@@ -333,10 +333,14 @@ public:
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
   void emitModelStateChanged(const QString &name) {emit modelStateChanged(name);}
+  bool isCreatingAutoLoadedLibrary() const {return mCreatingAutoLoadedLibrary;}
+  void setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary) {mCreatingAutoLoadedLibrary = creatingAutoLoadedLibrary;}
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
   QList<LibraryTreeItem*> mNonExistingLibraryTreeItemsList;
+  bool mCreatingAutoLoadedLibrary = false;
+
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem, const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
