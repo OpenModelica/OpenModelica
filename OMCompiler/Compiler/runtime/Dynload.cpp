@@ -619,10 +619,10 @@ void *type_desc_to_value(type_description *desc)
                           desc->data.bool_array.dim_size, &ptr);
   };
   case TYPE_DESC_STRING_ARRAY: {
-    void *ptr = (modelica_string *) desc->data.string_array.data
-      + base_array_nr_of_elements(desc->data.string_array) - 1;
-    return generate_array(TYPE_DESC_STRING, 1, desc->data.string_array.ndims,
-                          desc->data.string_array.dim_size, &ptr);
+    void *ptr = (modelica_string *) desc->data.str_array.data
+      + base_array_nr_of_elements(desc->data.str_array) - 1;
+    return generate_array(TYPE_DESC_STRING, 1, desc->data.str_array.ndims,
+                          desc->data.str_array.dim_size, &ptr);
   };
   case TYPE_DESC_MMC: {
     void* t = 0;
@@ -779,8 +779,8 @@ static int parse_array(type_description *desc, void *arrdata, void *dimLst)
     desc->data.bool_array.dim_size = dim_size;
     break;
   case TYPE_DESC_STRING_ARRAY:
-    desc->data.string_array.ndims = dims;
-    desc->data.string_array.dim_size = dim_size;
+    desc->data.str_array.ndims = dims;
+    desc->data.str_array.dim_size = dim_size;
     break;
   default:
     assert(0);
@@ -802,8 +802,8 @@ static int parse_array(type_description *desc, void *arrdata, void *dimLst)
     data = desc->data.bool_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_BOOL, &data);
   case TYPE_DESC_STRING_ARRAY:
-    alloc_string_array_data(&(desc->data.string_array));
-    data = desc->data.string_array.data;
+    alloc_string_array_data(&(desc->data.str_array));
+    data = desc->data.str_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_STRING, &data);
   default:
     break;
