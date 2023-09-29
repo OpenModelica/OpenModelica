@@ -29,7 +29,7 @@
  */
 
 #include "meta_modelica.h"
-#include "ryu.h"
+#include "om_format.h"
 #include <ctype.h>
 
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
@@ -66,10 +66,12 @@ modelica_string _old_realString(modelica_real r)
   return mmc_mk_scon(buffer);
 }
 
-modelica_string ryu_realString(modelica_real r)
+modelica_string _ryu_realString(modelica_real r)
 {
+  char str[32];
   char buffer[32];
-  ryu_to_hr(r, buffer, 1); /* include the trailing zero */
+  d2s_buffered(r, str);
+  ryu_to_hr(str, buffer, 1); /* include the trailing zero for MetaModelica */
   return mmc_mk_scon(buffer);
 }
 
