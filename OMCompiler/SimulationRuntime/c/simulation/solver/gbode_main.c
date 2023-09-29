@@ -1776,7 +1776,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         gbData->stepSizeValues[i] = gbData->stepSizeValues[i - 1];
       }
       // update new values
-      gbData->errValues[0] = _omc_gen_maximumVectorNorm(gbData->err, nStates);
+      gbData->errValues[0] = err = _omc_gen_maximumVectorNorm(gbData->err, nStates);
       gbData->stepSizeValues[0] = gbData->stepSize;
 
       // Store performed step size for latter interpolation
