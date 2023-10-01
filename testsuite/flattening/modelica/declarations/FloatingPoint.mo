@@ -7,8 +7,8 @@
 //
 
 model FloatingPoint
-  constant Real r1 = 1.7976931348623157E308;
-  constant Real r2 = 2.2250738585072014E-308;
+  constant Real r1 = 1.7976931348623157e308;
+  constant Real r2 = 2.2250738585072014e-308;
   constant Real r3 = 22.5;
   constant Real r4 = 3.141592653589793;
   constant Real r5 = 1.2E-35;
@@ -24,8 +24,8 @@ end FloatingPoint;
 
 // Result:
 // class FloatingPoint
-//   constant Real r1 = 1.797693134862316e+308;
-//   constant Real r2 = 2.225073858507201e-308;
+//   constant Real r1 = 1.7976931348623157e308;
+//   constant Real r2 = 2.2250738585072014e-308;
 //   constant Real r3 = 22.5;
 //   constant Real r4 = 3.141592653589793;
 //   constant Real r5 = 1.2e-35;
