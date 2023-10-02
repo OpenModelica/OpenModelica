@@ -19,6 +19,8 @@ set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/OSMC-License.txt")
 
 # Generator specific variables go in their own files.
 include(cmake/packaging/debian.cmake)
+include(cmake/packaging/rpm.cmake)
+include(cmake/packaging/nsis.cmake)
 include(cmake/packaging/productbuild.cmake)
 
 # Now that the options/settings variables have been set include CPack and add the components.
