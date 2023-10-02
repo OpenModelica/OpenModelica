@@ -316,7 +316,7 @@ case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
   <ModelStructure>
     <%ModelStructureOutputs(fmistruct.fmiOutputs)%>
     <%ModelStructureDerivatives(fmistruct.fmiDerivatives)%>
-    <%ModelStructureDiscreteStates(fmistruct.fmiDiscreteStates)%>
+    <% if Flags.getConfigBool(Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION) then ModelStructureDiscreteStates(fmistruct.fmiDiscreteStates) else "" %>
     <%ModelStructureInitialUnknowns(fmistruct.fmiInitialUnknowns)%>
   </ModelStructure>
   >>

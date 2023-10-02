@@ -14063,17 +14063,17 @@ else
   // create empty model structure
   try
     // create empty derivatives dependencies
-    derivatives := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+    derivatives := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                         for v in getScalarVars(inModelInfo.vars.derivativeVars));
 
     // create empty output dependencies
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    outputs := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+    outputs := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                     for v in getScalarVars(varsA));
 
     // create empty clockedStates dependencies
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    discreteStates := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+    discreteStates := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                            for v in getScalarVars(clockedStates));
 
     contPartSimDer := NONE();
@@ -14319,11 +14319,16 @@ protected
   SimCodeVar.SimVar simVar;
 algorithm
   for cr in crefs loop
-    var := BackendVariable.getVarSingle(cr, orderedVars);
-    simVar := BaseHashTable.get(cr, crefSimVarHT);
-    // Filter only Real vars that match the --fmiFilter flag
-    if BackendVariable.isRealVar(var) and isSome(simVar.exportVar) then
-      outVar := var :: outVar;
+    // skip CLOCK related vars $CLKPRE.Ts and also check for previous, we do not generate partial derivatives for cpp runtime,
+    // but still some models (e.g) /testsuite/openmodelica/fmi/ModelExchange/2.0/fmi_attributes_20.mos, clock related variables
+    // pop up in partial derivatives and we should skip those variables
+    if (not ComponentReference.isPreviousCref(cr) and not ComponentReference.isPreCref(cr)) then
+      var := BackendVariable.getVarSingle(cr, orderedVars);
+      simVar := BaseHashTable.get(cr, crefSimVarHT);
+      // Filter only Real vars that match the --fmiFilter flag
+      if BackendVariable.isRealVar(var) and isSome(simVar.exportVar) then
+        outVar := var :: outVar;
+      end if;
     end if;
   end for;
 end getDependentAndIndepentVarsForJacobian;
