@@ -530,6 +530,9 @@ bool MainWindow::isDebuggingPerspectiveActive()
  */
 void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
 {
+  if (mRestoringState) {
+    return;
+  }
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
@@ -599,6 +602,9 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
  */
 void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
 {
+  if (mRestoringState) {
+    return;
+  }
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
