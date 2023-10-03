@@ -2,7 +2,7 @@
 # https://cmake.org/cmake/help/latest/cpack_gen/nsis.html
 # usage: cpack -G NSIS64
 
-set(CPACK_PACKAGING_INSTALL_PREFIX ".")
+# set(CPACK_PACKAGING_INSTALL_PREFIX ".")
 
 # This assumes the images are in the root OpenModelica directory for now.
 set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}\\OpenModelica.ico")
