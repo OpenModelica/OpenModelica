@@ -14288,8 +14288,8 @@ algorithm
 
   // generate Partial derivative for initDAE here, as we have the list of all depVars and inDepVars
   if not Flags.isSet(Flags.FMI20_DEPENDENCIES) and not stringEq(Config.simCodeTarget(), "Cpp") then
-    fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(depVars), crefSimVarHT);
-    fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(indepVars), crefSimVarHT);
+    fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(orderedVars), crefSimVarHT);
+    fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(orderedVars), crefSimVarHT);
     if debug then
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
@@ -14319,17 +14319,18 @@ protected
   SimCodeVar.SimVar simVar;
 algorithm
   for cr in crefs loop
-    // skip CLOCK related vars $CLKPRE.Ts and also check for previous, we do not generate partial derivatives for cpp runtime,
-    // but still some models (e.g) /testsuite/openmodelica/fmi/ModelExchange/2.0/fmi_attributes_20.mos, clock related variables
-    // pop up in partial derivatives and we should skip those variables
-    if (not ComponentReference.isPreviousCref(cr) and not ComponentReference.isPreCref(cr)) then
+    // check if var exist otherwise don't generate derivatives for those vars, it is possible sometimes
+    // internal variables pops up in this list
+    try
       var := BackendVariable.getVarSingle(cr, orderedVars);
       simVar := BaseHashTable.get(cr, crefSimVarHT);
       // Filter only Real vars that match the --fmiFilter flag
       if BackendVariable.isRealVar(var) and isSome(simVar.exportVar) then
         outVar := var :: outVar;
       end if;
-    end if;
+    else
+      outVar := {};
+    end try;
   end for;
 end getDependentAndIndepentVarsForJacobian;
 
