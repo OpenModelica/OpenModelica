@@ -67,7 +67,7 @@ $(info Creating dirs: $(BUILD_DIRS))
 $(info $(shell mkdir -p $(BUILD_DIRS)))
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr libryu boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
 
 ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 semla:
@@ -116,7 +116,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables boehm-gc idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables boehm-gc libryu idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
@@ -459,6 +459,12 @@ $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT): 3rdParty/metis-5.1.0/CMakeLists.txt
 metis-clean:
 	test ! -f 3rdParty/metis-5.1.0/Makefile || $(MAKE) -C 3rdParty/metis-5.1.0 clean
 	rm -rf 3rdParty/metis-5.1.0/CMakeCache.txt 3rdParty/metis-5.1.0/libmetis/libmetis.a 3rdParty/metis-5.1.0/CMakeFiles 3rdParty/metis-5.1.0/Makefile 3rdParty/metis-5.1.0/cmake_install.cmake 3rdParty/metis-5.1.0/include/CMakeFiles 3rdParty/metis-5.1.0/include/Makefile 3rdParty/metis-5.1.0/include/cmake_install.cmake 3rdParty/metis-5.1.0/libmetis/CMakeFiles 3rdParty/metis-5.1.0/libmetis/Makefile 3rdParty/metis-5.1.0/libmetis/cmake_install.cmake 3rdParty/metis-5.1.0/programs/CMakeFiles 3rdParty/metis-5.1.0/programs/Makefile 3rdParty/metis-5.1.0/programs/cmake_install.cmake
+
+libryu: 3rdParty/ryu/ryu/libryu.a
+3rdParty/ryu/ryu/libryu.a:
+	test -d 3rdParty/ryu/ryu
+	(cd 3rdParty/ryu/ryu && $(MAKE) -f Makefile CC="$(CC)" CFLAGS="$(CFLAGS)")
+	cp 3rdParty/ryu/ryu/libryu$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libryu$(STAEXT)
 
 Cdaskr: 3rdParty/Cdaskr/solver/libcdaskr.a
 3rdParty/Cdaskr/solver/libcdaskr.a:
