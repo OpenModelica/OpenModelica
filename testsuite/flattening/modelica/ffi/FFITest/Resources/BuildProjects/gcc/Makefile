@@ -18,7 +18,7 @@ OBJS = FFITestLib.o FFITestLibCpp.o
 all: ${TARGET_LIB}
 
 $(TARGET_LIB): $(OBJS)
-	$(CC) ${LDFLAGS} -o $@ $^
+	$(CXX) ${LDFLAGS} -o $@ $^
 	mkdir -p ../../Library/$(TARGET_DIR)
 	cp $@ ../../Library/$(TARGET_DIR)/$@
 
