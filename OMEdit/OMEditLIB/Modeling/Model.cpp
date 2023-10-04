@@ -700,11 +700,7 @@ namespace ModelInstance
 
   Modifier::Modifier()
   {
-    mName = "";
-    mValue = "";
-    mFinal = false;
-    mEach = false;
-    mModifiers.clear();
+
   }
 
   void Modifier::deserialize(const QJsonValue &jsonValue)
@@ -720,6 +716,8 @@ namespace ModelInstance
           mFinal = true;
         } else if (modifierKey.compare(QStringLiteral("each")) == 0) {
           mEach = true;
+        } else if (modifierKey.compare(QStringLiteral("redeclare")) == 0) {
+          mRedeclare = true;
         } else {
           Modifier modifier;
           modifier.setName(modifierKey);
