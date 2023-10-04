@@ -42,18 +42,22 @@ getErrorString();
 //         \"choices\": {
 //           \"choice\": [
 //             {
+//               \"redeclare\": true,
 //               \"$value\": \"redeclare Real x = 1.0 \\\"A\\\"\",
 //               \"$type\": \"Real\"
 //             },
 //             {
+//               \"redeclare\": true,
 //               \"$value\": \"redeclare Real x = 2.0 \\\"B\\\"\",
 //               \"$type\": \"Real\"
 //             },
 //             {
+//               \"redeclare\": true,
 //               \"$value\": \"redeclare P2.OtherReal x = 3.0 \\\"C\\\"\",
 //               \"$type\": \"P.P2.OtherReal\"
 //             },
 //             {
+//               \"redeclare\": true,
 //               \"$value\": \"redeclare MissingReal x = 4.0 \\\"D\\\"\"
 //             }
 //           ]

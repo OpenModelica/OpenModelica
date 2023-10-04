@@ -12,6 +12,7 @@ getErrorString();
 // "{
 //   \"a\": {
 //     \"y\": {
+//       \"redeclare\": true,
 //       \"$value\": \"redeclare MyReal y = 4\"
 //     },
 //     \"x\": \"3\"
