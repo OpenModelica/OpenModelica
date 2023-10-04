@@ -321,5 +321,28 @@ public function dorgqr
     outA, outWORK, outINFO) annotation(Library = {"omcruntime", "Lapack"});
 end dorgqr;
 
+public function dhseqr
+  input String inJOB;
+  input String inCOMPZ;
+  input Integer inN;
+  input Integer inILO;
+  input Integer inIHI;
+  input list<list<Real>> inH;
+  input Integer inLDH;
+  input list<list<Real>> inZ;
+  input Integer inLDZ;
+  input list<Real> inWORK;
+  input Integer inLWORK;
+  output list<list<Real>> outH;
+  output list<Real> outWR;
+  output list<Real> outWI;
+  output list<list<Real>> outZ;
+  output list<Real> outWORK;
+  output Integer outINFO;
+  external "C" LapackImpl__dhseqr(inJOB, inCOMPZ, inN, inILO, inIHI, inH, inLDH,
+    inZ, inLDZ, inWORK, inLWORK, outH, outWR, outWI, outZ, outWORK, outINFO)
+    annotation(Library = {"omcruntime", "Lapack"});
+end dhseqr;
+
 annotation(__OpenModelica_Interface="util");
 end Lapack;
