@@ -1167,7 +1167,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
     /* Ticket #2531
      * Check if parameter is marked final.
      */
-    if (modifier.isFinal()) {
+    if (modifier.isFinal() || modifier.isRedeclare()) {
       mParametersList.removeOne(pParameter);
       delete pParameter;
     } else {
