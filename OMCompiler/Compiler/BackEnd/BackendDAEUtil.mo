@@ -10276,10 +10276,12 @@ algorithm
   syst := match syst
     local
       BackendDAE.StrongComponents comps;
+      UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
     case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps)) algorithm
       for comp in comps loop
-        syst.orderedVars := markNonlinearIterationVariablesStrongComponent(comp, syst.orderedVars);
+        markNonlinearIterationVariablesStrongComponent(comp, set);
       end for;
+      (syst.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(syst.orderedVars, markNonlinearIterationVariable, set);
     then syst;
     else syst;
   end match;
@@ -10287,10 +10289,9 @@ end markNonlinearIterationVariablesEqSystem;
 
 protected function markNonlinearIterationVariablesStrongComponent
   input BackendDAE.StrongComponent comp;
-  input output BackendDAE.Variables vars;
+  input UnorderedSet<DAE.ComponentRef> set;
 protected
   list<BackendDAE.Var> nonlinear_iteration_vars;
-  UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
 algorithm
   nonlinear_iteration_vars := match comp
     local
@@ -10302,8 +10303,6 @@ algorithm
   for var in nonlinear_iteration_vars loop
     UnorderedSet.add(var.varName, set);
   end for;
-
-  (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, markNonlinearIterationVariable, set);
 end markNonlinearIterationVariablesStrongComponent;
 
 protected function markNonlinearIterationVariable
