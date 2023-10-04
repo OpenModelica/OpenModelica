@@ -450,6 +450,10 @@
             "each": {
               "type": "boolean",
               "description": "Whether the modifier is each or not"
+            },
+            "redeclare": {
+              "type": "boolean",
+              "description": "Whether the modifier is a redeclare or not"
             }
           },
           "additionalProperties": {
