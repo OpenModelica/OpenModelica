@@ -41,9 +41,11 @@ getModelInstance(M, prettyPrint = true);
 //       \"$kind\": \"extends\",
 //       \"modifiers\": {
 //         \"B\": {
+//           \"redeclare\": true,
 //           \"$value\": \"redeclare model B = MB\"
 //         },
 //         \"C\": {
+//           \"redeclare\": true,
 //           \"$value\": \"redeclare model C = C(y = 2.0)\"
 //         }
 //       },

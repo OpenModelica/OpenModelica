@@ -2112,6 +2112,8 @@ algorithm
           json := JSON.addPair("each", JSON.makeBoolean(true), json);
         end if;
 
+        json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
+
         binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
         json := JSON.addPair("$value", binding_json, json);
 
