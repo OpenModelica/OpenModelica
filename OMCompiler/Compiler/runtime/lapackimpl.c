@@ -148,6 +148,10 @@ extern int dgetri_(integer *n, doublereal *a, integer *lda, integer *ipiv,
 extern int dorgqr_(integer *m, integer *n, integer *k, doublereal *a,
   integer *lda, doublereal *tau, doublereal *work, integer *lwork, integer *info);
 
+extern int dhseqr_(const char *job, const char *compz, integer *n, integer *ilo,
+  integer *ihi, doublereal *h, integer *ldh, doublereal *wr, doublereal *wi,
+  doublereal *z, integer *ldz, doublereal *work, integer *lwork, integer *info);
+
 static double* alloc_real_matrix(int N, int M, void *data)
 {
   double *matrix;
@@ -861,6 +865,46 @@ void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
 
   free(a);
   free(tau);
+  free(work);
+#else
+  OMC_NO_LAPACK_ERROR();
+#endif
+}
+
+void LapackImpl__dhseqr(const char *job, const char *compz, int N, int ILO, int IHI,
+                        void **inH, int LDH, void **inZ, int LDZ, void **inWORK, int LWORK,
+                        void **outH, void **WR, void **WI, void **outZ, void **outWORK, int *INFO)
+{
+#ifdef HAVE_LAPACK
+  integer n, ilo, ihi, ldh, ldz, lwork, info = 0;
+  double *h, *z, *wr, *wi, *work;
+
+  n = N;
+  ilo = ILO;
+  ihi = IHI;
+  ldh = LDH;
+  ldz = LDZ;
+  lwork = LWORK;
+
+  h = alloc_real_matrix(ldh, n, inH);
+  z = alloc_real_matrix(ldz, n, inZ);
+  wr = alloc_zeroed_real_vector(n);
+  wi = alloc_zeroed_real_vector(n);
+  work = alloc_real_vector(lwork, inWORK);
+
+  dhseqr_(job, compz, &n, &ilo, &ihi, h, &ldh, wr, wi, z, &ldz, work, &lwork, &info);
+
+  *outH = mk_rml_real_matrix(ldh, n, h);
+  *WR = mk_rml_real_vector(n, wr);
+  *WI = mk_rml_real_vector(n, wi);
+  *outZ = mk_rml_real_matrix(ldz, n, z);
+  *outWORK = mk_rml_real_vector(lwork, work);
+  *INFO = info;
+
+  free(h);
+  free(z);
+  free(wr);
+  free(wi);
   free(work);
 #else
   OMC_NO_LAPACK_ERROR();
