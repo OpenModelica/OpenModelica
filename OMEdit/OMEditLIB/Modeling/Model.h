@@ -584,7 +584,7 @@ private:
 
     bool isParameterConnectorSizing(const QString &parameter);
     bool isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const;
-    bool isTypeCompatibleWith(const Model &other) const;
+    bool isTypeCompatibleWith(const Model &other, bool lhsOutside, bool rhsOutside) const;
     QString getParameterValue(const QString &parameter, QString &typeName);
     QString getParameterValueFromExtendsModifiers(const QString &parameter);
 
