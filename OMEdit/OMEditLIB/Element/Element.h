@@ -348,12 +348,9 @@ private:
   ResizerItem *mpBottomRightResizerItem;
   ResizerItem *mpSelectedResizerItem;
   OriginItem *mpOriginItem;
-  QTransform mTransform;
   QRectF mSceneBoundingRect;
   QPointF mTransformationStartPosition;
   QPointF mPivotPoint;
-  qreal mXFactor;
-  qreal mYFactor;
   QList<Element*> mInheritedElementsList;
   QList<ShapeAnnotation*> mShapesList;
   QList<Element*> mElementsList;

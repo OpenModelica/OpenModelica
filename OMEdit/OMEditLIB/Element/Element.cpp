@@ -3382,7 +3382,6 @@ void Element::prepareResizeElement(ResizerItem *pResizerItem)
   prepareGeometryChange();
   mOldTransformation = mTransformation;
   mpSelectedResizerItem = pResizerItem;
-  mTransform = transform();
   mSceneBoundingRect = sceneBoundingRect();
   QPointF topLeft = sceneBoundingRect().topLeft();
   QPointF topRight = sceneBoundingRect().topRight();
@@ -3428,38 +3427,38 @@ void Element::resizeElement(QPointF newPosition)
     yDistance = yDistance * -1;
   }
   //Calculate the factors by dividing the distances againts the original size of this container
-  mXFactor = 0;
-  mYFactor = 0;
-  mXFactor = xDistance / mSceneBoundingRect.width();
-  mYFactor = yDistance / mSceneBoundingRect.height();
-  mXFactor = 1 + mXFactor;
-  mYFactor = 1 + mYFactor;
+  qreal xFactor = 0.0;
+  qreal yFactor = 0.0;
+  xFactor = xDistance / mSceneBoundingRect.width();
+  yFactor = yDistance / mSceneBoundingRect.height();
+  xFactor = 1 + xFactor;
+  yFactor = 1 + yFactor;
   // if preserveAspectRatio is true then resize equally
   CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
   if (coOrdinateSystem.getPreserveAspectRatio()) {
-    qreal factor = qMax(qFabs(mXFactor), qFabs(mYFactor));
-    mXFactor = mXFactor < 0 ? factor * -1 : factor;
-    mYFactor = mYFactor < 0 ? factor * -1 : factor;
+    qreal factor = qMax(qFabs(xFactor), qFabs(yFactor));
+    xFactor = xFactor < 0 ? factor * -1 : factor;
+    yFactor = yFactor < 0 ? factor * -1 : factor;
   }
-  // Apply the transformation to the temporary polygon using the new scaling factors
   PointAnnotation startOrigin = mOldTransformation.getOrigin();
   ExtentAnnotation startExtent = mOldTransformation.getExtent();
   QPointF startExtent1 = startExtent.at(0);
   QPointF startExtent2 = startExtent.at(1);
-  qreal x = mPivotPoint.x() + (startOrigin.x() - mPivotPoint.x()) * mXFactor;
-  qreal y = mPivotPoint.y() + (startOrigin.y() - mPivotPoint.y()) * mYFactor;
+  qreal x = mPivotPoint.x() + (startOrigin.x() - mPivotPoint.x()) * xFactor;
+  qreal y = mPivotPoint.y() + (startOrigin.y() - mPivotPoint.y()) * yFactor;
   QPointF extent1, extent2;
-  extent1.setX(mXFactor * startExtent1.x());
-  extent1.setY(mYFactor * startExtent1.y());
-  extent2.setX(mXFactor * startExtent2.x());
-  extent2.setY(mYFactor * startExtent2.y());
+  extent1.setX(xFactor * startExtent1.x());
+  extent1.setY(yFactor * startExtent1.y());
+  extent2.setX(xFactor * startExtent2.x());
+  extent2.setY(yFactor * startExtent2.y());
   mTransformation.setOrigin(QPointF(x, y));
   QVector<QPointF> extent;
   extent.append(extent1);
   extent.append(extent2);
   mTransformation.setExtent(extent);
-  if (mOldTransformation.getRotateAngle() != 0)
-    mTransformation.setRotateAngle((mXFactor < 0 ? -1 : 1) * (mYFactor < 0 ? -1 : 1) * mOldTransformation.getRotateAngle());
+  if (!qFuzzyCompare(mOldTransformation.getRotateAngle(), 0.0)) {
+    mTransformation.setRotateAngle((xFactor < 0 ? -1 : 1) * (yFactor < 0 ? -1 : 1) * mOldTransformation.getRotateAngle());
+  }
   setTransform(mTransformation.getTransformationMatrix());
   // let connections know that component has changed.
   emit transformChange(false);
