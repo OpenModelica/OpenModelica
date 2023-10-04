@@ -1233,6 +1233,22 @@ namespace ModelInstance
     return elem && elem->getModel() && elem->getModel()->isConnector();
   }
 
+  bool isCompatibleConnectorDirection(const Element &lhs, bool lhsOutside, const Element &rhs, bool rhsOutside)
+  {
+    // A inside output should not be connected to an inside output,
+    // or a public outside input to a public outside input.
+    auto dir = lhs.getDirection();
+    if (!dir.isEmpty() && dir == lhs.getDirection()) {
+      if (dir == "output" && !lhsOutside && !rhsOutside) {
+        return false;
+      } else if (dir == "input" && lhsOutside && rhsOutside && lhs.isPublic() && rhs.isPublic()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   bool Model::isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const
   {
     const Element *lhs = lookupElement(lhsConnector);
@@ -1243,18 +1259,11 @@ namespace ModelInstance
       return true;
     }
 
-    // A inside output should not be connected to an inside output,
-    // or a public outside input to a public outside input.
-    auto dir = lhs->getDirection();
-    if (!dir.isEmpty() && dir == rhs->getDirection()) {
-      auto lhs_outside = isOutsideConnector(lhsConnector, *this);
-      auto rhs_outside = isOutsideConnector(rhsConnector, *this);
+    auto lhs_outside = isOutsideConnector(lhsConnector, *this);
+    auto rhs_outside = isOutsideConnector(rhsConnector, *this);
 
-      if (dir == "output" && !lhs_outside && !rhs_outside) {
-        return false;
-      } else if (dir == "input" && lhs_outside && rhs_outside && lhs->isPublic() && rhs->isPublic()) {
-        return false;
-      }
+    if (!isCompatibleConnectorDirection(*lhs, lhs_outside, *rhs, rhs_outside)) {
+      return false;
     }
 
     // Check that the connectors are type compatible.
@@ -1263,10 +1272,10 @@ namespace ModelInstance
 
     if (!lhs_model || !rhs_model) return false;
 
-    return lhs_model->isTypeCompatibleWith(*rhs_model);
+    return lhs_model->isTypeCompatibleWith(*rhs_model, lhs_outside, rhs_outside);
   }
 
-  bool Model::isTypeCompatibleWith(const Model &other) const
+  bool Model::isTypeCompatibleWith(const Model &other, bool lhsOutside, bool rhsOutside) const
   {
     if (isExpandableConnector() || other.isExpandableConnector()) {
       // Don't type check expandable connectors, since we don't really know what
@@ -1294,13 +1303,11 @@ namespace ModelInstance
               auto m1 = e1->getModel();
               auto m2 = e2->getModel();
 
-              if (m1 && m2 && !m1->isTypeCompatibleWith(*m2)) {
+              if (m1 && m2 && !m1->isTypeCompatibleWith(*m2, lhsOutside, rhsOutside)) {
                 return false;
               }
 
-              // The components should not have the same input/output prefix.
-              auto dir = e1->getDirection();
-              if (!dir.isEmpty() && dir == e2->getDirection()) {
+              if (!isCompatibleConnectorDirection(*e1, lhsOutside, *e2, rhsOutside)) {
                 return false;
               }
             } else {
@@ -1324,7 +1331,7 @@ namespace ModelInstance
         auto m1 = comps1.at(i)->getModel();
         auto m2 = comps2.at(i)->getModel();
 
-        if (m1 && m2 && !m1->isTypeCompatibleWith(*m2)) {
+        if (m1 && m2 && !m1->isTypeCompatibleWith(*m2, lhsOutside, rhsOutside)) {
           return false;
         }
       }
