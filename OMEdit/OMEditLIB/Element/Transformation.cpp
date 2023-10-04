@@ -328,10 +328,6 @@ QTransform Transformation::getTransformationMatrixDiagram() const
   if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
     sy = 1;
   }
-  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
-  if (mpComponent) {
-    position = position - (QPointF(mpComponent->boundingRect().center().x() * sx, mpComponent->boundingRect().center().y() * sy));
-  }
 
   // get the horizontal flip
   if (extent2Diagram.x() < extent1Diagram.x()) {
@@ -343,7 +339,10 @@ QTransform Transformation::getTransformationMatrixDiagram() const
   }
   // return the transformations
   if (mpComponent) {
-    QTransform transformationMatrix = QTransform::fromScale(sx, sy);
+    QPointF diagExtentCenter = mpComponent->boundingRect().center();
+
+    QTransform transformationMatrix = QTransform::fromTranslate(-diagExtentCenter.x(), -diagExtentCenter.y());
+    transformationMatrix *= QTransform::fromScale(sx, sy);
     transformationMatrix *= QTransform::fromTranslate(position.x(), position.y());
     transformationMatrix *= QTransform().translate(mOriginDiagram.x(), mOriginDiagram.y()).rotate(mRotateAngleDiagram).translate(-mOriginDiagram.x(), -mOriginDiagram.y());
     return transformationMatrix;
@@ -399,10 +398,7 @@ QTransform Transformation::getTransformationMatrixIcon()
   if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
     sy = 1;
   }
-  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
-  if (mpComponent) {
-    position = position - (QPointF(mpComponent->boundingRect().center().x() * sx, mpComponent->boundingRect().center().y() * sy));
-  }
+
   // get the horizontal flip
   if (extent2Icon.x() < extent1Icon.x()) {
     sx = -sx;
@@ -413,7 +409,10 @@ QTransform Transformation::getTransformationMatrixIcon()
   }
   // return the transformations
   if (mpComponent) {
-    QTransform transformationMatrix = QTransform::fromScale(sx, sy);
+    QPointF extentCenter = mpComponent->boundingRect().center();
+
+    QTransform transformationMatrix = QTransform::fromTranslate(-extentCenter.x(), -extentCenter.y());
+    transformationMatrix *= QTransform::fromScale(sx, sy);
     transformationMatrix *= QTransform::fromTranslate(position.x(), position.y());
     transformationMatrix *= QTransform().translate(mOriginIcon.x(), mOriginIcon.y()).rotate(mRotateAngleIcon).translate(-mOriginIcon.x(), -mOriginIcon.y());
     return transformationMatrix;
