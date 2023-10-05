@@ -454,6 +454,10 @@
             "redeclare": {
               "type": "boolean",
               "description": "Whether the modifier is a redeclare or not"
+            },
+            "replaceable": {
+              "type": "boolean",
+              "description": "Whether the modifier is a replaceable or not"
             }
           },
           "additionalProperties": {

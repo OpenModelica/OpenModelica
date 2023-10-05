@@ -62,6 +62,7 @@ GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
 GetModelInstanceReplaceable4.mos \
+GetModelInstanceReplaceable5.mos \
 GetModelInstanceReplaceableComment.mos \
 GetModelInstanceStateMachine1.mos \
 ModifierToJSON1.mos \
