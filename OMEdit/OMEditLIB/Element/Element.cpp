@@ -3345,8 +3345,7 @@ void Element::referenceElementDeleted()
       mpBusComponent = mpReferenceElement->getBusComponent();
     }
   } else {
-    mpGraphicsView->removeItem(this);
-    mpGraphicsView->removeItem(mpOriginItem);
+    mpGraphicsView->removeElementItem(this);
   }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
