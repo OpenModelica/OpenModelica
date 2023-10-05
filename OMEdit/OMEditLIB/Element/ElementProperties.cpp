@@ -280,7 +280,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     }
     setValueWidget(value, true, mUnit);
   } else {
-    mpElementParameters->applyFinalStartFixedAndDisplayUnitModifiers(this, mpModelInstanceElement->getModifier(), true);
+    mpElementParameters->applyFinalStartFixedAndDisplayUnitModifiers(this, mpModelInstanceElement->getModifier(), true, false);
   }
   update();
 }
@@ -1160,14 +1160,15 @@ QString ElementParameters::getElementParentClassName() const
  * \param pParameter
  * \param modifier
  * \param defaultValue
+ * \param isElementModification
  */
-void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue)
+void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue, bool isElementModification)
 {
   if (pParameter) {
     /* Ticket #2531
      * Check if parameter is marked final.
      */
-    if (modifier.isFinal() || (modifier.isRedeclare() && !modifier.isReplaceable())) {
+    if (modifier.isFinal() || (!isElementModification && modifier.isRedeclare() && !modifier.isReplaceable())) {
       mParametersList.removeOne(pParameter);
       delete pParameter;
     } else {
@@ -1466,7 +1467,7 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
       fetchElementExtendsModifiers(pExtend->getModel());
       foreach (auto modifier, pExtend->getModifier().getModifiers()) {
         Parameter *pParameter = findParameter(modifier.getName());
-        applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, true);
+        applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, true, false);
       }
     }
   }
@@ -1480,7 +1481,7 @@ void ElementParameters::fetchElementModifiers()
 {
   foreach (auto modifier, mpElement->getModifier().getModifiers()) {
     Parameter *pParameter = findParameter(modifier.getName());
-    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited || mNested);
+    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited || mNested, true);
   }
 }
 
@@ -1502,7 +1503,7 @@ void ElementParameters::fetchClassExtendsModifiers(ModelInstance::Element *pMode
         if (modifier.getName().compare(mpElement->getName()) == 0) {
           foreach (auto subModifier, modifier.getModifiers()) {
             Parameter *pParameter = findParameter(subModifier.getName());
-            applyFinalStartFixedAndDisplayUnitModifiers(pParameter, subModifier, hasParentElement);
+            applyFinalStartFixedAndDisplayUnitModifiers(pParameter, subModifier, hasParentElement, false);
           }
           break;
         }
@@ -1525,7 +1526,7 @@ void ElementParameters::applyModifiers(const ModelInstance::Modifier modifiers, 
   if (mNested) {
     foreach (auto modifier, modifiers.getModifiers()) {
       Parameter *pParameter = findParameter(modifier.getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, defaultValue);
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, defaultValue, false);
     }
   }
 }
