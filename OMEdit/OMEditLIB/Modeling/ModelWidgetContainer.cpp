@@ -2245,6 +2245,7 @@ void GraphicsView::removeInheritedClassElements()
 void GraphicsView::removeInheritedClassConnections()
 {
   foreach (LineAnnotation *pConnectionLineAnnotation, mInheritedConnectionsList) {
+    pConnectionLineAnnotation->clearCollidingConnections();
     deleteInheritedConnectionFromList(pConnectionLineAnnotation);
     removeItem(pConnectionLineAnnotation);
     delete pConnectionLineAnnotation;
@@ -2258,6 +2259,7 @@ void GraphicsView::removeInheritedClassConnections()
 void GraphicsView::removeInheritedClassTransitions()
 {
   foreach (LineAnnotation *pTransitionLineAnnotation, mInheritedTransitionsList) {
+    removeConnectionDetails(pTransitionLineAnnotation);
     deleteInheritedTransitionFromList(pTransitionLineAnnotation);
     removeItem(pTransitionLineAnnotation);
     delete pTransitionLineAnnotation;
@@ -6724,10 +6726,10 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   mpIconGraphicsView->removeInheritedClassTransitions();
   mpIconGraphicsView->removeInheritedClassInitialStates();
   mpDiagramGraphicsView->removeInheritedClassShapes();
-  mpDiagramGraphicsView->removeInheritedClassElements();
   mpDiagramGraphicsView->removeInheritedClassConnections();
   mpDiagramGraphicsView->removeInheritedClassTransitions();
   mpDiagramGraphicsView->removeInheritedClassInitialStates();
+  mpDiagramGraphicsView->removeInheritedClassElements();
   /* get model components, connection and shapes. */
   // Draw icon view
   // reset the CoOrdinateSystem
