@@ -704,11 +704,13 @@ void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool 
 void GraphicsView::handleCollidingConnections()
 {
   // First clear the colliding connector elements and connections.
-  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+  QList<LineAnnotation*> connections = mInheritedConnectionsList;
+  connections.append(mConnectionsList);
+  foreach (LineAnnotation *pConnectionLineAnnotation, connections) {
     pConnectionLineAnnotation->clearCollidingConnections();
   }
 
-  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+  foreach (LineAnnotation *pConnectionLineAnnotation, connections) {
     pConnectionLineAnnotation->handleCollidingConnections();
   }
 }
