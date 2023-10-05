@@ -718,6 +718,8 @@ namespace ModelInstance
           mEach = true;
         } else if (modifierKey.compare(QStringLiteral("redeclare")) == 0) {
           mRedeclare = true;
+        } else if (modifierKey.compare(QStringLiteral("replaceable")) == 0) {
+          mReplaceable = true;
         } else {
           Modifier modifier;
           modifier.setName(modifierKey);
