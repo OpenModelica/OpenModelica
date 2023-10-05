@@ -2120,6 +2120,10 @@ algorithm
 
         json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
 
+        if SCodeUtil.isElementReplaceable(mod.element) then
+          json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
+        end if;
+
         binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
         json := JSON.addPair("$value", binding_json, json);
 
