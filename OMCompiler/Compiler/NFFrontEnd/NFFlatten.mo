@@ -1034,6 +1034,21 @@ algorithm
   exp := Binding.getExp(binding);
   binding_ty := Binding.getType(binding);
 
+  // When replacing split indices we often get expressions such as
+  // {"m" for $i1 in 1:3}[$x1]. If the subscripts are the same as the subscripts
+  // in the prefix we can just remove all the subscripts and be done.
+  () := match exp
+    case Expression.SUBSCRIPTED_EXP()
+      guard Subscript.isEqualList(exp.subscripts, subs)
+      algorithm
+        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding));
+        return;
+      then
+        ();
+
+    else ();
+  end match;
+
   nodes := ComponentRef.nodes(prefix_cr);
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
   dims := List.lastN(dims, listLength(subs));
@@ -1394,7 +1409,7 @@ protected
   Integer index;
   InstNode cr_node;
 algorithm
-  for cr in ComponentRef.toListReverse(Prefix.prefix(prefix)) loop
+  for cr in ComponentRef.toListReverse(Prefix.indexedPrefix(prefix)) loop
     cr_subs := ComponentRef.getSubscripts(cr);
 
     if not listEmpty(cr_subs) then
