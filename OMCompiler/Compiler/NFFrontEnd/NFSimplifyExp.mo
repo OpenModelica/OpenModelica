@@ -1476,9 +1476,11 @@ algorithm
     then addArgument(result, exp, inverse);
 
     case (_, Expression.ARRAY()) algorithm
-      exp.elements := Array.map(exp.elements,
-        function combineBinariesExp(optOperator = NONE(),
-          result = Expression.EMPTY(Expression.typeOf(exp)), inverse = false));
+      if not exp.literal then
+        exp.elements := Array.map(exp.elements,
+          function combineBinariesExp(optOperator = NONE(),
+            result = Expression.EMPTY(Expression.typeOf(exp)), inverse = false));
+      end if;
     then addArgument(result, exp, inverse);
 
     case (_, Expression.RANGE()) algorithm
