@@ -464,6 +464,8 @@ libryu: 3rdParty/ryu/ryu/libryu.a
 3rdParty/ryu/ryu/libryu.a:
 	test -d 3rdParty/ryu/ryu
 	(cd 3rdParty/ryu/ryu && $(MAKE) -f Makefile CC="$(CC)" CFLAGS="$(CFLAGS)")
+	cp 3rdParty/ryu/ryu/ryu.h $(builddir_inc)/
+	cp 3rdParty/ryu/ryu/om_format.h $(builddir_inc)/
 	cp 3rdParty/ryu/ryu/libryu$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libryu$(STAEXT)
 
 Cdaskr: 3rdParty/Cdaskr/solver/libcdaskr.a
