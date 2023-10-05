@@ -469,6 +469,7 @@ private:
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
     bool isRedeclare() const {return mRedeclare;}
+    bool isReplaceable() const {return mReplaceable;}
     QString getModifierValue(QStringList qualifiedModifierName) const;
   private:
     QString mName;
@@ -476,6 +477,7 @@ private:
     bool mFinal = false;
     bool mEach = false;
     bool mRedeclare = false;
+    bool mReplaceable = false;
     QList<Modifier> mModifiers;
 
     static QString getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName);
