@@ -332,7 +332,7 @@ public
 
     // sort
     for i in 1:arrayLength(indices) loop
-      indices[i] := List.sort(List.unique(indices[i]), intLt);
+      indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
     end for;
   end getDependentCrefIndicesPseudoArray;
 
@@ -390,7 +390,7 @@ public
 
     // sort
     for i in 1:arrayLength(indices) loop
-      indices[i] := List.sort(List.unique(indices[i]), intLt);
+      indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
     end for;
   end getDependentCrefIndicesPseudoFor;
 
