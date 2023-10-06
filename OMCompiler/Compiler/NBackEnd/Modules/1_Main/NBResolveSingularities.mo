@@ -100,7 +100,7 @@ public
   extends Module.resolveSingularitiesInterface;
     input list<list<Integer>> marked_eqns_lst;
   protected
-    UnorderedSet<Integer> marked_eqns_set = UnorderedSet.new(Util.id, intEq);
+    UnorderedSet<Integer> marked_eqns_set;
     list<Integer> marked_eqns;
     SlicingStatus status;
     Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
@@ -120,6 +120,7 @@ public
     if not listEmpty(marked_eqns_lst) then
       changed := true;
       // marked_eqns_lst to flat uniqie list (via UnorderedSet)
+      marked_eqns_set := UnorderedSet.new(Util.id, intEq, Util.nextPrime(sum(listLength(l) for l in marked_eqns_lst)));
       for lst in marked_eqns_lst loop
         for e in lst loop
           UnorderedSet.add(e, marked_eqns_set);
