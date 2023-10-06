@@ -38,7 +38,7 @@
 #include "Helper.h"
 #include "Utilities.h"
 #include "Util/ResourceCache.h"
-#include "omc/om_format.h"
+#include "om_format.h"
 
 #include <QtCore/qmath.h>
 #include <QDir>
