@@ -605,7 +605,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
             OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit, displayUnit);
             if (convertUnit.unitsCompatible) {
               qreal convertedValue = Utilities::convertUnit(textValue.toDouble(), convertUnit.offset, convertUnit.scaleFactor);
-              textValue = StringHandler::number(convertedValue, textValue);
+              textValue = StringHandler::number(convertedValue);
               textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit));
             } else {
               textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(unit));
