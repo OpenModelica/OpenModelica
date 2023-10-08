@@ -37,7 +37,7 @@ struct SimulationOutput
 	/** Container for all output parameter description*/
   var_names_t  parameterDescription;
 	/** Container for all output variable names*/
-  var_names_t  ourputVarNames;
+  var_names_t  outputVarNames;
 	/** Container for all output variable descriptions*/
   var_names_t  outputVarDescription;
 	/** Container for all output variables*/
