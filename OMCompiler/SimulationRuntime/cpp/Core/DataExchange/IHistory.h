@@ -39,7 +39,7 @@ struct SimulationOutput
 	/** Container for all output variable names*/
   var_names_t  ourputVarNames;
 	/** Container for all output variable descriptions*/
-  var_names_t  ourputVarDescription;
+  var_names_t  outputVarDescription;
 	/** Container for all output variables*/
   values_t outputVars;
 	/** Container for all output parameter*/
@@ -68,8 +68,8 @@ struct SimulationOutput
 	 */
 	void addOutputVar(string& name,string& description,const T* var,bool negate)
 	{
-		ourputVarNames.push_back(name);
-		ourputVarDescription.push_back(description);
+		outputVarNames.push_back(name);
+		outputVarDescription.push_back(description);
 		outputVars.push_back(var);
         negateOutputVars.push_back(negate);
 	}
