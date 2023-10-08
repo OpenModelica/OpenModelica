@@ -6337,13 +6337,13 @@ match  Config.simCodeTarget()
                          //Write head line
                          if (command & IWriteOutput::HEAD_LINE)
                          {
-                           const all_names_t outputVarNames = make_tuple(outputRealVars.ourputVarNames,outputIntVars.ourputVarNames,outputBoolVars.ourputVarNames,outputDerVars.ourputVarNames,outputResVars.ourputVarNames);
+                           const all_names_t outputVarNames = make_tuple(outputRealVars.outputVarNames,outputIntVars.outputVarNames,outputBoolVars.outputVarNames,outputDerVars.outputVarNames,outputResVars.outputVarNames);
                            const all_description_t outputVarDescription = make_tuple(outputRealVars.outputVarDescription,outputIntVars.outputVarDescription,outputBoolVars.outputVarDescription,outputDerVars.outputVarDescription,outputResVars.outputVarDescription);
                            <%
                            match   settings.outputFormat
                               case "mat" then
                               <<
-                               const all_names_t parameterVarNames =  make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames,outputDerVars.ourputVarNames,outputResVars.ourputVarNames);
+                               const all_names_t parameterVarNames =  make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames,outputDerVars.outputVarNames,outputResVars.outputVarNames);
                                const all_description_t parameterVarDescription =  make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription,outputDerVars.outputVarDescription,outputResVars.outputVarDescription);
                               >>
                             else
