@@ -1238,7 +1238,7 @@ namespace ModelInstance
     // A inside output should not be connected to an inside output,
     // or a public outside input to a public outside input.
     auto dir = lhs.getDirection();
-    if (!dir.isEmpty() && dir == lhs.getDirection()) {
+    if (!dir.isEmpty() && dir == rhs.getDirection()) {
       if (dir == "output" && !lhsOutside && !rhsOutside) {
         return false;
       } else if (dir == "input" && lhsOutside && rhsOutside && lhs.isPublic() && rhs.isPublic()) {
