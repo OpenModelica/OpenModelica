@@ -509,6 +509,8 @@ namespace ModelInstance
     // Element annotation
     mChoicesAllMatching = false;
     mHasDialogAnnotation = false;
+    mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
+    mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
   }
 
   void Annotation::deserialize(const QJsonObject &jsonObject)
@@ -605,15 +607,13 @@ namespace ModelInstance
 
   IconDiagramAnnotation *Annotation::getIconAnnotation() const
   {
-    return mpIconAnnotation ? mpIconAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
+    return mpIconAnnotation.get();
   }
 
   IconDiagramAnnotation *Annotation::getDiagramAnnotation() const
   {
-    return mpDiagramAnnotation ? mpDiagramAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
+    return mpDiagramAnnotation.get();
   }
-
-  IconDiagramAnnotation IconDiagramAnnotation::defaultIconDiagramAnnotation{nullptr};
 
   IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
@@ -1152,7 +1152,7 @@ namespace ModelInstance
 
   Annotation *Model::getAnnotation() const
   {
-    return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
+    return mpAnnotation.get();
   }
 
   void Model::readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon)
@@ -1449,6 +1449,7 @@ namespace ModelInstance
     mConnections.clear();
     mTransitions.clear();
     mInitialStates.clear();
+    mpAnnotation = std::make_unique<Annotation>(this);
   }
 
   Transformation::Transformation()

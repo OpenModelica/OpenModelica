@@ -277,8 +277,6 @@ private:
 
     CoordinateSystem mCoordinateSystem;
     CoordinateSystem mMergedCoOrdinateSystem;
-
-    static IconDiagramAnnotation defaultIconDiagramAnnotation;
   private:
     Model *mpParentModel;
     QList<Shape*> mGraphics;
