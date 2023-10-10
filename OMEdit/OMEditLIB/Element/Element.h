@@ -221,9 +221,9 @@ public:
   bool isCondition() const;
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   Element *getReferenceElement() {return mpReferenceElement;}
-  Element* getParentElement() {return mpParentElement;}
+  Element* getParentElement() const {return mpParentElement;}
   Element* getRootParentElement();
-  ElementType getElementType() {return mElementType;}
+  ElementType getElementType() const {return mElementType;}
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
@@ -384,7 +384,7 @@ private:
   static QString getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QString modifierString);
   static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
-  bool canUseDiagramAnnotation();
+  bool canUseDiagramAnnotation() const;
 signals:
   void added();
   void transformChange(bool positionChanged);

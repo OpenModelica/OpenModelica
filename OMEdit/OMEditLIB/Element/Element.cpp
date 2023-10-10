@@ -1193,10 +1193,10 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
 {
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModel->isConnector()) {
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
-    } else {
+    if ((mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
       coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
+    } else {
+      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
     }
   } else {
     coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
@@ -3097,15 +3097,19 @@ void Element::updateToolTip()
  * then we should not use the diagram annotation.
  * \return
  */
-bool Element::canUseDiagramAnnotation()
+bool Element::canUseDiagramAnnotation() const
 {
-  Element *pElement = this;
-  while (pElement->getParentElement()) {
+  if (getElementType() == Element::Port)
+    return false;
+
+  Element *pElement = getParentElement();
+  while (pElement) {
     if (pElement->getElementType() == Element::Port) {
       return false;
     }
     pElement = pElement->getParentElement();
   }
+
   return true;
 }
 
