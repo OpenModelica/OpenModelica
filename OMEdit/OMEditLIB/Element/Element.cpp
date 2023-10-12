@@ -2248,11 +2248,15 @@ ModelInstance::Component* Element::getModelComponentByName(ModelInstance::Model 
 void Element::reDrawConnector(QPainter *painter)
 {
   if (mpDefaultElementRectangle && mpDefaultElementRectangle->isVisible()) {
+    painter->save();
     mpDefaultElementRectangle->drawAnnotation(painter, true);
+    painter->restore();
   }
 
   if (mpDefaultElementText && mpDefaultElementText->isVisible()) {
+    painter->save();
     mpDefaultElementText->drawAnnotation(painter, true);
+    painter->restore();
   }
 
   foreach (Element *pInheritedElement, mInheritedElementsList) {
@@ -2260,7 +2264,9 @@ void Element::reDrawConnector(QPainter *painter)
   }
 
   foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    painter->save();
     pShapeAnnotation->drawAnnotation(painter, true);
+    painter->restore();
   }
 
   foreach (Element *pElement, mElementsList) {
