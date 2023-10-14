@@ -57,8 +57,10 @@ public:
   void setScaleRadius(const float scale) {mScaleRadius = scale;}
   void setScaleTransf(const float scale) {mScaleTransf = scale;}
   float getScaleTransf() const {return mScaleTransf;}
-  void setAutoScaleCancellationRequired(const bool required) {mAutoScaleCancellationRequired = required;}
+  void setAutoScaleCancellationRequired(const bool autoScaleCancellationRequired) {mAutoScaleCancellationRequired = autoScaleCancellationRequired;}
   bool getAutoScaleCancellationRequired() const {return mAutoScaleCancellationRequired;}
+  void setOnlyShaftLengthCounted(const bool onlyShaftLengthCounted) {mOnlyShaftLengthCounted = onlyShaftLengthCounted;}
+  bool hasOnlyShaftLengthCounted() const {return mOnlyShaftLengthCounted;}
   void setCoordinates(const float x, const float y, const float z) {_coords[0].exp = x, _coords[1].exp = y, _coords[2].exp = z;}
   void getCoordinates(float* x, float* y, float* z) const {*x = _coords[0].exp, *y = _coords[1].exp, *z = _coords[2].exp;}
   float getLength    () const {return mScaleTransf * mScaleLength * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
@@ -86,6 +88,7 @@ private:
   float mScaleRadius;
   float mScaleTransf;
   bool mAutoScaleCancellationRequired;
+  bool mOnlyShaftLengthCounted;
 public:
   VisualizerAttribute _coords[3];
   VisualizerAttribute _quantity;
