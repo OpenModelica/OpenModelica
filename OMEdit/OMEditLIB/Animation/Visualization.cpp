@@ -768,7 +768,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     std::vector<std::reference_wrapper<VectorObject>> fixedRadiusVectors;
     std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableRadius() && vector.getRadius() > 0) {
+      if (vector.isAdjustableRadius()) {
         adjustableRadiusVectors.push_back(vector);
       } else {
         fixedRadiusVectors.push_back(vector);
@@ -867,7 +867,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     // Initialize a container of adjustable-length vectors
     std::vector<std::reference_wrapper<VectorObject>> adjustableLengthVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableLength() && vector.getLength() > 0) {
+      if (vector.isAdjustableLength()) {
         adjustableLengthVectors.push_back(vector);
       }
     }
@@ -983,7 +983,8 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
                 if (samples > 1) {
                   updateVectorCoords(vector, s + 1 == samples ? timeStop : timeStart + timeIncrement * s);
                 }
-                if (vector.getLength() < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
+                const float length = vector.getLength();
+                if (length > 0 && length < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
                   squeezedTooMuch = true;
                   break;
                 }
