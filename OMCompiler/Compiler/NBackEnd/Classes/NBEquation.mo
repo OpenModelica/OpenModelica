@@ -3224,6 +3224,28 @@ public
 
     record EQ_DATA_EMPTY end EQ_DATA_EMPTY;
 
+    function size
+      input EqData eqData;
+      output Integer s;
+    algorithm
+      s := match eqData
+        case EQ_DATA_SIM() then EquationPointers.size(eqData.simulation);
+        case EQ_DATA_JAC() then EquationPointers.size(eqData.equations);
+        case EQ_DATA_HES() then EquationPointers.size(eqData.equations);
+      end match;
+    end size;
+
+    function scalarSize
+      input EqData eqData;
+      output Integer s;
+    algorithm
+      s := match eqData
+        case EQ_DATA_SIM() then EquationPointers.scalarSize(eqData.simulation);
+        case EQ_DATA_JAC() then EquationPointers.scalarSize(eqData.equations);
+        case EQ_DATA_HES() then EquationPointers.scalarSize(eqData.equations);
+      end match;
+    end scalarSize;
+
     function map
       input output EqData eqData;
       input MapFuncEqn func;

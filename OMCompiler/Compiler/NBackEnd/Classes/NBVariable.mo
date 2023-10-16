@@ -118,6 +118,11 @@ public
     output String str = toString(Pointer.access(var_ptr));
   end pointerToString;
 
+  function nameString
+    input Pointer<Variable> var_ptr;
+    output String str = ComponentRef.toString(getVarName(var_ptr));
+  end nameString;
+
   function hash
     input Pointer<Variable> var_ptr;
     output Integer i = Variable.hash(Pointer.access(var_ptr));
@@ -1681,6 +1686,7 @@ public
       VariablePointers algebraics         "Algebraic variables";
       VariablePointers discretes          "Discrete variables";
       VariablePointers previous           "Previous discrete variables (pre(d) -> $PRE.d)";
+      // clocked
 
       /* subset of knowns */
       VariablePointers states             "States";
@@ -1751,6 +1757,28 @@ public
     end VAR_DATA_HES;
 
     record VAR_DATA_EMPTY end VAR_DATA_EMPTY;
+
+    function size
+      input VarData varData;
+      output Integer s;
+    algorithm
+      s := match varData
+        case VAR_DATA_SIM() then VariablePointers.size(varData.unknowns);
+        case VAR_DATA_JAC() then VariablePointers.size(varData.unknowns);
+        case VAR_DATA_HES() then VariablePointers.size(varData.unknowns);
+      end match;
+    end size;
+
+    function scalarSize
+      input VarData varData;
+      output Integer s;
+    algorithm
+      s := match varData
+        case VAR_DATA_SIM() then VariablePointers.scalarSize(varData.unknowns);
+        case VAR_DATA_JAC() then VariablePointers.scalarSize(varData.unknowns);
+        case VAR_DATA_HES() then VariablePointers.scalarSize(varData.unknowns);
+      end match;
+    end scalarSize;
 
     function toString
       input VarData varData;

@@ -215,6 +215,64 @@ public
     end match;
   end toString;
 
+  uniontype CountCollector
+    record COUNT_COLLECTOR
+      Integer single_scalar;
+      Integer single_array;
+      Integer single_record;
+      Integer multi_algorithm;
+      Integer multi_when;
+      Integer multi_if;
+      Integer generic_for;
+      Integer entwined_for;
+      Integer loop_lin;
+      Integer loop_nlin;
+    end COUNT_COLLECTOR;
+  end CountCollector;
+
+  function strongComponentInfo
+    input output StrongComponent comp;
+    input Pointer<CountCollector> collector_ptr;
+  protected
+    CountCollector collector = Pointer.access(collector_ptr);
+  algorithm
+    _ := match comp
+      case StrongComponent.SINGLE_COMPONENT() algorithm
+        _ := match Pointer.access(comp.eqn)
+          case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
+          case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
+          case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
+          else                            algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");          then ();
+        end match;
+      then ();
+
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        _ := match Pointer.access(comp.eqn)
+          case Equation.ALGORITHM()     algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
+          case Equation.WHEN_EQUATION() algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
+          case Equation.IF_EQUATION()   algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
+          else                          algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");              then ();
+        end match;
+      then ();
+
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        _ := match Pointer.access(Slice.getT(comp.eqn))
+          case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
+          case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
+          case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
+          else                            algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");          then ();
+        end match;
+      then ();
+
+      case StrongComponent.GENERIC_COMPONENT()  algorithm collector.generic_for := collector.generic_for + 1; Pointer.update(collector_ptr, collector);   then ();
+      case StrongComponent.ENTWINED_COMPONENT() algorithm collector.entwined_for := collector.entwined_for + 1; Pointer.update(collector_ptr, collector); then ();
+      case StrongComponent.ALGEBRAIC_LOOP() guard(comp.linear) algorithm collector.loop_lin := collector.loop_lin + 1; Pointer.update(collector_ptr, collector);         then ();
+      case StrongComponent.ALGEBRAIC_LOOP()     algorithm collector.loop_nlin := collector.loop_nlin + 1; Pointer.update(collector_ptr, collector);         then ();
+      case StrongComponent.ALIAS()              algorithm strongComponentInfo(comp.original, collector_ptr);                                              then ();
+      else                                      algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");        then ();
+    end match;
+  end strongComponentInfo;
+
   function hash
     "only hashes basic types, isEqual is used to differ between sliced/entwined loops"
     input StrongComponent comp;

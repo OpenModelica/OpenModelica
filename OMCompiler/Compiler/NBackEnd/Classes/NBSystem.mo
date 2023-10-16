@@ -235,6 +235,24 @@ public
       system.equations := EquationPointers.mapExp(system.equations, func);
     end mapExp;
 
+    function mapStrongComponents
+      input output System system;
+      input MapFunc func;
+      partial function MapFunc
+        input output StrongComponent comp;
+      end MapFunc;
+    protected
+      array<StrongComponent> comps;
+    algorithm
+      if Util.isSome(system.strongComponents) then
+        SOME(comps) := system.strongComponents;
+        for i in 1:arrayLength(comps) loop
+          comps[i] := func(comps[i]);
+        end for;
+        system.strongComponents := SOME(comps);
+      end if;
+    end mapStrongComponents;
+
     function systemTypeString
       input SystemType systemType;
       output String str = "";
