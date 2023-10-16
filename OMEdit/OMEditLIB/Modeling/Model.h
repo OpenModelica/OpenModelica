@@ -277,8 +277,6 @@ private:
 
     CoordinateSystem mCoordinateSystem;
     CoordinateSystem mMergedCoOrdinateSystem;
-
-    static IconDiagramAnnotation defaultIconDiagramAnnotation;
   private:
     Model *mpParentModel;
     QList<Shape*> mGraphics;
@@ -391,8 +389,8 @@ private:
     Annotation(Model *pParentModel);
     void deserialize(const QJsonObject &jsonObject);
 
-    IconDiagramAnnotation *getIconAnnotation() const;
-    IconDiagramAnnotation *getDiagramAnnotation() const;
+    IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation.get();}
+    IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation.get();}
     const BooleanAnnotation &isState() const {return mState;}
     // Element annotation
     const BooleanAnnotation &isChoicesAllMatching() const {return mChoicesAllMatching;}
