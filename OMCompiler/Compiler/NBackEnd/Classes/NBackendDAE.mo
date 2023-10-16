@@ -44,6 +44,7 @@ public
   import Jacobian = NBJacobian;
   import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
+  import NBStrongComponent.CountCollector;
   import NBSystem;
   import NBSystem.System;
 
@@ -212,6 +213,12 @@ public
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
+    if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
+      Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
+        intString(EqData.scalarSize(equationData)) + " (" + intString(EqData.size(equationData)) + ")",
+        intString(VarData.scalarSize(variableData)) + " (" + intString(VarData.size(variableData)) + ")"},
+        AbsynUtil.dummyInfo);
+    end if;
   end lower;
 
   function main
@@ -273,6 +280,8 @@ public
         print(stringDelimitList(list(Module.moduleClockString(clck) for clck in postOptClocks), "\n") + "\n\n");
       end if;
     end if;
+
+    backenddaeinfo(bdae);
   end main;
 
   function applyModules
@@ -1258,5 +1267,108 @@ public
       else exp;
     end match;
   end lowerIteratorExp;
+
+  function backenddaeinfo
+    input BackendDAE bdae;
+  algorithm
+    if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
+      _ := match bdae
+        local
+          VarData varData;
+          EqData eqData;
+          String p_ode, p_alg, p_ode_e, p_alg_e, p_clk, p_ini, p_ini_0;
+          String states, discretes, discrete_states, clocked_states, inputs;
+
+        case MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+          // collect partition size info
+          p_ode   := intString(listLength(bdae.ode));
+          p_alg   := intString(listLength(bdae.algebraic));
+          p_ode_e := intString(listLength(bdae.ode_event));
+          p_alg_e := intString(listLength(bdae.alg_event));
+          p_clk   := "0";
+          p_ini   := intString(listLength(bdae.init));
+          p_ini_0 := if isSome(bdae.init_0) then intString(listLength(Util.getOption(bdae.init_0))) else "0";
+
+          // collect variable info
+          states          := intString(VariablePointers.scalarSize(varData.states)) + " (" + intString(VariablePointers.size(varData.states)) + ")";
+          discretes       := intString(VariablePointers.scalarSize(varData.discretes)) + " (" + intString(VariablePointers.size(varData.discretes)) + ")";
+          discrete_states := intString(VariablePointers.scalarSize(varData.previous)) + " (" + intString(VariablePointers.size(varData.previous)) + ")";
+          clocked_states  := "0 (0)";
+          inputs          := "0 (0)";
+
+          if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
+            states := states + " " + List.toString(VariablePointers.toList(varData.states), BVariable.nameString);
+          else
+            states := states + " ('-d=stateselection' for list of states)";
+          end if;
+
+          if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
+            discretes := discretes + " " + List.toString(VariablePointers.toList(varData.discretes), BVariable.nameString);
+            discrete_states := discrete_states + " {NOT YET AVAILABLE}";
+            clocked_states := clocked_states + " {NOT YET AVAILABLE}";
+          else
+            discretes := discretes + " ('-d=discreteinfo' for list of discrete variables)";
+            discrete_states := discrete_states + " ('-d=discreteinfo' for list of discrete states)";
+            clocked_states := clocked_states + " ('-d=discreteinfo' for list of clocked states)";
+          end if;
+
+          Error.addCompilerNotification(
+            "Partition statistics after passing the back-end:\n"
+            + "* Number of ODE partitions: ..................... " + p_ode + "\n"
+            + "* Number of algebraic partitions: ............... " + p_alg + "\n"
+            + "* Number of ODE event partitions: ............... " + p_ode_e + "\n"
+            + "* Number of algebraic event partitions: ......... " + p_alg_e + "\n"
+            + "* Number of clocked partitions: ................. " + p_clk + "\n"
+            + "* Number of initial partitions: ................. " + p_ini + "\n"
+            + "* Number of initial(lambda=0) partitions: ....... " + p_ini_0);
+
+          Error.addCompilerNotification(
+            "Variable statistics after passing the back-end:\n"
+            + "* Number of states: ............................. " + states + "\n"
+            + "* Number of discrete variables: ................. " + discretes + "\n"
+            + "* Number of discrete states: .................... " + discrete_states + "\n"
+            + "* Number of clocked states: ..................... " + clocked_states + "\n"
+            + "* Number of top-level inputs: ................... " + inputs);
+
+          // collect strong component info simulation
+          strongcomponentinfo("Simulation", {bdae.ode, bdae.algebraic, bdae.ode_event, bdae.alg_event});
+          // collect strong component info initialization
+          strongcomponentinfo("Initialization", {bdae.init});
+          if Util.isSome(bdae.init_0) then
+            strongcomponentinfo("Initialization (lambda=0)", {Util.getOption(bdae.init_0)});
+          end if;
+
+        then ();
+      end match;
+    end if;
+  end backenddaeinfo;
+
+  function strongcomponentinfo
+    input String phase;
+    input list<list<System>> systems;
+  protected
+    CountCollector c = CountCollector.COUNT_COLLECTOR(0,0,0,0,0,0,0,0,0,0);
+    Pointer<CountCollector> collector_ptr = Pointer.create(c);
+    String single_sc, multi_sc, for_sc, alg_sc;
+  algorithm
+    for lst in systems loop
+      for system in lst loop
+        System.mapStrongComponents(system, function StrongComponent.strongComponentInfo(collector_ptr = collector_ptr));
+      end for;
+    end for;
+    c := Pointer.access(collector_ptr);
+    single_sc := intString(c.single_scalar + c.single_array + c.single_record) + " (scalar:" + intString(c.single_scalar) + ", array:" + intString(c.single_array) + ", record:" + intString(c.single_record) + ")";
+    multi_sc := intString(c.multi_algorithm + c.multi_when + c.multi_if) + " (algorithm:" + intString(c.multi_algorithm) + ", when:" + intString(c.multi_when) + ", if:" + intString(c.multi_if) + ")";
+    for_sc := intString(c.generic_for + c.entwined_for) + " (generic: " + intString(c.generic_for) + ", entwined:" + intString(c.entwined_for) + ")";
+    alg_sc := intString(c.loop_lin + c.loop_nlin) + " (linear: " + intString(c.loop_lin) + ", nonlinear:" + intString(c.loop_nlin) + ")";
+
+    Error.addCompilerNotification(
+      "[" + phase + "] Strong Component statistics after passing the back-end:\n"
+      + "* Number of single strong components: ........... " + single_sc + "\n"
+      + "* Number of multi strong components: ............ " + multi_sc + "\n"
+      + "* Number of for-loop strong components: ......... " + for_sc + "\n"
+      + "* Number of algebraic-loop strong components: ... " + alg_sc);
+  end strongcomponentinfo;
+
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;
