@@ -498,6 +498,8 @@ namespace ModelInstance
     : mPlacementAnnotation(pParentModel)
   {
     mpParentModel = pParentModel;
+    mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
+    mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
     mDocumentationClass = false;
     mVersion = "";
     mVersionDate = "";
@@ -514,12 +516,10 @@ namespace ModelInstance
   void Annotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("Icon")) {
-      mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
       mpIconAnnotation->deserialize(jsonObject.value("Icon").toObject());
     }
 
     if (jsonObject.contains("Diagram")) {
-      mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
       mpDiagramAnnotation->deserialize(jsonObject.value("Diagram").toObject());
     }
 
@@ -602,18 +602,6 @@ namespace ModelInstance
       mDiagramMap.deserialize(jsonObject.value("DiagramMap").toObject());
     }
   }
-
-  IconDiagramAnnotation *Annotation::getIconAnnotation() const
-  {
-    return mpIconAnnotation ? mpIconAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
-  }
-
-  IconDiagramAnnotation *Annotation::getDiagramAnnotation() const
-  {
-    return mpDiagramAnnotation ? mpDiagramAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
-  }
-
-  IconDiagramAnnotation IconDiagramAnnotation::defaultIconDiagramAnnotation{nullptr};
 
   IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
@@ -995,7 +983,6 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("annotation")) {
-      mpAnnotation = std::make_unique<Annotation>(this);
       mpAnnotation->deserialize(mModelJson.value("annotation").toObject());
     }
 
@@ -1449,6 +1436,7 @@ namespace ModelInstance
     mConnections.clear();
     mTransitions.clear();
     mInitialStates.clear();
+    mpAnnotation = std::make_unique<Annotation>(this);
   }
 
   Transformation::Transformation()
@@ -1645,11 +1633,6 @@ namespace ModelInstance
       mComment = jsonObject.value("comment").toString();
     }
 
-    if (jsonObject.contains("annotation")) {
-      mpAnnotation = std::make_unique<Annotation>(mpParentModel);
-      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
-    }
-
     deserialize_impl(jsonObject);
   }
 
@@ -1814,6 +1797,12 @@ namespace ModelInstance
         mBaseClass = mpModel->getName();
       }
     }
+
+    // Always create Annotation for extend element. See #11363
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+    if (jsonObject.contains("annotation")) {
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
+    }
   }
 
   /*!
@@ -1899,6 +1888,11 @@ namespace ModelInstance
       mpPrefixes = std::make_unique<Prefixes>(mpParentModel);
       mpPrefixes->deserialize(jsonObject.value("prefixes").toObject());
     }
+
+    if (jsonObject.contains("annotation")) {
+      mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
+    }
   }
 
   /*!
@@ -1956,6 +1950,11 @@ namespace ModelInstance
 
     if (jsonObject.contains("source")) {
       mSource.deserialize(jsonObject.value("source").toObject());
+    }
+
+    if (jsonObject.contains("annotation")) {
+      mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+      mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
   }
 
