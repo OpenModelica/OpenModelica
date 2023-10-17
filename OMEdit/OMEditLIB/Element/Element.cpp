@@ -1227,7 +1227,7 @@ QString Element::getTransformationAnnotation(bool ModelicaSyntax)
 {
   QString annotationString;
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    annotationString.append(ModelicaSyntax ? "transformation(" : "iconTransformation=transformation(");
+    annotationString.append(ModelicaSyntax ? "iconTransformation(" : "iconTransformation=transformation(");
   } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
     annotationString.append(ModelicaSyntax ? "transformation(" : "transformation=transformation(");
   }
