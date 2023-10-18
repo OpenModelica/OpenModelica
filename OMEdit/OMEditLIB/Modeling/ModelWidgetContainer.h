@@ -195,7 +195,7 @@ public:
   void handleCollidingConnections();
 
 
-  void setExtentRectangle(const QRectF rectangle);
+  void setExtentRectangle(const QRectF rectangle, bool moveToCenter);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
   bool isCustomScale() {return mIsCustomScale;}
   void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
