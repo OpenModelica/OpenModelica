@@ -197,7 +197,7 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible) {
-    drawAnnotation(painter, false);
+    drawAnnotation(painter);
   }
 }
 
@@ -205,14 +205,10 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
  * \brief BitmapAnnotation::drawAnnotation
  * Draws the bitmap.
  * \param painter
- * \param scene
  */
-void BitmapAnnotation::drawAnnotation(QPainter *painter, bool scene)
+void BitmapAnnotation::drawAnnotation(QPainter *painter)
 {
   QRectF rect = getBoundingRect().normalized();
-  if (scene) {
-    rect = mapToScene(getBoundingRect()).boundingRect().normalized();
-  }
   QImage image = mImage.scaled(rect.width(), rect.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
   QPointF centerPoint = rect.center() - image.rect().center();
   QRectF target(centerPoint.x(), centerPoint.y(), image.width(), image.height());

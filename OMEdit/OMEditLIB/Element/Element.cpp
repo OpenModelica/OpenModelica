@@ -2249,13 +2249,13 @@ void Element::reDrawConnector(QPainter *painter)
 {
   if (mpDefaultElementRectangle && mpDefaultElementRectangle->isVisible()) {
     painter->save();
-    mpDefaultElementRectangle->drawAnnotation(painter, true);
+    mpDefaultElementRectangle->drawAnnotation(painter);
     painter->restore();
   }
 
   if (mpDefaultElementText && mpDefaultElementText->isVisible()) {
     painter->save();
-    mpDefaultElementText->drawAnnotation(painter, true);
+    mpDefaultElementText->drawAnnotation(painter);
     painter->restore();
   }
 
@@ -2265,7 +2265,8 @@ void Element::reDrawConnector(QPainter *painter)
 
   foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
     painter->save();
-    pShapeAnnotation->drawAnnotation(painter, true);
+    painter->setTransform(pShapeAnnotation->sceneTransform(), true);
+    pShapeAnnotation->drawAnnotation(painter);
     painter->restore();
   }
 

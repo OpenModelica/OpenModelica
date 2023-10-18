@@ -185,9 +185,9 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
     if (!qFuzzyCompare(horizontal, 2) || !qFuzzyCompare(vertical, 2)) {
       mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
     }
-    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle());
+    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle(), true);
   } else { // when opening a model use the default Modelica specification values
-    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle());
+    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle(), true);
   }
   mMergedCoOrdinateSystem = mCoOrdinateSystem;
   scale(1.0, -1.0);     // invert the drawing area.
@@ -321,7 +321,7 @@ void GraphicsView::drawCoordinateSystem()
     }
   }
 
-  setExtentRectangle(mMergedCoOrdinateSystem.getExtentRectangle());
+  setExtentRectangle(mMergedCoOrdinateSystem.getExtentRectangle(), false);
   resize(size());
 }
 
@@ -725,11 +725,19 @@ bool GraphicsView::isCreatingShape()
       isCreatingTextShape();
 }
 
-void GraphicsView::setExtentRectangle(const QRectF rectangle)
+/*!
+ * \brief GraphicsView::setExtentRectangle
+ * Increases the size of the extent rectangle by 25%.
+ * \param rectangle
+ * \param moveToCenter
+ */
+void GraphicsView::setExtentRectangle(const QRectF rectangle, bool moveToCenter)
 {
   QRectF sceneRectangle = Utilities::adjustSceneRectangle(rectangle, 0.25);
   setSceneRect(sceneRectangle);
-  centerOn(sceneRectangle.center());
+  if (moveToCenter) {
+    centerOn(sceneRectangle.center());
+  }
 }
 
 void GraphicsView::setIsCreatingConnection(const bool enable)
@@ -8193,7 +8201,7 @@ void ModelWidget::drawModelCoOrdinateSystem(GraphicsView *pGraphicsView)
     readCoOrdinateSystemFromInheritedClass(this, pGraphicsView);
   }
 
-  pGraphicsView->setExtentRectangle(pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle());
+  pGraphicsView->setExtentRectangle(pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle(), false);
   pGraphicsView->resize(pGraphicsView->size());
 }
 

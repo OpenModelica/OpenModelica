@@ -155,7 +155,7 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible) {
-    drawAnnotation(painter, false);
+    drawAnnotation(painter);
   }
 }
 
@@ -163,26 +163,20 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
  * \brief EllipseAnnotation::drawAnnotation
  * Draws the ellipse.
  * \param painter
- * \param scene
  */
-void EllipseAnnotation::drawAnnotation(QPainter *painter, bool scene)
+void EllipseAnnotation::drawAnnotation(QPainter *painter)
 {
   QRectF boundingRectangle = boundingRect();
-  if (!scene) {
-    // first we invert the painter since we have our coordinate system inverted.
-    // inversion is required to draw the elliptic curves at correct angles.
-    painter->scale(1.0, -1.0);
-    painter->translate(0, ((-boundingRectangle.top()) - boundingRectangle.bottom()));
-  }
+  // first we invert the painter since we have our coordinate system inverted.
+  // inversion is required to draw the elliptic curves at correct angles.
+  painter->scale(1.0, -1.0);
+  painter->translate(0, ((-boundingRectangle.top()) - boundingRectangle.bottom()));
   applyLinePattern(painter);
   if (mClosure != StringHandler::ClosureNone) {
     applyFillPattern(painter);
   }
 
   boundingRectangle = getBoundingRect();
-  if (scene) {
-    boundingRectangle = mapToScene(getBoundingRect()).boundingRect();
-  }
   if (mClosure == StringHandler::ClosureNone) {
     painter->drawArc(boundingRectangle, mStartAngle*16, mEndAngle*16 - mStartAngle*16);
   } else if (mClosure == StringHandler::ClosureChord) {

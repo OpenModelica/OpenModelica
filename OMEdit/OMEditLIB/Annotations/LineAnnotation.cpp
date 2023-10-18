@@ -723,7 +723,7 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         painter->setOpacity(0.3);
       }
     }
-    drawAnnotation(painter, false);
+    drawAnnotation(painter);
     /* issue #9557
      * Redraw the connectors which collides with connection.
      */
@@ -771,20 +771,13 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
  * \brief LineAnnotation::drawAnnotation
  * Draws the line.
  * \param painter
- * \param scene
  */
-void LineAnnotation::drawAnnotation(QPainter *painter, bool scene)
+void LineAnnotation::drawAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
 
   QPainterPath path = getShape();
   PointArrayAnnotation points = adjustPointsForDrawing();
-  if (scene) {
-    path = mapToScene(path);
-    for (int i = 0; i < points.size(); ++i) {
-      points.setPoint(i, mapToScene(points.at(i)));
-    }
-  }
 
   // draw highlight for connections
   if (mLineType == LineAnnotation::ConnectionType) {
