@@ -46,7 +46,7 @@ public
   //NF Imports
   import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.{BackendInfo, VariableKind};
+  import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
   import NFBinding.Binding;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -109,7 +109,7 @@ public
   protected
     String attr;
   algorithm
-    attr := BackendExtension.VariableAttributes.toString(var.backendinfo.attributes);
+    attr := VariableAttributes.toString(var.backendinfo.attributes);
     str := str + VariableKind.toString(var.backendinfo.varKind) + " (" + intString(Variable.size(var)) + ") " + Variable.toString(var) + (if attr == "" then "" else " " + attr);
   end toString;
 
@@ -442,18 +442,23 @@ public
   algorithm
     b := match Pointer.access(var_ptr)
       local
-        BackendExtension.VariableAttributes attributes;
+        VariableAttributes attributes;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
-      then BackendExtension.VariableAttributes.getStateSelect(attributes) == stateSelect;
+      then VariableAttributes.getStateSelect(attributes) == stateSelect;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(Pointer.access(var_ptr))});
       then fail();
     end match;
   end isStateSelect;
 
+  function getVariableAttributes
+    input Variable var;
+    output VariableAttributes variableAttributes = var.backendinfo.attributes;
+  end getVariableAttributes;
+
   function setVariableAttributes
     input output Variable var;
-    input BackendExtension.VariableAttributes variableAttributes;
+    input VariableAttributes variableAttributes;
   algorithm
     var := match var
       local
@@ -1091,7 +1096,7 @@ public
         Expression start;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, var.ty, b);
+        binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b);
         var.backendinfo := binfo;
       then var;
 
@@ -1117,7 +1122,7 @@ public
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
-        binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
+        binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start);
         var.backendinfo := binfo;
       then var;
 
@@ -1135,6 +1140,11 @@ public
     var_ptr := setBindingAsStart(var_ptr);
     var_ptr := setFixed(var_ptr, b);
   end setBindingAsStartAndFix;
+
+  function getStartAttribute
+    input Pointer<Variable> var_ptr;
+    output Option<Expression> start =  VariableAttributes.getStartAttribute(getVariableAttributes(Pointer.access(var_ptr)));
+  end getStartAttribute;
 
   function hasNonTrivialAliasBinding
     "returns true if the binding does not represent a cref, a negated cref or a constant.
