@@ -18,13 +18,16 @@ end FuncVectorization3;
 
 
 // Result:
+// function FuncVectorization3.f
+//   input Real x;
+//   output Real y = x;
+// end FuncVectorization3.f;
+//
 // class FuncVectorization3
 //   Real x[1];
 //   Real x[2];
 //   Real x[3];
 // equation
-//   x[1] = 1.0;
-//   x[2] = 2.0;
-//   x[3] = 3.0;
+//   x = array(FuncVectorization3.f({1.0, 2.0, 3.0}[$i1]) for $i1 in 1:3);
 // end FuncVectorization3;
 // endResult

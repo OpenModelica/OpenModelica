@@ -514,9 +514,9 @@ algorithm
           exp := Expression.replaceIterator(exp, iter, e);
           exp := Expression.makeArray(ty, listArray({exp}));
           outExp := simplify(exp);
-        elseif Expression.isLiteral(e) and not Expression.hasNonArrayIteratorSubscript(exp, iter) then
+        elseif Expression.isLiteral(e) and isIteratorSubscriptedArray(exp, iter) then
           // If the iterator is only used to subscript array expressions like
-          // {{1, 2, 3}[i] in i 1:3}, then we might as well expand it.
+          // {{1, 2, 3}[i] for i in 1:3}, then we might as well expand it.
           (outExp, expanded) := ExpandExp.expandArrayConstructor(exp, ty, iters);
 
           if expanded then
@@ -536,6 +536,19 @@ algorithm
         Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters));
   end matchcontinue;
 end simplifyArrayConstructor;
+
+function isIteratorSubscriptedArray
+  input Expression exp;
+  input InstNode iterator;
+  output Boolean res;
+algorithm
+  res := match exp
+    case Expression.SUBSCRIPTED_EXP()
+      then Expression.isArray(exp.exp) and
+           List.all(exp.subscripts, function Subscript.equalsIterator(iterator = iterator));
+    else false;
+  end match;
+end isIteratorSubscriptedArray;
 
 function simplifyReduction
   input Call call;
