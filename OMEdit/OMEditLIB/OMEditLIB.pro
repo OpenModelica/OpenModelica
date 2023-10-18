@@ -97,6 +97,7 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/include/omplot \
   $$OPENMODELICAHOME/include/omplot/qwt \
   $$OPENMODELICAHOME/include/$$host_short/omc/antlr3 \
+  $$OPENMODELICAHOME/include/omc \
   $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c \
   $$OPENMODELICAHOME/include/omc/c/util \
