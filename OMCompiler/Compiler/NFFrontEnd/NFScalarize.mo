@@ -233,7 +233,7 @@ algorithm
         (name, index) := tpl;
         elem_var := var;
         elem_var.name := ComponentRef.prepend(elem_var.name, ComponentRef.rename(name, elem_var.name));
-        elem_var.backendinfo := BackendInfo.setAttributes(elem_var.backendinfo, attr.childrenAttr[index]);
+        elem_var.backendinfo := BackendInfo.setAttributes(elem_var.backendinfo, attr.childrenAttr[index], var.backendinfo.annotations);
         // update the types accordingly
         elem_var.ty := VariableAttributes.elemType(attr.childrenAttr[index]);
         elem_var.name := ComponentRef.setNodeType(elem_var.ty, elem_var.name);

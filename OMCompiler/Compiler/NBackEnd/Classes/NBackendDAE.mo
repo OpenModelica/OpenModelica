@@ -518,19 +518,21 @@ protected
     input Variable var;
     output Pointer<Variable> var_ptr;
   protected
-    BackendExtension.VariableAttributes attributes;
     BackendExtension.VariableKind varKind;
+    BackendExtension.VariableAttributes attributes;
+    BackendExtension.Annotations annotations;
   algorithm
     // ToDo! extract tearing select option
     try
       attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
+      annotations := BackendExtension.Annotations.create(var.comment);
 
       // only change varKind if unset (Iterators are set before)
       var.backendinfo := match var.backendinfo
         case BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-        then BackendExtension.BACKEND_INFO(varKind, attributes);
-        else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes);
+        then BackendExtension.BACKEND_INFO(varKind, attributes, annotations);
+        else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 
       // Remove old type attribute information since it has been converted.
