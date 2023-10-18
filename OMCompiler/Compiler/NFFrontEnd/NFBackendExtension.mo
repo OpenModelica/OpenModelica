@@ -68,6 +68,7 @@ public
     record BACKEND_INFO
       VariableKind varKind            "Structural kind: state, algebraic...";
       VariableAttributes attributes   "values on built-in attributes";
+      Annotations annotations         "values on annotations (vendor specific)";
     end BACKEND_INFO;
 
     function toString
@@ -103,9 +104,26 @@ public
     function setAttributes
       input output BackendInfo binfo;
       input VariableAttributes attributes;
+      input Annotations annotations;
     algorithm
       binfo.attributes := attributes;
+      binfo.annotations := annotations;
     end setAttributes;
+
+    function setHideResult
+      input output BackendInfo binfo;
+      input Boolean hideResult;
+    algorithm
+      binfo := match binfo
+        local
+          Annotations anno;
+        case BackendInfo.BACKEND_INFO(annotations = anno as ANNOTATIONS()) algorithm
+          anno.hideResult := hideResult;
+          binfo.annotations := anno;
+        then binfo;
+        else binfo;
+      end match;
+    end setHideResult;
 
     function scalarize
       input BackendInfo binfo;
@@ -118,12 +136,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL);
+  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS);
 
   uniontype VariableKind
     record TIME end TIME;
@@ -1224,11 +1242,11 @@ public
       output StateSelect stateSelect;
     algorithm
       stateSelect := match name
-        case "never" then StateSelect.NEVER;
-        case "avoid" then StateSelect.AVOID;
-        case "default" then StateSelect.DEFAULT;
-        case "prefer" then StateSelect.PREFER;
-        case "always" then StateSelect.ALWAYS;
+        case "never"    then StateSelect.NEVER;
+        case "avoid"    then StateSelect.AVOID;
+        case "default"  then StateSelect.DEFAULT;
+        case "prefer"   then StateSelect.PREFER;
+        case "always"   then StateSelect.ALWAYS;
         else
           algorithm
             Error.assertion(false, getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
@@ -1275,5 +1293,40 @@ public
     end DISTRIBUTION;
   end Distribution;
 
-    annotation(__OpenModelica_Interface="frontend");
+  uniontype Annotations
+    record ANNOTATIONS
+      "all annotations that are vendor specific
+      note: doesn't inculde tearingSelect, this is considered a first class attribute"
+      Boolean hideResult;
+    end ANNOTATIONS;
+
+    function create
+      input Option<SCode.Comment> comment;
+      output Annotations annotations = EMPTY_ANNOTATIONS;
+    protected
+      SCode.Mod mod;
+    algorithm
+      _ := match comment
+        case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=mod as SCode.MOD())))) algorithm
+          for submod in mod.subModLst loop
+            _ := match submod
+              case SCode.NAMEMOD(ident = "HideResult", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
+                annotations.hideResult := true;
+              then ();
+              // do not create a notification for TearingSelect since its parsed in attributes
+              case SCode.NAMEMOD(ident = "TearingSelect") then ();
+              else algorithm
+                Error.addCompilerNotification("Could not parse annotation \"" + submod.ident + "\" in the backend.");
+              then ();
+            end match;
+          end for;
+        then ();
+        else ();
+      end match;
+    end create;
+  end Annotations;
+
+  constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false);
+
+  annotation(__OpenModelica_Interface="frontend");
 end NFBackendExtension;

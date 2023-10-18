@@ -183,7 +183,7 @@ public
             numArrayElement     = {},
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
-            hideResult          = false,
+            hideResult          = var.backendinfo.annotations.hideResult,
             inputIndex          = NONE(),
             matrixName          = NONE(),
             variability         = NONE(),
