@@ -211,19 +211,20 @@ public
     output Pointer<Variable> start_var;
     output ComponentRef start_name;
   protected
+    Option<Pointer<Variable>> pre_post = BVariable.getPrePost(var_ptr);
     Pointer<Variable> disc_state_var;
     ComponentRef merged_name;
   algorithm
-    if BVariable.isDiscreteState(var_ptr) then
-      // for discrete states change the lhs cref to the $PRE cref
-      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
-      name := BVariable.getPreCref(name);
-      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
-      var_ptr := BVariable.getVarPointer(name);
-    elseif BVariable.isPrevious(var_ptr) then
+    if BVariable.isPrevious(var_ptr) and Util.isSome(pre_post) then
       // for previous change the rhs to the start value of the discrete state
-      merged_name := BVariable.getDiscreteStateCref(name);
+      merged_name := BVariable.getVarName(Util.getOption(pre_post));
       merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true);
+    elseif Util.isSome(pre_post) then
+      // for vars with previous change the lhs cref to the $PRE cref
+      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+      var_ptr := Util.getOption(pre_post);
+      name := BVariable.getVarName(var_ptr);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
     else
       // just apply subscripts and make start var
       name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
@@ -334,34 +335,33 @@ public
 
   function createPreEquation
     "creates d = $PRE.d equations"
-    input Pointer<Variable> disc_state;
+    input Pointer<Variable> var_ptr;
     input Pointer<list<Pointer<Equation>>> ptr_pre_eqs;
     input Pointer<Integer> idx;
+  protected
+    Option<Pointer<Variable>> pre;
+    Pointer<Equation> pre_eq;
+    EquationKind kind;
   algorithm
-    () := match Pointer.access(disc_state)
-      local
-        Pointer<Variable> previous;
-        Pointer<Equation> pre_eq;
-        EquationKind kind;
-
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.DISCRETE_STATE(previous = previous)))
-        algorithm
-          kind := if BVariable.isContinuous(disc_state) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-          pre_eq := Equation.makeAssignment(BVariable.getVarName(disc_state), Expression.fromCref(BVariable.getVarName(previous)), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
-          Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
-      then ();
-      else ();
-    end match;
+    if not BVariable.isPrevious(var_ptr) then
+      pre := BVariable.getPrePost(var_ptr);
+      if Util.isSome(pre) then
+        kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+        pre_eq := Equation.makeAssignment(BVariable.getVarName(var_ptr), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
+        Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
+      end if;
+    end if;
   end createPreEquation;
 
   function createPreEquationSlice
     "creates a pre equation for a sliced variable.
     usually results in a for equation, but might be scalarized if that is not possible."
-    input Slice<VariablePointer> disc_state;
+    input Slice<VariablePointer> var_slice;
     input Pointer<list<Pointer<Equation>>> ptr_pre_eqs;
     input Pointer<Integer> idx;
   protected
     Pointer<Variable> var_ptr;
+    Option<Pointer<Variable>> pre;
     ComponentRef name, pre_name;
     list<Dimension> dims;
     list<InstNode> iterators;
@@ -371,24 +371,29 @@ public
     Pointer<Equation> pre_eq;
     EquationKind kind;
   algorithm
-    var_ptr := Slice.getT(disc_state);
-    name    := BVariable.getVarName(var_ptr);
-    dims    := Type.arrayDims(ComponentRef.nodeType(name));
-    (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-    frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
+    var_ptr := Slice.getT(var_slice);
+    if not BVariable.isPrevious(var_ptr) then
+      pre := BVariable.getPrePost(var_ptr);
+      if Util.isSome(pre) then
+        name    := BVariable.getVarName(var_ptr);
+        dims    := Type.arrayDims(ComponentRef.nodeType(name));
+        (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
+        frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
 
-    pre_name := BVariable.getPreCref(name);
-    pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name, true, true);
-    name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+        pre_name := BVariable.getVarName(Util.getOption(pre));
+        pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name, true, true);
+        name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
 
-    kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-    pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
+        kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+        pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
 
-    if not listEmpty(disc_state.indices) then
-      // empty list indicates full array, slice otherwise
-      (pre_eq, _, _) := Equation.slice(pre_eq, disc_state.indices, NONE(), FunctionTreeImpl.EMPTY());
+        if not listEmpty(var_slice.indices) then
+          // empty list indicates full array, slice otherwise
+          (pre_eq, _, _) := Equation.slice(pre_eq, var_slice.indices, NONE(), FunctionTreeImpl.EMPTY());
+        end if;
+        Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
+      end if;
     end if;
-    Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
   end createPreEquationSlice;
 
   function cleanup

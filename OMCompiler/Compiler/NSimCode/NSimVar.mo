@@ -469,11 +469,7 @@ public
         case BackendExtension.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case BackendExtension.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case BackendExtension.DISCRETE()                then OldBackendDAE.DISCRETE();
-        case qual as BackendExtension.DISCRETE_STATE()
-          algorithm
-            var := Pointer.access(qual.previous);
-            oldCref := ComponentRef.toDAE(var.name);
-        then OldBackendDAE.CLOCKED_STATE(oldCref, qual.fixed);
+        case BackendExtension.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we dont differ between discrete states and discretes in the old backend. is this correct?
         case BackendExtension.PREVIOUS()                then OldBackendDAE.DISCRETE();
         case BackendExtension.PARAMETER()               then OldBackendDAE.PARAM();
         case BackendExtension.CONSTANT()                then OldBackendDAE.CONST();

@@ -389,10 +389,10 @@ protected
     list<Variable> vars;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
-    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
+    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, previous_lst = {};
     list<Pointer<Variable>> parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
-    VariablePointers states, derivatives, algebraics, discretes, previous;
+    VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous;
     VariablePointers parameters, constants, records, artificials;
     Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
@@ -492,6 +492,7 @@ protected
     derivatives     := VariablePointers.fromList(derivatives_lst, scalarized);
     algebraics      := VariablePointers.fromList(algebraics_lst, scalarized);
     discretes       := VariablePointers.fromList(discretes_lst, scalarized);
+    discrete_states := VariablePointers.fromList(discrete_states_lst, scalarized);
     previous        := VariablePointers.fromList(previous_lst, scalarized);
 
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
@@ -511,7 +512,7 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, previous, states, parameters, constants, records, artificials);
+                    derivatives, algebraics, discretes, discrete_states, previous, states, parameters, constants, records, artificials);
   end lowerVariableData;
 
   function lowerVariable
@@ -531,7 +532,7 @@ protected
       var.backendinfo := match var.backendinfo
         case BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-        then BackendExtension.BACKEND_INFO(varKind, attributes, annotations);
+        then BackendExtension.BACKEND_INFO(varKind, attributes, annotations, NONE());
         else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 
@@ -1294,7 +1295,7 @@ public
           // collect variable info
           states          := intString(VariablePointers.scalarSize(varData.states)) + " (" + intString(VariablePointers.size(varData.states)) + ")";
           discretes       := intString(VariablePointers.scalarSize(varData.discretes)) + " (" + intString(VariablePointers.size(varData.discretes)) + ")";
-          discrete_states := intString(VariablePointers.scalarSize(varData.previous)) + " (" + intString(VariablePointers.size(varData.previous)) + ")";
+          discrete_states := intString(VariablePointers.scalarSize(varData.discrete_states)) + " (" + intString(VariablePointers.size(varData.discrete_states)) + ")";
           clocked_states  := "0 (0)";
           inputs          := "0 (0)";
 
@@ -1306,7 +1307,7 @@ public
 
           if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
             discretes := discretes + " " + List.toString(VariablePointers.toList(varData.discretes), BVariable.nameString);
-            discrete_states := discrete_states + " {NOT YET AVAILABLE}";
+            discrete_states := discrete_states + " " + List.toString(VariablePointers.toList(varData.discrete_states), BVariable.nameString);
             clocked_states := clocked_states + " {NOT YET AVAILABLE}";
           else
             discretes := discretes + " ('-d=discreteinfo' for list of discrete variables)";
