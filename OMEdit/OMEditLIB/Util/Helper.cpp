@@ -902,6 +902,9 @@ QString GUIMessages::getMessage(int type)
       return tr("Please enter a script file.");
     case LIBRARY_INDEX_FILE_NOT_FOUND:
       return tr("Library index file <b>%1</b> doesn't exist.");
+    case VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH:
+      return tr("Automatically-adjusted vector length scales zoomed out the scene too much. "
+                "Home position will be reset as if adjustable-length vectors were not drawn.");
     default:
       return "";
   }

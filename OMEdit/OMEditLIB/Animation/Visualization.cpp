@@ -715,6 +715,14 @@ void OMVisualBase::updateVectorCoords(VectorObject& vector, const double time)
  *          and the heuristic no longer attempts to increase the lengths if the check is disabled,
  *          unless this is required by the first constraint when the latter is enabled.
  *          <hr>
+ *          In order to avoid excessive length scales resulting from the first constraint,
+ *          which may typically happen when vectors of the same quantity span different
+ *          orders of magnitude and would be rendered with hardly comparable lengths,
+ *          the definition of the vector length can be altered somewhat
+ *          so as to measure either the shaft or the entire arrow.
+ *          To this end, the counting up to the apex can be constantly enabled (default: true).
+ *          When disabled, whether the vector is one- or two-headed, only the shaft length counts.
+ *          <hr>
  *          During the binary search, floating-point numbers are treated as integer bit patterns,
  *          thus considering quantities as if they were given in units in the last place (ULP).
  *          This allows to stop the search when a constant precision is reached (default: 4096ulp)
@@ -730,8 +738,17 @@ void OMVisualBase::updateVectorCoords(VectorObject& vector, const double time)
  *          shifting the bounds towards a constant horizon (default: 16777216ulp)
  *          that is either subtracted from or added to the current value.
  *          Whenever it moves, the default horizon has the effect of halving or doubling the value.
- * \note    For debugging purposes, MessagesWidget::addPendingMessage() shall be used
- *          instead of MessagesWidget::addGUIMessage() when \p mutex is locked.
+ *          <hr>
+ *          After all length scales are adjusted, depending on the activated settings and margins,
+ *          it is possible that the final camera distance is too big for the interesting parts of
+ *          the model to be seen well enough, in which case it may be desirable to reject it and
+ *          to render the scene using the initial camera distance even if this implies that
+ *          the model cannot be seen entirely, meaning, some vectors cannot be compared.
+ *          The tolerable zoom-out can be limited by adding some constant factor (default: 100%)
+ *          above which the home position is reset, as if adjustable-length vectors were not drawn.
+ * \note    For displaying a message to the user or for debugging purposes,
+ *          MessagesWidget::addPendingMessage() shall be used instead of
+ *          MessagesWidget::addGUIMessage() when \p mutex is locked.
  * \param[in] view OSG view of the scene composed of at least one camera.
  * \param[in] mutex OT mutex for synchronization of frame rendering.
  * \param[in] frame VW frame function to trigger frame rendering.
@@ -747,7 +764,9 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
   constexpr int8_t factorRadius   = -10; // Factor for vector radius greater than median of fixed radii in percent [%]
   constexpr int8_t marginLength   = +10; // Margin for vector length greater than length of its head(s) in percent [%]
   constexpr int8_t marginDistance = +10; // Margin for home distance greater than initial home distance in percent [%]
-  constexpr uint32_t timeSamples = 100;  // Number of time samples to be examined for vector lengths {32b}
+  constexpr int8_t factorDistance = 100; // Factor for limiting final zoom-out of initial home distance in percent [%]
+  constexpr uint32_t timeSamples = 100;  // Number of time samples to be inspected for vector length {32b}
+  constexpr bool countUpToApex = true;   // Whether head(s) length shall be counted in vector length {0,1}
   constexpr bool checkDistance = true;   // Whether camera distance to focal center shall be checked {0,1}
   constexpr bool movingHorizon = true;   // Is moving horizon in units in the last place {0,1}
   constexpr uint32_t hulp = 0x01000000;  // Move this horizon in units in the last place [ulp]
@@ -768,7 +787,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     std::vector<std::reference_wrapper<VectorObject>> fixedRadiusVectors;
     std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableRadius() && vector.getRadius() > 0) {
+      if (vector.isAdjustableRadius()) {
         adjustableRadiusVectors.push_back(vector);
       } else {
         fixedRadiusVectors.push_back(vector);
@@ -867,7 +886,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     // Initialize a container of adjustable-length vectors
     std::vector<std::reference_wrapper<VectorObject>> adjustableLengthVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableLength() && vector.getLength() > 0) {
+      if (vector.isAdjustableLength()) {
         adjustableLengthVectors.push_back(vector);
       }
     }
@@ -889,6 +908,11 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
       std::unordered_map<const std::reference_wrapper<VectorObject>, float> transformScales;
       for (VectorObject& vector : adjustableLengthVectors) {
         transformScales[vector] = vector.getScaleTransf();
+      }
+
+      // Store whether only the shaft length is counted for all adjustable-length vectors
+      for (VectorObject& vector : adjustableLengthVectors) {
+        vector.setOnlyShaftLengthCounted(!countUpToApex);
       }
 
       // Update the bounds of the whole scene without any adjustable-length vectors
@@ -983,7 +1007,8 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
                 if (samples > 1) {
                   updateVectorCoords(vector, s + 1 == samples ? timeStop : timeStart + timeIncrement * s);
                 }
-                if (vector.getLength() < vector.getHeadLength() * ((vector.isTwoHeadedArrow() ? 1.5f : 1.f) + marginLength / 100.f)) {
+                const float length = vector.getLength();
+                if (length > 0 && length < vector.getHeadLength() * ((countUpToApex ? vector.isTwoHeadedArrow() ? 1.5f : 1.f : 0.f) + marginLength / 100.f)) {
                   squeezedTooMuch = true;
                   break;
                 }
@@ -1044,14 +1069,39 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
         }
       }
 
-      // Update the bounds of the whole scene with all adjustable-length vectors using their adjusted length scale
+      // Update the bounds of the whole scene with all adjustable-length vectors using their adjusted length scales
       for (VectorObject& vector : adjustableLengthVectors) {
         vector.setScaleTransf(transformScales[vector]);
         updateVisualizer(vector);
       }
 
-      // Recompute the home position
+      // Get the final camera distance to the focal center
       view->home();
+      const double finalDistance = manipulator->getDistance();
+
+      // Check if the adjusted length scales have unzoomed the scene too much
+      if (finalDistance > initialDistance * (1.f + factorDistance / 100.f)) {
+        // Inform that the home position will be reset
+        MessagesWidget::instance()->addPendingMessage(MessageItem(MessageItem::Modelica,
+                                                                  GUIMessages::getMessage(GUIMessages::VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH),
+                                                                  Helper::scriptingKind,
+                                                                  Helper::warningLevel));
+
+        // Make all adjustable-length vectors invisible
+        for (VectorObject& vector : adjustableLengthVectors) {
+          vector.setScaleTransf(0);
+          updateVisualizer(vector);
+        }
+
+        // Reset the home position
+        view->home();
+
+        // Make all adjustable-length vectors visible
+        for (VectorObject& vector : adjustableLengthVectors) {
+          vector.setScaleTransf(transformScales[vector]);
+          updateVisualizer(vector);
+        }
+      }
     }
   }
 
@@ -1500,13 +1550,15 @@ void UpdateVisitor::apply(osg::Geode& node)
       const float vectorLength = vector->getLength();
       const float   headRadius = vector->getHeadRadius();
       const float   headLength = vector->getHeadLength();
+      const float  tHeadLength = vector->isTwoHeadedArrow() ? 1.5f * headLength : headLength;
+      const float  arrowLength = vector->hasOnlyShaftLengthCounted() ? tHeadLength + vectorLength : vectorLength;
       const float  shaftRadius = vectorRadius;
-      const float  shaftLength = vectorLength > headLength ? vectorLength - headLength : 0;
-      const osg::Vec3f vectorDirection = osg::Vec3f(0, 0, 1);                                                  // axis directed from tail to head of arrow
-      const osg::Vec3f offsetPosition = vectorDirection * (headAtOrigin ? -vectorLength : 0);                  // origin placed upon tail or head of arrow
-      const osg::Vec3f shaftPosition = offsetPosition + vectorDirection * (vectorLength - headLength) / 2;     // center of    cylinder (shifted for top of shaft to meet bottom of first head)
-      const osg::Vec3f head1Position = offsetPosition + vectorDirection * (vectorLength - headLength);         // base   of  first cone (offset added by osg::Cone is canceled below)
-      const osg::Vec3f head2Position = offsetPosition + vectorDirection * (vectorLength - headLength * 3 / 2); // base   of second cone (offset added by osg::Cone is canceled below)
+      const float  shaftLength = arrowLength > tHeadLength ? arrowLength - tHeadLength : 0;
+      const osg::Vec3f vectorDirection = osg::Vec3f(0, 0, 1);                                              // axis directed from tail to head of arrow
+      const osg::Vec3f offsetPosition = vectorDirection * (headAtOrigin ? -arrowLength : 0);               // origin placed upon tail or head of arrow
+      const osg::Vec3f shaftPosition = offsetPosition + vectorDirection * (arrowLength - tHeadLength) / 2; // center of    cylinder (such that top of shaft meets bottom of head)
+      const osg::Vec3f head1Position = offsetPosition + vectorDirection * (arrowLength -  headLength);     // base   of  first cone (offset added by osg::Cone is canceled below)
+      const osg::Vec3f head2Position = offsetPosition + vectorDirection * (arrowLength - tHeadLength);     // base   of second cone (offset added by osg::Cone is canceled below)
 
       osg::ref_ptr<osg::Cylinder> shaftShape = new osg::Cylinder(shaftPosition, shaftRadius, shaftLength);
       osg::ref_ptr<osg::Cone>     head1Shape = new osg::Cone    (head1Position,  headRadius,  headLength);
