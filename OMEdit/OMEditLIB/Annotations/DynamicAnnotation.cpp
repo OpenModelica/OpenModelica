@@ -143,8 +143,10 @@ void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
                 return *exp;
               }));
     } catch (const std::exception &e) {
-      qDebug() << "Failed to evaluate expression.";
-      qDebug() << e.what();
+      if (MainWindow::instance()->isDebug()) {
+        qDebug() << "Failed to evaluate expression.";
+        qDebug() << e.what();
+      }
     }
   }
 }
