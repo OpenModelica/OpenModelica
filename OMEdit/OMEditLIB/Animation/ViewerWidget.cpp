@@ -223,17 +223,21 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
   // 1 = left mouse button
   // 2 = middle mouse button
   // 3 = right mouse button
-  unsigned int button = 0;
+  mMouseButton = 0;
   int pixelRatio = qCeil(qApp->devicePixelRatio());
   switch (event->button()) {
     case Qt::LeftButton:
-      button = 1;
+      if (event->modifiers() != Qt::ControlModifier) { // left mouse button without Ctrl
+        mMouseButton = 1;
+      } else { // left mouse button with Ctrl - do the same as middle mouse button, there is no middle button on laptops.
+        mMouseButton = 2;
+      }
       break;
     case Qt::MiddleButton:
-      button = 2;
+      mMouseButton = 2;
       break;
     case Qt::RightButton:
-      button = 3;
+      mMouseButton = 3;
       if (event->modifiers() == Qt::ShiftModifier) {
         //qt counts pixels from upper left corner and osg from bottom left corner
         pickVisualizer(event->x() * pixelRatio, (this->height() - event->y()) * pixelRatio);
@@ -244,7 +248,7 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
     default:
       break;
   }
-  getEventQueue()->mouseButtonPress(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), button);
+  getEventQueue()->mouseButtonPress(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), mMouseButton);
 }
 
 /*!
@@ -487,26 +491,15 @@ void ViewerWidget::resetVisualPropertiesForAllVisualizers()
  */
 void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
 {
-  // 1 = left mouse button
-  // 2 = middle mouse button
-  // 3 = right mouse button
-  unsigned int button = 0;
   switch (event->button()) {
-    case Qt::LeftButton:
-      button = 1;
-      break;
-    case Qt::MiddleButton:
-      button = 2;
-      break;
     case Qt::RightButton:
-      button = 3;
       mpSelectedVisualizer = nullptr;
       break;
     default:
       break;
   }
   int pixelRatio = qCeil(qApp->devicePixelRatio());
-  getEventQueue()->mouseButtonRelease(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), button);
+  getEventQueue()->mouseButtonRelease(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), mMouseButton);
 }
 
 /*!
