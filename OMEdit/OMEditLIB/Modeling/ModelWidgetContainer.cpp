@@ -6072,6 +6072,7 @@ void ModelWidget::loadConnections()
       getModelInitialStates();
     }
     mConnectionsLoaded = true;
+    mpDiagramGraphicsView->handleCollidingConnections();
   }
 }
 
