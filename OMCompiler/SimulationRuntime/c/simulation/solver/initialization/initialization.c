@@ -793,6 +793,14 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     throwStreamPrint(threadData, "unsupported option -iim");
   }
 
+  /* External object sanity check
+   * At this point all external objects should be initialized (bound parameters or initial system) */
+  for(int i=0; i<data->modelData->nExtObjs; i++) {
+    if (data->simulationInfo->extObjs[i] == NULL) {
+      warningStreamPrint(LOG_STDOUT, 0, "External object %i is NULL, did a external constructor fail?", i);
+    }
+  }
+
   /* check for unsolved (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
