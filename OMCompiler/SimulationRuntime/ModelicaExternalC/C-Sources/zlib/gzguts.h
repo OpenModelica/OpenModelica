@@ -48,7 +48,9 @@
 #  define read _read
 #  define write _write
 #  define close _close
-#else
+#endif
+
+#if !defined(_MSC_VER)
 #include <unistd.h>
 #endif
 
