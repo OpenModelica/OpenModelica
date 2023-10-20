@@ -3534,6 +3534,14 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
       >> ; separator="\n" %>
     <%fncalls%>
+
+    /* External object sanity check */
+    for(int i=0; i<data->modelData->nExtObjs; i++) {
+      if (data->simulationInfo->extObjs[i] == NULL) {
+        warningStreamPrint(LOG_ASSERT, 0, "<%symbolName(modelNamePrefix,"updateBoundParameters")%>: External object %i is NULL, did a external constructor fail?", i);
+      }
+    }
+
     TRACE_POP
     return 0;
   }
