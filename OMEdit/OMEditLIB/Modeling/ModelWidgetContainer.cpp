@@ -3604,32 +3604,39 @@ void GraphicsView::copyItems()
  */
 void GraphicsView::copyItems(bool cut)
 {
+  /* Issue #9515
+   * scene()->selectedItems() returns a list of all currently selected items. The items are returned in no particular order.
+   * So use items() instead and then check which items are selected.
+   */
   QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
+  QList<QGraphicsItem*> itemsList = items();
   if (!selectedItems.isEmpty()) {
     QStringList components, connections, shapes, allItems;
     connections << "equation";
     MimeData *pMimeData = new MimeData;
-    for (int i = 0 ; i < selectedItems.size() ; i++) {
-      if (Element *pComponent = dynamic_cast<Element*>(selectedItems.at(i))) {
-        if (mpModelWidget->isNewApi()) {
-          pMimeData->addModifier(pComponent->getModelComponent()->getModifier());
-        } else {
-          // we need to get the modifiers here instead of inside pasteItems() because in case of cut the component is removed and then we can't fetch the modifiers.
-          pComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), pComponent);
-        }
-        pMimeData->addComponent(pComponent);
-        components << pComponent->getClassName() % " " % pComponent->getName() % " " % "annotation(" % pComponent->getPlacementAnnotation(true) % ")";
-      } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(selectedItems.at(i))) {
-        LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(selectedItems.at(i));
-        if (pLineAnnotation && pLineAnnotation->isConnection()) {
-          // Only consider the connection for copying if both the start and the end components are selected.
-          if (pLineAnnotation->getStartElement()->getRootParentElement()->isSelected() && pLineAnnotation->getEndElement()->getRootParentElement()->isSelected()) {
-            pMimeData->addConnection(pLineAnnotation);
-            connections << QString("connect(%1, %2) annotation %3;").arg(pLineAnnotation->getStartElementName(), pLineAnnotation->getEndElementName(), pLineAnnotation->getShapeAnnotation());
+    for (int i = itemsList.size() - 1 ; i >= 0 ; i--) {
+      if (itemsList.at(i)->isSelected()) {
+        if (Element *pElement = dynamic_cast<Element*>(itemsList.at(i))) {
+          if (mpModelWidget->isNewApi()) {
+            pMimeData->addModifier(pElement->getModelComponent()->getModifier());
+          } else {
+            // we need to get the modifiers here instead of inside pasteItems() because in case of cut the component is removed and then we can't fetch the modifiers.
+            pElement->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), pElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), pElement);
           }
-        } else {
-          pMimeData->addShape(pShapeAnnotation);
-          shapes << pShapeAnnotation->getShapeAnnotation();
+          pMimeData->addComponent(pElement);
+          components << pElement->getClassName() % " " % pElement->getName() % " " % "annotation(" % pElement->getPlacementAnnotation(true) % ")";
+        } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemsList.at(i))) {
+          LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(itemsList.at(i));
+          if (pLineAnnotation && pLineAnnotation->isConnection()) {
+            // Only consider the connection for copying if both the start and the end components are selected.
+            if (pLineAnnotation->getStartElement()->getRootParentElement()->isSelected() && pLineAnnotation->getEndElement()->getRootParentElement()->isSelected()) {
+              pMimeData->addConnection(pLineAnnotation);
+              connections << QString("connect(%1, %2) annotation %3;").arg(pLineAnnotation->getStartElementName(), pLineAnnotation->getEndElementName(), pLineAnnotation->getShapeAnnotation());
+            }
+          } else {
+            pMimeData->addShape(pShapeAnnotation);
+            shapes << pShapeAnnotation->getShapeAnnotation();
+          }
         }
       }
     }
