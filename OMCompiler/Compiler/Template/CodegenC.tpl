@@ -3534,7 +3534,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
       >> ; separator="\n" %>
     <%fncalls%>
-
     TRACE_POP
     return 0;
   }
