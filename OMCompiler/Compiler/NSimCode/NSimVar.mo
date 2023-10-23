@@ -735,6 +735,7 @@ public
     protected
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {};
+      list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
       list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {};
@@ -757,15 +758,16 @@ public
 
         case qual as BVariable.VAR_DATA_SIM()
           algorithm
-            ({stateVars}, simCodeIndices)                                               := createSimVarLists(qual.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({derivativeVars}, simCodeIndices)                                          := createSimVarLists(qual.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({algVars}, simCodeIndices)                                                 := createSimVarLists(qual.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({nonTrivialAlias}, simCodeIndices)                                         := createSimVarLists(qual.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices) := createSimVarLists(qual.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices) := createSimVarLists(qual.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
-            ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices) := createSimVarLists(qual.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
-            ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices) := createSimVarLists(qual.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-            ({residualVars}, simCodeIndices)                                            := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
+            ({stateVars}, simCodeIndices)                                                   := createSimVarLists(qual.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({derivativeVars}, simCodeIndices)                                              := createSimVarLists(qual.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({algVars}, simCodeIndices)                                                     := createSimVarLists(qual.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({nonTrivialAlias}, simCodeIndices)                                             := createSimVarLists(qual.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices)     := createSimVarLists(qual.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+            ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2}, simCodeIndices) := createSimVarLists(qual.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices)     := createSimVarLists(qual.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
+            ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices)     := createSimVarLists(qual.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
+            ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices)     := createSimVarLists(qual.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+            ({residualVars}, simCodeIndices)                                                := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
         then ();
 
         case qual as BVariable.VAR_DATA_JAC() then ();
@@ -780,9 +782,9 @@ public
         stateVars                           = stateVars,
         derivativeVars                      = derivativeVars,
         algVars                             = listAppend(algVars, nonTrivialAlias),
-        discreteAlgVars                     = discreteAlgVars,
-        intAlgVars                          = intAlgVars,
-        boolAlgVars                         = boolAlgVars,
+        discreteAlgVars                     = listAppend(discreteAlgVars, discreteAlgVars2),
+        intAlgVars                          = listAppend(intAlgVars, intAlgVars2),
+        boolAlgVars                         = listAppend(boolAlgVars, boolAlgVars2),
         inputVars                           = inputVars,
         outputVars                          = outputVars,
         aliasVars                           = aliasVars,
@@ -791,7 +793,7 @@ public
         paramVars                           = paramVars,
         intParamVars                        = intParamVars,
         boolParamVars                       = boolParamVars,
-        stringAlgVars                       = stringAlgVars,
+        stringAlgVars                       = listAppend(stringAlgVars, stringAlgVars2),
         stringParamVars                     = stringParamVars,
         stringAliasVars                     = stringAliasVars,
         extObjVars                          = extObjVars,
