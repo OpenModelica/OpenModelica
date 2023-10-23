@@ -4,7 +4,10 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <ostream>
+#include <iosfwd>
+#include <optional>
+#include <functional>
+#include <memory>
 
 namespace OpenModelica
 {
@@ -58,6 +61,29 @@ namespace OpenModelica
         Tuple toTuple() const;
         Record toRecord() const;
 
+        // Converts an Option value to an std::optional<T> using T(value).
+        template<typename T> std::optional<T> mapOptional() const;
+        // Converts an Option value to a T using T(value) if the Option contains
+        // a value and T() otherwise.
+        template<typename T> T mapOptionalOrDefault() const;
+        // Converts an Option value to an std::unique_ptr<T> using T(value).
+        template<typename T> std::unique_ptr<T> mapPointer() const;
+        // Converts an Array or List value to an std::vector<T> using T(value)
+        // for each value in the array/list.
+        template<typename T> std::vector<T> mapVector() const;
+
+        // Converts the value using the corresponding Value::toX method for T.
+        template<typename T> T to() const;
+        // Converts an Option value to an std::optional<T> using the corresponding
+        // Value::toX method for T.
+        template<typename T> std::optional<T> toOptional() const;
+        // Converts an Array or List value to an std::vector<T> using the
+        // corresponding Value::toX method for T.
+        template<typename T> std::vector<T> toVector() const;
+
+        explicit operator bool() const;
+
+        std::string name() const noexcept;
         void* data() const noexcept;
 
       private:
@@ -67,8 +93,8 @@ namespace OpenModelica
     class Value::ArrowProxy
     {
       public:
-        ArrowProxy(void *value) noexcept : _value(value) {}
-        Value operator->() const noexcept { return _value; }
+        ArrowProxy(void *value) noexcept : _value{value} {}
+        const Value* operator->() const noexcept { return &_value; }
 
       private:
         Value _value;
@@ -132,6 +158,21 @@ namespace OpenModelica
         bool empty() const noexcept;
         size_t size() const noexcept;
 
+        template<typename T>
+        std::vector<T> mapVector() const
+        {
+          std::vector<T> v;
+          for (const auto &e: *this) v.emplace_back(e);
+          return v;
+        }
+
+        template<typename T>
+        std::vector<T> toVector() const
+        {
+          std::vector<T> v;
+          for (const auto &e: *this) v.emplace_back(e.to<T>());
+          return v;
+        }
       private:
         void *_value;
     };
@@ -184,6 +225,21 @@ namespace OpenModelica
         Value operator[](size_t index) const noexcept;
         Value at(size_t index) const;
 
+        template<typename T>
+        std::vector<T> mapVector() const
+        {
+          std::vector<T> v;
+          for (const auto &e: *this) v.emplace_back(e);
+          return v;
+        }
+
+        template<typename T>
+        std::vector<T> toVector() const
+        {
+          std::vector<T> v;
+          for (const auto &e: *this) v.emplace_back(e.to<T>());
+          return v;
+        }
       private:
         void *_value;
     };
@@ -214,8 +270,17 @@ namespace OpenModelica
     {
       public:
         Record(void *value) noexcept;
+        Record(Value value);
 
-        std::string name() const noexcept;
+        // Returns the full name of the record (e.g. SCode.Element.CLASS).
+        std::string fullName() const noexcept;
+        // Returns the name of the uniontype (e.g. SCode.Element).
+        std::string uniontypeName() const noexcept;
+        // Returns the name of the record (e.g. CLASS).
+        std::string recordName() const noexcept;
+        // The index of the record in the uniontype, starting from 0.
+        int index() const noexcept;
+
         IndexedConstIterator begin() const noexcept;
         IndexedConstIterator cbegin() const noexcept;
         IndexedConstIterator end() const noexcept;
@@ -233,6 +298,43 @@ namespace OpenModelica
     };
 
     std::ostream& operator<< (std::ostream &os, Record record) noexcept;
+
+    template<typename T> std::optional<T> Value::mapOptional() const
+    {
+      auto o = toOption();
+      return o ? std::make_optional(T(o.value())) : std::nullopt;
+    }
+
+    template<typename T> T Value::mapOptionalOrDefault() const
+    {
+      auto o = toOption();
+      return o ? T(o.value()) : T();
+    }
+
+    template<typename T> std::unique_ptr<T> Value::mapPointer() const
+    {
+      auto o = toOption();
+      return o ? std::make_unique<T>(o.value()) : nullptr;
+    }
+
+    template<typename T>
+    std::vector<T> Value::mapVector() const
+    {
+      return isList() ? toList().mapVector<T>() : toArray().mapVector<T>();
+    }
+
+    template<typename T>
+    std::optional<T> Value::toOptional() const
+    {
+      auto o = toOption();
+      return o ? std::make_optional(o->to<T>()) : std::nullopt;
+    }
+
+    template<typename T>
+    std::vector<T> Value::toVector() const
+    {
+      return isList() ? toList().toVector<T>() : toArray().toVector<T>();
+    }
   }
 }
 
