@@ -1695,6 +1695,7 @@ public
 
       /* subset of knowns */
       VariablePointers states             "States";
+      VariablePointers top_level_inputs   "Top level inputs";
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
       VariablePointers records            "Records";
@@ -1824,6 +1825,7 @@ public
               VariablePointers.toString(varData.discretes, "Discrete", false) +
               VariablePointers.toString(varData.discrete_states, "Discrete States", false) +
               VariablePointers.toString(varData.previous, "Previous", false) +
+              VariablePointers.toString(varData.top_level_inputs, "Top Level Inputs", false) +
               VariablePointers.toString(varData.parameters, "Parameter", false) +
               VariablePointers.toString(varData.constants, "Constant", false) +
               VariablePointers.toString(varData.records, "Record", false) +

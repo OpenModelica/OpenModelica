@@ -390,10 +390,10 @@ protected
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, previous_lst = {};
-    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
+    list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous;
-    VariablePointers parameters, constants, records, artificials;
+    VariablePointers inputs, parameters, constants, records, artificials;
     Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
@@ -417,13 +417,8 @@ protected
       variables := VariablePointers.add(lowVar_ptr, variables);
       () := match lowVar.backendinfo.varKind
 
-        case BackendExtension.ALGEBRAIC() guard(Variable.isTopLevelInput(var)) algorithm
-          algebraics_lst := lowVar_ptr :: algebraics_lst;
-          knowns_lst := lowVar_ptr :: knowns_lst;
-        then ();
-
-        case BackendExtension.DISCRETE() guard(Variable.isTopLevelInput(var)) algorithm
-          discretes_lst := lowVar_ptr :: discretes_lst;
+        case _ guard(Variable.isTopLevelInput(var)) algorithm
+          inputs_lst := lowVar_ptr :: inputs_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
@@ -495,6 +490,7 @@ protected
     discrete_states := VariablePointers.fromList(discrete_states_lst, scalarized);
     previous        := VariablePointers.fromList(previous_lst, scalarized);
 
+    inputs          := VariablePointers.fromList(inputs_lst, scalarized);
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
     records         := VariablePointers.fromList(records_lst, scalarized);
@@ -512,7 +508,7 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, discrete_states, previous, states, parameters, constants, records, artificials);
+                    derivatives, algebraics, discretes, discrete_states, previous, states, inputs, parameters, constants, records, artificials);
   end lowerVariableData;
 
   function lowerVariable
@@ -1297,7 +1293,7 @@ public
           discretes       := intString(VariablePointers.scalarSize(varData.discretes)) + " (" + intString(VariablePointers.size(varData.discretes)) + ")";
           discrete_states := intString(VariablePointers.scalarSize(varData.discrete_states)) + " (" + intString(VariablePointers.size(varData.discrete_states)) + ")";
           clocked_states  := "0 (0)";
-          inputs          := "0 (0)";
+          inputs          := intString(VariablePointers.scalarSize(varData.top_level_inputs)) + " (" + intString(VariablePointers.size(varData.top_level_inputs)) + ")";
 
           if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
             states := states + " " + List.toString(VariablePointers.toList(varData.states), BVariable.nameString);
@@ -1307,12 +1303,18 @@ public
 
           if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
             discretes := discretes + " " + List.toString(VariablePointers.toList(varData.discretes), BVariable.nameString);
+            inputs := inputs + " " + List.toString(VariablePointers.toList(varData.top_level_inputs), BVariable.nameString);
+          else
+            discretes := discretes + " ('-d=discreteinfo' for list of discrete variables)";
+            inputs := inputs + " ('-d=discreteinfo' for list of top level inputs)";
+          end if;
+
+          if  Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
             discrete_states := discrete_states + " " + List.toString(VariablePointers.toList(varData.discrete_states), BVariable.nameString);
             clocked_states := clocked_states + " {NOT YET AVAILABLE}";
           else
-            discretes := discretes + " ('-d=discreteinfo' for list of discrete variables)";
-            discrete_states := discrete_states + " ('-d=discreteinfo' for list of discrete states)";
-            clocked_states := clocked_states + " ('-d=discreteinfo' for list of clocked states)";
+            discrete_states := discrete_states + " ('-d=discreteinfo' or '-d=stateselection' for list of discrete states)";
+            clocked_states := clocked_states + " ('-d=discreteinfo' or '-d=stateselection' for list of clocked states)";
           end if;
 
           Error.addCompilerNotification(
@@ -1328,9 +1330,9 @@ public
           Error.addCompilerNotification(
             "Variable statistics after passing the back-end:\n"
             + "* Number of states: ............................. " + states + "\n"
-            + "* Number of discrete variables: ................. " + discretes + "\n"
             + "* Number of discrete states: .................... " + discrete_states + "\n"
             + "* Number of clocked states: ..................... " + clocked_states + "\n"
+            + "* Number of discrete variables: ................. " + discretes + "\n"
             + "* Number of top-level inputs: ................... " + inputs);
 
           // collect strong component info simulation

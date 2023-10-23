@@ -127,32 +127,33 @@ protected
     VariablePointers discretes      "Discrete variables";
     VariablePointers discrete_states"Discrete state variables";
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
-    VariablePointers auxiliaries, aliasVars, nonTrivialAlias, parameters, constants, records, artificials   "(only to reconstruct VAR_DATA_SIM)";
+    VariablePointers auxiliaries, aliasVars, nonTrivialAlias, top_level_inputs, parameters, constants, records, artificials   "(only to reconstruct VAR_DATA_SIM)";
     list<Pointer<Equation>> aux_eqns;
   algorithm
-    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, nonTrivialAlias = nonTrivialAlias, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, discrete_states = discrete_states, previous = previous, parameters = parameters, constants = constants, records = records, artificials = artificials) := varData;
+    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, nonTrivialAlias = nonTrivialAlias, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, discrete_states = discrete_states, previous = previous, top_level_inputs = top_level_inputs, parameters = parameters, constants = constants, records = records, artificials = artificials) := varData;
     BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns, initials = init_eqns) := eqData;
     (variables, unknowns, knowns, initials, states, derivatives, algebraics, aux_eqns) := continuousFunc(variables, unknowns, knowns, initials, states, derivatives, algebraics, equations);
     (variables, disc_eqns, knowns, initials, discretes, discrete_states, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, discrete_states, previous, "discrete equations");
     (variables, init_eqns, knowns, initials, discretes, discrete_states, previous) := discreteFunc(variables, init_eqns, knowns, initials, discretes, discrete_states, previous, "initial equations");
     varData := BVariable.VAR_DATA_SIM(
-      variables       = variables,
-      unknowns        = unknowns,
-      knowns          = knowns,
-      initials        = initials,
-      auxiliaries     = auxiliaries,
-      aliasVars       = aliasVars,
-      nonTrivialAlias = nonTrivialAlias,
-      derivatives     = derivatives,
-      algebraics      = algebraics,
-      discretes       = discretes,
-      discrete_states = discrete_states,
-      previous        = previous,
-      states          = states,
-      parameters      = parameters,
-      constants       = constants,
-      records         = records,
-      artificials     = artificials
+      variables         = variables,
+      unknowns          = unknowns,
+      knowns            = knowns,
+      initials          = initials,
+      auxiliaries       = auxiliaries,
+      aliasVars         = aliasVars,
+      nonTrivialAlias   = nonTrivialAlias,
+      derivatives       = derivatives,
+      algebraics        = algebraics,
+      discretes         = discretes,
+      discrete_states   = discrete_states,
+      previous          = previous,
+      states            = states,
+      top_level_inputs  = top_level_inputs,
+      parameters        = parameters,
+      constants         = constants,
+      records           = records,
+      artificials       = artificials
     );
     eqData := EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false);
   end detectStatesDefault;
