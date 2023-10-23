@@ -648,7 +648,7 @@ algorithm
   end if;
 end chooseExternalAlias;
 
-protected function getExternalObjectAlias2 "Traverser for equations to check if an external alias assignment an be made
+protected function getExternalObjectAlias2 "Traverser for equations to check if an external alias assignment can be made
 author: waurich TUD 2016-10"
   input BackendDAE.Equation eqIn;
   input list<DAE.ComponentRef> extCrefs;
@@ -659,16 +659,33 @@ algorithm
     local
       list<BackendDAE.Equation> noAliasEqs, aliasEqs;
       DAE.ComponentRef cr1,cr2;
+      DAE.Exp left, right;
+      DAE.Type ty1;
   case(BackendDAE.COMPLEX_EQUATION(left = DAE.CREF(componentRef=cr1), right = DAE.CREF(componentRef=cr2)),_,(noAliasEqs,aliasEqs))
     algorithm
       true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
 
-  case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef= cr1, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())),
-                           scalar = DAE.CREF(componentRef= cr2, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))),_,(noAliasEqs,aliasEqs))
+  case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr1, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())),
+                           scalar = DAE.CREF(componentRef = cr2, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))),_,(noAliasEqs,aliasEqs))
     algorithm
       true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
+
+  // TODO AHeu: Add case for array of external objects
+  case(BackendDAE.ARRAY_EQUATION(_,
+                                 left as DAE.CREF(componentRef = cr1, ty = DAE.T_ARRAY(ty = ty1 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) )),
+                                 right as DAE.ARRAY()),
+       _, (noAliasEqs,aliasEqs))
+    algorithm
+      print("AHeu 2:\n" + BackendDump.equationString(eqIn) + "\n");
+      print("Case ARRAY_EQUATION\n");
+      print(DAEDump.daeTypeStr(ty1)+"\n");
+      print(ExpressionDump.printExpStr(left)+"\n");
+      print("------\n");
+      print(ExpressionDump.printExpStr(right)+"\n");
+      //true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
+    then (noAliasEqs,eqIn::aliasEqs);
 
   else
     algorithm
