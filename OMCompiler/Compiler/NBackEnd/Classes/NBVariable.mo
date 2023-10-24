@@ -179,7 +179,7 @@ public
     Variable pre = Pointer.access(pre_ptr);
   algorithm
     var.backendinfo := BackendInfo.setPrePost(var.backendinfo, SOME(pre_ptr));
-    pre.backendinfo := BackendInfo.setPrePost(var.backendinfo, SOME(var_ptr));
+    pre.backendinfo := BackendInfo.setPrePost(pre.backendinfo, SOME(var_ptr));
     Pointer.update(var_ptr, var);
     Pointer.update(pre_ptr, pre);
   end connectPrePostVar;
@@ -355,6 +355,22 @@ public
     pre_post := var.backendinfo.pre_post;
   end getPrePost;
 
+  function getPrePostCref
+    "only use if you are sure there is a pre-post variable"
+    input ComponentRef cref;
+    output ComponentRef pre_post;
+  protected
+    Option<Pointer<Variable>> pre_post_opt;
+  algorithm
+    pre_post_opt := getPrePost(getVarPointer(cref));
+    if Util.isSome(pre_post_opt) then
+      pre_post := getVarName(Util.getOption(pre_post_opt));
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because it had no pre or post variable."});
+      fail();
+    end if;
+  end getPrePostCref;
+
   function hasPre
     "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
     extends checkVar;
@@ -462,6 +478,7 @@ public
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))          then not isFixed(var_ptr) or hasPre(var_ptr);
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))    then not isFixed(var_ptr) or hasPre(var_ptr);
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))         then not isFixed(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))          then true;
       else false;
     end match;
   end isFixable;
@@ -605,8 +622,6 @@ public
     state_var := match Pointer.access(der_var)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state_var)))
       then state_var;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS(state = state_var)))
-      then state_var;
       else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(der_var) + " because of wrong variable kind."});
         then fail();
@@ -624,10 +639,6 @@ public
         Variable stateVar;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = derivative)) then match Pointer.access(derivative)
         case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state)))
-          algorithm
-            stateVar := Pointer.access(state);
-        then stateVar.name;
-        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS(state = state)))
           algorithm
             stateVar := Pointer.access(state);
         then stateVar.name;
@@ -677,30 +688,6 @@ public
       then fail();
     end match;
   end getDerCref;
-
-  function getDiscreteStateCref
-    "Returns the discrete state variable component reference from a previous reference.
-    Only works after the discrete state has been detected by the DetectStates module and fails for non-previous crefs!"
-    input output ComponentRef cref;
-  algorithm
-    cref := match cref
-      local
-        Pointer<Variable> previous, state;
-        Variable stateVar;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = previous)) then match Pointer.access(previous)
-        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS(state = state)))
-          algorithm
-            stateVar := Pointer.access(state);
-        then stateVar.name;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
-        then fail();
-      end match;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
-      then fail();
-    end match;
-  end getDiscreteStateCref;
 
   function getRecordChildren
     "returns all children of the variable if its a record, otherwise returns empty list"
@@ -794,7 +781,7 @@ public
           qual.name := PREVIOUS_STR;
           pre_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           pre := fromCref(pre_cref, Variable.attributes(Pointer.access(var_ptr)));
-          pre.backendinfo := BackendExtension.BackendInfo.setVarKind(pre.backendinfo, BackendExtension.PREVIOUS(var_ptr));
+          pre.backendinfo := BackendExtension.BackendInfo.setVarKind(pre.backendinfo, BackendExtension.PREVIOUS());
           (pre_ptr, pre_cref) := makeVarPtrCyclic(pre, pre_cref);
           connectPrePostVar(var_ptr, pre_ptr);
       then ();

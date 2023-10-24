@@ -168,14 +168,12 @@ public
     end DUMMY_DER;
     record DUMMY_STATE
       Pointer<Variable> dummy_der           "corresponding dummy derivative";
-    end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state seleciton in index reduction
+    end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state selection in index reduction
     record DISCRETE end DISCRETE;
     record DISCRETE_STATE
       Boolean fixed                         "is fixed at first clock tick";
     end DISCRETE_STATE;
-    record PREVIOUS
-      Pointer<Variable> state               "Pointer to the corresponding discrete state.";
-    end PREVIOUS;
+    record PREVIOUS end PREVIOUS;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
