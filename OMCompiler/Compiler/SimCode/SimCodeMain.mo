@@ -894,9 +894,6 @@ algorithm
 
         // I need to see some tests failing or something not working to make sense of what to add here
         shared_source_files := List.flatten({RuntimeSources.simrt_c_sources,
-                                             dgesv_sources,
-                                             cminpack_sources,
-                                             simrt_c_sundials_sources,
                                              simrt_linear_solver_sources,
                                              simrt_non_linear_solver_sources,
                                              simrt_mixed_solver_sources
@@ -906,7 +903,12 @@ algorithm
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          model_desc_src_files := listAppend(model_gen_files, shared_source_files);
+          model_desc_src_files := List.flatten({shared_source_files,  // order matters, must be first
+                                                dgesv_sources,
+                                                cminpack_sources,
+                                                simrt_c_sundials_sources,
+                                                model_gen_files  //  order matters(?), must be last
+                                    });
         end if;
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
