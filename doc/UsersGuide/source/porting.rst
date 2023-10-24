@@ -275,7 +275,7 @@ and should be fixed by putting the variable *z* in the protected section:
 Subscripting of expressions
 ---------------------------
 
-There is a proposal of allowing expression subscripting, e.g.
+Some libraries use expression subscripting, e.g.
 
 .. code-block:: modelica
 
@@ -289,8 +289,10 @@ There is a proposal of allowing expression subscripting, e.g.
   end M;
 
 This construct is already accepted by some Modelica tools, but is not yet
-included in the current Modelica specification 3.5, nor even in the current working
-draft of 3.6, so it is not currently supported by OpenModelica.
+included in the current Modelica Specification 3.6, so it is not supported
+in OpenModelica up to version 1.22.0. It has now been included in the draft
+for the 3.7 language specification, so it will be implemented in the future
+also by OpenModelica.
 
 Incomplete specification of initial conditions
 ----------------------------------------------
