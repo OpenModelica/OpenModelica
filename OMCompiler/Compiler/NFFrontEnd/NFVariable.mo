@@ -79,6 +79,7 @@ public
     Attributes attr;
     Option<SCode.Comment> cmt;
     SourceInfo info;
+    BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
@@ -91,11 +92,11 @@ public
     // conversion to backend process (except for iterators). NBackendDAE.lower
     if ComponentRef.isIterator(cref) then
       binding := NFBinding.EMPTY_BINDING;
-      variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, BackendExtension.BACKEND_INFO(BackendExtension.ITERATOR(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS));
+      binfo.varKind := BackendExtension.ITERATOR();
     else
       binding := Component.getImplicitBinding(comp);
-      variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
     end if;
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, binfo);
   end fromCref;
 
   function size

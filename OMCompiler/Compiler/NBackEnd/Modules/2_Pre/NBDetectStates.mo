@@ -125,32 +125,35 @@ protected
     VariablePointers derivatives    "State derivatives (der(x) -> $DER.x)";
     VariablePointers algebraics     "Algebraic variables";
     VariablePointers discretes      "Discrete variables";
+    VariablePointers discrete_states"Discrete state variables";
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
-    VariablePointers auxiliaries, aliasVars, nonTrivialAlias, parameters, constants, records, artificials   "(only to reconstruct VAR_DATA_SIM)";
+    VariablePointers auxiliaries, aliasVars, nonTrivialAlias, top_level_inputs, parameters, constants, records, artificials   "(only to reconstruct VAR_DATA_SIM)";
     list<Pointer<Equation>> aux_eqns;
   algorithm
-    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, nonTrivialAlias = nonTrivialAlias, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants, records = records, artificials = artificials) := varData;
+    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, nonTrivialAlias = nonTrivialAlias, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, discrete_states = discrete_states, previous = previous, top_level_inputs = top_level_inputs, parameters = parameters, constants = constants, records = records, artificials = artificials) := varData;
     BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns, initials = init_eqns) := eqData;
     (variables, unknowns, knowns, initials, states, derivatives, algebraics, aux_eqns) := continuousFunc(variables, unknowns, knowns, initials, states, derivatives, algebraics, equations);
-    (variables, disc_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, previous, "discrete equations");
-    (variables, init_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, init_eqns, knowns, initials, discretes, previous, "initial equations");
+    (variables, disc_eqns, knowns, initials, discretes, discrete_states, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, discrete_states, previous, "discrete equations");
+    (variables, init_eqns, knowns, initials, discretes, discrete_states, previous) := discreteFunc(variables, init_eqns, knowns, initials, discretes, discrete_states, previous, "initial equations");
     varData := BVariable.VAR_DATA_SIM(
-      variables       = variables,
-      unknowns        = unknowns,
-      knowns          = knowns,
-      initials        = initials,
-      auxiliaries     = auxiliaries,
-      aliasVars       = aliasVars,
-      nonTrivialAlias = nonTrivialAlias,
-      derivatives     = derivatives,
-      algebraics      = algebraics,
-      discretes       = discretes,
-      previous        = previous,
-      states          = states,
-      parameters      = parameters,
-      constants       = constants,
-      records         = records,
-      artificials     = artificials
+      variables         = variables,
+      unknowns          = unknowns,
+      knowns            = knowns,
+      initials          = initials,
+      auxiliaries       = auxiliaries,
+      aliasVars         = aliasVars,
+      nonTrivialAlias   = nonTrivialAlias,
+      derivatives       = derivatives,
+      algebraics        = algebraics,
+      discretes         = discretes,
+      discrete_states   = discrete_states,
+      previous          = previous,
+      states            = states,
+      top_level_inputs  = top_level_inputs,
+      parameters        = parameters,
+      constants         = constants,
+      records           = records,
+      artificials       = artificials
     );
     eqData := EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false);
   end detectStatesDefault;
@@ -182,12 +185,12 @@ protected
     Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
     Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
   algorithm
-    // collect all 'natural' states on the lhs of a when
-    EquationPointers.map(equations, function collectDiscreteStatesFromWhen(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous, scalarized = variables.scalarized));
-    // collect all 'natural' states from pre(d)
-    EquationPointers.mapExp(equations, function collectDiscreteStatesAndPrevious(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous, scalarized = variables.scalarized));
+    // collect all states on the lhs of a when
+    EquationPointers.map(equations, function collectDiscreteStatesFromWhen(acc_discrete_states = acc_discrete_states, scalarized = variables.scalarized));
+    // collect all pre(d)
+    EquationPointers.mapExp(equations, function collectPreAndPrevious(acc_previous = acc_previous, scalarized = variables.scalarized));
     // move stuff to their correct arrays
-    (variables, knowns, initials, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous), context);
+    (variables, knowns, initials, discretes, discrete_states, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, discrete_states, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous), context);
   end detectDiscreteStatesDefault;
 
   function collectStatesAndDerivatives
@@ -328,10 +331,9 @@ protected
     end if;
   end updateStatesAndDerivatives;
 
-  function collectDiscreteStatesAndPrevious
-    "Collects all discrete states and creates a previous variable for each. Only to be used on discrete equations!"
+  function collectPreAndPrevious
+    "Collects all pre and previous variables. Only to be used on discrete equations!"
     input output Expression exp;
-    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
     input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
@@ -344,13 +346,13 @@ protected
         arguments = {Expression.CREF(cref = state_cref)}))
         algorithm
           state_var := BVariable.getVarPointer(state_cref);
-          pre_cref := getPreVar(state_cref, state_var, acc_discrete_states, acc_previous, scalarized);
+          pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
       then Expression.fromCref(pre_cref);
       // ToDo! General expressions inside pre call!
       // ToDo! edge and change replacement!
       else exp;
     end match;
-  end collectDiscreteStatesAndPrevious;
+  end collectPreAndPrevious;
 
   function updateDiscreteStatesAndPrevious
     "Updates the variable pointer arrays with the new information about states and derivatives."
@@ -358,6 +360,7 @@ protected
     input output VariablePointers knowns          "Knowns";
     input output VariablePointers initials        "initial unknowns";
     input output VariablePointers discretes       "Discrete variables";
+    input output VariablePointers discrete_states "Discrete state variables";
     input output VariablePointers previous        "Previous (left limit) variables";
     input list<Pointer<Variable>> acc_discrete_states;
     input list<Pointer<Variable>> acc_previous;
@@ -368,6 +371,9 @@ protected
     knowns := VariablePointers.addList(acc_previous, knowns);
     initials := VariablePointers.addList(acc_previous, initials);
     previous := VariablePointers.addList(acc_previous, previous);
+    discrete_states := VariablePointers.addList(acc_discrete_states, discrete_states);
+    // also remove discrete states from discretes
+    discretes := VariablePointers.removeList(acc_discrete_states, discretes);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       print(StringUtil.headline_4("[stateselection] Natural discrete states from " + context + ":"));
@@ -383,12 +389,11 @@ protected
     "All variables on the LHS in a when equation are considered discrete."
     input output Equation eqn "outputs equation just to fit the map() interface. does not change.";
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     () := match eqn
       case Equation.WHEN_EQUATION() algorithm
-        collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, acc_previous, scalarized);
+        collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, scalarized);
       then ();
       else ();
     end match;
@@ -398,7 +403,6 @@ protected
     "All variables on the LHS in a when equation are considered discrete."
     input WhenEquationBody body;
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     for body_stmt in body.when_stmts loop
@@ -411,7 +415,8 @@ protected
           // the function getPreVar() does all necessary collecting of information
           // but we don't need the actual pre cref it returns
           state_var := BVariable.getVarPointer(state_cref);
-          pre_cref := getPreVar(state_cref, state_var, acc_discrete_states, acc_previous, scalarized);
+          BVariable.makeDiscreteStateVar(state_var);
+          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
         then ();
 
         else ();
@@ -419,36 +424,31 @@ protected
     end for;
 
     if Util.isSome(body.else_when) then
-      collectDiscreteStatesFromWhenBody(Util.getOption(body.else_when), acc_discrete_states, acc_previous, scalarized);
+      collectDiscreteStatesFromWhenBody(Util.getOption(body.else_when), acc_discrete_states, scalarized);
     end if;
   end collectDiscreteStatesFromWhenBody;
 
   function getPreVar
-    input ComponentRef state_cref;
-    input Pointer<Variable> state_var;
-    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input ComponentRef var_cref;
+    input Pointer<Variable> var_ptr;
     input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
     output ComponentRef pre_cref;
   protected
+    Option<Pointer<Variable>> pre = BVariable.getPrePost(var_ptr);
     Pointer<Variable> pre_var;
   algorithm
-    if BVariable.isDiscreteState(state_var) then
-      // this previous was already created -> the variable should already have a pointer to its previous variable
-      pre_cref := BVariable.getPreCref(state_cref);
-      if not scalarized then
-        pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
-      end if;
+    if Util.isSome(pre) then
+      SOME(pre_var) := pre;
+      pre_cref := BVariable.getVarName(pre_var);
     else
       if not scalarized then
-        // prevent the variable from having the subscripts, but add it to the pre_cref
-        (pre_cref, pre_var) := BVariable.makePreVar(ComponentRef.stripSubscriptsAll(state_cref));
-        pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
+        // prevent the created pre variable from having the subscripts, but add it to the pre_cref
+        (pre_cref, pre_var) := BVariable.makePreVar(ComponentRef.stripSubscriptsAll(var_cref));
+        pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(var_cref)), pre_cref);
       else
-        (pre_cref, pre_var) := BVariable.makePreVar(state_cref);
+        (pre_cref, pre_var) := BVariable.makePreVar(var_cref);
       end if;
-      BVariable.makeDiscreteStateVar(state_var, pre_var);
-      Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
       Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
     end if;
   end getPreVar;

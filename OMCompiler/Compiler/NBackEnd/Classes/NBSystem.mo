@@ -304,6 +304,22 @@ public
       end if;
     end clone;
 
+    function removeAlias
+      "removes alias strong components and replaces it with their original strong components.
+      used before differentiating for jacobians."
+      input output System sys;
+    protected
+      array<StrongComponent> comps;
+    algorithm
+      if Util.isSome(sys.strongComponents) then
+        // no need to override comps afterwards since arrays are mutable
+        comps := Util.getOption(sys.strongComponents);
+        for i in 1:arrayLength(comps) loop
+          comps[i] := StrongComponent.removeAlias(comps[i]);
+        end for;
+      end if;
+    end removeAlias;
+
   protected
     function partitionKindString
       input PartitionKind partitionKind;

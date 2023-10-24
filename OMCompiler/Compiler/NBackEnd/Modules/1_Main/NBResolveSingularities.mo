@@ -327,8 +327,8 @@ public
       for var in unmatched_vars loop
         var_ptr := Slice.getT(var);
         if BVariable.isFixable(var_ptr) then
-          if BVariable.isDiscreteState(var_ptr) then
-            // create previous equations for discrete states
+          if BVariable.hasPre(var_ptr) then
+            // create previous equations
             // d = $PRE.d
             Initialization.createPreEquationSlice(var, ptr_start_eqns, idx);
           else

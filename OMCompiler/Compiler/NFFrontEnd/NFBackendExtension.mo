@@ -66,9 +66,10 @@ protected
 public
   uniontype BackendInfo
     record BACKEND_INFO
-      VariableKind varKind            "Structural kind: state, algebraic...";
-      VariableAttributes attributes   "values on built-in attributes";
-      Annotations annotations         "values on annotations (vendor specific)";
+      VariableKind varKind                "Structural kind: state, algebraic...";
+      VariableAttributes attributes       "values on built-in attributes";
+      Annotations annotations             "values on annotations (vendor specific)";
+      Option<Pointer<Variable>> pre_post  "Pointer (var->pre) or (pre-> var) if existent.";
     end BACKEND_INFO;
 
     function toString
@@ -100,6 +101,13 @@ public
     algorithm
       binfo.varKind := varKind;
     end setVarKind;
+
+    function setPrePost
+      input output BackendInfo binfo;
+      input Option<Pointer<Variable>> pre_post;
+    algorithm
+      binfo.pre_post := pre_post;
+    end setPrePost;
 
     function setAttributes
       input output BackendInfo binfo;
@@ -136,12 +144,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.pre_post) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS);
+  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE());
 
   uniontype VariableKind
     record TIME end TIME;
@@ -160,15 +168,12 @@ public
     end DUMMY_DER;
     record DUMMY_STATE
       Pointer<Variable> dummy_der           "corresponding dummy derivative";
-    end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state seleciton in index reduction
+    end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state selection in index reduction
     record DISCRETE end DISCRETE;
     record DISCRETE_STATE
-      Pointer<Variable> previous            "Pointer to the left limit if existant.";
       Boolean fixed                         "is fixed at first clock tick";
     end DISCRETE_STATE;
-    record PREVIOUS
-      Pointer<Variable> state               "Pointer to the corresponding discrete state.";
-    end PREVIOUS;
+    record PREVIOUS end PREVIOUS;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
