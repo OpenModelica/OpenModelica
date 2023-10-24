@@ -306,6 +306,15 @@ public
     end match;
   end isEqual;
 
+  function removeAlias
+    input output StrongComponent comp;
+  algorithm
+    comp := match comp
+      case ALIAS() then comp.original;
+      else comp;
+    end match;
+  end removeAlias;
+
   function createPseudoSlice
     input Integer eqn_arr_idx;
     input ComponentRef cref_to_solve;

@@ -51,7 +51,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) y = abs(x[2]) ($RES_$AUX_29)
 //
-// --- Alias of INI[1 | 10] ---
+// --- Alias of INI[1 | 17] ---
 // BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -59,7 +59,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_9 = sinh(y) ($RES_$AUX_21)
 //
-// --- Alias of INI[1 | 9] ---
+// --- Alias of INI[1 | 15] ---
 // BLOCK 3: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -67,7 +67,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_8 = atan(y) ($RES_$AUX_22)
 //
-// --- Alias of INI[1 | 8] ---
+// --- Alias of INI[1 | 13] ---
 // BLOCK 4: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -75,7 +75,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_7 = acos(y) ($RES_$AUX_23)
 //
-// --- Alias of INI[1 | 7] ---
+// --- Alias of INI[1 | 11] ---
 // BLOCK 5: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -83,7 +83,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_6 = asin(y) ($RES_$AUX_24)
 //
-// --- Alias of INI[1 | 6] ---
+// --- Alias of INI[1 | 9] ---
 // BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -91,7 +91,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_5 = tan(y) ($RES_$AUX_25)
 //
-// --- Alias of INI[1 | 5] ---
+// --- Alias of INI[1 | 7] ---
 // BLOCK 7: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -99,7 +99,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_4 = cos(y) ($RES_$AUX_26)
 //
-// --- Alias of INI[1 | 4] ---
+// --- Alias of INI[1 | 5] ---
 // BLOCK 8: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -115,7 +115,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_2 = sqrt(y) ($RES_$AUX_28)
 //
-// --- Alias of INI[1 | 16] ---
+// --- Alias of INI[1 | 29] ---
 // BLOCK 10: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
@@ -123,7 +123,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_15 = atan2(y, x[1]) ($RES_$AUX_15)
 //
-// --- Alias of INI[1 | 15] ---
+// --- Alias of INI[1 | 27] ---
 // BLOCK 11: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
@@ -131,7 +131,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_14 = log10(1.0 + y) ($RES_$AUX_16)
 //
-// --- Alias of INI[1 | 17] ---
+// --- Alias of INI[1 | 4] ---
 // BLOCK 12: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -140,7 +140,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[1] = $FUN_2 ($RES_SIM_13)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 18] ---
+// --- Alias of INI[1 | 6] ---
 // BLOCK 13: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -149,7 +149,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[2] = $FUN_3 ($RES_SIM_12)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 19] ---
+// --- Alias of INI[1 | 8] ---
 // BLOCK 14: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -158,7 +158,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[3] = $FUN_4 ($RES_SIM_11)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 20] ---
+// --- Alias of INI[1 | 10] ---
 // BLOCK 15: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -167,7 +167,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[4] = $FUN_5 ($RES_SIM_10)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 21] ---
+// --- Alias of INI[1 | 12] ---
 // BLOCK 16: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -176,7 +176,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[5] = $FUN_6 ($RES_SIM_9)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 22] ---
+// --- Alias of INI[1 | 14] ---
 // BLOCK 17: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -185,7 +185,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[6] = $FUN_7 ($RES_SIM_8)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 23] ---
+// --- Alias of INI[1 | 16] ---
 // BLOCK 18: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -194,7 +194,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[7] = $FUN_8 ($RES_SIM_7)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 24] ---
+// --- Alias of INI[1 | 18] ---
 // BLOCK 19: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -203,7 +203,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[8] = $FUN_9 ($RES_SIM_6)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 11] ---
+// --- Alias of INI[1 | 19] ---
 // BLOCK 20: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
@@ -211,7 +211,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_10 = cosh(y) ($RES_$AUX_20)
 //
-// --- Alias of INI[1 | 25] ---
+// --- Alias of INI[1 | 20] ---
 // BLOCK 21: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -220,7 +220,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[9] = $FUN_10 ($RES_SIM_5)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 12] ---
+// --- Alias of INI[1 | 21] ---
 // BLOCK 22: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
@@ -228,7 +228,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_11 = tanh(y) ($RES_$AUX_19)
 //
-// --- Alias of INI[1 | 26] ---
+// --- Alias of INI[1 | 22] ---
 // BLOCK 23: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -237,7 +237,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[10] = $FUN_11 ($RES_SIM_4)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 13] ---
+// --- Alias of INI[1 | 23] ---
 // BLOCK 24: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
@@ -245,7 +245,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_12 = exp(y) ($RES_$AUX_18)
 //
-// --- Alias of INI[1 | 27] ---
+// --- Alias of INI[1 | 24] ---
 // BLOCK 25: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -254,7 +254,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[11] = $FUN_12 ($RES_SIM_3)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 14] ---
+// --- Alias of INI[1 | 25] ---
 // BLOCK 26: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
@@ -262,7 +262,7 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $FUN_13 = log(1.0 + y) ($RES_$AUX_17)
 //
-// --- Alias of INI[1 | 28] ---
+// --- Alias of INI[1 | 26] ---
 // BLOCK 27: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -271,7 +271,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $DER.x[12] = $FUN_13 ($RES_SIM_2)
 // 	 slice: {}
 //
-// --- Alias of INI[1 | 29] ---
+// --- Alias of INI[1 | 28] ---
 // BLOCK 28: Sliced Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
@@ -378,7 +378,7 @@ simulate(builtin_functions); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "builtin_functions_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'builtin_functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'builtin_functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

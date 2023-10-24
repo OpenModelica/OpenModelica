@@ -415,8 +415,8 @@ public
         end match;
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to create adjacency matrix for system:\n"
-          + VariablePointers.toString(vars, "system vars") + "\n"
-          + EquationPointers.toString(eqns, "system eqns")});
+          + VariablePointers.toString(vars, "System") + "\n"
+          + EquationPointers.toString(eqns, "System")});
         fail();
       end try;
     end create;
