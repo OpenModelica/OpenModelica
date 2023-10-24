@@ -894,8 +894,9 @@ algorithm
 
         // I need to see some tests failing or something not working to make sense of what to add here
         shared_source_files := List.flatten({RuntimeSources.simrt_c_sources,
-                                             // dgesv_sources, // listed separately
-                                             // simrt_c_sundials_sources, // listed separately
+                                             dgesv_sources,
+                                             cminpack_sources,
+                                             simrt_c_sundials_sources,
                                              simrt_linear_solver_sources,
                                              simrt_non_linear_solver_sources,
                                              simrt_mixed_solver_sources
