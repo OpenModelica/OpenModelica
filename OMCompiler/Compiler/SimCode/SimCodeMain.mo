@@ -903,11 +903,11 @@ algorithm
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          model_desc_src_files := List.flatten({shared_source_files,  // order matters, must be first
+          model_desc_src_files := List.flatten({model_gen_files,      //  order matters
+                                                shared_source_files,
                                                 dgesv_sources,
                                                 cminpack_sources,
-                                                simrt_c_sundials_sources,
-                                                model_gen_files  //  order matters(?), must be last
+                                                simrt_c_sundials_sources
                                     });
         end if;
 
