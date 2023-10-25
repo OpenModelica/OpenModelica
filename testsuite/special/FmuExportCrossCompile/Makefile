@@ -5,9 +5,9 @@
 # fmuCheck.linux32 fmuCheck.linux64 fmuCheck.win32.exe fmuCheck.win64.exe
 
 # I hate if conditions in make...
-OMC = $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
-              || test -e ../../../build_cmake/install_cmake/bin/omc && echo ../../../build_cmake/install_cmake/bin/omc \
-              || ../../../build/bin/omc)
+OMC := $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
+               || test -e ../../../build_cmake/install_cmake/bin/omc && echo ../../../build_cmake/install_cmake/bin/omc \
+               || echo ../../../build/bin/omc )
 
 test: clean
 	$(MAKE) fmuExportCrossCompile
