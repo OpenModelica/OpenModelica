@@ -1085,6 +1085,10 @@ SubscriptCevalIndexRange1.mo \
 SubscriptCevalSlice1.mo \
 SubscriptCevalSlice2.mo \
 SubscriptCevalWhole1.mo \
+SubscriptedExp1.mo \
+SubscriptedExp2.mo \
+SubscriptedExp3.mo \
+SubscriptedExp4.mo \
 SubscriptEnum1.mo \
 SubscriptIterator1.mo \
 SubscriptReduction1.mo \

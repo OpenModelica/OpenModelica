@@ -1833,7 +1833,7 @@ public
 
       case BOX() then "BOX(" + toString(exp.exp) + ")";
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
-      case SUBSCRIPTED_EXP() then toString(exp.exp) + Subscript.toStringList(exp.subscripts);
+      case SUBSCRIPTED_EXP() then "(" + toString(exp.exp) + ")" + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toString(Mutable.access(exp.exp));
@@ -1980,7 +1980,7 @@ public
         str := stringAppendList(strl);
       end if;
     else
-      str := "(" + toFlatString(exp) + Subscript.toFlatStringList(subscripts) + ")";
+      str := "(" + toFlatString(exp) + ")" + Subscript.toFlatStringList(subscripts);
     end if;
   end toFlatSubscriptedString;
 

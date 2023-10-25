@@ -1696,7 +1696,7 @@ factor returns [void* ast]
 
 primary returns [void* ast]
 @declarations { int tupleExpressionIsTuple = 0; }
-@init { v = 0; for_or_el.isFor = 0; OM_PUSHZ3(ptr.ast, el, for_or_el.ast) } :
+@init { v = 0; for_or_el.isFor = 0; OM_PUSHZ4(ptr.ast, el, subs, for_or_el.ast) } :
   ( v=UNSIGNED_INTEGER
     {
       char* chars = (char*)$v.text->chars;
@@ -1785,14 +1785,25 @@ primary returns [void* ast]
   | ptr=component_reference__function_call { $ast = ptr.ast; }
   | DER el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("der"), mmc_mk_nil()),el,mmc_mk_nil()); }
   | PURE el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("pure"), mmc_mk_nil()),el,mmc_mk_nil()); }
-  | LPAR el=output_expression_list[&tupleExpressionIsTuple]
+  | LPAR el=output_expression_list[&tupleExpressionIsTuple] subs=array_subscripts?
     {
-      $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
+      if (subs) {
+        if (tupleExpressionIsTuple) {
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Tuple expression can not be subscripted.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        } else {
+          $ast = Absyn__SUBSCRIPTED_5fEXP(el, subs);
+        }
+      } else {
+        $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
 #if defined(OMC_BOOTSTRAPPING)
-      el;
+        el;
 #else
-      Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
+        Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
 #endif
+      }
     }
   | LBRACK el=matrix_expression_list RBRACK { $ast = Absyn__MATRIX(el); }
   | LBRACE for_or_el=for_or_expression_list RBRACE
