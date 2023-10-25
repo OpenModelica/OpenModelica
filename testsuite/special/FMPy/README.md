@@ -6,7 +6,7 @@ Build FMUs from [../FmuExportCrossCompile/](../FmuExportCrossCompile):
 make compile_FMUs
 ```
 
-Re-compile each FMU with FMPy and simulate it:
+Remove binaries from FMU, re-compile each FMU with FMPy and simulate it:
 
 ```bash
 make test

@@ -17,9 +17,19 @@ test: $(FMU)
 %.fmu:
 	@echo -----------------------------------------------------------------------
 	@echo $@
-	$(FMPY_CALL) compile $(FMU_DIRECTORY)/$@
-	$(FMPY_CALL) simulate $(FMU_DIRECTORY)/$@
+  # Remove binaries
+	unzip -qq $(FMU_DIRECTORY)/$@ -d $@_FMU/
+	rm -rf $@_FMU/binaries
+	cd $@_FMU/; zip -qqr ../$@ *
+	rm -rf $@_FMU/
+  # Compile sources and simulate
+	$(FMPY_CALL) compile $@
+	$(FMPY_CALL) simulate $@
 	@echo -----------------------------------------------------------------------
 
 compile_FMUs:
 	make -C ../FmuExportCrossCompile
+
+clean:
+	rm -f $(FMU)
+	rm -rf $(addsuffix _FMU/,$(FMU))
