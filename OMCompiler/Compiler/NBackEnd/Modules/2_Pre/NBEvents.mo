@@ -186,7 +186,7 @@ public
           (iter, range) := Equation.Iterator.getFrames(iterator);
           // lower the subscripts (containing iterators)
           lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
-          aux_eqn := Equation.makeAssignment(lhs_cref, rhs, idx, context, Iterator.fromFrames(List.zip(iter, range)), EquationAttributes.default(EquationKind.DISCRETE, false));
+          aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), rhs, idx, context, Iterator.fromFrames(List.zip(iter, range)), EquationAttributes.default(EquationKind.DISCRETE, false));
           auxiliary_vars := aux_var :: auxiliary_vars;
           auxiliary_eqns := aux_eqn :: auxiliary_eqns;
         end if;

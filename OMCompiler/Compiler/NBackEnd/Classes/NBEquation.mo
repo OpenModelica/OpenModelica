@@ -822,7 +822,7 @@ public
     end getSolvedVar;
 
     function makeAssignment
-      input ComponentRef lhs;
+      input Expression lhs;
       input Expression rhs;
       input Pointer<Integer> idx;
       input String str;
@@ -831,38 +831,56 @@ public
       output Pointer<Equation> eq;
     protected
       Equation e;
-      Type ty = ComponentRef.getSubscriptedType(lhs, true);
+      Type ty = Expression.typeOf(lhs);
     algorithm
-      if Iterator.isEmpty(iter) then
-        if Type.isArray(ty) then
-          eq := Pointer.create(ARRAY_EQUATION(
+      // match type and create equation accordingly
+      e := match ty
+        case Type.ARRAY() then ARRAY_EQUATION(
             ty          = ty,
-            lhs         = Expression.fromCref(lhs),
+            lhs         = lhs,
             rhs         = rhs,
             source      = DAE.emptyElementSource,
             attr        = attr,
             recordSize  = NONE()
-          ));
-        else
-          eq := Pointer.create(SCALAR_EQUATION(
+          );
+        case Type.TUPLE() then RECORD_EQUATION(
+            ty          = ty,
+            lhs         = lhs,
+            rhs         = rhs,
+            source      = DAE.emptyElementSource,
+            attr        = attr,
+            recordSize  = Type.sizeOf(ty)
+          );
+        case Type.COMPLEX() then RECORD_EQUATION(
+            ty          = ty,
+            lhs         = lhs,
+            rhs         = rhs,
+            source      = DAE.emptyElementSource,
+            attr        = attr,
+            recordSize  = Type.sizeOf(ty)
+          );
+        else SCALAR_EQUATION(
             ty      = ty,
-            lhs     = Expression.fromCref(lhs),
+            lhs     = lhs,
             rhs     = rhs,
             source  = DAE.emptyElementSource,
             attr    = attr
-          ));
-        end if;
-      else
+          );
+      end match;
+
+      // create for-loop around it if there is an iterator
+      if not Iterator.isEmpty(iter) then
         e := FOR_EQUATION(
-          size    = ComponentRef.size(lhs),
+          size    = Type.sizeOf(ty),
           iter    = iter,
-          body    = {SCALAR_EQUATION(ty, Expression.fromCref(lhs), rhs, DAE.emptyElementSource, attr)}, // this can also be an array?
+          body    = {e},
           source  = DAE.emptyElementSource,
           attr    = attr
         );
         // inline if it has size 1
-        eq := Pointer.create(Inline.inlineForEquation(e));
+        e := Inline.inlineForEquation(e);
       end if;
+      eq := Pointer.create(e);
       Equation.createName(eq, idx, str);
     end makeAssignment;
 

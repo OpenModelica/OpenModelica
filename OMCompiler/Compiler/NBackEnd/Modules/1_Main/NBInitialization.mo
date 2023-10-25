@@ -192,7 +192,7 @@ public
 
         // make the new start equation
         kind := if BVariable.isContinuous(state) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-        start_eq := Equation.makeAssignment(name, start_exp, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
+        start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
         Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
       then ();
 
@@ -326,7 +326,7 @@ public
 
     // make the new start equation
     kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-    start_eq := Equation.makeAssignment(name, start_exp, idx, NBEquation.START_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
+    start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
       (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
@@ -348,7 +348,7 @@ public
       pre := BVariable.getPrePost(var_ptr);
       if Util.isSome(pre) then
         kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-        pre_eq := Equation.makeAssignment(BVariable.getVarName(var_ptr), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
+        pre_eq := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var_ptr)), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
         Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
       end if;
     end if;
@@ -386,7 +386,7 @@ public
         name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
 
         kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-        pre_eq := Equation.makeAssignment(name, Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
+        pre_eq := Equation.makeAssignment(Expression.fromCref(name), Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
 
         if not listEmpty(var_slice.indices) then
           // empty list indicates full array, slice otherwise
