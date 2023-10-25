@@ -874,7 +874,7 @@ public
       // create for-loop around it if there is an iterator
       if not Iterator.isEmpty(iter) then
         e := FOR_EQUATION(
-          size    = Type.sizeOf(ty),
+          size    = Type.sizeOf(ty) * Iterator.size(iter),
           iter    = iter,
           body    = {e},
           source  = DAE.emptyElementSource,
