@@ -223,6 +223,7 @@ public
       Integer multi_algorithm;
       Integer multi_when;
       Integer multi_if;
+      Integer multi_tpl;
       Integer generic_for;
       Integer entwined_for;
       Integer loop_lin;
@@ -248,10 +249,11 @@ public
 
       case StrongComponent.MULTI_COMPONENT() algorithm
         _ := match Pointer.access(comp.eqn)
-          case Equation.ALGORITHM()     algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
-          case Equation.WHEN_EQUATION() algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
-          case Equation.IF_EQUATION()   algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
-          else                          algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");              then ();
+          case Equation.ALGORITHM()       algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
+          case Equation.WHEN_EQUATION()   algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
+          case Equation.IF_EQUATION()     algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
+          case Equation.RECORD_EQUATION() algorithm collector.multi_tpl := collector.multi_tpl + 1; Pointer.update(collector_ptr, collector);               then ();
+          else                            algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");              then ();
         end match;
       then ();
 

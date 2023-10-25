@@ -150,15 +150,53 @@ protected
     represents the auxilliary variable that will be created and has
     the equation kind for auxilliary equation."
     record CALL_AUX
-      ComponentRef name;
+      Expression replacer;
       EquationKind kind;
       Boolean parsed;
     end CALL_AUX;
 
     function toString
       input Call_Aux aux;
-      output String str = ComponentRef.toString(aux.name);
+      output String str = Expression.toString(aux.replacer);
     end toString;
+
+    function getVars
+      input Call_Aux aux;
+      output list<Pointer<Variable>> vars = getVarsExp(aux.replacer);
+    protected
+      function getVarsExp
+        input Expression exp;
+        output list<Pointer<Variable>> vars;
+      algorithm
+        vars := match exp
+          case Expression.CREF() then {BVariable.getVarPointer(exp.cref)};
+          case Expression.TUPLE() then List.flatten(list(getVarsExp(elem) for elem in exp.elements));
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because function alias auxilliary has a return type that currently cannot be parsed: " + Expression.toString(exp)});
+          then fail();
+        end match;
+      end getVarsExp;
+    end getVars;
+
+    function createName
+      input Type ty;
+      input Iterator iter;
+      input Pointer<Integer> index;
+      input Boolean init;
+      output ComponentRef name;
+    protected
+      Type new_ty = ty;
+    algorithm
+      if not Iterator.isEmpty(iter) then
+        new_ty := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(iter)));
+        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), new_ty, init);
+        // add iterators to subscripts of auxilliary variable
+        name      := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(iter), name, true, true);
+      else
+        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), new_ty, init);
+      end if;
+      Pointer.update(index, Pointer.access(index) + 1);
+    end createName;
   end Call_Aux;
 
   function functionAliasTplString
@@ -184,9 +222,9 @@ protected
       local
         Call_Id id;
         Call_Aux aux;
-        Boolean disc;
+        Boolean disc = true;
         Pointer<Equation> new_eqn;
-        Pointer<Variable> new_var;
+        list<Pointer<Variable>> new_vars;
 
       case EqData.EQ_DATA_SIM() algorithm
         // first collect all new functions from simulation equations
@@ -194,17 +232,26 @@ protected
 
         // create new simulation variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
-          (id, aux)       := tpl;
-          new_var         := BVariable.getVarPointer(aux.name);
-          new_eqn         := Equation.makeAssignment(aux.name, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
-          if BVariable.isContinuous(new_var) then
-            new_vars_cont := new_var :: new_vars_cont;
-            new_eqns_cont := new_eqn :: new_eqns_cont;
-          else
-            new_vars_disc := new_var :: new_vars_disc;
+          (id, aux) := tpl;
+          new_vars  := Call_Aux.getVars(aux);
+          for new_var in new_vars loop
+            if BVariable.isContinuous(new_var) then
+              disc := false;
+              new_vars_cont := new_var :: new_vars_cont;
+            else
+              new_vars_disc := new_var :: new_vars_disc;
+            end if;
+          end for;
+
+          // if any of the created variables is continuous, so is the equation
+          new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
+          if disc then
             new_eqns_disc := new_eqn :: new_eqns_disc;
+          else
+            new_eqns_cont := new_eqn :: new_eqns_cont;
           end if;
-          aux.parsed      := true;
+
+          aux.parsed := true;
           UnorderedMap.add(id, aux, map);
         end for;
 
@@ -219,11 +266,16 @@ protected
         for tpl in listReverse(UnorderedMap.toList(map)) loop
           // only create new var and eqn if there is not already one in the simulation system
           if not aux.parsed then
-            (id, aux)       := tpl;
+            (id, aux) := tpl;
+
             // unfix parameters in initial system because we also add an equation
-            new_var         := BVariable.setFixed(BVariable.getVarPointer(aux.name), false);
-            new_eqn         := Equation.makeAssignment(aux.name, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
-            new_vars_init := new_var :: new_vars_init;
+            new_vars := Call_Aux.getVars(aux);
+            for new_var in new_vars loop
+              new_var := BVariable.setFixed(new_var, false);
+              new_vars_init := new_var :: new_vars_init;
+            end for;
+
+            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
             new_eqns_init := new_eqn :: new_eqns_init;
           end if;
         end for;
@@ -292,7 +344,8 @@ protected
         Type ty;
         Call_Aux aux;
         Option<Call_Aux> aux_opt;
-        Expression new_exp;
+        Expression new_exp, elem;
+        list<ComponentRef> names;
 
       case Expression.CALL() guard(checkCallReplacement(exp.call)) algorithm
         // strip nested iterator for the iterators that actually occure in the function call
@@ -304,27 +357,34 @@ protected
           new_iter := iter;
         end if;
         // check if call id already exists in the map
-        id                  := CALL_ID(exp, new_iter);
-        aux_opt             := UnorderedMap.get(id, map);
+        id      := CALL_ID(exp, new_iter);
+        aux_opt := UnorderedMap.get(id, map);
         if isSome(aux_opt) then
           aux := Util.getOption(aux_opt);
+          new_exp := aux.replacer;
         else
           // for initial systems create parameters, otherwise use type to determine variable kind
           ty := Expression.typeOf(exp);
-          if not Iterator.isEmpty(new_iter) then
-            ty := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(new_iter)));
-            (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), ty, init);
-            // add iterators to subscripts of auxilliary variable
-            name      := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(new_iter), name, true, true);
-          else
-            (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), ty, init);
-          end if;
-          aux := CALL_AUX(name, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
-          UnorderedMap.add(id, aux, map);
-          Pointer.update(index, Pointer.access(index) + 1);
+          new_exp := match ty
+            case Type.TUPLE() algorithm
+              names := list(Call_Aux.createName(sub_ty, new_iter, index, init) for sub_ty in ty.types);
+            then Expression.TUPLE(ty, list(Expression.fromCref(cref) for cref in names));
+            else algorithm
+              name := Call_Aux.createName(ty, new_iter, index, init);
+            then Expression.fromCref(name);
+          end match;
         end if;
-        new_exp := Expression.fromCref(aux.name);
+
+        // create auxilliary and add to map
+        aux := CALL_AUX(new_exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
+        UnorderedMap.add(id, aux, map);
       then new_exp;
+
+      // remove tuple expressions that occur when using a function only for its first output
+      // y = fun(x)[1] where fun() has multiple outputs
+      // we create y = ($FUN1, $FUN2)[1] and simplify to y = $FUN1
+      case Expression.TUPLE_ELEMENT(tupleExp = Expression.TUPLE(elements = elem :: _), index = 1)
+      then elem;
 
       // do nothing if not function call or inlineable
       else exp;

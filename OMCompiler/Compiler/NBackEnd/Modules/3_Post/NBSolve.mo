@@ -392,6 +392,7 @@ public
     (eqn, funcTree, status) := match eqn
       local
         IfEquationBody if_body;
+        Expression lhs, rhs;
 
       case Equation.IF_EQUATION() algorithm
         (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, systemType, implicit_index, slicing_map);
@@ -403,6 +404,19 @@ public
 
       // for now assume they are solved
       case Equation.WHEN_EQUATION() then (eqn, funcTree, Status.EXPLICIT);
+
+      // solve tuple equations
+      case Equation.RECORD_EQUATION() algorithm
+        (lhs, rhs, status) := match (eqn.lhs, eqn.rhs)
+          local
+            Expression exp;
+          case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars)) then (eqn.lhs, eqn.rhs, Status.EXPLICIT);
+          case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars)) then (eqn.rhs, eqn.lhs, Status.EXPLICIT);
+          else (eqn.lhs, eqn.rhs, Status.IMPLICIT);
+        end match;
+        eqn.lhs := lhs;
+        eqn.rhs := rhs;
+      then (eqn, funcTree, status);
 
       else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for equation:\n" + Equation.toString(eqn)});
@@ -633,6 +647,37 @@ protected
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
   end solveLinear;
+
+  function tupleSolvable
+    "checks if the tuple expression exactly represents the variables we need to solve for"
+    input list<Expression> tuple_exps;
+    input list<Pointer<Variable>> vars;
+    output Boolean b = false;
+  protected
+    UnorderedMap<ComponentRef, Boolean> map;
+    function boolID
+      input output Boolean b;
+    end boolID;
+  algorithm
+    if listLength(tuple_exps) == listLength(vars) then
+      map := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
+      // add all variables to solve for
+      for var in vars loop
+        UnorderedMap.add(BVariable.getVarName(var), false, map);
+      end for;
+      // set the map entry for all variables that occur to true
+      for exp in tuple_exps loop
+        _ := match exp
+          case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
+            UnorderedMap.add(exp.cref, true, map);
+          then ();
+          else algorithm return; then ();
+        end match;
+      end for;
+      // check if all variables occured
+      b := List.all(UnorderedMap.valueList(map), boolID);
+    end if;
+  end tupleSolvable;
 
   annotation(__OpenModelica_Interface="backend");
 end NBSolve;
