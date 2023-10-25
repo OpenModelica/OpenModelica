@@ -3471,10 +3471,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   QString modelInstanceJson = "";
   if (icon) {
-    modelInstanceJson = mpOMCInterface->getModelInstanceIcon(className, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstanceAnnotation(className, {"Icon", "IconMap"}, prettyPrint);
     if (modelInstanceJson.isEmpty()) {
       if (MainWindow::instance()->isDebug()) {
-        QString msg = QString("<b>getModelInstanceIcon(%1, %2)</b> failed. Using <b>getModelInstance(%1, %2)</b>.").arg(className).arg(prettyPrint ? "true" : "false");
+        QString msg = QString("<b>getModelInstanceAnnotation(%1, {\"Icon\", \"IconMap\"}, %2)</b> failed. Using <b>getModelInstance(%1, %2)</b>.").arg(className).arg(prettyPrint ? "true" : "false");
         MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
         MessagesWidget::instance()->addGUIMessage(messageItem);
         printMessagesStringInternal();
