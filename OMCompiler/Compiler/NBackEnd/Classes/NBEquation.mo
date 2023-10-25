@@ -2806,16 +2806,19 @@ public
       input output String str = "";
       input Boolean printEmpty = true;
     protected
-      Integer numberOfElements = EquationPointers.size(equations);
-      Integer length = 10;
+      Integer luI = lastUsedIndex(equations);
+      Integer length = 10, current_index = 1;
       String index;
     algorithm
-      if printEmpty or numberOfElements > 0 then
-        str := StringUtil.headline_4(str + " Equations (" + intString(numberOfElements) + "/" + intString(scalarSize(equations)) + ")");
-        for i in 1:numberOfElements loop
-          index := "(" + intString(i) + ")";
-          index := index + StringUtil.repeat(" ", length - stringLength(index));
-          str := str + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), index) + "\n";
+      if printEmpty or luI > 0 then
+        str := StringUtil.headline_4(str + " Equations (" + intString(EquationPointers.size(equations)) + "/" + intString(scalarSize(equations)) + ")");
+        for i in 1:luI loop
+          if ExpandableArray.occupied(i, equations.eqArr) then
+            index := "(" + intString(current_index) + ")";
+            index := index + StringUtil.repeat(" ", length - stringLength(index));
+            str := str + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), index) + "\n";
+            current_index := current_index + 1;
+          end if;
         end for;
         str := str + "\n";
       else
@@ -2862,6 +2865,12 @@ public
         sz := sz + Equation.size(eqn_ptr);
       end for;
     end scalarSize;
+
+    function lastUsedIndex
+      "returns the last used index != size!"
+      input EquationPointers equations;
+      output Integer sz = ExpandableArray.getLastUsedIndex(equations.eqArr);
+    end lastUsedIndex;
 
     function toList
       "Creates a EquationPointer list from EquationPointers."
@@ -3367,7 +3376,7 @@ public
 
         case EQ_DATA_EMPTY() then "Empty equation Data!\n";
 
-      else getInstanceName() + " failed!\n";
+        else getInstanceName() + " failed!\n";
       end match;
     end toString;
 
