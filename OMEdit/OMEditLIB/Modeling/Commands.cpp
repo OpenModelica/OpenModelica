@@ -333,8 +333,9 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Ele
 void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && mMoveConnectorsTogether &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+      && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
+          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -374,8 +375,9 @@ void UpdateComponentTransformationsCommand::redoInternal()
 void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && mMoveConnectorsTogether &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+      && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
+          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
