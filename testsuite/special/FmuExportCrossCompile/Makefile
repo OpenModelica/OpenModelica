@@ -4,13 +4,10 @@
 # all cross-compilation targets (including OSX)
 # fmuCheck.linux32 fmuCheck.linux64 fmuCheck.win32.exe fmuCheck.win64.exe
 
-ifeq ($(test -e ../../../build/install_cmake/bin/omc),0)
-  OMC=../../../build/install_cmake/bin/omc
-else ifeq ($(test -e ../../../build_cmake/install_cmake/bin/omc),0)
-  OMC=../../../build_cmake/install_cmake/bin/omc
-else
-  OMC=../../../build/bin/omc
-endif
+# I hate if conditions in make...
+OMC = $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
+              || test -e ../../../build_cmake/install_cmake/bin/omc && echo ../../../build_cmake/install_cmake/bin/omc \
+              || ../../../build/bin/omc)
 
 test: clean
 	$(MAKE) fmuExportCrossCompile
