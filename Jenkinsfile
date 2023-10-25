@@ -659,7 +659,7 @@ pipeline {
           agent {
             docker {
               label 'linux'
-              image 'docker.openmodelica.org/fmpy:v0.3.18'
+              image 'anheuermann/fmpy:v0.3.18'
             }
           }
           when {
@@ -671,11 +671,11 @@ pipeline {
           }
           steps {
             echo "${env.NODE_NAME}"
-            sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             sh '''
             export HOME="$PWD"
             cd testsuite/special/FMPy/
+            make clean
             make test
             '''
           }
