@@ -623,7 +623,7 @@ pipeline {
 
       }
     }
-    stage('fmuchecker + OMEdit testsuite') {
+    stage('fmuchecker + FMPy + OMEdit testsuite') {
       parallel {
         stage('linux-wine-fmuchecker') {
           agent {
@@ -653,6 +653,31 @@ pipeline {
             ./single-fmu-run.sh win32 `cat VERSION`
             '''
             stash name: 'cross-fmu-results-linux-wine', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
+          }
+        }
+        stage('linux-FMPy') {
+          agent {
+            docker {
+              label 'linux'
+              image 'anheuermann/fmpy:v0.3.18'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            skipDefaultCheckout true
+          }
+          steps {
+            echo "${env.NODE_NAME}"
+            unstash 'cross-fmu'
+            sh '''
+            export HOME="$PWD"
+            cd testsuite/special/FMPy/
+            make clean
+            make test
+            '''
           }
         }
         stage('osx-fmuchecker') {

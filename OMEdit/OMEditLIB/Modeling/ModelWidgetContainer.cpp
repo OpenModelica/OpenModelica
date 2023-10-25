@@ -923,7 +923,7 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   ModelInstance::Component *pComponent = new ModelInstance::Component(pModelInstance);
   pComponent->setName(name);
   pComponent->setType(className);
-  /* We use getModelInstanceIcon here for bettter performance
+  /* We use getModelInstanceAnnotation here for bettter performance
    * This model will be updated right after this so it doesn't matter if the Component has complete model or not.
    */
   pComponent->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", false, true)));

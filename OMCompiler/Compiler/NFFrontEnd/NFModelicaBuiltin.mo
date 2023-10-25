@@ -4760,14 +4760,15 @@ function getModelInstance
 external "builtin";
 end getModelInstance;
 
-function getModelInstanceIcon
-  "Dumps only the Icon and IconMap annotations of a model, using the same JSON
-   format as getModelInstance."
+function getModelInstanceAnnotation
+  "Dumps the annotation of a model using the same JSON format as
+   getModelInstance, optionally filtering out only certain parts."
   input TypeName className;
+  input String[:] filter = fill("", 0);
   input Boolean prettyPrint = false;
   output String result;
 external "builtin";
-end getModelInstanceIcon;
+end getModelInstanceAnnotation;
 
 function modifierToJSON
   "Parses a modifier given as a string and dumps it as JSON."
