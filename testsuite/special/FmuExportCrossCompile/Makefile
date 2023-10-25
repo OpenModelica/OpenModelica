@@ -6,7 +6,7 @@
 
 ifeq ($(test -e ../../../build/install_cmake/bin/omc),0)
   OMC=../../../build/install_cmake/bin/omc
-else ifneq ($(test -e ../../../build_cmake/install_cmake/bin/omc),0)
+else ifeq ($(test -e ../../../build_cmake/install_cmake/bin/omc),0)
   OMC=../../../build_cmake/install_cmake/bin/omc
 else
   OMC=../../../build/bin/omc
