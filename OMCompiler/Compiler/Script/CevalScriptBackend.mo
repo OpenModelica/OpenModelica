@@ -3118,8 +3118,8 @@ algorithm
     case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.BOOL(b)})
       then NFApi.getModelInstance(classpath, str, b);
 
-    case ("getModelInstanceIcon", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
-      then NFApi.getModelInstanceIcon(classpath, b);
+    case ("getModelInstanceAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), v as Values.ARRAY(), Values.BOOL(b)})
+      then NFApi.getModelInstanceAnnotation(classpath, ValuesUtil.arrayValueStrings(v), b);
 
     case ("modifierToJSON", {Values.STRING(str), Values.BOOL(b)})
       then NFApi.modifierToJSON(str, b);

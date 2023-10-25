@@ -888,8 +888,9 @@ algorithm
   Inst.clearCaches();
 end getModelInstance;
 
-function getModelInstanceIcon
+function getModelInstanceAnnotation
   input Absyn.Path classPath;
+  input list<String> filter;
   input Boolean prettyPrint;
   output Values.Value res;
 protected
@@ -904,10 +905,10 @@ algorithm
   cls_node := Inst.lookupRootClass(classPath, top, context);
   cls_node := InstNode.resolveInner(cls_node);
 
-  json := dumpJSONInstanceIcon(cls_node);
+  json := dumpJSONInstanceAnnotation(cls_node, filter);
   res := Values.STRING(JSON.toString(json, prettyPrint));
   Inst.clearCaches();
-end getModelInstanceIcon;
+end getModelInstanceAnnotation;
 
 function parseModifier
   input String modifierValue;
@@ -1108,8 +1109,9 @@ algorithm
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
 
-function dumpJSONInstanceIcon
+function dumpJSONInstanceAnnotation
   input InstNode node;
+  input list<String> filter;
   output JSON json = JSON.makeNull();
 protected
   Option<SCode.Comment> cmt;
@@ -1136,7 +1138,7 @@ algorithm
     j := JSON.emptyArray();
 
     for ext in exts loop
-      j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
+      j := JSON.addElement(dumpJSONInstanceAnnotationExtends(ext, filter), j);
     end for;
 
     json := JSON.addPair("elements", j, json);
@@ -1147,8 +1149,11 @@ algorithm
   cmt := match cmt
     case SOME(SCode.Comment.COMMENT(annotation_ = SOME(ann as SCode.Annotation.ANNOTATION())))
       algorithm
-        ann.modification := SCodeUtil.filterSubMods(ann.modification,
-          function SCodeUtil.filterGivenSubModNames(namesToKeep = {"Icon", "IconMap"}));
+        if not listEmpty(filter) then
+          ann.modification := SCodeUtil.filterSubMods(ann.modification,
+            function SCodeUtil.filterGivenSubModNames(namesToKeep = filter));
+        end if;
+
         annotation_is_literal := SCodeUtil.onlyLiteralsInMod(ann.modification);
       then
         if SCodeUtil.isEmptyMod(ann.modification) then NONE() else SOME(SCode.Comment.COMMENT(SOME(ann), NONE()));
@@ -1172,15 +1177,16 @@ algorithm
   end if;
 
   json := dumpJSONCommentOpt(cmt, scope, json, failOnError = true);
-end dumpJSONInstanceIcon;
+end dumpJSONInstanceAnnotation;
 
-function dumpJSONInstanceIconExtends
+function dumpJSONInstanceAnnotationExtends
   input InstNode ext;
+  input list<String> filter;
   output JSON json = JSON.makeNull();
 algorithm
   json := JSON.addPair("$kind", JSON.makeString("extends"), json);
-  json := JSON.addPair("baseClass", dumpJSONInstanceIcon(ext), json);
-end dumpJSONInstanceIconExtends;
+  json := JSON.addPair("baseClass", dumpJSONInstanceAnnotation(ext, filter), json);
+end dumpJSONInstanceAnnotationExtends;
 
 function dumpJSONNodePath
   input InstNode node;
