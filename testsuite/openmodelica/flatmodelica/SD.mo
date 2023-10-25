@@ -58,7 +58,7 @@ end SD;
 //   'c.x'[:,'c.N'[:]] = 'c.c.f'[:];
 //
 //   for '$i1' in 1:3 loop
-//     for 'i' in 2:({3, 4, 5}['$i1']) loop
+//     for 'i' in 2:({3, 4, 5})['$i1'] loop
 //       'c.x'['$i1','i'] = 'c.x'['$i1','i' - 1] + 'c.p'['$i1'];
 //     end for;
 //   end for;
