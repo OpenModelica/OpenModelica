@@ -3471,10 +3471,11 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   QString modelInstanceJson = "";
   if (icon) {
-    modelInstanceJson = mpOMCInterface->getModelInstanceAnnotation(className, {"Icon", "IconMap"}, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstanceAnnotation(className, {"Icon", "IconMap", "Diagram", "DiagramMap"}, prettyPrint);
     if (modelInstanceJson.isEmpty()) {
       if (MainWindow::instance()->isDebug()) {
-        QString msg = QString("<b>getModelInstanceAnnotation(%1, {\"Icon\", \"IconMap\"}, %2)</b> failed. Using <b>getModelInstance(%1, %2)</b>.").arg(className).arg(prettyPrint ? "true" : "false");
+        QString msg = QString("<b>getModelInstanceAnnotation(%1, {\"Icon\", \"IconMap\", \"Diagram\", \"DiagramMap\"}, %2)</b> failed. Using <b>getModelInstance(%1, %2)</b>.")
+                      .arg(className).arg(prettyPrint ? "true" : "false");
         MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
         MessagesWidget::instance()->addGUIMessage(messageItem);
         printMessagesStringInternal();
@@ -3488,7 +3489,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
   }
 
   if (MainWindow::instance()->isNewApiProfiling()) {
-    const QString api = icon ? "getModelInstanceIcon" : "getModelInstance";
+    const QString api = icon ? "getModelInstanceAnnotation" : "getModelInstance";
     double elapsed = (double)timer.elapsed() / 1000.0;
     MainWindow::instance()->writeNewApiProfiling(QString("Time for %1 %2 secs").arg(api, QString::number(elapsed, 'f', 6)));
   }
