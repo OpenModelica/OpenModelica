@@ -145,9 +145,9 @@ public
     algorithm
       if not isEmpty(eventInfo) then
         str := StringUtil.headline_2("Event Info") + "\n";
-        str := str + UnorderedSet.toString(eventInfo.time_set, function TimeEvent.toString(printIndex = true), "Time Events") + "\n";
-        str := str + UnorderedMap.toString(eventInfo.time_map, Condition.toString, CompositeEvent.toString, "Composite Events") + "\n";
-        str := str + UnorderedMap.toString(eventInfo.state_map, Condition.toString, StateEvent.toString, "Composite Events") + "\n\n";
+        str := str + StringUtil.headline_4("Time Events") + UnorderedSet.toString(eventInfo.time_set, function TimeEvent.toString(printIndex = true)) + "\n\n";
+        str := str + StringUtil.headline_4("Composite Events") + UnorderedMap.toString(eventInfo.time_map, Condition.toString, CompositeEvent.toString) + "\n\n";
+        str := str + StringUtil.headline_4("State Events") + UnorderedMap.toString(eventInfo.state_map, Condition.toString, StateEvent.toString) + "\n\n";
       end if;
     end toString;
 
@@ -266,8 +266,8 @@ public
       str := match timeEvent
         case SINGLE() guard(not printIndex) then "time > " + Expression.toString(timeEvent.trigger);
         case SAMPLE() guard(not printIndex) then "sample(" + intString(timeEvent.index) + ", " + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")";
-        case SINGLE() then "\t(" + intString(timeEvent.index) + ") time > " + Expression.toString(timeEvent.trigger);
-        case SAMPLE() then "\t(" + intString(timeEvent.index) + ") sample(" + intString(timeEvent.index) + ", " + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")";
+        case SINGLE() then "(" + intString(timeEvent.index) + ") time > " + Expression.toString(timeEvent.trigger);
+        case SAMPLE() then "(" + intString(timeEvent.index) + ") sample(" + intString(timeEvent.index) + ", " + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
         then fail();

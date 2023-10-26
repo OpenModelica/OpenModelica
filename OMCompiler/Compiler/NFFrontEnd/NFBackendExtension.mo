@@ -1320,6 +1320,9 @@ public
               then ();
               // do not create a notification for TearingSelect since its parsed in attributes
               case SCode.NAMEMOD(ident = "TearingSelect") then ();
+              // do not create a notification for the following since they are handled in the frontend
+              case SCode.NAMEMOD(ident = "Placement") then ();
+              case SCode.NAMEMOD(ident = "Dialog") then ();
               else algorithm
                 Error.addCompilerNotification("Could not parse annotation \"" + submod.ident + "\" in the backend.");
               then ();
