@@ -798,12 +798,9 @@ protected
       UnorderedSet<TimeEvent> time_set                  "tracks compact time events (SINGLE or SAMPLE)";
       UnorderedMap<Condition, CompositeEvent> time_map  "tracks full time events of the form $TEV_11 = ...";
       UnorderedMap<Condition, StateEvent> state_map     "tracks full state events of the form $SEV_4 = ...";
-      //TimeEventSet.Tree timeEventSet        "tracks compact time events (SINGLE or SAMPLE)";
-      //TimeEventTree.Tree timeEventTree      "tracks full time events of the form $TEV_11 = ...";
-      //StateEventTree.Tree stateEventTree    "tracks full state events of the form $SEV_4 = ...";
-      Integer timeEventIndex                "used for internal indexing of time events";
-      Integer auxiliaryTimeEventIndex       "used for indexing new $TEV vars";
-      Integer auxiliaryStateEventIndex      "used for indexing new $SEV vars";
+      Integer timeEventIndex                            "used for internal indexing of time events";
+      Integer auxiliaryTimeEventIndex                   "used for indexing new $TEV vars";
+      Integer auxiliaryStateEventIndex                  "used for indexing new $SEV vars";
     end BUCKET;
   end Bucket;
 
