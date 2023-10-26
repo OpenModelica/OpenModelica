@@ -181,8 +181,8 @@ public:
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCalculateDataReconciliationAction() {return mpCalculateDataReconciliationAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
+  QAction* getExportReadonlyPackageAction() {return mpExportReadonlyPackageAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
-  QAction* getExportRealonlyPackageAction() {return mpExportReadonlyPackageAction;}
   QAction* getExportXMLAction() {return mpExportXMLAction;}
   QAction* getExportFigaroAction() {return mpExportFigaroAction;}
   QAction* getLineShapeAction() {return mpLineShapeAction;}

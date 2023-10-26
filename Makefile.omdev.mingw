@@ -90,7 +90,7 @@ omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omedit: omparser omplot omsimulator qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
 
 omedit-testsuite: omedit testsuite-depends
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite OMBUILDDIR=$(OMBUILDDIR)
