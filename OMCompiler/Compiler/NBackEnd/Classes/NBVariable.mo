@@ -975,6 +975,7 @@ public
     var := fromCref(var_cref, NFAttributes.IMPL_DISCRETE_ATTR);
     // update the variable to be discrete and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
+    var.backendinfo := BackendExtension.BackendInfo.setHideResult(var.backendinfo, true);
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeEventVar;

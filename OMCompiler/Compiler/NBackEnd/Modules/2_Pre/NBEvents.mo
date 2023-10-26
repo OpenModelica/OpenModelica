@@ -218,7 +218,7 @@ public
         time_set          = UnorderedSet.new(TimeEvent.hash, TimeEvent.isEqual),
         time_map          = UnorderedMap.new<CompositeEvent>(Condition.hash, Condition.isEqual),
         state_map         = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual),
-        numberMathEvents  = 0 // ToDo
+        numberMathEvents  = 0
       );
     end empty;
 
@@ -352,38 +352,50 @@ public
       input FunctionTree funcTree         "function tree for differentiation (solve)";
       output Boolean failed               "true if it did not work to create a compact time event";
     protected
-      Expression new_exp;
+      Expression new_exp = exp;
     algorithm
       (exp, failed) := match exp
           local
             Equation tmpEqn;
             Solve.Status status;
             Call call;
-            Boolean invert;
+            Expression trigger;
             TimeEvent timeEvent;
             Pointer<Boolean> containsTime = Pointer.create(false);
 
-        case new_exp as Expression.RELATION()
+        // check for "sample" call
+        case new_exp as Expression.CALL() algorithm
+          (call, bucket, failed) := createSample(new_exp.call, bucket);
+          new_exp.call := call;
+        then (new_exp, failed);
+
+        // try to extract single time event
+        case Expression.RELATION()
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.RELATION)
           algorithm
             // create auxiliary equation and solve for TIME
-            tmpEqn := Pointer.access(Equation.fromLHSandRHS(new_exp.exp1, new_exp.exp2, Pointer.create(0), "TMP"));
+            tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
             _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
-              (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
+              (tmpEqn, _, status, _) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
               if status == NBSolve.Status.EXPLICIT then
-                // save simplified binary
-                new_exp.exp1 := Equation.getLHS(tmpEqn);
-                new_exp.exp2 := Equation.getRHS(tmpEqn);
-                if invert then
-                  new_exp.operator := Operator.invert(new_exp.operator);
-                  // ToDo: Operator cannot be < or <= after inversion, because it has been solved for time -> fail()?
-                end if;
-                timeEvent := SINGLE(bucket.timeEventIndex, new_exp.exp2);
+                // create and add the time event
+                trigger := Equation.getRHS(tmpEqn);
+                timeEvent := SINGLE(bucket.timeEventIndex, trigger);
                 if not UnorderedSet.contains(timeEvent, bucket.time_set) then
                   bucket.timeEventIndex := bucket.timeEventIndex + 1;
                   UnorderedSet.add(timeEvent, bucket.time_set);
                 end if;
+
+                // replace the original expression with the sample call
+                // only do this for when equations? if equations don't trigger like this with sample
+                new_exp := Expression.CALL(Call.makeTypedCall(
+                  fn          = NFBuiltinFuncs.SAMPLE,
+                  args        = {Expression.INTEGER(TimeEvent.getIndex(timeEvent) + 1), trigger, Expression.REAL(BuiltinSystem.intMaxLit())},
+                  variability = NFPrefixes.Variability.DISCRETE,
+                  purity      = NFPrefixes.Purity.PURE
+                ));
+
                 failed := false;
               else
                 failed := true;
@@ -391,11 +403,6 @@ public
             else
               failed := true;
             end if;
-        then (new_exp, failed);
-
-        case new_exp as Expression.CALL() algorithm
-          (call, bucket, failed) := createSample(new_exp.call, bucket);
-          new_exp.call := call;
         then (new_exp, failed);
 
         else (exp, true);
@@ -420,7 +427,7 @@ public
               UnorderedSet.add(timeEvent, bucket.time_set);
             end if;
             // add index to sample interface
-            call := Call.setArguments(call, {Expression.INTEGER(TimeEvent.getIndex(timeEvent)), start, interval});
+            call := Call.setArguments(call, {Expression.INTEGER(TimeEvent.getIndex(timeEvent) + 1), start, interval});
         then false;
 
           case ("sample", _) algorithm
