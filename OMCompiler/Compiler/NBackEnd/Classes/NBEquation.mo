@@ -2259,7 +2259,7 @@ public
           case Expression.ARRAY() then List.flatten(list(getConditions(elem) for elem in cond.elements));
           case Expression.CALL() guard(Call.isNamed(cond.call, "initial")) then {};
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for condition: " + Expression.toString(cond)});
           then fail();
         end match;
       end getConditions;
