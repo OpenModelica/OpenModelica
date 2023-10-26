@@ -218,9 +218,10 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
  * @param size                  Size of non-linear problem.
  * @param userData              Pointer to set NLS user data.
  * @param attemptRetry          True if KINSOL should retry with different settings after solution failed.
+ * @param isPatternAvailable    True if sparsity pattern of Jacobian is available. Allocate work vectors for KLU in that case.
  * @return NLS_KINSOL_DATA*     Pointer to allocated KINSOL data.
  */
-NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry) {
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable) {
   /* Allocate system data */
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)calloc(1, sizeof(NLS_KINSOL_DATA));
 
@@ -242,6 +243,13 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_bo
   kinsolData->fTmp = N_VNew_Serial(size);
 
   kinsolData->y = N_VNew_Serial(size);
+  if (isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
+    kinsolData->tmp1 = N_VNew_Serial(size);
+    kinsolData->tmp2 = N_VNew_Serial(size);
+  } else {
+    kinsolData->tmp1 = NULL;
+    kinsolData->tmp2 = NULL;
+  }
 
   kinsolData->kinsolMemory = NULL;
   kinsolData->userData = userData;
@@ -271,6 +279,10 @@ void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData) {
   SUNLinSolFree(kinsolData->linSol);
   SUNMatDestroy(kinsolData->J);
   N_VDestroy_Serial(kinsolData->y);
+  if (kinsolData->tmp1 != NULL) {
+    N_VDestroy_Serial(kinsolData->tmp1);
+    N_VDestroy_Serial(kinsolData->tmp2);
+  }
 
   freeNlsUserData(kinsolData->userData);
   free(kinsolData);
@@ -322,11 +334,11 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
  * @param N               Size of vecX and vecFX.
  * @param vecX            Vector x.
  * @param vecFX           Residual vector f(x).
- * @param Jac             Jacobian matrix J(x).
+ * @param Jac             Dense Jacobian matrix J(x).
  * @param kinsolUserData  Pointer to Kinsol user data.
- * @param tmp1            Work vector.
- * @param tmp2            Work vector.
- * @return int            Return 0 on success.
+ * @param tmp1            Unused, only to match interface of KINLsJacFn
+ * @param tmp2            Unused, only to match interface of KINLsJacFn
+ * @return int            Return 0 on success, -1 on failure.
  */
 static int nlsDenseJac(long int N,
                        N_Vector vecX,
@@ -339,6 +351,12 @@ static int nlsDenseJac(long int N,
   threadData_t *threadData = kinsolUserData->threadData;
   NONLINEAR_SYSTEM_DATA *nlsData = kinsolUserData->nlsData;
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
+
+  if (SUNMatGetID(Jac) != SUNMATRIX_DENSE) {
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: nlsDenseJac illegal input Jac. Matrix is not dense!");
+    return -1;
+  }
 
   /* prepare variables */
   double *x = N_VGetArrayPointer(vecX);
@@ -451,6 +469,12 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   NLS_KINSOL_DATA *kinsolData;
   SPARSE_PATTERN *sparsePattern;
 
+  if (SUNMatGetID(Jac) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(Jac) == CSR_MAT) {
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: nlsSparseJac illegal input Jac. Matrix is not sparse!");
+    return -1;
+  }
+
   double *x;
   double *fx;
   double *xsave;
@@ -550,8 +574,8 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
  * @param vecFX     just for interface compatibility, will not be used here
  * @param Jac
  * @param userData
- * @param tmp1
- * @param tmp2
+ * @param tmp1      Unused, only to match interface of KINLsJacFn
+ * @param tmp2      Unused, only to match interface of KINLsJacFn
  * @return int
  */
 int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
@@ -571,6 +595,12 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   long int i, j, ii;
   int nth;
+
+  if (SUNMatGetID(Jac) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(Jac) == CSR_MAT) {
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: nlsSparseJac illegal input Jac. Matrix is not sparse!");
+    return -1;
+  }
 
   /* Access userData and nonlinear system data */
   kinsolUserData = (NLS_USERDATA *)userData;
@@ -831,9 +861,6 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
                               scalingMode mode) {
   double *fScaling = NV_DATA_S(kinsolData->fScale);
   N_Vector x = kinsolData->initialGuess;
-  SUNMatrix spJac;
-  SUNMatrix denseJac;
-  N_Vector tmp1, tmp2;
 
   int i, j;
   int ret;
@@ -846,49 +873,32 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
   /* Use nominal value or the actual working point for scaling */
   switch (mode) {
   case SCALING_JACOBIAN:
-    tmp1 = N_VNew_Serial(kinsolData->size);
-    tmp2 = N_VNew_Serial(kinsolData->size);
-
     /* Enable scaled jacobian evaluation */
     kinsolData->nominalJac = 1;
 
     /* Calculate the scaled Jacobian */
     if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
-      spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size, kinsolData->nnz, CSC_MAT);
       if (kinsolData->solved != NLS_SOLVED) {
         kinsolData->nominalJac = 0;
         if (nlsData->analyticalJacobianColumn != NULL) {
           /* Calculate the sparse Jacobian symbolically  */
-          nlsSparseSymJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
+          nlsSparseSymJac(x, kinsolData->fTmp, kinsolData->J, kinsolData->userData, NULL, NULL);
         } else {
           /* Update f(x) for the numerical jacobian matrix */
           nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
-          nlsSparseJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
+          nlsSparseJac(x, kinsolData->fTmp, kinsolData->J, kinsolData->userData, kinsolData->tmp1, kinsolData->tmp2);
         }
-        /* Copy the sparse Jacobian into the kinsol data structure for later use */
-        SUNMatCopy_Sparse(spJac, kinsolData->J);
-      } else {
-        /* Copy previous solution into spJac */
-        SUNMatCopy_Sparse(kinsolData->J, spJac);
       }
       /* Scale the current Jacobian */
-      ret = _omc_SUNSparseMatrixVecScaling(spJac, kinsolData->xScale);
+      ret = _omc_SUNSparseMatrixVecScaling(kinsolData->J, kinsolData->xScale);
       if (ret != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "KINSOL: _omc_SUNSparseMatrixVecScaling failed.");
       }
     } else {
       /* Update f(x) for the numerical jacobian matrix */
       nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
-      denseJac = SUNDenseMatrix(kinsolData->size, kinsolData->size);
-      nlsDenseJac(nlsData->size, x, kinsolData->fTmp, denseJac,
-                  kinsolData->userData, tmp1, tmp2);
-      spJac = SUNSparseFromDenseMatrix(denseJac, DBL_MIN, CSC_MAT);
-      if (spJac == NULL) {
-        errorStreamPrint(LOG_STDOUT, 0,
-                         "KINSOL: In function SUNSparseFromDenseMatrix: Requirements are "
-                         "violated, or matrix storage request cannot be satisfied.");
-      }
-      SUNMatDestroy(denseJac);
+      nlsDenseJac(nlsData->size, x, kinsolData->fTmp, kinsolData->J,
+                  kinsolData->userData, NULL, NULL);
     }
 
     /* Disable scaled Jacobian evaluation */
@@ -897,18 +907,33 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     for (i = 0; i < nlsData->size; i++) {
       fScaling[i] = 1e-12;
     }
-    for (i = 0; i < SM_NNZ_S(spJac); ++i) {
-      if (fScaling[SM_INDEXVALS_S(spJac)[i]] < fabs(SM_DATA_S(spJac)[i])) {
-        fScaling[SM_INDEXVALS_S(spJac)[i]] = fabs(SM_DATA_S(spJac)[i]);
+
+    switch (SUNMatGetID(kinsolData->J))
+    {
+    case SUNMATRIX_SPARSE:
+      for (i = 0; i < SM_NNZ_S(kinsolData->J); ++i) {
+        if (fScaling[SM_INDEXVALS_S(kinsolData->J)[i]] < fabs(SM_DATA_S(kinsolData->J)[i])) {
+          fScaling[SM_INDEXVALS_S(kinsolData->J)[i]] = fabs(SM_DATA_S(kinsolData->J)[i]);
+        }
       }
+      break;
+    case SUNMATRIX_DENSE:
+      for (i = 0; i < nlsData->size; i++) {
+        for (j = 0; j < nlsData->size; j++) {
+          if (fScaling[i] < fabs(SM_ELEMENT_D(kinsolData->J, j, i))) {
+            fScaling[i] = fabs(SM_ELEMENT_D(kinsolData->J, j, i));
+          }
+        }
+      }
+      break;
+    default:
+      errorStreamPrint(LOG_STDOUT, 0,
+                       "KINSOL: Function nlsKinsolFScaling: Unknown matrix type.");
     }
+
     /* inverse fScale */
     N_VInv(kinsolData->fScale, kinsolData->fScale);
 
-    /* Free memory */
-    SUNMatDestroy(spJac);
-    N_VDestroy_Serial(tmp1);
-    N_VDestroy_Serial(tmp2);
     break;
   case SCALING_ONES:
     for (i = 0; i < nlsData->size; i++) {
@@ -1234,7 +1259,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
 #else /* WITH_SUNDIALS */
 
-void* nlsKinsolAllocate(int size, void* userData, int attemptRetry) {
+void* nlsKinsolAllocate(int size, void* userData, int attemptRetry, modelica_boolean isPatternAvailable) {
 
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
   return 0;

@@ -107,13 +107,15 @@ typedef struct NLS_KINSOL_DATA {
   SUNMatrix J;                         /* (Non-)Sparse matrix template for cloning
                                           matrices needed within linear solver */
 
+  N_Vector tmp1, tmp2;                  /* Work arrays for nlsSparseJac */
+
   /* Properties of non-linear system */
   int size;                            /* Size of non-linear problem */
   int nnz;                             /* Number of non-zero elements */
 
 } NLS_KINSOL_DATA;
 
-NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry);
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable);
 void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
