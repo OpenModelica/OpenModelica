@@ -659,7 +659,7 @@ pipeline {
           agent {
             docker {
               label 'linux'
-              image 'anheuermann/fmpy:v0.3.18'
+              image 'docker.openmodelica.org/fmpy:v0.3.18'
             }
           }
           when {
