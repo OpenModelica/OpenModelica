@@ -1,29 +1,4 @@
-# Common variables for most package generators.
 
-set(CPACK_VERBATIM_VARIABLES ON)
-
-set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-set(CPACK_PACKAGE_VENDOR "Open Source Modelica Consoritum")
-
-set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
-SET(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_BINARY_DIR}/_packages")
-
-set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/omc")
-
-set(CPACK_PACKAGE_VERSION ${SOURCE_REVISION})
-
-set(CPACK_PACKAGE_CONTACT "build@openmodelica.org")
-
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/OSMC-License.txt")
-# set(CPACK_RESOURCE_FILE_README "${PROJECT_SOURCE_DIR}/README.md")
-
-# Generator specific variables go in their own files.
-include(cmake/packaging/debian.cmake)
-include(cmake/packaging/rpm.cmake)
-include(cmake/packaging/nsis.cmake)
-include(cmake/packaging/productbuild.cmake)
-
-# Now that the options/settings variables have been set include CPack and add the components.
 include(CPack)
 
 cpack_add_component(omc
