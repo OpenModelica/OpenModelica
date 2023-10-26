@@ -88,8 +88,8 @@ typedef struct NLS_KINSOL_DATA {
 
   /* ### work arrays ### */
   N_Vector initialGuess;
-  N_Vector xScale;
-  N_Vector fScale;
+  N_Vector xScale;                      /* x scaling vector */
+  N_Vector fScale;                      /* f(x) scaling vector */
   N_Vector fRes;
   N_Vector fTmp;
 

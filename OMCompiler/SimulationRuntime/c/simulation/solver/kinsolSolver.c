@@ -836,6 +836,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
   N_Vector tmp1, tmp2;
 
   int i, j;
+  int ret;
 
   /* If noScaling flag is used overwrite mode */
   if (omc_flag[FLAG_NO_SCALING]) {
@@ -853,7 +854,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
 
     /* Calculate the scaled Jacobian */
     if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
-      spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size,kinsolData->nnz, CSC_MAT);
+      spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size, kinsolData->nnz, CSC_MAT);
       if (kinsolData->solved != NLS_SOLVED) {
         kinsolData->nominalJac = 0;
         if (nlsData->analyticalJacobianColumn != NULL) {
@@ -866,9 +867,15 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
         }
         /* Copy the sparse Jacobian into the kinsol data structure for later use */
         SUNMatCopy_Sparse(spJac, kinsolData->J);
+      } else {
+        /* Copy previous solution into spJac */
+        SUNMatCopy_Sparse(kinsolData->J, spJac);
       }
       /* Scale the current Jacobian */
-      spJac = _omc_SUNSparseMatrixVecScaling(kinsolData->J, kinsolData->xScale);
+      ret = _omc_SUNSparseMatrixVecScaling(spJac, kinsolData->xScale);
+      if (ret != 0) {
+        errorStreamPrint(LOG_STDOUT, 0, "KINSOL: _omc_SUNSparseMatrixVecScaling failed.");
+      }
     } else {
       /* Update f(x) for the numerical jacobian matrix */
       nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
