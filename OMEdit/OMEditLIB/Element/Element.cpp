@@ -1188,14 +1188,16 @@ CoOrdinateSystem Element::getCoOrdinateSystem() const
 ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
 {
   ModelInstance::CoordinateSystem coordinateSystem;
-  if (mpModel->isConnector()) {
-    if ((mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
-      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
+  if (mpModel) {
+    if (mpModel->isConnector()) {
+      if ((mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
+        coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
+      } else {
+        coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
+      }
     } else {
       coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
     }
-  } else {
-    coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
   }
   return coordinateSystem;
 }
