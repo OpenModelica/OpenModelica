@@ -76,6 +76,12 @@ CONFIG(release, debug|release) { # release
   QMAKE_LFLAGS_RELEASE =
 }
 
+# if OM_ENABLE_ENCRYPTION
+_OM_ENABLE_ENCRYPTION = $$(OM_ENABLE_ENCRYPTION)
+equals(_OM_ENABLE_ENCRYPTION, yes) {
+  QMAKE_CXXFLAGS += -DOM_ENABLE_ENCRYPTION
+}
+
 # On older msys the include directory for binutils is in binutils
 # On recent (November 2022) MSYS2 this is no longer needed.
 contains(QT_ARCH, i386) { # 32-bit

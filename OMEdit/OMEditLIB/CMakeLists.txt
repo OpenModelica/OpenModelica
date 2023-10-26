@@ -300,6 +300,10 @@ if(WIN32)
   target_compile_definitions(OMEditLib PRIVATE UNICODE)
 endif()
 
+if(OM_ENABLE_ENCRYPTION)
+  target_compile_definitions(OMEditLib PRIVATE OM_ENABLE_ENCRYPTION)
+endif()
+
 target_link_libraries(OMEditLib PUBLIC omedit::config)
 target_link_libraries(OMEditLib PUBLIC OMSimulatorLib)
 target_link_libraries(OMEditLib PUBLIC OMParser)
