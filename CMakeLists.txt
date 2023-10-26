@@ -173,7 +173,14 @@ endif()
 omc_add_subdirectory(libraries)
 omc_add_subdirectory(testsuite)
 
-include(cmake/packaging/common.cmake)
+## Packaging ##########################################################################################
+# Configure the file OpenModelicaCPackOptions.in.cmake to pick up full paths based on the current location.
+# This will generate the output file in the build directory.
+configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
+# Tell CPack to use this configured file when it is invoked to create packages.
+set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
+# Tell CPack about our components (dispaly names, descriptions, dependencies ...)
+include(cmake/packaging/components.cmake)
 
 
 ## Report some status info.
