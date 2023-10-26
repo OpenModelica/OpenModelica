@@ -52,7 +52,7 @@ extern "C" {
 
 void setJacElementSundialsSparse(int row, int column, int nth, double value, void* Jac, int nRows);
 int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A);
-SUNMatrix _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale);
+int _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale);
 
 #endif /* WITH_SUNDIALS */
 
