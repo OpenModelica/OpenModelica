@@ -584,13 +584,27 @@ template StartString2(SimVar simvar)
 match simvar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
 case SIMVAR(initialValue = NONE()) then ''
-case SIMVAR(initialValue = SOME(initialValue), causality = SOME(SimCodeVar.INPUT())) then ' start="<%initValXml(initialValue)%>"'
-case SIMVAR(initialValue = SOME(initialValue), initial_ = initial_) then
+case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then '<%startString3(simvar)%>'
+case SIMVAR(initial_ = initial_) then
   match initial_
-    case SOME(SimCodeVar.EXACT()) then ' start="<%initValXml(initialValue)%>"'
-    case SOME(SimCodeVar.APPROX()) then ' start="<%initValXml(initialValue)%>"'
+    case SOME(SimCodeVar.EXACT()) then '<%startString3(simvar)%>'
+    case SOME(SimCodeVar.APPROX()) then '<%startString3(simvar)%>'
     else ''
 end StartString2;
+
+// make a more general check on the expression types and generate start value only for these types
+template startString3(SimVar simvar)
+::=
+match simvar
+case SIMVAR(initialValue = initialValue) then
+  match initialValue
+    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
+    else ''
+end startString3;
 
 template startString2Helper(Option<Exp> exp, DAE.Type type_)
 ::=
