@@ -1197,6 +1197,20 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   mpStatusBar->clearMessage();
 }
 
+#ifndef OM_ENABLE_ENCRYPTION
+void showEncryptionSupportMessage()
+{
+  QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                           QString("The open-source versions of OpenModelica cannot handle encrypted libraries,"
+                                   " because the private key for decryption cannot be made public published.<br /><br />"
+                                   "OpenModelica supports loading encrypted libraries through SEMLA technology, provided by Modelon AB."
+                                   " For that, you need a special version of OpenModelica that is only released in binary form;"
+                                   " please contact your library supplier for information on how to get it.<br /><br />"
+                                   "Read more about <u><a href=\"https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/encryption.html\">OpenModelica Encryption</a></u>.")
+                           .arg(Helper::OpenModelicaUsersGuideVersion), Helper::ok);
+}
+#endif // OM_ENABLE_ENCRYPTION
+
 /*!
  * \brief MainWindow::exportEncryptedPackage
  * Exports the package as encrypted package
@@ -1204,6 +1218,12 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
  */
 void MainWindow::exportEncryptedPackage(LibraryTreeItem *pLibraryTreeItem)
 {
+#ifdef OM_ENABLE_ENCRYPTION
+  if (!pLibraryTreeItem) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("making encrypted package")), Helper::scriptingKind, Helper::notificationLevel));
+    return;
+  }
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -1228,6 +1248,10 @@ void MainWindow::exportEncryptedPackage(LibraryTreeItem *pLibraryTreeItem)
   hideProgressBar();
   // clear the status bar message
   mpStatusBar->clearMessage();
+#else // OM_ENABLE_ENCRYPTION
+  Q_UNUSED(pLibraryTreeItem);
+  showEncryptionSupportMessage();
+#endif // OM_ENABLE_ENCRYPTION
 }
 
 /*!
@@ -1905,6 +1929,7 @@ void MainWindow::loadModelicaLibrary()
 
 void MainWindow::loadEncryptedLibrary()
 {
+#ifdef OM_ENABLE_ENCRYPTION
   QStringList fileNames;
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
                                               NULL, Helper::omEncryptedFileTypes, NULL);
@@ -1950,6 +1975,9 @@ void MainWindow::loadEncryptedLibrary()
   }
   mpStatusBar->clearMessage();
   hideProgressBar();
+#else // OM_ENABLE_ENCRYPTION
+  showEncryptionSupportMessage();
+#endif // OM_ENABLE_ENCRYPTION
 }
 
 /*!
@@ -2619,8 +2647,7 @@ void MainWindow::exportEncryptedPackage()
   if (pModelWidget) {
     exportEncryptedPackage(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                          .arg(tr("making encrypted package")), Helper::scriptingKind, Helper::notificationLevel));
+    exportEncryptedPackage(0);
   }
 }
 
