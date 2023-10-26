@@ -819,18 +819,25 @@ declaration returns [void* ast]
  */
 
 modification returns [void* ast]
-@init { OM_PUSHZ2(e.ast, cm); eq = 0; } :
-  ( cm=class_modification ( eq=EQUALS e=expression[metamodelica_enabled()] )?
-  | eq=EQUALS e=expression[metamodelica_enabled()]
-  | eq=ASSIGN e=expression[metamodelica_enabled()] {c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, ":= in modifiers has been deprecated",
+@init { OM_PUSHZ2(e, cm); eq = 0; } :
+  ( cm=class_modification ( eq=EQUALS e=modification_expression )?
+  | eq=EQUALS e=modification_expression
+  | eq=ASSIGN e=modification_expression {c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, ":= in modifiers has been deprecated",
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);}
   )
     {
-      $ast = Absyn__CLASSMOD(or_nil(cm), e.ast ? Absyn__EQMOD(e.ast,PARSER_INFO($eq)) : Absyn__NOMOD);
+      $ast = Absyn__CLASSMOD(or_nil(cm), e ? Absyn__EQMOD(e,PARSER_INFO($eq)) : Absyn__NOMOD);
     }
   ;
   finally{ OM_POP(2); }
+
+modification_expression returns [void* ast]
+@init { OM_PUSHZ1(e.ast); } :
+    e=expression[metamodelica_enabled()] { ast = e.ast; }
+  | BREAK        { ast = Absyn__BREAK; }
+  ;
+  finally{ OM_POP(1); }
 
 class_modification returns [void* ast]
 @init { OM_PUSHZ2(as, ast); } :
@@ -1822,7 +1829,7 @@ primary returns [void* ast]
   | T_END { $ast = Absyn__END; }
   )
   ;
-  finally{ OM_POP(3); }
+  finally{ OM_POP(4); }
 
 matrix_expression_list returns [void* ast]
 @init{ OM_PUSHZ2(e1, e2); } :

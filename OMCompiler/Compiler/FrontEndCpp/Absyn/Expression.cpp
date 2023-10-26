@@ -25,6 +25,7 @@ constexpr int END = 17;
 constexpr int CODE = 18;
 constexpr int EXPRESSIONCOMMENT = 24;
 constexpr int SUBSCRIPTED_EXP = 25;
+constexpr int BREAK = 26;
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
@@ -52,6 +53,7 @@ std::unique_ptr<Expression::Base> exp_from_mm(MetaModelica::Record value)
     case END:               return std::make_unique<End>();
     case EXPRESSIONCOMMENT: return exp_from_mm(value[1]);
     case SUBSCRIPTED_EXP:   return std::make_unique<SubscriptedExp>(value);
+    case BREAK:             return std::make_unique<Break>();
   }
 
   throw std::runtime_error("Unimplemented Expression index " + std::to_string(value.index()));
@@ -448,3 +450,12 @@ void SubscriptedExp::print(std::ostream &os) const noexcept
   os << _exp << '[' << Util::printList(_subscripts) << ']';
 }
 
+std::unique_ptr<Expression::Base> Break::clone() const noexcept
+{
+  return std::make_unique<Break>(*this);
+}
+
+void Break::print(std::ostream &os) const noexcept
+{
+  os << "break";
+}

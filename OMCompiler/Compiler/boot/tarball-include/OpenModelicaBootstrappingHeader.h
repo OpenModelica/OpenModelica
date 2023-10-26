@@ -3259,6 +3259,22 @@ extern struct record_description Absyn_Direction_INPUT__desc;
 static const MMC_DEFSTRUCTLIT(Absyn__INPUT__struct,1,3) {&Absyn_Direction_INPUT__desc}};
 static void *Absyn__INPUT = MMC_REFSTRUCTLIT(Absyn__INPUT__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Exp_BREAK__desc_added
+#define Absyn_Exp_BREAK__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_BREAK__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_BREAK__desc = {
+  "Absyn_Exp_BREAK",
+  "Absyn.Exp.BREAK",
+  Absyn_Exp_BREAK__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Exp_BREAK__desc;
+#endif
+#define Absyn__BREAK_3dBOX0 29
+static const MMC_DEFSTRUCTLIT(Absyn__BREAK__struct,1,29) {&Absyn_Exp_BREAK__desc}};
+static void *Absyn__BREAK = MMC_REFSTRUCTLIT(Absyn__BREAK__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Exp_SUBSCRIPTED__EXP__desc_added
 #define Absyn_Exp_SUBSCRIPTED__EXP__desc_added
 ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_SUBSCRIPTED__EXP__desc__fields[2] = {"exp","subscripts"};
