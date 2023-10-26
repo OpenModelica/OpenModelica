@@ -2351,9 +2351,7 @@ void RenameItemDialog::renameItem()
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
     if (mpLibraryTreeItem->getModelWidget()) {
       CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
-      RenameCompositeModelCommand *pRenameCompositeModelCommand = new RenameCompositeModelCommand(pCompositeModelEditor,
-                                                                                                  mpLibraryTreeItem->getName(),
-                                                                                                  mpNameTextBox->text());
+      RenameCompositeModelCommand *pRenameCompositeModelCommand = new RenameCompositeModelCommand(pCompositeModelEditor, mpLibraryTreeItem->getName(), mpNameTextBox->text());
       mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pRenameCompositeModelCommand);
       mpLibraryTreeItem->getModelWidget()->updateModelText();
     }
@@ -2362,9 +2360,10 @@ void RenameItemDialog::renameItem()
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     if (mpLibraryTreeItem->isTopLevel()) {
-      mpLibraryTreeItem->getModelWidget()->createOMSimulatorRenameModelUndoCommand(QString("Rename %1").arg(mpLibraryTreeItem->getNameStructure()),
-                                                                                   mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text());
-      mpLibraryTreeItem->getModelWidget()->updateModelText();
+      ModelWidget *pModelWidget = mpLibraryTreeItem->getModelWidget();
+      pModelWidget->createOMSimulatorRenameModelUndoCommand(QString("Rename %1").arg(mpLibraryTreeItem->getNameStructure()),
+                                                            mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text());
+      pModelWidget->updateModelText();
     } else {
       if (OMSProxy::instance()->rename(mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text())) {
         QString newEditedCref = QString("%1.%2").arg(mpLibraryTreeItem->parent()->getNameStructure(), mpNameTextBox->text());
