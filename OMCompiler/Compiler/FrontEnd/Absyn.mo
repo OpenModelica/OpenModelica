@@ -826,6 +826,9 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     list<Subscript> subscripts;
   end SUBSCRIPTED_EXP;
 
+  record BREAK
+  end BREAK;
+
 end Exp;
 
 uniontype Case "case in match or matchcontinue"

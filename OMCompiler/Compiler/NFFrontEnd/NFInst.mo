@@ -2546,6 +2546,9 @@ algorithm
       local
         Expression bind_exp;
 
+      // Binding is removed by a break, change it to an unbound binding.
+      case Binding.RAW_BINDING(bindingExp = Absyn.Exp.BREAK()) then Binding.UNBOUND();
+
       case Binding.RAW_BINDING()
         algorithm
           bind_exp := instExp(binding.bindingExp, binding.scope, context, binding.info);
@@ -2693,6 +2696,7 @@ algorithm
       then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, context, info);
 
     case Absyn.Exp.END() then Expression.END();
+    case Absyn.Exp.EXPRESSIONCOMMENT() then instExp(absynExp.exp, scope, context, info);
 
     case Absyn.Exp.SUBSCRIPTED_EXP()
       then Expression.SUBSCRIPTED_EXP(
@@ -2701,8 +2705,6 @@ algorithm
         Type.UNKNOWN(),
         false
       );
-
-    case Absyn.Exp.EXPRESSIONCOMMENT() then instExp(absynExp.exp, scope, context, info);
 
     else
       algorithm

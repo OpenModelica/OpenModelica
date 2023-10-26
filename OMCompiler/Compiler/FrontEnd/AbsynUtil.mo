@@ -337,6 +337,8 @@ algorithm
       then
         (if referenceEq(exp.exp, e1) and referenceEq(exp.subscripts, subs) then exp else Absyn.SUBSCRIPTED_EXP(e1, subs), arg);
 
+    case Absyn.BREAK() then (exp, arg);
+
     else
       algorithm
         (,,enterName) := System.dladdr(enterFunc);
@@ -1980,6 +1982,8 @@ algorithm
         end if;
       then
         l1;
+
+    case Absyn.BREAK() then {};
 
     else
       equation
@@ -5076,6 +5080,7 @@ algorithm
     case Absyn.RANGE() then true;
     case Absyn.CONS() then true;
     case Absyn.LIST() then true;
+    case Absyn.BREAK() then true;
     else false;
   end match;
 end isInvariantExpNoTraverse;

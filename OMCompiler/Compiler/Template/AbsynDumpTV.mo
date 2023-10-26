@@ -653,6 +653,8 @@ package Absyn
       Exp exp;
       list<Subscript> subscripts;
     end SUBSCRIPTED_EXP;
+
+    record BREAK end BREAK;
   end Exp;
 
   uniontype Case

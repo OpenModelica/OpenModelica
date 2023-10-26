@@ -853,6 +853,7 @@ match exp
     ((commentsBefore |> cmt => cmt ; absIndent=0) + dumpExp(exp) + (commentsAfter |> cmt => cmt ; absIndent=0))
   case SUBSCRIPTED_EXP(__) then
     '(<%dumpExp(exp)%>)[<%dumpSubscripts(subscripts)%>]'
+  case BREAK(__) then 'break'
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 

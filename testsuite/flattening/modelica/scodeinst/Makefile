@@ -61,6 +61,9 @@ bindings7.mo \
 BooleanDim.mo \
 Break1.mo \
 Break2.mo \
+BreakModifier1.mo \
+BreakModifier2.mo \
+BreakModifier3.mo \
 BuiltinAttribute1.mo \
 BuiltinAttribute2.mo \
 BuiltinAttribute3.mo \

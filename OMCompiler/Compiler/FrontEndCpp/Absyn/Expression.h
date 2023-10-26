@@ -305,6 +305,15 @@ namespace OpenModelica::Absyn
       Expression _exp;
       std::vector<Subscript> _subscripts;
   };
+
+  class Break : public Expression::Base
+  {
+    public:
+      Break() = default;
+
+      std::unique_ptr<Base> clone() const noexcept override;
+      void print(std::ostream &os) const noexcept override;
+  };
 }
 
 #endif /* ABSYN_EXPRESSION_H */
