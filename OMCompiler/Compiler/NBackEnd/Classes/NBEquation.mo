@@ -353,7 +353,7 @@ public
 
     function size
       input Iterator iter;
-      output Integer size = product(i for i in sizes(iter));
+      output Integer size = product(i for i in 1 :: sizes(iter));
     end size;
 
     function createLocationReplacements
@@ -1509,11 +1509,11 @@ public
     end getType;
 
     function getForIterator
+      "does not work for algorithms"
       input Equation eqn;
       output Iterator iterator;
     algorithm
       iterator := match eqn
-        // ToDo: algorithms!
         case FOR_EQUATION() then eqn.iter;
         else Iterator.EMPTY();
       end match;

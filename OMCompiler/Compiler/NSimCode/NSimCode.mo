@@ -60,7 +60,7 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
-  import NBEvents.{EventInfo, StateEvent};
+  import NBEvents.{EventInfo, Condition};
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import System = NBSystem;
@@ -686,9 +686,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
-        numTimeEvents                = listLength(eventInfo.timeEvents),
-        numRelations                 = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
+        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numTimeEvents                = listLength(UnorderedSet.toList(eventInfo.time_set)),
+        numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listLength(vars.stateVars),
         numAlgVars                   = listLength(vars.algVars),
