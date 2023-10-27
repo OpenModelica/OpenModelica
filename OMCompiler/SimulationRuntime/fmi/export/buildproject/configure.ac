@@ -215,16 +215,21 @@ else
   AC_LINK_IFELSE([AC_LANG_CALL([], [pthread_mutex_lock])],[LIBS="$NEWLIBS";PTHREAD_STATIC=1;AC_MSG_RESULT([OK (static)])],[AC_MSG_RESULT([no])])
 fi
 
-if ! test "$PTHREAD_STATIC" = 1; then
+if test "$PTHREAD_STATIC" = 1; then
+  CPPFLAGS="$CPPFLAGS -DOM_HAVE_PTHREADS"
+else
   LIBS="$OLDLIBS -shared"
-  AC_CHECK_LIB(pthread,[pthread_mutex_lock],[],[
-    if test "$LIBTYPE_DYNAMIC" = 1; then
-      AC_MSG_ERROR([pthreads not found and requested dynamic linking])
-    else
-      AC_MSG_RESULT([pthreads disabled])
-      CPPFLAGS="$CPPFLAGS -DOMC_NO_THREADS"
-    fi
-  ])
+  AC_CHECK_LIB(pthread,[pthread_mutex_lock],
+    [
+      CPPFLAGS="$CPPFLAGS -DOM_HAVE_PTHREADS"
+    ],
+    [
+      if test "$LIBTYPE_DYNAMIC" = 1; then
+        AC_MSG_ERROR([pthreads not found and requested dynamic linking])
+      else
+        AC_MSG_RESULT([pthreads disabled])
+      fi
+    ])
 fi
 
 AC_CHECK_LIB([m],[cos],[],[AC_MSG_ERROR([math library not found])])

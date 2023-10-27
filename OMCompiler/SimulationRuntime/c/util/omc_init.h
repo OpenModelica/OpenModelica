@@ -33,7 +33,7 @@
 
 #include "../openmodelica.h"
 
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 #include <pthread.h>
 DLLDirection extern pthread_key_t mmc_thread_data_key;
 DLLDirection extern pthread_once_t mmc_init_once;

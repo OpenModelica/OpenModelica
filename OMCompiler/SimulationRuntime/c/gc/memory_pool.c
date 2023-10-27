@@ -34,7 +34,7 @@
 #endif
 #include "omc_gc.h"
 #include <string.h>
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 #include <pthread.h>
 #endif
 #include "../util/omc_error.h"
@@ -59,7 +59,7 @@ extern "C" {
 /// will also update this.
 OMCMemPoolBlock *memory_pools = NULL;
 
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 static pthread_mutex_t memory_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
@@ -110,7 +110,7 @@ static void* pool_malloc(size_t requested_size)
   void *res;
   requested_size = round_up(requested_size, 8);
 
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
   pthread_mutex_lock(&memory_pool_mutex);
 #endif
 
@@ -129,7 +129,7 @@ static void* pool_malloc(size_t requested_size)
   res = (void*)((char*)memory_pools->memory + memory_pools->used);
   memory_pools->used += requested_size;
 
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
   pthread_mutex_unlock(&memory_pool_mutex);
 #endif
 
