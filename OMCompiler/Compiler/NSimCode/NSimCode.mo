@@ -60,7 +60,7 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
-  import NBEvents.{EventInfo, StateEvent};
+  import NBEvents.{EventInfo, Condition};
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import System = NBSystem;
@@ -221,7 +221,7 @@ public
     algorithm
       str := StringUtil.headline_1("SimCode " + str + "(" + simCode.fileNamePrefix + ")");
       str := str + ModelInfo.toString(simCode.modelInfo);
-      str := str + SimStrongComponent.Block.listToString(simCode.init, "  ", "INIT") + "\n";
+      str := str + SimStrongComponent.Block.listToString(simCode.init, "  ", "Initial Partition") + "\n";
       for blck_lst in simCode.ode loop
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "ODE Partition " + intString(idx)) + "\n";
         idx := idx + 1;
@@ -231,6 +231,7 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
+      str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
       if not listEmpty(simCode.generic_loop_calls) then
         str := str + StringUtil.headline_3("Generic Calls");
         str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
@@ -686,9 +687,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
-        numTimeEvents                = listLength(eventInfo.timeEvents),
-        numRelations                 = sum(StateEvent.size(se) for se in eventInfo.stateEvents),
+        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numTimeEvents                = listLength(UnorderedSet.toList(eventInfo.time_set)),
+        numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listLength(vars.stateVars),
         numAlgVars                   = listLength(vars.algVars),

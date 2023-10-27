@@ -33,8 +33,8 @@ simulate(implicitEquation); getErrorString();
 // ************************
 //   (0)[RES-] (1) Real $RES_SIM_0
 //
-// INIT
-// ------
+// Initial Partition
+// -------------------
 //   (3) $FUN_1 := sin(time)
 //   (2) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{x}
@@ -42,6 +42,11 @@ simulate(implicitEquation); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
+//   (5) Alias of 3
+//   (4) Alias of 2
+//
+// Event Partition
+// -----------------
 //   (5) Alias of 3
 //   (4) Alias of 2
 //

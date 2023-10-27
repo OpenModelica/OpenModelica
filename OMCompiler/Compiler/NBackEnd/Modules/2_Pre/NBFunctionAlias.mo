@@ -362,6 +362,7 @@ protected
         if isSome(aux_opt) then
           aux := Util.getOption(aux_opt);
           new_exp := aux.replacer;
+          ty := Expression.typeOf(new_exp);
         else
           // for initial systems create parameters, otherwise use type to determine variable kind
           ty := Expression.typeOf(exp);
