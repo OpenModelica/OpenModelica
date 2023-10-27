@@ -142,14 +142,44 @@ public
     function toString
       input EventInfo eventInfo;
       output String str = "";
+    protected
+      list<TimeEvent> tev_lst;
+      list<tuple<Condition, CompositeEvent>> cev_lst;
+      list<tuple<Condition, StateEvent>> sev_lst;
+      function tplString<T1, T2>
+        input tuple<T1, T2> tpl;
+        input F1 f1;
+        input F2 f2;
+        output String str;
+      protected
+        T1 t1;
+        T2 t2;
+        partial function F1 input T1 t1; output String str; end F1;
+        partial function F2 input T2 t2; output String str; end F2;
+      algorithm
+        (t1, t2) := tpl;
+        str := f2(t2) + " = " + f1(t1);
+      end tplString;
     algorithm
       if not isEmpty(eventInfo) then
+        (tev_lst, cev_lst, sev_lst) := toLists(eventInfo);
         str := StringUtil.headline_2("Event Info") + "\n";
-        str := str + StringUtil.headline_4("Time Events") + UnorderedSet.toString(eventInfo.time_set, function TimeEvent.toString(printIndex = true)) + "\n\n";
-        str := str + StringUtil.headline_4("Composite Events") + UnorderedMap.toString(eventInfo.time_map, Condition.toString, CompositeEvent.toString) + "\n\n";
-        str := str + StringUtil.headline_4("State Events") + UnorderedMap.toString(eventInfo.state_map, Condition.toString, StateEvent.toString) + "\n\n";
+        str := str +  StringUtil.headline_4("Time Events") + List.toString(tev_lst, function TimeEvent.toString(printIndex = true), "", "", "\n", "") + "\n\n";
+        str := str +  StringUtil.headline_4("Composite Events") + List.toString(cev_lst, function tplString(f1 = Condition.toString, f2 = CompositeEvent.toString), "", "", "\n", "") + "\n\n";
+        str := str +  StringUtil.headline_4("State Events") + List.toString(sev_lst, function tplString(f1 = Condition.toString, f2 = StateEvent.toString), "", "", "\n", "") + "\n\n";
       end if;
     end toString;
+
+    function toLists
+      input EventInfo eventInfo;
+      output list<TimeEvent> tev_lst;
+      output list<tuple<Condition, CompositeEvent>> cev_lst;
+      output list<tuple<Condition, StateEvent>> sev_lst;
+    algorithm
+      tev_lst := List.sort(UnorderedSet.toList(eventInfo.time_set), TimeEvent.indexGt);
+      cev_lst := List.sort(UnorderedMap.toList(eventInfo.time_map), CompositeEvent.indexGt);
+      sev_lst := List.sort(UnorderedMap.toList(eventInfo.state_map), StateEvent.indexGt);
+    end toLists;
 
     function create
       input Bucket bucket;
@@ -235,14 +265,15 @@ public
       output list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
       output list<OldBackendDAE.TimeEvent> timeEvents;
     protected
-      list<tuple<Condition, CompositeEvent>> cev_lst = UnorderedMap.toList(eventInfo.time_map);
-      list<tuple<Condition, StateEvent>> sev_lst = UnorderedMap.toList(eventInfo.state_map);
+      list<TimeEvent> tev_lst;
+      list<tuple<Condition, CompositeEvent>> cev_lst;
+      list<tuple<Condition, StateEvent>> sev_lst;
     algorithm
-      // list(CompositeEvent.convert(cev_tpl) for cev_tpl in cev_lst) add composite events at some point
+      // add composite at some point?
+      (tev_lst, cev_lst, sev_lst) := toLists(eventInfo);
       zeroCrossings := list(StateEvent.convert(sev_tpl) for sev_tpl in sev_lst);
       relations := zeroCrossings;
-      // for some reason this needs to be reversed
-      timeEvents := listReverse(list(TimeEvent.convert(te) for te in UnorderedSet.toList(eventInfo.time_set)));
+      timeEvents := list(TimeEvent.convert(tev) for tev in tev_lst);
     end convert;
   end EventInfo;
 
@@ -303,10 +334,17 @@ public
       end match;
     end isEqual;
 
+    function indexGt
+      input TimeEvent tev1;
+      input TimeEvent tev2;
+      output Boolean b = getIndex(tev1) > getIndex(tev2);
+    end indexGt;
+
     function create
       input output Expression exp;
       input output Bucket bucket;
       input Iterator iter;
+      input Pointer<Equation> eqn;
       input FunctionTree funcTree;
       input Boolean createAux;
       output Boolean failed = false "returns true if time event list could not be created";
@@ -321,8 +359,8 @@ public
         case new_exp as Expression.LBINARY()
           guard(Operator.getMathClassification(new_exp.operator) == NFOperator.MathClassification.LOGICAL)
           algorithm
-            (exp1, bucket, b1) := create(exp.exp1, bucket, iter, funcTree, createAux);
-            (exp2, bucket, b2) := create(exp.exp2, bucket, iter, funcTree, createAux);
+            (exp1, bucket, b1) := create(exp.exp1, bucket, iter, eqn, funcTree, createAux);
+            (exp2, bucket, b2) := create(exp.exp2, bucket, iter, eqn, funcTree, createAux);
             failed := (b1 or b2);
             if not failed then
               // we could simplify here
@@ -331,7 +369,7 @@ public
             end if;
         then (new_exp, bucket, failed);
 
-        else createSingleOrSample(exp, bucket, iter, funcTree);
+        else createSingleOrSample(exp, bucket, iter, eqn, funcTree);
       end match;
 
       if not failed then
@@ -349,6 +387,7 @@ public
       input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
       input Iterator iter;
+      input Pointer<Equation> eqn;
       input FunctionTree funcTree         "function tree for differentiation (solve)";
       output Boolean failed               "true if it did not work to create a compact time event";
     protected
@@ -358,6 +397,7 @@ public
           local
             Equation tmpEqn;
             Solve.Status status;
+            Boolean invert, can_trigger;
             Call call;
             Expression trigger;
             TimeEvent timeEvent;
@@ -377,24 +417,39 @@ public
             tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
             _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
-              (tmpEqn, _, status, _) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
+              (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
               if status == NBSolve.Status.EXPLICIT then
-                // create and add the time event
                 trigger := Equation.getRHS(tmpEqn);
-                timeEvent := SINGLE(bucket.timeEventIndex, trigger);
-                if not UnorderedSet.contains(timeEvent, bucket.time_set) then
-                  bucket.timeEventIndex := bucket.timeEventIndex + 1;
-                  UnorderedSet.add(timeEvent, bucket.time_set);
+                exp.operator := if invert then Operator.invert(exp.operator) else exp.operator;
+
+                if Equation.isWhenEquation(eqn) then
+                  // if it is a when equation check if it can even trigger
+                  can_trigger := match exp.operator.op
+                    case NFOperator.Op.GREATER    then true;
+                    case NFOperator.Op.GREATEREQ  then true;
+                    else false;
+                  end match;
+                  // if it can trigger replace it by the sample call, otherwise just make the trigger false
+                  new_exp := if can_trigger then Expression.CALL(Call.makeTypedCall(
+                      fn          = NFBuiltinFuncs.SAMPLE,
+                      args        = {Expression.INTEGER(bucket.timeEventIndex + 1), trigger, Expression.REAL(BuiltinSystem.intMaxLit())},
+                      variability = NFPrefixes.Variability.DISCRETE,
+                      purity      = NFPrefixes.Purity.PURE
+                    )) else Expression.BOOLEAN(false);
+                else
+                  // inside if can always trigger, keep the expression as is
+                  can_trigger := true;
+                  new_exp := exp;
                 end if;
 
-                // replace the original expression with the sample call
-                // only do this for when equations? if equations don't trigger like this with sample
-                new_exp := Expression.CALL(Call.makeTypedCall(
-                  fn          = NFBuiltinFuncs.SAMPLE,
-                  args        = {Expression.INTEGER(TimeEvent.getIndex(timeEvent) + 1), trigger, Expression.REAL(BuiltinSystem.intMaxLit())},
-                  variability = NFPrefixes.Variability.DISCRETE,
-                  purity      = NFPrefixes.Purity.PURE
-                ));
+                // create and add the time event
+                if can_trigger then
+                  timeEvent := SINGLE(bucket.timeEventIndex, trigger);
+                  if not UnorderedSet.contains(timeEvent, bucket.time_set) then
+                    bucket.timeEventIndex := bucket.timeEventIndex + 1;
+                    UnorderedSet.add(timeEvent, bucket.time_set);
+                  end if;
+                end if;
 
                 failed := false;
               else
@@ -522,6 +577,18 @@ public
       end if;
     end toStringList;
 
+    function indexGt
+      input tuple<Condition, StateEvent> tpl1;
+      input tuple<Condition, StateEvent> tpl2;
+      output Boolean b;
+    protected
+      StateEvent sev1, sev2;
+    algorithm
+      (_, sev1) := tpl1;
+      (_, sev2) := tpl2;
+      b := sev1.index > sev2.index;
+    end indexGt;
+
     function fromStatement
       input Statement stmt;
       input Pointer<Bucket> bucket_ptr;
@@ -627,6 +694,18 @@ public
       input CompositeEvent cev;
       output String str = "(" + intString(cev.index) + ") " + BVariable.pointerToString(cev.auxiliary);
     end toString;
+
+    function indexGt
+      input tuple<Condition, CompositeEvent> tpl1;
+      input tuple<Condition, CompositeEvent> tpl2;
+      output Boolean b;
+    protected
+      CompositeEvent cev1, cev2;
+    algorithm
+      (_, cev1) := tpl1;
+      (_, cev2) := tpl2;
+      b := cev1.index > cev2.index;
+    end indexGt;
 
     function create
       "Find special events of the form:  sample(t0, dt) and (f(x) > 0)
@@ -940,7 +1019,7 @@ protected
   algorithm
     // try to create time event or composite time event
     if BackendUtil.isOnlyTimeDependent(exp) then
-      (exp, bucket, failed) := TimeEvent.create(exp, bucket, iter, funcTree, createAux);
+      (exp, bucket, failed) := TimeEvent.create(exp, bucket, iter, eqn, funcTree, createAux);
     else
       (exp, bucket, failed) := CompositeEvent.create(exp, bucket, iter, createAux);
     end if;
