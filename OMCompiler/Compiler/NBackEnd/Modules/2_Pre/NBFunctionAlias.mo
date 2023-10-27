@@ -344,7 +344,7 @@ protected
         Type ty;
         Call_Aux aux;
         Option<Call_Aux> aux_opt;
-        Expression new_exp, elem;
+        Expression new_exp, sub_exp;
         list<ComponentRef> names;
 
       case Expression.CALL() guard(checkCallReplacement(exp.call)) algorithm
@@ -381,11 +381,17 @@ protected
         UnorderedMap.add(id, aux, map);
       then new_exp;
 
-      // remove tuple expressions that occur when using a function only for its first output
+      // remove tuple expressions that occur when using a function only for one output
       // y = fun(x)[1] where fun() has multiple outputs
       // we create y = ($FUN1, $FUN2)[1] and simplify to y = $FUN1
-      case Expression.TUPLE_ELEMENT(tupleExp = Expression.TUPLE(elements = elem :: _), index = 1)
-      then elem;
+      case Expression.TUPLE_ELEMENT(tupleExp = sub_exp as Expression.TUPLE()) algorithm
+        if exp.index > listLength(sub_exp.elements) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get subscripted tuple element: " + Expression.toString(exp)});
+          fail();
+        else
+          new_exp := listGet(sub_exp.elements, exp.index);
+        end if;
+      then new_exp;
 
       // do nothing if not function call or inlineable
       else exp;

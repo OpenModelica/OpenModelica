@@ -51,6 +51,7 @@ protected
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
   import Statement = NFStatement;
+  import Type = NFType;
 
   // NB imports
   import Module = NBModule;
@@ -154,7 +155,7 @@ protected
     eqData := Replacements.replaceFunctions(eqData, replacements);
     // replace record constucters after functions because record operator
     // functions will produce record constructors once inlined
-    eqData := inlineRecords(eqData, VarData.getVariables(varData));
+    eqData := inlineRecordsTuples(eqData, VarData.getVariables(varData));
   end inline;
 
   function collectInlineFunctions
@@ -171,16 +172,18 @@ protected
     end if;
   end collectInlineFunctions;
 
-  function inlineRecords
+  function inlineRecordsTuples
     input output EqData eqData;
     input VariablePointers variables;
   protected
-    Pointer<list<Pointer<Equation>>> record_eqns = Pointer.create({});
+    Pointer<Integer> index = EqData.getUniqueIndex(eqData);
+    Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
   algorithm
-    eqData := EqData.map(eqData, function inlineRecordEquation(variables = variables, record_eqns = record_eqns, index = EqData.getUniqueIndex(eqData)));
-    eqData := EqData.addUntypedList(eqData, Pointer.access(record_eqns), false);
+    eqData := EqData.map(eqData, function inlineRecordEquation(variables = variables, record_eqns = new_eqns, index = index));
+    eqData := EqData.map(eqData, function inlineTupleEquation(tuple_eqns = new_eqns, index = index));
+    eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
     eqData := EqData.compress(eqData);
-  end inlineRecords;
+  end inlineRecordsTuples;
 
   function inlineRecordEquation
     "tries to inline a record equation. Removes the old equation by making it a dummy
@@ -201,7 +204,7 @@ protected
       case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()) then eqn;
 
       // try to inline other record equations. try catch to be sure to not discard
-      case Equation.RECORD_EQUATION() algorithm
+      case Equation.RECORD_EQUATION(ty = Type.COMPLEX()) algorithm
         try
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n"); end if;
           new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, eqn.recordSize, variables, record_eqns, index);
@@ -215,9 +218,7 @@ protected
       // only if record size is not NONE()
       case Equation.ARRAY_EQUATION(recordSize = SOME(size)) algorithm
         try
-          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
-          end if;
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n"); end if;
           new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, size, variables, record_eqns, index);
         else
           // inlining failed, keep old equation
@@ -308,6 +309,70 @@ protected
       else exp;
     end match;
   end inlineRecordConstructorElements;
+
+  function inlineTupleEquation
+    "inlines equations of the form TPL1 = TPL2 which is not modelica standard but can be created
+    by the function alias module and need to be removed afterwards"
+    input output Equation eqn;
+    input Pointer<Integer> index;
+    input Pointer<list<Pointer<Equation>>> tuple_eqns;
+  algorithm
+    eqn := match eqn
+      local
+        list<Pointer<Equation>> eqns;
+        list<Expression> lhs_elems, rhs_elems;
+        Expression lhs, rhs;
+        Pointer<Equation> tmp_eqn;
+        Equation new_eqn;
+
+      case Equation.RECORD_EQUATION() algorithm
+        lhs_elems := getElementList(eqn.lhs);
+        rhs_elems := getElementList(eqn.rhs);
+        if not listEmpty(lhs_elems) and listLength(lhs_elems) == listLength(rhs_elems) then
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+          end if;
+          eqns := Pointer.access(tuple_eqns);
+          for tpl in List.zip(lhs_elems, rhs_elems) loop
+            (lhs, rhs) := tpl;
+            tmp_eqn := Equation.makeAssignment(lhs, rhs, index, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), eqn.attr);
+            if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+              print("-- Result: " + Equation.toString(Pointer.access(tmp_eqn)) + "\n");
+            end if;
+            eqns := tmp_eqn :: eqns;
+          end for;
+          Pointer.update(tuple_eqns, eqns);
+          new_eqn := Equation.DUMMY_EQUATION();
+        else
+          new_eqn := eqn;
+        end if;
+      then new_eqn;
+      else eqn;
+    end match;
+  end inlineTupleEquation;
+
+  function getElementList
+    input Expression exp;
+    output list<Expression> elements;
+  algorithm
+    elements := match exp
+      local
+        Expression sub_exp, elem;
+
+      case Expression.TUPLE() then exp.elements;
+
+      case Expression.TUPLE_ELEMENT(tupleExp = sub_exp as Expression.TUPLE()) algorithm
+        if exp.index > listLength(sub_exp.elements) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get subscripted tuple element: " + Expression.toString(exp)});
+          fail();
+        else
+          elem := listGet(sub_exp.elements, exp.index);
+        end if;
+      then {elem};
+
+      else {};
+    end match;
+  end getElementList;
 
 
   annotation(__OpenModelica_Interface="backend");

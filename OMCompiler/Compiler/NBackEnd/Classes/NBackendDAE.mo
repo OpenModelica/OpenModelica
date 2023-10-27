@@ -730,26 +730,14 @@ protected
         attr := lowerEquationAttributes(ty, init);
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
 
-      // sometimes regular equalities are array equations aswell. Need to update frontend?
-      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        guard(Type.isArray(ty)) algorithm
-        attr := lowerEquationAttributes(ty, init);
-      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
-
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
         attr := lowerEquationAttributes(ty, init);
-        if Type.isComplex(ty) then
-          try
-            SOME(rec_size) := Type.complexSize(ty);
-          else
-            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
-              + ": could not determine complex type size of \n" + FEquation.toString(frontend_equation)});
-            fail();
-          end try;
-          result := {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, rec_size))};
-        else
-          result := {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
-        end if;
+        result := match ty
+          case Type.ARRAY()   then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
+          case Type.COMPLEX() then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
+          case Type.TUPLE()   then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
+                              else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
+        end match;
       then result;
 
       case FEquation.FOR(range = SOME(range)) algorithm
