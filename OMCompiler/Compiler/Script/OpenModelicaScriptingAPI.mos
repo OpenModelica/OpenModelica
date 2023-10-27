@@ -7,7 +7,7 @@ if bool then
   if bool then
     bool := OpenModelica.Scripting.compareFilesAndMove("OpenModelicaScriptingAPI.tmp.mo", "OpenModelicaScriptingAPI.mo");
     /* FIXME `compareFilesAndMove` should remove the tmp.mo file but for some reason it doesn't, so we delete it explicitly */
-    OpenModelica.Scripting.deleteFile("OpenModelicaScriptingAPI.tmp.mo");
+    OpenModelica.Scripting.remove("OpenModelicaScriptingAPI.tmp.mo");
   else
     exit(1);
   end if;
