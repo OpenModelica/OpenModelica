@@ -335,11 +335,13 @@ protected
           eqns := Pointer.access(tuple_eqns);
           for tpl in List.zip(lhs_elems, rhs_elems) loop
             (lhs, rhs) := tpl;
-            tmp_eqn := Equation.makeAssignment(lhs, rhs, index, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), eqn.attr);
-            if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-              print("-- Result: " + Equation.toString(Pointer.access(tmp_eqn)) + "\n");
+            if not (Expression.isWildCref(lhs) or Expression.isWildCref(rhs)) then
+              tmp_eqn := Equation.makeAssignment(lhs, rhs, index, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), eqn.attr);
+              if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+                print("-- Result: " + Equation.toString(Pointer.access(tmp_eqn)) + "\n");
+              end if;
+              eqns := tmp_eqn :: eqns;
             end if;
-            eqns := tmp_eqn :: eqns;
           end for;
           Pointer.update(tuple_eqns, eqns);
           new_eqn := Equation.DUMMY_EQUATION();
