@@ -339,7 +339,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
  *                                               1, if there is a fired timer;
  *                                               2, if there is a fired timer which trigger event;
  */
-int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, int *nextTimerDefined, double *nextTimerActivationTime)
+int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, modelica_boolean *nextTimerDefined, double *nextTimerActivationTime)
 {
   int base_idx, sub_idx;
   double activationTime;
