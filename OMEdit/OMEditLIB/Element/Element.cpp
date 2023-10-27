@@ -3568,7 +3568,8 @@ void Element::duplicate()
     ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpGraphicsView->getModelWidget()->getModelInstance(), name, getClassName());
     mpGraphicsView->addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), getOMCPlacementAnnotation(gridStep), false);
     // set modifiers
-    GraphicsView::setModifiers(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), name, "", mpModelComponent->getModifier());
+    MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), name,
+                                                                   mpModelComponent->getModifier().toString());
   } else {
     mpElementInfo->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), this);
     ElementInfo *pElementInfo = new ElementInfo(mpElementInfo);
