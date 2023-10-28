@@ -1307,21 +1307,21 @@ public
 
           Error.addCompilerNotification(
             "Partition statistics after passing the back-end:\n"
-            + "* Number of ODE partitions: ..................... " + p_ode + "\n"
-            + "* Number of algebraic partitions: ............... " + p_alg + "\n"
-            + "* Number of ODE event partitions: ............... " + p_ode_e + "\n"
-            + "* Number of algebraic event partitions: ......... " + p_alg_e + "\n"
-            + "* Number of clocked partitions: ................. " + p_clk + "\n"
-            + "* Number of initial partitions: ................. " + p_ini + "\n"
-            + "* Number of initial(lambda=0) partitions: ....... " + p_ini_0);
+            + " * Number of ODE partitions: ..................... " + p_ode + "\n"
+            + " * Number of algebraic partitions: ............... " + p_alg + "\n"
+            + " * Number of ODE event partitions: ............... " + p_ode_e + "\n"
+            + " * Number of algebraic event partitions: ......... " + p_alg_e + "\n"
+            + " * Number of clocked partitions: ................. " + p_clk + "\n"
+            + " * Number of initial partitions: ................. " + p_ini + "\n"
+            + " * Number of initial(lambda=0) partitions: ....... " + p_ini_0);
 
           Error.addCompilerNotification(
             "Variable statistics after passing the back-end:\n"
-            + "* Number of states: ............................. " + states + "\n"
-            + "* Number of discrete states: .................... " + discrete_states + "\n"
-            + "* Number of clocked states: ..................... " + clocked_states + "\n"
-            + "* Number of discrete variables: ................. " + discretes + "\n"
-            + "* Number of top-level inputs: ................... " + inputs);
+            + " * Number of states: ............................. " + states + "\n"
+            + " * Number of discrete states: .................... " + discrete_states + "\n"
+            + " * Number of clocked states: ..................... " + clocked_states + "\n"
+            + " * Number of discrete variables: ................. " + discretes + "\n"
+            + " * Number of top-level inputs: ................... " + inputs);
 
           // collect strong component info simulation
           strongcomponentinfo("Simulation", {bdae.ode, bdae.algebraic, bdae.ode_event, bdae.alg_event});
@@ -1357,10 +1357,10 @@ public
 
     Error.addCompilerNotification(
       "[" + phase + "] Strong Component statistics after passing the back-end:\n"
-      + "* Number of single strong components: ........... " + single_sc + "\n"
-      + "* Number of multi strong components: ............ " + multi_sc + "\n"
-      + "* Number of for-loop strong components: ......... " + for_sc + "\n"
-      + "* Number of algebraic-loop strong components: ... " + alg_sc);
+      + " * Number of single strong components: ........... " + single_sc + "\n"
+      + " * Number of multi strong components: ............ " + multi_sc + "\n"
+      + " * Number of for-loop strong components: ......... " + for_sc + "\n"
+      + " * Number of algebraic-loop strong components: ... " + alg_sc);
   end strongcomponentinfo;
 
   annotation(__OpenModelica_Interface="backend");
