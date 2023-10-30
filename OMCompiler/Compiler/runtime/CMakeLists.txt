@@ -208,7 +208,7 @@ set(WITH_UUID "#define WITH_LIBUUID 1")
 
 set(USE_GRAPH 0)
 
-set(RUNTIMECFLAGS "-fPIC")
+set(RUNTIMECFLAGS "-fPIC -DOM_HAVE_PTHREADS")
 
 configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
 configure_file(${OMCompiler_SOURCE_DIR}/omc_config.unix.h.in ${OMCompiler_SOURCE_DIR}/omc_config.unix.h)
