@@ -12,7 +12,7 @@ INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/tbb/include 
 CC=gcc
 CXX=g++
 CFLAGS= -O0 -g -Wall
-CPPFLAGS= $(CFLAGS) -std=c++11 -DGC_THREADS
+CPPFLAGS= $(CFLAGS) -std=c++11 -DGC_THREADS -DOM_HAVE_PTHREADS
 
 OS_SRCS = pm_win_timer.cpp
 
