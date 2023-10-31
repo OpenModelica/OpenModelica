@@ -1065,7 +1065,7 @@ protected
     end match;
   end lowerWhenBranchStatement;
 
-  function lowerAlgorithm
+  public function lowerAlgorithm
     input Algorithm alg;
     input Boolean init;
     output Pointer<Equation> eq;
@@ -1087,7 +1087,7 @@ protected
     eq := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
   end lowerAlgorithm;
 
-  function lowerEquationAttributes
+  protected function lowerEquationAttributes
     input Type ty;
     input Boolean init;
     output EquationAttributes attr;

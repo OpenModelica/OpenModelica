@@ -530,9 +530,12 @@ public
 
       case MULTI_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
+        dependencies := list(ComponentRef.stripIteratorSubscripts(dep) for dep in dependencies);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         for var in comp.vars loop
-          updateDependencyMap(BVariable.getVarName(var), dependencies, map, jacType);
+          for cref in ComponentRef.scalarizeAll(BVariable.getVarName(var)) loop
+            updateDependencyMap(cref, dependencies, map, jacType);
+          end for;
         end for;
       then ();
 

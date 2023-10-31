@@ -2298,6 +2298,8 @@ public
                                Type.toDAE(exp.ty),
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
+      case MUTABLE() then toDAE(Mutable.access(exp.exp));
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
