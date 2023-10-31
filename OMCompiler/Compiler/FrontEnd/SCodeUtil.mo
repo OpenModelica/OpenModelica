@@ -3197,57 +3197,20 @@ algorithm
   end match;
 end isNotBuiltinClass;
 
-public function getElementNamedAnnotation
-  "Returns the annotation with the given name in the element, or fails if no
-   such annotation could be found."
+public function getElementAnnotation
   input SCode.Element element;
   input String name;
-  output Absyn.Exp exp;
-protected
-  SCode.Annotation ann;
+  output Option<SCode.Annotation> outAnnotation;
 algorithm
-  ann := match element
-    case SCode.EXTENDS(ann = SOME(ann)) then ann;
-    case SCode.CLASS(cmt = SCode.COMMENT(annotation_ = SOME(ann))) then ann;
-    case SCode.COMPONENT(comment = SCode.COMMENT(annotation_ = SOME(ann))) then ann;
+  outAnnotation := match element
+    case SCode.EXTENDS() then element.ann;
+    case SCode.CLASS() then element.cmt.annotation_;
+    case SCode.COMPONENT() then element.comment.annotation_;
+    else NONE();
   end match;
+end getElementAnnotation;
 
-  exp := getNamedAnnotation(ann, name);
-end getElementNamedAnnotation;
-
-public function getNamedAnnotation
-  "Checks if the given annotation contains an entry with the given name with the
-   value true."
-  input SCode.Annotation inAnnotation;
-  input String inName;
-  output Absyn.Exp exp;
-  output SourceInfo info;
-protected
-  list<SCode.SubMod> submods;
-algorithm
-  SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) := inAnnotation;
-  SCode.NAMEMOD(mod = SCode.MOD(info = info, binding = SOME(exp))) := List.find1(submods, hasNamedAnnotation, inName);
-end getNamedAnnotation;
-
-protected function hasNamedAnnotation
-  "Checks if a submod has the same name as the given name, and if its binding
-   in that case is true."
-  input SCode.SubMod inSubMod;
-  input String inName;
-  output Boolean outIsMatch;
-algorithm
-  outIsMatch := match(inSubMod, inName)
-    local
-      String id;
-
-    case (SCode.NAMEMOD(ident = id, mod = SCode.MOD(binding = SOME(_))), _)
-      then stringEq(id, inName);
-
-    else false;
-  end match;
-end hasNamedAnnotation;
-
-public function lookupNamedAnnotation
+public function lookupAnnotation
   "Returns the modifier with the given name if it can be found in the
    annotation, otherwise an empty modifier."
   input SCode.Annotation ann;
@@ -3272,24 +3235,17 @@ algorithm
 
     else SCode.NOMOD();
   end match;
-end lookupNamedAnnotation;
+end lookupAnnotation;
 
-public function lookupNamedAnnotationBinding
+public function lookupAnnotationBinding
   input SCode.Annotation ann;
   input String name;
   output Option<Absyn.Exp> binding;
-protected
-  SCode.Mod mod;
 algorithm
-  mod := lookupNamedAnnotation(ann, name);
+  binding := getModifierBinding(lookupAnnotation(ann, name));
+end lookupAnnotationBinding;
 
-  binding := match mod
-    case SCode.Mod.MOD() then mod.binding;
-    else NONE();
-  end match;
-end lookupNamedAnnotationBinding;
-
-public function lookupNamedBooleanAnnotation
+public function lookupBooleanAnnotation
   input SCode.Annotation ann;
   input String name;
   output Option<Boolean> value;
@@ -3297,15 +3253,15 @@ protected
   Option<Absyn.Exp> binding;
   Boolean bval;
 algorithm
-  binding := lookupNamedAnnotationBinding(ann, name);
+  binding := lookupAnnotationBinding(ann, name);
 
   value := match binding
     case SOME(Absyn.Exp.BOOL(value = bval)) then SOME(bval);
     else NONE();
   end match;
-end lookupNamedBooleanAnnotation;
+end lookupBooleanAnnotation;
 
-public function lookupNamedAnnotations
+public function lookupAnnotations
   "Returns a list of modifiers with the given name found in the annotation."
   input SCode.Annotation ann;
   input String name;
@@ -3330,7 +3286,28 @@ algorithm
 
     else {};
   end match;
-end lookupNamedAnnotations;
+end lookupAnnotations;
+
+public function lookupElementAnnotation
+  "Returns the modifier with the given name if it can be found in the annotation
+   of the given element, otherwise an empty modifier."
+  input SCode.Element element;
+  input String name;
+  output SCode.Mod mod;
+protected
+  Option<SCode.Annotation> ann;
+algorithm
+  ann := getElementAnnotation(element, name);
+  mod := if isSome(ann) then lookupAnnotation(Util.getOption(ann), name) else SCode.Mod.NOMOD();
+end lookupElementAnnotation;
+
+public function lookupElementAnnotationBinding
+  input SCode.Element element;
+  input String name;
+  output Option<Absyn.Exp> binding;
+algorithm
+  binding := getModifierBinding(lookupElementAnnotation(element, name));
+end lookupElementAnnotationBinding;
 
 public function hasBooleanNamedAnnotationInClass
   input SCode.Element inClass;
@@ -3397,29 +3374,15 @@ public function hasBooleanNamedAnnotation
   input String inName;
   output Boolean outHasEntry;
 protected
-  list<SCode.SubMod> submods;
+  Option<Absyn.Exp> binding;
 algorithm
-  SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) := inAnnotation;
-  outHasEntry := List.exist1(submods, hasBooleanNamedAnnotation2, inName);
-end hasBooleanNamedAnnotation;
+  binding := lookupAnnotationBinding(inAnnotation, inName);
 
-protected function hasBooleanNamedAnnotation2
-  "Checks if a submod has the same name as the given name, and if its binding
-   in that case is true."
-  input SCode.SubMod inSubMod;
-  input String inName;
-  output Boolean outIsMatch;
-algorithm
-  outIsMatch := match inSubMod
-    local
-      String id;
-
-    case SCode.NAMEMOD(ident = id, mod = SCode.MOD(binding = SOME(Absyn.BOOL(value = true))))
-      then stringEq(id, inName);
-
+  outHasEntry := match binding
+    case SOME(Absyn.BOOL(value = true)) then true;
     else false;
   end match;
-end hasBooleanNamedAnnotation2;
+end hasBooleanNamedAnnotation;
 
 public function getEvaluateAnnotation
   "Looks up the Evaluate annotation and returns the value if the annotation
@@ -3432,56 +3395,10 @@ protected
 algorithm
   value := match cmt
     case SOME(SCode.COMMENT(annotation_ = SOME(ann)))
-      then lookupNamedBooleanAnnotation(ann, "Evaluate");
+      then lookupBooleanAnnotation(ann, "Evaluate");
     else NONE();
   end match;
 end getEvaluateAnnotation;
-
-public function getInlineTypeAnnotationFromCmt
-  input SCode.Comment inComment;
-  output Option<SCode.Annotation> outAnnotation;
-algorithm
-  outAnnotation := match(inComment)
-    local
-      SCode.Annotation ann;
-
-    case SCode.COMMENT(annotation_ = SOME(ann)) then getInlineTypeAnnotation(ann);
-    else NONE();
-  end match;
-end getInlineTypeAnnotationFromCmt;
-
-protected function getInlineTypeAnnotation
-  input SCode.Annotation inAnnotation;
-  output Option<SCode.Annotation> outAnnotation;
-algorithm
-  outAnnotation := matchcontinue(inAnnotation)
-    local
-      list<SCode.SubMod> submods;
-      SCode.SubMod inline_mod;
-      SCode.Final fp;
-      SCode.Each ep;
-      SourceInfo info;
-
-    case SCode.ANNOTATION(SCode.MOD(fp, ep, submods, _, info))
-      equation
-        inline_mod = List.find(submods, isInlineTypeSubMod);
-      then
-        SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, {inline_mod}, NONE(), info)));
-
-    else NONE();
-  end matchcontinue;
-end getInlineTypeAnnotation;
-
-protected function isInlineTypeSubMod
-  input SCode.SubMod inSubMod;
-  output Boolean outIsInlineType;
-algorithm
-  outIsInlineType := match(inSubMod)
-    case SCode.NAMEMOD(ident = "Inline") then true;
-    case SCode.NAMEMOD(ident = "LateInline") then true;
-    case SCode.NAMEMOD(ident = "InlineAfterIndexReduction") then true;
-  end match;
-end isInlineTypeSubMod;
 
 public function appendAnnotationToCommentOption
   input SCode.Annotation inAnnotation;
@@ -3562,10 +3479,7 @@ public function getModifierBinding
   output Option<Absyn.Exp> outBinding;
 algorithm
   outBinding := match(inMod)
-    local
-      Absyn.Exp binding;
-
-    case SCode.MOD(binding = SOME(binding)) then SOME(binding);
+    case SCode.MOD() then inMod.binding;
     else NONE();
   end match;
 end getModifierBinding;
