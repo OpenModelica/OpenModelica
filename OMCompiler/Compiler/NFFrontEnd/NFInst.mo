@@ -3578,7 +3578,7 @@ algorithm
       // to give a diagnostic message.
       if not InstContext.inInstanceAPI(context) then
         try
-          Absyn.STRING(str) := SCodeUtil.getElementNamedAnnotation(
+          SOME(Absyn.STRING(str)) := SCodeUtil.lookupElementAnnotationBinding(
             InstNode.definition(InstNode.classScope(n)), "missingInnerMessage");
           Error.addSourceMessage(Error.MISSING_INNER_MESSAGE, {System.unescapedString(str)}, InstNode.info(n));
         else

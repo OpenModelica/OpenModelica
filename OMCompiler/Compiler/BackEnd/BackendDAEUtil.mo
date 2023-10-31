@@ -1141,7 +1141,7 @@ protected
 algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
-    val := SCodeUtil.getNamedAnnotation(ann, "tearingSelect");
+    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "tearingSelect");
     ts_str := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
     ts := match(ts_str)
       case "always" then SOME(BackendDAE.ALWAYS());
@@ -1171,7 +1171,7 @@ protected
 algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
-    val := SCodeUtil.getNamedAnnotation(ann, "HideResult");
+    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "HideResult");
     hr := Expression.fromAbsynExp(val);
 
     hideResult := match(inCref)
