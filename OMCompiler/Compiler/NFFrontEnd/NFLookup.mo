@@ -1157,8 +1157,8 @@ algorithm
       // version it is so we can tell the user.
       if name == SCodeUtil.getElementName(scls) then
         try
-          Absyn.Exp.STRING(value = version) :=
-            SCodeUtil.getElementNamedAnnotation(scls, "version");
+          SOME(Absyn.Exp.STRING(value = version)) :=
+            SCodeUtil.lookupElementAnnotationBinding(scls, "version");
         else
         end try;
       end if;

@@ -2474,8 +2474,9 @@ algorithm
       SourceInfo info;
     case (SCode.CLASS(restriction=SCode.R_METARECORD(moved=true)),_) then ();
     case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),name::_)
-      equation
-        (Absyn.STRING(str),info) = SCodeUtil.getNamedAnnotation(ann,"__OpenModelica_Interface");
+      algorithm
+        SCode.MOD(binding = SOME(Absyn.STRING(str)), info = info) :=
+          SCodeUtil.lookupAnnotation(ann, "__OpenModelica_Interface");
         Error.assertionOrAddSourceMessage(listMember(str, expected), Error.MISMATCHING_INTERFACE_TYPE, {str,name}, info);
       then ();
     else
@@ -2499,7 +2500,7 @@ algorithm
       SourceInfo info;
     case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),_)
       equation
-        (Absyn.STRING(str),_) = SCodeUtil.getNamedAnnotation(ann,"__OpenModelica_Interface");
+        SOME(Absyn.STRING(str)) = SCodeUtil.lookupAnnotationBinding(ann,"__OpenModelica_Interface");
         it = Util.assoc(str,assoc);
       then it;
     else
