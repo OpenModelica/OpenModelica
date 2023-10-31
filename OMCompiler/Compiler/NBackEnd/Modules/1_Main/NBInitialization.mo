@@ -37,6 +37,7 @@ encapsulated package NBInitialization
 
 protected
   // NF imports
+  import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
@@ -46,6 +47,8 @@ protected
   import NFFunction.Function;
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import NFInstNode.InstNode;
+  import Operator = NFOperator;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -53,7 +56,7 @@ protected
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Causalize = NBCausalize;
@@ -294,7 +297,7 @@ public
     var_ptr := Slice.getT(state);
     // make unique iterators for the new for-loop
     name    := BVariable.getVarName(var_ptr);
-    dims    := Type.arrayDims(ComponentRef.nodeType(name));
+    dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
     iter_crefs := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
     iter_crefs := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
@@ -377,7 +380,7 @@ public
       pre := BVariable.getPrePost(var_ptr);
       if Util.isSome(pre) then
         name    := BVariable.getVarName(var_ptr);
-        dims    := Type.arrayDims(ComponentRef.nodeType(name));
+        dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
         (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
         frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
 
@@ -501,6 +504,152 @@ public
       else exp;
     end match;
   end cleanupHomotopy;
+
+  function removeWhenEquation
+    "this function checks if an equation has to be removed before initialization.
+    true for: when branch without condition initial()"
+    input output Equation eqn;
+  algorithm
+    eqn := match eqn
+      local
+        Equation new_eqn;
+        list<Statement> stmts;
+        Option<IfEquationBody> if_body;
+
+      // reduce the body of for equations
+      case Equation.FOR_EQUATION() algorithm
+        eqn.body := list(removeWhenEquation(b) for b in eqn.body);
+      then if List.all(eqn.body, Equation.isDummy) then Equation.DUMMY_EQUATION() else eqn;
+
+      // reduce the body of when equations
+      case Equation.WHEN_EQUATION() algorithm
+        stmts := removeWhenEquationBody(SOME(eqn.body));
+        if not listEmpty(stmts) then
+          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
+          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+        else
+          new_eqn := Equation.DUMMY_EQUATION();
+        end if;
+      then new_eqn;
+
+      // reduce the body of if equations
+      case Equation.IF_EQUATION() algorithm
+        eqn.body := removeWhenEquationIfBody(eqn.body);
+        eqn.size := IfEquationBody.size(eqn.body);
+      then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
+
+      // reduce the body of algorithms
+      case Equation.ALGORITHM() algorithm
+        stmts := removeWhenEquationAlgorithmBody(eqn.alg.statements);
+        if not listEmpty(stmts) then
+          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
+          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+        else
+          new_eqn := Equation.DUMMY_EQUATION();
+        end if;
+      then new_eqn;
+
+      else eqn;
+    end match;
+  end removeWhenEquation;
+
+  function removeWhenEquationBody
+    input Option<WhenEquationBody> body_opt;
+    output list<Statement> stmts;
+  algorithm
+    stmts := match body_opt
+      local
+        WhenEquationBody body;
+
+      case SOME(body) algorithm
+        if isInitialCall(body.condition) then
+          // this is kept, return the statements
+          stmts := list(WhenStatement.toStatement(st) for st in body.when_stmts);
+        else
+          // dig deeper
+          stmts := removeWhenEquationBody(body.else_when);
+        end if;
+      then stmts;
+
+      else {};
+    end match;
+  end removeWhenEquationBody;
+
+  function removeWhenEquationIfBody
+    input output IfEquationBody body;
+  algorithm
+    body.then_eqns := list(Pointer.apply(e, removeWhenEquation) for e in body.then_eqns);
+    if Util.isSome(body.else_if) then
+      body.else_if := SOME(removeWhenEquationIfBody(Util.getOption(body.else_if)));
+    end if;
+  end removeWhenEquationIfBody;
+
+  function removeWhenEquationAlgorithmBody
+    input list<Statement> in_stmts;
+    output list<Statement> out_stmts;
+  protected
+    list<list<Statement>> stmts = {};
+  algorithm
+    for stmt in listReverse(in_stmts) loop
+      stmts := removeWhenEquationStatement(stmt) :: stmts;
+    end for;
+    out_stmts := List.flatten(stmts);
+  end removeWhenEquationAlgorithmBody;
+
+  function removeWhenEquationStatement
+    input Statement stmt;
+    output list<Statement> out_stmts = {};
+  algorithm
+    out_stmts := match stmt
+      local
+        Expression cond;
+        list<Statement> stmts;
+        list<list<Statement>> stmts_acc = {};
+
+      case Statement.WHEN() algorithm
+        for tpl in stmt.branches loop
+          (cond, stmts) := tpl;
+          if isInitialCall(cond) then
+            out_stmts := stmts;
+            break;
+          end if;
+        end for;
+      then out_stmts;
+
+      case Statement.FOR() algorithm
+        for body_stmt in listReverse(stmt.body) loop
+          stmts_acc := removeWhenEquationStatement(body_stmt) :: stmts_acc;
+        end for;
+        stmts := List.flatten(stmts_acc);
+        if not listEmpty(stmts) then
+          stmt.body := stmts;
+          out_stmts := {stmt};
+        else
+          out_stmts := {};
+        end if;
+      then out_stmts;
+
+      else {stmt};
+    end match;
+  end removeWhenEquationStatement;
+
+  function isInitialCall
+    "checks if the expression is an initial call or can be simplified to be one.
+    ToDo: better apprach is to replace all initial calls with true and see if the expression can be simplified to true.
+    do this once ExpressionSimplify is mature enough"
+    input Expression condition;
+    output Boolean b;
+  algorithm
+    b := match condition
+      // it's an initial call -> true;
+      case Expression.CALL() then Call.isNamed(condition.call, "initial");
+      // its an "or" expression, check if either argument is an initial call
+      case Expression.LBINARY(operator = Operator.OPERATOR(op = NFOperator.Op.OR))
+      then isInitialCall(condition.exp1) or isInitialCall(condition.exp2);
+      // not an initial call. Ignore "and" constructs
+      else false;
+    end match;
+  end isInitialCall;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;

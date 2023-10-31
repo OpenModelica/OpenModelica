@@ -42,6 +42,7 @@ public
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
+  import BackendDAE = NBackendDAE;
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
   import Call = NFCall;
@@ -355,6 +356,11 @@ public
       input Iterator iter;
       output Integer size = product(i for i in 1 :: sizes(iter));
     end size;
+
+    function dimensions
+      input Iterator iter;
+      output list<Dimension> dims = list(Dimension.fromInteger(s) for s in sizes(iter));
+    end dimensions;
 
     function createLocationReplacements
       "adds replacements rules for a single frame location"
@@ -886,6 +892,18 @@ public
       eq := Pointer.create(e);
       Equation.createName(eq, idx, str);
     end makeAssignment;
+
+    function makeAlgorithm
+      input list<Statement> stmts;
+      input Boolean init;
+      output Pointer<Equation> eqn;
+    protected
+      Algorithm alg;
+    algorithm
+      alg := Algorithm.ALGORITHM(stmts, {}, {}, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+      alg := Algorithm.setInputsOutputs(alg);
+      eqn := BackendDAE.lowerAlgorithm(alg, init);
+    end makeAlgorithm;
 
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
@@ -1504,6 +1522,7 @@ public
         case SCALAR_EQUATION()  then eq.ty;
         case ARRAY_EQUATION()   then eq.ty;
         case RECORD_EQUATION()  then eq.ty;
+        case FOR_EQUATION()     then Type.liftArrayRightList(getType(List.first(eq.body)), Iterator.dimensions(eq.iter));
                                 else Type.REAL(); // TODO: WRONG there should not be an else case
       end match;
     end getType;
@@ -1544,6 +1563,13 @@ public
         else {};
       end match;
     end getForFrames;
+
+    function isDummy
+      input Equation eqn;
+      output Boolean b;
+    algorithm
+      b := match eqn case DUMMY_EQUATION() then true; else false; end match;
+    end isDummy;
 
     function isDiscrete
       input Pointer<Equation> eqn;
