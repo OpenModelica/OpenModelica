@@ -823,6 +823,7 @@ public
       elseif not createAux then
         // do not create auxiliary variable and equation
         UnorderedMap.add(condition, CompositeEvent.COMPOSITE_EVENT(bucket.auxiliaryTimeEventIndex, Pointer.create(NBVariable.DUMMY_VARIABLE)), bucket.time_map);
+        exp := condition.exp;
       else
         if createAux then
           // make a new auxiliary variable and return the expression which replaces the zero crossing
