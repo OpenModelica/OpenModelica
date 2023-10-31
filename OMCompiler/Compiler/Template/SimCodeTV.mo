@@ -557,6 +557,14 @@ package SimCode
       BackendDAE.EquationAttributes eqAttr;
     end SES_RESIDUAL;
 
+    record SES_ARRAY_RESIDUAL
+      Integer index;
+      Integer res_index;
+      DAE.Exp exp;
+      DAE.ElementSource source;
+      BackendDAE.EquationAttributes eqAttr;
+    end SES_ARRAY_RESIDUAL;
+
     record SES_FOR_RESIDUAL
       Integer index;
       Integer res_index;
