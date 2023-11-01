@@ -40,6 +40,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Variability;
   import NFPrefixes.ConnectorType;
   import NFPrefixes.Direction;
+  import NFPrefixes.AccessLevel;
   import Type = NFType;
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.BackendInfo;
@@ -287,6 +288,30 @@ public
     input Variable variable;
     output Boolean isEncrypted = Util.endsWith(variable.info.fileName, ".moc");
   end isEncrypted;
+
+  function isAccessible
+    input Variable variable;
+    output Boolean isAccessible;
+  protected
+    Option<AccessLevel> oaccess;
+    AccessLevel access;
+  algorithm
+    oaccess := InstNode.getAccessLevel(ComponentRef.node(variable.name));
+
+    if isSome(oaccess) then
+      SOME(access) := oaccess;
+    else
+      access := if isEncrypted(variable) then AccessLevel.DOCUMENTATION else AccessLevel.PACKAGE_DUPLICATE;
+    end if;
+
+    if access < AccessLevel.ICON then
+      isAccessible := false;
+    elseif access < AccessLevel.NON_PACKAGE_TEXT then
+      isAccessible := not isProtected(variable);
+    else
+      isAccessible := true;
+    end if;
+  end isAccessible;
 
   function lookupTypeAttribute
     input String name;
