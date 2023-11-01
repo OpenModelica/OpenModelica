@@ -707,10 +707,6 @@ public
       addObfuscatedVariable(v, only_encrypted, obfuscation_map);
     end for;
 
-    if UnorderedMap.isEmpty(obfuscation_map) then
-      return;
-    end if;
-
     flatModel.variables := list(obfuscateVariable(v, obfuscation_map) for v in flatModel.variables);
     flatModel := mapEquations(flatModel, function obfuscateEquation(obfuscationMap = obfuscation_map));
     flatModel := mapAlgorithms(flatModel, function obfuscateAlgorithm(obfuscationMap = obfuscation_map));
@@ -740,7 +736,8 @@ public
     input ObfuscationMap obfuscationMap;
   algorithm
     var.name := obfuscateCref(var.name, obfuscationMap);
-    var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name), obfuscationMap);
+    var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name),
+      obfuscationMap, stripComment = not Variable.isAccessible(var));
     var := Variable.mapExpShallow(var, function obfuscateExp(obfuscationMap = obfuscationMap));
   end obfuscateVariable;
 
@@ -839,18 +836,23 @@ public
     input output Option<SCode.Comment> comment;
     input InstNode scope;
     input ObfuscationMap obfuscationMap;
+    input Boolean stripComment = true;
   algorithm
     comment := Util.applyOption(comment,
-      function obfuscateComment(scope = scope, obfuscationMap = obfuscationMap));
+      function obfuscateComment(scope = scope, obfuscationMap = obfuscationMap, stripComment = stripComment));
   end obfuscateCommentOpt;
 
   function obfuscateComment
     input output SCode.Comment comment;
     input InstNode scope;
     input ObfuscationMap obfuscationMap;
+    input Boolean stripComment = true;
   algorithm
     comment.annotation_ := obfuscateAnnotationOpt(comment.annotation_, scope, obfuscationMap);
-    comment.comment := NONE();
+
+    if stripComment then
+      comment.comment := NONE();
+    end if;
   end obfuscateComment;
 
   function obfuscateAnnotationOpt
