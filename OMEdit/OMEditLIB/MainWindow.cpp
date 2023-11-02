@@ -1202,7 +1202,7 @@ void showEncryptionSupportMessage()
 {
   QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
                            QString("The open-source versions of OpenModelica cannot handle encrypted libraries,"
-                                   " because the private key for decryption cannot be made public published.<br /><br />"
+                                   " because the private key for decryption cannot be made public.<br /><br />"
                                    "OpenModelica supports loading encrypted libraries through SEMLA technology, provided by Modelon AB."
                                    " For that, you need a special version of OpenModelica that is only released in binary form;"
                                    " please contact your library supplier for information on how to get it.<br /><br />"
