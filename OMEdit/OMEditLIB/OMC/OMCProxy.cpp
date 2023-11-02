@@ -1081,14 +1081,16 @@ QString OMCProxy::getElementModifierValue(QString className, QString name)
 }
 
 /*!
- * \brief OMCProxy::setElementModifierValue
+ * \brief OMCProxy::setElementModifierValueOld
  * Sets the element modifier value.
  * \param className - is the name of the class whose modifier value is set.
  * \param modifierName - is the name of the modifier whose value is set.
  * \param modifierValue - is the value to set.
  * \return true on success.
+ * \deprecated
+ * \see OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
  */
-bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
+bool OMCProxy::setElementModifierValueOld(QString className, QString modifierName, QString modifierValue)
 {
   const QString sapi = QString("setElementModifierValue");
   QString expression;
@@ -1101,6 +1103,28 @@ bool OMCProxy::setElementModifierValue(QString className, QString modifierName, 
   } else {
     expression = QString("%1(%2, %3, $Code(=%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   }
+  sendCommand(expression);
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    QString msg = tr("Unable to set the element modifier value using command <b>%1</b>").arg(expression);
+    MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::setElementModifierValue
+ * Sets the element modifier value.
+ * \param className - is the name of the class whose modifier value is set.
+ * \param modifierName - is the name of the modifier whose value is set.
+ * \param modifierValue - is the value to set.
+ * \return true on success.
+ */
+bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
+{
+  const QString expression = "setElementModifierValue(" % className % ", " % modifierName % ", $Code((" % modifierValue % ")))";
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
     return true;
@@ -1161,15 +1185,17 @@ QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClas
 }
 
 /*!
- * \brief OMCProxy::setExtendsModifierValue
+ * \brief OMCProxy::setExtendsModifierValueOld
  * Sets the extends modifier value.
  * \param className - is the name of the class whose modifier value is set.
  * \param extendsClassName - is the name of the extends class.
  * \param modifierName - is the name of the modifier whose value is set.
  * \param modifierValue - is the value to set.
  * \return true on success.
+ * \deprecated
+ * \see OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
  */
-bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
+bool OMCProxy::setExtendsModifierValueOld(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
 {
   const QString sapi = QString("setExtendsModifierValue");
   QString expression;
@@ -1182,6 +1208,29 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
   } else {
     expression = QString("%1(%2, %3, %4, $Code(=%5))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
   }
+  sendCommand(expression);
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    QString msg = tr("Unable to set the extends modifier value using command <b>%1</b>").arg(expression);
+    MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::setExtendsModifierValue
+ * Sets the extends modifier value.
+ * \param className - is the name of the class whose modifier value is set.
+ * \param extendsClassName - is the name of the extends class.
+ * \param modifierName - is the name of the modifier whose value is set.
+ * \param modifierValue - is the value to set.
+ * \return true on success.
+ */
+bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
+{
+  const QString expression = "setExtendsModifierValue(" % className % ", " % extendsClassName % ", " % modifierName % ", $Code((" % modifierValue % ")))";
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
     return true;
@@ -3525,7 +3574,7 @@ QJsonObject OMCProxy::modifierToJSON(const QString &modifier, bool prettyPrint)
 {
   QString modifierJson = mpOMCInterface->modifierToJSON(modifier, prettyPrint);
   printMessagesStringInternal();
-  if (!modifierJson.isEmpty()) {
+  if (!modifierJson.isEmpty() && modifierJson.compare(QStringLiteral("null")) != 0) {
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modifierJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {

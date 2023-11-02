@@ -566,7 +566,7 @@ void UpdateElementAttributesCommand::updateComponentModifiers(Element *pComponen
   for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
     QString modifierName = QString(pComponent->getName()).append(".").append(modifiersIterator.key());
     QString modifierValue = modifiersIterator.value();
-    if (MainWindow::instance()->getOMCProxy()->setElementModifierValue(modelName, modifierName, modifierValue)) {
+    if (MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(modelName, modifierName, modifierValue)) {
       modifierValueChanged = true;
     }
   }
@@ -606,7 +606,7 @@ void UpdateElementParametersCommand::redoInternal()
     for (componentModifier = mNewComponentModifiersMap.begin(); componentModifier != mNewComponentModifiersMap.end(); ++componentModifier) {
       QString modifierValue = componentModifier.value();
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
+      pOMCProxy->setElementModifierValueOld(className, modifierKey, modifierValue);
     }
     // we want to load modifiers even if they are loaded already
     mpComponent->getElementInfo()->setModifiersLoaded(false);
@@ -618,7 +618,7 @@ void UpdateElementParametersCommand::redoInternal()
     QMap<QString, QString>::iterator componentExtendsModifier;
     for (componentExtendsModifier = mNewComponentExtendsModifiersMap.begin(); componentExtendsModifier != mNewComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
       QString modifierValue = componentExtendsModifier.value();
-      pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
+      pOMCProxy->setExtendsModifierValueOld(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
     }
     mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
   }
@@ -641,7 +641,7 @@ void UpdateElementParametersCommand::undo()
     for (componentModifier = mOldComponentModifiersMap.begin(); componentModifier != mOldComponentModifiersMap.end(); ++componentModifier) {
       QString modifierValue = componentModifier.value();
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
+      pOMCProxy->setElementModifierValueOld(className, modifierKey, modifierValue);
     }
     // we want to load modifiers even if they are loaded already
     mpComponent->getElementInfo()->setModifiersLoaded(false);
@@ -655,7 +655,7 @@ void UpdateElementParametersCommand::undo()
     QMap<QString, QString>::iterator componentExtendsModifier;
     for (componentExtendsModifier = mOldComponentExtendsModifiersMap.begin(); componentExtendsModifier != mOldComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
       QString modifierValue = componentExtendsModifier.value();
-      pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
+      pOMCProxy->setExtendsModifierValueOld(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
     }
     mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
   }
