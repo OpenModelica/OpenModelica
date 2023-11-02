@@ -60,8 +60,10 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
             ${MINGWDIR}/bin/libharfbuzz-0.dll
             ${MINGWDIR}/bin/libiconv-2.dll
             ${MINGWDIR}/bin/libicudt67.dll
+            ${MINGWDIR}/bin/libicudtd67.dll
             ${MINGWDIR}/bin/libicuin67.dll
             ${MINGWDIR}/bin/libicuuc67.dll
+            ${MINGWDIR}/bin/libicuucd67.dll
             ${MINGWDIR}/bin/libidn2-0.dll
             ${MINGWDIR}/bin/libintl-8.dll
             ${MINGWDIR}/bin/libjpeg-8.dll
