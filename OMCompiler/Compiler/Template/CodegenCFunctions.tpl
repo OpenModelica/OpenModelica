@@ -5405,13 +5405,13 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
             let dimsLenStr = listLength(dims)
             let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
             let arrayData = if hasZeroDimension(dims) then
-            'NULL'
-          else
-            let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-            '((modelica_<%type%>*)&(<%nosubname%>))'
-            let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-            let &preExp += t
-          wrapperArray
+              'NULL'
+            else
+              let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+              '((modelica_<%type%>*)&(<%nosubname%>))'
+              let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+              let &preExp += t
+            wrapperArray
           else
             let &sub = buffer ""
             let dimsLenStr = listLength(crefDims(cr))
@@ -5421,19 +5421,17 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
             let slicedArray = tempDecl(arrayType, &varDecls)
             let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
             let &preExp += 'index_alloc_<%type%>_array(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
-          slicedArray
-        case ty then
-          if crefIsScalarWithAllConstSubs(cr) then
-            // let cast = typeCastContextInt(context, ty)
-            let &sub = buffer ""
-            '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
-          else if crefIsScalarWithVariableSubs(cr) then
-            let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-            let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-            // let cast = typeCastContextInt(context, ty)
-            '<%nosubname%>'
-          else
-            error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+            slicedArray
+      case ty then
+        if crefIsScalarWithAllConstSubs(cr) then
+          let &sub = buffer ""
+          '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
+        else if crefIsScalarWithVariableSubs(cr) then
+          let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+          let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+          '<%nosubname%>'
+        else
+          error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsSimContext;
 
 template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
