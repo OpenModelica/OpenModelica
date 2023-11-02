@@ -462,15 +462,22 @@ private:
     void setName(const QString &name) {mName = name;}
     const QString &getValue() const {return mValue;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
-    QString getValueWithSubModifiers() const;
-    QString getModifier(const QString &m) const;
-    bool hasModifier(const QString &m) const;
+    QString toString() const;
+    Modifier getModifier(const QString &m) const;
+    QString getModifierValue(const QString &m) const;
+    bool hasModifier(const QString &modifier) const;
     const QList<Modifier> &getModifiers() const {return mModifiers;}
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
     bool isRedeclare() const {return mRedeclare;}
     bool isReplaceable() const {return mReplaceable;}
     QString getModifierValue(QStringList qualifiedModifierName) const;
+
+    QString printEach() const;
+    QString printFinal() const;
+    QString printRedeclare() const;
+    QString printReplaceable() const;
+
   private:
     QString mName;
     QString mValue;

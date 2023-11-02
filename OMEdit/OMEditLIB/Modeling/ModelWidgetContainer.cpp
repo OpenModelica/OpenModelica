@@ -931,25 +931,6 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   return pComponent;
 }
 
-/*!
- * \brief GraphicsView::setModifiers
- * Sets the modifiers on Element.
- * \param modelName
- * \param name
- * \param modifierNames
- * \param modifier
- */
-void GraphicsView::setModifiers(const QString &modelName, const QString &name, QString modifierNames, const ModelInstance::Modifier modifier)
-{
-  foreach (auto subModifier, modifier.getModifiers()) {
-    if (!subModifier.getValue().isEmpty()) {
-      const QString modifierName = name % "." % modifierNames % subModifier.getName();
-      MainWindow::instance()->getOMCProxy()->setElementModifierValue(modelName, modifierName, subModifier.getValue());
-    }
-    GraphicsView::setModifiers(modelName, name, modifierNames % subModifier.getName() % ".", subModifier);
-  }
-}
-
 bool GraphicsView::addComponent(QString className, QPointF position)
 {
   MainWindow *pMainWindow = MainWindow::instance();
@@ -3132,7 +3113,7 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
         return true;
       } else {
         QString modifierKey = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(parameter);
-        MainWindow::instance()->getOMCProxy()->setElementModifierValue(className, modifierKey, QString::number(numberOfElementConnections));
+        MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(className, modifierKey, QString::number(numberOfElementConnections));
         return true;
       }
     }
@@ -3977,7 +3958,8 @@ void GraphicsView::pasteItems()
           ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className);
           addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), false);
           // set modifiers
-          GraphicsView::setModifiers(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name, "", pMimeData->getModifiers().at(index));
+          MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name,
+                                                                         pMimeData->getModifiers().at(index).toString());
         } else {
           ElementInfo *pComponentInfo = new ElementInfo(pComponent->getElementInfo());
           pComponentInfo->setName(name);

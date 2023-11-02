@@ -732,41 +732,50 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::getValueWithSubModifiers() const
+  QString Modifier::toString() const
   {
-    if (mModifiers.isEmpty()) {
+    if (isRedeclare()) {
       return mValue;
     } else {
-      QStringList modifiers;
+      QString value;
+      value.append(printRedeclare());
+      value.append(printEach());
+      value.append(printFinal());
+      value.append(printReplaceable());
+      value.append(mName);
+      QStringList subModifiers;
       foreach (auto subModifier, mModifiers) {
-        if (subModifier.getModifiers().isEmpty()) {
-          modifiers.append(subModifier.getName() % "=" % subModifier.getValue());
-        } else {
-          modifiers.append(subModifier.getName() % subModifier.getValueWithSubModifiers());
-        }
+        subModifiers.append(subModifier.toString());
       }
-      return "(" % modifiers.join(",") % ")";
+      if (!subModifiers.isEmpty()) {
+        value.append("(" % subModifiers.join(", ") % ")");
+      }
+      if (mValue.isEmpty()) {
+        return value;
+      } else {
+        return value.append(mName.isEmpty() ? mValue : " = " % mValue);
+      }
     }
   }
 
-  QString Modifier::getModifier(const QString &m) const
+  Modifier Modifier::getModifier(const QString &m) const
   {
-    foreach (auto modifier, mModifiers) {
+    foreach (Modifier modifier, mModifiers) {
       if (modifier.getName().compare(m) == 0) {
-        return modifier.getValue();
+        return modifier;
       }
     }
-    return "";
+    return Modifier();
+  }
+
+  QString Modifier::getModifierValue(const QString &m) const
+  {
+    return getModifier(m).getValue();
   }
 
   bool Modifier::hasModifier(const QString &m) const
   {
-    foreach (auto modifier, mModifiers) {
-      if (modifier.getName().compare(m) == 0) {
-        return true;
-      }
-    }
-    return false;
+    return getModifier(m).getName().compare(m) == 0;
   }
 
   QString Modifier::getModifierValue(QStringList qualifiedModifierName) const
@@ -797,6 +806,26 @@ namespace ModelInstance
     }
 
     return "";
+  }
+
+  QString Modifier::printEach() const
+  {
+    return isEach() ? "each " : "";
+  }
+
+  QString Modifier::printFinal() const
+  {
+    return isFinal() ? "final " : "";
+  }
+
+  QString Modifier::printRedeclare() const
+  {
+    return isRedeclare() ? "redeclare " : "";
+  }
+
+  QString Modifier::printReplaceable() const
+  {
+    return isReplaceable() ? "replaceable " : "";
   }
 
   Replaceable::Replaceable(Model *pParentModel)
