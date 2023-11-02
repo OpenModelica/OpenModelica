@@ -25,6 +25,9 @@ getErrorString();
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"modifiers\": \"\\\"s\\\"\",
+//       \"value\": {
+//         \"binding\": \"s\"
+//       },
 //       \"prefixes\": {
 //         \"variability\": \"parameter\"
 //       }
@@ -38,5 +41,6 @@ getErrorString();
 //     \"columnEnd\": 8
 //   }
 // }"
-// ""
+// "[<interactive>:3:5-3:27:writable] Error: Type mismatch in binding x = \"s\", expected subtype of Real, got type String.
+// "
 // endResult
