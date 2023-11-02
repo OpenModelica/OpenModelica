@@ -603,7 +603,7 @@ protected
   Boolean found;
 algorithm
   if listEmpty(inOldArgs) then
-    outArgs := inNewArgs;
+    outArgs := removeEmptySubMods(inNewArgs);
   elseif listEmpty(inNewArgs) then
     outArgs := inOldArgs;
   else
