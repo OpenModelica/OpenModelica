@@ -1348,7 +1348,7 @@ protected
   list<SCode.Mod> mods;
   Absyn.Exp exp;
 algorithm
-  mods := SCodeUtil.lookupNamedAnnotations(ann, name);
+  mods := SCodeUtil.lookupAnnotations(ann, name);
 
   for m in mods loop
     strl := match m

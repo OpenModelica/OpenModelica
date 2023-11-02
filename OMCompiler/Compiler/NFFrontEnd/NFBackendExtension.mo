@@ -1211,7 +1211,7 @@ public
     algorithm
       try
         SOME(SCode.COMMENT(annotation_=SOME(anno))) := optComment;
-        val := SCodeUtil.getNamedAnnotation(anno, "tearingSelect");
+        SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "tearingSelect");
         name := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
         tearingSelect := SOME(lookupTearingSelectMember(name));
       else

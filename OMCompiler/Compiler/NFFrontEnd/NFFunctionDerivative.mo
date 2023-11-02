@@ -227,10 +227,10 @@ protected
 
       case SCode.Element.CLASS(classDef = SCode.ClassDef.PARTS(
           externalDecl = SOME(SCode.ExternalDecl.EXTERNALDECL(annotation_ = SOME(ann)))))
-        then SCodeUtil.lookupNamedAnnotations(ann, "derivative");
+        then SCodeUtil.lookupAnnotations(ann, "derivative");
 
       case SCode.Element.CLASS(cmt = SCode.Comment.COMMENT(annotation_ = SOME(ann)))
-        then SCodeUtil.lookupNamedAnnotations(ann, "derivative");
+        then SCodeUtil.lookupAnnotations(ann, "derivative");
 
       else {};
     end match;

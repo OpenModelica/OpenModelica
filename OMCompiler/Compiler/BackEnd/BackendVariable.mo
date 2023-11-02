@@ -1683,7 +1683,7 @@ protected
 algorithm
   try
     BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-    (val,_) := SCodeUtil.getNamedAnnotation(ann, "Evaluate");
+    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "Evaluate");
     isTrue := stringEqual(Dump.printExpStr(val), "true");
   else
     isTrue := false;
@@ -1701,7 +1701,7 @@ protected
 algorithm
   try
     BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-    (val,_) := SCodeUtil.getNamedAnnotation(ann, "Evaluate");
+    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "Evaluate");
     isFalse := stringEqual(Dump.printExpStr(val), "false");
   else
     isFalse := false;
@@ -1728,7 +1728,7 @@ protected
   SCode.Annotation ann;
 algorithm
   BackendDAE.VAR(comment = SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-  outValue := SCodeUtil.getNamedAnnotation(ann, inName);
+  SOME(outValue) := SCodeUtil.lookupAnnotationBinding(ann, inName);
 end getNamedAnnotation;
 
 public function getAnnotationComment"gets the annotation comment, if there is one"
