@@ -2862,7 +2862,10 @@ algorithm
         if not isValidAssignmentMatch(ty_match) then
           binding.bindingExp := Expression.expandSplitIndices(exp);
           printBindingTypeError(name, binding, comp_ty, bind_ty, component, context);
-          fail();
+
+          if not InstContext.inInstanceAPI(context) then
+            fail();
+          end if;
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType,
             binding.evalState, binding.isFlattened, binding.source, binding.info);
