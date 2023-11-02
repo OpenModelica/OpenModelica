@@ -1945,6 +1945,13 @@ algorithm
         then
           ();
 
+      case Equation.FOR()
+        algorithm
+          (connections, transitions, initialStates) :=
+            sortEquations(eq.body, connections, transitions, initialStates);
+        then
+          ();
+
       case Equation.IF()
         algorithm
           for b in eq.branches loop
