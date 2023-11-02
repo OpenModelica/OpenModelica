@@ -134,11 +134,13 @@ public:
   QString getParameterValue(const QString &className, const QString &parameter);
   QStringList getElementModifierNames(QString className, QString name);
   QString getElementModifierValue(QString className, QString name);
+  bool setElementModifierValueOld(QString className, QString modifierName, QString modifierValue);
   bool setElementModifierValue(QString className, QString modifierName, QString modifierValue);
   bool removeElementModifiers(QString className, QString name);
   QString getElementModifierValues(QString className, QString name);
   QStringList getExtendsModifierNames(QString className, QString extendsClassName);
   QString getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName);
+  bool setExtendsModifierValueOld(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
   bool setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
   bool isExtendsModifierFinal(QString className, QString extendsClassName, QString modifierName);
   bool removeExtendsModifiers(QString className, QString extendsClassName);
