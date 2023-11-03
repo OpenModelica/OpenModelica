@@ -241,7 +241,7 @@ static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
 // ---------------------------------------------------------------------------
 static inline void resetThreadData(ModelInstance* comp)
 {
-#if !OMC_NO_THREADS
+#if defined(OM_HAVE_PTHREADS)
   if (comp->threadDataParent) {
     pthread_setspecific(mmc_thread_data_key, comp->threadDataParent);
   }
@@ -250,7 +250,7 @@ static inline void resetThreadData(ModelInstance* comp)
 
 static inline void setThreadData(ModelInstance* comp)
 {
-#if !OMC_NO_THREADS
+#if defined(OM_HAVE_PTHREADS)
   if (comp->threadDataParent) {
     pthread_setspecific(mmc_thread_data_key, comp->threadData);
   }
@@ -598,7 +598,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Out of memory.");
     return NULL;
   }
-#if !OMC_NO_THREADS
+#if defined(OM_HAVE_PTHREADS)
   pthread_setspecific(mmc_thread_data_key, comp->threadData);
 #endif
   omc_assert = omc_assert_fmi;

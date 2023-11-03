@@ -15,7 +15,9 @@ SET(OMCCAPI_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/omcCAPI/include")
 
 INCLUDE(../CMake/CheckCXX11.cmake)
 
-
+if(NOT MSVC)
+  add_definitions(-DOM_HAVE_PTHREADS)
+endif()
 
 #set OpenModelica include directories
 INCLUDE_DIRECTORIES(${OMC_PATH}/include/omc/c)
@@ -69,7 +71,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
 ENDIF(NOT WIN32)
 
 #omc c-api library build is only supported for mingw on Windows.
-#compatible importlibrary library of the mingw dll can build 
+#compatible importlibrary library of the mingw dll can build
 #in Visual Studio command prompt:
 #dumpbin /exports libOMCDLL.dll > libOMCDLL.def
 #remove all symbols except the function names
@@ -91,9 +93,3 @@ if(USE_ZEROMQ AND COMPILER_SUPPORTS_CXX11 AND (NOT ((${CMAKE_SYSTEM_NAME} MATCHE
      message (STATUS "build omc zeromq application" )
     add_subdirectory(omcZeroMQ)
 endif(USE_ZEROMQ AND COMPILER_SUPPORTS_CXX11 AND (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") )))
-  
- 
-
-
-  
-

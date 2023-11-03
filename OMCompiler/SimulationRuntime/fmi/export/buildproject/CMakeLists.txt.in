@@ -57,11 +57,15 @@ if(NOT FMI2_FUNCTIONS_H)
 endif()
 message(STATUS "FMI2 include directory: ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}")
 
-# POSIX Threads
-if(NOT MSVC)
-  set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads REQUIRED)
+
+# Look for a threading library and see if it is PThreads.
+find_package(Threads)
+# If we find a threading library and it is PThreads then we enable its usage.
+if(Threads_FOUND AND CMAKE_USE_PTHREADS_INIT)
+  set(OM_HAVE_PTHREADS ON)
+# Otherwise threading will be disabled.
+else()
+  set(OM_HAVE_PTHREADS OFF)
 endif()
 
 # Source files
@@ -127,11 +131,19 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
   endif()
 endif()
 
-# Link additional libraries
-if(NOT MSVC)
-  target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
+# If we have PThreads support, define OM_HAVE_PTHREADS and link to the imported threading library.
+if(OM_HAVE_PTHREADS)
+  target_compile_definitions(${FMU_NAME} PRIVATE OM_HAVE_PTHREADS)
+  target_link_libraries(${FMU_NAME} PRIVATE Threads::Threads)
 endif()
+
+# If not using MSVC, link to the math library libm.
+if(NOT MSVC)
+  target_link_libraries(${FMU_NAME} PRIVATE m)
+endif()
+
 @FMU_ADDITIONAL_LIBS@
+
 if(${NEED_CVODE})
   message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
   find_library(SUNDIALS_CVODE_LIBRARY sundials_cvode
@@ -155,9 +167,7 @@ target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRE
 
 # Set compiler definitions
 target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
-if(MSVC)
-  target_compile_definitions(${FMU_NAME} PRIVATE OMC_NO_THREADS)
-endif()
+
 if(BUILD_SHARED_LIBS)
   # Override FMI2_FUNCTION_PREFIX if FMU compiled dynamically
   target_compile_definitions(${FMU_NAME} PRIVATE FMI2_OVERRIDE_FUNCTION_PREFIX)

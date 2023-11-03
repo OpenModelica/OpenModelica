@@ -50,6 +50,6 @@ fmu-check:
 	./fmu-run.sh WaterTank_TestSingleWaterTank
 	$(OMC) check-files.mos
 clean:
-	rm -f *.json *.xml *.html *.fmu* *.c *.makefile *.log *.o *.opt *.libs *.h *.mat *.csv
+	rm -rf *.json *.xml *.html *.fmu* *.c *.makefile *.log *.o *.opt *.libs *.h *.mat *.csv
 	rm -f BouncingBall FmuExportCrossCompile RoomHeating_OM_RH WaterTank_Control WaterTank_TestSingleWaterTank
 	rm -rf CMakeCrossCompile/ Test_FMUs/
