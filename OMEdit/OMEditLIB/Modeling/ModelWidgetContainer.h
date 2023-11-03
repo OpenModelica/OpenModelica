@@ -605,7 +605,6 @@ public:
   QMap<QString, QString> getDerivedClassModifiersMap();
 
   bool isNewApi();
-  QString getModelTextForOMCUndoCommand();
   void addDependsOnModel(const QString &dependsOnModel);
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
 
