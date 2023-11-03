@@ -5,6 +5,8 @@ ANTLRJAR = $(ANTLR)/../tool/antlr-3.2.jar
 ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
 OMC_CONFIG_INC = ../
 
+CPPFLAGS += -DOM_HAVE_PTHREADS
+
 BUILDINC = -I$(OMC_CONFIG_INC) -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util
 
 .PHONY: all

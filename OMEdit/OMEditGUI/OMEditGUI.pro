@@ -45,6 +45,8 @@ LIBS += -L../bin -lOMEdit
 
 OMEDIT_ROOT = ../
 
+DEFINES += OM_HAVE_PTHREADS
+
 # Windows libraries and includes
 win32 {
   _cxx = $$(CXX)

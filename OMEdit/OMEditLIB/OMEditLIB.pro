@@ -40,6 +40,8 @@ TARGET = OMEdit
 TEMPLATE = lib
 CONFIG += staticlib
 
+DEFINES += OM_HAVE_PTHREADS
+
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_es.ts \
   Resources/nls/OMEdit_fr.ts \

@@ -17,6 +17,8 @@ TRANSLATIONS = Resources/nls/OMNotebook_de_DE.ts
 TARGET = OMNotebook
 TEMPLATE = app
 
+DEFINES += OM_HAVE_PTHREADS
+
 SOURCES += \
     cellapplication.cpp \
     cellparserfactory.cpp \

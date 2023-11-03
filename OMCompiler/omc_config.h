@@ -103,9 +103,9 @@
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  #define DEFAULT_CFLAGS "-Wno-parentheses-equality -falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
 #else
-  #define DEFAULT_CFLAGS "-Wno-parentheses-equality -falign-functions ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions ${MODELICAUSERCFLAGS}"
 #endif
 
 /* for windows/mingw we don't need -fPIC for x86_64 target, also clang doesn't support it, gcc ignores it */
