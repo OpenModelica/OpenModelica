@@ -3768,6 +3768,7 @@ algorithm
 
   LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
               "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
+              "-Wl,--no-undefined " +
               System.getLDFlags()+" ");
   CPPFLAGS := "-I. -I" + includeDefaultFmi + " -DOMC_FMI_RUNTIME=1";
   if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
@@ -3893,7 +3894,7 @@ algorithm
         end if;
         cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+volumeID+":/fmu "+stringDelimitList(rest," ")+ " sh -c " + dquote +
                "cd " + dquote + "/fmu/" + System.basename(fmutmp) + "/sources" + dquote + " && " +
-               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmu/fmiInclude LDFLAGS= && " +
+               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmu/fmiInclude LDFLAGS=" + dquote + "-Wl,--no-undefined" + dquote + " && " +
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});

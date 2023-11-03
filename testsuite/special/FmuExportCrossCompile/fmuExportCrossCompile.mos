@@ -84,6 +84,9 @@ platforms := if false then {
   "i686-w64-mingw32"
 };
 
+system("rm -rf MakeCrossCompile && mkdir MakeCrossCompile", "MakeCrossCompile.log");
+cd("MakeCrossCompile");
+
 for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","WaterTank.TestSingleWaterTank","BouncingBall"} loop
   c2 := stringReplace(c, ".", "_");
   print(c2+"

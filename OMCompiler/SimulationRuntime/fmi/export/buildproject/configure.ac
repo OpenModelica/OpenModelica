@@ -222,6 +222,7 @@ else
   AC_CHECK_LIB(pthread,[pthread_mutex_lock],
     [
       CPPFLAGS="$CPPFLAGS -DOM_HAVE_PTHREADS"
+      LIBS="$OLDLIBS -Wl,-Bdynamic -lpthread -shared"
     ],
     [
       if test "$LIBTYPE_DYNAMIC" = 1; then
