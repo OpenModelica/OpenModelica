@@ -69,6 +69,8 @@
 #include "util/varinfo.h"
 #include "epsilon.h"
 
+extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
+
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -1966,6 +1968,13 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     // reduce step size with respect to the simulation stop time, if necessary
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
+
+    if(omc_flag[FLAG_PORT] && solverInfo->integratorSteps) {
+      if(0 != strcmp("ia", data->simulationInfo->outputFormat)) {
+        communicateStatus("Running", (solverInfo->currentTime - data->simulationInfo->startTime)/(data->simulationInfo->stopTime - data->simulationInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
+      }
+    }
+
   }
   // end of while-loop (gbData->time < targetTime)
 
