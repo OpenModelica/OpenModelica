@@ -78,11 +78,12 @@ AC_MSG_CHECKING([if -Werror works])
 AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed (check your CFLAGS=$CFLAGS LDFLAGS=$LDFLAGS CPPFLAGS=$CPPFLAGS)])])
 CFLAGS="$CFLAGS_BEFORE"
 
+# Test for --no-undefine and add it to LDFLAGS if available
 LDFLAGS_BEFORE="$LDFLAGS"
 LDFLAGS="$LDFLAGS -Wl,--no-undefined -Werror"
 AC_MSG_CHECKING([looking for --no-undefined])
 AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
-LDFLAGS="$LDFLAGS_BEFORE"
+LDFLAGS="$LDFLAGS_BEFORE $LD_NOUNDEFINED"
 
 dnl Enable to handle AVR pre-processor not handling $ as symbol names; but fails on assembler anyway
 
@@ -222,7 +223,7 @@ else
   AC_CHECK_LIB(pthread,[pthread_mutex_lock],
     [
       CPPFLAGS="$CPPFLAGS -DOM_HAVE_PTHREADS"
-      LIBS="$OLDLIBS -Wl,-Bdynamic -lpthread -shared"
+      LIBS="$OLDLIBS -lpthread"
     ],
     [
       if test "$LIBTYPE_DYNAMIC" = 1; then
