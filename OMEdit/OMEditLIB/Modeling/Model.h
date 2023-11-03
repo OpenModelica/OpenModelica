@@ -624,6 +624,7 @@ private:
 
     Model *getParentModel() const {return mpParentModel;}
     QString getTopLevelExtendName() const;
+    Element *getTopLevelExtendElement() const;
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     const Modifier &getModifier() const {return mModifier;}

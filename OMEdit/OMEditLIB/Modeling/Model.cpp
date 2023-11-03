@@ -1636,6 +1636,16 @@ namespace ModelInstance
     deserialize_impl(jsonObject);
   }
 
+  Element *Element::getTopLevelExtendElement() const
+  {
+    Element *pElement = mpParentModel->getParentElement();
+    while (pElement && pElement->getParentModel() && pElement->getParentModel()->getParentElement()) {
+      pElement = pElement->getParentModel()->getParentElement();
+    }
+
+    return pElement;
+  }
+
   /*!
    * \brief Element::getTopLevelExtendName
    * Returns the top level extend name where the element is located.
@@ -1643,10 +1653,7 @@ namespace ModelInstance
    */
   QString Element::getTopLevelExtendName() const
   {
-    Element *pElement = mpParentModel->getParentElement();
-    while (pElement && pElement->getParentModel() && pElement->getParentModel()->getParentElement()) {
-      pElement = pElement->getParentModel()->getParentElement();
-    }
+    Element *pElement = getTopLevelExtendElement();
 
     if (pElement->getModel()) {
       return pElement->getModel()->getName();
