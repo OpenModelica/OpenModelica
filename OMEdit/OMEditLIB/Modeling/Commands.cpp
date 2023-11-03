@@ -1645,29 +1645,45 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
   }
 }
 
+/*!
+ * \brief OMCUndoCommand::OMCUndoCommand
+ * Undo command used with the instance API.
+ * \param pLibraryTreeItem
+ * \param oldModelInfo
+ * \param newModelInfo
+ * \param commandText
+ * \param pParent
+ */
 OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
-  mOldModelText = mpLibraryTreeItem->getModelWidget()->getModelTextForOMCUndoCommand();
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  // get the containing parent LibraryTreeItem
+  mpParentContainingLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
+  mOldModelText = mpParentContainingLibraryTreeItem->getClassText(pLibraryTreeModel);
   mOldModelInfo = oldModelInfo;
-  mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure());
+  mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(mpParentContainingLibraryTreeItem->getNameStructure());
   mNewModelInfo = newModelInfo;
-  mUndoDoneOnce = false;
   setText(commandText);
 }
 
+/*!
+ * \brief OMCUndoCommand::redoInternal
+ * Loads the new model text and redraws the model.
+ */
 void OMCUndoCommand::redoInternal()
 {
-  if (mUndoDoneOnce) {
-    MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpLibraryTreeItem->getFileName());
-  }
+  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
 }
 
+/*!
+ * \brief OMCUndoCommand::undo
+ * Loads the old model text and redraws the model.
+ */
 void OMCUndoCommand::undo()
 {
-  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpLibraryTreeItem->getFileName());
-  mUndoDoneOnce = true;
+  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }
