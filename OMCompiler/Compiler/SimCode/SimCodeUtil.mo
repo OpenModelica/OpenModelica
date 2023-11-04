@@ -522,7 +522,7 @@ algorithm
       if Flags.getConfigBool(Flags.REDUCE_TERMS) then
         (allEquations,modelInfo) := ReduceDAE.reduceTerms(allEquations,modelInfo,args);
         FlagsUtil.setConfigBool(Flags.REDUCE_TERMS, false);
-        FlagsUtil.disableDebug(Flags.REDUCE_DAE);
+        FlagsUtil.set(Flags.REDUCE_DAE, false);
         if debug then execStat("ReduceDAE: reduceTerms"); end if;
       end if;
     end if;
@@ -4963,7 +4963,7 @@ algorithm
       Option<BackendDAE.Jacobian> jacH;
     case (_, _, _)
       algorithm
-        // b := FlagsUtil.disableDebug(Flags.EXEC_STAT);
+        // b := FlagsUtil.set(Flags.EXEC_STAT, false);
         crefSimVarHT := createCrefToSimVarHT(inModelInfo);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code

@@ -130,7 +130,7 @@ algorithm
 
   inlineBDAE := BackendDAE.DAE(osystlst, shared);
 
-  execbool := FlagsUtil.disableDebug(Flags.EXEC_STAT);
+  execbool := FlagsUtil.set(Flags.EXEC_STAT, false);
   if Flags.isSet(Flags.DUMP_INLINE_SOLVER) then
     BackendDump.bltdump("Generated inline system:",inlineBDAE);
   end if;

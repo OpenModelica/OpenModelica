@@ -1417,7 +1417,7 @@ algorithm
         FlagsUtil.setConfigBool(Flags.REDUCE_TERMS, true);
         // FlagsUtil.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
         FlagsUtil.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
-        FlagsUtil.disableDebug(Flags.WRITE_TO_BUFFER);
+        FlagsUtil.set(Flags.WRITE_TO_BUFFER, false);
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
