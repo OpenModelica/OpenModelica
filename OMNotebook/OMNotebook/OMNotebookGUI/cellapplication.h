@@ -39,7 +39,6 @@
 #include <QtWidgets>
 #include <QPrinter>
 #include <QPrintDialog>
-#include <QtWebKitWidgets>
 #include <QTextCodec>
 #include <QUrlQuery>
 #include <QItemDelegate>
