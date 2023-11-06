@@ -39,7 +39,7 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
-#include <QWebView>
+#include <QWebEngineView>
 #include <QToolBar>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -174,7 +174,7 @@ public slots:
   void updateDocumentationHistory();
 };
 
-class DocumentationViewer : public QWebView
+class DocumentationViewer : public QWebEngineView
 {
   Q_OBJECT
 private:
@@ -192,7 +192,7 @@ public slots:
   void showContextMenu(QPoint point);
   void pageLoaded(bool ok);
 protected:
-  virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
+  virtual QWebEngineView* createWindow(QWebEnginePage::WebWindowType type) override;
   virtual void keyPressEvent(QKeyEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) override;

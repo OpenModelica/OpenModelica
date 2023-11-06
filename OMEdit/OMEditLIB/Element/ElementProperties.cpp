@@ -48,6 +48,7 @@
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QList>
+#include <QScreen>
 #include <QStringList>
 #include <QStringBuilder>
 

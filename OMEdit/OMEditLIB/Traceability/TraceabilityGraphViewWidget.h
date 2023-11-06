@@ -11,7 +11,7 @@
 #endif
 
 #include "QWidget"
-#include "QWebView"
+#include "QWebEngineView"
 #include "QUrl"
 
 class TraceabilityGraphViewWidget: public QWidget
@@ -20,7 +20,7 @@ class TraceabilityGraphViewWidget: public QWidget
 public:
   TraceabilityGraphViewWidget(QWidget *pParent = 0);
 private:
-  QWebView *mpTraceabilityGraphWebView;
+  QWebEngineView *mpTraceabilityGraphWebView;
   QLabel *mpTraceabilityGraphViewLabel;
 };
 

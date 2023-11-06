@@ -28,12 +28,8 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent testlib
-} else {
-  CONFIG += qtestlib
-}
+QT += network core gui webengine xml xmlpatterns svg opengl
+QT += printsupport widgets webenginewidgets concurrent testlib
 
 OMEDIT_ROOT = ../../
 

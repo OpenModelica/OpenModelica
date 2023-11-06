@@ -110,8 +110,8 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
             ${MINGWDIR}/bin/Qt5Sensors.dll
             ${MINGWDIR}/bin/Qt5Svg.dll
             ${MINGWDIR}/bin/Qt5WebChannel.dll
-            ${MINGWDIR}/bin/Qt5WebKit.dll
-            ${MINGWDIR}/bin/Qt5WebKitWidgets.dll
+            ${MINGWDIR}/bin/Qt5WebEngine.dll
+            ${MINGWDIR}/bin/Qt5WebEngineWidgets.dll
             ${MINGWDIR}/bin/Qt5Widgets.dll
             ${MINGWDIR}/bin/Qt5Xml.dll
             ${MINGWDIR}/bin/Qt5XmlPatterns.dll
