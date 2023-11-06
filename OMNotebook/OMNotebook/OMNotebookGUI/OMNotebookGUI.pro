@@ -5,9 +5,7 @@
 # Adeel Asghar [adeel.asghar@ida.liu.se] 2011-03-05
 
 QT += network core gui xml svg
-greaterThan(QT_MAJOR_VERSION, 4) {
-    QT *= printsupport widgets webkitwidgets
-}
+QT *= printsupport widgets
 
 # Set the C++ standard.
 CONFIG += c++1z
