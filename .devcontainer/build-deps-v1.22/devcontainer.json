@@ -10,7 +10,7 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-        "BASE_IMAGE": "docker.openmodelica.org/build-deps:v1.22.1",
+        "BASE_IMAGE": "docker.openmodelica.org/build-deps:v1.22.2",
         // On Windows USERNAME is set, on Linux USER is set
         // We hope only one is set
         "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
