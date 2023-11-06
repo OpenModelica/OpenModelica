@@ -25,7 +25,7 @@ pipeline {
         stage('autoconf-jammy-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'anheuermann/openmodelica-build-deps:v1.22.1-qtwebengine'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -39,10 +39,10 @@ pipeline {
         }
         stage('cmake-jammy-gcc') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
+            docker {
+              image 'anheuermann/openmodelica-build-deps:v1.22.1-qtwebengine'
               label 'linux'
+              alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                     "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
