@@ -21,7 +21,7 @@ target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMShellLib PUBLIC Qt5::Xml)
 target_link_libraries(OMShellLib PUBLIC Qt5::Widgets)
 target_link_libraries(OMShellLib PUBLIC Qt5::PrintSupport)
-target_link_libraries(OMShellLib PUBLIC Qt5::WebKitWidgets)
+target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
 
 
 if(APPLE)

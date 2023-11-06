@@ -56,7 +56,7 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
-#include <QtWebKit>
+//#include <QtWebEngine>
 #include <QtXmlPatterns>
 #include <QSplitter>
 #include <QUndoStack>

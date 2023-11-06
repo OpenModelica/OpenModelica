@@ -28,10 +28,8 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent
-}
+QT += network core gui webengine xml xmlpatterns svg opengl
+QT += printsupport widgets webenginewidgets concurrent
 
 # Set the C++ standard.
 CONFIG += c++1z
