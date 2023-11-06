@@ -1737,7 +1737,7 @@ algorithm
   reverseDims := lastDim::reverseDims;
   // Fill in the elements of the new array in the new order; this uses
   // an array structure for random access
-  expArr := arrayCreate(lastDim*product(d for d in firstDims), listHead(listHead(arrs)));
+  expArr := Dangerous.arrayCreateNoInit(lastDim*product(d for d in firstDims), listHead(exps));
   k := 1;
   for exps in arrs loop
     thisDim :: lastDims := lastDims;
