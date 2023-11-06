@@ -119,10 +119,10 @@ pipeline {
         }
         stage('cmake-jammy-gcc') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
+              alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
