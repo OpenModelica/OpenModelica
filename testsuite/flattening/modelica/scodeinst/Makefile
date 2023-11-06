@@ -169,6 +169,7 @@ CevalLog102.mo \
 CevalLog1.mo \
 CevalLog2.mo \
 CevalLogical1.mo \
+CevalMatrix1.mo \
 CevalMatrixPow1.mo \
 CevalMatrixProduct1.mo \
 CevalMatrixVectorMul1.mo \
