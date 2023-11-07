@@ -26,9 +26,7 @@
 #include <time.h>
 #include "diff_match_patch.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #define toAscii toLatin1
-#endif
 
 //////////////////////////
 //

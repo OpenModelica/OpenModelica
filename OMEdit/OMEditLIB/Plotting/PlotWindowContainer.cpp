@@ -61,10 +61,8 @@ PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setActivationOrder(QMdiArea::ActivationHistoryOrder);
   setDocumentMode(true);
-#if QT_VERSION >= 0x040800
   setTabsClosable(true);
   setTabsMovable(true);
-#endif
   if (OptionsDialog::instance()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {

@@ -3,14 +3,8 @@
 
 #include <QtGlobal>
 #include <QObject>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #include <QNetworkReply>
-#else
-#include <QtCore>
-#include <QtGui>
-#include <QtNetwork>
-#endif
 
 
 class Label;

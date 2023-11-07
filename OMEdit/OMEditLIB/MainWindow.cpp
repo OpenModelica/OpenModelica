@@ -422,9 +422,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   }
   // create the auto save timer
   mpAutoSaveTimer = new QTimer(this);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   mpAutoSaveTimer->setTimerType(Qt::PreciseTimer);
-#endif
   mpAutoSaveTimer->setInterval(OptionsDialog::instance()->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
   connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
   // read auto save settings

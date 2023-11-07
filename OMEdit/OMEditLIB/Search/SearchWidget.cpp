@@ -38,9 +38,7 @@
 #include "Util/Helper.h"
 #include "Options/OptionsDialog.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtConcurrent/QtConcurrent>
-#endif
 #include <QMenu>
 #include <QHeaderView>
 #include <QToolBar>
