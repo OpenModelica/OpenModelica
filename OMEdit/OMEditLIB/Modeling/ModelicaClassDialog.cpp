@@ -1677,11 +1677,7 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpUsesTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
   mpUsesTableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
   mpUsesTableWidget->setColumnCount(2);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   mpUsesTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-#else /* Qt4 */
-  mpUsesTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-#endif
   mpUsesTableWidget->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
   QStringList headerLabels;
   headerLabels << Helper::library << Helper::version;
