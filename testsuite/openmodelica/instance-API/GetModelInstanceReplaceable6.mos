@@ -1,4 +1,4 @@
-// name: GetModelInstanceReplaceable5
+// name: GetModelInstanceReplaceable6
 // keywords:
 // status: correct
 // cflags: -d=newInst,structuredRedeclare
@@ -8,11 +8,11 @@
 loadString("
   package P
     model A
-      replaceable Real x;
+      replaceable Real x[:];
     end A;
 
     model M
-      A a(redeclare replaceable Real x = 1.0);
+      A a(redeclare replaceable Real x[2] = {1, 2});
     end M;
   end P;
 ");
@@ -36,8 +36,19 @@ getModelInstance(P.M, prettyPrint = true);
 //             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \":\"
+//               ],
+//               \"typed\": [
+//                 \"2\"
+//               ]
+//             },
 //             \"value\": {
-//               \"binding\": 1
+//               \"binding\": [
+//                 1,
+//                 2
+//               ]
 //             },
 //             \"prefixes\": {
 //               \"replaceable\": true
@@ -58,7 +69,12 @@ getModelInstance(P.M, prettyPrint = true);
 //             \"$kind\": \"component\",
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
-//             \"modifiers\": \"1.0\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \"2\"
+//               ]
+//             },
+//             \"modifiers\": \"{1, 2}\",
 //             \"prefixes\": {
 //               \"replaceable\": true,
 //               \"redeclare\": true
