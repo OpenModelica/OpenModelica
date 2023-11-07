@@ -85,7 +85,7 @@ First you need to install the dependencies:
 - libcurl (libcurl4-gnutls-dev)
 - ncurses, readline (optional, used by OMShell-terminal)
 - OpenSceneGraph (optional, used by OMEdit)
-- Qt5, QtOpenGL (optional, used by OMEdit)
+- Qt5 or Qt4, Webkit, QtOpenGL (optional, used by OMEdit)
 
 # 2 Compile OpenModelica
 
