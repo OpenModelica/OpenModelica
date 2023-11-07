@@ -304,7 +304,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     process = QString("python");
     QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
     QString OMHOME = QString(Helper::OpenModelicaHome);
-    processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PYTHONPATH"));
+    processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib/omc;" + processEnvironment.value("PYTHONPATH"));
     processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
     mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #else
