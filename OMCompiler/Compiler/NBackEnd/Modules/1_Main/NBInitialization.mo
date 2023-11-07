@@ -103,7 +103,6 @@ public
             // clone all simulation equations and add them to the initial equations
             eqData.initials := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
 
-            // inline the record (and tuple?) equations from bindings
             bdae.varData := varData;
             bdae.eqData := eqData;
         then bdae;
