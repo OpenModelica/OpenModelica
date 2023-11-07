@@ -60,6 +60,7 @@ protected
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Causalize = NBCausalize;
+  import Inline = NBInline;
   import Jacobian = NBJacobian;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
@@ -93,7 +94,8 @@ public
             (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex, "State");
             (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex, "Discretes");
             (variables, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, equations, initialEqs, eqData.uniqueIndex, "Discrete States");
-            (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex);
+            (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex, " ");
+            (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
 
             varData.variables := variables;
             varData.initials := initialVars;
@@ -101,6 +103,7 @@ public
             // clone all simulation equations and add them to the initial equations
             eqData.initials := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
 
+            // inline the record (and tuple?) equations from bindings
             bdae.varData := varData;
             bdae.eqData := eqData;
         then bdae;
@@ -112,6 +115,7 @@ public
 
       // Modules
       modules := {
+        (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Inline"),
         (function Partitioning.main(systemType = NBSystem.SystemType.INI),  "Partitioning"),
         (cleanup,                                                           "Cleanup"),
         (function Causalize.main(systemType = NBSystem.SystemType.INI),     "Causalize"),
@@ -154,7 +158,8 @@ public
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
-      print(List.toString(start_eqs, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created " + str + " Start Equations:"), "\t", "\n\t", "", false) + "\n\n");
+      print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
+       StringUtil.headline_4("Created " + str + " Start Equations(" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createStartEquations;
 
@@ -244,28 +249,46 @@ public
     input output EquationPointers initialEqs;
     input output VariablePointers initialVars;
     input Pointer<Integer> idx;
+    input String str "only for debug";
   protected
     list<Pointer<Equation>> parameter_eqs = {};
     list<Pointer<Variable>> initial_param_vars = {};
   algorithm
+
     for var in VariablePointers.toList(parameters) loop
-      // only consider non constant parameter bindings
-      if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
-        // add variable to initial unknowns
-        initial_param_vars := var :: initial_param_vars;
-        // generate equation only if variable is fixed
-        if BVariable.isFixed(var) then
+      // parse records slightly different
+      if BVariable.isKnownRecord(var) then
+        // only consider non constant parameter bindings
+        if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
+          initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
           parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
+        else
+          for c_var in BVariable.getRecordChildren(var) loop
+            BVariable.setBindingAsStart(c_var);
+          end for;
         end if;
-      else
-        BVariable.setBindingAsStart(var);
+
+      // all other variables that are not records
+      elseif not BVariable.isRecord(var) then
+        // only consider non constant parameter bindings
+        if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
+          // add variable to initial unknowns
+          initial_param_vars := var :: initial_param_vars;
+          // generate equation only if variable is fixed
+          if BVariable.isFixed(var) then
+            parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
+          end if;
+        else
+          BVariable.setBindingAsStart(var);
+        end if;
       end if;
     end for;
     equations := EquationPointers.addList(parameter_eqs, equations);
     initialEqs := EquationPointers.addList(parameter_eqs, initialEqs);
     initialVars := VariablePointers.addList(initial_param_vars, initialVars);
     if (Flags.isSet(Flags.INITIALIZATION) and not listEmpty(parameter_eqs)) or Flags.isSet(Flags.DUMP_BINDINGS) then
-      print(List.toString(parameter_eqs, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created Parameter Binding Equations:"), "\t", "\n\t", "", false) + "\n\n");
+      print(List.toString(parameter_eqs, function Equation.pointerToString(str = ""),
+        StringUtil.headline_4("Created" + str + "Parameter Binding Equations (" + intString(listLength(parameter_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createParameterEquations;
 
