@@ -179,6 +179,7 @@ public
     record ITERATOR end ITERATOR;
     record RECORD
       list<Pointer<Variable>> children;
+      Boolean known                         "true if the record is known. e.g. parameters";
     end RECORD;
     record START
       Pointer<Variable> original            "Pointer to the corresponding original variable.";
@@ -265,12 +266,15 @@ public
     end isTimeDependent;
 
     function fromType
-      "only creates record, discrete or algebraic kind"
+      "only creates record, parameter, discrete or algebraic kind"
       input Type ty;
+      input Boolean makeParam;
       output VariableKind varKind;
     algorithm
       if Type.isRecord(ty) then
-        varKind := RECORD({}); // ToDo: children!
+        varKind := RECORD({}, makeParam); // ToDo: children!
+      elseif makeParam then
+        varKind := PARAMETER();
       elseif Type.isDiscrete(ty) then
         varKind := DISCRETE();
       else

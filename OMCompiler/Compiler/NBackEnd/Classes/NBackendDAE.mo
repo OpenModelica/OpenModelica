@@ -462,6 +462,7 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
+        // always consider records known since their attributes are in the unknown section (if they are unknown)
         case BackendExtension.RECORD() algorithm
           records_lst := lowVar_ptr :: records_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
@@ -561,9 +562,9 @@ protected
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then BackendExtension.STATE(1, NONE(), false);
 
-      // add children pointers for records afterwards
-      case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({});
-      case (_, _, _) guard(Type.isComplexArray(ty))                   then BackendExtension.RECORD({});
+      // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
+      case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
+      case (_, _, _) guard(Type.isComplexArray(ty))                   then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
 
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();

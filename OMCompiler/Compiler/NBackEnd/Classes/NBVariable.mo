@@ -345,6 +345,24 @@ public
     end match;
   end isPrevious;
 
+  function isRecord extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.RECORD())) then true;
+      else false;
+    end match;
+  end isRecord;
+
+  function isKnownRecord extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      local
+        Boolean known;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.RECORD(known = known))) then known;
+      else false;
+    end match;
+  end isKnownRecord;
+
   function getPrePost
     "gets the pre() / previous() var if its a variable / clocked variable or the other way around"
     input Pointer<Variable> var_ptr;
@@ -999,7 +1017,7 @@ public
     cref  := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     var   := fromCref(cref);
     // update the variable kind and set hideResult = true
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, if makeParam then VariableKind.PARAMETER() else VariableKind.fromType(ty));
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, VariableKind.fromType(ty, makeParam));
     var.backendinfo := BackendExtension.BackendInfo.setHideResult(var.backendinfo, true);
 
     // create the new variable pointer and safe it to the component reference
