@@ -775,6 +775,21 @@ type_specifier returns [void* ast]
   ;
   finally{ OM_POP(3); }
 
+type_specifier_no_dims returns [void* ast]
+@init { OM_PUSHZ2(np, ts); } :
+  np=name_path (lt=LESS ts=type_specifier_list gt=GREATER)?
+    {
+      if (ts != NULL) {
+        modelicaParserAssert(metamodelica_enabled(),"Algebraic data types are only available in MetaModelica", type_specifier_no_dims, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
+
+        $ast = Absyn__TCOMPLEX(np,ts,mmc_mk_nil());
+      } else {
+        $ast = Absyn__TPATH(np,mmc_mk_nil());
+      }
+    }
+  ;
+  finally{ OM_POP(2); }
+
 type_specifier_list returns [void* ast]
 @init { OM_PUSHZ3($np1.ast, np2, ast); } :
   np1=type_specifier ( COMMA np2=type_specifier_list )? { ast = mmc_mk_cons_typed(Absyn_TypeSpec, $np1.ast, or_nil(np2)); }
@@ -950,7 +965,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast]
 
 component_clause1 returns [void* ast]
 @init { OM_PUSHZ3(attr, ts.ast, comp_decl); } :
-  attr=base_prefix ts=type_specifier comp_decl=component_declaration1
+  attr=base_prefix ts=type_specifier_no_dims comp_decl=component_declaration1
     {
       ast = Absyn__COMPONENTS(attr, $ts.ast, mmc_mk_cons_typed(Absyn_ComponentItem, comp_decl, mmc_mk_nil()));
     }

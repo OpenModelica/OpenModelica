@@ -29,7 +29,7 @@ partial model PartialDistribution2Pipe
 end PartialDistribution2Pipe;
 
 model RedeclareClass2
-  extends PartialDistribution2Pipe(redeclare Connection2PipeLossless[nCon] con);
+  extends PartialDistribution2Pipe(redeclare Connection2PipeLossless con[nCon]);
 end RedeclareClass2;
 
 
