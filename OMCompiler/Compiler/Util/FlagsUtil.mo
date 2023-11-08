@@ -870,8 +870,8 @@ algorithm
   neg1 := stringEq(stringGetStringChar(inFlag, 1), "-");
   neg2 := System.strncmp("no",inFlag,2) == 0;
   negated :=  neg1 or neg2;
-  flag_str := if negated then Util.stringRest(inFlag) else inFlag;
-  flag_str := if neg2 then Util.stringRest(flag_str) else flag_str;
+  flag_str := if negated then StringUtil.rest(inFlag) else inFlag;
+  flag_str := if neg2 then StringUtil.rest(flag_str) else flag_str;
   setDebugFlag2(flag_str, not negated, inFlags);
 end setDebugFlag;
 

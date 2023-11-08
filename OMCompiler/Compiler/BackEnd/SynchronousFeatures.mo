@@ -59,6 +59,7 @@ import Flags;
 import HashTable;
 import List;
 import MMath;
+import StringUtil;
 import Types;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -252,7 +253,7 @@ algorithm
           subPartition := shared.partitionsInfo.subPartitions[idx];
           solverMethod := BackendDump.optionString(getSubClockSolverOpt(subPartition.clock));
           // check solverMethod
-          if stringLength(solverMethod) > 7 and substring(solverMethod, 1, 8) == "Explicit" then
+          if StringUtil.startsWith(solverMethod, "Explicit") then
             if solverMethod <> "ExplicitEuler" then
               Error.addMessage(Error.CLOCK_SOLVERMETHOD, {"ExplicitEuler", solverMethod});
               solverMethod := "ExplicitEuler";

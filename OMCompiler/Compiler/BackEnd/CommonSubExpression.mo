@@ -64,6 +64,7 @@ import HashTableExpToIndex;
 import HpcOmTaskGraph;
 import List;
 import ResolveLoops;
+import StringUtil;
 import Types;
 
 uniontype CSE_Equation
@@ -1645,32 +1646,25 @@ public function isCSECref
 "Returns true if the cref is prefixed with '$cse'"
   input DAE.ComponentRef cr;
   output Boolean b;
-protected
-  String s;
 algorithm
-  b := matchcontinue(cr)
-    case(DAE.CREF_IDENT(ident=s))
-     then (stringLength(s) > 3 and substring(s, 1, 4) == "$cse");
-    case(DAE.CREF_QUAL(ident=s))
-     then (stringLength(s) > 3 and substring(s, 1, 4) == "$cse");
-  end matchcontinue;
+  b := match cr
+    local
+      String s;
+    case DAE.CREF_IDENT(ident=s)  then StringUtil.startsWith(s, "$cse");
+    case DAE.CREF_QUAL(ident=s)   then StringUtil.startsWith(s, "$cse");
+    else false;
+  end match;
 end isCSECref;
 
 public function isCSEExp
 "Returns true if the exp is prefixed with '$cse'"
   input DAE.Exp inExp;
   output Boolean b;
-protected
-  DAE.ComponentRef cr;
-  String s;
 algorithm
-  try
-    cr := Expression.expCref(inExp);
-    DAE.CREF_IDENT(ident=s) := cr;
-    b := substring(s, 1, 4) == "$cse";
-  else
-    b := false;
-  end try;
+  b := match inExp
+    case DAE.CREF() then isCSECref(inExp.componentRef);
+    else false;
+  end match;
 end isCSEExp;
 
 public function cseBinary "authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)

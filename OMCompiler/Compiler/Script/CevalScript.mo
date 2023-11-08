@@ -110,6 +110,7 @@ import Settings;
 import SimCodeFunction;
 import StackOverflow;
 import Static;
+import StringUtil;
 import SymbolTable;
 import System;
 import Tpl;
@@ -2968,7 +2969,7 @@ algorithm
   success := false;
   outFilename := "";
   if (System.regularFileExists(filename)) then
-    if (Util.endsWith(filename, ".mol")) then
+    if (StringUtil.endsWith(filename, ".mol")) then
       workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
       if (skipUnzip or 0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
         s1 := System.basename(filename);

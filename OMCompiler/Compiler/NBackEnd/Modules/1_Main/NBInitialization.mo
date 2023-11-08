@@ -73,6 +73,7 @@ protected
   import ClockIndexes;
   import DoubleEnded;
   import Slice = NBSlice;
+  import StringUtil;
 
 public
   function main extends Module.wrapper;

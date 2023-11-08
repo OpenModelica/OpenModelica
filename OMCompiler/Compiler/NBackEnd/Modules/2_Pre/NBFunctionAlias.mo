@@ -61,6 +61,7 @@ protected
   import NBVariable.{VariablePointers, VarData};
 
   // Util imports
+  import StringUtil;
   import UnorderedMap;
 public
   function main

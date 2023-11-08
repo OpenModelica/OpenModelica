@@ -54,6 +54,7 @@ import InstUtil;
 import Class = NFClass;
 import Component = NFComponent;
 import Attributes = NFAttributes;
+import StringUtil;
 import Typing = NFTyping;
 import TypeCheck = NFTypeCheck;
 import Util;
@@ -2390,10 +2391,8 @@ protected
       name := InstNode.name(component);
 
       // Remove $in_ for OM input output arguments.
-      if stringGet(name, 1) == 36 /*$*/ then
-        if stringLength(name) > 4 and substring(name, 1, 4) == "$in_" then
-          name := substring(name, 5, stringLength(name));
-        end if;
+      if StringUtil.startsWith(name, "$in_") then
+        name := substring(name, 5, stringLength(name));
       end if;
 
       slot := SLOT(component, SlotType.GENERIC, default, NONE(), index, SlotEvalStatus.NOT_EVALUATED);

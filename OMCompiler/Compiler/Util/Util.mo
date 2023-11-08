@@ -815,14 +815,6 @@ algorithm
   end try;
 end writeFileOrErrorMsg;
 
-public function stringStartsWith
-  input String inString1;
-  input String inString2;
-  output Boolean outEqual;
-algorithm
-  outEqual := (0 == System.strncmp(inString1, inString2, stringLength(inString1)));
-end stringStartsWith;
-
 public function strncmp "Compare two strings up to the nth character
   Returns true if they are equal."
   input String inString1;
@@ -1257,17 +1249,6 @@ algorithm
   end if;
 end stringPadLeft;
 
-public function stringRest
-  "Returns all but the first character of a string."
-  input String inString;
-  output String outRest;
-protected
-  Integer len;
-algorithm
-  len := stringLength(inString);
-  outRest := substring(inString, 2, len);
-end stringRest;
-
 public function intProduct
   input list<Integer> lst;
   output Integer i = List.fold(lst, intMul, 1);
@@ -1446,23 +1427,6 @@ algorithm
   v := intBitOr(v, intBitLShift(v, 16));
   v := v + 1;
 end nextPowerOf2;
-
-public function endsWith
-  input String inString;
-  input String inSuffix;
-  output Boolean outEndsWith;
-protected
-  Integer start, stop, str_len, suf_len;
-algorithm
-  if inString == "" then
-    outEndsWith := false;
-  else
-    str_len := stringLength(inString);
-    suf_len := stringLength(inSuffix);
-    start := if str_len > suf_len then str_len - suf_len + 1 else 1;
-    outEndsWith := inSuffix == substring(inString, start, str_len);
-  end if;
-end endsWith;
 
 public function isCIdentifier
   input String str;

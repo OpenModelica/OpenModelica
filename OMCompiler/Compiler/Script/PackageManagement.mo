@@ -44,6 +44,7 @@ import Error;
 import Global;
 import List;
 import Settings;
+import StringUtil;
 import System;
 import Testsuite;
 import Util;
@@ -112,7 +113,7 @@ algorithm
   end for;
   for path in listAppend(files, dirs) loop
     lib := System.basename(path);
-    if Util.endsWith(lib, ".mo") then
+    if StringUtil.endsWith(lib, ".mo") then
       lib := Util.removeLast3Char(lib);
     end if;
     first::rest := System.strtok(lib, " ");
@@ -488,7 +489,7 @@ algorithm
     end if;
 
     curCachePath := if System.regularFileExists(installCachePath + System.basename(pack.urlToZipFile)) then installCachePath else cachePath;
-    if Util.endsWith(pack.path, ".mo") then
+    if StringUtil.endsWith(pack.path, ".mo") then
       // We are not copying a full directory, so also look for Resources in the zip-file
       dirOfPath := System.dirname(pack.path);
       if pack.singleFileStructureCopyAllFiles then
@@ -745,12 +746,12 @@ protected
   String urlWithoutProtocol, newUrl;
 algorithm
   urls := {url};
-  if not Util.stringStartsWith("https://", url) then
+  if not StringUtil.startsWith(url, "https://") then
     return;
   end if;
   urlWithoutProtocol := substring(url,9,stringLength(url));
   for mirror in mirrors loop
-    newUrl := if Util.endsWith(mirror, "/") then (mirror + urlWithoutProtocol) else (mirror + "/" + urlWithoutProtocol);
+    newUrl := if StringUtil.endsWith(mirror, "/") then (mirror + urlWithoutProtocol) else (mirror + "/" + urlWithoutProtocol);
     urls := newUrl::urls;
   end for;
 end getAllUrls;

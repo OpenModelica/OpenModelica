@@ -73,6 +73,7 @@ import Graph;
 import HashSet;
 import IndexReduction;
 import List;
+import StringUtil;
 import System;
 import UnorderedMap;
 import Util;
@@ -4435,9 +4436,9 @@ algorithm
     local
       DAE.ComponentRef cr;
 
-    case DAE.CREF_IDENT() guard(stringLength(cref.ident) > 4 and substring(cref.ident, 1, 5) == "$pDER") then (cref, true);
+    case DAE.CREF_IDENT() guard(StringUtil.startsWith(cref.ident, "$pDER")) then (cref, true);
 
-    case DAE.CREF_QUAL()  guard(stringLength(cref.ident) > 4 and substring(cref.ident, 1, 5) == "$pDER") then (cref, true);
+    case DAE.CREF_QUAL()  guard(StringUtil.startsWith(cref.ident, "$pDER")) then (cref, true);
 
     case DAE.CREF_QUAL() algorithm
       (cr, strip) := stripPartialDerWork(cref.componentRef);

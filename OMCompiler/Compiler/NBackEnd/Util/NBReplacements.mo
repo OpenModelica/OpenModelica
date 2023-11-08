@@ -67,6 +67,9 @@ protected
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
 
+  // Util
+  import StringUtil;
+
 public
 // =========================================================================
 //                     COMPONENT REFERENCE REPLACEMENT

@@ -10181,7 +10181,7 @@ algorithm
 
             else
               algorithm
-                if not Util.stringStartsWith(name, "__") then
+                if not StringUtil.startsWith(name, "__") then
                   Error.addSourceMessage(Error.CONVERSION_UNKNOWN_ANNOTATION, {name}, info);
                 end if;
               then
@@ -10199,7 +10199,7 @@ algorithm
 
     case Absyn.MODIFICATION(path = Absyn.IDENT(name = name), info = info)
       algorithm
-        if not Util.stringStartsWith(name, "__") then
+        if not StringUtil.startsWith(name, "__") then
           Error.addSourceMessage(Error.CONVERSION_UNKNOWN_ANNOTATION, {name}, info);
         end if;
       then
@@ -14848,7 +14848,7 @@ protected
 algorithm
   try
     Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := InteractiveUtil.getPathedClassInProgram(path, p);
-    encryptedClass := Util.endsWith(fileName, ".moc");
+    encryptedClass := StringUtil.endsWith(fileName, ".moc");
     if encryptedClass then
       access := getAccessAnnotation(path, p);
       if access == "Access.hide" then
@@ -14894,7 +14894,7 @@ algorithm
   end match;
   for c in classes loop
     Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := c;
-    containsEncryptedClass := containsEncryptedClass or Util.endsWith(fileName, ".moc");
+    containsEncryptedClass := containsEncryptedClass or StringUtil.endsWith(fileName, ".moc");
     if containsEncryptedClass then break; end if;
   end for;
 end astContainsEncryptedClass;

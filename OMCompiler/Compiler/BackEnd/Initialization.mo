@@ -42,6 +42,7 @@ import BackendDAE;
 import BackendDAEFunc;
 import DAE;
 import HashSet;
+import StringUtil;
 import Util;
 
 protected
@@ -2423,7 +2424,7 @@ algorithm
 
       if isFixed then
         // Special case for initial state selection
-        if Util.stringStartsWith("$STATESET",ComponentReference.crefFirstIdent(cr)) and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
+        if StringUtil.startsWith(ComponentReference.crefFirstIdent(cr), "$STATESET") and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
           stateSetSplit = Util.stringSplitAtChar(ComponentReference.crefFirstIdent(cr),".");
           stateSetIdxString::stateSetSplit = stateSetSplit;
           stateSetIdxString = substring(stateSetIdxString,10,stringLength(stateSetIdxString));

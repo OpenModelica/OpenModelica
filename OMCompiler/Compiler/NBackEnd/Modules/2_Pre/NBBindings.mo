@@ -43,6 +43,9 @@ protected
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
 
+  // Util
+  import StringUtil;
+
 public
   function main extends Module.wrapper;
   algorithm

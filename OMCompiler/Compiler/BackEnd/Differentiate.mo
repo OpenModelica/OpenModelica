@@ -73,6 +73,7 @@ protected import Flags;
 protected import Inline;
 protected import List;
 protected import SCode;
+protected import StringUtil;
 protected import Util;
 protected import SymbolicJacobian.DAE_CJ;
 
@@ -1328,11 +1329,11 @@ public function isSeedCref
   input DAE.ComponentRef cr;
   output Boolean b;
 algorithm
-  b := matchcontinue(cr)
-    case(DAE.CREF_IDENT())  then (substring(cr.ident, 1, 4) == "Seed");
-    case(DAE.CREF_QUAL())   then isSeedCref(cr.componentRef);
+  b := match cr
+    case DAE.CREF_IDENT() then StringUtil.startsWith(cr.ident, "Seed");
+    case DAE.CREF_QUAL()  then StringUtil.startsWith(cr.ident, "Seed");
     else false;
-  end matchcontinue;
+  end match;
 end isSeedCref;
 
 protected function differentiateCalls
