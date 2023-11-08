@@ -570,7 +570,7 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
     SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
