@@ -158,7 +158,7 @@ public
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
       print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
-       StringUtil.headline_4("Created " + str + " Start Equations(" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+       StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createStartEquations;
 
