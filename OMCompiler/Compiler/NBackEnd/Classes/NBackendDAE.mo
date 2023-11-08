@@ -514,7 +514,6 @@ protected
     BackendExtension.VariableAttributes attributes;
     BackendExtension.Annotations annotations;
   algorithm
-    // ToDo! extract tearing select option
     try
       attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
       annotations := BackendExtension.Annotations.create(var.comment);
