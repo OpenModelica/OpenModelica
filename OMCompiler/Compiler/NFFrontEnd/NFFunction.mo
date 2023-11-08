@@ -2666,11 +2666,16 @@ protected
   protected
     list<Algorithm> algorithms;
   algorithm
-    b := match InstNode.getSections(fn.node)
-      case Sections.SECTIONS(algorithms = algorithms) then listLength(algorithms) < 2;
-      case Sections.EMPTY() then true;
-      else false;
-    end match;
+    try
+      // InstNode.getSections can fail
+      b := match InstNode.getSections(fn.node)
+        case Sections.SECTIONS(algorithms = algorithms) then listLength(algorithms) < 2;
+        case Sections.EMPTY() then true;
+        else false;
+      end match;
+    else
+      b := false;
+    end try;
   end hasSingleOrEmptyBody;
 
   function analyseUnusedParameters
