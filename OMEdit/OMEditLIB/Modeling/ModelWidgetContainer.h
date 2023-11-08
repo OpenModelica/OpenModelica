@@ -539,12 +539,14 @@ class MimeData : public QMimeData
 {
   Q_OBJECT
 public:
-  MimeData() : QMimeData()
+  MimeData(const QString &name) : QMimeData()
   {
+    mName = name;
     mComponents.clear();
     mConnections.clear();
     mShapes.clear();
   }
+  QString getName() const {return mName;}
   void addComponent(Element *pComponent) {mComponents.append(pComponent);}
   QList<Element*> getComponents() const {return mComponents;}
   void addModifier(ModelInstance::Modifier modifier) {mModifiers.append(modifier);}
@@ -554,6 +556,7 @@ public:
   void addShape(ShapeAnnotation *pShapeAnnotation) {mShapes.append(pShapeAnnotation);}
   QList<ShapeAnnotation*> getShapes() const {return mShapes;}
 private:
+  QString mName;
   QList<Element*> mComponents;
   QList<ModelInstance::Modifier> mModifiers;
   QList<LineAnnotation*> mConnections;
