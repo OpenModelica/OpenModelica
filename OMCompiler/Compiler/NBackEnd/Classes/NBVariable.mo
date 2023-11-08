@@ -560,15 +560,9 @@ public
     end match;
   end isDummyVariable;
 
-  function isFunctionAlias
-    input Pointer<Variable> var;
-    output Boolean b = false;
-  protected
-    String str = ComponentRef.firstName(getVarName(var));
+  function isFunctionAlias extends checkVar;
   algorithm
-    if stringLength(str) > 3 then
-      b := substring(str, 1, 4) == FUNCTION_STR;
-    end if;
+    b := Util.stringStartsWith(FUNCTION_STR, ComponentRef.firstName(getVarName(var_ptr)));
   end isFunctionAlias;
 
   function createTimeVar

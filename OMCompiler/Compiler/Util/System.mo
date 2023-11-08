@@ -897,7 +897,7 @@ public function intMaxLit "Returns the maximum integer that can be represent usi
   external "builtin" outInt=intMaxLit();
 end intMaxLit;
 
-public function realMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
+public function realMaxLit "Returns the maximum real that can be represent using this version of the compiler"
   output Real outReal;
   external "builtin" outReal=realMaxLit();
 end realMaxLit;
