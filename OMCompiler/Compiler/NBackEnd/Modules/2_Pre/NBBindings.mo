@@ -77,6 +77,13 @@ public
 
         bdae.eqData := eqData;
 
+        if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
+          Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
+            intString(EqData.scalarSize(eqData)) + " (" + intString(EqData.size(eqData)) + ")",
+            intString(VarData.scalarSize(varData)) + " (" + intString(VarData.size(varData)) + ")"},
+            AbsynUtil.dummyInfo);
+        end if;
+
         if Flags.isSet(Flags.DUMP_BINDINGS) then
           print(List.toString(binding_cont, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created Continuous Binding Equations:"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_disc, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created Discrete Binding Equations:"), "\t", "\n\t", "", false) + "\n\n");

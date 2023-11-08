@@ -213,12 +213,6 @@ public
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
-    if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
-      Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
-        intString(EqData.scalarSize(equationData)) + " (" + intString(EqData.size(equationData)) + ")",
-        intString(VarData.scalarSize(variableData)) + " (" + intString(VarData.size(variableData)) + ")"},
-        AbsynUtil.dummyInfo);
-    end if;
   end lower;
 
   function main
