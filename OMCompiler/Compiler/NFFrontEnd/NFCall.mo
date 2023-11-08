@@ -2054,7 +2054,7 @@ public
           step          := NONE();
           for stop in rest loop
             iter_name   := InstNode.newIndexedIterator(index);
-            iter_range  := Expression.RANGE(Type.INTEGER(), start, step, stop);
+            iter_range  := Expression.makeRange(start, step, stop);
             iterators   := (iter_name, iter_range) :: iterators;
             index       := index + 1;
           end for;
