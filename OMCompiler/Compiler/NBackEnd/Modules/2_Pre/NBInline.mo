@@ -61,6 +61,9 @@ protected
   import Replacements = NBReplacements;
   import NBVariable.{VariablePointers, VarData};
 
+  // Util
+  import StringUtil;
+
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
 // =========================================================================

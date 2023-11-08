@@ -60,6 +60,10 @@ protected
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EquationPointers, EqData, WhenEquationBody, WhenStatement};
   import NBVariable.{VariablePointers, VarData};
+
+  // Util
+  import StringUtil;
+
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
 // =========================================================================

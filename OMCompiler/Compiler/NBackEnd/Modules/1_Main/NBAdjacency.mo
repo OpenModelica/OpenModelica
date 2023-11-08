@@ -59,6 +59,7 @@ protected
   import BackendUtil = NBBackendUtil;
   import BuiltinSystem = System;
   import Slice = NBSlice;
+  import StringUtil;
 
   // SetBased Graph imports
   import SBGraph.BipartiteIncidenceList;

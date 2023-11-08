@@ -562,7 +562,7 @@ public
 
   function isFunctionAlias extends checkVar;
   algorithm
-    b := Util.stringStartsWith(FUNCTION_STR, ComponentRef.firstName(getVarName(var_ptr)));
+    b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), FUNCTION_STR);
   end isFunctionAlias;
 
   function createTimeVar

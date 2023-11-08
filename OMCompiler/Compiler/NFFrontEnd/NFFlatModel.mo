@@ -51,6 +51,7 @@ protected
   import NFComponentRef.ComponentRef;
   import DAE.ElementSource;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import StringUtil;
   import Util;
   import Prefixes = NFPrefixes;
   import NFPrefixes.Visibility;
@@ -910,7 +911,7 @@ public
       case "unassignedMessage" then false;
       case "Protection" then false;
       case "Authorization" then false;
-      else not Util.stringStartsWith("__", mod.ident);
+      else not StringUtil.startsWith(mod.ident, "__");
     end match;
   end isAllowedAnnotation;
 

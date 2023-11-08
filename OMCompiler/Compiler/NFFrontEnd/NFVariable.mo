@@ -49,6 +49,7 @@ protected
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
+  import StringUtil;
   import Util;
   import Variable = NFVariable;
   import MetaModelica.Dangerous.listReverseInPlace;
@@ -294,7 +295,7 @@ public
 
   function isEncrypted
     input Variable variable;
-    output Boolean isEncrypted = Util.endsWith(variable.info.fileName, ".moc");
+    output Boolean isEncrypted = StringUtil.endsWith(variable.info.fileName, ".moc");
   end isEncrypted;
 
   function isAccessible

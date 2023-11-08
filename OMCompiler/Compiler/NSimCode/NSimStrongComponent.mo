@@ -80,6 +80,7 @@ protected
   // Util imports
   import Error;
   import Slice = NBSlice;
+  import StringUtil;
 
 public
   uniontype Block

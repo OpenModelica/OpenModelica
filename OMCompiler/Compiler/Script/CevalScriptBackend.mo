@@ -2425,8 +2425,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = Autoconf.pathDelimiter;
-        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename = if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkTaskGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
       then
@@ -2439,8 +2439,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = Autoconf.pathDelimiter;
-        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename = if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkCodeGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
       then
@@ -4175,7 +4175,7 @@ algorithm
       cdCommand := "cd \"" +  dirPath + "\"";
       mvCommand := "mv \"" + molName +"\" \"" + System.pwd() + "\"";
 
-      if (Util.endsWith(fileName, "package.mo")) then
+      if (StringUtil.endsWith(fileName, "package.mo")) then
         dirOrFileName := System.basename(dirPath);
         zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
         command := stringAppendList({rmCommand, " && ", cdCommand, " && cd .. && ", zipCommand});

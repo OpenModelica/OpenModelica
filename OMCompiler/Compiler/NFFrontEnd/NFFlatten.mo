@@ -65,6 +65,7 @@ import Sections = NFSections;
 import NFOCConnectionGraph;
 import Prefixes = NFPrefixes;
 import RangeIterator = NFRangeIterator;
+import StringUtil;
 import Subscript = NFSubscript;
 import Type = NFType;
 import Util;
@@ -1277,7 +1278,6 @@ function addIterator_traverse
   input list<Subscript> subscripts;
 protected
   String restString, prefixString = ComponentRef.toString(Prefix.prefix(prefix));
-  Integer prefixLength = stringLength(prefixString);
 algorithm
   exp := match exp
     local
@@ -1285,7 +1285,7 @@ algorithm
     case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
       algorithm
         restString := ComponentRef.toString(restCref);
-        if prefixLength <= stringLength(restString) and prefixString == substring(restString, 1, prefixLength) then
+        if StringUtil.startsWith(restString, prefixString) then
           exp.cref := ComponentRef.mergeSubscripts(subscripts, exp.cref, applyToScope = true);
         end if;
       then

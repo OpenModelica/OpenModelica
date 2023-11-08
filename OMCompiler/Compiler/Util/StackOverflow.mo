@@ -33,6 +33,7 @@ encapsulated package StackOverflow
 
 protected
 
+import StringUtil;
 import System;
 import Testsuite;
 
@@ -41,13 +42,11 @@ function unmangle
   output String outSymbol;
 algorithm
   outSymbol := inSymbol;
-  if stringLength(inSymbol)>4 then
-    if substring(inSymbol, 1, 4) == "omc_" then
-      outSymbol := substring(outSymbol, 5, stringLength(outSymbol));
-      outSymbol := System.stringReplace(outSymbol, "__", "#");
-      outSymbol := System.stringReplace(outSymbol, "_", ".");
-      outSymbol := System.stringReplace(outSymbol, "#", "_");
-    end if;
+  if StringUtil.startsWith(inSymbol, "omc_") then
+    outSymbol := substring(outSymbol, 5, stringLength(outSymbol));
+    outSymbol := System.stringReplace(outSymbol, "__", "#");
+    outSymbol := System.stringReplace(outSymbol, "_", ".");
+    outSymbol := System.stringReplace(outSymbol, "#", "_");
   end if;
 end unmangle;
 

@@ -56,6 +56,7 @@ protected
   // util imports
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
+  import StringUtil;
   import UnorderedSet;
 
 public

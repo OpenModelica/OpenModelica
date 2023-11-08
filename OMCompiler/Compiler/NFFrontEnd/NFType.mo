@@ -36,6 +36,7 @@ protected
   import List;
   import Class = NFClass;
   import IOStream;
+  import StringUtil;
   import Util;
   import NFClassTree.ClassTree;
 
@@ -904,7 +905,7 @@ public
       case Type.FUNCTION() then Function.typeString(ty.fn);
       case Type.METABOXED() then toString(ty.ty);
       case Type.POLYMORPHIC()
-        then if Util.stringStartsWith("__", ty.name) then
+        then if StringUtil.startsWith(ty.name, "__") then
           substring(ty.name, 3, stringLength(ty.name)) else "<" + ty.name + ">";
 
       case Type.ANY() then "$ANY$";

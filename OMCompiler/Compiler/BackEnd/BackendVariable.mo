@@ -63,6 +63,7 @@ import List;
 import MetaModelica.Dangerous;
 import Mutable;
 import SCodeUtil;
+import StringUtil;
 import System;
 import Types;
 import Util;
@@ -1441,13 +1442,11 @@ public function isRESVar
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inVar.varName)
+  outBoolean := match inVar.varName
     local
       String s;
-    case(DAE.CREF_IDENT(ident=s))
-     then (stringLength(s) > 3 and substring(s, 1, 4) == "$res");
-    case(DAE.CREF_QUAL(ident=s))
-     then (stringLength(s) > 3 and substring(s, 1, 4) == "$res");
+    case DAE.CREF_IDENT(ident=s)  then StringUtil.startsWith(s, "$res");
+    case DAE.CREF_QUAL(ident=s)   then StringUtil.startsWith(s, "$res");
     else false;
   end match;
 end isRESVar;
@@ -4445,9 +4444,7 @@ end calcAliasKey;
 
 public function selfGeneratedVar
   input DAE.ComponentRef inCref;
-  output Boolean b;
-algorithm
-  b := substring(ComponentReference.crefStr(inCref), 1, 1) == "$";
+  output Boolean b = StringUtil.startsWith(ComponentReference.crefStr(inCref), "$");
 end selfGeneratedVar;
 
 public function varStateSelectPrioAlias "Helper function to calculateVarPriorities.

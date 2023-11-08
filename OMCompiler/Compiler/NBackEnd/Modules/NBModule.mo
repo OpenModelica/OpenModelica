@@ -81,6 +81,7 @@ protected
 
   // Util imports
   import BuiltinSystem = System;
+  import StringUtil;
 
 public
   partial function wrapper

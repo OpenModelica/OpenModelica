@@ -63,6 +63,7 @@ protected
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
   import NBSlice.IntLst;
+  import StringUtil;
 public
   // =======================================
   //                MATCHING

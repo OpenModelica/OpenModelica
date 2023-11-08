@@ -111,6 +111,7 @@ import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.varName;
 import Static;
+import StringUtil;
 import SymbolicJacobian;
 import System;
 import Util;
@@ -15705,9 +15706,9 @@ function getDirectoriesForDLLsFromLinkLibs
   output list<String> outLibs = {};
 algorithm
   for str in libsAndLinkDirs loop
-    if Util.stringStartsWith("\"-L", str) then
+    if StringUtil.startsWith(str, "\"-L") then
       outLocations := listAppend({System.trim(str, "\"-L")}, outLocations);
-    elseif Util.stringStartsWith("-l", str) then
+    elseif StringUtil.startsWith(str, "-l") then
       outLibs := listAppend({System.trim(str, "-l")}, outLibs);
     end if;
   end for;

@@ -83,6 +83,7 @@ protected
 
   // Util imports
   import Error;
+  import StringUtil;
 
   // Script imports
   import CevalScriptBackend;
