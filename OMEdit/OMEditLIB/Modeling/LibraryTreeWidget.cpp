@@ -2791,6 +2791,13 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
   MainWindow *pMainWindow = MainWindow::instance();
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
+    // clear model from clipboard
+    if (QApplication::clipboard()->mimeData() && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
+      const MimeData *pMimeData = qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData());
+      if (pMimeData && pMimeData->getName().compare(pLibraryTreeItem->getNameStructure()) == 0) {
+        QApplication::clipboard()->clear();
+      }
+    }
     // if ModelWidget is used by DiagramWindow
     if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()
         && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget() == pLibraryTreeItem->getModelWidget()) {

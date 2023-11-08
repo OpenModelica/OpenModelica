@@ -3594,7 +3594,7 @@ void GraphicsView::copyItems(bool cut)
   if (!selectedItems.isEmpty()) {
     QStringList components, connections, shapes, allItems;
     connections << "equation";
-    MimeData *pMimeData = new MimeData;
+    MimeData *pMimeData = new MimeData(mpModelWidget->getLibraryTreeItem()->getNameStructure());
     for (int i = itemsList.size() - 1 ; i >= 0 ; i--) {
       if (itemsList.at(i)->isSelected()) {
         if (Element *pElement = dynamic_cast<Element*>(itemsList.at(i))) {
@@ -3645,7 +3645,10 @@ void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
     pExportMenu->addAction(MainWindow::instance()->getExportToOMNotebookAction());
     pMenu->addSeparator();
     bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView();
-    mpPasteAction->setEnabled(!isSystemLibrary && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat) && qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData()));
+    mpPasteAction->setEnabled(!isSystemLibrary
+                              && QApplication::clipboard()->mimeData()
+                              && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat)
+                              && qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData()));
     pMenu->addAction(mpPasteAction);
     pMenu->addSeparator();
     pMenu->addAction(MainWindow::instance()->getPrintModelAction());
@@ -3933,9 +3936,8 @@ QString replaceComponentNameInConnection(const QString &oldConnectionComponentNa
  */
 void GraphicsView::pasteItems()
 {
-  QClipboard *pClipboard = QApplication::clipboard();
-  if (pClipboard->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
-    if (const MimeData *pMimeData = qobject_cast<const MimeData*>(pClipboard->mimeData())) {
+  if (QApplication::clipboard()->mimeData() && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
+    if (const MimeData *pMimeData = qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData())) {
       const QString action = "Paste items from clipboard";
       mpModelWidget->beginMacro(action);
       ModelInfo oldModelInfo;
