@@ -70,6 +70,7 @@ public
       VariableAttributes attributes       "values on built-in attributes";
       Annotations annotations             "values on annotations (vendor specific)";
       Option<Pointer<Variable>> pre_post  "Pointer (var->pre) or (pre-> var) if existent.";
+      Option<Pointer<Variable>> parent    "record parent if it is part of a record.";
     end BACKEND_INFO;
 
     function toString
@@ -101,6 +102,13 @@ public
     algorithm
       binfo.varKind := varKind;
     end setVarKind;
+
+    function setParent
+      input output BackendInfo binfo;
+      input Pointer<Variable> parent;
+    algorithm
+      binfo.parent := SOME(parent);
+    end setParent;
 
     function setPrePost
       input output BackendInfo binfo;
@@ -144,12 +152,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.pre_post) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.pre_post, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE());
 
   uniontype VariableKind
     record TIME end TIME;

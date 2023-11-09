@@ -97,6 +97,12 @@ package ComplexTestNB
     Q = 0.2 + 0.1*time;
     v*Modelica.ComplexMath.conj(i) = Complex(P, Q);
   end T09;
+
+  model T10
+    Real a = 1;
+    Real b = 1;
+    Complex z(re = a, im = b);
+  end T10;
 end ComplexTestNB;
 "); getErrorString();
 
@@ -111,6 +117,7 @@ simulate(ComplexTestNB.T06); getErrorString();
 simulate(ComplexTestNB.T07); getErrorString();
 simulate(ComplexTestNB.T08); getErrorString();
 simulate(ComplexTestNB.T09); getErrorString();
+simulate(ComplexTestNB.T10); getErrorString();
 
 // Result:
 // true
@@ -369,6 +376,38 @@ simulate(ComplexTestNB.T09); getErrorString();
 // record SimulationResult
 //     resultFile = "ComplexTestNB.T09_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T09', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (4):
+// *******************************************
+// 	[SCAL] (1) z.re = a ($RES_BND_3)
+// 	[SCAL] (1) z.im = b ($RES_BND_2)
+// 	[SCAL] (1) b = 1.0 ($RES_BND_1)
+// 	[SCAL] (1) a = 1.0 ($RES_BND_0)
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (0):
+// ***************************************
+//
+//
+// Created Parameter Binding Equations (2):
+// ******************************************
+// 	[SCAL] (1) z.re = 1.0 ($RES_BND_5)
+// 	[SCAL] (1) z.im = 1.0 ($RES_BND_4)
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

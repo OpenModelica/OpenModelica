@@ -57,17 +57,27 @@ public
         list<Pointer<Equation>> binding_cont = {}   "list of created continuous binding equations";
         list<Pointer<Equation>> binding_disc = {}   "list of created discrete binding equations";
         list<Pointer<Equation>> binding_rec = {}    "list of created record binding equations";
+        Pointer<Variable> parent                    "optional record parent";
+        Boolean skip_record_element                 "true if this variable is part of an array and the array variable is bound";
 
       case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM())
       algorithm
         // create continuous and discrete binding equations
-        // do not create bindings for record children! they are bound off their record variables
-        bound_vars := list(var for var guard(BVariable.isBound(var) and not Variable.isComplexChild(Pointer.access(var))) in VariablePointers.toList(varData.unknowns));
+        bound_vars := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.unknowns));
+
         for var in bound_vars loop
-          if BVariable.isContinuous(var) then
-            binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_cont;
-          else
-            binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_disc;
+          // do not create bindings for record children with bound parents! they are bound off their record variables
+          skip_record_element := match BVariable.getParent(var)
+            case SOME(parent) then BVariable.isBound(parent);
+            else false;
+          end match;
+
+          if not skip_record_element then
+            if BVariable.isContinuous(var) then
+              binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_cont;
+            else
+              binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_disc;
+            end if;
           end if;
         end for;
 

@@ -499,7 +499,7 @@ protected
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
 
     /* lower the records to add children */
-    records         := VariablePointers.map(records, function lowerRecordChildren(variables = variables));
+    records         := VariablePointers.mapPtr(records, function lowerRecordChildren(variables = variables));
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
@@ -522,7 +522,7 @@ protected
       var.backendinfo := match var.backendinfo
         case BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-        then BackendExtension.BACKEND_INFO(varKind, attributes, annotations, NONE());
+        then BackendExtension.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE());
         else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 
@@ -599,8 +599,10 @@ protected
   end collectVariableBindingIterators;
 
   function lowerRecordChildren
-    input output Variable var;
+    input Pointer<Variable> var_ptr;
     input VariablePointers variables;
+  protected
+    Variable var = Pointer.access(var_ptr);
   algorithm
     var := match var
       local
@@ -609,11 +611,14 @@ protected
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD())) algorithm
         // kabdelhak: why is this list reversed in the frontend? doesnt match input order
         varKind.children := listReverse(list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children));
+        // set parent for all children
+        varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
         binfo.varKind := varKind;
         var.backendinfo := binfo;
       then var;
       else var;
     end match;
+    Pointer.update(var_ptr, var);
   end lowerRecordChildren;
 
   function lowerEquationData
