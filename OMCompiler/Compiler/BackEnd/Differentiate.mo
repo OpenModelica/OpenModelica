@@ -1325,13 +1325,13 @@ algorithm
 end createSeedCrefName;
 
 public function isSeedCref
-"Returns true if the cref is prefixed with '$SEED'"
+"Returns true if the last cref part is prefixed with 'Seed', i.e. x.y.z.SeedLSJac0"
   input DAE.ComponentRef cr;
   output Boolean b;
 algorithm
   b := match cr
     case DAE.CREF_IDENT() then StringUtil.startsWith(cr.ident, "Seed");
-    case DAE.CREF_QUAL()  then StringUtil.startsWith(cr.ident, "Seed");
+    case DAE.CREF_QUAL()  then isSeedCref(cr.componentRef);
     else false;
   end match;
 end isSeedCref;
