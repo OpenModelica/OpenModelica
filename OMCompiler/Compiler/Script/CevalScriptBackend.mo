@@ -499,107 +499,50 @@ algorithm
 end getConst;
 
 protected function populateSimulationOptions
-"@auhtor: adrpo
-  populate simulation options"
-  input GlobalScript.SimulationOptions inSimOpt;
-  input list<Absyn.NamedArg> inExperimentSettings;
-  output GlobalScript.SimulationOptions outSimOpt;
+  input output GlobalScript.SimulationOptions options;
+  input list<Absyn.NamedArg> args;
+protected
+  String name;
+  Absyn.Exp value;
+  Option<DAE.Exp> interval = NONE();
 algorithm
-  outSimOpt := matchcontinue(inSimOpt, inExperimentSettings)
-    local
-      Absyn.Exp exp;
-      list<Absyn.NamedArg> rest;
-      GlobalScript.SimulationOptions simOpt;
-      DAE.Exp startTime;
-      DAE.Exp stopTime;
-      DAE.Exp numberOfIntervals;
-      DAE.Exp stepSize;
-      DAE.Exp tolerance;
-      DAE.Exp method;
-      DAE.Exp fileNamePrefix;
-      DAE.Exp options;
-      DAE.Exp outputFormat;
-      DAE.Exp variableFilter, cflags, simflags;
-      Real rStepSize, rStopTime, rStartTime;
-      Integer iNumberOfIntervals;
-      String name,msg;
+  for arg in args loop
+    Absyn.NAMEDARG(argName = name, argValue = value) := arg;
 
-    case (_, {}) then inSimOpt;
+    () := match name
+      case "Tolerance"         algorithm options.tolerance := getConst(value, DAE.T_REAL_DEFAULT);            then ();
+      case "StartTime"         algorithm options.startTime := getConst(value, DAE.T_REAL_DEFAULT);            then ();
+      case "StopTime"          algorithm options.stopTime := getConst(value, DAE.T_REAL_DEFAULT);             then ();
+      case "NumberOfIntervals" algorithm options.numberOfIntervals := getConst(value, DAE.T_INTEGER_DEFAULT); then ();
+      case "Interval"          algorithm interval := SOME(getConst(value, DAE.T_REAL_DEFAULT));               then ();
+      else
+        algorithm
+          if not StringUtil.startsWith(name, "__") then
+            Error.addCompilerWarning("Ignoring unknown experiment annotation option: " +
+              name + " = " + Dump.printExpStr(value));
+          end if;
+        then
+          ();
+    end match;
+  end for;
 
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix,  options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
-      equation
-        tolerance = getConst(exp, DAE.T_REAL_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
-      equation
-        startTime = getConst(exp, DAE.T_REAL_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
-      equation
-        stopTime = getConst(exp, DAE.T_REAL_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
-      equation
-        numberOfIntervals = getConst(exp, DAE.T_INTEGER_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
-      equation
-        DAE.RCONST(rStepSize) = getConst(exp, DAE.T_REAL_DEFAULT);
-        // a bit different for Interval, handle it LAST!!!!
-        GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                           fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags) =
-          populateSimulationOptions(inSimOpt, rest);
-
-       DAE.RCONST(rStartTime) = startTime;
-       DAE.RCONST(rStopTime) = stopTime;
-       iNumberOfIntervals = realInt(realDiv(realSub(rStopTime, rStartTime), rStepSize));
-
-       numberOfIntervals = DAE.ICONST(iNumberOfIntervals);
-       stepSize = DAE.RCONST(rStepSize);
-
-       simOpt = GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                                   fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags);
-      then
-        simOpt;
-
-    case (_,Absyn.NAMEDARG(argName = name, argValue = exp)::rest)
-      equation
-        msg = "Ignoring unknown experiment annotation option: " + name + " = " + Dump.printExpStr(exp);
-        Error.addCompilerWarning(msg);
-        simOpt = populateSimulationOptions(inSimOpt, rest);
-      then
-        simOpt;
-  end matchcontinue;
+  // Interval needs to be handled last since it depends on the start and stop time.
+  if isSome(interval) then
+    options := setSimulationOptionsInterval(options, Expression.toReal(Util.getOption(interval)));
+  end if;
 end populateSimulationOptions;
+
+function setSimulationOptionsInterval
+  input output GlobalScript.SimulationOptions options;
+  input Real interval;
+protected
+  Real start_time, stop_time;
+algorithm
+  start_time := Expression.toReal(options.startTime);
+  stop_time := Expression.toReal(options.stopTime);
+  options.stepSize := DAE.RCONST(interval);
+  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval));
+end setSimulationOptionsInterval;
 
 protected function simOptionsAsString
 "@author: adrpo
@@ -3457,15 +3400,15 @@ algorithm
       list<String> args;
       Boolean haveAnnotation;
       SimCode.SimulationSettings simSettings;
-      GlobalScript.SimulationOptions defaulSimOpt;
+      GlobalScript.SimulationOptions defaultSimOpt;
 
     case (cache,env,_,fileNamePrefix,_)
       algorithm
         if isSome(inSimSettingsOpt)  then
           SOME(simSettings) := inSimSettingsOpt;
         else
-          defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
-          simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+          defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
+          simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
         end if;
 
         if Config.ignoreCommandLineOptionsAnnotation() then
@@ -3999,7 +3942,7 @@ protected
   Boolean staticSourceCodeFMU, success;
   String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
-  GlobalScript.SimulationOptions defaulSimOpt;
+  GlobalScript.SimulationOptions defaultSimOpt;
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
@@ -4034,8 +3977,8 @@ algorithm
   if isSome(inSimSettings)  then
     SOME(simSettings) := inSimSettings;
   else
-    defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
-    simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+    defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
+    simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
