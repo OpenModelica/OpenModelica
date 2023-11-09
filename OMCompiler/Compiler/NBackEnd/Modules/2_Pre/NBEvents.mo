@@ -352,10 +352,10 @@ public
     algorithm
       (exp, bucket, failed) := match exp
         local
-          Expression exp1, exp2, new_exp;
+          Expression exp1, exp2;
           Boolean b1, b2;
 
-        case new_exp as Expression.LBINARY()
+        case Expression.LBINARY()
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.LOGICAL)
           algorithm
             (exp1, bucket, b1) := create(exp.exp1, bucket, iter, eqn, funcTree, createAux);
@@ -363,10 +363,10 @@ public
             failed := (b1 or b2);
             if not failed then
               // we could simplify here
-              new_exp.exp1 := exp1;
-              new_exp.exp2 := exp2;
+              exp.exp1 := exp1;
+              exp.exp2 := exp2;
             end if;
-        then (new_exp, bucket, failed);
+        then (exp, bucket, failed);
 
         else createSingleOrSample(exp, bucket, iter, eqn, funcTree);
       end match;
@@ -396,7 +396,7 @@ public
             Solve.Status status;
             Boolean invert, can_trigger;
             Call call;
-            Expression trigger, new_exp = exp;
+            Expression trigger, new_exp;
             TimeEvent timeEvent;
             Pointer<Boolean> containsTime = Pointer.create(false);
 
@@ -436,6 +436,7 @@ public
                 else
                   // inside if can always trigger, keep the expression as is
                   can_trigger := true;
+                  new_exp := exp;
                 end if;
 
                 // create and add the time event
@@ -450,9 +451,11 @@ public
                 failed := false;
               else
                 failed := true;
+                new_exp := exp;
               end if;
             else
               failed := true;
+              new_exp := exp;
             end if;
         then (new_exp, failed);
 
@@ -819,6 +822,8 @@ public
         SOME(cev) := cev_opt;
         if not BVariable.isDummyVariable(cev.auxiliary) then
           exp := Expression.fromCref(BVariable.getVarName(cev.auxiliary));
+        else
+          exp := condition.exp;
         end if;
       else
         if createAux then

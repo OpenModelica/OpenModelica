@@ -408,10 +408,10 @@ protected
   algorithm
     b := not Inline.functionInlineable(fn)
      and not Function.isSpecialBuiltin(fn)
-     and not inlineException(fn);
+     and not replaceException(fn);
   end checkCallReplacement;
 
-  function inlineException
+  function replaceException
     input Function fn;
     output Boolean b;
   protected
@@ -430,11 +430,12 @@ protected
       else
         b := match AbsynUtil.pathFirstIdent(path)
           case "integer" then true;
+          case "String" then true;
           else false;
         end match;
       end if;
     end if;
-  end inlineException;
+  end replaceException;
 
   function filterFrames
     "filters the list of frames for all iterators that occure in exp"
