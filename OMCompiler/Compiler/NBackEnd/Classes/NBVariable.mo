@@ -87,7 +87,7 @@ public
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, NONE(), SCodeUtil.dummyInfo, BackendExtension.BACKEND_INFO(
-    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE()));
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -547,6 +547,27 @@ public
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, varKind);
     Pointer.update(varPointer, var);
   end setVarKind;
+
+  function setParent
+    "sets the record parent. only do for record elements!"
+    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> parent;
+  protected
+    Variable var = Pointer.access(varPointer);
+  algorithm
+    var.backendinfo := BackendExtension.BackendInfo.setParent(var.backendinfo, parent);
+    Pointer.update(varPointer, var);
+  end setParent;
+
+  function getParent
+    "returns the optional record parent"
+    input Pointer<Variable> varPointer;
+    output Option<Pointer<Variable>> parent;
+  protected
+    Variable var = Pointer.access(varPointer);
+  algorithm
+    parent := var.backendinfo.parent;
+  end getParent;
 
   function isDummyVariable
     "Returns true, if the variable is a dummy variable.

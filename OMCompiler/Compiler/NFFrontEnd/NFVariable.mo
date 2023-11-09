@@ -224,13 +224,6 @@ public
     output Boolean b = Type.isComplexArray(var.ty);
   end isComplexArray;
 
-  function isComplexChild
-    "returns true if any of the crefs sub crefs are of type complex.
-    Note: also returns true for the record cref itself"
-    input Variable var;
-    output Boolean b = ComponentRef.isComplexChild(var.name);
-  end isComplexChild;
-
   function isStructural
     input Variable variable;
     output Boolean structural =

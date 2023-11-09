@@ -1717,18 +1717,6 @@ public
     end match;
   end isComplexArray2;
 
-  function isComplexChild
-    "returns true if any of the crefs sub crefs are of type complex.
-    Note: also returns true for the record cref itself"
-    input ComponentRef cref;
-    output Boolean b;
-  algorithm
-    b := match cref
-      case CREF() then Type.isComplex(cref.ty) or isComplexChild(cref.restCref);
-      else false;
-    end match;
-  end isComplexChild;
-
   function containsExp
     input ComponentRef cref;
     input ContainsPred func;
