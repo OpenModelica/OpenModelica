@@ -795,6 +795,14 @@ public
     input Operator operator;
     output Boolean b;
   algorithm
+    b := match Type.arrayElementType(operator.ty)
+      case Type.INTEGER() then true;
+      case Type.REAL()    then true;
+      case Type.BOOLEAN() then true;
+                          else false;
+    end match;
+    if not b then return; end if;
+
     b := match operator.op
       case Op.ADD               then true;
       case Op.MUL               then true;

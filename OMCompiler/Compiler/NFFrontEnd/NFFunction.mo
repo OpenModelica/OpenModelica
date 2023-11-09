@@ -2661,19 +2661,19 @@ protected
 
   function hasSingleOrEmptyBody
     input Function fn;
-    output Boolean b;
+    output Boolean b = false;
   protected
     list<Algorithm> algorithms;
   algorithm
     try
       // InstNode.getSections can fail
+      if isBuiltin(fn) then return; end if;
       b := match InstNode.getSections(fn.node)
         case Sections.SECTIONS(algorithms = algorithms) then listLength(algorithms) < 2;
         case Sections.EMPTY() then true;
         else false;
       end match;
     else
-      b := false;
     end try;
   end hasSingleOrEmptyBody;
 
