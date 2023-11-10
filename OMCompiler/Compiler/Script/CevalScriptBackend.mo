@@ -3088,6 +3088,14 @@ algorithm
       then
         Values.BOOL(b);
 
+    case ("loadClassContentString",
+          {Values.STRING(str), Values.CODE(Absyn.C_TYPENAME(classpath))})
+      algorithm
+        (p, b) := InteractiveUtil.loadClassContentString(str, classpath, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        Values.BOOL(b);
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
