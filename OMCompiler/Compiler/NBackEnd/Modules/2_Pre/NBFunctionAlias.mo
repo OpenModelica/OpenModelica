@@ -265,10 +265,10 @@ protected
 
         // create new initialization variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
+          (id, aux) := tpl;
+
           // only create new var and eqn if there is not already one in the simulation system
           if not aux.parsed then
-            (id, aux) := tpl;
-
             // unfix parameters in initial system because we also add an equation
             new_vars := Call_Aux.getVars(aux);
             for new_var in new_vars loop
