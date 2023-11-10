@@ -2095,6 +2095,7 @@ algorithm
 
   // Elaborate expandable connectors.
   (flatModel, conns) := ExpandableConnectors.elaborate(flatModel, conns);
+  flatModel.variables := list(v for v guard Variable.isPresent(v) in flatModel.variables);
 
   // Collect flow variables from the model, which needs to be done after
   // elaborating expandable connectors to get all of them.
@@ -2128,7 +2129,6 @@ algorithm
 
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
-  flatModel.variables := list(v for v guard Variable.isPresent(v) in flatModel.variables);
 
   // remove input and output prefixes from local IOs that are determined through connect equations
   if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
