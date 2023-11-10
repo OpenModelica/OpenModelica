@@ -360,7 +360,7 @@ algorithm
     return;
   end if;
 
-  parent := InstNode.parent(component);
+  parent := InstNode.instanceParent(component);
   if InstNode.isComponent(parent) and Component.isConnector(InstNode.component(parent)) then
     return;
   end if;
@@ -503,20 +503,6 @@ algorithm
     end if;
   end if;
 end checkComponentStreamAttribute;
-
-function checkConnectorType
-  input InstNode node;
-  output Boolean isConnector;
-protected
-  InstNode dnode = InstNode.getDerivedNode(node);
-algorithm
-  if InstNode.isEmpty(dnode) or InstNode.isInnerOuterNode(dnode) then
-    isConnector := false;
-  else
-    isConnector := Class.isConnectorClass(InstNode.getClass(dnode)) or
-                   checkConnectorType(InstNode.parent(dnode));
-  end if;
-end checkConnectorType;
 
 function typeIterator
   input InstNode iterator;

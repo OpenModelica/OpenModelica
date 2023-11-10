@@ -441,6 +441,7 @@ ExpandableConnector6.mo \
 ExpandableConnector7.mo \
 ExpandableConnector8.mo \
 ExpandableConnector9.mo \
+ExpandableConnector10.mo \
 ExpandableConnectorComplex1.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
