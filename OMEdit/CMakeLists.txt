@@ -7,8 +7,16 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omedit)
 
 omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
 omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." OFF)
+omc_option(OM_OMEDIT_ENABLE_QTWEBENGINE "Enable building of OMEdit with QtWebEngine instead of QtWebkit" OFF)
 
-find_package(Qt5 COMPONENTS Widgets PrintSupport WebKitWidgets Xml XmlPatterns OpenGL Network Svg REQUIRED)
+set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml XmlPatterns OpenGL Network Svg REQUIRED)
+if (OM_OMEDIT_ENABLE_QTWEBENGINE)
+  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebEngineWidgets REQUIRED)
+else ()
+  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebKitWidgets REQUIRED)
+endif ()
+
 find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)
 find_package(OpenGL REQUIRED)
 

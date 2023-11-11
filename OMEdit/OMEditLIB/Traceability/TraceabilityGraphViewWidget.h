@@ -3,16 +3,15 @@
 
 
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore>
-#include <QtGui>
-#endif
 
 #include "QWidget"
-#include "QWebView"
 #include "QUrl"
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#include <QWebEngineView>
+#else
+#include <QWebView>
+#endif
 
 class TraceabilityGraphViewWidget: public QWidget
 {
@@ -20,7 +19,11 @@ class TraceabilityGraphViewWidget: public QWidget
 public:
   TraceabilityGraphViewWidget(QWidget *pParent = 0);
 private:
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEngineView *mpTraceabilityGraphWebView;
+#else
   QWebView *mpTraceabilityGraphWebView;
+#endif
   QLabel *mpTraceabilityGraphViewLabel;
 };
 
