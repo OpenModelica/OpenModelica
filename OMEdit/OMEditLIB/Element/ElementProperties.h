@@ -217,23 +217,23 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, const ModelInstance::Modifier defaultElementModifier,
-                    const ModelInstance::Modifier replaceableConstrainedByModifier, const ModelInstance::Modifier elementModifier, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, ModelInstance::Modifier *pDefaultElementModifier,
+                    ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementParentClassName() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}
-  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue, bool isElementModification, bool checkFinal);
+  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification, bool checkFinal);
   void updateParameters();
 private:
   ModelInstance::Element *mpElement;
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;
-  ModelInstance::Modifier mDefaultElementModifier;
-  ModelInstance::Modifier mReplaceableConstrainedByModifier;
-  ModelInstance::Modifier mElementModifier;
+  ModelInstance::Modifier *mpDefaultElementModifier;
+  ModelInstance::Modifier *mpReplaceableConstrainedByModifier;
+  ModelInstance::Modifier *mpElementModifier;
   QString mModification;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;
@@ -261,7 +261,7 @@ private:
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
   void fetchElementModifiers();
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
-  void applyModifiers(const ModelInstance::Modifier modifiers, bool defaultValue);
+  void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:

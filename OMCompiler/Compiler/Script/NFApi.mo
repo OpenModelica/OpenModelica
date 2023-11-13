@@ -2092,22 +2092,7 @@ algorithm
           json := JSON.addPair("each", JSON.makeBoolean(true), json);
         end if;
 
-        if Flags.isSet(Flags.STRUCTURED_REDECLARE) then
-          json := JSON.addPair("$value", dumpJSONSCodeElement(mod.element, scope), json);
-        else
-          json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
-
-          if SCodeUtil.isElementReplaceable(mod.element) then
-            json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
-          end if;
-
-          binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
-          json := JSON.addPair("$value", binding_json, json);
-
-          if isChoices then
-            json := dumpJSONRedeclareType(mod.element, scope, json);
-          end if;
-        end if;
+        json := JSON.addPair("$value", dumpJSONSCodeElement(mod.element, scope), json);
       then
         ();
 
