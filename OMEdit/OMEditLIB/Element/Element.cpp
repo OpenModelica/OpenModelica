@@ -1844,7 +1844,9 @@ QString Element::getParameterDisplayString(QString parameterName)
   /* case 1 */
   if (displayString.isEmpty()) {
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      displayString = mpModelComponent->getModifier().getModifierValue(QStringList() << parameterName);
+      if (mpModelComponent->getModifier()) {
+        displayString = mpModelComponent->getModifier()->getModifierValue(QStringList() << parameterName);
+      }
     } else {
       displayString = mpElementInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
     }
@@ -3568,8 +3570,10 @@ void Element::duplicate()
     ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpGraphicsView->getModelWidget()->getModelInstance(), name, getClassName());
     mpGraphicsView->addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), getOMCPlacementAnnotation(gridStep), false);
     // set modifiers
-    MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), name,
-                                                                   mpModelComponent->getModifier().toString());
+    if (mpModelComponent->getModifier()) {
+      MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), name,
+                                                                     mpModelComponent->getModifier()->toString());
+    }
   } else {
     mpElementInfo->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), this);
     ElementInfo *pElementInfo = new ElementInfo(mpElementInfo);
@@ -3835,8 +3839,7 @@ void Element::showParameters()
   if (MainWindow::instance()->isNewApi()) {
     pMainWindow->getProgressBar()->setRange(0, 0);
     pMainWindow->showProgressBar();
-    ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, isInheritedElement(), false, ModelInstance::Modifier(),
-                                                                  ModelInstance::Modifier(), ModelInstance::Modifier(), pMainWindow);
+    ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, isInheritedElement(), false, 0, 0, 0, pMainWindow);
     pMainWindow->hideProgressBar();
     pMainWindow->getStatusBar()->clearMessage();
     pElementParameters->exec();

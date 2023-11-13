@@ -549,8 +549,8 @@ public:
   QString getName() const {return mName;}
   void addComponent(Element *pComponent) {mComponents.append(pComponent);}
   QList<Element*> getComponents() const {return mComponents;}
-  void addModifier(ModelInstance::Modifier modifier) {mModifiers.append(modifier);}
-  QList<ModelInstance::Modifier> getModifiers() const {return mModifiers;}
+  void addModifier(ModelInstance::Modifier *pModifier) {mModifiers.append(pModifier);}
+  QList<ModelInstance::Modifier*> getModifiers() const {return mModifiers;}
   void addConnection(LineAnnotation *pConnectionLineAnnotation) {mConnections.append(pConnectionLineAnnotation);}
   QList<LineAnnotation*> getConnections() const {return mConnections;}
   void addShape(ShapeAnnotation *pShapeAnnotation) {mShapes.append(pShapeAnnotation);}
@@ -558,7 +558,7 @@ public:
 private:
   QString mName;
   QList<Element*> mComponents;
-  QList<ModelInstance::Modifier> mModifiers;
+  QList<ModelInstance::Modifier*> mModifiers;
   QList<LineAnnotation*> mConnections;
   QList<ShapeAnnotation*> mShapes;
   // QMimeData interface

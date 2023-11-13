@@ -513,6 +513,13 @@ namespace ModelInstance
     mHasDialogAnnotation = false;
   }
 
+  Annotation::~Annotation()
+  {
+    if (mpChoices) {
+      delete mpChoices;
+    }
+  }
+
   void Annotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("Icon")) {
@@ -581,7 +588,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("choices")) {
-      mChoices.deserialize(jsonObject.value("choices").toObject());
+      mpChoices = new Choices(jsonObject.value("choices").toObject(), mpParentModel);
     }
     // Connection annotation
     if (jsonObject.contains("Line")) {
@@ -686,9 +693,21 @@ namespace ModelInstance
     }
   }
 
-  Modifier::Modifier()
+  Modifier::Modifier(const QString &name, const QJsonValue &jsonValue, Model *pParentModel)
   {
+    mName = name;
+    mpParentModel = pParentModel;
+    deserialize(jsonValue);
+  }
 
+  Modifier::~Modifier()
+  {
+    if (mpElement) {
+      delete mpElement;
+    }
+
+    qDeleteAll(mModifiers);
+    mModifiers.clear();
   }
 
   void Modifier::deserialize(const QJsonValue &jsonValue)
@@ -698,21 +717,29 @@ namespace ModelInstance
       for (QJsonObject::iterator modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
         const QString modifierKey = modifiersIterator.key();
         const QJsonValue modifierValue = modifiersIterator.value();
-        if (modifierKey.compare(QStringLiteral("$value")) == 0) {
-          mValue = modifierValue.toString();
+        if (modifierKey.compare(QStringLiteral("$type")) == 0) {
+          mType = modifierValue.toString();
         } else if (modifierKey.compare(QStringLiteral("final")) == 0) {
           mFinal = true;
         } else if (modifierKey.compare(QStringLiteral("each")) == 0) {
           mEach = true;
-        } else if (modifierKey.compare(QStringLiteral("redeclare")) == 0) {
-          mRedeclare = true;
-        } else if (modifierKey.compare(QStringLiteral("replaceable")) == 0) {
-          mReplaceable = true;
+        } else if (modifierKey.compare(QStringLiteral("$value")) == 0) {
+          if (modifierValue.isObject()) {
+            QJsonObject valueObject = modifierValue.toObject();
+            QString kind = valueObject.value("$kind").toString();
+
+            if (kind.compare(QStringLiteral("component")) == 0) {
+              mpElement = new Component(mpParentModel, valueObject);
+            } else if (kind.compare(QStringLiteral("class")) == 0) {
+              mpElement = new ReplaceableClass(mpParentModel, valueObject);
+            } else {
+              qDebug() << "Modifier::deserialize() unhandled kind of element" << kind;
+            }
+          } else {
+            mValue = modifierValue.toString();
+          }
         } else {
-          Modifier modifier;
-          modifier.setName(modifierKey);
-          modifier.deserialize(modifierValue);
-          mModifiers.append(modifier);
+          mModifiers.append(new Modifier(modifierKey, modifierValue, mpParentModel));
         }
       }
     } else {
@@ -720,50 +747,70 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::toString() const
+  QString Modifier::toString(bool skipTopLevel) const
   {
-    if (isRedeclare()) {
-      return mValue;
+    if (mpElement) {
+      return mpElement->toString(skipTopLevel);
     } else {
       QString value;
-      value.append(printRedeclare());
-      value.append(printEach());
-      value.append(printFinal());
-      value.append(printReplaceable());
+      if (!skipTopLevel) {
+        value.append(toStringEach());
+        value.append(toStringFinal());
+      }
       value.append(mName);
       QStringList subModifiers;
-      foreach (auto subModifier, mModifiers) {
-        subModifiers.append(subModifier.toString());
+      foreach (auto *pSubModifier, mModifiers) {
+        subModifiers.append(pSubModifier->toString());
       }
       if (!subModifiers.isEmpty()) {
         value.append("(" % subModifiers.join(", ") % ")");
       }
       if (mValue.isEmpty()) {
-        return value;
+        if (value.compare(mName) != 0) {
+          return value;
+        } else {
+          return "";
+        }
       } else {
         return value.append(mName.isEmpty() ? mValue : " = " % mValue);
       }
     }
   }
 
-  Modifier Modifier::getModifier(const QString &m) const
+  Modifier *Modifier::getModifier(const QString &modifier) const
   {
-    foreach (Modifier modifier, mModifiers) {
-      if (modifier.getName().compare(m) == 0) {
-        return modifier;
+    foreach (auto *pModifier, mModifiers) {
+      if (pModifier->getName().compare(modifier) == 0) {
+        return pModifier;
       }
     }
-    return Modifier();
+    return 0;
   }
 
-  QString Modifier::getModifierValue(const QString &m) const
+  QString Modifier::getModifierValue(const QString &modifier) const
   {
-    return getModifier(m).getValue();
+    Modifier *pModifier = getModifier(modifier);
+    if (pModifier) {
+      return pModifier->getValue();
+    } else {
+      return "";
+    }
   }
 
-  bool Modifier::hasModifier(const QString &m) const
+  bool Modifier::hasModifier(const QString &modifier) const
   {
-    return getModifier(m).getName().compare(m) == 0;
+    Modifier *pModifier = getModifier(modifier);
+    return pModifier && pModifier->getName().compare(modifier) == 0;
+  }
+
+  bool Modifier::isRedeclare() const
+  {
+    return mpElement && mpElement->isRedeclare();
+  }
+
+  bool Modifier::isReplaceable() const
+  {
+    return mpElement && mpElement->getReplaceable();
   }
 
   QString Modifier::getModifierValue(QStringList qualifiedModifierName) const
@@ -777,43 +824,33 @@ namespace ModelInstance
      * so correct list items are passed to the function.
      */
     const QString name = qualifiedModifierName.takeFirst();
-    return Modifier::getModifierValue(*this, name, qualifiedModifierName);
+    return Modifier::getModifierValue(this, name, qualifiedModifierName);
   }
 
-  QString Modifier::getModifierValue(const Modifier &modifier, const QString &modifierName, QStringList qualifiedModifierName)
+  QString Modifier::toStringEach() const
   {
-    foreach (auto subModifier, modifier.getModifiers()) {
-      if (subModifier.getName().compare(modifierName) == 0) {
+    return isEach() ? "each " : "";
+  }
+
+  QString Modifier::toStringFinal() const
+  {
+    return isFinal() ? "final " : "";
+  }
+
+  QString Modifier::getModifierValue(const Modifier *pModifier, const QString &modifierName, QStringList qualifiedModifierName)
+  {
+    foreach (auto *pSubModifier, pModifier->getModifiers()) {
+      if (pSubModifier->getName().compare(modifierName) == 0) {
         if (qualifiedModifierName.isEmpty()) {
-          return subModifier.getValueWithoutQuotes();
+          return pSubModifier->getValueWithoutQuotes();
         } else {
           const QString name = qualifiedModifierName.takeFirst();
-          return Modifier::getModifierValue(subModifier, name, qualifiedModifierName);
+          return Modifier::getModifierValue(pSubModifier, name, qualifiedModifierName);
         }
       }
     }
 
     return "";
-  }
-
-  QString Modifier::printEach() const
-  {
-    return isEach() ? "each " : "";
-  }
-
-  QString Modifier::printFinal() const
-  {
-    return isFinal() ? "final " : "";
-  }
-
-  QString Modifier::printRedeclare() const
-  {
-    return isRedeclare() ? "redeclare " : "";
-  }
-
-  QString Modifier::printReplaceable() const
-  {
-    return isReplaceable() ? "replaceable " : "";
   }
 
   Replaceable::Replaceable(Model *pParentModel)
@@ -823,6 +860,13 @@ namespace ModelInstance
     mComment = "";
   }
 
+  Replaceable::~Replaceable()
+  {
+    if (mpModifier) {
+      delete mpModifier;
+    }
+  }
+
   void Replaceable::deserialize(const QJsonValue &jsonValue)
   {
     if (jsonValue.isObject()) {
@@ -830,7 +874,7 @@ namespace ModelInstance
       mConstrainedby = replaceableObject.value("constrainedby").toString();
 
       if (replaceableObject.contains("modifiers")) {
-        mModifier.deserialize(replaceableObject.value("modifiers"));
+        mpModifier = new Modifier("", replaceableObject.value("modifiers"), mpParentModel);
       }
 
       if (replaceableObject.contains("comment")) {
@@ -905,6 +949,23 @@ namespace ModelInstance
     if (jsonObject.contains("direction")) {
       mDirection = jsonObject.value("direction").toString();
     }
+  }
+
+  QString Prefixes::toString(bool skipTopLevel) const
+  {
+    QStringList value;
+
+    if (mRedeclare) {
+      value.append("redeclare");
+    }
+    if (mFinal && !skipTopLevel) {
+      value.append("final");
+    }
+    if (mpReplaceable) {
+      value.append("replaceable");
+    }
+
+    return value.join(" ");
   }
 
   Source::Source()
@@ -1003,7 +1064,7 @@ namespace ModelInstance
       } else if (kind.compare(QStringLiteral("class")) == 0) {
         mElements.append(new ReplaceableClass(this, elementObject));
       } else {
-        qDebug() << "Unhandled kind of element" << kind;
+        qDebug() << "Model::deserialize() unhandled kind of element" << kind;
       }
     }
 
@@ -1363,7 +1424,9 @@ namespace ModelInstance
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<Component*>(pElement);
         if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-          value = pComponent->getModifier().getValueWithoutQuotes();
+          if (pComponent->getModifier()) {
+            value = pComponent->getModifier()->getValueWithoutQuotes();
+          }
           // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
           if (value.isEmpty() && pComponent->getModel()) {
             value = pComponent->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
@@ -1382,7 +1445,9 @@ namespace ModelInstance
     foreach (auto pElement, mElements) {
       if (pElement->isExtend()) {
         auto pExtend = dynamic_cast<Extend*>(pElement);
-        value = pExtend->getModifier().getModifierValue(QStringList() << parameter);
+        if (pExtend->getModifier()) {
+          value = pExtend->getModifier()->getModifierValue(QStringList() << parameter);
+        }
         if (!value.isEmpty()) {
           return value;
         } else {
@@ -1594,10 +1659,18 @@ namespace ModelInstance
     }
   }
 
-  Choices::Choices()
+  Choices::Choices(const QJsonObject &jsonObject, Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     mCheckBox = false;
     mDymolaCheckBox = false;
+    mChoices.clear();
+    deserialize(jsonObject);
+  }
+
+  Choices::~Choices()
+  {
+    qDeleteAll(mChoices);
     mChoices.clear();
   }
 
@@ -1614,27 +1687,16 @@ namespace ModelInstance
     if (jsonObject.contains("choice")) {
       QJsonArray choices = jsonObject.value("choice").toArray();
       foreach (auto choice, choices) {
-        QString type = "";
-        if (choice.isObject()) {
-          QJsonObject choiceObject = choice.toObject();
-          if (choiceObject.contains("$type")) {
-            type = choiceObject.value("$type").toString();
-          }
-          if (choiceObject.contains("$value")) {
-            mChoices.append(qMakePair(choiceObject.value("$value").toString(), type));
-          }
-        } else {
-          mChoices.append(qMakePair(choice.toString(), type));
-        }
+        mChoices.append(new Modifier("", choice, mpParentModel));
       }
     }
   }
 
-  QStringList Choices::getChoices() const
+  QStringList Choices::getChoicesStringList() const
   {
     QStringList choices;
-    foreach (Choice choice, mChoices) {
-      choices.append(choice.first);
+    foreach (auto *pChoice, mChoices) {
+      choices.append(pChoice->toString());
     }
     return choices;
   }
@@ -1650,12 +1712,16 @@ namespace ModelInstance
     if (mpModel) {
       delete mpModel;
     }
+
+    if (mpModifier) {
+      delete mpModifier;
+    }
   }
 
   void Element::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("modifiers")) {
-      mModifier.deserialize(jsonObject.value("modifiers"));
+      mpModifier = new Modifier("", jsonObject.value("modifiers"), mpParentModel);
     }
 
     if (jsonObject.contains("comment")) {
@@ -1690,7 +1756,10 @@ namespace ModelInstance
      * 2. If no unit is found then check it in the derived class modifier value recursively.
      */
     // Case 1
-    QString modifierValue = mModifier.getModifierValue(modifierNames);
+    QString modifierValue;
+    if (mpModifier) {
+      modifierValue = mpModifier->getModifierValue(modifierNames);
+    }
     if (modifierValue.isEmpty() && mpModel) {
       // Case 2
       if (modifierValue.isEmpty()) {
@@ -1723,6 +1792,11 @@ namespace ModelInstance
   Replaceable *Element::getReplaceable() const
   {
     return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
+  }
+
+  bool Element::isRedeclare() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->isRedeclare() : false;
   }
 
   QString Element::getConnector() const
@@ -1772,6 +1846,14 @@ namespace ModelInstance
     }
   }
 
+  QString Element::toString(bool skipTopLevel) const
+  {
+    if (mpPrefixes) {
+      return mpPrefixes->toString(skipTopLevel);
+    }
+    return "";
+  }
+
   /*!
    * \brief Element::getDirection
    * Returns the direction of the element, either from the element itself or
@@ -1799,7 +1881,9 @@ namespace ModelInstance
     foreach (auto pElement, pModel->getElements()) {
       if (pElement->isExtend()) {
         auto pExtend = dynamic_cast<Extend*>(pElement);
-        modifierValue = pExtend->getModifier().getModifierValue(modifierNames);
+        if (pExtend->getModifier()) {
+          modifierValue = pExtend->getModifier()->getModifierValue(modifierNames);
+        }
         if (modifierValue.isEmpty() && pExtend->getModel()) {
           modifierValue = Element::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
         } else {
@@ -1854,6 +1938,11 @@ namespace ModelInstance
       return mpModel->getElements().at(0)->getRootType();
     }
     return mBaseClass;
+  }
+
+  QString Extend::toString(bool skipTopLevel) const
+  {
+    return Element::toString(skipTopLevel);
   }
 
   Component::Component(Model *pParentModel)
@@ -1946,6 +2035,24 @@ namespace ModelInstance
     return mType;
   }
 
+  QString Component::toString(bool skipTopLevel) const
+  {
+    QStringList value;
+
+    value.append(Element::toString(skipTopLevel));
+    value.append(mType);
+    value.append(mName);
+    if (mpModifier) {
+      value.append(mpModifier->toString());
+    }
+    if (!mComment.isEmpty()) {
+      value.append("\"" % mComment % "\"");
+    }
+
+    value.removeAll(QString(""));
+    return value.join(" ");
+  }
+
   ReplaceableClass::ReplaceableClass(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
@@ -1994,6 +2101,21 @@ namespace ModelInstance
     } else {
       return mName;
     }
+  }
+
+  QString ReplaceableClass::toString(bool skipTopLevel) const
+  {
+    QStringList value;
+
+    value.append(Element::toString(skipTopLevel));
+    value.append(mType);
+    value.append(mName);
+    if (!mBaseClass.isEmpty()) {
+      value.append("= " % mBaseClass);
+    }
+
+    value.removeAll(QString(""));
+    return value.join(" ");
   }
 
   Part::Part()
@@ -2052,9 +2174,9 @@ namespace ModelInstance
     }
   }
 
-  void Name::deserialize(const QJsonArray &jsonObject)
+  void Name::deserialize(const QJsonArray &jsonArray)
   {
-    foreach (QJsonValue part, jsonObject) {
+    foreach (QJsonValue part, jsonArray) {
       Part partObject;
       partObject.deserialize(part.toObject());
       mParts.append(partObject);
