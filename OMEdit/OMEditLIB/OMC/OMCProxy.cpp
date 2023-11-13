@@ -1559,7 +1559,7 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
       docElement = QString("<div class=\"textDoc\">" % Qt::convertFromPlainText(docElement) % "</div>");
     }
     docElement = docElement.trimmed();
-    docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
+    docElement.remove(QRegularExpression("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
     doc = doc % docElement;
   }
 
@@ -2800,7 +2800,7 @@ bool OMCProxy::disableNewInstantiation()
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
   // get img src tags
-  QRegExp imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
+  QRegularExpression imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
   imgRegExp.setMinimal(true);
   QStringList attributeMatches;
   QStringList tagMatches;
@@ -2811,7 +2811,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     attributeMatches.append(imgRegExp.cap(1)); // attribute
   }
   // get script src tags
-  QRegExp scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
+  QRegularExpression scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
   scriptRegExp.setMinimal(true);
   offset = 0;
   while((offset = scriptRegExp.indexIn(documentation, offset)) != -1) {
@@ -2820,7 +2820,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     attributeMatches.append(scriptRegExp.cap(1));
   }
   // get link href tags
-  QRegExp linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
+  QRegularExpression linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
   linkRegExp.setMinimal(true);
   offset = 0;
   while((offset = linkRegExp.indexIn(documentation, offset)) != -1) {

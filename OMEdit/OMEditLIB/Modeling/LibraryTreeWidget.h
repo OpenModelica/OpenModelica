@@ -285,7 +285,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   LibraryTreeItem* findLibraryTreeItem(const QString &name, LibraryTreeItem *pLibraryTreeItem = 0,
                                        Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-  LibraryTreeItem* findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *pLibraryTreeItem = 0) const;
+  LibraryTreeItem* findLibraryTreeItem(const QRegularExpression &regExp, LibraryTreeItem *pLibraryTreeItem = 0) const;
   LibraryTreeItem* findLibraryTreeItemOneLevel(const QString &name, LibraryTreeItem *pLibraryTreeItem = 0,
                                                Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   LibraryTreeItem* findNonExistingLibraryTreeItem(const QString &name, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;

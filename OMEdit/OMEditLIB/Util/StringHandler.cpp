@@ -1589,9 +1589,9 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
 QStringList StringHandler::makeVariableParts(QString variable)
 {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), Qt::SkipEmptyParts);
+  return variable.split(QRegularExpression("\\.(?![^\\[\\]]*\\])"), Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
+  return variable.split(QRegularExpression("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
 }
 
@@ -1604,7 +1604,7 @@ QStringList StringHandler::makeVariablePartsWithInd(QString variable)
 
   if (!varParts.isEmpty()) {
 	  QString* lastStr = &(varParts.last());
-	  int i = lastStr->lastIndexOf(QRegExp("\\[\\d+\\]"));
+	  int i = lastStr->lastIndexOf(QRegularExpression("\\[\\d+\\]"));
 	  if(i>=0){
 		  QString indexPart = *lastStr;
 		  indexPart.remove(0,i);

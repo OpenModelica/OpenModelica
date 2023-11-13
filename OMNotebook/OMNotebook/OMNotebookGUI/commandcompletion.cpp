@@ -164,7 +164,7 @@ namespace IAEX
         QStringList commandList = commandList_;
         cmds_ = &commands_;
         QString content = cursor.document()->toPlainText();
-        QRegExp key;
+        QRegularExpression key;
         // check if alternative list is to be used (depending on keywords in the code)
         foreach (key, keywords_) {
           if (content.contains(key)) {
@@ -380,7 +380,7 @@ namespace IAEX
           elementList_.append( unit->fullName() );
         } else if( element.tagName() == "keyword" )
         {
-          keywords_.append( QRegExp(element.attribute( "name" )) );
+          keywords_.append( QRegularExpression(element.attribute( "name" )) );
         }
       }
       node = node.nextSibling();

@@ -79,7 +79,7 @@ namespace IAEX
     int commandStartPos_;
     int commandEndPos_;
 
-    QList<QRegExp> keywords_;
+    QList<QRegularExpression> keywords_;
 
     QStringList *currentList_;
     QStringList commandList_;

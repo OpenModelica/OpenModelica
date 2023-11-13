@@ -70,7 +70,7 @@ private:
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
-    QRegExp mPattern;
+    QRegularExpression mPattern;
     QTextCharFormat mFormat;
   };
   QVector<HighlightingRule> mHighlightingRules;

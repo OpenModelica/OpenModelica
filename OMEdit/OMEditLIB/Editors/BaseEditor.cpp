@@ -2665,7 +2665,7 @@ void FindReplaceWidget::findText(bool forward)
   }
 
   if (mpRegularExpressionCheckBox->isChecked()) {
-    QRegExp reg(textToFind, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+    QRegularExpression reg(textToFind, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
     currentTextCursor = mpBaseEditor->getPlainTextEdit()->document()->find(reg, currentTextCursor, flags);
     mpBaseEditor->getPlainTextEdit()->setTextCursor(currentTextCursor);
   }
@@ -2786,7 +2786,7 @@ void FindReplaceWidget::validateRegularExpression(const QString &text)
   if (!mpRegularExpressionCheckBox->isChecked() || text.size() == 0) {
     return; // nothing to validate
   }
-  QRegExp reg(text, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+  QRegularExpression reg(text, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
   if (!reg.isValid()) {
     QMessageBox::critical( this, "Find", reg.errorString());
   }

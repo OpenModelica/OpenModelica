@@ -693,7 +693,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             commandLineOptionKey = commandLineOption;
             commandLineOptionValues = "";
           }
-          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegExp("\\-|\\--|\\+"));
+          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegularExpression("\\-|\\--|\\+"));
           if (commandLineOptionKeyFiltered.compare("matchingAlgorithm") == 0) {
             int currentIndex = mpTranslationFlagsWidget->getMatchingAlgorithmComboBox()->findText(commandLineOptionValues);
             if (currentIndex > -1) {
@@ -807,7 +807,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpOutputVariablesTextBox->setText(value);
           } else if (simulationFlag.compare("r") == 0) {
             mpResultFileNameTextBox->setText(value);
-            QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
+            QRegularExpression resultFilesRegExp(Helper::omResultFileTypesRegExp);
             if (resultFilesRegExp.indexIn(value) != -1) {
               int currentIndex = mpOutputFormatComboBox->findText(StringHandler::getLastWordAfterDot(value));
               if (currentIndex > -1) {
@@ -1975,7 +1975,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     return;
   }
   QString workingDirectory = simulationOptions.getWorkingDirectory();
-  QRegExp regExp(Helper::omResultFileTypesRegExp);
+  QRegularExpression regExp(Helper::omResultFileTypesRegExp);
   bool resultFileKnown = regExp.indexIn(simulationOptions.getFullResultFileName()) != -1;
   // read the result file
   QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(simulationOptions.getFullResultFileName()));

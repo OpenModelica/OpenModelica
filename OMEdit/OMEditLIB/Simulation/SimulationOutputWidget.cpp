@@ -1171,7 +1171,7 @@ void SimulationOutputWidget::readSimulationStandardOutput()
   /* The remote embedded server does not currently disconnect connected clients when a simulation finishes.
    * This check hides the mazy network message of an open connection at shutdown.
    */
-  QRegExp rx("info/network");
+  QRegularExpression rx("info/network");
   QString stdOutput = mpSimulationProcess->readAllStandardOutput();
   if (!stdOutput.contains(rx)) {
     mSimulationStandardOutput.append(stdOutput);

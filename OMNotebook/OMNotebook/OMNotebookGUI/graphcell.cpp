@@ -66,7 +66,7 @@
 #include <QActionGroup>
 #include <QTextDocumentFragment>
 #include <QTextStream>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QPushButton>
 #endif
 
@@ -419,7 +419,7 @@ namespace IAEX {
     {
       inCommand = false;
       QTextCursor tc(textCursor());
-      int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
+      int i = toPlainText().indexOf(QRegularExpression("\\n|$"), tc.position());
 
       if(i -tc.position() > 0)
         tc.setPosition(i, QTextCursor::KeepAnchor);
@@ -444,7 +444,7 @@ namespace IAEX {
         int k2 = t.blockNumber();
         QTextBlock b = t.block();
         int k = b.userState();
-        int prevLevel = b.text().indexOf(QRegExp("\\S"));
+        int prevLevel = b.text().indexOf(QRegularExpression("\\S"));
 
         while(k2 >= 0 && !indentationStates.contains(k))
         {
@@ -515,7 +515,7 @@ namespace IAEX {
 
   bool MyTextEdit2a::lessIndented(QString s)
   {
-    QRegExp l("\\b(equation|algorithm|public|protected|else|elseif)\\b");
+    QRegularExpression l("\\b(equation|algorithm|public|protected|else|elseif)\\b");
     return s.indexOf(l) >= 0;
   }
 
@@ -551,7 +551,7 @@ namespace IAEX {
 
   void MyTextEdit2a::goToPos(const QUrl& u)
   {
-    QRegExp e("/|\\-|:");
+    QRegularExpression e("/|\\-|:");
     int r=u.path().section(e, 1,1).toInt();
     int c=u.path().section(e, 2,2).toInt();
     int r2=u.path().section(e, 3,3).toInt();
@@ -1049,7 +1049,7 @@ namespace IAEX {
     tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
 
     // 2005-12-08 AF, remove any <span style tag
-    QRegExp spanEnd( "</span>" );
+    QRegularExpression spanEnd( "</span>" );
     tmp.remove( spanEnd );
     int pos = 0;
     while( true )
@@ -1633,7 +1633,7 @@ namespace IAEX {
       setState(Finished);
 
     output_->selectAll();
-    res = res.replace(QRegExp("\\[<interactive>:([\\d]+):([\\d]+)-([\\d]+):([\\d]+):.*\\](.*)"),"[\\1:\\2-\\3:\\4]\\5");
+    res = res.replace(QRegularExpression("\\[<interactive>:([\\d]+):([\\d]+)-([\\d]+):([\\d]+):.*\\](.*)"),"[\\1:\\2-\\3:\\4]\\5");
     output_->textCursor().insertText( res );
 
     QPalette pal = output_->palette(); // define palette for textEdit.
@@ -1646,7 +1646,7 @@ namespace IAEX {
     }
     output_->setPalette(pal);
 
-    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
+    QRegularExpression e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
     int cap = 1;
     int p=0;
     QList<QAction*> actions;

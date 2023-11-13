@@ -1313,7 +1313,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
  * \param pLibraryTreeItem
  * \return
  */
-LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *pLibraryTreeItem) const
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegularExpression &regExp, LibraryTreeItem *pLibraryTreeItem) const
 {
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
@@ -5426,8 +5426,8 @@ void LibraryWidget::scrollToActiveLibraryTreeItem()
 void LibraryWidget::searchClasses()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
+  QRegularExpression::PatternSyntax syntax = QRegularExpression::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-  QRegExp regExp(searchText, caseSensitivity, syntax);
+  QRegularExpression regExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
 }

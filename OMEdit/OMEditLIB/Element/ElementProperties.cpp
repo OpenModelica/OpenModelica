@@ -1846,7 +1846,7 @@ void ElementParameters::updateElementParameters()
   // any new modifier is added
   if (!mpModifiersTextBox->text().isEmpty()) {
     QString regexp ("\\s*([A-Za-z0-9._]+\\s*)\\(\\s*([A-Za-z0-9._]+)\\s*=\\s*([A-Za-z0-9._]+)\\s*\\)$");
-    QRegExp modifierRegExp (regexp);
+    QRegularExpression modifierRegExp (regexp);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
     QStringList modifiers = mpModifiersTextBox->text().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
@@ -2608,7 +2608,7 @@ void ElementParametersOld::updateElementParameters()
   // any new modifier is added
   if (!mpModifiersTextBox->text().isEmpty()) {
     QString regexp ("\\s*([A-Za-z0-9._]+\\s*)\\(\\s*([A-Za-z0-9._]+)\\s*=\\s*([A-Za-z0-9._]+)\\s*\\)$");
-    QRegExp modifierRegExp (regexp);
+    QRegularExpression modifierRegExp (regexp);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
     QStringList modifiers = mpModifiersTextBox->text().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK

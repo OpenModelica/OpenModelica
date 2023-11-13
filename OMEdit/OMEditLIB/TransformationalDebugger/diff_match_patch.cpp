@@ -984,8 +984,8 @@ int diff_match_patch::diff_cleanupSemanticScore(const QString &one,
 
 
 // Define some regex patterns for matching boundaries.
-QRegExp diff_match_patch::BLANKLINEEND = QRegExp("\\n\\r?\\n$");
-QRegExp diff_match_patch::BLANKLINESTART = QRegExp("^\\r?\\n\\r?\\n");
+QRegularExpression diff_match_patch::BLANKLINEEND = QRegularExpression("\\n\\r?\\n$");
+QRegularExpression diff_match_patch::BLANKLINESTART = QRegularExpression("^\\r?\\n\\r?\\n");
 
 
 void diff_match_patch::diff_cleanupEfficiency(QList<Diff> &diffs) {
@@ -2051,7 +2051,7 @@ QList<Patch> diff_match_patch::patch_fromText(const QString &textline) {
   QStringList text = textline.split("\n", QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
   Patch patch;
-  QRegExp patchHeader("^@@ -(\\d+),?(\\d*) \\+(\\d+),?(\\d*) @@$");
+  QRegularExpression patchHeader("^@@ -(\\d+),?(\\d*) \\+(\\d+),?(\\d*) @@$");
   char sign;
   QString line;
   while (!text.isEmpty()) {

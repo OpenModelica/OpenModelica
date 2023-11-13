@@ -65,14 +65,14 @@ namespace IAEX
     mNumberFormat.setForeground(QColor(139, 0, 139)); // purple
 
     HighlightingRule rule;
-    rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
+    rule.mPattern = QRegularExpression("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
     rule.mFormat = mNumberFormat;
     mHighlightingRules.append(rule);
-    rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
+    rule.mPattern = QRegularExpression("\\b[A-Za-z_][A-Za-z0-9_]*");
     rule.mFormat = mTextFormat;
     mHighlightingRules.append(rule);
     // functions
-    rule.mPattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
+    rule.mPattern = QRegularExpression("\\b[A-Za-z0-9_]+(?=\\()");
     rule.mFormat = mFunctionFormat;
     mHighlightingRules.append(rule);
     // keywords
@@ -140,7 +140,7 @@ namespace IAEX
                     << "\\bwhile\\b"
                     << "\\bwithin\\b";
     foreach (const QString &pattern, keywordPatterns) {
-      rule.mPattern = QRegExp(pattern);
+      rule.mPattern = QRegularExpression(pattern);
       rule.mFormat = mKeywordFormat;
       mHighlightingRules.append(rule);
     }
@@ -151,7 +151,7 @@ namespace IAEX
                  << "\\bBoolean\\b"
                  << "\\bReal\\b";
     foreach (const QString &pattern, typePatterns) {
-      rule.mPattern = QRegExp(pattern);
+      rule.mPattern = QRegularExpression(pattern);
       rule.mFormat = mTypeFormat;
       mHighlightingRules.append(rule);
     }
@@ -229,7 +229,7 @@ namespace IAEX
     setCurrentBlockState(0);
     setFormat(0, text.length(), mTextFormat);
     foreach (const HighlightingRule &rule, mHighlightingRules) {
-      QRegExp expression(rule.mPattern);
+      QRegularExpression expression(rule.mPattern);
       int index = expression.indexIn(text);
       while (index >= 0) {
         int length = expression.matchedLength();

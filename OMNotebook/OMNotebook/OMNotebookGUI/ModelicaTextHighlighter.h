@@ -35,7 +35,7 @@
 
 //QT Headers
 #include <QtCore/QString>
-#include <QtCore/QRegExp>
+#include <QtCore/QRegularExpression>
 #include <QtGui/QTextCharFormat>
 #include <QSyntaxHighlighter>
 
@@ -54,7 +54,7 @@ namespace IAEX
   private:
     struct HighlightingRule
     {
-      QRegExp mPattern;
+      QRegularExpression mPattern;
       QTextCharFormat mFormat;
     };
     QVector<HighlightingRule> mHighlightingRules;

@@ -75,7 +75,7 @@ private:
   ModelInstance::Text *mpText;
 
   void initUpdateTextString();
-  void updateTextStringHelper(QRegExp regExp);
+  void updateTextStringHelper(QRegularExpression regExp);
 public slots:
   void updateTextString();
   void duplicate() override;

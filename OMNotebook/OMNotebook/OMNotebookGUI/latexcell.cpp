@@ -66,7 +66,7 @@
 #include <QActionGroup>
 #include <QTextDocumentFragment>
 #include <QTextStream>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QPushButton>
 #include <QFile>
 #include <QProcess>
@@ -196,7 +196,7 @@ namespace IAEX {
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       QTextCursor tc(textCursor());
-      int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
+      int i = toPlainText().indexOf(QRegularExpression("\\n|$"), tc.position());
 
       if(i -tc.position() > 0)
         tc.setPosition(i, QTextCursor::KeepAnchor);
@@ -505,7 +505,7 @@ namespace IAEX {
     tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
 
     // 2005-12-08 AF, remove any <span style tag
-    QRegExp spanEnd( "</span>" );
+    QRegularExpression spanEnd( "</span>" );
     tmp.remove( spanEnd );
     int pos = 0;
     while( true )

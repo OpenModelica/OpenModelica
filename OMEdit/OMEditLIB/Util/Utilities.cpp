@@ -112,9 +112,9 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   syntaxDescriptions << tr("A rich Perl-like pattern matching syntax.")
                       << tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\".")
                       << tr("Fixed string matching.");
-  mpSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
-  mpSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
-  mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
+  mpSyntaxComboBox->addItem(tr("Regular Expression"), QRegularExpression::NoPatternOption);
+  //mpSyntaxComboBox->addItem(tr("Wildcard"), QRegularExpression::Wildcard);
+  //mpSyntaxComboBox->addItem(tr("Fixed String"), QRegularExpression::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
@@ -1053,7 +1053,7 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
     return false;
   }
   QString textToMatch = text.mid(index, keyword.length());
-  QRegExp keywordRegExp("\\b" + keyword + "\\b");
+  QRegularExpression keywordRegExp("\\b" + keyword + "\\b");
   if (keywordRegExp.indexIn(textToMatch) != -1 && (index + keyword.length() == text.length() ||
                                                    text[index + keyword.length()].isSpace() ||
                                                    (checkParenthesis && text[index + keyword.length()] == '('))) {

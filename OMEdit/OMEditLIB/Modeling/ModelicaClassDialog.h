@@ -70,7 +70,7 @@ private:
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 
-  void findAndSelectLibraryTreeItem(const QRegExp &regExp);
+  void findAndSelectLibraryTreeItem(const QRegularExpression &regExp);
 private slots:
   void searchClasses();
   void useModelicaClass();

@@ -369,7 +369,7 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
         tVariableData << variable.name << StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(");
       } else if ((tVariables.size() == count) && (variable.name.startsWith("previous("))) { /* if last item of previous */
         tVariableData << variable.name << StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "previous(");
-      } else if (tVariables.size() == count && QRegExp("\\[\\d+\\]").exactMatch(tVariable)) { /* if last item of array derivative*/
+      } else if (tVariables.size() == count && QRegularExpression("\\[\\d+\\]").exactMatch(tVariable)) { /* if last item of array derivative*/
         tVariableData << variable.name << tVariable;
       } else {
         tVariableData << QString("%1%2").arg(parentVarName, tVariable) << tVariable;
@@ -481,7 +481,7 @@ bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex 
       TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
       if (pTVariablesTreeItem) {
         QString variableName = pTVariablesTreeItem->getVariableName();
-        variableName.remove(QRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
+        variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
         return variableName.contains(filterRegExp());
       } else {
         return sourceModel()->data(index).toString().contains(filterRegExp());
@@ -1288,7 +1288,7 @@ void TransformationsWidget::reloadTransformations()
   signalsState = mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
-  mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
+  mpTVariableTreeProxyModel->setFilterRegExp(QRegularExpression());
   /* clear equations tree */
   clearTreeWidgetItems(mpEquationsTreeWidget);
   /* clear defines in tree */
@@ -1315,9 +1315,9 @@ void TransformationsWidget::reloadTransformations()
 void TransformationsWidget::findVariables()
 {
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
+  QRegularExpression::PatternSyntax syntax = QRegularExpression::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-  QRegExp regExp(findText, caseSensitivity, syntax);
+  QRegularExpression regExp(findText, caseSensitivity, syntax);
   mpTVariableTreeProxyModel->setFilterRegExp(regExp);
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {

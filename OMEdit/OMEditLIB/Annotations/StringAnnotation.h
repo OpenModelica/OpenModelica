@@ -50,7 +50,7 @@ class StringAnnotation : public DynamicAnnotation
     QString& prepend(QChar ch);
     QString& replace(int position, int n, const QString &after);
     QString& replace(int position, int n, QChar after);
-    QString& replace(const QRegExp &rx, const QString &after);
+    QString& replace(const QRegularExpression &rx, const QString &after);
     QString& replace(const QRegularExpression &re, const QString &after);
     QString toLower() const;
     QString toUpper() const;

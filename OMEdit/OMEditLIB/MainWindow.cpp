@@ -903,7 +903,7 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
     QFileInfo fileInfo(fileUrl.toLocalFile());
     mpProgressBar->setValue(++progressValue);
     // check the file extension
-    QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
+    QRegularExpression resultFilesRegExp(Helper::omResultFileTypesRegExp);
     if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
       openResultFile(fileInfo.absoluteFilePath());
     } else {

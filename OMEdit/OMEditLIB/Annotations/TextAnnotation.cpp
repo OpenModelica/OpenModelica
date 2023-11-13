@@ -551,7 +551,7 @@ void TextAnnotation::initUpdateTextString()
  * Helper function for TextAnnotation::updateTextString()
  * \param regExp
  */
-void TextAnnotation::updateTextStringHelper(QRegExp regExp)
+void TextAnnotation::updateTextStringHelper(QRegularExpression regExp)
 {
   int pos = 0;
   while ((pos = regExp.indexIn(mTextString, pos)) != -1) {
@@ -645,7 +645,7 @@ void TextAnnotation::updateTextString()
   if (pLineAnnotation) {
     if (mTextString.toLower().contains("%condition")) {
       if (!pLineAnnotation->getCondition().isEmpty()) {
-        mTextString.replace(QRegExp("%condition"), pLineAnnotation->getCondition());
+        mTextString.replace(QRegularExpression("%condition"), pLineAnnotation->getCondition());
       }
       if (pLineAnnotation->getPriority() > 1) {
         mTextString.prepend(QString("%1: ").arg(pLineAnnotation->getPriority()));
@@ -656,21 +656,21 @@ void TextAnnotation::updateTextString()
       return;
     }
     if (mTextString.toLower().contains("%name")) {
-      mTextString.replace(QRegExp("%name"), mpElement->getName());
+      mTextString.replace(QRegularExpression("%name"), mpElement->getName());
     }
     if (mTextString.toLower().contains("%class")) {
-      mTextString.replace(QRegExp("%class"), mpElement->getClassName());
+      mTextString.replace(QRegularExpression("%class"), mpElement->getClassName());
     }
     if (!mTextString.contains("%")) {
       return;
     }
     /* handle variables now */
-    updateTextStringHelper(QRegExp("(%%|%\\{?\\w+(\\.\\w+)*\\}?)"));
+    updateTextStringHelper(QRegularExpression("(%%|%\\{?\\w+(\\.\\w+)*\\}?)"));
     /* call again with non-word characters so invalid % can be removed. */
-    updateTextStringHelper(QRegExp("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
+    updateTextStringHelper(QRegularExpression("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
     /* handle %% */
     if (mTextString.toLower().contains("%%")) {
-      mTextString.replace(QRegExp("%%"), "%");
+      mTextString.replace(QRegularExpression("%%"), "%");
     }
   }
 }

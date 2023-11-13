@@ -1358,7 +1358,7 @@ void CompositeModelHighlighter::initializeSettings()
   mCommentFormat.setForeground(mpCompositeModelEditorPage->getColor("Comment"));
   mQuotationFormat.setForeground(QColor(mpCompositeModelEditorPage->getColor("Quotes")));
 
-  rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
+  rule.mPattern = QRegularExpression("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
 
@@ -1371,7 +1371,7 @@ void CompositeModelHighlighter::initializeSettings()
                      << ">"
                      << "/>";
   foreach (const QString &compositeModelTag, compositeModelTags) {
-    rule.mPattern = QRegExp(compositeModelTag);
+    rule.mPattern = QRegularExpression(compositeModelTag);
     rule.mFormat = mTagFormat;
     mHighlightingRules.append(rule);
   }
@@ -1393,14 +1393,14 @@ void CompositeModelHighlighter::initializeSettings()
                   << "\\bSimulationParams\\b";
   foreach (const QString &elementPattern, elementPatterns)
   {
-    rule.mPattern = QRegExp(elementPattern);
+    rule.mPattern = QRegularExpression(elementPattern);
     rule.mFormat = mElementFormat;
     mHighlightingRules.append(rule);
   }
 
   // CompositeModel Comments
-  mCommentStartExpression = QRegExp("<!--");
-  mCommentEndExpression = QRegExp("-->");
+  mCommentStartExpression = QRegularExpression("<!--");
+  mCommentEndExpression = QRegularExpression("-->");
 }
 
 /*!
@@ -1470,7 +1470,7 @@ void CompositeModelHighlighter::highlightBlock(const QString &text)
   setCurrentBlockState(0);
   setFormat(0, text.length(), mpCompositeModelEditorPage->getColor("Text"));
   foreach (const HighlightingRule &rule, mHighlightingRules) {
-    QRegExp expression(rule.mPattern);
+    QRegularExpression expression(rule.mPattern);
     int index = expression.indexIn(text);
     while (index >= 0) {
       int length = expression.matchedLength();

@@ -81,7 +81,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   connect(mpLibraryTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(useModelicaClass()));
   // try to automatically select if user has something in the text box.
   if (!mpLineEdit->text().isEmpty()) {
-    findAndSelectLibraryTreeItem(QRegExp(mpLineEdit->text()));
+    findAndSelectLibraryTreeItem(QRegularExpression(mpLineEdit->text()));
   }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -108,7 +108,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
  * Finds the LibraryTreeItem and selects it.
  * \param regExp
  */
-void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegExp &regExp)
+void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegularExpression &regExp)
 {
   QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
   if (proxyIndex.isValid()) {
@@ -134,9 +134,9 @@ void LibraryBrowseDialog::searchClasses()
 {
   mpLibraryTreeView->selectionModel()->clearSelection();
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
+  QRegularExpression::PatternSyntax syntax = QRegularExpression::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-  QRegExp regExp(searchText, caseSensitivity, syntax);
+  QRegularExpression regExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
   // if we have really searched something
   if (!searchText.isEmpty()) {
@@ -1632,9 +1632,9 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpHorizontalTextBox->setValidator(pDoubleValidator);
   mpVerticalTextBox->setValidator(pDoubleValidator);
   mpScaleFactorTextBox->setValidator(pDoubleValidator);
-  QRegExp preserveAspectRatioRegExp("true|false");
+  QRegularExpression preserveAspectRatioRegExp("true|false");
   preserveAspectRatioRegExp.setCaseSensitivity(Qt::CaseSensitive);
-  QRegExpValidator *pPreserveAspectRatioValidator = new QRegExpValidator(preserveAspectRatioRegExp);
+  QRegularExpressionValidator *pPreserveAspectRatioValidator = new QRegularExpressionValidator(preserveAspectRatioRegExp);
   mpPreserveAspectRatioComboBox->lineEdit()->setValidator(pPreserveAspectRatioValidator);
   // set the grid group box layout
   QGridLayout *pComponentLayout = new QGridLayout;

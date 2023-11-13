@@ -591,8 +591,8 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
   // suppress the unnecessary qt warning messages
   foreach (QString suppressMessage, mSuppressMessagesList) {
-    QRegExp rx(suppressMessage);
-    rx.setPatternSyntax(QRegExp::Wildcard);
+    QRegularExpression rx(suppressMessage);
+    //rx.setPatternSyntax(QRegularExpression::Wildcard);
     if (rx.exactMatch(messageItem.getMessage())) {
       return;
     }

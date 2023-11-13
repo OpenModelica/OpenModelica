@@ -90,7 +90,7 @@ QString& StringAnnotation::replace(int position, int n, QChar after)
   return mValue;
 }
 
-QString& StringAnnotation::replace(const QRegExp &rx, const QString &after)
+QString& StringAnnotation::replace(const QRegularExpression &rx, const QString &after)
 {
   mValue.replace(rx, after);
   setExp();
