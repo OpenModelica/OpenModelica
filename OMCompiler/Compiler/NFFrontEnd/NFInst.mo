@@ -144,7 +144,7 @@ protected
   InstNode top, cls, inst_cls;
   String name;
   InstContext.Type context;
-  Integer var_count, eq_count;
+  Integer var_count, eq_count, expose_local_ios;
 algorithm
   //Inst_test(program);
   resetGlobalFlags();
@@ -244,6 +244,8 @@ algorithm
   // propagate hide result attribute
   // ticket #4346
   flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, var) for var in flatModel.variables);
+
+  flatModel := FlatModel.removeNonTopLevelDirections(flatModel);
 
   if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
      Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then

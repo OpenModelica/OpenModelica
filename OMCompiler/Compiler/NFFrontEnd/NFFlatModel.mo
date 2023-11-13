@@ -1023,5 +1023,19 @@ public
     end for;
   end hasArrayConnections;
 
+  function removeNonTopLevelDirections
+    input output FlatModel flatModel;
+  protected
+    Integer expose_local_ios;
+  algorithm
+    // Keep the declared directions if --useLocalDirection=true has been set.
+    if Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION) then
+      return;
+    end if;
+
+    expose_local_ios := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
+    flatModel.variables := list(Variable.removeNonTopLevelDirection(v, expose_local_ios) for v in flatModel.variables);
+  end removeNonTopLevelDirections;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

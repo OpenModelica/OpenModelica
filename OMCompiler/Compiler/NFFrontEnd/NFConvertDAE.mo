@@ -103,15 +103,13 @@ end convertStatements;
 protected
 uniontype VariableConversionSettings
   record VARIABLE_CONVERSION_SETTINGS
-    Boolean useLocalDirection;
-    Integer exposeLocalIOs;
     Boolean isFunctionParameter;
     Boolean addTypeToSource;
   end VARIABLE_CONVERSION_SETTINGS;
 end VariableConversionSettings;
 
 constant VariableConversionSettings FUNCTION_VARIABLE_CONVERSION_SETTINGS =
-  VARIABLE_CONVERSION_SETTINGS(false, 0, true, false);
+  VARIABLE_CONVERSION_SETTINGS(true, false);
 
 function convertVariables
   input list<Variable> variables;
@@ -120,8 +118,6 @@ protected
   VariableConversionSettings settings;
 algorithm
   settings := VariableConversionSettings.VARIABLE_CONVERSION_SETTINGS(
-    useLocalDirection = Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION),
-    exposeLocalIOs = Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS),
     isFunctionParameter = false,
     addTypeToSource = Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)
   );
@@ -172,23 +168,11 @@ algorithm
 
   var := match attr
     case Attributes.ATTRIBUTES()
-      algorithm
-        // Strip input/output from non top-level components unless
-        // --useLocalDirection=true has been set.
-        // Alternatively strip input/output from non connectors and from protected connectors if
-        // --nonStdExposeLocalIOs has been set to respective level.
-        if attr.direction == Direction.NONE or settings.useLocalDirection or
-           (settings.exposeLocalIOs > 0 and attr.connectorType <> ConnectorType.NON_CONNECTOR and
-            vis == Visibility.PUBLIC and ComponentRef.depth(cref) <= settings.exposeLocalIOs + 1) then
-          dir := attr.direction;
-        else
-          dir := getComponentDirection(attr.direction, cref);
-        end if;
       then
         DAE.VAR(
           dcref,
           Prefixes.variabilityToDAE(attr.variability),
-          Prefixes.directionToDAE(dir),
+          Prefixes.directionToDAE(attr.direction),
           Prefixes.parallelismToDAE(attr.parallelism),
           Prefixes.visibilityToDAE(vis),
           dty,
@@ -225,23 +209,6 @@ algorithm
     else source;
   end match;
 end addComponentTypeToSource;
-
-function getComponentDirection
-  "Returns the given direction if the cref refers to a top-level component,
-   a component in a top-level connector, or a component in a top-level input
-   component, otherwise returns Direction.NONE."
-  input output Direction dir;
-  input ComponentRef cref;
-protected
-  ComponentRef rest_cref = ComponentRef.rest(cref);
-algorithm
-  dir := match rest_cref
-    case ComponentRef.EMPTY() then dir;
-    case ComponentRef.CREF()
-      then if InstNode.isConnector(rest_cref.node) or InstNode.isInput(rest_cref.node) then
-        getComponentDirection(dir, rest_cref) else Direction.NONE;
-  end match;
-end getComponentDirection;
 
 function convertVarAttributes
   input list<tuple<String, Binding>> attrs;
