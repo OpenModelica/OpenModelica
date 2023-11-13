@@ -235,8 +235,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   mConnectorSizing = dialogAnnotation.isConnectorSizing();
 
   // If mShowStartAttribute is not set then check for start modifier
-  if (!mShowStartAndFixed && !isParameter()) {
-    mShowStartAndFixed = mpModelInstanceElement->getModifier().hasModifier("start");
+  if (!mShowStartAndFixed && !isParameter() && mpModelInstanceElement->getModifier()) {
+    mShowStartAndFixed = mpModelInstanceElement->getModifier()->hasModifier("start");
   }
   /* if mShowStartAndFixed and group name is empty then set group name to Initialization.
    * else set group name to Parameters for actual parameters or elements that have dialog annotation or replaceable elements.
@@ -254,7 +254,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   mpFixedFinalEachMenuButton = new FinalEachToolButton(mpModelInstanceElement->getDimensions().isArray());
   // set the value type based on element type.
   if (mpModelInstanceElement->getRootType().compare(QStringLiteral("Boolean")) == 0) {
-    if (mpModelInstanceElement->getAnnotation()->getChoices().isCheckBox() || mpModelInstanceElement->getAnnotation()-> getChoices().isDymolaCheckBox()) {
+    if (mpModelInstanceElement->getAnnotation()->getChoices()
+        && (mpModelInstanceElement->getAnnotation()->getChoices()->isCheckBox() || mpModelInstanceElement->getAnnotation()-> getChoices()->isDymolaCheckBox())) {
       mValueType = Parameter::CheckBox;
     } else {
       mValueType = Parameter::Boolean;
@@ -275,7 +276,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
       mpEditRedeclareClassButton->setAutoRaise(true);
       connect(mpEditRedeclareClassButton, SIGNAL(clicked()), SLOT(editRedeclareClassButtonClicked()));
     }
-  } else if (!mpModelInstanceElement->getAnnotation()->getChoices().getChoices().isEmpty()) {
+  } else if (mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty()) {
     mValueType = Parameter::Choices;
   } else if (mpModelInstanceElement->getAnnotation()->isChoicesAllMatching()) {
     mValueType = Parameter::ChoicesAllMatching;
@@ -339,7 +340,10 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   } else if (mValueType == Parameter::ReplaceableComponent) {
     QString value = "redeclare " % mpModelInstanceElement->getType()
                     % " " % mpModelInstanceElement->getName();
-    QString modifiers = mpModelInstanceElement->getModifier().toString();
+    QString modifiers;
+    if (mpModelInstanceElement->getModifier()) {
+      modifiers = mpModelInstanceElement->getModifier()->toString(true);
+    }
     if (!modifiers.isEmpty()) {
       if (modifiers.startsWith("(")) {
         value = value % modifiers;
@@ -680,7 +684,9 @@ void Parameter::createValueWidget()
             }
           }
         }
-        choices = mpModelInstanceElement->getAnnotation()->getChoices().getChoices();
+        if (mpModelInstanceElement->getAnnotation()->getChoices()) {
+          choices = mpModelInstanceElement->getAnnotation()->getChoices()->getChoicesStringList();
+        }
         parentClassName = mpElementParameters->getElementParentClassName();
         if (mpModelInstanceElement->getModel()) {
           restriction = mpModelInstanceElement->getModel()->getRestriction();
@@ -842,15 +848,15 @@ void Parameter::editRedeclareClassButtonClicked()
   QString modifier = value;
   const QString defaultValue = mpValueComboBox->lineEdit()->placeholderText();
   QString defaultModifier = defaultValue;
-  ModelInstance::Modifier replaceableConstrainedByModifier;
+  ModelInstance::Modifier *pReplaceableConstrainedByModifier = 0;
   QString comment;
   if (mValueType == Parameter::ReplaceableComponent) {
     type = mpModelInstanceElement->getType();
-    replaceableConstrainedByModifier = mpModelInstanceElement->getReplaceable()->getModifier();
+    pReplaceableConstrainedByModifier = mpModelInstanceElement->getReplaceable()->getModifier();
   } else if (mValueType == Parameter::ReplaceableClass) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
     type = pReplaceableClass->getBaseClass();
-    replaceableConstrainedByModifier = pReplaceableClass->getReplaceable()->getModifier();
+    pReplaceableConstrainedByModifier = pReplaceableClass->getReplaceable()->getModifier();
   }
   // parse the Modelica code of element redeclaration to get the type and modifiers
   if (value.startsWith("redeclare")) {
@@ -871,17 +877,17 @@ void Parameter::editRedeclareClassButtonClicked()
     const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
     if (!newModelJSON.isEmpty()) {
       const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
-      ModelInstance::Modifier elementModifier;
-      elementModifier.deserialize(QJsonValue(modifierJSON));
+      ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
+      pElementModifier->deserialize(QJsonValue(modifierJSON));
       const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
-      ModelInstance::Modifier defaultElementModifier;
-      defaultElementModifier.deserialize(QJsonValue(defaultModifierJSON));
+      ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
+      pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
       ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON);
       mpModelInstanceElement->setModel(pNewModel);
       MainWindow::instance()->getProgressBar()->setRange(0, 0);
       MainWindow::instance()->showProgressBar();
       ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
-                                                                    true, defaultElementModifier, replaceableConstrainedByModifier, elementModifier, mpElementParameters);
+                                                                    true, pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, mpElementParameters);
       MainWindow::instance()->hideProgressBar();
       MainWindow::instance()->getStatusBar()->clearMessage();
       if (pElementParameters->exec() == QDialog::Accepted) {
@@ -915,6 +921,8 @@ void Parameter::editRedeclareClassButtonClicked()
         }
       }
       pElementParameters->deleteLater();
+      delete pElementModifier;
+      delete pDefaultElementModifier;
       // reset the actual model of the element
       mpModelInstanceElement->setModel(pCurrentModel);
       delete pNewModel;
@@ -1205,14 +1213,16 @@ QVBoxLayout *ParametersScrollArea::getLayout()
  * \brief ElementParameters::ElementParameters
  * \param pElement - pointer to ModelInstance::Element
  * \param pGraphicsView
- * \param className
  * \param inherited
- * \param elementModifier
+ * \param nested
+ * \param pDefaultElementModifier
+ * \param pReplaceableConstrainedByModifier
+ * \param pElementModifier
  * \param pParent
  */
 ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested,
-                                     const ModelInstance::Modifier defaultElementModifier,
-                                     const ModelInstance::Modifier replaceableConstrainedByModifier, const ModelInstance::Modifier elementModifier, QWidget *pParent)
+                                     ModelInstance::Modifier *pDefaultElementModifier,
+                                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent)
   : QDialog(pParent)
 {
   const QString className = pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -1221,9 +1231,9 @@ ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsV
   mpGraphicsView = pGraphicsView;
   mInherited = inherited;
   mNested = nested;
-  mDefaultElementModifier = defaultElementModifier;
-  mReplaceableConstrainedByModifier = replaceableConstrainedByModifier;
-  mElementModifier = elementModifier;
+  mpDefaultElementModifier = pDefaultElementModifier;
+  mpReplaceableConstrainedByModifier = pReplaceableConstrainedByModifier;
+  mpElementModifier = pElementModifier;
   mModification.clear();
   setUpDialog();
 }
@@ -1251,28 +1261,28 @@ QString ElementParameters::getElementParentClassName() const
 /*!
  * \brief ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers
  * \param pParameter
- * \param modifier
+ * \param pModifier
  * \param defaultValue
  * \param isElementModification
  * \param checkFinal
  */
-void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue, bool isElementModification, bool checkFinal)
+void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification, bool checkFinal)
 {
-  if (pParameter) {
+  if (pParameter && pModifier) {
     /* Ticket #2531
      * Check if parameter is marked final.
      */
-    if ((checkFinal && modifier.isFinal()) || (!isElementModification && modifier.isRedeclare() && !modifier.isReplaceable())) {
+    if ((checkFinal && pModifier->isFinal()) || (!isElementModification && pModifier->isRedeclare() && !pModifier->isReplaceable())) {
       mParametersList.removeOne(pParameter);
       delete pParameter;
     } else {
       // if builtin type
       if (MainWindow::instance()->getOMCProxy()->isBuiltinType(pParameter->getModelInstanceElement()->getRootType())) {
-        const QString value = modifier.getValue();
+        const QString value = pModifier->getValue();
         // if value is not empty then use it otherwise try to read start and fixed modifiers
         if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter())) {
-          bool hasStart = modifier.hasModifier("start");
-          bool hasFixed = modifier.hasModifier("fixed");
+          bool hasStart = pModifier->hasModifier("start");
+          bool hasFixed = pModifier->hasModifier("fixed");
           if (hasStart || hasFixed) {
             if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
               pParameter->setGroup("Initialization");
@@ -1280,30 +1290,37 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             pParameter->setShowStartAndFixed(true);
           }
           if (hasStart) {
-            ModelInstance::Modifier startModifier = modifier.getModifier("start");
-            pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(startModifier.getValue()), defaultValue, pParameter->getUnit(), mNested);
-            pParameter->getFinalEachMenu()->setFinal(startModifier.isFinal());
-            pParameter->getFinalEachMenu()->setEach(startModifier.isEach());
+            ModelInstance::Modifier *pStartModifier = pModifier->getModifier("start");
+            if (pStartModifier) {
+              pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(pStartModifier->getValue()), defaultValue, pParameter->getUnit(), mNested);
+              pParameter->getFinalEachMenu()->setFinal(pStartModifier->isFinal());
+              pParameter->getFinalEachMenu()->setEach(pStartModifier->isEach());
+            }
           }
           if (hasFixed) {
-            ModelInstance::Modifier fixedModifier = modifier.getModifier("fixed");
-            pParameter->setFixedState(StringHandler::removeFirstLastQuotes(fixedModifier.getValue()), defaultValue);
-            pParameter->getFixedFinalEachMenu()->setFinal(fixedModifier.isFinal());
-            pParameter->getFixedFinalEachMenu()->setEach(fixedModifier.isEach());
+            ModelInstance::Modifier *pFixedModifier = pModifier->getModifier("fixed");
+            if (pFixedModifier) {
+              pParameter->setFixedState(StringHandler::removeFirstLastQuotes(pFixedModifier->getValue()), defaultValue);
+              pParameter->getFixedFinalEachMenu()->setFinal(pFixedModifier->isFinal());
+              pParameter->getFixedFinalEachMenu()->setEach(pFixedModifier->isEach());
+            }
           }
         } else {
           pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
         }
       } else { // if not builtin type then use all sub modifiers
-        QString modifierValue = modifier.toString();
+        QString modifierValue = pModifier->toString(true);
         if (modifierValue.startsWith("(")) {
           modifierValue = pParameter->getModelInstanceElement()->getName() % modifierValue;
         }
         pParameter->setValueWidget(modifierValue, defaultValue, pParameter->getUnit(), mNested);
       }
       // displayUnit
-      ModelInstance::Modifier displayUnitModifier = modifier.getModifier("displayUnit");
-      QString displayUnit = StringHandler::removeFirstLastQuotes(displayUnitModifier.getValue());
+      ModelInstance::Modifier *pDisplayUnitModifier = pModifier->getModifier("displayUnit");
+      QString displayUnit;
+      if (pDisplayUnitModifier) {
+        displayUnit = StringHandler::removeFirstLastQuotes(pDisplayUnitModifier->getValue());
+      }
       if (!displayUnit.isEmpty()) {
         int index = pParameter->getUnitComboBox()->findData(displayUnit);
         if (index < 0) {
@@ -1324,8 +1341,10 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           if (!defaultValue) {
             pParameter->setHasDisplayUnit(true);
           }
-          pParameter->getDisplayUnitFinalEachMenu()->setFinal(displayUnitModifier.isFinal());
-          pParameter->getDisplayUnitFinalEachMenu()->setEach(displayUnitModifier.isEach());
+          if (pDisplayUnitModifier) {
+            pParameter->getDisplayUnitFinalEachMenu()->setFinal(pDisplayUnitModifier->isFinal());
+            pParameter->getDisplayUnitFinalEachMenu()->setEach(pDisplayUnitModifier->isEach());
+          }
         }
       }
     }
@@ -1404,11 +1423,11 @@ void ElementParameters::setUpDialog()
   fetchElementModifiers();
   fetchClassExtendsModifiers(mpElement);
   // Apply the default modifiers that are given in the redeclaration of the replaceable class or component.
-  applyModifiers(mDefaultElementModifier, true);
+  applyModifier(mpDefaultElementModifier, true);
   // Apply the modifiers that are given in the constainedBy of the replaceable class or component.
-  applyModifiers(mReplaceableConstrainedByModifier, true);
+  applyModifier(mpReplaceableConstrainedByModifier, true);
   // Apply the modifiers that are given in the redeclaration of the replaceable class or component.
-  applyModifiers(mElementModifier, false);
+  applyModifier(mpElementModifier, false);
 
   foreach (Parameter *pParameter, mParametersList) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
@@ -1577,9 +1596,11 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
        * Go deep in the extends hierarchy and then apply the values in bottom to top order.
        */
       fetchElementExtendsModifiers(pExtend->getModel());
-      foreach (auto modifier, pExtend->getModifier().getModifiers()) {
-        Parameter *pParameter = findParameter(modifier.getName());
-        applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, true, false, true);
+      if (pExtend->getModifier()) {
+        foreach (auto *pModifier, pExtend->getModifier()->getModifiers()) {
+          Parameter *pParameter = findParameter(pModifier->getName());
+          applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, true, false, true);
+        }
       }
     }
   }
@@ -1591,13 +1612,15 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
  */
 void ElementParameters::fetchElementModifiers()
 {
-  foreach (auto modifier, mpElement->getModifier().getModifiers()) {
-    Parameter *pParameter = findParameter(modifier.getName());
-    ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, mInherited || mNested, true, false);
-    // set final and each checkboxes in the menu
-    if (pParameter && !pParameter->isShowStartAndFixed()) {
-      pParameter->getFinalEachMenu()->setFinal(modifier.isFinal());
-      pParameter->getFinalEachMenu()->setEach(modifier.isEach());
+  if (mpElement->getModifier()) {
+    foreach (auto *pModifier, mpElement->getModifier()->getModifiers()) {
+      Parameter *pParameter = findParameter(pModifier->getName());
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true, false);
+      // set final and each checkboxes in the menu
+      if (pParameter && !pParameter->isShowStartAndFixed()) {
+        pParameter->getFinalEachMenu()->setFinal(pModifier->isFinal());
+        pParameter->getFinalEachMenu()->setEach(pModifier->isEach());
+      }
     }
   }
 }
@@ -1616,13 +1639,15 @@ void ElementParameters::fetchClassExtendsModifiers(ModelInstance::Element *pMode
     auto pExtend = pModelElement->getParentModel()->getParentElement();
     if (pExtend && pExtend->isExtend()) {
       bool hasParentElement = pExtend->getParentModel() && pExtend->getParentModel()->getParentElement();
-      foreach (auto modifier, pExtend->getModifier().getModifiers()) {
-        if (modifier.getName().compare(mpElement->getName()) == 0) {
-          foreach (auto subModifier, modifier.getModifiers()) {
-            Parameter *pParameter = findParameter(subModifier.getName());
-            applyFinalStartFixedAndDisplayUnitModifiers(pParameter, subModifier, hasParentElement, false, true);
+      if (pExtend->getModifier()) {
+        foreach (auto pModifier, pExtend->getModifier()->getModifiers()) {
+          if (pModifier->getName().compare(mpElement->getName()) == 0) {
+            foreach (auto *pSubModifier, pModifier->getModifiers()) {
+              Parameter *pParameter = findParameter(pSubModifier->getName());
+              applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, hasParentElement, false, true);
+            }
+            break;
           }
-          break;
         }
       }
       if (hasParentElement) {
@@ -1633,21 +1658,21 @@ void ElementParameters::fetchClassExtendsModifiers(ModelInstance::Element *pMode
 }
 
 /*!
- * \brief ElementParameters::applyModifiers
- * Apply the modifiers of the component.
- * \param modifiers
+ * \brief ElementParameters::applyModifier
+ * Apply the modifier of the component.
+ * \param pModifier
  * \param defaultValue
  */
-void ElementParameters::applyModifiers(const ModelInstance::Modifier modifiers, bool defaultValue)
+void ElementParameters::applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue)
 {
-  if (mNested) {
-    foreach (auto modifier, modifiers.getModifiers()) {
-      Parameter *pParameter = findParameter(modifier.getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, modifier, defaultValue, false, !mNested);
+  if (mNested && pModifier) {
+    foreach (auto pSubModifier, pModifier->getModifiers()) {
+      Parameter *pParameter = findParameter(pSubModifier->getName());
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, defaultValue, false, !mNested);
       // set final and each checkboxes in the menu
       if (pParameter && !pParameter->isShowStartAndFixed()) {
-        pParameter->getFinalEachMenu()->setFinal(modifier.isFinal());
-        pParameter->getFinalEachMenu()->setEach(modifier.isEach());
+        pParameter->getFinalEachMenu()->setFinal(pSubModifier->isFinal());
+        pParameter->getFinalEachMenu()->setEach(pSubModifier->isEach());
       }
     }
   }

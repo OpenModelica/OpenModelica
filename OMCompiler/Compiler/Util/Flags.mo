@@ -559,8 +559,6 @@ constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
   Gettext.gettext("Dumps information about the detected event functions."));
 constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(194, "dumpBindings", false,
   Gettext.gettext("Dumps information about the equations created from bindings."));
-constant DebugFlag STRUCTURED_REDECLARE = DEBUG_FLAG(195, "structuredRedeclare", false,
-  Gettext.gettext("Dumps redeclares as structures in getModelInstance."));
 
 public
 // CONFIGURATION FLAGS

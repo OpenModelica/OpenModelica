@@ -1,7 +1,7 @@
 // name: GetModelInstanceChoices2
 // keywords:
 // status: correct
-// cflags: -d=newInst,structuredRedeclare
+// cflags: -d=newInst
 //
 //
 
