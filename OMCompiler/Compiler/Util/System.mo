@@ -1088,7 +1088,7 @@ algorithm
   try
     fullpath := system_realpath(path);
   else
-    Error.addInternalError(getInstanceName() + " failed", sourceInfo());
+    Error.addInternalError(getInstanceName() + " failed for " + path, sourceInfo());
     fail();
   end try;
 end realpath;
