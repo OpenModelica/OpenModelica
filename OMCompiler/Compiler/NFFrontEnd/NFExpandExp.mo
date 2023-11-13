@@ -89,7 +89,7 @@ public
       case Expression.LBINARY()  then expandLogicalBinary(exp);
       case Expression.LUNARY()   then expandLogicalUnary(exp);
       case Expression.RELATION() then (exp, true);
-      case Expression.CAST()     then expandCast(exp.exp, exp.ty);
+      case Expression.CAST()     then expandCast(exp);
       else expandGeneric(exp);
     end match;
   end expand;
@@ -1011,17 +1011,20 @@ public
   end makeLogicalUnaryOp;
 
   function expandCast
-    input Expression exp;
-    input Type ty;
+    input Expression castExp;
     output Expression outExp;
     output Boolean expanded;
+  protected
+    Expression exp;
+    Type ty;
   algorithm
+    Expression.CAST(exp = exp, ty = ty) := castExp;
     (outExp, expanded) := expand(exp);
 
-    if expanded then
+    if expanded and not referenceEq(exp, outExp) then
       outExp := Expression.typeCast(outExp, ty);
     else
-      outExp := exp;
+      outExp := castExp;
     end if;
   end expandCast;
 
