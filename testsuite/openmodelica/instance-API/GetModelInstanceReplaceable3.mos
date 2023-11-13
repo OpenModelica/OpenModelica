@@ -1,7 +1,7 @@
 // name: GetModelInstanceReplaceable3
 // keywords:
 // status: correct
-// cflags: -d=newInst,structuredRedeclare
+// cflags: -d=newInst
 //
 //
 

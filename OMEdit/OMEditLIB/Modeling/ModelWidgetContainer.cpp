@@ -3960,8 +3960,10 @@ void GraphicsView::pasteItems()
           ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className);
           addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), false);
           // set modifiers
-          MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name,
-                                                                         pMimeData->getModifiers().at(index).toString());
+          ModelInstance::Modifier *pModifier = pMimeData->getModifiers().at(index);
+          if (pModifier) {
+            MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name, pModifier->toString());
+          }
         } else {
           ElementInfo *pComponentInfo = new ElementInfo(pComponent->getElementInfo());
           pComponentInfo->setName(name);
