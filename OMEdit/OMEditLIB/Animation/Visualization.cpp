@@ -43,6 +43,7 @@
 
 #include <osg/Array>
 #include <osg/Drawable>
+#include <osg/Geometry>
 #include <osg/Shape>
 #include <osg/ShapeDrawable>
 #include <osg/StateAttribute>
@@ -57,9 +58,11 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <functional>
 #include <limits>
 #include <map>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
 
