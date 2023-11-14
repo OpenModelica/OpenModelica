@@ -1151,9 +1151,25 @@ void AutoTransformCullCallback::operator()(osg::Node* node, osg::NodeVisitor* nv
         }
         if (visualizer && visualizer->isVector()) {
           VectorObject* vector = visualizer->asVector();
+          const float scale = 1 / at->getScale().z(); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
+          bool update = false;
           if (vector->getAutoScaleCancellationRequired()) {
             vector->setAutoScaleCancellationRequired(false);
-            vector->setTransfScale(1 / at->getScale().z()); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
+            vector->setAutoRadiusScaleCancellation(scale);
+            vector->setAutoLengthScaleCancellation(scale);
+            update = true;
+          } else if (vector->isLengthScaleInvariant() && !vector->isRadiusScaleInvariant()) {
+            if (vector->getAutoRadiusScaleCancellation() != scale) {
+              vector->setAutoRadiusScaleCancellation(scale);
+              update = true;
+            }
+          } else if (vector->isRadiusScaleInvariant() && !vector->isLengthScaleInvariant()) {
+            if (vector->getAutoLengthScaleCancellation() != scale) {
+              vector->setAutoLengthScaleCancellation(scale);
+              update = true;
+            }
+          }
+          if (update) {
             _visualization->getBaseData()->updateVisualizer(vector);
           }
         }
@@ -1391,14 +1407,17 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
 {
   for (VectorObject& vector : vectors)
   {
+    const bool isScaleInvariant = vector.isLengthScaleInvariant() || vector.isRadiusScaleInvariant();
+    const bool isDrawnOnTop = vector.isDrawnOnTop();
+
     osg::ref_ptr<AutoTransformVisualizer> transf = new AutoTransformVisualizer(&vector);
     transf->setName(vector._id);
     transf->setAutoRotateMode(osg::AutoTransform::NO_ROTATION);
     transf->setAutoScaleTransitionWidthRatio(0);
-    transf->setAutoScaleToScreen(vector.isScaleInvariant());
-    transf->setCullingActive(!vector.isScaleInvariant()); // Work-around for osg::AutoTransform::setAutoScaleToScreen(bool) (see OSG commit 5c48904)
-    transf->getOrCreateStateSet()->setMode(GL_NORMALIZE, vector.isScaleInvariant() ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
-    transf->getOrCreateStateSet()->setRenderBinDetails(VectorObject::kAutoScaleRenderBinNum - !vector.isDrawnOnTop(), VectorObject::kAutoScaleRenderBinName);
+    transf->setAutoScaleToScreen(isScaleInvariant);
+    transf->setCullingActive(!isScaleInvariant); // Work-around for osg::AutoTransform::setAutoScaleToScreen(bool) (see OSG commit 5c48904)
+    transf->getOrCreateStateSet()->setMode(GL_NORMALIZE, isScaleInvariant ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
+    transf->getOrCreateStateSet()->setRenderBinDetails(VectorObject::kAutoScaleRenderBinNum - !isDrawnOnTop, VectorObject::kAutoScaleRenderBinName);
     transf->addCullCallback(_atCullCallback.get());
 
     osg::ref_ptr<osg::ShapeDrawable> shapeDraw0 = new osg::ShapeDrawable(); // shaft cylinder

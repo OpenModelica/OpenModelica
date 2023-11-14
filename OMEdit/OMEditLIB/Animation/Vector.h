@@ -55,8 +55,10 @@ public:
   void dumpVisualizerAttributes() override;
   void setLengthScale(const float scale) {mLengthScale = scale;}
   void setRadiusScale(const float scale) {mRadiusScale = scale;}
-  void setTransfScale(const float scale) {mTransfScale = scale;}
-  float getTransfScale() const {return mTransfScale;}
+  void setAutoLengthScaleCancellation(const float scale) {mAutoLengthScaleCancellation = scale;}
+  void setAutoRadiusScaleCancellation(const float scale) {mAutoRadiusScaleCancellation = scale;}
+  float getAutoLengthScaleCancellation() const {return mAutoLengthScaleCancellation;}
+  float getAutoRadiusScaleCancellation() const {return mAutoRadiusScaleCancellation;}
   void setAutoScaleCancellationRequired(const bool autoScaleCancellationRequired) {mAutoScaleCancellationRequired = autoScaleCancellationRequired;}
   bool getAutoScaleCancellationRequired() const {return mAutoScaleCancellationRequired;}
   void setOnlyShaftLengthCounted(const bool onlyShaftLengthCounted) {mOnlyShaftLengthCounted = onlyShaftLengthCounted;}
@@ -65,18 +67,19 @@ public:
   void setVisible() {mHidden = false;}
   void setCoordinates(const float x, const float y, const float z) {_coords[0].exp = x, _coords[1].exp = y, _coords[2].exp = z;}
   void getCoordinates(float* x, float* y, float* z) const {*x = _coords[0].exp, *y = _coords[1].exp, *z = _coords[2].exp;}
-  float getLength    () const {return mHidden ? 0 : mTransfScale * mLengthScale * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
-  float getRadius    () const {return mHidden ? 0 : mTransfScale * mRadiusScale * kRadius;}
-  float getHeadLength() const {return mHidden ? 0 : mTransfScale * mRadiusScale * kHeadLength;}
-  float getHeadRadius() const {return mHidden ? 0 : mTransfScale * mRadiusScale * kHeadRadius;}
+  float getLength    () const {return mHidden ? 0 : mAutoLengthScaleCancellation * mLengthScale * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
+  float getRadius    () const {return mHidden ? 0 : mAutoRadiusScaleCancellation * mRadiusScale * kRadius;}
+  float getHeadLength() const {return mHidden ? 0 : mAutoRadiusScaleCancellation * mRadiusScale * kHeadLength;}
+  float getHeadRadius() const {return mHidden ? 0 : mAutoRadiusScaleCancellation * mRadiusScale * kHeadRadius;}
   VectorQuantity getQuantity() const {return static_cast<VectorQuantity>(_quantity.exp);}
   bool areCoordinatesConstant() const {return _coords[0].isConst && _coords[1].isConst && _coords[2].isConst;}
   bool hasHeadAtOrigin() const {return _headAtOrigin.exp;}
   bool isTwoHeadedArrow() const {return _twoHeadedArrow.exp;}
-  bool isRadiusAdjustable() const {return getQuantity() != VectorQuantity::relativePosition;}
-  bool isLengthAdjustable() const {return getQuantity() != VectorQuantity::relativePosition;}
-  bool isScaleInvariant  () const {return getQuantity() != VectorQuantity::relativePosition;}
-  bool isDrawnOnTop      () const {return getQuantity() != VectorQuantity::relativePosition;}
+  bool isDrawnOnTop          () const {return getQuantity() != VectorQuantity::relativePosition;}
+  bool isLengthAdjustable    () const {return getQuantity() != VectorQuantity::relativePosition;}
+  bool isRadiusAdjustable    () const {return getQuantity() != VectorQuantity::relativePosition;}
+  bool isLengthScaleInvariant() const {return getQuantity() != VectorQuantity::relativePosition;}
+  bool isRadiusScaleInvariant() const {return getQuantity() != VectorQuantity::relativePosition;}
 public:
   static constexpr float kRadius      = 0.0125; //!< Modelica.Mechanics.MultiBody.World.defaultArrowDiameter / 2 = 1 / 40 / 2 = 0.0125
   static constexpr float kHeadLength  = 0.1000; //!< Modelica.Mechanics.MultiBody.Types.Defaults.ArrowHeadLengthFraction * (2 * kRadius) = 4 * 0.025 = 0.1000
@@ -88,7 +91,8 @@ public:
 private:
   float mLengthScale;
   float mRadiusScale;
-  float mTransfScale;
+  float mAutoLengthScaleCancellation;
+  float mAutoRadiusScaleCancellation;
   bool mAutoScaleCancellationRequired;
   bool mOnlyShaftLengthCounted;
   bool mHidden;
