@@ -867,7 +867,16 @@ void Parameter::editRedeclareClassButtonClicked()
     }
   }
   // get type as qualified path
-  const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(mpModelInstanceElement->getParentModel()->getName(), type);
+  if ((mpModelInstanceElement == NULL) ||
+      (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
+      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
+      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == NULL))
+  {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Unable to find the redeclare class."), Helper::ok);
+  }
+
+  const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName(), type);
   // if we fail to find the type
   if (qualifiedType.isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
