@@ -53,26 +53,26 @@ public:
   VectorObject& operator=(const VectorObject&) = default;
   VectorObject* asVector() override final {return this;}
   void dumpVisualizerAttributes() override;
-  void setScaleLength(const float scale) {mScaleLength = scale;}
-  void setScaleRadius(const float scale) {mScaleRadius = scale;}
-  void setScaleTransf(const float scale) {mScaleTransf = scale;}
-  float getScaleTransf() const {return mScaleTransf;}
+  void setLengthScale(const float scale) {mLengthScale = scale;}
+  void setRadiusScale(const float scale) {mRadiusScale = scale;}
+  void setTransfScale(const float scale) {mTransfScale = scale;}
+  float getTransfScale() const {return mTransfScale;}
   void setAutoScaleCancellationRequired(const bool autoScaleCancellationRequired) {mAutoScaleCancellationRequired = autoScaleCancellationRequired;}
   bool getAutoScaleCancellationRequired() const {return mAutoScaleCancellationRequired;}
   void setOnlyShaftLengthCounted(const bool onlyShaftLengthCounted) {mOnlyShaftLengthCounted = onlyShaftLengthCounted;}
   bool hasOnlyShaftLengthCounted() const {return mOnlyShaftLengthCounted;}
   void setCoordinates(const float x, const float y, const float z) {_coords[0].exp = x, _coords[1].exp = y, _coords[2].exp = z;}
   void getCoordinates(float* x, float* y, float* z) const {*x = _coords[0].exp, *y = _coords[1].exp, *z = _coords[2].exp;}
-  float getLength    () const {return mScaleTransf * mScaleLength * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
-  float getRadius    () const {return mScaleTransf * mScaleRadius * kRadius    ;}
-  float getHeadLength() const {return mScaleTransf * mScaleRadius * kHeadLength;}
-  float getHeadRadius() const {return mScaleTransf * mScaleRadius * kHeadRadius;}
+  float getLength    () const {return mTransfScale * mLengthScale * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
+  float getRadius    () const {return mTransfScale * mRadiusScale * kRadius;}
+  float getHeadLength() const {return mTransfScale * mRadiusScale * kHeadLength;}
+  float getHeadRadius() const {return mTransfScale * mRadiusScale * kHeadRadius;}
   VectorQuantity getQuantity() const {return static_cast<VectorQuantity>(_quantity.exp);}
   bool areCoordinatesConstant() const {return _coords[0].isConst && _coords[1].isConst && _coords[2].isConst;}
   bool hasHeadAtOrigin() const {return _headAtOrigin.exp;}
   bool isTwoHeadedArrow() const {return _twoHeadedArrow.exp;}
-  bool isAdjustableRadius() const {return getQuantity() != VectorQuantity::relativePosition;}
-  bool isAdjustableLength() const {return getQuantity() != VectorQuantity::relativePosition;}
+  bool isRadiusAdjustable() const {return getQuantity() != VectorQuantity::relativePosition;}
+  bool isLengthAdjustable() const {return getQuantity() != VectorQuantity::relativePosition;}
   bool isScaleInvariant  () const {return getQuantity() != VectorQuantity::relativePosition;}
   bool isDrawnOnTop      () const {return getQuantity() != VectorQuantity::relativePosition;}
 public:
@@ -84,9 +84,9 @@ public:
   static constexpr char  kAutoScaleRenderBinName[] = "RenderBin"; //!< See class RenderBinPrototypeList in osgUtil/RenderBin.cpp
   static constexpr int   kAutoScaleRenderBinNum    = std::numeric_limits<int>::max(); //!< To be rendered last
 private:
-  float mScaleLength;
-  float mScaleRadius;
-  float mScaleTransf;
+  float mLengthScale;
+  float mRadiusScale;
+  float mTransfScale;
   bool mAutoScaleCancellationRequired;
   bool mOnlyShaftLengthCounted;
 public:

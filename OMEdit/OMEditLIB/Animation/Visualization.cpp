@@ -790,7 +790,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     std::vector<std::reference_wrapper<VectorObject>> fixedRadiusVectors;
     std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableRadius()) {
+      if (vector.isRadiusAdjustable()) {
         adjustableRadiusVectors.push_back(vector);
       } else {
         fixedRadiusVectors.push_back(vector);
@@ -875,7 +875,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
       // Apply the radius scale to all adjustable-radius vectors
       for (VectorObject& vector : adjustableRadiusVectors) {
-        vector.setScaleRadius(scale);
+        vector.setRadiusScale(scale);
         updateVisualizer(vector);
       }
 
@@ -889,7 +889,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     // Initialize a container of adjustable-length vectors
     std::vector<std::reference_wrapper<VectorObject>> adjustableLengthVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableLength()) {
+      if (vector.isLengthAdjustable()) {
         adjustableLengthVectors.push_back(vector);
       }
     }
@@ -910,7 +910,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
       // Initialize a map of actual transform scales, one for each adjustable-length vector
       std::unordered_map<const std::reference_wrapper<VectorObject>, float> transformScales;
       for (VectorObject& vector : adjustableLengthVectors) {
-        transformScales[vector] = vector.getScaleTransf();
+        transformScales[vector] = vector.getTransfScale();
       }
 
       // Store whether only the shaft length is counted for all adjustable-length vectors
@@ -920,7 +920,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
       // Update the bounds of the whole scene without any adjustable-length vectors
       for (VectorObject& vector : adjustableLengthVectors) {
-        vector.setScaleTransf(0);
+        vector.setTransfScale(0);
         updateVisualizer(vector);
       }
 
@@ -959,7 +959,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
         // Make the vectors of the current quantity visible again
         // (the update is not necessary here because it is done inside and after the while loop in any case)
         for (VectorObject& vector : vectors) {
-          vector.setScaleTransf(transformScales[vector]);
+          vector.setTransfScale(transformScales[vector]);
         }
 
         // Adjust the length scale for the current quantity as long as the criteria have not been met
@@ -991,7 +991,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
           // Apply the new length scale to the vectors of the current quantity
           for (VectorObject& vector : vectors) {
-            vector.setScaleLength(scale);
+            vector.setLengthScale(scale);
             updateVisualizer(vector);
           }
 
@@ -1067,14 +1067,14 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
         // Make the vectors of the current quantity invisible again
         // (until all length scales have been carefully adjusted)
         for (VectorObject& vector : vectors) {
-          vector.setScaleTransf(0);
+          vector.setTransfScale(0);
           updateVisualizer(vector);
         }
       }
 
       // Update the bounds of the whole scene with all adjustable-length vectors using their adjusted length scales
       for (VectorObject& vector : adjustableLengthVectors) {
-        vector.setScaleTransf(transformScales[vector]);
+        vector.setTransfScale(transformScales[vector]);
         updateVisualizer(vector);
       }
 
@@ -1092,7 +1092,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
         // Make all adjustable-length vectors invisible
         for (VectorObject& vector : adjustableLengthVectors) {
-          vector.setScaleTransf(0);
+          vector.setTransfScale(0);
           updateVisualizer(vector);
         }
 
@@ -1101,7 +1101,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
         // Make all adjustable-length vectors visible
         for (VectorObject& vector : adjustableLengthVectors) {
-          vector.setScaleTransf(transformScales[vector]);
+          vector.setTransfScale(transformScales[vector]);
           updateVisualizer(vector);
         }
       }
@@ -1159,7 +1159,7 @@ void AutoTransformCullCallback::operator()(osg::Node* node, osg::NodeVisitor* nv
           VectorObject* vector = visualizer->asVector();
           if (vector->getAutoScaleCancellationRequired()) {
             vector->setAutoScaleCancellationRequired(false);
-            vector->setScaleTransf(1 / at->getScale().z()); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
+            vector->setTransfScale(1 / at->getScale().z()); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
             _visualization->getBaseData()->updateVisualizer(vector);
           }
         }
