@@ -603,7 +603,7 @@ protected
   Boolean found;
 algorithm
   if listEmpty(inOldArgs) then
-    outArgs := inNewArgs;
+    outArgs := removeEmptySubMods(inNewArgs);
   elseif listEmpty(inNewArgs) then
     outArgs := inOldArgs;
   else
@@ -616,9 +616,35 @@ algorithm
       end if;
     end for;
 
-    outArgs := list(arg for arg guard not AbsynUtil.isEmptySubMod(arg) in outArgs);
+    outArgs := removeEmptySubMods(outArgs);
   end if;
 end mergeElementArgs;
+
+function removeEmptySubMods
+  input list<Absyn.ElementArg> subMods;
+  output list<Absyn.ElementArg> outSubMods = {};
+protected
+  Absyn.Modification mod;
+algorithm
+  for m in subMods loop
+    () := match m
+      case Absyn.ElementArg.MODIFICATION(modification = SOME(mod))
+        algorithm
+          mod.elementArgLst := removeEmptySubMods(mod.elementArgLst);
+          m.modification := if AbsynUtil.isEmptyMod(mod) then NONE() else SOME(mod);
+        then
+          ();
+
+      else ();
+    end match;
+
+    if not AbsynUtil.isEmptySubMod(m) then
+      outSubMods := m :: outSubMods;
+    end if;
+  end for;
+
+  outSubMods := Dangerous.listReverseInPlace(outSubMods);
+end removeEmptySubMods;
 
 protected function propagateMod2
   input Absyn.Path inComponentName;

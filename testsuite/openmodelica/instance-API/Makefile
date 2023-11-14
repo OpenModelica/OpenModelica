@@ -20,6 +20,7 @@ GetModelInstanceBinding4.mos \
 GetModelInstanceBinding5.mos \
 GetModelInstanceBinding6.mos \
 GetModelInstanceBinding7.mos \
+GetModelInstanceBinding8.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
 GetModelInstanceComment1.mos \
@@ -64,6 +65,7 @@ GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
 GetModelInstanceReplaceable4.mos \
 GetModelInstanceReplaceable5.mos \
+GetModelInstanceReplaceable6.mos \
 GetModelInstanceReplaceableComment.mos \
 GetModelInstanceStateMachine1.mos \
 ModifierToJSON1.mos \

@@ -1284,44 +1284,7 @@ protected
 algorithm
   node := InstNode.getRedeclaredNode(cls);
   elem := InstNode.definition(node);
-
-  json := JSON.addPair("$kind", JSON.makeString("class"), json);
-  json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
-  json := JSON.addPair("restriction",
-    JSON.makeString(SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(elem))), json);
-  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(elem, scope), json);
-
-  SCode.Element.CLASS(classDef = cdef, cmt = cmt) := elem;
-
-  () := match cdef
-    case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = odims))
-      algorithm
-        try
-          derivedNode := Lookup.lookupName(path, scope, NFInstContext.RELAXED, false);
-          json := JSON.addPair("baseClass", dumpJSONNodeEnclosingPath(derivedNode), json);
-        else
-        end try;
-
-        if isSome(odims) then
-          json := JSON.addPairNotNull("dims", dumpJSONDims(Util.getOption(odims), {}), json);
-        end if;
-
-        json := dumpJSONSCodeMod(cdef.modifications, scope, json);
-      then
-        ();
-
-    case SCode.ClassDef.CLASS_EXTENDS()
-      algorithm
-        json := dumpJSONSCodeMod(cdef.modifications, scope, json);
-      then
-        ();
-
-    else ();
-  end match;
-
-  json := dumpJSONCommentOpt(SOME(cmt), scope, json);
-  json := dumpJSONCommentAnnotation(SOME(cmt), scope, json,
-    {"Dialog", "choices", "choicesAllMatching"});
+  json := dumpJSONSCodeClass(elem, scope, true, json);
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONReplaceableClass;
 
@@ -1365,7 +1328,7 @@ algorithm
         ();
 
     case (Component.COMPONENT(), SCode.Element.COMPONENT())
-      algorithm
+algorithm
         json := JSON.addPair("$kind", JSON.makeString("component"), json);
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty), json);
@@ -1548,20 +1511,24 @@ function dumpJSONDims
 protected
   JSON ty_json, absyn_json;
 algorithm
-  absyn_json := JSON.emptyArray();
-  for d in absynDims loop
-    absyn_json := JSON.addElement(JSON.makeString(Dump.printSubscriptStr(d)), absyn_json);
-  end for;
+  json := JSON.addPairNotNull("absyn", dumpJSONAbsynDims(absynDims), json);
 
-  json := JSON.addPairNotNull("absyn", absyn_json, json);
-
-  ty_json := JSON.emptyArray();
+  ty_json := JSON.makeNull();
   for d in typedDims loop
     ty_json := JSON.addElement(JSON.makeString(Dimension.toString(d)), ty_json);
   end for;
 
   json := JSON.addPairNotNull("typed", ty_json, json);
 end dumpJSONDims;
+
+function dumpJSONAbsynDims
+  input list<Absyn.Subscript> dims;
+  output JSON json = JSON.makeNull();
+algorithm
+  for d in dims loop
+    json := JSON.addElement(JSON.makeString(Dump.printSubscriptStr(d)), json);
+  end for;
+end dumpJSONAbsynDims;
 
 function dumpJSONAttributes
   input SCode.Attributes attrs;
@@ -2125,17 +2092,21 @@ algorithm
           json := JSON.addPair("each", JSON.makeBoolean(true), json);
         end if;
 
-        json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
+        if Flags.isSet(Flags.STRUCTURED_REDECLARE) then
+          json := JSON.addPair("$value", dumpJSONSCodeElement(mod.element, scope), json);
+        else
+          json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
 
-        if SCodeUtil.isElementReplaceable(mod.element) then
-          json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
-        end if;
+          if SCodeUtil.isElementReplaceable(mod.element) then
+            json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
+          end if;
 
-        binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
-        json := JSON.addPair("$value", binding_json, json);
+          binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
+          json := JSON.addPair("$value", binding_json, json);
 
-        if isChoices then
-          json := dumpJSONRedeclareType(mod.element, scope, json);
+          if isChoices then
+            json := dumpJSONRedeclareType(mod.element, scope, json);
+          end if;
         end if;
       then
         ();
@@ -2166,6 +2137,105 @@ algorithm
     else ();
   end matchcontinue;
 end dumpJSONRedeclareType;
+
+function dumpJSONSCodeElement
+  input SCode.Element element;
+  input InstNode scope;
+  input output JSON json = JSON.makeNull();
+algorithm
+  json := match element
+    case SCode.Element.COMPONENT()
+      algorithm
+        json := JSON.addPair("$kind", JSON.makeString("component"), json);
+        json := JSON.addPair("name", JSON.makeString(element.name), json);
+        json := JSON.addPair("type", dumpJSONPath(AbsynUtil.typeSpecPath(element.typeSpec)), json);
+        json := JSON.addPairNotNull("dims", dumpJSONDims(element.attributes.arrayDims, {}), json);
+        json := dumpJSONSCodeMod(element.modifications, scope, json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(element.attributes, element.prefixes, scope), json);
+
+        if isSome(element.condition) then
+          json := JSON.addPair("condition", dumpJSONAbsynExpression(Util.getOption(element.condition)), json);
+        end if;
+
+        json := dumpJSONCommentOpt(SOME(element.comment), scope, json);
+      then
+        json;
+
+    case SCode.Element.CLASS()
+      then dumpJSONSCodeClass(element, scope, false, json);
+
+    else json;
+  end match;
+end dumpJSONSCodeElement;
+
+function dumpJSONSCodeClass
+  input SCode.Element element;
+  input InstNode scope;
+  input Boolean isRedeclare;
+  input output JSON json = JSON.makeNull();
+protected
+  Option<list<Absyn.Subscript>> odims;
+algorithm
+  () := match element
+    case SCode.CLASS()
+      algorithm
+        json := JSON.addPair("$kind", JSON.makeString("class"), json);
+        json := JSON.addPair("name", JSON.makeString(element.name), json);
+        json := JSON.addPair("restriction",
+          JSON.makeString(SCodeDump.restrictionStringPP(element.restriction)), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(element, scope), json);
+        json := dumpJSONSCodeClassDef(element.classDef, scope, isRedeclare, json);
+        json := dumpJSONCommentOpt(SOME(element.cmt), scope, json, dumpAnnotation = not isRedeclare);
+
+        if isRedeclare then
+          json := dumpJSONCommentAnnotation(SOME(element.cmt), scope, json,
+            {"Dialog", "choices", "choicesAllMatching"});
+        end if;
+      then
+        ();
+  end match;
+end dumpJSONSCodeClass;
+
+function dumpJSONSCodeClassDef
+  input SCode.ClassDef classDef;
+  input InstNode scope;
+  input Boolean qualifyPath;
+  input output JSON json;
+protected
+  Absyn.Path path;
+  Option<list<Absyn.Subscript>> odims;
+  InstNode derivedNode;
+algorithm
+  () := match classDef
+    case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = odims))
+      algorithm
+        if qualifyPath then
+          try
+            derivedNode := Lookup.lookupName(path, scope, NFInstContext.RELAXED, false);
+            json := JSON.addPair("baseClass", dumpJSONNodeEnclosingPath(derivedNode), json);
+          else
+          end try;
+        else
+          json := JSON.addPair("baseClass", dumpJSONPath(path), json);
+        end if;
+
+        if isSome(odims) then
+          json := JSON.addPairNotNull("dims", dumpJSONDims(Util.getOption(odims), {}), json);
+        end if;
+
+        json := dumpJSONSCodeMod(classDef.modifications, scope, json);
+      then
+        ();
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      algorithm
+        json := dumpJSONSCodeMod(classDef.modifications, scope, json);
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONSCodeClassDef;
 
 function dumpJSONChoicesAnnotation
   input list<SCode.SubMod> mods;
