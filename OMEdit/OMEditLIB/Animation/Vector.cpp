@@ -67,6 +67,7 @@ VectorObject::VectorObject()
       mTransfScale(1.0),
       mAutoScaleCancellationRequired(false),
       mOnlyShaftLengthCounted(false),
+      mHidden(false),
       _quantity(VisualizerAttribute(0.0)),
       _headAtOrigin(VisualizerAttribute(0.0)),
       _twoHeadedArrow(VisualizerAttribute(0.0))

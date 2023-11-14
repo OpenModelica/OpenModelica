@@ -61,12 +61,14 @@ public:
   bool getAutoScaleCancellationRequired() const {return mAutoScaleCancellationRequired;}
   void setOnlyShaftLengthCounted(const bool onlyShaftLengthCounted) {mOnlyShaftLengthCounted = onlyShaftLengthCounted;}
   bool hasOnlyShaftLengthCounted() const {return mOnlyShaftLengthCounted;}
+  void setInvisible() {mHidden = true;}
+  void setVisible() {mHidden = false;}
   void setCoordinates(const float x, const float y, const float z) {_coords[0].exp = x, _coords[1].exp = y, _coords[2].exp = z;}
   void getCoordinates(float* x, float* y, float* z) const {*x = _coords[0].exp, *y = _coords[1].exp, *z = _coords[2].exp;}
-  float getLength    () const {return mTransfScale * mLengthScale * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
-  float getRadius    () const {return mTransfScale * mRadiusScale * kRadius;}
-  float getHeadLength() const {return mTransfScale * mRadiusScale * kHeadLength;}
-  float getHeadRadius() const {return mTransfScale * mRadiusScale * kHeadRadius;}
+  float getLength    () const {return mHidden ? 0 : mTransfScale * mLengthScale * std::sqrt(_coords[0].exp * _coords[0].exp + _coords[1].exp * _coords[1].exp + _coords[2].exp * _coords[2].exp);}
+  float getRadius    () const {return mHidden ? 0 : mTransfScale * mRadiusScale * kRadius;}
+  float getHeadLength() const {return mHidden ? 0 : mTransfScale * mRadiusScale * kHeadLength;}
+  float getHeadRadius() const {return mHidden ? 0 : mTransfScale * mRadiusScale * kHeadRadius;}
   VectorQuantity getQuantity() const {return static_cast<VectorQuantity>(_quantity.exp);}
   bool areCoordinatesConstant() const {return _coords[0].isConst && _coords[1].isConst && _coords[2].isConst;}
   bool hasHeadAtOrigin() const {return _headAtOrigin.exp;}
@@ -89,6 +91,7 @@ private:
   float mTransfScale;
   bool mAutoScaleCancellationRequired;
   bool mOnlyShaftLengthCounted;
+  bool mHidden;
 public:
   VisualizerAttribute _coords[3];
   VisualizerAttribute _quantity;
