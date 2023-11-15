@@ -6364,5 +6364,38 @@ algorithm
   end if;
 end purityEqual;
 
+function isElementSection
+  input Absyn.ClassPart part;
+  output Boolean res;
+algorithm
+  res := match part
+    case Absyn.ClassPart.PUBLIC() then true;
+    case Absyn.ClassPart.PROTECTED() then true;
+    else false;
+  end match;
+end isElementSection;
+
+function isEquationSection
+  input Absyn.ClassPart part;
+  output Boolean res;
+algorithm
+  res := match part
+    case Absyn.ClassPart.EQUATIONS() then true;
+    case Absyn.ClassPart.INITIALEQUATIONS() then true;
+    else false;
+  end match;
+end isEquationSection;
+
+function isAlgorithmSection
+  input Absyn.ClassPart part;
+  output Boolean res;
+algorithm
+  res := match part
+    case Absyn.ClassPart.ALGORITHMS() then true;
+    case Absyn.ClassPart.INITIALALGORITHMS() then true;
+    else false;
+  end match;
+end isAlgorithmSection;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

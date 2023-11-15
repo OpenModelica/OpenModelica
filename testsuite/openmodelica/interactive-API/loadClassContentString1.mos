@@ -1,0 +1,55 @@
+// name: loadClassContentString1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  package P
+    model A
+      Real x;
+      Real y;
+    protected
+      Real u;
+      Real w;
+    equation
+      x = y;
+    algorithm
+      x := y;
+    end A;
+  end P;
+");
+
+loadClassContentString("
+    Real z;
+  equation
+    x = z;
+  algorithm
+    y := z;
+  protected
+    Real p;
+", P.A);
+
+list(P.A);
+
+// Result:
+// true
+// true
+// "model A
+//   Real x;
+//   Real y;
+// protected
+//   Real u;
+//   Real w;
+// public
+//   Real z;
+// protected
+//   Real p;
+// equation
+//   x = y;
+//   x = z;
+// algorithm
+//   x := y;
+// algorithm
+//   y := z;
+// end A;"
+// endResult
