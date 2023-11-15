@@ -1577,7 +1577,7 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
       docElement = QString("<div class=\"textDoc\">" % Qt::convertFromPlainText(docElement) % "</div>");
     }
     docElement = docElement.trimmed();
-    docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
+    docElement.remove(QRegularExpression("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
     doc = doc % docElement;
   }
 

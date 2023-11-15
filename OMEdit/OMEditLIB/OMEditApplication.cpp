@@ -42,6 +42,8 @@
 
 #include <locale.h>
 #include <QMessageBox>
+#include <QTextCodec>
+
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 

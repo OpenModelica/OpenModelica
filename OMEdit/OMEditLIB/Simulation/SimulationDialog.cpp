@@ -669,7 +669,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             commandLineOptionKey = commandLineOption;
             commandLineOptionValues = "";
           }
-          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegExp("\\-|\\--|\\+"));
+          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegularExpression("\\-|\\--|\\+"));
           if (commandLineOptionKeyFiltered.compare("matchingAlgorithm") == 0) {
             int currentIndex = mpTranslationFlagsWidget->getMatchingAlgorithmComboBox()->findText(commandLineOptionValues);
             if (currentIndex > -1) {
@@ -1815,7 +1815,7 @@ void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simul
 void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation, QString className, bool closeInteractivePlotWindow)
 {
   if (isInteractiveSimulation) {
-    className.remove(QRegExp("_res.int"));
+    className.remove(QRegularExpression("_res.int"));
     SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
     if (pSimulationOutputWidget) {
       pSimulationOutputWidget->cancelCompilationOrSimulation();

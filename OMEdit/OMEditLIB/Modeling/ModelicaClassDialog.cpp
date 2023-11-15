@@ -47,6 +47,7 @@
 #include <QMessageBox>
 #include <QCompleter>
 #include <QHeaderView>
+#include <QRegularExpressionValidator>
 
 LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryWidget *pLibraryWidget)
   : QDialog(0)
@@ -126,6 +127,26 @@ void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegExp &regExp)
   }
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegularExpression &regExp)
+{
+  QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
+  if (proxyIndex.isValid()) {
+    QModelIndex modelIndex = mpLibraryTreeProxyModel->mapToSource(proxyIndex);
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
+    if (pLibraryTreeItem) {
+      modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+      proxyIndex = mpLibraryTreeProxyModel->mapFromSource(modelIndex);
+      mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
+      while (proxyIndex.parent().isValid()) {
+        proxyIndex = proxyIndex.parent();
+        mpLibraryTreeView->expand(proxyIndex);
+      }
+    }
+  }
+}
+#endif
+
 /*!
  * \brief LibraryBrowseDialog::searchClasses
  * Searches the classes.
@@ -134,10 +155,15 @@ void LibraryBrowseDialog::searchClasses()
 {
   mpLibraryTreeView->selectionModel()->clearSelection();
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  QRegularExpression regExp(QRegularExpression::fromWildcard(searchText, caseSensitivity));
+  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity));
+#else
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   QRegExp regExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
+ #endif
   // if we have really searched something
   if (!searchText.isEmpty()) {
     findAndSelectLibraryTreeItem(regExp);
@@ -480,7 +506,11 @@ void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
   file.close();
   file.open(QIODevice::WriteOnly | QIODevice::Truncate);
   QTextStream out(&file);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  out.setEncoding(QStringConverter::Utf8);
+#else
   out.setCodec(Helper::utf8.toUtf8().constData());
+#endif
   out.setGenerateByteOrderMark(false);
   out << fileData;
   file.close();
@@ -1632,9 +1662,9 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpHorizontalTextBox->setValidator(pDoubleValidator);
   mpVerticalTextBox->setValidator(pDoubleValidator);
   mpScaleFactorTextBox->setValidator(pDoubleValidator);
-  QRegExp preserveAspectRatioRegExp("true|false");
-  preserveAspectRatioRegExp.setCaseSensitivity(Qt::CaseSensitive);
-  QRegExpValidator *pPreserveAspectRatioValidator = new QRegExpValidator(preserveAspectRatioRegExp);
+  QRegularExpression preserveAspectRatioRegExp("true|false");
+  preserveAspectRatioRegExp.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionValidator *pPreserveAspectRatioValidator = new QRegularExpressionValidator(preserveAspectRatioRegExp);
   mpPreserveAspectRatioComboBox->lineEdit()->setValidator(pPreserveAspectRatioValidator);
   // set the grid group box layout
   QGridLayout *pComponentLayout = new QGridLayout;

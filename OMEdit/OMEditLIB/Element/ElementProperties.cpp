@@ -46,7 +46,6 @@
 #include <QButtonGroup>
 #include <QMessageBox>
 #include <QDesktopServices>
-#include <QDesktopWidget>
 #include <QList>
 #include <QScreen>
 #include <QStringList>
@@ -904,7 +903,7 @@ void Parameter::editRedeclareClassButtonClicked()
   if ((mpModelInstanceElement == NULL) ||
       (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
       (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
-      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == NULL))
+      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == QString()))
   {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("Unable to find the redeclare class."), Helper::ok);

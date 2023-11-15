@@ -5604,31 +5604,31 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
       mpNoLatestNewsLabel->setVisible(false);
       xml.readNext();
       if (xml.tokenType() == QXmlStreamReader::StartElement) {
-        if (xml.name() == "item") {
+        if (xml.name() == QString("item")) {
           title = "";
           link = "";
           pubDateTime = QDateTime();
           endDateTime = QDateTime();
           // read everything inside item
           xml.readNext();
-          if (xml.name() == "title") {
+          if (xml.name() == QString("title")) {
             title = xml.readElementText();
           }
           xml.readNext();
-          if (xml.name() == "link") {
+          if (xml.name() == QString("link")) {
             link = xml.readElementText();
           }
           xml.readNext();
-          if (xml.name() == "pubDate") {
+          if (xml.name() == QString("pubDate")) {
             pubDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
           }
           xml.readNext();
-          if (xml.name() == "endDate") {
+          if (xml.name() == QString("endDate")) {
             endDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
           }
         }
       } else if (xml.tokenType() == QXmlStreamReader::EndElement) {
-        if (xml.name() == "item") {
+        if (xml.name() == QString("item")) {
           // add the item to the list view
           QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
           listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
@@ -7247,7 +7247,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream resultFile(&file);
     // set to UTF-8
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  resultFile.setEncoding(QStringConverter::Utf8);
+#else
     resultFile.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     resultFile.setGenerateByteOrderMark(false);
     // write result file header
     resultFile << "\"" << "time\",";
@@ -7406,7 +7410,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream visualFile(&file);
     // set to UTF-8
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    visualFile.setEncoding(QStringConverter::Utf8);
+#else
     visualFile.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     visualFile.setGenerateByteOrderMark(false);
 
     visualFile << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";
@@ -10232,7 +10240,11 @@ void ModelWidgetContainer::printModel()
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pModelWidget->getEditor());
       // set print options if text is selected
       if (pModelicaEditor->getPlainTextEdit()->textCursor().hasSelection()) {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        pPrintDialog->setOption(QAbstractPrintDialog::PrintSelection);
+#else
         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
+#endif
       }
       // open print dialog
       if (pPrintDialog->exec() == QDialog::Accepted) {

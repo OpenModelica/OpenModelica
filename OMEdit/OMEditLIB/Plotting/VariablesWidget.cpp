@@ -602,7 +602,7 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
     /* If token is StartElement, we'll see if we can read it.*/
     if (token == QXmlStreamReader::StartElement) {
       /* If it's named ScalarVariable, we'll dig the information from there.*/
-      if (xmlReader.name() == "ScalarVariable") {
+      if (xmlReader.name() == QString("ScalarVariable")) {
         QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
         bool hideResultIsTrue = scalarVariable.value("hideResult").compare(QStringLiteral("true")) == 0;
         // we need the following flag becasuse hideResult value can be empty.
@@ -677,8 +677,8 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   } else {
     toolTip = tr("Simulation Result File: %1\n%2: %3/%4").arg(fileName).arg(Helper::fileLocation).arg(filePath).arg(fileName);
   }
-  QRegExp resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
-  QString text = QString(fileName).remove(resultTypeRegExp);
+  QRegularExpression resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
+  QString text(fileName.remove(resultTypeRegExp));
   QVector<QVariant> variabledata;
   variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json" << false;
 
@@ -897,7 +897,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
 
       /* find the variable in the xml file */
       QString variableToFind = variableData.at(VariableItemData::NAME).toString();
-      variableToFind.remove(QRegExp(pTopVariablesTreeItem->getVariableName() + "."));
+      variableToFind.remove(QRegularExpression(pTopVariablesTreeItem->getVariableName() + "."));
       /* get the variable information i.e value, unit, displayunit, description */
       QString type, value, variability, unit, displayUnit, description;
       bool changeAble = false;
@@ -1151,7 +1151,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
 {
   QHash<QString, QString> scalarVariable;
   /* Let's check that we're really getting a ScalarVariable. */
-  if (xmlReader.tokenType() != QXmlStreamReader::StartElement && xmlReader.name() == "ScalarVariable") {
+  if (xmlReader.tokenType() != QXmlStreamReader::StartElement && xmlReader.name() == QString("ScalarVariable")) {
     return scalarVariable;
   }
   /* Let's get the attributes for ScalarVariable */
@@ -1165,7 +1165,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
   scalarVariable["isProtected"] = attributes.value("isProtected").toString();
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
-  while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable")) {
+  while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == QString("ScalarVariable"))) {
     if (xmlReader.tokenType() == QXmlStreamReader::StartElement) {
       scalarVariable["type"] = xmlReader.name().toString();
       QXmlStreamAttributes attributes = xmlReader.attributes();
@@ -1241,8 +1241,13 @@ void VariablesTreeModel::filterDependencies()
     foreach(QString s, uses) {
       escapedUses << s.replace("[","[[]").replace("]","[]]").replace("[[[]]","[[]").replace("(","[(]").replace(")","[)]").replace(".","[.]");
     }
-    QRegExp regexp = QRegExp("^" + escapedUses.join("|") + "$");
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    QRegularExpression regexp("^" + escapedUses.join("|") + "$");
+    mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->setFilterRegularExpression(regexp);
+#else
+    QRegExp regexp("^" + escapedUses.join("|") + "$");
     mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->setFilterRegExp(regexp);
+#endif
   }
 }
 
@@ -1306,7 +1311,11 @@ VariableTreeProxyModel::VariableTreeProxyModel(QObject *parent)
  */
 bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  if (!filterRegularExpression().pattern().isEmpty()) {
+#else
   if (!filterRegExp().isEmpty()) {
+#endif
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
     if (index.isValid()) {
       // if any of children matches the filter, then current index matches the filter as well
@@ -1320,13 +1329,25 @@ bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
       VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
       if (pVariablesTreeItem) {
         QString variableName = pVariablesTreeItem->getVariableName();
-        variableName.remove(QRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
+        variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        return variableName.contains(filterRegularExpression());
+#else
         return variableName.contains(filterRegExp());
+#endif
       } else {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        return sourceModel()->data(index).toString().contains(filterRegularExpression());
+#else
         return sourceModel()->data(index).toString().contains(filterRegExp());
+#endif
       }
       QString key = sourceModel()->data(index, filterRole()).toString();
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      return key.contains(filterRegularExpression());
+#else
       return key.contains(filterRegExp());
+#endif
     }
   }
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
@@ -1557,7 +1578,11 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   MainWindow::instance()->getStatusBar()->showMessage(tr("Loading simulation result variables"));
   // In order to improve the response time of insertVariablesItems function we should disbale sorting and clear the filter.
   mpVariablesTreeView->setSortingEnabled(false);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  mpVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression(""));
+#else
   mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
+#endif
   // insert the plot variables
   bool updateVariables = mpVariablesTreeModel->insertVariablesItems(fileName, filePath, variablesList, simulationOptions);
   // update the plot variables tree
@@ -1708,7 +1733,7 @@ void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTre
       QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getDisplayUnit(),
                                                         pChildVariablesTreeItem->getUnit()).toString();
       QString variableToFind = pChildVariablesTreeItem->getVariableName();
-      variableToFind.remove(QRegExp(outputFileName + "."));
+      variableToFind.remove(QRegularExpression(outputFileName + "."));
       QHash<QString, QString> hash;
       hash["name"] = variableToFind;
       hash["value"] = value;
@@ -1806,7 +1831,11 @@ void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, S
     initFile.close();
     initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
     QTextStream textStream(&initFile);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    textStream.setEncoding(QStringConverter::Utf8);
+#else
     textStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     textStream.setGenerateByteOrderMark(false);
     textStream << initXmlDocument.toString();
     initFile.close();
@@ -2753,10 +2782,15 @@ void VariablesWidget::showContextMenu(QPoint point)
 void VariablesWidget::findVariables()
 {
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity));
+  mpVariableTreeProxyModel->setFilterRegularExpression(regExp);
+#else
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   QRegExp regExp(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegExp(regExp);
+#endif
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {
     mpVariablesTreeView->expandAll();

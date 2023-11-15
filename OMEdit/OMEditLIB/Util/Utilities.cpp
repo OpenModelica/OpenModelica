@@ -603,7 +603,9 @@ QSettings* Utilities::getApplicationSettings()
   if (!init) {
     init = 1;
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
+#endif
   }
   return pSettings;
 }

@@ -30,6 +30,8 @@
 #ifndef STRINGANNOTATION_H
 #define STRINGANNOTATION_H
 
+#include <QRegExp>
+
 #include "DynamicAnnotation.h"
 
 class StringAnnotation : public DynamicAnnotation

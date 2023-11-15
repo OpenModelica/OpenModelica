@@ -329,6 +329,17 @@ else ()
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::XmlPatterns)
 endif ()
 
+target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGLWidgets)
+endif ()
+target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Network)
+target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
+
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  target_link_libraries(OMEditLib PUBLIC Qt6::Core5Compat)
+endif ()
+
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)

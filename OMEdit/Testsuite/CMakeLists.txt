@@ -1,4 +1,4 @@
-find_package(Qt5Test REQUIRED)
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Test REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -13,7 +13,7 @@ enable_testing()
 add_library(OMEditTestSuiteUtil STATIC Util/Util.cpp)
 add_library(omedit::testsuite::util ALIAS OMEditTestSuiteUtil)
 
-target_link_libraries(OMEditTestSuiteUtil PUBLIC Qt5::Test)
+target_link_libraries(OMEditTestSuiteUtil PUBLIC Qt${OM_QT_MAJOR_VERSION}::Test)
 target_link_libraries(OMEditTestSuiteUtil PUBLIC OMEditLib)
 
 target_include_directories(OMEditTestSuiteUtil PUBLIC Util/)
