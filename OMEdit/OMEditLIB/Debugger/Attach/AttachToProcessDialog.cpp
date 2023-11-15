@@ -41,6 +41,10 @@
 #include <QMessageBox>
 #include <QGridLayout>
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+#define setFilterRegularExpression setFilterRegExp
+#endif
+
 /*!
  * \class AttachToProcessDialog
  * \brief Provides interface for attaching a debugger to a running process.
@@ -63,7 +67,7 @@ AttachToProcessDialog::AttachToProcessDialog(QWidget *pParent)
   // processes tree view model & proxy
   mpProcessListModel = new ProcessListModel;
   mProcessListFilterModel.setSourceModel(mpProcessListModel);
-  mProcessListFilterModel.setFilterRegExp(mpFilterProcessesTextBox->text());
+  mProcessListFilterModel.setFilterRegularExpression(mpFilterProcessesTextBox->text());
   // processes tree view
   mpProcessesTreeView = new QTreeView;
   mpProcessesTreeView->setItemDelegate(new ItemDelegate(mpProcessesTreeView));
@@ -150,7 +154,7 @@ void AttachToProcessDialog::processIDChanged(const QString &pid)
   */
 void AttachToProcessDialog::setFilterString(const QString &filter)
 {
-  mProcessListFilterModel.setFilterRegExp(filter);
+  mProcessListFilterModel.setFilterRegularExpression(filter);
   // Activate the line edit if there's a unique filtered process.
   QString processId;
   if (mProcessListFilterModel.rowCount(QModelIndex()) == 1)

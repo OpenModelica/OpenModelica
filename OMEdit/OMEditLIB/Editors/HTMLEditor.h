@@ -34,6 +34,7 @@
 #ifndef HTMLEDITOR_H
 #define HTMLEDITOR_H
 
+#include <QRegExp>
 #include <QSyntaxHighlighter>
 #include <QPlainTextEdit>
 

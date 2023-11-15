@@ -54,7 +54,6 @@
 #endif
 
 #include <QDockWidget>
-#include <QDesktopWidget>
 #include <QMessageBox>
 #include <QScreen>
 

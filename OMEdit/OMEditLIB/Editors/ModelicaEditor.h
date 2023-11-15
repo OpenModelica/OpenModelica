@@ -39,6 +39,7 @@
 #include "Util/Utilities.h"
 #include "Editors/BaseEditor.h"
 
+#include <QRegExp>
 #include <QSyntaxHighlighter>
 
 class ModelWidget;

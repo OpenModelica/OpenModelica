@@ -695,7 +695,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             commandLineOptionKey = commandLineOption;
             commandLineOptionValues = "";
           }
-          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegExp("\\-|\\--|\\+"));
+          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegularExpression("\\-|\\--|\\+"));
           if (commandLineOptionKeyFiltered.compare("matchingAlgorithm") == 0) {
             int currentIndex = mpTranslationFlagsWidget->getMatchingAlgorithmComboBox()->findText(commandLineOptionValues);
             if (currentIndex > -1) {
