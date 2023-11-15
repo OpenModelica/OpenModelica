@@ -34,16 +34,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtGui/QGridLayout>
-#include <QtGui/QLabel>
-#include <QtGui/QMessageBox>
-#include <QtGui/QMouseEvent>
-#include <QtGui/QResizeEvent>
-#include <QtGui/QTextCursor>
-#endif
 
 #include <exception>
 #include <stdexcept>

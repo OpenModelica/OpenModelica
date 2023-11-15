@@ -44,12 +44,8 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #include <QTextEdit>
-#else
-#include <QtGui/QTextEdit>
-#endif
 
 //IAEX Headers
 #include "cellgroup.h"

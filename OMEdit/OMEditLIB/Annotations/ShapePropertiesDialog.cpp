@@ -406,11 +406,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpPointsTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
   mpPointsTableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
   mpPointsTableWidget->setColumnCount(2);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   mpPointsTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-#else /* Qt4 */
-  mpPointsTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-#endif
   mpPointsTableWidget->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
   QStringList headerLabels;
   headerLabels << "X" << "Y";

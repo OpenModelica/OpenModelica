@@ -45,36 +45,7 @@
 #include <algorithm>
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QTimer>
-#include <QtGui/QAction>
-#include <QtGui/QApplication>
-#include <QtGui/QClipboard>
-#include <QtGui/QColorDialog>
-#include <QtGui/QFileDialog>
-#include <QtGui/QFontDatabase>
-#include <QtGui/QFontDialog>
-#include <QtGui/QImageReader>
-#include <QtGui/QKeyEvent>
-#include <QtGui/QMenuBar>
-#include <QtGui/QMessageBox>
-#include <QtGui/QPrinter>
-#include <QtGui/QPrintDialog>
-#include <QtGui/QStatusBar>
-#include <QtGui/QTextCursor>
-#include <QtGui/QTextEdit>
-#include <QtGui/QTextFrame>
-#include <QtGui/QToolBar>
-#include <QtGui/QLabel>
-#include <QtGui/QMouseEvent>
-#include <QDebug>
-#include <QSettings>
-#include <QToolButton>
-#include <QObject>
-#endif
-#include <QDir>
 
 //IAEX Headers
 #include "command.h"
