@@ -50,7 +50,9 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 
+#include <QClipboard>
 #include <QDockWidget>
+#include <QDrag>
 #include <QMessageBox>
 #include <QMenu>
 

@@ -39,12 +39,8 @@
 
 // QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #include <QMessageBox>
-#else
-#include <QtGui/QMessageBox>
-#endif
 
 // IAEX Headers
 #include "cellcursor.h"

@@ -303,12 +303,8 @@ void MessageWidget::openErrorMessageClass(QUrl url)
     return;
   }
   QString className = url.path();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QUrlQuery query(url);
   int lineNumber = query.queryItemValue("lineNumber").toInt();
-#else /* Qt4 */
-  int lineNumber = url.queryItemValue("lineNumber").toInt();
-#endif
   if (className.startsWith("/")) {
     className.remove(0, 1);
   }

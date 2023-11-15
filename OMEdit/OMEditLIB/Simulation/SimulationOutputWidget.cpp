@@ -861,11 +861,7 @@ void SimulationOutputWidget::deleteIntermediateCompilationFiles()
 void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat)
 {
   if (textFormat) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     QString escaped = QString(output).toHtmlEscaped();
-#else /* Qt4 */
-    QString escaped = Qt::escape(output);
-#endif
     output = QString("<message stream=\"stdout\" type=\"%1\" text=\"%2\" />")
         .arg(StringHandler::getSimulationMessageTypeString(type))
         .arg(escaped);
@@ -1242,12 +1238,8 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     /* open the model_info.json file */
     if (QFileInfo(fileName).exists()) {
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
       QUrlQuery query(url);
       int equationIndex = query.queryItemValue("index").toInt();
-#else /* Qt4 */
-      int equationIndex = url.queryItemValue("index").toInt();
-#endif
       QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
       if (pTreeWidgetItem) {
         pTransformationsWidget->getEquationsTreeWidget()->clearSelection();

@@ -46,11 +46,7 @@ QString OMOperation::toString()
 QString OMOperation::toHtml(HtmlDiff htmlDiff)
 {
   Q_UNUSED(htmlDiff);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   return QString(toString()).toHtmlEscaped();
-#else /* Qt4 */
-  return Qt::escape(toString());
-#endif
 }
 
 QString OMOperation::diffHtml(QString &before, QString &after, HtmlDiff htmlDiff)

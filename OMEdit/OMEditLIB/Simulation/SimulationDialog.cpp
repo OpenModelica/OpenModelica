@@ -48,9 +48,11 @@
 #include "TranslationFlagsWidget.h"
 
 #include <QDebug>
-#include <limits>
-#include <QMessageBox>
+#include <QDesktopServices>
 #include <QDockWidget>
+#include <QMessageBox>
+
+#include <limits>
 
 /*!
  * \class SimulationDialog
