@@ -299,7 +299,7 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
     QXmlStreamReader::TokenType token = mXmlStreamReader.readNext();
     if (token == QXmlStreamReader::StartElement) {
       QXmlStreamAttributes attributes = mXmlStreamReader.attributes();
-      if (mXmlStreamReader.name() == "message") {
+      if (mXmlStreamReader.name() == QString("message")) {
         QString text = attributes.value("text").toString() + "\n";
         mNumberOfBytes += text.toUtf8().size();
         // write simulation log file
@@ -338,7 +338,7 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
           mpSimulationMessage->mStream = attributes.value("stream").toString();
           mpSimulationMessage->mType = StringHandler::getSimulationMessageType(attributes.value("type").toString());
           // check if we get the message about embedded opc-ua server initialized.
-          if (attributes.value("text") == "The embedded server is initialized.") {
+          if (attributes.value("text") == QString("The embedded server is initialized.") ){
             mpSimulationOutputWidget->embeddedServerInitialized();
           }
           if (mpSimulationOutputWidget->isOutputStructured()) {
@@ -367,17 +367,17 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
           }
           mLevel++;
         }
-      } else if (mXmlStreamReader.name() == "used") {
+      } else if (mXmlStreamReader.name() == QString("used")) {
         if (mpSimulationMessage) {
           mpSimulationMessage->mIndex = attributes.value("index").toString();
         }
-      } else if (mXmlStreamReader.name() == "status") {
+      } else if (mXmlStreamReader.name() == QString("status")) {
         int progress = attributes.value("progress").toInt();
         mpSimulationOutputWidget->getProgressBar()->setValue(progress/100);
         mpSimulationOutputWidget->updateMessageTabProgress();
       }
     } else if (token == QXmlStreamReader::EndElement) {
-      if (mXmlStreamReader.name() == "message") {
+      if (mXmlStreamReader.name() == QString("message")) {
         if (!isMaximumDisplayLimitReached()) {
           endElement();
         }

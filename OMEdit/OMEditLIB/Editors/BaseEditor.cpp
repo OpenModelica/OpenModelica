@@ -1648,7 +1648,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
   bool isCompleterShortcut = controlModifier && (pEvent->key() == Qt::Key_Space); // CTRL+space
-  bool isCompleterChar = mCompletionCharacters.indexOf(pEvent->key()) != -1;
+  bool isCompleterChar = mCompletionCharacters.indexOf(QChar(pEvent->key())) != -1;
   /* Ticket #4404. hide the completer on Esc and enter text based on Tab */
   if (mpCompleter && mpCompleter->popup()->isVisible()) {
     // The following keys are forwarded by the completer to the widget
@@ -2562,8 +2562,7 @@ FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
   pOptionsHorizontalLayout->addWidget(mpReplaceAllButton);
   // set main layout
   QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setMargin(2);
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpFindLabel, 0, 0);
   pMainLayout->addWidget(mpFindComboBox, 0, 1);
@@ -2665,7 +2664,7 @@ void FindReplaceWidget::findText(bool forward)
   }
 
   if (mpRegularExpressionCheckBox->isChecked()) {
-    QRegExp reg(textToFind, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+    QRegularExpression reg(textToFind, (mpCaseSensitiveCheckBox->isChecked() ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption));
     currentTextCursor = mpBaseEditor->getPlainTextEdit()->document()->find(reg, currentTextCursor, flags);
     mpBaseEditor->getPlainTextEdit()->setTextCursor(currentTextCursor);
   }
@@ -2893,8 +2892,7 @@ InfoBar::InfoBar(QWidget *pParent)
   connect(mpCloseButton, SIGNAL(clicked()), SLOT(hide()));
   // set the layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setMargin(2);
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
   pMainLayout->addWidget(mpInfoLabel);
   pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignTop);
   setLayout(pMainLayout);

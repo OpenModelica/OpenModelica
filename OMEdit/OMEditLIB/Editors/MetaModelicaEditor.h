@@ -35,6 +35,7 @@
 
 #include "Editors/BaseEditor.h"
 
+#include <QRegExp>
 #include <QSyntaxHighlighter>
 
 class MetaModelicaEditorPage;

@@ -438,7 +438,7 @@ QString LibraryTreeItem::getTooltip() const {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg("TLM Bus")
-                .arg("Domain").arg(QString(mpOMSTLMBusConnector->domain))
+                .arg("Domain").arg(QString::number(mpOMSTLMBusConnector->domain))
                 .arg("Dimensions").arg(QString::number(mpOMSTLMBusConnector->dimensions))
                 .arg("Interpolation").arg(OMSProxy::getInterpolationString(mpOMSTLMBusConnector->interpolation));
     }
@@ -1204,7 +1204,11 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (hide) {
       return false;
     } else {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      return pLibraryTreeItem->getNameStructure().contains(filterRegularExpression());
+#else
       return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
+#endif
     }
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
@@ -1393,6 +1397,26 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
   }
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  if (regExp.indexIn(pLibraryTreeItem->getNameStructure()) > 0) {
+#else
+  if (pLibraryTreeItem->getNameStructure().contains(regExp)) {
+#endif
+    return pLibraryTreeItem;
+  }
+  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
+    if (LibraryTreeItem *item = findLibraryTreeItem(regExp, pLibraryTreeItem->childAt(i))) {
+      return item;
+    }
+  }
+  return 0;
+}
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegularExpression &regExp, LibraryTreeItem *pLibraryTreeItem) const
+{
+  if (!pLibraryTreeItem) {
+    pLibraryTreeItem = mpRootLibraryTreeItem;
+  }
   if (pLibraryTreeItem->getNameStructure().contains(regExp)) {
     return pLibraryTreeItem;
   }
@@ -1403,6 +1427,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
   }
   return 0;
 }
+#endif
 
 /*!
  * \brief LibraryTreeModel::findLibraryTreeItemOneLevel
@@ -4695,7 +4720,11 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     // set to UTF-8
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    textStream.setEncoding(QStringConverter::Utf8);
+#else
     textStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     textStream.setGenerateByteOrderMark(bom);
     textStream << newContents;
     file.close();
@@ -5517,8 +5546,13 @@ void LibraryWidget::scrollToActiveLibraryTreeItem()
 void LibraryWidget::searchClasses()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
+  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity));
+#else
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   QRegExp regExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
+#endif
 }
