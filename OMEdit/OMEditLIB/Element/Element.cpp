@@ -3448,8 +3448,15 @@ void Element::resizeElement(QPointF newPosition)
   xFactor = 1 + xFactor;
   yFactor = 1 + yFactor;
   // if preserveAspectRatio is true then resize equally
-  CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
-  if (coOrdinateSystem.getPreserveAspectRatio()) {
+  bool preserveAspectRatio;
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    ModelInstance::CoordinateSystem coOrdinateSystem = getCoOrdinateSystemNew();
+    preserveAspectRatio = coOrdinateSystem.getPreserveAspectRatio();
+  } else {
+    CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
+    preserveAspectRatio = coOrdinateSystem.getPreserveAspectRatio();
+  }
+  if (preserveAspectRatio) {
     qreal factor = qMax(qFabs(xFactor), qFabs(yFactor));
     xFactor = xFactor < 0 ? factor * -1 : factor;
     yFactor = yFactor < 0 ? factor * -1 : factor;
