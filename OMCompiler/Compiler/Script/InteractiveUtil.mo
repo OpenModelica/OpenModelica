@@ -5033,5 +5033,227 @@ algorithm
   end try;
 end setElementAnnotation;
 
+public function loadClassContentString
+  input String content;
+  input Absyn.Path classPath;
+  input output Absyn.Program program;
+        output Boolean success = true;
+protected
+  Absyn.ClassDef parsed_body;
+algorithm
+  try
+    Absyn.Program.PROGRAM(classes = {Absyn.Class.CLASS(body = parsed_body)}) :=
+      Parser.parsestring(stringAppendList({"model dummy\n", content, "end dummy;\n"}));
+
+    (program, success) := transformPathedElementInProgram(classPath,
+      function mergeClassContents(newContent = parsed_body), program);
+  else
+    success := false;
+  end try;
+end loadClassContentString;
+
+public function mergeClassContents
+  input output Absyn.Element element;
+  input Absyn.ClassDef newContent;
+protected
+  Absyn.ElementSpec spec;
+  Absyn.Class cls;
+  Absyn.ClassDef old_content;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as
+           Absyn.ElementSpec.CLASSDEF(class_ = cls as
+             Absyn.Class.CLASS(body = old_content)))
+      algorithm
+        () := match (old_content, newContent)
+          case (Absyn.ClassDef.PARTS(), Absyn.ClassDef.PARTS())
+            algorithm
+              old_content.classParts := mergeClassParts(newContent.classParts, old_content.classParts);
+              old_content.ann := mergeAnnotationLists(newContent.ann, old_content.ann);
+            then
+              ();
+
+          case (Absyn.ClassDef.CLASS_EXTENDS(), Absyn.ClassDef.PARTS())
+            algorithm
+              old_content.parts := mergeClassParts(newContent.classParts, old_content.parts);
+              old_content.ann := mergeAnnotationLists(newContent.ann, old_content.ann);
+            then
+              ();
+
+        end match;
+
+        cls.body := old_content;
+        spec.class_ := cls;
+        element.specification := spec;
+      then
+        ();
+  end match;
+end mergeClassContents;
+
+protected function mergeClassParts
+  "Merges a list of new class parts with a list of old parts."
+  input list<Absyn.ClassPart> newParts;
+  input list<Absyn.ClassPart> oldParts;
+  output list<Absyn.ClassPart> outParts;
+protected
+  Vector<Absyn.ClassPart> parts;
+  Option<Absyn.ClassPart> op;
+  Absyn.ClassPart p;
+  Integer index;
+algorithm
+  parts := Vector.fromList(oldParts);
+
+  for part in newParts loop
+    () := match part
+      case Absyn.ClassPart.PUBLIC()
+        algorithm
+          // Try to find the last public/protected element section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+
+          () := match op
+            // Compatible public section, append the new elements to the old.
+            case SOME(p as Absyn.ClassPart.PUBLIC())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the section after any existing element sections.
+            else
+              algorithm
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      case Absyn.ClassPart.PROTECTED()
+        algorithm
+          // Try to find the last public/protected element section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+
+          () := match op
+            // Compatible protected section, append the new elements to the old.
+            case SOME(p as Absyn.ClassPart.PROTECTED())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the section after any existing element sections.
+            else
+              algorithm
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      case Absyn.ClassPart.EQUATIONS()
+        algorithm
+          // Try to find the last normal/initial equation section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isEquationSection);
+
+          () := match op
+            // Compatible normal equation section, append the new contents to the old.
+            case SOME(p as Absyn.ClassPart.EQUATIONS())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the new section after any existing element and equation sections.
+            else
+              algorithm
+                if index == -1 then
+                  (_, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+                end if;
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      case Absyn.ClassPart.INITIALEQUATIONS()
+        algorithm
+          // Try to find the last normal/initial equation section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isEquationSection);
+
+          () := match op
+            // Compatible initial equation section, append the new contents to the old.
+            case SOME(p as Absyn.ClassPart.INITIALEQUATIONS())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the new section after any existing element and equation sections.
+            else
+              algorithm
+                if index == -1 then
+                  (_, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+                end if;
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      // external section, replace the existing one or add it at the end of the
+      // class if none exists.
+      case Absyn.ClassPart.EXTERNAL()
+        algorithm
+          (_, index) := Vector.findLast(parts, AbsynUtil.isExternalPart);
+
+          if index <> -1 then
+            Vector.updateNoBounds(parts, index, part);
+          else
+            Vector.push(parts, part);
+          end if;
+        then
+          ();
+
+      // Anything else, add to the end of the class without merging.
+      else
+        algorithm
+          Vector.push(parts, part);
+        then
+          ();
+    end match;
+  end for;
+
+  outParts := Vector.toList(parts);
+end mergeClassParts;
+
+function mergeAnnotationLists
+  input list<Absyn.Annotation> newAnnotations;
+  input list<Absyn.Annotation> oldAnnotations;
+  output list<Absyn.Annotation> outAnnotations;
+protected
+  Absyn.Annotation old_ann;
+algorithm
+  if listEmpty(oldAnnotations) then
+    outAnnotations := newAnnotations;
+  else
+    old_ann := listHead(oldAnnotations);
+    for new_ann in newAnnotations loop
+      old_ann := AbsynUtil.mergeAnnotations(old_ann, new_ann);
+    end for;
+    outAnnotations := old_ann :: listRest(oldAnnotations);
+  end if;
+end mergeAnnotationLists;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

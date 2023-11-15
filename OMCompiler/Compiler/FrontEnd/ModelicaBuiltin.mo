@@ -1197,6 +1197,43 @@ external "builtin";
 annotation(preferredView="text");
 end loadString;
 
+function loadClassContentString
+  "Loads class elements from a string and inserts them into the given loaded class."
+  input String data;
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="test",Documentation(info="<html>
+<p>Loads class content from a string and inserts it into the given loaded class.
+The existing class must be a long class definition, either normal or class
+extends. The content is merged according to the following rules:</p>
+<p>
+<ul>
+<li>public/protected sections: Merged with the last public/protected section if the protection is the same.</li>
+<li>equation sections: Merged with the last equation section.</li>
+<li>external declaration: The new declaration overwrites the old.</li>
+<li>annotations: The new annotation is merged with the old.
+</ul>
+</p>
+<p>
+Any section not merged is added after the last section of the same type, or
+where they would normally be placed if no such section exists (i.e.
+public/protected first, then equations, etc).  </p>
+<p>
+Example:
+<blockquote>
+<pre>
+loadClassContentString(\"
+    Real y;
+  equation
+    y = x;
+\", P.M);
+</pre>
+</blockquote>
+</p>
+</html>"));
+end loadClassContentString;
+
 function parseString
   input String data;
   input String filename = "<interactive>";
