@@ -39,7 +39,11 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#include <QWebEngineView>
+#else
 #include <QWebView>
+#endif
 #include <QToolBar>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -174,7 +178,11 @@ public slots:
   void updateDocumentationHistory();
 };
 
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+class DocumentationViewer : public QWebEngineView
+#else
 class DocumentationViewer : public QWebView
+#endif
 {
   Q_OBJECT
 private:
@@ -188,14 +196,20 @@ private:
 public slots:
   void processLinkClick(QUrl url);
   void requestFinished();
+  void processLinkHover(QString link);
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
   void pageLoaded(bool ok);
 protected:
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  virtual QWebEngineView* createWindow(QWebEnginePage::WebWindowType type) override;
+#else
   virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
+#endif
   virtual void keyPressEvent(QKeyEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
+  bool mIsContentEditable;
 };
 
 #endif // DOCUMENTATIONWIDGET_H

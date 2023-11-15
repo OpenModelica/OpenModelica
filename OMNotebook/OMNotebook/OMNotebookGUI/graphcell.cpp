@@ -46,29 +46,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QDir>
-#include <QtCore/QEvent>
-#include <QtCore/QThread>
-#include <QtGui/QAbstractTextDocumentLayout>
-#include <QtGui/QApplication>
-#include <QtGui/QMouseEvent>
-#include <QtGui/QGridLayout>
-#include <QtGui/QKeyEvent>
-#include <QtGui/QLabel>
-#include <QtGui/QMessageBox>
-#include <QtGui/QResizeEvent>
-#include <QtGui/QFrame>
-#include <QtGui/QTextFrame>
-#include <QAction>
-#include <QActionGroup>
-#include <QTextDocumentFragment>
-#include <QTextStream>
-#include <QRegExp>
-#include <QPushButton>
-#endif
 
 //IAEX Headers
 #include "graphcell.h"

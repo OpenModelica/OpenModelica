@@ -1060,11 +1060,7 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
   pEquationTreeItem->setToolTip(0, values[0]);
   pEquationTreeItem->setToolTip(1, values[1]);
   pEquationTreeItem->setToolTip(2, "<html><div style=\"margin:3px;\">" +
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QString(values[2]).toHtmlEscaped()
-#else /* Qt4 */
-  Qt::escape(values[2])
-#endif
   + "</div></html>");
   pEquationTreeItem->setToolTip(4, "Maximum execution time in a single step");
   pEquationTreeItem->setToolTip(5, "Total time excluding the overhead of measuring.");

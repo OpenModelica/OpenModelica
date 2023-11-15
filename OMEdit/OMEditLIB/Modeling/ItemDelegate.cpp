@@ -74,15 +74,9 @@ void ItemDelegate::initTextDocument(QTextDocument *pTextDocument, QFont font, in
 
 void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QStyleOptionViewItem opt = setOptions(index, option);
   const QStyleOptionViewItem *v2 = qstyleoption_cast<const QStyleOptionViewItem *>(&option);
   opt.features = v2 ? v2->features : QStyleOptionViewItem::ViewItemFeatures(QStyleOptionViewItem::None);
-#else
-  QStyleOptionViewItemV2 opt = setOptions(index, option);
-  const QStyleOptionViewItemV2 *v2 = qstyleoption_cast<const QStyleOptionViewItemV2 *>(&option);
-  opt.features = v2 ? v2->features : QStyleOptionViewItemV2::ViewItemFeatures(QStyleOptionViewItemV2::None);
-#endif
   // prepare
   painter->save();
   // get the data and the rectangles
@@ -114,11 +108,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   value = index.data(Qt::CheckStateRole);
   if (value.isValid()) {
     checkState = static_cast<Qt::CheckState>(value.toInt());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     checkRect = doCheck(opt, opt.rect, value);
-#else /* Qt4 */
-    checkRect = check(opt, opt.rect, value);
-#endif
   }
   // do the layout
   doLayout(opt, &checkRect, &decorationRect, &displayRect, false);

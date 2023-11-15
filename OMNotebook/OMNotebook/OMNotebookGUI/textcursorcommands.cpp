@@ -40,17 +40,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QDir>
-#include <QtGui/QMessageBox>
-#include <QtGui/QTextCursor>
-#include <QtGui/QTextDocumentFragment>
-#include <QtGui/QTextEdit>
-#include <QtGui/QTextFrame>
-#include <QVariant>
-#endif
 
 #include <exception>
 #include <stdexcept>

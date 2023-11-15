@@ -45,9 +45,7 @@
 #include <QFileDialog>
 #include <QTextCodec>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #define toAscii toLatin1
-#endif
 
 
 QString StringHandler::mLastOpenDir;
@@ -1320,17 +1318,7 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   }
 
   if (!fileName.isEmpty()) {
-    /* Qt is not reallllyyyy platform independent :(
-     * In older versions of Qt QFileDialog::getSaveFileName doesn't return file extension on Linux.
-     * But it works fine in Qt 4.8.
-     */
     QFileInfo fileInfo(fileName);
-#if defined(Q_OS_LINUX) && QT_VERSION < 0x040800
-    if (fileInfo.suffix() == QString(""))
-      fileName.append(".").append(defaultSuffix);
-#else
-    Q_UNUSED(defaultSuffix);
-#endif
     StringHandler::setLastOpenDirectory(fileInfo.absolutePath());
   }
   return fileName;
