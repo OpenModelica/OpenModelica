@@ -264,7 +264,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   threadData_t *threadData = comp->threadData;
   fmi2Real nextSampleEvent;
   fmi2Boolean nextSampleEventDefined;
-  fmi2Boolean nextTimerDefined;
+  modelica_boolean nextTimerDefined;
   fmi2Real nextTimerActivationTime;
   int syncRet;
 

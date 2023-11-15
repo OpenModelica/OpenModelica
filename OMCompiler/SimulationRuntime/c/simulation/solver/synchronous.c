@@ -332,8 +332,8 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
  * @param data                            data
  * @param threadData                      thread data, for errro handling
  * @param currentTime                     Current solver timer.
- * @param nextTimerDefined                0 (false) if no next timer is defined.
- *                                        1 (true) if a next timer is defined. Then the time is outputted in nextTimerActivationTime.
+ * @param nextTimerDefined                FALSE if no next timer is defined.
+ *                                        TRUE if a next timer is defined. Then the time is outputted in nextTimerActivationTime.
  * @param nextTimerActivationTime         If nextTimerDefined is true it will contain the next time a timer will fire.
  * @return int                            Return 0, if there is no fired timers;
  *                                               1, if there is a fired timer;
@@ -349,7 +349,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
   fire_timer_t ret = NO_TIMER_FIRED;
   SUBCLOCK_DATA* subClock;
 
-  *nextTimerDefined = 0;
+  *nextTimerDefined = FALSE;
 
   if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
     TRACE_POP
@@ -398,7 +398,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
     nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
     /* Next time a timer will activate: */
     *nextTimerActivationTime = nextTimer->activationTime;
-    *nextTimerDefined = 1;
+    *nextTimerDefined = TRUE;
   }
 
   TRACE_POP
