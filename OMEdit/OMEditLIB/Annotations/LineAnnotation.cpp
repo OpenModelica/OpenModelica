@@ -649,7 +649,7 @@ void LineAnnotation::parseShapeAnnotation()
   mLineColor.evaluate(mpLine->getParentModel());
   mLinePattern = mpLine->getPattern();
   mLinePattern.evaluate(mpLine->getParentModel());
-  mLineThickness = mpLine->getLineThickness();
+  mLineThickness = mpLine->getThickness();
   mLineThickness.evaluate(mpLine->getParentModel());
   mArrow = mpLine->getArrow();
   mArrow.evaluate(mpLine->getParentModel());
