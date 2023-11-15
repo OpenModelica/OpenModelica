@@ -467,7 +467,11 @@ TVariableTreeProxyModel::TVariableTreeProxyModel(QObject *parent)
 
 bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  if (!filterRegularExpression().pattern().isEmpty()) {
+#else
   if (!filterRegExp().isEmpty()) {
+#endif
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
     if (index.isValid()) {
       // if any of children matches the filter, then current index matches the filter as well
@@ -481,13 +485,25 @@ bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex 
       TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
       if (pTVariablesTreeItem) {
         QString variableName = pTVariablesTreeItem->getVariableName();
-        variableName.remove(QRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
+        variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        return variableName.contains(filterRegularExpression());
+#else
         return variableName.contains(filterRegExp());
+#endif
       } else {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        return sourceModel()->data(index).toString().contains(filterRegularExpression());
+#else
         return sourceModel()->data(index).toString().contains(filterRegExp());
+#endif
       }
       QString key = sourceModel()->data(index, filterRole()).toString();
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      return key.contains(filterRegularExpression());
+#else
       return key.contains(filterRegExp());
+#endif
     }
   }
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
@@ -1284,7 +1300,11 @@ void TransformationsWidget::reloadTransformations()
   signalsState = mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
+#else
   mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
+#endif
   /* clear equations tree */
   clearTreeWidgetItems(mpEquationsTreeWidget);
   /* clear defines in tree */
@@ -1311,10 +1331,16 @@ void TransformationsWidget::reloadTransformations()
 void TransformationsWidget::findVariables()
 {
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  // TODO: handle PatternSyntax
+  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity));
+  mpTVariableTreeProxyModel->setFilterRegularExpression(regExp);
+#else
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   QRegExp regExp(findText, caseSensitivity, syntax);
   mpTVariableTreeProxyModel->setFilterRegExp(regExp);
+#endif
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {
     mpTVariablesTreeView->expandAll();

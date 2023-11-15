@@ -126,9 +126,11 @@ MainWindow::MainWindow(QWidget *parent)
    * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
    * DebuggerConfiguration section respectively from the settings file.
    */
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
+#endif
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
@@ -1483,7 +1485,11 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   QFile omnotebookFile(omnotebookFileName);
   omnotebookFile.open(QIODevice::WriteOnly);
   QTextStream textStream(&omnotebookFile);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  textStream.setEncoding(QStringConverter::Utf8);
+#else
   textStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
   textStream.setGenerateByteOrderMark(false);
   textStream << xmlDocument.toString();
   omnotebookFile.close();
