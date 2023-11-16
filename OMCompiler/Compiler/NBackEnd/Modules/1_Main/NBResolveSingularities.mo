@@ -275,10 +275,12 @@ public
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
       if Flags.isSet(Flags.BLT_DUMP) then
         err_str := err_str + " \n" + StringUtil.headline_4("(" + intString(listLength(matched_vars)) + ") Matched Variables")
-        + List.toString(matched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-        + StringUtil.headline_4("(" + intString(listLength(matched_eqns)) + ") Matched Equations")
-        + List.toString(matched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
-       end if;
+          + List.toString(matched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+          + StringUtil.headline_4("(" + intString(listLength(matched_eqns)) + ") Matched Equations")
+          + List.toString(matched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+          + VariablePointers.toString(variables, "All ") + "\n" + EquationPointers.toString(equations, "All ") + "\n"
+          + Matching.toString(matching);
+      end if;
       Error.addMessage(Error.INTERNAL_ERROR,{err_str});
       fail();
     end if;

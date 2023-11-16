@@ -2064,28 +2064,43 @@ public
     public function toStatement
       "expects for loops to be split with splitIterators(eqn)"
       input Equation eqn;
-      output Statement stmt;
+      output list<Statement> stmts = {};
     algorithm
-      stmt := match eqn
+      stmts := match eqn
         local
           list<ComponentRef> iter_lst;
           list<Expression> range_lst;
-          ComponentRef iter;
+          ComponentRef iter, lhs_rec, rhs_rec;
           Expression range;
           list<Statement> body;
+          Pointer<Variable> lhs, rhs;
+          list<Pointer<Variable>> lhs_lst, rhs_lst;
 
         case SCALAR_EQUATION()
-        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
 
         case ARRAY_EQUATION()
-        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+
+        case RECORD_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec)) algorithm
+          lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec));
+          rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec));
+          if listLength(lhs_lst) == listLength(rhs_lst) then
+            for tpl in List.zip(lhs_lst, rhs_lst) loop
+              (lhs, rhs) := tpl;
+               stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
+            end for;
+          else
+            stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+          end if;
+        then stmts;
 
         case RECORD_EQUATION()
-        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
 
         case FOR_EQUATION() algorithm
           (iter_lst, range_lst) := Equation.Iterator.getFrames(eqn.iter);
-          body := list(toStatement(body_eqn) for body_eqn in eqn.body);
+          body := List.flatten(list(toStatement(body_eqn) for body_eqn in eqn.body));
           for tpl in listReverse(List.zip(iter_lst, range_lst)) loop
             (iter, range) := tpl;
             body := {Statement.FOR(
@@ -2095,11 +2110,11 @@ public
               forType   = Statement.ForType.NORMAL(),
               source    = eqn.source)};
           end for;
-        then List.first(body);
+        then body;
 
-        case IF_EQUATION() then Statement.IF(IfEquationBody.toStatement(eqn.body), eqn.source);
+        case IF_EQUATION() then {Statement.IF(IfEquationBody.toStatement(eqn.body), eqn.source)};
 
-        case WHEN_EQUATION() then Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source);
+        case WHEN_EQUATION() then {Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source)};
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for: \n" + toString(eqn)});
@@ -2206,7 +2221,7 @@ public
     protected
       tuple<Expression, list<Statement>> stmt;
     algorithm
-      stmt := (body.condition, list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns));
+      stmt := (body.condition, List.flatten(list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns)));
       if Util.isSome(body.else_if) then
         stmts := stmt :: toStatement(Util.getOption(body.else_if));
       else

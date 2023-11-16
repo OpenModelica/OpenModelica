@@ -1011,12 +1011,28 @@ algorithm
     local
       T1 val1;
       T2 val2;
-
     case (SOME(val1), SOME(val2)) then inFunc(val1, val2);
     case (NONE(), NONE()) then true;
     else false;
   end match;
 end optionEqual;
+
+public function optionHash<T>
+  input Option<T> inOption;
+  input HashFunc inFunc;
+  output Integer outHash;
+  partial function HashFunc
+    input T inValue;
+    output Integer outHash;
+  end HashFunc;
+algorithm
+  outHash := match inOption
+    local
+      T val;
+    case SOME(val) then inFunc(val);
+    else 0;
+  end match;
+end optionHash;
 
 public function makeValueOrDefault<TI, TO>
   "Returns the value if the function call succeeds, otherwise the default"

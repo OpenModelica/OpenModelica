@@ -391,8 +391,11 @@ public
    algorithm
     (eqn, funcTree, status) := match eqn
       local
+        Equation solved_eqn;
         IfEquationBody if_body;
         Expression lhs, rhs;
+        list<Option<Pointer<Variable>>> record_parents;
+        Pointer<Variable> parent;
 
       case Equation.IF_EQUATION() algorithm
         (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, systemType, implicit_index, slicing_map);
@@ -407,16 +410,28 @@ public
 
       // solve tuple equations
       case Equation.RECORD_EQUATION() algorithm
-        (lhs, rhs, status) := match (eqn.lhs, eqn.rhs)
+        (solved_eqn, status) := match (eqn.lhs, eqn.rhs)
           local
             Expression exp;
-          case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars)) then (eqn.lhs, eqn.rhs, Status.EXPLICIT);
-          case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars)) then (eqn.rhs, eqn.lhs, Status.EXPLICIT);
-          else (eqn.lhs, eqn.rhs, Status.IMPLICIT);
+          case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars)) then (eqn, Status.EXPLICIT);
+          case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars)) algorithm
+            eqn.rhs := eqn.lhs;
+            eqn.lhs := exp;
+          then (eqn, Status.EXPLICIT);
+          else algorithm
+            // check if all belong to the same record
+            record_parents := list(BVariable.getParent(var) for var in vars);
+            solved_eqn := match UnorderedSet.unique_list(record_parents, function Util.optionHash(inFunc = BVariable.hash), function Util.optionEqual(inFunc = BVariable.equalName))
+              case {SOME(parent)} algorithm
+                (solved_eqn, funcTree, status, _) := solveBody(eqn, BVariable.getVarName(parent), funcTree);
+              then solved_eqn;
+              else algorithm
+                status := Status.IMPLICIT;
+              then eqn;
+            end match;
+          then (solved_eqn, status);
         end match;
-        eqn.lhs := lhs;
-        eqn.rhs := rhs;
-      then (eqn, funcTree, status);
+      then (solved_eqn, funcTree, status);
 
       else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for equation:\n" + Equation.toString(eqn)});
