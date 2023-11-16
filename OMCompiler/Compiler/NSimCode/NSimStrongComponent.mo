@@ -758,11 +758,6 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
-          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), eqn.rhs, eqn.source, eqn.attr);
-          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-        then tmp;
-
         case (BEquation.RECORD_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           (tmp, simCodeIndices) := createAlgorithm(eqn, simCodeIndices);
         then tmp;
@@ -873,7 +868,7 @@ public
     algorithm
       stmts := match eqn
         case Equation.ALGORITHM() then eqn.alg.statements;
-        else {Equation.toStatement(eqn)};
+        else Equation.toStatement(eqn);
       end match;
 
       blck := ALGORITHM(indices.equationIndex, stmts, Equation.getAttributes(eqn));

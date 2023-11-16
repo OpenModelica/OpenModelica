@@ -1,0 +1,80 @@
+// name: NonTopLevelInputs
+// keywords: NewBackend
+// status: correct
+
+loadModel(Complex); getErrorString();
+
+loadString("
+package NonTopLevelInputs
+  model M1
+    input Real e;
+  end M1;
+
+  model M2
+    parameter Real p = 1;
+    extends M1(e = p);
+  end M2;
+
+  model S
+  M2 m2;
+  end S;
+
+  model M1c
+    input Complex e;
+  end M1c;
+
+  model M2c
+    parameter Complex p = Complex(1);
+    extends M1c(e = p);
+  end M2c;
+
+  model Sc
+  M2c m2;
+  end Sc;
+
+  model M1cv
+    Complex e;
+  end M1cv;
+
+  model M2cv
+    parameter Complex p = Complex(1);
+    extends M1cv(e = p);
+  end M2cv;
+
+  model Scv
+    M2cv m2;
+  end Scv;
+end NonTopLevelInputs;
+"); getErrorString();
+
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(NonTopLevelInputs.S); getErrorString();
+
+simulate(NonTopLevelInputs.Sc); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "NonTopLevelInputs.S_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NonTopLevelInputs.S', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "NonTopLevelInputs.Sc_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NonTopLevelInputs.Sc', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

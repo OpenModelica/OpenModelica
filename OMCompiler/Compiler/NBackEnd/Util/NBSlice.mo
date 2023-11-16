@@ -45,12 +45,14 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import Variable = NFVariable;
 
   // NB imports
   import NBAdjacency.Mapping;
   import BackendUtil = NBBackendUtil;
   import NBEquation.{Equation, Iterator, Frame, FrameLocation, RecollectStatus, FrameOrderingStatus};
   import Replacements = NBReplacements;
+  import BVariable = NBVariable;
   import NBVariable.VariablePointers;
 
   // Util imports
@@ -206,12 +208,29 @@ public
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input Boolean pseudo;
   protected
-    ComponentRef checkCref;
+    ComponentRef checkCref, childCref;
+    list<Pointer<Variable>> record_children;
+    list<ComponentRef> crefs = {};
   algorithm
     // if causalized in pseudo array mode, the variables will only have subscript-free variables
     checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
-    if UnorderedMap.contains(checkCref, map) then
-      Pointer.update(acc, cref :: Pointer.access(acc));
+    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref));
+    if listEmpty(record_children) then
+      // not a record
+      if UnorderedMap.contains(checkCref, map) then
+        Pointer.update(acc, cref :: Pointer.access(acc));
+      end if;
+    else
+      // its a record, instead parse all the children
+      for child in record_children loop
+        childCref := BVariable.getVarName(child);
+        if UnorderedMap.contains(childCref, map) then
+          crefs := childCref :: crefs;
+        end if;
+      end for;
+      if not listEmpty(crefs) then
+        Pointer.update(acc, listAppend(crefs, Pointer.access(acc)));
+      end if;
     end if;
   end getDependentCref;
 
@@ -222,11 +241,29 @@ public
     input Pointer<list<ComponentRef>> acc                       "accumulator for relevant crefs";
     input UnorderedSet<ComponentRef> set                        "unordered set to check for array crefs for relevance";
   protected
-    ComponentRef checkCref;
+    ComponentRef checkCref, childCref;
+    list<Pointer<Variable>> record_children;
+    list<ComponentRef> crefs = {};
   algorithm
     // always remove subscripts here, this analysis is for sparsity pattern -> currently always scalarized!
-    if UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set) then
-      Pointer.update(acc, cref :: Pointer.access(acc));
+    checkCref := ComponentRef.stripSubscriptsAll(cref);
+    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref));
+    if listEmpty(record_children) then
+      // not a record
+      if UnorderedSet.contains(checkCref, set) then
+        Pointer.update(acc, cref :: Pointer.access(acc));
+      end if;
+    else
+      // its a record, instead parse all the children
+      for child in record_children loop
+        childCref := BVariable.getVarName(child);
+        if UnorderedSet.contains(childCref, set) then
+          crefs := childCref :: crefs;
+        end if;
+      end for;
+      if not listEmpty(crefs) then
+        Pointer.update(acc, listAppend(crefs, Pointer.access(acc)));
+      end if;
     end if;
   end getDependentCrefCausalized;
 
