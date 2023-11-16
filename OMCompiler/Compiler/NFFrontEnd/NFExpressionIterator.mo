@@ -99,9 +99,11 @@ public
 
       else
         algorithm
-          (e, true) := ExpandExp.expand(exp, backend);
+          (e, expanded) := ExpandExp.expand(exp, backend);
         then
-          if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend);
+          if expanded then
+            (if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend)) else
+            NONE_ITERATOR();
 
     end match;
   end fromExp;

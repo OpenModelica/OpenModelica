@@ -892,6 +892,7 @@ OperationMul1.mo \
 OperationMulEW1.mo \
 OperationPow1.mo \
 OperationPow2.mo \
+OperationPow3.mo \
 OperationPowEW1.mo \
 OperationRelational1.mo \
 OperationSub1.mo \

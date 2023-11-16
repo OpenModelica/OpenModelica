@@ -882,6 +882,7 @@ public
 
       // a ^ n where n is a literal value.
       case Expression.INTEGER(n)
+        guard n > 0
         algorithm
           (exp1, expanded) := expand(exp1);
 
