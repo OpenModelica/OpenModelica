@@ -537,40 +537,6 @@ public:
   bool mPrimitivesVisible;
 };
 
-class MimeData : public QMimeData
-{
-  Q_OBJECT
-public:
-  MimeData(const QString &name) : QMimeData()
-  {
-    mName = name;
-    mComponents.clear();
-    mConnections.clear();
-    mShapes.clear();
-  }
-  QString getName() const {return mName;}
-  void addComponent(Element *pComponent) {mComponents.append(pComponent);}
-  QList<Element*> getComponents() const {return mComponents;}
-  void addModifier(ModelInstance::Modifier *pModifier) {mModifiers.append(pModifier);}
-  QList<ModelInstance::Modifier*> getModifiers() const {return mModifiers;}
-  void addConnection(LineAnnotation *pConnectionLineAnnotation) {mConnections.append(pConnectionLineAnnotation);}
-  QList<LineAnnotation*> getConnections() const {return mConnections;}
-  void addShape(ShapeAnnotation *pShapeAnnotation) {mShapes.append(pShapeAnnotation);}
-  QList<ShapeAnnotation*> getShapes() const {return mShapes;}
-private:
-  QString mName;
-  QList<Element*> mComponents;
-  QList<ModelInstance::Modifier*> mModifiers;
-  QList<LineAnnotation*> mConnections;
-  QList<ShapeAnnotation*> mShapes;
-  // QMimeData interface
-public:
-  virtual QStringList formats() const override
-  {
-    return QStringList() << "text/plain" << Helper::cutCopyPasteFormat;
-  }
-};
-
 class ModelWidgetContainer;
 class ModelicaHighlighter;
 class CompositeModelHighlighter;
