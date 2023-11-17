@@ -1882,10 +1882,16 @@ void ElementParameters::updateElementParameters()
     // apply the new Component modifiers if any
     QStringList modifiersList;
     foreach (ElementModifier elementModifier, elementModifiersList) {
+      int index = elementModifier.mValue.indexOf('(');
+      QString modifierStartStr;
+      if (index > -1) {
+        modifierStartStr = elementModifier.mValue.left(index);
+        modifierStartStr = modifierStartStr.remove('(').trimmed();
+      }
       QString modifierValue;
       if (elementModifier.mValue.isEmpty()) {
         modifierValue = QString(elementModifier.mKey);
-      } else if (elementModifier.mValue.startsWith(QStringLiteral("redeclare")) || elementModifier.mValue.startsWith(elementModifier.mKey)) {
+      } else if (elementModifier.mValue.startsWith(QStringLiteral("redeclare")) || ((index > -1) && (modifierStartStr.compare(elementModifier.mKey) == 0))) {
         modifierValue = QString(elementModifier.mValue);
       } else {
         modifierValue = QString(elementModifier.mKey % " = " % elementModifier.mValue);
