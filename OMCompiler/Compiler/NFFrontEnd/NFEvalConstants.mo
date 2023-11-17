@@ -129,7 +129,7 @@ algorithm
         eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
       end if;
 
-      eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(prefix));
+      eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(InstNode.EMPTY_NODE(), prefix));
     else
       info := Binding.getInfo(binding);
       eexp := evaluateExp(exp, info);
@@ -204,7 +204,7 @@ algorithm
            not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(cref));
+          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref));
           outChanged := true;
         elseif outChanged then
           ty := ComponentRef.getSubscriptedType(cref);

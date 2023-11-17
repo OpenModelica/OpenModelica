@@ -1949,6 +1949,7 @@ algorithm
     case "realClock" then evalRealClock(args);
     case "booleanClock" then evalBooleanClock(args);
     case "solverClock" then evalSolverClock(args);
+    case "getInstanceName" then evalGetInstanceName(listHead(args));
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -3071,6 +3072,19 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
 end evalSolverClock;
+
+function evalGetInstanceName
+  input Expression scopeArg;
+  output Expression result;
+protected
+  ComponentRef cref;
+algorithm
+  // getInstanceName is normally evaluated by the flattening, but we might get
+  // here when getInstanceName is used in e.g. a package. In that case use the
+  // scope that was added as an argument during the typing.
+  cref := Expression.toCref(scopeArg);
+  result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(ComponentRef.node(cref))));
+end evalGetInstanceName;
 
 function evalArrayConstructor
   input Expression callExp;
