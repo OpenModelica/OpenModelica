@@ -13,6 +13,6 @@ end BuiltinAttribute23;
 // Result:
 // class BuiltinAttribute23
 //   parameter Real x0;
-//   Real[3] t(start = array(x0 for $t1 in 1:3));
+//   Real[3] t(start = array(x0 for $i1 in 1:3));
 // end BuiltinAttribute23;
 // endResult

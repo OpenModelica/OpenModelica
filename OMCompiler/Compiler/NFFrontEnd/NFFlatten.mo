@@ -141,13 +141,25 @@ end FlattenSettings;
 
 uniontype Prefix
   record PREFIX
+    InstNode root;
     ComponentRef prefix;
   end PREFIX;
 
   record INDEXED_PREFIX
+    InstNode root;
     ComponentRef prefix;
     ComponentRef indexedPrefix;
   end INDEXED_PREFIX;
+
+  function new
+    input InstNode root;
+    input Boolean indexed = false;
+    output Prefix prefix;
+  algorithm
+    prefix := if indexed then
+      INDEXED_PREFIX(root, ComponentRef.EMPTY(), ComponentRef.EMPTY()) else
+      PREFIX(root, ComponentRef.EMPTY());
+  end new;
 
   function isEmpty
     input Prefix prefix;
@@ -237,7 +249,7 @@ uniontype Prefix
   algorithm
     prefix := match prefix
       case PREFIX() then prefix;
-      case INDEXED_PREFIX() then PREFIX(prefix.prefix);
+      case INDEXED_PREFIX() then PREFIX(prefix.root, prefix.prefix);
     end match;
   end toNonIndexedPrefix;
 
@@ -271,10 +283,31 @@ uniontype Prefix
     input Prefix pre;
     output String str = ComponentRef.toString(prefix(pre));
   end toString;
+
+  function rootNode
+    input Prefix pre;
+    output InstNode node;
+  algorithm
+    node := match pre
+      case PREFIX() then pre.root;
+      case INDEXED_PREFIX() then pre.root;
+    end match;
+  end rootNode;
+
+  function instanceName
+    input Prefix pre;
+    output String str;
+  algorithm
+    str := InstNode.name(rootNode(pre));
+
+    if not ComponentRef.isEmpty(indexedPrefix(pre)) then
+      str := str + "." + toString(pre);
+    end if;
+  end instanceName;
 end Prefix;
 
-constant Prefix EMPTY_PREFIX = Prefix.PREFIX(ComponentRef.EMPTY());
-constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(ComponentRef.EMPTY(), ComponentRef.EMPTY());
+constant Prefix EMPTY_PREFIX = Prefix.PREFIX(InstNode.EMPTY_NODE(), ComponentRef.EMPTY());
+constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(InstNode.EMPTY_NODE(), ComponentRef.EMPTY(), ComponentRef.EMPTY());
 
 function flatten
   input InstNode classInst;
@@ -300,7 +333,7 @@ algorithm
     Flags.isSet(Flags.VECTORIZE_BINDINGS)
   );
 
-  prefix := if settings.vectorizeBindings then EMPTY_INDEXED_PREFIX else EMPTY_PREFIX;
+  prefix := Prefix.new(classInst, indexed = settings.vectorizeBindings);
 
   sections := Sections.EMPTY();
   src := ElementSource.createElementSource(InstNode.info(classInst));
@@ -654,7 +687,7 @@ algorithm
   ty := flattenType(ty, prefix);
   verifyDimensions(Type.arrayDims(ty), comp_node);
   pre := Prefix.push(comp_node, ty, Type.arrayDims(ty), prefix);
-  ty_attrs := list(flattenTypeAttribute(m, pre) for m in typeAttrs);
+  ty_attrs := list(flattenTypeAttribute(m, prefix) for m in typeAttrs);
 
   // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
@@ -878,7 +911,7 @@ algorithm
         for i in arrayLength(comps):-1:1 loop
           ty := InstNode.getType(comps[i]);
           field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
-          field_cr := flattenCref(field_cr, Prefix.PREFIX(cr));
+          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr));
           fields := Expression.fromCref(field_cr) :: fields;
         end for;
       then
@@ -1393,6 +1426,10 @@ algorithm
       then Expression.mapShallow(
           flattenConditionalArrayIfExp(exp),
           function flattenExp(prefix = prefix));
+
+    case Expression.CALL()
+      guard Call.isNamed(exp.call, "getInstanceName")
+      then Expression.STRING(Prefix.instanceName(prefix));
 
     else Expression.mapShallow(exp, function flattenExp(prefix = prefix));
   end match;
