@@ -161,6 +161,9 @@ endif()
 omc_add_subdirectory(OMCompiler)
 
 if(OM_ENABLE_GUI_CLIENTS)
+  # select qt version 5/6
+  set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
+
   omc_add_subdirectory(OMParser)
   omc_add_subdirectory(OMPlot)
   omc_add_subdirectory(OMShell)
