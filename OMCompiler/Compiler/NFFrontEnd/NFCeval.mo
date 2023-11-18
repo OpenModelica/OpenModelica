@@ -3073,7 +3073,7 @@ algorithm
   end match;
 end evalSolverClock;
 
-function evalGetInstanceName
+public function evalGetInstanceName
   input Expression scopeArg;
   output Expression result;
 protected
@@ -3086,7 +3086,7 @@ algorithm
   result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(ComponentRef.node(cref))));
 end evalGetInstanceName;
 
-function evalArrayConstructor
+protected function evalArrayConstructor
   input Expression callExp;
   output Expression result;
 protected

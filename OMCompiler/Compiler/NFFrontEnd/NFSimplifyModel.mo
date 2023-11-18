@@ -340,6 +340,27 @@ algorithm
       then
         stmt :: statements;
 
+    case Statement.ASSERT()
+      algorithm
+        stmt.condition := SimplifyExp.simplify(stmt.condition);
+        stmt.message := SimplifyExp.simplify(stmt.message);
+        stmt.level := SimplifyExp.simplify(stmt.level);
+      then
+        stmt :: statements;
+
+    case Statement.TERMINATE()
+      algorithm
+        stmt.message := SimplifyExp.simplify(stmt.message);
+      then
+        stmt :: statements;
+
+    case Statement.WHILE()
+      algorithm
+        stmt.condition := SimplifyExp.simplify(stmt.condition);
+        stmt.body := simplifyStatements(stmt.body);
+      then
+        stmt :: statements;
+
     case Statement.NORETCALL()
       algorithm
         e := SimplifyExp.simplify(stmt.exp);

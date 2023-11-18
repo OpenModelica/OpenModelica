@@ -29,6 +29,12 @@ model FuncBuiltinGetInstanceName
     output String s = getInstanceName();
   end f;
 
+  function f2
+    input Real dummy;
+  algorithm
+    assert(true, getInstanceName());
+  end f2;
+
   String s = getInstanceName();
   A a;
   A a1[2];
@@ -38,9 +44,17 @@ model FuncBuiltinGetInstanceName
   String pas = P.a.s;
   constant String fs = f();
   Real rs(displayUnit = getInstanceName());
+equation
+  f2(time);
 end FuncBuiltinGetInstanceName;
 
 // Result:
+// function FuncBuiltinGetInstanceName.f2
+//   input Real dummy;
+// algorithm
+//   assert(true, "FuncBuiltinGetInstanceName.f2");
+// end FuncBuiltinGetInstanceName.f2;
+//
 // class FuncBuiltinGetInstanceName
 //   String s = "FuncBuiltinGetInstanceName";
 //   String a.b.s = "FuncBuiltinGetInstanceName.a.b";
@@ -59,5 +73,7 @@ end FuncBuiltinGetInstanceName;
 //   String pas = "P.a";
 //   constant String fs = "FuncBuiltinGetInstanceName.f";
 //   Real rs(displayUnit = "FuncBuiltinGetInstanceName");
+// equation
+//   FuncBuiltinGetInstanceName.f2(time);
 // end FuncBuiltinGetInstanceName;
 // endResult

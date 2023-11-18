@@ -251,19 +251,20 @@ algorithm
       then
         exp;
 
-    case "delay"        then simplifyDelay(args, call);
-    case "der"          then simplifyDer(listHead(args), call);
-    case "fill"         then simplifyFill(listHead(args), listRest(args), call, expand);
-    case "homotopy"     then simplifyHomotopy(args, call);
-    case "max"          then simplifyMinMax(args, call, isMin = false);
-    case "min"          then simplifyMinMax(args, call, isMin = true);
-    case "ones"         then simplifyFill(Expression.INTEGER(1), args, call, expand);
-    case "product"      then simplifySumProduct(listHead(args), call, expand, isSum = false);
-    case "sum"          then simplifySumProduct(listHead(args), call, expand, isSum = true);
-    case "transpose"    then simplifyTranspose(listHead(args), call, expand);
-    case "vector"       then simplifyVector(listHead(args), call);
-    case "zeros"        then simplifyFill(Expression.INTEGER(0), args, call, expand);
-    case "semiLinear"   then simplifySemiLinear(args, call);
+    case "delay"           then simplifyDelay(args, call);
+    case "der"             then simplifyDer(listHead(args), call);
+    case "fill"            then simplifyFill(listHead(args), listRest(args), call, expand);
+    case "homotopy"        then simplifyHomotopy(args, call);
+    case "max"             then simplifyMinMax(args, call, isMin = false);
+    case "min"             then simplifyMinMax(args, call, isMin = true);
+    case "ones"            then simplifyFill(Expression.INTEGER(1), args, call, expand);
+    case "product"         then simplifySumProduct(listHead(args), call, expand, isSum = false);
+    case "sum"             then simplifySumProduct(listHead(args), call, expand, isSum = true);
+    case "transpose"       then simplifyTranspose(listHead(args), call, expand);
+    case "vector"          then simplifyVector(listHead(args), call);
+    case "zeros"           then simplifyFill(Expression.INTEGER(0), args, call, expand);
+    case "semiLinear"      then simplifySemiLinear(args, call);
+    case "getInstanceName" then Ceval.evalGetInstanceName(listHead(args));
 
     else Expression.CALL(call);
   end match;
