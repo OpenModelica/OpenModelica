@@ -26,7 +26,7 @@ public:
     verticalLayout->setGeometry(QRect(10, 10, 221, 41));
     vboxLayout = new QVBoxLayout(verticalLayout);
     vboxLayout->setSpacing(6);
-    vboxLayout->setMargin(0);
+    vboxLayout->setContentsMargins(0, 0, 0, 0);
     vboxLayout->setObjectName(QString::fromUtf8("vboxLayout"));
     label = new QLabel(verticalLayout);
     label->setObjectName(QString::fromUtf8("label"));
@@ -43,7 +43,7 @@ public:
     layoutWidget->setGeometry(QRect(230, 10, 77, 41));
     vboxLayout1 = new QVBoxLayout(layoutWidget);
     vboxLayout1->setSpacing(6);
-    vboxLayout1->setMargin(0);
+    vboxLayout1->setContentsMargins(0, 0, 0, 0);
     vboxLayout1->setObjectName(QString::fromUtf8("vboxLayout1"));
     spacerItem = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
 

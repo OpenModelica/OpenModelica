@@ -44,6 +44,7 @@
 // QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QStringList>
 
 //IAEX Headers
 #include "commandcompletion.h"
@@ -52,7 +53,6 @@
 class QAction;
 class QFrame;
 class QMenu;
-class QStringList;
 class QVBoxLayout;
 
 
