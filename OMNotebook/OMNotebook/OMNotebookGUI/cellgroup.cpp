@@ -85,7 +85,7 @@ namespace IAEX{
     main_ = new QWidget(this);
 
     layout_ = new QGridLayout(main_);
-    layout_->setMargin(0);
+    layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(0);
 
     setMainWidget(main_);
