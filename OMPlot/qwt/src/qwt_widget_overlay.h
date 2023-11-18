@@ -1,4 +1,4 @@
-/* -*- mode: C++ ; c-file-style: "stroustrup" -*- *****************************
+/******************************************************************************
  * Qwt Widget Library
  * Copyright (C) 1997   Josef Wilgen
  * Copyright (C) 2002   Uwe Rathmann
@@ -12,9 +12,9 @@
 
 #include "qwt_global.h"
 #include <qwidget.h>
-#include <qregion.h>
 
 class QPainter;
+class QRegion;
 
 /*!
    \brief An overlay for a widget
@@ -37,9 +37,9 @@ class QPainter;
 
    \sa QwtPlotCanvas::BackingStore
  */
-class QWT_EXPORT QwtWidgetOverlay: public QWidget
+class QWT_EXPORT QwtWidgetOverlay : public QWidget
 {
-public:
+  public:
     /*!
        \brief Mask mode
 
@@ -111,7 +111,7 @@ public:
         DrawOverlay
     };
 
-    QwtWidgetOverlay( QWidget* );
+    explicit QwtWidgetOverlay( QWidget* );
     virtual ~QwtWidgetOverlay();
 
     void setMaskMode( MaskMode );
@@ -120,13 +120,14 @@ public:
     void setRenderMode( RenderMode );
     RenderMode renderMode() const;
 
+    virtual bool eventFilter( QObject*, QEvent*) QWT_OVERRIDE;
+
+  public Q_SLOTS:
     void updateOverlay();
 
-    virtual bool eventFilter( QObject *, QEvent *);
-
-protected:
-    virtual void paintEvent( QPaintEvent* event );
-    virtual void resizeEvent( QResizeEvent* event );
+  protected:
+    virtual void paintEvent( QPaintEvent* ) QWT_OVERRIDE;
+    virtual void resizeEvent( QResizeEvent* ) QWT_OVERRIDE;
 
     virtual QRegion maskHint() const;
 
@@ -134,15 +135,15 @@ protected:
        Draw the widget overlay
        \param painter Painter
      */
-    virtual void drawOverlay( QPainter *painter ) const = 0;
+    virtual void drawOverlay( QPainter* painter ) const = 0;
 
-private:
+  private:
     void updateMask();
-    void draw( QPainter * ) const;
+    void draw( QPainter* ) const;
 
-private:
+  private:
     class PrivateData;
-    PrivateData *d_data;
+    PrivateData* m_data;
 };
 
 #endif
