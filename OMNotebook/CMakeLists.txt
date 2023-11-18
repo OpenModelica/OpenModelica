@@ -10,7 +10,11 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 
-find_package(Qt5 COMPONENTS Widgets PrintSupport Xml REQUIRED)
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml REQUIRED)
+
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  find_package(Qt6 COMPONENTS Core5Compat REQUIRED)
+endif ()
 
 omc_add_subdirectory(OMNotebook/OMNotebookGUI)
 
