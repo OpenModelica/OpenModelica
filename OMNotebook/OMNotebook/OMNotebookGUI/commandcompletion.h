@@ -47,6 +47,7 @@
 #include <QtCore/QStringList>
 #include <QtGui/QTextCursor>
 #include <QtXml/QDomDocument>
+#include <QRegularExpression>
 
 //IAEX Headers
 #include "commandunit.h"
