@@ -34,6 +34,8 @@
 
 #include "OMPlot.h"
 
+#include <QPen>
+
 namespace OMPlot
 {
 class PlotGrid : public QwtPlotGrid
