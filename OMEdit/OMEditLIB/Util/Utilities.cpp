@@ -1333,3 +1333,14 @@ void Utilities::setToolTip(QComboBox *pComboBox, const QString &description, con
   }
   pComboBox->setToolTip(QString("<html><head/><body><p>%1</p><ul>%2</ul></body></html>").arg(description, itemsToolTip));
 }
+
+/*!
+ * \brief Utilities::isMultiline
+ * Returns true if the text containts \n.
+ * \param text
+ * \return
+ */
+bool Utilities::isMultiline(const QString &text)
+{
+  return text.indexOf('\n') >= 0;
+}
