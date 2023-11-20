@@ -11,6 +11,12 @@ loadString("
     protected
       Real u;
       Real w;
+
+      class C
+        Real x;
+      end C;
+
+      C c;
     equation
       x = y;
     algorithm
@@ -21,6 +27,13 @@ loadString("
 
 loadClassContentString("
     Real z;
+    Real x;
+
+    class C
+      Real y;
+    end C;
+
+    C c;
   equation
     x = z;
   algorithm
@@ -40,13 +53,26 @@ list(P.A);
 // protected
 //   Real u;
 //   Real w;
+//
+//   class C
+//     Real x;
+//   end C;
+//
+//   C c;
 // public
 //   Real z;
+//   Real x1;
+//
+//   class C1
+//     Real y;
+//   end C1;
+//
+//   C1 c1;
 // protected
 //   Real p;
 // equation
 //   x = y;
-//   x = z;
+//   x1 = z;
 // algorithm
 //   x := y;
 // algorithm
