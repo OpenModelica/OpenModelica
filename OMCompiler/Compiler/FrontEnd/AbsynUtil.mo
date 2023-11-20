@@ -612,7 +612,7 @@ algorithm
   end match;
 end traverseClassPartBidir;
 
-protected function traverseEquationItemListBidir<Arg>
+public function traverseEquationItemListBidir<Arg>
   input list<Absyn.EquationItem> inEquationItems;
   input FuncType enterFunc;
   input FuncType exitFunc;
@@ -628,7 +628,7 @@ algorithm
   (outEquationItems, outArg) := List.map2FoldCheckReferenceEq(inEquationItems, traverseEquationItemBidir, enterFunc, exitFunc, inArg);
 end traverseEquationItemListBidir;
 
-protected function traverseAlgorithmItemListBidir<Arg>
+public function traverseAlgorithmItemListBidir<Arg>
   input list<Absyn.AlgorithmItem> inAlgs;
   input FuncType enterFunc;
   input FuncType exitFunc;
@@ -933,14 +933,12 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true);
 end makeQualifiedPathFromStrings;
 
-public function className "returns the class name of a Absyn.Class as a Absyn.Path"
+public function className
+  "Returns the class name of a Absyn.Class."
   input Absyn.Class cl;
-  output Absyn.Path name;
-protected
-  String id;
+  output String name;
 algorithm
-  Absyn.CLASS(name = id) := cl;
-  name := Absyn.IDENT(id);
+  Absyn.CLASS(name = name) := cl;
 end className;
 
 public function isClassNamed
@@ -979,6 +977,37 @@ algorithm
     case Absyn.COMPONENTS(components = {Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n))}) then n;
   end match;
 end elementSpecName;
+
+public function elementItemNames
+  input Absyn.ElementItem item;
+  output list<String> names;
+algorithm
+  names := match item
+    case Absyn.ElementItem.ELEMENTITEM() then elementNames(item.element);
+    else {};
+  end match;
+end elementItemNames;
+
+public function elementNames
+  input Absyn.Element element;
+  output list<String> names;
+algorithm
+  names := match element
+    case Absyn.Element.ELEMENT() then elementSpecNames(element.specification);
+    else {};
+  end match;
+end elementNames;
+
+public function elementSpecNames
+  input Absyn.ElementSpec spec;
+  output list<String> names;
+algorithm
+  names := match spec
+    case Absyn.ElementSpec.CLASSDEF() then {className(spec.class_)};
+    case Absyn.ElementSpec.COMPONENTS() then list(componentName(c) for c in spec.components);
+    else {};
+  end match;
+end elementSpecNames;
 
 public function isClassdef
   input Absyn.Element inElement;
@@ -4343,7 +4372,7 @@ algorithm
   end match;
 end opIsElementWise;
 
-protected function dummyTraverseExp<Arg>
+public function dummyTraverseExp<Arg>
   input Absyn.Exp inExp;
   input Arg inArg;
   output Absyn.Exp outExp;
@@ -4380,25 +4409,41 @@ algorithm
   end match;
 end getClassPartsInClass;
 
+public function getElementItemsInElement
+  "Returns the public and protected elements in a class."
+  input Absyn.Element element;
+  output list<Absyn.ElementItem> outElements;
+protected
+  Absyn.Class cls;
+algorithm
+  outElements := match element
+    case Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls))
+      then getElementItemsInClass(cls);
+    else {};
+  end match;
+end getElementItemsInElement;
+
 public function getElementItemsInClass
   "Returns the public and protected elements in a class."
   input Absyn.Class inClass;
+  output list<Absyn.ElementItem> outElements = getElementItemsInClassDef(inClass.body);
+end getElementItemsInClass;
+
+public function getElementItemsInClassDef
+  "Returns the public and protected elements in a class definition."
+  input Absyn.ClassDef classDef;
   output list<Absyn.ElementItem> outElements;
 algorithm
-  outElements := match(inClass)
-    local
-      list<Absyn.ClassPart> parts;
+  outElements := match classDef
+    case Absyn.ClassDef.PARTS()
+      then List.mapFlat(classDef.classParts, getElementItemsInClassPart);
 
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      then List.mapFlat(parts, getElementItemsInClassPart);
-
-    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      then List.mapFlat(parts, getElementItemsInClassPart);
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      then List.mapFlat(classDef.parts, getElementItemsInClassPart);
 
     else {};
-
   end match;
-end getElementItemsInClass;
+end getElementItemsInClassDef;
 
 public function getElementItemsInClassPart
   "Returns the public and protected elements in a class part."
@@ -5275,7 +5320,7 @@ algorithm
     case ((class_ :: _),_,_,_,_)
       equation
         print("-traverse_classes2 failed on class:");
-        print(AbsynUtil.pathString(AbsynUtil.className(class_)));
+        print(AbsynUtil.className(class_));
         print("\n");
       then
         fail();
@@ -5639,34 +5684,39 @@ algorithm
 end isUniontype;
 
 public function traverseClassElements<ArgT>
-  input Absyn.Class inClass;
-  input FuncType inFunc;
-  input ArgT inArg;
-  output Absyn.Class outClass = inClass;
-  output ArgT outArg;
+  input output Absyn.Class cls;
+  input FuncType func;
+  input output ArgT arg;
 
   partial function FuncType
-    input Absyn.Element inElement;
-    input ArgT inArg;
-    output Absyn.Element outElement;
-    output ArgT outArg;
-    output Boolean outContinue;
+    input output Absyn.Element element;
+    input output ArgT arg;
+          output Boolean outContinue;
+  end FuncType;
+protected
+  Absyn.ClassDef body;
+algorithm
+  (body, arg) := traverseClassDefElements(cls.body, func, arg);
+
+  if not referenceEq(body, cls.body) then
+    cls.body := body;
+  end if;
+end traverseClassElements;
+
+public function traverseClassDefElements<ArgT>
+  input output Absyn.ClassDef classDef;
+  input FuncType func;
+  input output ArgT arg;
+
+  partial function FuncType
+    input output Absyn.Element element;
+    input output ArgT arg;
+          output Boolean outContinue;
   end FuncType;
 algorithm
-  outClass := match(outClass)
-    local
-      Absyn.ClassDef body;
-
-    case Absyn.CLASS()
-      algorithm
-        (body, outArg) := traverseClassDef(outClass.body,
-          function traverseClassPartElements(inFunc = inFunc), inArg);
-        if not referenceEq(body, outClass.body) then outClass.body := body; end if;
-      then
-        outClass;
-
-  end match;
-end traverseClassElements;
+  (classDef, arg) := traverseClassDef(classDef,
+    function traverseClassPartElements(inFunc = func), arg);
+end traverseClassDefElements;
 
 protected function traverseClassPartElements<ArgT>
   input Absyn.ClassPart inClassPart;

@@ -82,6 +82,8 @@ import StringUtil;
 import SymbolTable;
 import System;
 import UnitAbsyn;
+import UnorderedSet;
+import UnorderedMap;
 import Util;
 
 import MetaModelica.Dangerous;
@@ -694,7 +696,7 @@ algorithm
         end match;
 
         outSubMods := List.append_reverse(outSubMods, rest_submods);
-        return;
+return;
       end if;
 
       if AbsynUtil.pathIsIdent(comp_name) then
@@ -5058,25 +5060,27 @@ public function mergeClassContents
 protected
   Absyn.ElementSpec spec;
   Absyn.Class cls;
-  Absyn.ClassDef old_content;
+  Absyn.ClassDef old_content, new_content;
 algorithm
+  new_content := resolveMergeContentsConflicts(element, newContent);
+
   () := match element
     case Absyn.Element.ELEMENT(specification = spec as
            Absyn.ElementSpec.CLASSDEF(class_ = cls as
              Absyn.Class.CLASS(body = old_content)))
       algorithm
-        () := match (old_content, newContent)
+        () := match (old_content, new_content)
           case (Absyn.ClassDef.PARTS(), Absyn.ClassDef.PARTS())
             algorithm
-              old_content.classParts := mergeClassParts(newContent.classParts, old_content.classParts);
-              old_content.ann := mergeAnnotationLists(newContent.ann, old_content.ann);
+              old_content.classParts := mergeClassParts(new_content.classParts, old_content.classParts);
+              old_content.ann := mergeAnnotationLists(new_content.ann, old_content.ann);
             then
               ();
 
           case (Absyn.ClassDef.CLASS_EXTENDS(), Absyn.ClassDef.PARTS())
             algorithm
-              old_content.parts := mergeClassParts(newContent.classParts, old_content.parts);
-              old_content.ann := mergeAnnotationLists(newContent.ann, old_content.ann);
+              old_content.parts := mergeClassParts(new_content.classParts, old_content.parts);
+              old_content.ann := mergeAnnotationLists(new_content.ann, old_content.ann);
             then
               ();
 
@@ -5254,6 +5258,502 @@ algorithm
     outAnnotations := old_ann :: listRest(oldAnnotations);
   end if;
 end mergeAnnotationLists;
+
+function resolveMergeContentsConflicts
+  input Absyn.Element oldElement;
+  input output Absyn.ClassDef newContent;
+protected
+  UnorderedSet<String> old_names;
+  UnorderedMap<String, String> rename_map;
+  String new_name;
+  Integer index;
+algorithm
+  // Collect the existing names in a hash set.
+  old_names := UnorderedSet.new(stringHashDjb2, stringEq);
+  for e in AbsynUtil.getElementItemsInElement(oldElement) loop
+    for name in AbsynUtil.elementItemNames(e) loop
+      UnorderedSet.add(name, old_names);
+    end for;
+  end for;
+
+  // Check if any of the new names already exist in the old element.
+  rename_map := UnorderedMap.new<String>(stringHashDjb2, stringEq);
+  for e in AbsynUtil.getElementItemsInClassDef(newContent) loop
+    for name in AbsynUtil.elementItemNames(e) loop
+      if not UnorderedSet.contains(name, old_names) then
+        continue;
+      end if;
+
+      // If the name exists, try name1, name2, etc. until a non-conflicting name
+      // is found.
+      index := 1;
+      new_name := name + String(index);
+      while UnorderedSet.contains(new_name, old_names) loop
+        index := index + 1;
+        new_name := name + String(index);
+      end while;
+
+      // Save the mapping for name->new_name to apply to the class.
+      UnorderedMap.add(name, new_name, rename_map);
+    end for;
+  end for;
+
+  // Apply the new names to the class definition.
+  if not UnorderedMap.isEmpty(rename_map) then
+    newContent := renameElementsInClassDef(newContent, rename_map);
+  end if;
+end resolveMergeContentsConflicts;
+
+function renameElementsInElement
+  input output Absyn.Element element;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := renameElementsInElementSpec(element.specification, nameMap, renameElement = true);
+        element.constrainClass := renameElementsInConstrainClassOpt(element.constrainClass, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElement;
+
+function renameElementsInElementSpec
+  input output Absyn.ElementSpec spec;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        spec.class_ := renameElementsInClass(spec.class_, nameMap, renameElement);
+      then
+        ();
+
+    case Absyn.ElementSpec.EXTENDS()
+      algorithm
+        spec.elementArg := list(renameElementsInElementArg(a, nameMap) for a in spec.elementArg);
+        spec.annotationOpt := renameElementsInAnnotationOpt(spec.annotationOpt, nameMap);
+      then
+        ();
+
+    case Absyn.ElementSpec.COMPONENTS()
+      algorithm
+        spec.attributes := renameElementsInAttributes(spec.attributes, nameMap);
+        spec.typeSpec := renameElementsInTypeSpec(spec.typeSpec, nameMap);
+        spec.components := list(renameElementsInComponentItem(c, nameMap, renameElement) for c in spec.components);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElementSpec;
+
+function renameElementsInClass
+  input output Absyn.Class cls;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+algorithm
+  if renameElement then
+    cls.name := renameElementsInIdent(cls.name, nameMap);
+  end if;
+
+  cls.body := renameElementsInClassDef(cls.body, nameMap);
+end renameElementsInClass;
+
+function renameElementsInClassDef
+  input output Absyn.ClassDef classDef;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match classDef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        classDef.classParts := list(renameElementsInClassPart(p, nameMap) for p in classDef.classParts);
+        classDef.ann := list(renameElementsInAnnotation(a, nameMap) for a in classDef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        classDef.typeSpec := renameElementsInTypeSpec(classDef.typeSpec, nameMap);
+        classDef.attributes := renameElementsInAttributes(classDef.attributes, nameMap);
+        classDef.arguments := list(renameElementsInElementArg(a, nameMap) for a in classDef.arguments);
+        classDef.comment := renameElementsInCommentOpt(classDef.comment, nameMap);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        classDef.modifications := list(renameElementsInElementArg(a, nameMap) for a in classDef.modifications);
+        classDef.parts := list(renameElementsInClassPart(p, nameMap) for p in classDef.parts);
+        classDef.ann := list(renameElementsInAnnotation(a, nameMap) for a in classDef.ann);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInClassDef;
+
+function renameElementsInClassPart
+  input output Absyn.ClassPart part;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match part
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        part.contents := list(renameElementsInElementItem(i, nameMap) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        part.contents := list(renameElementsInElementItem(i, nameMap) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.CONSTRAINTS()
+      algorithm
+        part.contents := list(renameElementsInExp(e, nameMap) for e in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.EQUATIONS()
+      algorithm
+        part.contents := renameElementsInEquationItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALEQUATIONS()
+      algorithm
+        part.contents := renameElementsInEquationItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.ALGORITHMS()
+      algorithm
+        part.contents := renameElementsInAlgorithmItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALALGORITHMS()
+      algorithm
+        part.contents := renameElementsInAlgorithmItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.EXTERNAL()
+      algorithm
+        part.externalDecl := renameElementsInExternalDecl(part.externalDecl, nameMap);
+        part.annotation_ := renameElementsInAnnotationOpt(part.annotation_, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInClassPart;
+
+function renameElementsInElementItem
+  input output Absyn.ElementItem item;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        item.element := renameElementsInElement(item.element, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElementItem;
+
+function renameElementsInEquationItems
+  input output list<Absyn.EquationItem> items;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  (items, _) := AbsynUtil.traverseEquationItemListBidir(items,
+    renameElementsInExp, AbsynUtil.dummyTraverseExp, nameMap);
+end renameElementsInEquationItems;
+
+function renameElementsInAlgorithmItems
+  input output list<Absyn.AlgorithmItem> items;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  (items, _) := AbsynUtil.traverseAlgorithmItemListBidir(items,
+    renameElementsInExp, AbsynUtil.dummyTraverseExp, nameMap);
+end renameElementsInAlgorithmItems;
+
+function renameElementsInElementArg
+  input output Absyn.ElementArg arg;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION()
+      algorithm
+        arg.modification := renameElementsInModificationOpt(arg.modification, nameMap);
+      then
+        ();
+
+    case Absyn.ElementArg.REDECLARATION()
+      algorithm
+        arg.elementSpec := renameElementsInElementSpec(arg.elementSpec, nameMap, renameElement = false);
+        arg.constrainClass := renameElementsInConstrainClassOpt(arg.constrainClass, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElementArg;
+
+function renameElementsInConstrainClassOpt
+  input output Option<Absyn.ConstrainClass> cc;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  cc := Util.applyOption(cc, function renameElementsInConstrainClass(nameMap = nameMap));
+end renameElementsInConstrainClassOpt;
+
+function renameElementsInConstrainClass
+  input output Absyn.ConstrainClass cc;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  cc.elementSpec := renameElementsInElementSpec(cc.elementSpec, nameMap, renameElement = true);
+  cc.comment := renameElementsInCommentOpt(cc.comment, nameMap);
+end renameElementsInConstrainClass;
+
+function renameElementsInCommentOpt
+  input output Option<Absyn.Comment> comment;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  comment := Util.applyOption(comment, function renameElementsInComment(nameMap = nameMap));
+end renameElementsInCommentOpt;
+
+function renameElementsInComment
+  input output Absyn.Comment comment;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  comment.annotation_ := Util.applyOption(comment.annotation_, function renameElementsInAnnotation(nameMap = nameMap));
+end renameElementsInComment;
+
+function renameElementsInAnnotationOpt
+  input output Option<Absyn.Annotation> ann;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  ann := Util.applyOption(ann, function renameElementsInAnnotation(nameMap = nameMap));
+end renameElementsInAnnotationOpt;
+
+function renameElementsInAnnotation
+  input output Absyn.Annotation ann;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  ann.elementArgs := list(renameElementsInElementArg(a, nameMap) for a in ann.elementArgs);
+end renameElementsInAnnotation;
+
+function renameElementsInModificationOpt
+  input output Option<Absyn.Modification> mod;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  mod := Util.applyOption(mod, function renameElementsInModification(nameMap = nameMap));
+end renameElementsInModificationOpt;
+
+function renameElementsInModification
+  input output Absyn.Modification mod;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  mod.elementArgLst := list(renameElementsInElementArg(a, nameMap) for a in mod.elementArgLst);
+  mod.eqMod := renameElementsInEqMod(mod.eqMod, nameMap);
+end renameElementsInModification;
+
+function renameElementsInEqMod
+  input output Absyn.EqMod eqMod;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match eqMod
+    case Absyn.EqMod.EQMOD()
+      algorithm
+        eqMod.exp := AbsynUtil.traverseExp(eqMod.exp, renameElementsInExp, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInEqMod;
+
+function renameElementsInExp
+  input output Absyn.Exp exp;
+  input output UnorderedMap<String, String> nameMap;
+algorithm
+  () := match exp
+    case Absyn.Exp.CREF()
+      algorithm
+        exp.componentRef := renameElementsInCref(exp.componentRef, nameMap);
+      then
+        ();
+
+    case Absyn.Exp.CALL()
+      algorithm
+        exp.function_ := renameElementsInCref(exp.function_, nameMap);
+      then
+        ();
+
+    case Absyn.Exp.PARTEVALFUNCTION()
+      algorithm
+        exp.function_ := renameElementsInCref(exp.function_, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInExp;
+
+function renameElementsInCref
+  input output Absyn.ComponentRef cref;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean onlySubs = false;
+algorithm
+  () := match cref
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        if not onlySubs then
+          cref.name := renameElementsInIdent(cref.name, nameMap);
+        end if;
+
+        cref.subscripts := list(renameElementsInSubscript(s, nameMap) for s in cref.subscripts);
+        cref.componentRef := renameElementsInCref(cref.componentRef, nameMap, onlySubs = true);
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        if not onlySubs then
+          cref.name := renameElementsInIdent(cref.name, nameMap);
+        end if;
+
+        cref.subscripts := list(renameElementsInSubscript(s, nameMap) for s in cref.subscripts);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInCref;
+
+function renameElementsInPath
+  input output Absyn.Path path;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match path
+    case Absyn.Path.QUALIFIED()
+      algorithm
+        path.name := renameElementsInIdent(path.name, nameMap);
+      then
+        ();
+
+    case Absyn.Path.IDENT()
+      algorithm
+        path.name := renameElementsInIdent(path.name, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInPath;
+
+function renameElementsInIdent
+  input output String ident;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  ident := UnorderedMap.getOrDefault(ident, nameMap, ident);
+end renameElementsInIdent;
+
+function renameElementsInSubscripts
+  input output list<Absyn.Subscript> subs;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  subs := list(renameElementsInSubscript(s, nameMap) for s in subs);
+end renameElementsInSubscripts;
+
+function renameElementsInSubscript
+  input output Absyn.Subscript sub;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match sub
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        sub.subscript := AbsynUtil.traverseExp(sub.subscript, renameElementsInExp, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInSubscript;
+
+function renameElementsInExternalDecl
+  input output Absyn.ExternalDecl extDecl;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  extDecl.args := list(renameElementsInExp(a, nameMap) for a in extDecl.args);
+  extDecl.annotation_ := renameElementsInAnnotationOpt(extDecl.annotation_, nameMap);
+end renameElementsInExternalDecl;
+
+function renameElementsInTypeSpec
+  input output Absyn.TypeSpec spec;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match spec
+    case Absyn.TypeSpec.TPATH()
+      algorithm
+        spec.path := renameElementsInPath(spec.path, nameMap);
+        spec.arrayDim := Util.applyOption(spec.arrayDim, function renameElementsInSubscripts(nameMap = nameMap));
+      then
+        ();
+
+    case Absyn.TypeSpec.TCOMPLEX()
+      algorithm
+        spec.path := renameElementsInPath(spec.path, nameMap);
+        spec.arrayDim := Util.applyOption(spec.arrayDim, function renameElementsInSubscripts(nameMap = nameMap));
+      then
+        ();
+  end match;
+end renameElementsInTypeSpec;
+
+function renameElementsInAttributes
+  input output Absyn.ElementAttributes attrs;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  attrs.arrayDim := renameElementsInSubscripts(attrs.arrayDim, nameMap);
+end renameElementsInAttributes;
+
+function renameElementsInComponentItem
+  input output Absyn.ComponentItem component;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+protected
+  Absyn.Exp exp;
+algorithm
+  component.component := renameElementsInComponent(component.component, nameMap, renameElement);
+
+  if isSome(component.condition) then
+    SOME(exp) := component.condition;
+    exp := AbsynUtil.traverseExp(exp, renameElementsInExp, nameMap);
+    component.condition := SOME(exp);
+  end if;
+
+  component.comment := renameElementsInCommentOpt(component.comment, nameMap);
+end renameElementsInComponentItem;
+
+function renameElementsInComponent
+  input output Absyn.Component component;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+algorithm
+  if renameElement then
+    component.name := renameElementsInIdent(component.name, nameMap);
+  end if;
+
+  component.arrayDim := renameElementsInSubscripts(component.arrayDim, nameMap);
+  component.modification := renameElementsInModificationOpt(component.modification, nameMap);
+end renameElementsInComponent;
 
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
