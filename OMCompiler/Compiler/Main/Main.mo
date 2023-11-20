@@ -238,14 +238,14 @@ algorithm
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
       equation
-        names = List.map(cls,AbsynUtil.className);
+        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
         names = List.map1(names,AbsynUtil.joinPaths,scope);
         res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
       equation
-        names = List.map(cls,AbsynUtil.className);
+        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
         res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
