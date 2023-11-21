@@ -5,6 +5,8 @@ project(OMPlot)
 ## to the install component 'omplot' if it is not explicitly changed.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omplot)
 
+omc_option(OM_OMPLOT_EXTERNAL_QWT "Look for external Qwt instead of the bundled one" OFF)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -16,5 +18,11 @@ if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   find_package(Qt6 COMPONENTS Core5Compat REQUIRED)
 endif ()
 
-omc_add_subdirectory(qwt)
+if (OM_OMPLOT_EXTERNAL_QWT)
+  list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+  find_package(Qwt 6 REQUIRED)
+else ()
+  omc_add_subdirectory(qwt)
+endif ()
+
 omc_add_subdirectory(OMPlot/OMPlotGUI)
