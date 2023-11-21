@@ -355,6 +355,20 @@
         }
       }
     },
+    "ScalableTestSuite": {
+      "versions": {
+        "2.2.0": {
+          "path": "ScalableTestSuite",
+          "sha": "e6dcfb489b7e2d07198d93f00858459aa0611267",
+          "support": "fullSupport",
+          "uses": {
+            "Modelica": "4.0.0"
+          },
+          "version": "2.2.0",
+          "zipfile": "https://github.com/casella/ScalableTestSuite/archive/e6dcfb489b7e2d07198d93f00858459aa0611267.zip"
+        }
+      }
+    },
     "SiemensPower": {
       "versions": {
         "OMCtest": {

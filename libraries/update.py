@@ -48,6 +48,9 @@ desired = {
   "Modelica_Synchronous": {
     "0.92.2"
   },
+  "ScalableTestSuite": {
+    "2.2.0"
+  },
   "SiemensPower": {
     "2.1.0-beta",
     "2.2.0",
