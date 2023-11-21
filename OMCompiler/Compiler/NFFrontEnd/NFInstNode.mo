@@ -689,6 +689,10 @@ uniontype InstNode
         guard ignoreRedeclare
         then parentScope(orig_node);
 
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+        guard ignoreRedeclare
+        then scope;
+
       case CLASS_NODE() then node.parentScope;
       case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;

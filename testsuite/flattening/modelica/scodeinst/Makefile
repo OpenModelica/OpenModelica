@@ -413,6 +413,7 @@ enum7.mo \
 enum8.mo \
 EnumConversion1.mo \
 EnumConversion2.mo \
+EnumConversion3.mo \
 EnumInvalidLiteralName1.mo \
 EnumRangeBinding1.mo \
 EnumUnspecified1.mo \
