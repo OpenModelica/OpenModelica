@@ -635,7 +635,7 @@ uniontype Function
     );
 
     // Create a node from the SCode element.
-    fnNode := InstNode.new(fn_elem, InstNode.parent(enumNode));
+    fnNode := InstNode.new(fn_elem, InstNode.parentScope(enumNode, ignoreRedeclare=true));
   end makeEnumConversionOp;
 
   function getCachedFuncs
