@@ -856,6 +856,17 @@ function simplifyBinaryOp
 algorithm
   if Expression.isLiteral(exp1) and Expression.isLiteral(exp2) then
     outExp := Ceval.evalBinaryOp(ExpandExp.expand(exp1), op, ExpandExp.expand(exp2));
+  elseif Expression.isArray(exp1) and Expression.isArray(exp2) then
+    outExp := match op.op
+      case Op.ADD then simplifyBinaryEW(exp1, op, exp2);
+      case Op.SUB then simplifyBinaryEW(exp1, op, exp2);
+      case Op.ADD_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.SUB_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.MUL_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.DIV_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.POW_EW then simplifyBinaryEW(exp1, op, exp2);
+      else Expression.BINARY(exp1, op, exp2);
+    end match;
   else
     outExp := match op.op
       case Op.ADD then simplifyBinaryAdd(exp1, op, exp2);
@@ -973,6 +984,17 @@ algorithm
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
 end simplifyBinaryPow;
+
+function simplifyBinaryEW
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+algorithm
+  outExp := Expression.makeArray(Operator.typeOf(op),
+    Array.threadMap(Expression.arrayElements(exp1), Expression.arrayElements(exp2),
+                    function simplifyBinaryOp(op = Operator.unlift(op))));
+end simplifyBinaryEW;
 
 function simplifyUnary
   input output Expression unaryExp;
