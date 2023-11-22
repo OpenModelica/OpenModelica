@@ -381,6 +381,7 @@ void MessageWidget::clearAllTabsMessages()
 MessagesTabWidget::MessagesTabWidget(QWidget *pParent)
   : QTabWidget(pParent)
 {
+  setDocumentMode(true);
   setTabsClosable(true);
 }
 
@@ -523,8 +524,8 @@ void MessagesWidget::addSimulationOutputTab(QWidget *pSimulationOutputTab, const
   // add the tab if it doesn't already exist
   if (!tabFound) {
     mpMessagesTabWidget->setCurrentIndex(mpMessagesTabWidget->addTab(pSimulationOutputTab, name));
+    emit messageTabAdded(pSimulationOutputTab, name);
   }
-  emit MessageAdded();
 }
 
 /*!
@@ -568,11 +569,13 @@ bool MessagesWidget::closeTab(int index)
     if (pSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
       MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(pSimulationOutputWidget);
     }
+    emit messageTabClosed(index);
     return true;
   }
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
     return true;
   }
   return false;
@@ -616,7 +619,7 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
       break;
   }
   mpMessagesTabWidget->setCurrentWidget(mpAllMessageWidget);
-  emit MessageAdded();
+  emit messageAdded();
 }
 
 /*!

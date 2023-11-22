@@ -248,6 +248,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   // Generated Files tab widget
   mpGeneratedFilesTabWidget = new QTabWidget;
+  mpGeneratedFilesTabWidget->setDocumentMode(true);
   mpGeneratedFilesTabWidget->setMovable(true);
   // Compilation Output TextBox
   mpCompilationOutputTextBox = new OutputPlainTextEdit;
@@ -414,12 +415,6 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpSimulationProcess = 0;
   setSimulationProcessKilled(false);
   mIsSimulationProcessRunning = false;
-
-  if (!mSimulationOptions.isReSimulate()) {
-    compileModel();
-  } else {
-    runSimulationExecutable();
-  }
 }
 
 /*!
@@ -451,6 +446,19 @@ SimulationOutputWidget::~SimulationOutputWidget()
   }
   if (mpTcpServer) {
     mpTcpServer->deleteLater();
+  }
+}
+
+/*!
+ * \brief SimulationOutputWidget::start
+ * Starts the compilation/simulation.
+ */
+void SimulationOutputWidget::start()
+{
+  if (!mSimulationOptions.isReSimulate()) {
+    compileModel();
+  } else {
+    runSimulationExecutable();
   }
 }
 
@@ -631,9 +639,11 @@ void SimulationOutputWidget::runPostCompilation()
 void SimulationOutputWidget::postCompilationProcessStarted()
 {
   mIsPostCompilationProcessRunning = true;
-  mpProgressLabel->setText(tr("Post compiling %1.").arg(mSimulationOptions.getClassName()));
+  const QString progressStr = tr("Post compiling %1.").arg(mSimulationOptions.getClassName());
+  mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 0);
   mpProgressBar->setTextVisible(false);
+  updateMessageTab(progressStr);
   mpCancelButton->setText(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(true);
 }
@@ -701,7 +711,8 @@ void SimulationOutputWidget::postCompilationProcessFinished(int exitCode, QProce
 
 void SimulationOutputWidget::postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mpProgressLabel->setText(tr("Post compilation of %1 is finished.").arg(mSimulationOptions.getClassName()));
+  const QString progressStr = tr("Post compilation of %1 is finished.").arg(mSimulationOptions.getClassName());
+  mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
@@ -709,6 +720,7 @@ void SimulationOutputWidget::postCompilationProcessFinishedHelper(int exitCode, 
   } else {
     mpProgressBar->setValue(0);
   }
+  updateMessageTab(progressStr);
 }
 
 /*!
@@ -739,6 +751,25 @@ QString SimulationOutputWidget::getPathsFromBatFile(QString fileName) {
   batFile.close();
 
   return line;
+}
+
+/*!
+ * \brief SimulationOutputWidget::updateMessageTab
+ * Updates the corresponsing MessageTab.
+ */
+void SimulationOutputWidget::updateMessageTab(const QString &text)
+{
+  emit updateText(text);
+  emit updateProgressBar(mpProgressBar);
+}
+
+/*!
+ * \brief SimulationOutputWidget::updateMessageTabProgress
+ * Updates the progress bar of MessageTab
+ */
+void SimulationOutputWidget::updateMessageTabProgress()
+{
+  emit updateProgressBar(mpProgressBar);
 }
 
 /*!
@@ -802,7 +833,8 @@ void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color
 
 void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mpProgressLabel->setText(tr("Compilation of %1 is finished.").arg(mSimulationOptions.getClassName()));
+  const QString progressStr = tr("Compilation of %1 is finished.").arg(mSimulationOptions.getClassName());
+  mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
@@ -817,6 +849,7 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   } else {
     mpProgressBar->setValue(0);
   }
+  updateMessageTab(progressStr);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files
   if (mSimulationOptions.getBuildOnly()) {
@@ -898,11 +931,13 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
   int exitCode = mpSimulationProcess->exitCode();
   QProcess::ExitStatus exitStatus = mpSimulationProcess->exitStatus();
   QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
+  QString progressStr;
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     /* Ticket:4486
      * Don't print the success message since omc now outputs the success information.
      */
     //writeSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
+    progressStr = tr("Simulation of %1 finished.").arg(mSimulationOptions.getClassName());
   } else {
     if (mpSimulationOutputHandler) {
       SimulationMessage *pSimulationMessage;
@@ -923,9 +958,10 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
 
       mpSimulationOutputHandler->addSimulationMessage(pSimulationMessage);
     }
+    progressStr = tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName());
   }
-
-  mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mSimulationOptions.getClassName()));
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
   mpCancelButton->setEnabled(false);
   MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
   mpArchivedSimulationItem->setStatus(Helper::finished);
@@ -947,10 +983,11 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
  */
 void SimulationOutputWidget::cancelCompilationOrSimulation()
 {
+  QString progressStr;
   if (isCompilationProcessRunning()) {
     setCompilationProcessKilled(true);
     mpCompilationProcess->kill();
-    mpProgressLabel->setText(tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName()));
+    progressStr = tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
     mpProgressBar->setRange(0, 1);
     mpProgressBar->setValue(0);
     mpCancelButton->setEnabled(false);
@@ -958,7 +995,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   } else if (isPostCompilationProcessRunning()) {
     setPostCompilationProcessKilled(true);
     mpPostCompilationProcess->kill();
-    mpProgressLabel->setText(tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName()));
+    progressStr = tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
     mpProgressBar->setRange(0, 1);
     mpProgressBar->setValue(0);
     mpCancelButton->setEnabled(false);
@@ -966,10 +1003,12 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   } else if (isSimulationProcessRunning()) {
     setSimulationProcessKilled(true);
     mpSimulationProcess->kill();
-    mpProgressLabel->setText(tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName()));
+    progressStr = tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
     mpCancelButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
   }
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
 }
 
 /*!
@@ -1060,9 +1099,11 @@ void SimulationOutputWidget::socketDisconnected()
 void SimulationOutputWidget::compilationProcessStarted()
 {
   mIsCompilationProcessRunning = true;
-  mpProgressLabel->setText(tr("Compiling %1. Please wait for a while.").arg(mSimulationOptions.getClassName()));
+  const QString progressStr = tr("Compiling %1. Please wait for a while.").arg(mSimulationOptions.getClassName());
+  mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 0);
   mpProgressBar->setTextVisible(false);
+  updateMessageTab(progressStr);
   mpCancelButton->setText(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(true);
 }
@@ -1142,14 +1183,17 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
 void SimulationOutputWidget::simulationProcessStarted()
 {
   mIsSimulationProcessRunning = true;
+  QString progressStr;
   if (mSimulationOptions.isInteractiveSimulation()) {
-    mpProgressLabel->setText(tr("Running interactive simulation of %1.").arg(mSimulationOptions.getClassName()));
+    progressStr = tr("Running interactive simulation of %1.").arg(mSimulationOptions.getClassName());
   } else {
-    mpProgressLabel->setText(tr("Running simulation of %1. Please wait for a while.").arg(mSimulationOptions.getClassName()));
+    progressStr = tr("Running simulation of %1. Please wait for a while.").arg(mSimulationOptions.getClassName());
   }
+  mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setValue(0);
   mpProgressBar->setTextVisible(true);
+  updateMessageTab(progressStr);
   mpCancelButton->setText(Helper::cancelSimulation);
   mpCancelButton->setEnabled(true);
   mpOpenOutputFileButton->setEnabled(true);
