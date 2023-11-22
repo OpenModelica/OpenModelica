@@ -600,10 +600,12 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
 
   /* Check that tout is not less than timeValue
-   * else will dassl get in trouble. If that is the case we skip the current step. */
-  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+   * else will dassl get in trouble. If that is the case we skip the current step.
+     Also check if step size is smaller than DASSL_STEP_EPS or DASSL_STEP_EPS times simulation interval */
+  if ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+      (solverInfo->currentStepSize < DASSL_STEP_EPS*(data->simulationInfo->stopTime - data->simulationInfo->startTime)) )
   {
-    infoStreamPrint(LOG_DASSL, 0, "Desired step to small try next one");
+    infoStreamPrint(LOG_DASSL, 0, "Desired step size %e to small.", solverInfo->currentStepSize);
     infoStreamPrint(LOG_DASSL, 0, "Interpolate linear");
 
     /*euler step*/
