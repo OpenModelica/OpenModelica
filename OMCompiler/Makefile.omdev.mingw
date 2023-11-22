@@ -2,7 +2,7 @@
 CC = gcc
 CXX = g++
 FC = gfortran
-CFLAGS =-g -O2
+CFLAGS =-g -O2 -falign-functions -mstackrealign -msse2 -mfpmath=sse
 
 ifeq (gcc,$(findstring gcc,$(CC)))
 	override CFLAGS +=-falign-functions
