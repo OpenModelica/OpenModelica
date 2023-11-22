@@ -93,6 +93,7 @@ public:
   bool isShowStartAndFixed() const {return mShowStartAndFixed;}
   const StringAnnotation &getGroupImage() const {return mGroupImage;}
   void updateNameLabel();
+  QString getName() const {return mName;}
   Label* getNameLabel() {return mpNameLabel;}
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   QString getOriginalFixedValue() const {return mOriginalFixedValue;}
@@ -145,6 +146,7 @@ private:
   StringAnnotation mGroupImage;
   BooleanAnnotation mConnectorSizing;
 
+  QString mName;
   Label *mpNameLabel;
   FixedCheckBox *mpFixedCheckBox;
   QString mOriginalFixedValue;

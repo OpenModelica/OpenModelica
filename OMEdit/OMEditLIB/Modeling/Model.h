@@ -448,6 +448,7 @@ private:
     const QStringList &getAbsynDimensions() const {return mAbsynDims;}
     QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
     const QStringList &getTypedDimensions() const {return mTypedDims;}
+    QString getTypedDimensionsString() const {return mTypedDims.join(", ");}
     bool isArray() const {return !mTypedDims.isEmpty();}
   private:
     QStringList mAbsynDims;
