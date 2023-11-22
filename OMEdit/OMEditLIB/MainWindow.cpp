@@ -55,6 +55,7 @@
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
+#include "OMS/OMSSimulationOutputWidget.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "TLM/TLMCoSimulationOutputWidget.h"
 #include "OMS/OMSSimulationDialog.h"
@@ -185,11 +186,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create MessagesDockWidget dock
   mpMessagesDockWidget = new QDockWidget(tr("Messages Browser"), this);
   mpMessagesDockWidget->setObjectName("Messages");
-  mpMessagesDockWidget->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+  mpMessagesDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea);
   mpMessagesDockWidget->setWidget(MessagesWidget::instance());
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
-  connect(MessagesWidget::instance(), SIGNAL(MessageAdded()), SLOT(showMessagesBrowser()));
+  connect(MessagesWidget::instance(), SIGNAL(messageAdded()), SLOT(showMessagesBrowser()));
   // Create the OMCProxy object.
   mpOMCProxy = new OMCProxy(threadData, this);
   if (getExitApplicationStatus()) {
@@ -381,8 +382,25 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
   mpCentralStackedWidget->addWidget(mpModelWidgetContainer);
   mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
+  // central widget layout
+  QVBoxLayout *pCentralWidgetLayout = new QVBoxLayout;
+  pCentralWidgetLayout->setSpacing(0);
+  pCentralWidgetLayout->setContentsMargins(0, 0, 0, 0);
+  QWidget *pCentralWidget = new QWidget;
+  pCentralWidgetLayout->addWidget(mpCentralStackedWidget, 1);
+  // Create a QTabWidget that mimicks the Messages Browser
+  mpMessagesTabWidget = new QTabWidget(this);
+  mpMessagesTabWidget->setTabsClosable(true);
+  mpMessagesTabWidget->setDocumentMode(true);
+  connect(mpMessagesTabWidget, SIGNAL(tabBarClicked(int)), SLOT(messagesTabBarClicked(int)));
+  connect(mpMessagesDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(messagesDockWidgetVisibilityChanged(bool)));
+  connect(MessagesWidget::instance(), SIGNAL(messageTabAdded(QWidget*,QString)), SLOT(messageTabAdded(QWidget*,QString)));
+  connect(MessagesWidget::instance(), SIGNAL(messageTabClosed(int)), SLOT(messageTabClosed(int)));
+  connect(mpMessagesTabWidget, SIGNAL(tabCloseRequested(int)), MessagesWidget::instance(), SLOT(closeTab(int)));
+  pCentralWidgetLayout->addWidget(mpMessagesTabWidget, 0);
+  pCentralWidget->setLayout(pCentralWidgetLayout);
   //Set the centralwidget
-  setCentralWidget(mpCentralStackedWidget);
+  setCentralWidget(pCentralWidget);
   // Load and add user defined Modelica libraries into the Library Widget.
   if (!isTestsuiteRunning()) {
     mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
@@ -429,6 +447,20 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start();
   }
+  // create tabs from MessagesWidget
+  QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
+  MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
+  for (int i = 0; i < pMessagesTabWidget->count(); ++i) {
+    createMessageTab(pMessagesTabWidget->tabText(i), true);
+    QWidget *pTabButtonWidget = mpMessagesTabWidget->tabBar()->tabButton(i, closeSide);
+    if (pTabButtonWidget) {
+      pTabButtonWidget->deleteLater();
+    }
+    mpMessagesTabWidget->tabBar()->setTabButton(i, closeSide, 0);
+  }
+  // since createMessageTab() changes the index so switch it back to 0.
+  mpMessagesTabWidget->setCurrentIndex(0);
+  mpMessagesTabWidget->setVisible(!mpMessagesDockWidget->isVisible());
 }
 
 /*!
@@ -1785,7 +1817,7 @@ void MainWindow::writeNewApiProfiling(const QString &str)
 
 /*!
  * \brief MainWindow::showMessagesBrowser
- * Slot activated when MessagesWidget::MessageAdded signal is raised.\n
+ * Slot activated when MessagesWidget::messageAdded signal is raised.\n
  * Shows the Messages Browser.
  */
 void MainWindow::showMessagesBrowser()
@@ -3575,6 +3607,62 @@ void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
 }
 
 /*!
+ * \brief MainWindow::messagesTabBarClicked
+ * Shows the MessagesWidget when tab is clicked.
+ * \param index
+ */
+void MainWindow::messagesTabBarClicked(int index)
+{
+  showMessagesBrowser();
+  MessagesWidget::instance()->getMessagesTabWidget()->setCurrentIndex(index);
+}
+
+/*!
+ * \brief MainWindow::messagesDockWidgetVisibilityChanged
+ * Handles the VisibilityChanged signal of MessagesBrowser Dock Widget.
+ * \param visible
+ */
+void MainWindow::messagesDockWidgetVisibilityChanged(bool visible)
+{
+  mpMessagesTabWidget->setVisible(!visible);
+  if (!visible && MessagesWidget::instance()) {
+    mpMessagesTabWidget->setCurrentIndex(MessagesWidget::instance()->getMessagesTabWidget()->currentIndex());
+  }
+}
+
+/*!
+ * \brief MainWindow::messageTabAdded
+ * Handles the messageTabAdded signal of MessagesWidget.
+ * \param pSimulationOutputTab
+ * \param name
+ */
+void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &name)
+{
+  MessageTab *pMessageTab = createMessageTab(name, false);
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(pSimulationOutputTab);
+  if (pSimulationOutputWidget) {
+    connect(pSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
+    connect(pSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+  } else {
+    OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(pSimulationOutputTab);
+    if (pOMSSimulationOutputWidget) {
+      connect(pOMSSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
+      connect(pOMSSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+    }
+  }
+}
+
+/*!
+ * \brief MainWindow::messageTabClosed
+ * Handles the messageTabClosed signal of MessagesWidget.
+ * \param name
+ */
+void MainWindow::messageTabClosed(int index)
+{
+  mpMessagesTabWidget->removeTab(index);
+}
+
+/*!
  * \brief MainWindow::autoSave
  * Slot activated when mpAutoSaveTimer timeout SIGNAL is raised.\n
  * Auto saves the classes which user has alreadys saved to a file. Classes not saved to a file are not saved.
@@ -5016,6 +5104,23 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
   pSettings->endGroup();
 }
 
+/*!
+ * \brief MainWindow::createMessageTab
+ * Creates the MessageTab.
+ * \param name
+ * \param fixedTab
+ * \return
+ */
+MessageTab *MainWindow::createMessageTab(const QString &name, bool fixedTab)
+{
+  MessageTab *pMessageTab = new MessageTab(fixedTab);
+  int index = mpMessagesTabWidget->addTab(pMessageTab, name);
+  pMessageTab->setIndex(index);
+  mpMessagesTabWidget->setCurrentIndex(index);
+  connect(pMessageTab, SIGNAL(clicked(int)), mpMessagesTabWidget, SIGNAL(tabBarClicked(int)));
+  return pMessageTab;
+}
+
 //! when the dragged object enters the main window
 //! @param event contains information of the drag operation.
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -5183,4 +5288,75 @@ void AboutOMEditDialog::showReportIssue()
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
   pCrashReportDialog->exec();
+}
+
+/*!
+ * \class MessageTab
+ * \brief Creates a tab that mimicks the tab of Messages Browser.
+ */
+/*!
+ * \brief MessageTab::MessageTab
+ * \param fixedTab
+ */
+MessageTab::MessageTab(bool fixedTab)
+ : QWidget()
+{
+  mpProgressLabel = new Label;
+  mpProgressLabel->setElideMode(Qt::ElideMiddle);
+  mpProgressLabel->installEventFilter(this);
+  if (fixedTab) {
+    mpProgressLabel->setText(tr("Click to open Messages Browser."));
+  }
+  mpProgressBar = new QProgressBar;
+  mpProgressBar->setAlignment(Qt::AlignHCenter);
+  mpProgressBar->installEventFilter(this);
+  // layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setContentsMargins(5, 5, 5, 5);
+  pMainLayout->addWidget(mpProgressLabel, 0, 0);
+  if (!fixedTab) {
+    pMainLayout->addWidget(mpProgressBar, 0, 1);
+  }
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MessageTab::updateText
+ * Updates the text label.
+ * \param text
+ */
+void MessageTab::updateText(const QString &text)
+{
+  mpProgressLabel->setText(text);
+}
+
+/*!
+ * \brief MessageTab::updateProgress
+ * Updates the progressBar
+ * \param pProgressBar
+ */
+void MessageTab::updateProgress(QProgressBar *pProgressBar)
+{
+  mpProgressBar->setRange(pProgressBar->minimum(), pProgressBar->maximum());
+  mpProgressBar->setValue(pProgressBar->value());
+  mpProgressBar->setTextVisible(pProgressBar->isTextVisible());
+}
+
+/*!
+ * \brief MessageTab::eventFilter
+ * Emits the clicked signal on left mouse press.
+ * \param pObject
+ * \param pEvent
+ * \return
+ */
+bool MessageTab::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  if (pEvent->type() == QEvent::MouseButtonPress) {
+    QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+    if (pMouseEvent && pMouseEvent->button() == Qt::LeftButton) {
+      emit clicked(mIndex);
+      return true;
+    }
+  }
+  return QObject::eventFilter(pObject, pEvent);
 }

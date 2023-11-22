@@ -198,10 +198,17 @@ int SimulationMessageModel::getDepth(const QModelIndex &index) const
 void SimulationMessageModel::insertSimulationMessage(SimulationMessage *pSimulationMessage)
 {
   if (pSimulationMessage) {
+    // check scroll position before adding the message
+    auto pVerticalScrollBar = mpSimulationOutputWidget->getSimulationOutputTree()->verticalScrollBar();
+    const bool atBottom = pVerticalScrollBar->value() == pVerticalScrollBar->maximum();
     int row = mpRootSimulationMessage->children().size();
     beginInsertRows(QModelIndex(), row, row);
     mpRootSimulationMessage->insertChild(row, pSimulationMessage);
     endInsertRows();
+    // scroll to bottom
+    if (atBottom) {
+      mpSimulationOutputWidget->getSimulationOutputTree()->scrollToBottom();
+    }
   }
 }
 
@@ -367,6 +374,7 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
       } else if (mXmlStreamReader.name() == "status") {
         int progress = attributes.value("progress").toInt();
         mpSimulationOutputWidget->getProgressBar()->setValue(progress/100);
+        mpSimulationOutputWidget->updateMessageTabProgress();
       }
     } else if (token == QXmlStreamReader::EndElement) {
       if (mXmlStreamReader.name() == "message") {

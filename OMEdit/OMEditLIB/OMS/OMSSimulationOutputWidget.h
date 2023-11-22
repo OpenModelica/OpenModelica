@@ -119,8 +119,12 @@ private:
 
   void parseSimulationProgress(const QVariant progress);
   void parseSimulationVariables(const QVariant variables);
+  void updateMessageTab(const QString &text);
+  void updateMessageTabProgress();
 signals:
   void sendRequest(const QString &function, const QString &argument);
+  void updateText(const QString &text);
+  void updateProgressBar(QProgressBar *pProgressBar);
 public slots:
   void simulationProcessStarted();
   void readSimulationStandardOutput();
