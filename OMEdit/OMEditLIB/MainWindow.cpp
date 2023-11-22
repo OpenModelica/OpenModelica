@@ -458,6 +458,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     }
     mpMessagesTabWidget->tabBar()->setTabButton(i, closeSide, 0);
   }
+  // since createMessageTab() changes the index so switch it back to 0.
+  mpMessagesTabWidget->setCurrentIndex(0);
   mpMessagesTabWidget->setVisible(!mpMessagesDockWidget->isVisible());
 }
 
