@@ -5,6 +5,10 @@ convertUnits("m", "mm"); getErrorString();
 r;
 s := String(r);
 s;
+system("rm -rf convertUnitsNoSystem.txt convertUnitsNoSystem.diff.txt"); getErrorString();
+system("omc convertUnitsNoSystem.mos", outputFile="./convertUnitsNoSystem.txt"); getErrorString();
+system("diff -wZ ./convertUnitsNoSystem.txt ./convertUnitsNoSystem.expected.txt > ./convertUnitsNoSystem.diff.txt 2>&1"); getErrorString();
+readFile("convertUnitsNoSystem.diff.txt"); getErrorString();
 
 
 // Result:
@@ -15,4 +19,12 @@ s;
 // 0.001
 // "0.001"
 // "0.001"
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// ""
+// ""
 // endResult
