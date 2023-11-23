@@ -3672,16 +3672,15 @@ void GraphicsView::modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation
   pMenu->addSeparator();
   pMenu->addAction(mpCutAction);
   pMenu->addAction(mpCopyAction);
-  if (pLineAnnotation && pLineAnnotation->isConnection()) {
-    // nothing special for connection
-  } else if (pLineAnnotation && pLineAnnotation->isTransition()) {
+  if (pLineAnnotation && pLineAnnotation->isTransition()) {
     pMenu->addSeparator();
     pMenu->addAction(pShapeAnnotation->getEditTransitionAction());
-  } else if (pLineAnnotation && pLineAnnotation->isLineShape()) {
-    pMenu->addAction(mpDuplicateAction);
+  }
+  if (pLineAnnotation && pLineAnnotation->isLineShape()) {
     pMenu->addSeparator();
     pMenu->addAction(mpManhattanizeAction);
-  } else {
+  }
+  if (!pLineAnnotation || pLineAnnotation->isLineShape()) {
     pMenu->addAction(mpDuplicateAction);
     pMenu->addSeparator();
     pMenu->addAction(mpRotateClockwiseAction);
