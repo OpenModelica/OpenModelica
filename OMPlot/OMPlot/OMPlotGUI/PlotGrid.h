@@ -32,6 +32,8 @@
 #ifndef PLOTGRID_H
 #define PLOTGRID_H
 
+#include <QPen>
+
 #include "OMPlot.h"
 
 #include <QPen>
