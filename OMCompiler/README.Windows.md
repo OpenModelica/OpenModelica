@@ -17,30 +17,29 @@
 
 # 1 MSYS Environments
 
-We use Linux tools to compile OpenModelica on Windows.
+We use Linux tools provided by [MSYS2](https://www.msys2.org/) to compile OpenModelica on
+Windows.
 
-There are two ways to install all prerequisites to compile OMC on Windows.
-If you are unsure what to pick or building OpenModelica for the first time select the second option using **UCRT**.
+You can install MSYS2 with UCRT64 yourself or use OMDev with an MSYS2 installation and
+fixed package versions. If you are unsure what to pick or are building OpenModelica for
+the first time use OMDev.
 
-This Readme uses the `UCRT64` environment to explain the compilation process.
-If you use the `MINGW` environments change the path to 
+> [!NOTE]
+> If you have an older version of OMDev installed it's best to delete `OMDev` and start
+> with a fresh clone following the below instructions.
 
   1. OMDev package: MSYS2 with
-    [MINGW32 and MINGW64 environments](https://www.msys2.org/docs/environments/),
-    as well as additional tools for optional compiler features.
+    [UCRT64 environment](https://www.msys2.org/docs/environments/).
     Follow the instructions in [1.2 Install OMDev](#12-install-omdev).
-  2. [MSYS2](https://www.msys2.org/) with
-    [UCRT64](https://www.msys2.org/docs/environments/) environment.
+  2. Installed [MSYS2](https://www.msys2.org/) with
+    [UCRT64 environment](https://www.msys2.org/docs/environments/).
     Follow the instructions in [1.3 Install MSYS2](#13-install-msys2).
 
-> **Warning**
-> The MINGW and UCRT environments from OMDev and MSYS2 are not compatible and can't be
-> mixed.
 
 ## 1.1 General Notes
 
   - Install Git for Windows https://git-scm.com/downloads
-    Do not install git using pacman in msys, it does not work correctly!
+    Do not install git using pacman in MSYS, it does not work correctly!
   - Make sure you git clone with the correct line endings, run in a (Git Bash) terminal:
     ```bash
       git config --global core.eol lf
@@ -55,108 +54,13 @@ If you use the `MINGW` environments change the path to
     Run the following in a Git Bash:
     ```bash
       cd /c/
-      git clone https://openmodelica.org/git/OMDev.git
+      git clone --depth 1 -b master --single-branch https://gitlab.liu.se/OpenModelica/OMDevUCRT.git OMDev
     ```
 
   - Define a Windows environment variable `OMDEV` pointing to the OMDev directory.
-    Restart or logiut/login to make it available.
+    Restart or logout/login to make it available.
 
-  - Follow the instructions in the `C:\OMDev\INSTALL.txt` file.
-
-If you encounter issues with OpenModelica compilation try updating OMDev (git pull).
-
-## 1.3 Install MSYS2
-
-Follow the installation instructions in [www.msys2.org](https://www.msys2.org/) to install
-MSYS2 with the installer in `C:\OMDEV\tools\msys`.
-
-These are the UCRT64 packages needed to build OpenModelica with CMake:
-
-  - zip
-  - unzip
-  - make
-  - libtool
-  - flex
-  - mingw-w64-ucrt-x86_64-make
-  - mingw-w64-ucrt-x86_64-cmake
-  - mingw-w64-ucrt-x86_64-ccache
-  - mingw-w64-ucrt-x86_64-gcc-fortran
-  - mingw-w64-ucrt-x86_64-gcc-libs
-  - mingw-w64-ucrt-x86_64-binutils
-  - mingw-w64-ucrt-x86_64-curl
-  - mingw-w64-ucrt-x86_64-libiconv
-  - mingw-w64-ucrt-x86_64-readline
-  - mingw-w64-ucrt-x86_64-expat
-  - mingw-w64-ucrt-x86_64-libsystre
-  - mingw-w64-ucrt-x86_64-winpthreads-git
-  - mingw-w64-ucrt-x86_64-opencl-headers
-  - mingw-w64-ucrt-x86_64-openblas
-
-In addition the following packages are needed for the Makefile build:
-
-  - mingw-w64-ucrt-x86_64-autotools
-  - mingw-w64-ucrt-x86_64-openmp
-
-Optional packages for GUI (e.g OMEdit):
-
-  - mingw-w64-ucrt-x86_64-qt5
-  - mingw-w64-ucrt-x86_64-qtwebkit
-  - mingw-w64-ucrt-x86_64-OpenSceneGraph
-    or mingw-w64-ucrt-x86_64-OpenSceneGraph-debug for the debug version.
-  - mingw-w64-ucrt-x86_64-gdb
-
-Optional packages for CPP runtime
-
-  - mingw-w64-ucrt-x86_64-boost
-
-Optional packages for OMSens
-
-  - mingw-w64-ucrt-x86_64-python-numpy
-
-Optional packages for OMTLMSimulator
-
-  - mingw-w64-ucrt-x86_64-libxml2
-
-Optional compiler
-
-  -  mingw-w64-ucrt-x86_64-clang
-
-Optional packages for OmniORB(?):
-
-  - mingw-w64-ucrt-x86_64-libidl2
-
-Start the bash command line with the UCRT64 environment `C:\OMDev\tools\msys\ucrt64.exe`
-and use `pacman` to install the packages:
-
-```bash
-# Needed
-pacman -S zip unzip make libtool flex   \
-  mingw-w64-ucrt-x86_64-make            \
-  mingw-w64-ucrt-x86_64-cmake           \
-  mingw-w64-ucrt-x86_64-ccache          \
-  mingw-w64-ucrt-x86_64-gcc-fortran     \
-  mingw-w64-ucrt-x86_64-gcc-libs        \
-  mingw-w64-ucrt-x86_64-binutils        \
-  mingw-w64-ucrt-x86_64-curl            \
-  mingw-w64-ucrt-x86_64-libiconv        \
-  mingw-w64-ucrt-x86_64-readline        \
-  mingw-w64-ucrt-x86_64-expat           \
-  mingw-w64-ucrt-x86_64-libsystre       \
-  mingw-w64-ucrt-x86_64-winpthreads-git \
-  mingw-w64-ucrt-x86_64-opencl-headers  \
-  mingw-w64-ucrt-x86_64-openblas        \
-  mingw-w64-ucrt-x86_64-autotools       \
-  mingw-w64-ucrt-x86_64-openmp
-# Optional
-pacman -S mingw-w64-ucrt-x86_64-qt5     \
-  mingw-w64-ucrt-x86_64-qtwebkit        \
-  mingw-w64-ucrt-x86_64-OpenSceneGraph  \
-  mingw-w64-ucrt-x86_64-boost           \
-  mingw-w64-ucrt-x86_64-python-numpy    \
-  mingw-w64-ucrt-x86_64-libxml2         \
-  mingw-w64-ucrt-x86_64-gdb             \
-  mingw-w64-ucrt-x86_64-clang
-```
+  - Follow the instructions in the `%OMDEV%\INSTALL.md` file.
 
 ## 1.4 Install Additional Programs
 
@@ -169,26 +73,23 @@ Install the following programs:
 
 ## 1.5 Environment Variables
 
-Start `C:\OMDev\tools\msys\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
-(MINGW64) and run:
-
-Export the path to your tools: git, svn, java/javac
+Export the path to your tools: git, svn, java/javac and cmake.
 Define environment variables pointing to your OMDev directory as well as the MSYS2
 root directory.
 
-> **Note**
-> If you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
+> [!NOTE]
+> Use Linux like path. E.g. `C:\Program Files\Git\bin` becomes `/c/Program Files/Git/bin`
 
 ```bash
-export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
-export OPENMODELICAHOME="C:\\path\\to\\OpenModelica\\build"
-export OPENMODELICALIBRARY="C:\\Users\\<user name>\\AppData\\Roaming\\.openmodelica\\libraries"
-export OMDEV="C:\\OMDev"
-export OMDEV_MSYS="C:\\OMDev\\tools\\msys"
+export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin:/c/path/to/cmake/bin
+export OPENMODELICAHOME="/c/path/to/OpenModelica/build"
+export OPENMODELICALIBRARY="/c/Users/<user name>/AppData/Roaming/.openmodelica/libraries"
+export OMDEV="/c/OMDev"
+export OMDEV_MSYS="/c/OMDev/tools/msys"
 ```
 
 You can add this to your `.bashrc` file
-(usually in `C:\OMDev\tools\msys\home\<USERNAME>\.bashrc`), to always have them in your
+(usually in `%OMDEV%\tools\msys\home\<USERNAME>\.bashrc`), to always have them in your
 `PATH`.
 
 Additional remarks:
