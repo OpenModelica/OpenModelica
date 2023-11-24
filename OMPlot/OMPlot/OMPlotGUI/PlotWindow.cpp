@@ -66,6 +66,9 @@
 #include <QStack>
 #include <QLineEdit>
 #include <QColorDialog>
+#include <QPainter>
+#include <QStack>
+#include <QTextStream>
 
 using namespace OMPlot;
 

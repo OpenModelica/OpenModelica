@@ -38,6 +38,10 @@
 #include "qwt_math.h"
 #include "qwt_interval.h"
 #include "qwt_transform.h"
+#if QWT_VERSION >= 0x060200
+#define LOG_MIN QwtLogTransform::LogMin
+#define LOG_MAX QwtLogTransform::LogMax
+#endif
 
 #include <QtMath>
 

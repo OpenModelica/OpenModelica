@@ -35,6 +35,12 @@
 #include "LinearScaleEngine.h"
 #include "qwt_interval.h"
 
+#include "qwt_interval.h"
+#if QWT_VERSION >= 0x060200
+#define LOG_MIN QwtLogTransform::LogMin
+#define LOG_MAX QwtLogTransform::LogMax
+#endif
+
 using namespace OMPlot;
 
 /*!

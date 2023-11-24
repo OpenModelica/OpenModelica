@@ -33,6 +33,9 @@
 #define PLOTGRID_H
 
 #include "qwt_plot_grid.h"
+#include <QPen>
+
+#include "OMPlot.h"
 
 #include <QPen>
 
