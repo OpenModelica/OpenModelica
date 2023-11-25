@@ -1,5 +1,5 @@
 
-== How to add a new library needed by the testsuite
+## How to add a new library needed by the testsuite
 
 1. add lib to libraries/update.py
 2. run `cd libraries && make update`
