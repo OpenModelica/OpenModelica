@@ -1,4 +1,6 @@
+// name: convertUnits.mos
 // status: correct
+// teardown_command: rm -rf convertUnitsNoSystem.diff.txt convertUnitsNoSystem.txt
 
 convertUnits("m", "mm"); getErrorString();
 (_, r, _) := convertUnits("m", "mm"); getErrorString();
