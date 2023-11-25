@@ -8,7 +8,10 @@ r;
 s := String(r);
 s;
 system("rm -rf convertUnitsNoSystem.txt convertUnitsNoSystem.diff.txt"); getErrorString();
-system("omc convertUnitsNoSystem.mos", outputFile="./convertUnitsNoSystem.txt"); getErrorString();
+echo(false); getErrorString();
+path := getInstallationDirectoryPath(); getErrorString();
+echo(true); getErrorString();
+system(path + "/bin/omc convertUnitsNoSystem.mos", outputFile="./convertUnitsNoSystem.txt"); getErrorString();
 system("diff -wZ ./convertUnitsNoSystem.txt ./convertUnitsNoSystem.expected.txt > ./convertUnitsNoSystem.diff.txt 2>&1"); getErrorString();
 readFile("convertUnitsNoSystem.diff.txt"); getErrorString();
 
@@ -21,7 +24,8 @@ readFile("convertUnitsNoSystem.diff.txt"); getErrorString();
 // 0.001
 // "0.001"
 // "0.001"
-// 0
+// ""
+// true
 // ""
 // 0
 // ""
