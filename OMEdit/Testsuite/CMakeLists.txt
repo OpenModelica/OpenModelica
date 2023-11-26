@@ -1,4 +1,4 @@
-find_package(Qt5Test REQUIRED)
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Test REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

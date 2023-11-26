@@ -47,7 +47,6 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QApplication>
-#include <QDesktopWidget>
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebEnginePage>
 #include <QWebEngineSettings>
@@ -652,7 +651,11 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
   mDocumentationFile.open(QIODevice::WriteOnly);
   QTextStream out(&mDocumentationFile);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  out.setEncoding(QStringConverter::Utf8);
+#else
   out.setCodec(Helper::utf8.toUtf8().constData());
+#endif
   out << documentation;
   mDocumentationFile.close();
 }

@@ -416,14 +416,21 @@ namespace IAEX
           QString text = e.text();
           // replace all href="...\..." with href=".../..."
           QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+          QRegularExpression rx(pattern, QRegularExpression::CaseInsensitiveOption);
+#else
           QRegExp rx(pattern);
           rx.setCaseSensitivity(Qt::CaseInsensitive);
           rx.setMinimal(true);
           rx.setPatternSyntax(QRegExp::RegExp);
+#endif
           if (!rx.isValid())
           {
             fprintf(stderr, "Invalid QRegExp(%s)\n", rx.pattern().toStdString().c_str());
           }
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  // TODO
+#else
           int done = rx.indexIn(text);
           if (done > -1)
           {
@@ -441,6 +448,7 @@ namespace IAEX
           {
             textcell->setTextHtml( text );
           }
+#endif
         }
         else if( e.tagName() == XML_RULE )
         {

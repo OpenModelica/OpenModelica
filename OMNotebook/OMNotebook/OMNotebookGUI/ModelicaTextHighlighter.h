@@ -35,7 +35,7 @@
 
 //QT Headers
 #include <QtCore/QString>
-#include <QtCore/QRegExp>
+#include <QRegExp>
 #include <QtGui/QTextCharFormat>
 #include <QSyntaxHighlighter>
 

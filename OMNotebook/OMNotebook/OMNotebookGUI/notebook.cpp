@@ -511,7 +511,7 @@ void NotebookWindow::createFileMenu()
   QString recentFile;
   for(int i = 0; i < 8; ++i)
   {
-    if((recentFile = s.value(QString("Recent")+QString(i), QString()).toString()) != QString())
+    if((recentFile = s.value(QString("Recent")+QString(QChar(i)), QString()).toString()) != QString())
     {
       QAction* tmpAction = recentMenu->addAction(recentFile);
       connect(tmpAction, SIGNAL(triggered()), this, SLOT(recentTriggered()));
@@ -2409,7 +2409,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
   QString tmp;
   for(int i = 0; i < 8; ++i)
   {
-    if((tmp = s.value(QString("Recent") + QString(i), QString()).toString()) != QString())
+    if((tmp = s.value(QString("Recent") + QString(QChar(i)), QString()).toString()) != QString())
       tmpLst.push_back(tmp);
     else
       break;
@@ -2421,7 +2421,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
     tmpLst.push_front(filename);
 
   for(int i = 0; i < 8 && i < tmpLst.size(); ++i)
-    s.setValue(QString("Recent") + QString(i), tmpLst[i]);
+    s.setValue(QString("Recent") + QString(QChar(i)), tmpLst[i]);
 
 }
 

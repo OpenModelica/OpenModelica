@@ -35,6 +35,7 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QRegExp>
 
 #include <exception>
 #include <stdexcept>
@@ -96,7 +97,7 @@ namespace IAEX
     setEnabled(true);
 
     mainlayout_ = new QGridLayout(this);
-    mainlayout_->setMargin(0);
+    mainlayout_->setContentsMargins(0, 0, 0, 0);
     mainlayout_->setSpacing(0);
 
     setLayout( mainlayout_ );//AF
@@ -117,7 +118,7 @@ namespace IAEX
     setMouseTracking(true);
 
     mainlayout_ = new QGridLayout(this);
-    mainlayout_->setMargin(0);
+    mainlayout_->setContentsMargins(0, 0, 0, 0);
     mainlayout_->setSpacing(0);
 
     setLabel(new QLabel(this));
@@ -262,7 +263,7 @@ namespace IAEX
   {
     // TODO: DEBUG code: Remove when doing release,
     // just a check to find new rules
-    QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border" );
+    QRegularExpression expression("InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border");
     if( 0 > r->attribute().indexOf( expression ))
     {
       std::cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << std::endl;
@@ -271,25 +272,25 @@ namespace IAEX
     {
       if( r->attribute() == "FontSlant" )
       {
-        QRegExp fontslant( "Italic" );
+        QRegularExpression fontslant( "Italic" );
         if( 0 > r->value().indexOf( fontslant ))
           std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "TextAlignment" )
       {
-        QRegExp textalignment( "Right|Left|Center|Justify" );
+        QRegularExpression textalignment( "Right|Left|Center|Justify" );
         if( 0 > r->value().indexOf( textalignment ))
           std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "TextJustification" )
       {
-        QRegExp textjustification( "1|0" );
+        QRegularExpression textjustification( "1|0" );
         if( 0 > r->value().indexOf( textjustification ))
           std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "FontWeight" )
       {
-        QRegExp fontweight( "Bold|Plain" );
+        QRegularExpression fontweight( "Bold|Plain" );
         if( 0 > r->value().indexOf( fontweight ))
           std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << std::endl;
       }
@@ -304,7 +305,7 @@ namespace IAEX
 
     // 2006-02-09 AF, ignore some rules. This rules are not added
     // to the cell
-    QRegExp ignoreRules( "PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion" );
+    QRegularExpression ignoreRules("PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion");
 
     if( 0 > r->attribute().indexOf( ignoreRules ) )
     {

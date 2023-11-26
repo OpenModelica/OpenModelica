@@ -431,9 +431,14 @@ namespace IAEX
         ++v_iter;
       }
 
+     v->move(0, 0);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      QScreen *screen = QGuiApplication::primaryScreen();
+      v->resize(screen->geometry().width(), screen->geometry().height());
+#else
       QDesktopWidget dw;
-      v->move(0, 0);
       v->resize(dw.geometry().width(),dw.geometry().height());
+#endif
 
       // 2005-11-30 AF, apply hide() and show() to closed groupcells
       // childs in the documentview

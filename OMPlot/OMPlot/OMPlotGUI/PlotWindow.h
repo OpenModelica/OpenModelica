@@ -52,6 +52,7 @@
 #include <QDoubleSpinBox>
 #include <QDialog>
 #include <QStackedWidget>
+#include <QTextStream>
 #include <QDialogButtonBox>
 
 #include <qwt_plot.h>
@@ -67,7 +68,11 @@
 #include <qwt_plot_panner.h>
 #include <qwt_scale_engine.h>
 #if QWT_VERSION >= 0x060000
+#if QWT_VERSION < 0x060200
 #include <qwt_compat.h>
+#else
+#define QwtArray QVector
+#endif
 #endif
 #include <stdexcept>
 #include "util/read_matlab4.h"

@@ -886,7 +886,11 @@ void GDBAdapter::handleGDBProcessStartedHelper()
   mDebuggerLogFile.setFileName(QString("%1omeditdebugger.log").arg(tmpPath));
   if (mDebuggerLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
     mDebuggerLogFileTextStream.setDevice(&mDebuggerLogFile);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    mDebuggerLogFileTextStream.setEncoding(QStringConverter::Utf8);
+#else
     mDebuggerLogFileTextStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     mDebuggerLogFileTextStream.setGenerateByteOrderMark(false);
   }
   emit GDBProcessStarted();

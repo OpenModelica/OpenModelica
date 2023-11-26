@@ -48,6 +48,7 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QRegExp>
 
 
 //IAEX Headers
@@ -414,8 +415,8 @@ namespace IAEX
   {
     // check if the text contains html code, if so - set the
     // text with correct function.
-    QRegExp expression( "&nbsp;|<b>|<B>|</b>|</B>|<br>|<BR>|</a>|</A>|<sup>|<SUP>|</sup>|</SUP>|<sub>|<SUP>|</sub>|</SUB>|<span|<SPAN|</span>|</SPAN>" );
-    QRegExp expressionTag( "<.*" );
+    QRegularExpression expression( "&nbsp;|<b>|<B>|</b>|</B>|<br>|<BR>|</a>|</A>|<sup>|<SUP>|</sup>|</SUP>|<sub>|<SUP>|</sub>|</SUB>|<span|<SPAN|</span>|</SPAN>" );
+    QRegularExpression expressionTag( "<.*" );
     if( 0 <= text.indexOf( expression ))
     {
       // 2005-12-06 AF, ugly way to get the style, when inserting

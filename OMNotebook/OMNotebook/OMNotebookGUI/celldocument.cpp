@@ -135,7 +135,7 @@ namespace IAEX
       QSizePolicy::Expanding));
 
     mainLayout_ = new QGridLayout(mainFrame_);
-    mainLayout_->setMargin(0);
+    mainLayout_->setContentsMargins(0, 0, 0, 0);
     mainLayout_->setSpacing(0);
 
     //Initialize workspace.

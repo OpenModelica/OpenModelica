@@ -28,7 +28,7 @@ contains(QWT_CONFIG, QwtDll) {
 }
 else {
     CONFIG += staticlib
-}
+} 
 
 contains(QWT_CONFIG, QwtFramework) {
 
@@ -40,7 +40,7 @@ include ( $${PWD}/src.pri )
 # Install directives
 
 target.path    = $${QWT_INSTALL_LIBS}
-INSTALLS       = target
+INSTALLS       = target 
 
 CONFIG(lib_bundle) {
 
@@ -86,7 +86,7 @@ contains(QWT_CONFIG, QwtPkgConfig) {
     else {
 
         # there is no QMAKE_PKGCONFIG_FILE fo Qt4
-        QMAKE_PKGCONFIG_REQUIRES = QtGui
+        QMAKE_PKGCONFIG_REQUIRES = QtGui 
 
         contains(QWT_CONFIG, QwtSvg) {
             QMAKE_PKGCONFIG_REQUIRES += QtSvg

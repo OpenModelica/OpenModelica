@@ -17,12 +17,22 @@ contains(QWT_CONFIG, QwtDll) {
 
 contains(QWT_CONFIG, QwtSvg) {
 
-  QT      *= svg
+	QT      *= svg
 }
 else {
 
-  DEFINES *= QWT_NO_SVG
+	DEFINES *= QWT_NO_SVG
 }
+
+contains(QWT_CONFIG, QwtOpenGL) {
+
+    QT      *= opengl
+}
+else {
+
+    DEFINES *= QWT_NO_OPENGL
+}
+
 
 contains(QWT_CONFIG, QwtFramework) {
 

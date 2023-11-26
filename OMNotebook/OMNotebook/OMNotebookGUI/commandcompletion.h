@@ -47,6 +47,7 @@
 #include <QtCore/QStringList>
 #include <QtGui/QTextCursor>
 #include <QtXml/QDomDocument>
+#include <QRegularExpression>
 
 //IAEX Headers
 #include "commandunit.h"
@@ -79,7 +80,7 @@ namespace IAEX
     int commandStartPos_;
     int commandEndPos_;
 
-    QList<QRegExp> keywords_;
+    QList<QRegularExpression> keywords_;
 
     QStringList *currentList_;
     QStringList commandList_;

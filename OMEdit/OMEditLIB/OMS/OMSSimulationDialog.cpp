@@ -44,7 +44,6 @@
 
 #include <QGridLayout>
 #include <QMessageBox>
-#include <QDesktopWidget>
 
 /*!
  * \class OMSSimulationDialog

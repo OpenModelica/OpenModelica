@@ -3,7 +3,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt5 COMPONENTS Widgets PrintSupport Xml REQUIRED)
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml REQUIRED)
 
 set(OMSHELLLIB_SOURCES commandcompletion.cpp
                        omcinteractiveenvironment.cpp
@@ -18,9 +18,9 @@ set(OMSHELLLIB_HEADERS commandcompletion.h
 add_library(OMShellLib STATIC ${OMSHELLLIB_SOURCES} ${OMSHELLLIB_HEADERS})
 
 target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
-target_link_libraries(OMShellLib PUBLIC Qt5::Xml)
-target_link_libraries(OMShellLib PUBLIC Qt5::Widgets)
-target_link_libraries(OMShellLib PUBLIC Qt5::PrintSupport)
+target_link_libraries(OMShellLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Xml)
+target_link_libraries(OMShellLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Widgets)
+target_link_libraries(OMShellLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::PrintSupport)
 
 
 if(APPLE)

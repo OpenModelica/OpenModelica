@@ -105,9 +105,14 @@ target_compile_definitions(OMNotebook PRIVATE OMNOTEBOOKLIB_MOC_INCLUDE)
 
 target_include_directories(OMNotebook PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(OMNotebook PUBLIC Qt5::Xml)
-target_link_libraries(OMNotebook PUBLIC Qt5::Widgets)
-target_link_libraries(OMNotebook PUBLIC Qt5::PrintSupport)
+target_link_libraries(OMNotebook PUBLIC Qt${OM_QT_MAJOR_VERSION}::Xml)
+target_link_libraries(OMNotebook PUBLIC Qt${OM_QT_MAJOR_VERSION}::Widgets)
+target_link_libraries(OMNotebook PUBLIC Qt${OM_QT_MAJOR_VERSION}::PrintSupport)
+
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  target_link_libraries(OMNotebook PUBLIC Qt6::Core5Compat)
+endif ()
+
 target_link_libraries(OMNotebook PUBLIC OMPlotLib)
 target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 

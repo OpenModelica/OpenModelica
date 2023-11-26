@@ -9,12 +9,15 @@ omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll depe
 omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." OFF)
 omc_option(OM_OMEDIT_ENABLE_QTWEBENGINE "Enable building of OMEdit with QtWebEngine instead of QtWebkit" OFF)
 
-set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
 find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml XmlPatterns OpenGL Network Svg REQUIRED)
-if (OM_OMEDIT_ENABLE_QTWEBENGINE)
+if (OM_OMEDIT_ENABLE_QTWEBENGINE OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebEngineWidgets REQUIRED)
 else ()
   find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebKitWidgets REQUIRED)
+endif ()
+
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  find_package(Qt6 COMPONENTS OpenGLWidgets Core5Compat REQUIRED)
 endif ()
 
 find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)

@@ -8,8 +8,8 @@
 ################################################################
 
 QWT_VER_MAJ      = 6
-QWT_VER_MIN      = 1
-QWT_VER_PAT      = 5
+QWT_VER_MIN      = 2
+QWT_VER_PAT      = 0
 QWT_VERSION      = $${QWT_VER_MAJ}.$${QWT_VER_MIN}.$${QWT_VER_PAT}
 
 ######################################################################
@@ -86,6 +86,13 @@ QWT_CONFIG           += QwtDll
 QWT_CONFIG       += QwtPlot
 
 ######################################################################
+# QwtPPolar enables all classes, that are needed to use the QwtPolar
+# classes. It can't be enabled without also enabling QwtPlot
+######################################################################
+
+QWT_CONFIG       += QwtPolar
+
+######################################################################
 # QwtWidgets enables all classes, that are needed to use the all other
 # widgets (sliders, dials, ...), beside QwtPlot.
 ######################################################################
@@ -104,17 +111,6 @@ QWT_CONFIG     += QwtSvg
 ######################################################################
 
 #QWT_CONFIG     += QwtOpenGL
-
-######################################################################
-# You can use the MathML renderer of the Qt solutions package to
-# enable MathML support in Qwt. Because of license implications
-# the ( modified ) code of the MML Widget solution is included and
-# linked together with the QwtMathMLTextEngine into an own library.
-# To use it you will have to add "CONFIG += qwtmathml"
-# to your qmake project file.
-######################################################################
-
-#QWT_CONFIG     += QwtMathML
 
 ######################################################################
 # If you want to build the Qwt designer plugin,
