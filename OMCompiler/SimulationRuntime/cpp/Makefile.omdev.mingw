@@ -219,7 +219,6 @@ omcCAPIinstall:
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); $(MAKE) install);)
-	cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
 	cp -p $(MSYSTEM_PREFIX)/bin/libboost*.dll $(builddir_bin)/.
 
 clean:
