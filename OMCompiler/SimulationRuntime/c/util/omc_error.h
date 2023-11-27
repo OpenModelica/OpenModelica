@@ -251,7 +251,7 @@ void debugStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentN
 static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 3, 4)));
 static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) {/* Do nothing */}
 static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream __attribute__((unused)), FILE_INFO info, int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 5, 6)));
-static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream  __attribute__((unused)), FILE_INFO info, int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...)  {/* Do nothing */}
+static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream  __attribute__((unused)), FILE_INFO info __attribute__((unused)), int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...)  {/* Do nothing */}
 #endif
 
 #ifdef __cplusplus
