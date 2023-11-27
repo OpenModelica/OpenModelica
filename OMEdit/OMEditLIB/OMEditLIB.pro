@@ -86,7 +86,7 @@ equals(_OM_ENABLE_ENCRYPTION, yes) {
 
 # On older msys the include directory for binutils is in binutils
 # On recent (November 2022) MSYS2 this is no longer needed.
-  INCLUDEPATH += $$(OMDEV_MSYS)/include/binutils
+  INCLUDEPATH += $$(OMDEV)/tools/msys/include/binutils
 
 
   OPENMODELICAHOME = $$(OMBUILDDIR)

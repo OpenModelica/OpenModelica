@@ -632,10 +632,7 @@ algorithm
         if stringEq(omdevPath, "") then
           omdevPath = omHome;
         end if;
-        msysPath = Util.makeValueOrDefault(System.readEnv,"OMDEV_MSYS","");
-        if stringEq(msysPath, "") then
-          msysPath = omdevPath + "\\tools\\msys";
-        end if;
+        msysPath = omdevPath + "\\tools\\msys";
         mingwDir = System.openModelicaPlatform();
         msysBinDir = msysPath + "\\usr\\bin";
         binDir = msysPath + "\\" + mingwDir + "\\bin";
@@ -658,7 +655,7 @@ algorithm
         else
           // do not display anything if -d=disableWindowsPathCheckWarning
           if not Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING) then
-            print("We could not find some needed MINGW paths in $OPENMODELICAHOME or $OMDEV or $OMDEV_MSYS. Searched for paths:\n");
+            print("We could not find some needed MINGW paths in $OPENMODELICAHOME or $OMDEV. Searched for paths:\n");
             print("\t" + binDir + (if hasBinDir then " [found] " else " [not found] ") + "\n");
             print("\t" + libBinDir + (if hasLibBinDir then " [found] " else " [not found] ") + "\n");
           end if;

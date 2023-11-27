@@ -9,7 +9,7 @@
 <mapEntry key="OMDEV" value="/c/OMDev/"/>
 <mapEntry key="OPENMODELICAHOME" value="${project_loc}/build"/>
 <mapEntry key="OPENMODELICALIBRARY" value="${project_loc}\build\lib\omlibrary\"/>
-<mapEntry key="PATH" value="${env_var:OMDEV_MSYS}/usr/bin;c:/windows;c:/windows/system32;"/>
+<mapEntry key="PATH" value="${env_var:OMDEV}/tools/msys/mingw32/bin;${env_var:OMDEV}/tools/msys/usr/bin;c:/windows;c:/windows/system32;"/>
 <mapEntry key="SystemDrive" value="${env_var:SystemDrive}"/>
 <mapEntry key="SystemRoot" value="${env_var:SystemRoot}"/>
 <mapEntry key="TEMP" value="${env_var:TEMP}"/>
@@ -17,7 +17,7 @@
 </mapAttribute>
 <booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
 <booleanAttribute key="org.eclipse.ui.externaltools.ATTR_BUILDER_ENABLED" value="true"/>
-<stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="${env_var:OMDEV_MSYS}\usr\bin\make.exe"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="${env_var:OMDEV}\tools\msys\usr\bin\make.exe"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS" value="full,incremental,"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-f Makefile.omdev.mingw ${string_prompt}"/>
 <booleanAttribute key="org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED" value="true"/>

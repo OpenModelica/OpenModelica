@@ -978,7 +978,6 @@ QString Utilities::getGDBPath()
 {
 #if defined(_WIN32)
   const char *OMDEV = getenv("OMDEV");
-  const char *OMDEV_MSYS = getenv("OMDEV_MSYS");
   const char *MSYSTEM_PREFIX = getenv("MSYSTEM_PREFIX");
   const char* msysEnv = System_openModelicaPlatform(); /* "ucrt64" or "mingw64" */
 
@@ -986,12 +985,6 @@ QString Utilities::getGDBPath()
   if (!QString(MSYSTEM_PREFIX).isEmpty()) {
     QString qMSYSTEM_PREFIX = QString(MSYSTEM_PREFIX).replace("\\", "/");
     return QString(qMSYSTEM_PREFIX) + QString("/bin/gdb.exe");
-  }
-
-  // OMDEV_MSYS is set: <OMDEV_MSYS>/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
-  if (!QString(OMDEV_MSYS).isEmpty()) {
-    QString qOMDEV_MSYS = QString(OMDEV_MSYS).replace("\\", "/");
-    return QString(qOMDEV_MSYS) + QString("/") + QString(msysEnv) + QString("/bin/gdb.exe");
   }
 
   // OMDEV is set: <OMDEV>/tools/msys/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe

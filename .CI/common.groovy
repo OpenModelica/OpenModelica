@@ -72,7 +72,6 @@ void partest(partition=1,partitionmodulo=1,cache=true, extraArgs='') {
 
   bat ("""
      set OMDEV=C:\\OMDev
-     set OMDEV_MSYS=C:\\OMDev\\tools\\msys64
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -94,7 +93,7 @@ void partest(partition=1,partitionmodulo=1,cache=true, extraArgs='') {
 
      set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
-     %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x runTestWindows.sh && ./runTestWindows.sh && rm -f ./runTestWindows.sh"
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x runTestWindows.sh && ./runTestWindows.sh && rm -f ./runTestWindows.sh"
   """)
 
   } else {
@@ -169,7 +168,6 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   if (isWindows()) {
   bat ("""
      set OMDEV=C:\\OMDev
-     set OMDEV_MSYS=C:\\OMDev\\tools\\msys64
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -244,7 +242,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
 
      set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
-     %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
   } else {
   sh 'autoreconf --install'
@@ -292,7 +290,6 @@ void buildOMSens() {
   if (isWindows()) {
   bat ("""
      set OMDEV=C:\\OMDev
-     set OMDEV_MSYS=C:\\OMDev\\tools\\msys64
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -305,7 +302,7 @@ void buildOMSens() {
 
      set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
-     %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
   """)
   }
 }
@@ -316,7 +313,6 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   if (isWindows()) {
   bat ("""
      set OMDEV=C:\\OMDev
-     set OMDEV_MSYS=C:\\OMDev\\tools\\msys64
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -331,7 +327,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
 
      set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
-     %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
   }
   else {
@@ -347,7 +343,6 @@ void buildGUI(stash, isQt5) {
   if (isWindows()) {
   bat ("""
      set OMDEV=C:\\OMDev
-     set OMDEV_MSYS=C:\\OMDev\\tools\\msys64
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -364,7 +359,7 @@ void buildGUI(stash, isQt5) {
 
      set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
-     %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
   """)
   } else {
 
@@ -394,7 +389,6 @@ void buildAndRunOMEditTestsuite(stash) {
   if (isWindows()) {
   bat ("""
      set OMDEV=C:\\OMDev
-     set OMDEV_MSYS=C:\\OMDev\\tools\\msys64
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -410,7 +404,7 @@ void buildAndRunOMEditTestsuite(stash) {
 
      set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
-     %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMEditTestsuiteWindows.sh && ./buildOMEditTestsuiteWindows.sh && rm -f ./buildOMEditTestsuiteWindows.sh"
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMEditTestsuiteWindows.sh && ./buildOMEditTestsuiteWindows.sh && rm -f ./buildOMEditTestsuiteWindows.sh"
   """)
   } else {
 
@@ -451,7 +445,7 @@ void generateTemplates() {
 
 def getVersion() {
   if (isWindows()) {
-  return (bat (script: 'set OMDEV=C:\\OMDev && set OMDEV_MSYS=C:\\OMDev\\tools\\msys64 && set MSYSTEM=UCRT64 && set MSYS2_PATH_TYPE=inherit && %OMDEV_MSYS%\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
+  return (bat (script: 'set OMDEV=C:\\OMDev && set MSYSTEM=UCRT64 && set MSYS2_PATH_TYPE=inherit && %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
   } else {
   return (sh (script: 'build/bin/omc --version | grep -o "v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*"', returnStdout: true)).replaceAll("\\s","")
   }
