@@ -380,9 +380,18 @@ bool Parameter::isParameter() const
 void Parameter::updateNameLabel()
 {
   if (MainWindow::instance()->isNewApi()) {
-    mpNameLabel->setText(mpModelInstanceElement->getName() + (mShowStartAndFixed ? ".start" : ""));
+    mName = mpModelInstanceElement->getName();
+    QString name = mName;
+    if (mpModelInstanceElement->getDimensions().isArray()) {
+      name.append("[" % mpModelInstanceElement->getDimensions().getTypedDimensionsString() % "]");
+    }
+    if (mShowStartAndFixed) {
+      name.append(".start");
+    }
+    mpNameLabel->setText(name);
   } else {
-    mpNameLabel->setText(mpElement->getName() + (mShowStartAttribute ? ".start" : ""));
+    mName = mpElement->getName();
+    mpNameLabel->setText(mName + (mShowStartAttribute ? ".start" : ""));
   }
 }
 
@@ -1771,10 +1780,7 @@ void ElementParameters::updateElementParameters()
       continue;
     }
     ElementModifier elementModifier;
-    elementModifier.mKey = pParameter->getNameLabel()->text();
-    if (pParameter->isShowStartAndFixed()) {
-      elementModifier.mKey.replace(".start", "");
-    }
+    elementModifier.mKey = pParameter->getName();
     QString elementModifierValue = pParameter->getValue();
     elementModifier.mIsReplaceable = (pParameter->getValueType() == Parameter::ReplaceableClass || pParameter->getValueType() == Parameter::ReplaceableComponent);
     elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
