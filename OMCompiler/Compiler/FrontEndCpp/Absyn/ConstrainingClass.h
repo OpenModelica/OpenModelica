@@ -5,6 +5,8 @@
 
 #include "MetaModelica.h"
 #include "Path.h"
+#include "Modifier.h"
+#include "Comment.h"
 
 namespace OpenModelica::Absyn
 {
@@ -13,10 +15,14 @@ namespace OpenModelica::Absyn
     public:
       ConstrainingClass(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       const Path& path() const noexcept { return _path; }
 
     private:
       Path _path;
+      Modifier _modifier;
+      Comment _comment;
   };
 
   std::ostream& operator<< (std::ostream &os, const ConstrainingClass &cc) noexcept;

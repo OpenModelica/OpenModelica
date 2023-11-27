@@ -15,6 +15,8 @@ namespace OpenModelica::Absyn
     public:
       Extends(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept override;
+
       std::unique_ptr<Element::Base> clone() const noexcept override;
       void print(std::ostream &os, Each each) const noexcept override;
 

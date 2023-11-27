@@ -8,6 +8,9 @@
 
 #include "MetaModelica.h"
 
+extern record_description SCode_Replaceable_REPLACEABLE__desc;
+extern record_description SCode_Replaceable_NOT__REPLACEABLE__desc;
+
 namespace OpenModelica
 {
   class Visibility
@@ -23,6 +26,8 @@ namespace OpenModelica
       Visibility() = default;
       constexpr Visibility(Value value) noexcept : _value{value} {}
       explicit Visibility(MetaModelica::Record value) noexcept;
+
+      MetaModelica::Value toSCode() const noexcept;
 
       Value value() const noexcept { return _value; }
 
@@ -57,6 +62,8 @@ namespace OpenModelica
       constexpr Variability(Value value) noexcept : _value{value} {}
       explicit Variability(MetaModelica::Record value) noexcept;
 
+      MetaModelica::Value toSCode() const noexcept;
+
       Value value() const noexcept { return _value; }
       Variability effective() const noexcept;
 
@@ -81,6 +88,8 @@ namespace OpenModelica
       constexpr explicit Final(bool value) noexcept : _value{value} {}
       explicit Final(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       bool isFinal() const noexcept { return _value; }
       explicit operator bool() const noexcept { return _value; }
 
@@ -97,6 +106,8 @@ namespace OpenModelica
       Each() = default;
       constexpr explicit Each(bool value) noexcept : _value{value} {}
       explicit Each(MetaModelica::Record value);
+
+      MetaModelica::Value toSCode() const noexcept;
 
       bool isEach() const noexcept { return _value; }
       explicit operator bool() const noexcept { return _value; }
@@ -124,6 +135,8 @@ namespace OpenModelica
       constexpr InnerOuter(Value value) noexcept : _value{value} {}
       explicit InnerOuter(MetaModelica::Record value);
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
       bool isInner() const noexcept { return _value & Inner; }
       bool isOuter() const noexcept { return _value & Outer; }
       bool isOnlyInner() const noexcept { return _value == Inner; }
@@ -149,6 +162,8 @@ namespace OpenModelica
       constexpr explicit Redeclare(bool value) noexcept : _value{value} {}
       explicit Redeclare(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       bool isRedeclare() const noexcept { return _value; }
       explicit operator bool() const noexcept { return _value; }
 
@@ -162,12 +177,15 @@ namespace OpenModelica
   template<typename ConstrainingClass>
   class Replaceable
   {
+      static constexpr int REPLACEABLE = 0;
+      static constexpr int NOT_REPLACEABLE = 1;
+
     public:
       Replaceable() = default;
       constexpr explicit Replaceable(bool value) : _value{value} {}
 
       explicit Replaceable(MetaModelica::Record value)
-        : _value{value.index() == 0},
+        : _value{value.index() == REPLACEABLE},
           _cc{_value ? value[0].mapPointer<ConstrainingClass>() : nullptr}
       {
 
@@ -194,6 +212,17 @@ namespace OpenModelica
       {
         std::swap(_value, other._value);
         std::swap(_cc, other._cc);
+      }
+
+      MetaModelica::Value toSCode() const noexcept
+      {
+        if (isReplaceable()) {
+          return MetaModelica::Record(REPLACEABLE, SCode_Replaceable_REPLACEABLE__desc, {
+            _cc ? MetaModelica::Option(_cc->toSCode()) : MetaModelica::Option()
+          });
+        }
+
+        return MetaModelica::Record(NOT_REPLACEABLE, SCode_Replaceable_NOT__REPLACEABLE__desc);
       }
 
       bool isReplaceable() const noexcept { return _value; }
@@ -223,6 +252,8 @@ namespace OpenModelica
       constexpr explicit Encapsulated(bool value) noexcept : _value{value} {}
       explicit Encapsulated(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       bool isEncapsulated() const noexcept { return _value; }
       explicit operator bool() const noexcept { return _value; }
 
@@ -239,6 +270,8 @@ namespace OpenModelica
       Partial() = default;
       constexpr explicit Partial(bool value) : _value{value} {}
       explicit Partial(MetaModelica::Record value);
+
+      MetaModelica::Value toSCode() const noexcept;
 
       bool isPartial() const noexcept { return _value; }
       explicit operator bool() const noexcept { return _value; }
@@ -264,6 +297,8 @@ namespace OpenModelica
       Purity() = default;
       constexpr Purity(Value value) noexcept : _value{value} {}
       explicit Purity(MetaModelica::Record value);
+
+      MetaModelica::Value toAbsyn() const noexcept;
 
       Value value() const noexcept { return _value; }
 
@@ -298,6 +333,8 @@ namespace OpenModelica
       ConnectorType() = default;
       constexpr ConnectorType(Value value) noexcept : _value{value} {}
       explicit ConnectorType(MetaModelica::Record value);
+
+      MetaModelica::Value toSCode() const noexcept;
 
       bool isPotential() const noexcept;
       bool isFlow() const noexcept;
@@ -335,6 +372,8 @@ namespace OpenModelica
       constexpr Parallelism(Value value) noexcept : _value{value} {}
       explicit Parallelism(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       Value value() const noexcept { return _value; }
 
       std::string_view str() const noexcept;
@@ -362,6 +401,8 @@ namespace OpenModelica
       constexpr Direction(Value value) noexcept : _value{value} {}
       explicit Direction(MetaModelica::Record value);
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
       Value value() const noexcept { return _value; }
 
       static std::optional<Direction> merge(Direction outer, Direction inner, bool allowSame = false);
@@ -383,6 +424,8 @@ namespace OpenModelica
       constexpr explicit Field(bool value) : _value{value} {}
       explicit Field(MetaModelica::Record value);
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
       bool isField() const noexcept { return _value; }
       explicit operator bool() const noexcept { return _value; }
 
@@ -392,7 +435,6 @@ namespace OpenModelica
     private:
       bool _value = false;
   };
-
 }
 
 #endif /* PREFIXES_H */

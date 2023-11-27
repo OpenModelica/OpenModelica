@@ -27,6 +27,8 @@ namespace OpenModelica::Absyn
 public:
           virtual ~Base() = default;
 
+          virtual MetaModelica::Value toSCode() const noexcept = 0;
+
           virtual bool isFinal() const noexcept = 0;
           virtual bool isEach() const noexcept = 0;
 
@@ -48,6 +50,8 @@ public:
 
       Modifier& operator= (const Modifier &other) noexcept;
       Modifier& operator= (Modifier &&other) = default;
+
+      MetaModelica::Value toSCode() const noexcept;
 
       bool isEmpty() const noexcept;
       bool isFinal() const noexcept;
@@ -72,6 +76,8 @@ public:
       BindingModifier(Final finalPrefix, Each eachPrefix, std::vector<Modifier::SubMod> subMods,
           std::optional<Expression> binding, const SourceInfo &info) noexcept;
 
+      MetaModelica::Value toSCode() const noexcept override;
+
       bool isFinal() const noexcept override { return _final.isFinal(); }
       bool isEach() const noexcept override { return _each.isEach(); }
 
@@ -94,6 +100,8 @@ public:
     public:
       RedeclareModifier(MetaModelica::Record value);
       RedeclareModifier(Final isFinal, Each isEach, Element element) noexcept;
+
+      MetaModelica::Value toSCode() const noexcept override;
 
       bool isFinal() const noexcept override { return _final.isFinal(); }
       bool isEach() const noexcept override { return _each.isEach(); }

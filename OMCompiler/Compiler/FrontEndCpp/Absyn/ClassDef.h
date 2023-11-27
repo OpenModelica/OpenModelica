@@ -28,6 +28,7 @@ namespace OpenModelica::Absyn
           virtual ~Base() = default;
 
           virtual std::unique_ptr<Base> clone() const noexcept = 0;
+          virtual MetaModelica::Value toSCode() const noexcept = 0;
           virtual void print(std::ostream &os, const Class &parent) const noexcept = 0;
           virtual void printBody(std::ostream &os) const noexcept = 0;
       };
@@ -39,6 +40,8 @@ namespace OpenModelica::Absyn
 
       ClassDef& operator= (const ClassDef &other) noexcept;
       ClassDef& operator= (ClassDef &&other) = default;
+
+      MetaModelica::Value toSCode() const noexcept;
 
       void print(std::ostream &os, const Class &parent) const noexcept;
       void printBody(std::ostream &os) const noexcept;
@@ -60,6 +63,7 @@ namespace OpenModelica::Absyn
       void swap(Parts &parts) noexcept;
 
       std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -80,6 +84,7 @@ namespace OpenModelica::Absyn
       ClassExtends(MetaModelica::Record value);
 
       std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -94,6 +99,7 @@ namespace OpenModelica::Absyn
       Derived(MetaModelica::Record value);
 
       std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -112,6 +118,7 @@ namespace OpenModelica::Absyn
       Enumeration(MetaModelica::Record value);
 
       std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -125,6 +132,7 @@ namespace OpenModelica::Absyn
       Overload(MetaModelica::Record value);
 
       std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -138,6 +146,7 @@ namespace OpenModelica::Absyn
       PartialDerivative(MetaModelica::Record value);
 
       std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 

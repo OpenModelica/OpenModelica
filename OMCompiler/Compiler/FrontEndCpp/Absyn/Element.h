@@ -13,11 +13,20 @@ namespace OpenModelica::Absyn
   class Element
   {
     public:
+      static constexpr int IMPORT = 0;
+      static constexpr int EXTENDS = 1;
+      static constexpr int CLASS = 2;
+      static constexpr int COMPONENT = 3;
+      static constexpr int DEFINEUNIT = 4;
+
+    public:
       class Base
       {
         public:
           Base(SourceInfo info);
           virtual ~Base() = default;
+
+          virtual MetaModelica::Value toSCode() const noexcept = 0;
 
           const SourceInfo& info() const noexcept { return _info; }
 
@@ -35,6 +44,9 @@ namespace OpenModelica::Absyn
 
       Element& operator= (const Element &other) noexcept;
       Element& operator= (Element &&other) = default;
+
+      MetaModelica::Value toSCode() const noexcept;
+      static MetaModelica::Value toSCodeList(const std::vector<Element> &elements) noexcept;
 
       const SourceInfo& info() const noexcept { return _impl->info(); }
 

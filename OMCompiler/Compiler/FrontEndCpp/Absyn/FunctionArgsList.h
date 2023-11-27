@@ -23,6 +23,7 @@ namespace OpenModelica::Absyn
       FunctionArgsList(MetaModelica::Record value);
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:

@@ -11,10 +11,30 @@ constexpr int FULLYQUALIFIED = 2;
 constexpr int QUALIFIED = 0;
 constexpr int IDENT = 1;
 
+extern record_description Absyn_Path_FULLYQUALIFIED__desc;
+extern record_description Absyn_Path_QUALIFIED__desc;
+extern record_description Absyn_Path_IDENT__desc;
+
 Path::Path(std::vector<std::string> path, bool fullyQualified)
   : _names{std::move(path)}, _fullyQualified{fullyQualified}
 {
-  assert(!path.empty());
+  assert(!_names.empty());
+}
+
+Path::Path(std::string_view path)
+{
+  if (!path.empty() && path[0] == '.') {
+    _fullyQualified = true;
+    path.remove_prefix(1);
+  }
+
+  while (!path.empty()) {
+    auto pos = path.find('.', 0);
+    _names.emplace_back(path.substr(0, pos));
+    path.remove_prefix(pos == path.npos ? path.size() : pos + 1);
+  }
+
+  assert(!_names.empty());
 }
 
 Path::Path(MetaModelica::Record value)
@@ -34,6 +54,21 @@ Path::Path(MetaModelica::Record value)
   _names.push_back(v[0].toString());
 }
 
+MetaModelica::Value Path::toAbsyn() const noexcept
+{
+  MetaModelica::Value res = MetaModelica::Record(IDENT, Absyn_Path_IDENT__desc, {MetaModelica::Value(_names.back())});
+
+  for (auto it = ++_names.rbegin(); it != _names.rend(); ++it) {
+    res = MetaModelica::Record(QUALIFIED, Absyn_Path_QUALIFIED__desc, {MetaModelica::Value(*it), res});
+  }
+
+  if (_fullyQualified) {
+    res = MetaModelica::Record(FULLYQUALIFIED, Absyn_Path_FULLYQUALIFIED__desc, {res});
+  }
+
+  return res;
+}
+
 void Path::push_back(std::string name) noexcept
 {
   _names.emplace_back(std::move(name));
@@ -43,6 +78,11 @@ void Path::pop_back() noexcept
 {
   assert(_names.size() > 1);
   _names.pop_back();
+}
+
+size_t Path::size() const noexcept
+{
+  return _names.size();
 }
 
 bool Path::isIdent() const noexcept

@@ -5,6 +5,9 @@
 #include "Util.h"
 #include "ImportPath.h"
 
+using namespace OpenModelica;
+using namespace OpenModelica::Absyn;
+
 constexpr int NAMED_IMPORT = 0;
 constexpr int QUAL_IMPORT = 1;
 constexpr int UNQUAL_IMPORT = 2;
@@ -12,8 +15,12 @@ constexpr int GROUP_IMPORT = 3;
 
 constexpr int GROUP_IMPORT_NAME = 0;
 
-using namespace OpenModelica;
-using namespace OpenModelica::Absyn;
+extern record_description Absyn_Import_NAMED__IMPORT__desc;
+extern record_description Absyn_Import_QUAL__IMPORT__desc;
+extern record_description Absyn_Import_UNQUAL__IMPORT__desc;
+extern record_description Absyn_Import_GROUP__IMPORT__desc;
+
+extern record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc;
 
 std::pair<std::optional<Path>, std::vector<std::string>> splitPath(MetaModelica::Value value)
 {
@@ -63,6 +70,49 @@ ImportPath::ImportPath(MetaModelica::Record value)
       }
       break;
   }
+}
+
+MetaModelica::Value ImportPath::toAbsyn() const noexcept
+{
+  if (!_shortName.empty()) {
+    return MetaModelica::Record(NAMED_IMPORT, Absyn_Import_NAMED__IMPORT__desc, {
+      MetaModelica::Value(_shortName),
+      fullPath().toAbsyn()
+    });
+  }
+
+  switch (_defNames.size()) {
+    case 0:
+      return MetaModelica::Record(UNQUAL_IMPORT, Absyn_Import_UNQUAL__IMPORT__desc, {
+        _pkgName->toAbsyn()
+      });
+
+    case 1:
+      return MetaModelica::Record(QUAL_IMPORT, Absyn_Import_QUAL__IMPORT__desc, {
+        fullPath().toAbsyn()
+      });
+
+    default:
+      return MetaModelica::Record(GROUP_IMPORT, Absyn_Import_GROUP__IMPORT__desc, {
+        _pkgName->toAbsyn(),
+        MetaModelica::List(_defNames, [](const auto &n) {
+          return MetaModelica::Record(GROUP_IMPORT_NAME, Absyn_GroupImport_GROUP__IMPORT__NAME__desc, {
+            MetaModelica::Value(n)
+          });
+        })
+      });
+  }
+}
+
+Path ImportPath::fullPath() const noexcept
+{
+  auto p = _pkgName ? *_pkgName : Path(_defNames.front());
+
+  if (_defNames.size() == 1 && _pkgName) {
+    p.push_back(_defNames.front());
+  }
+
+  return p;
 }
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream &os, const ImportPath &path)

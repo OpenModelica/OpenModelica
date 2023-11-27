@@ -8,6 +8,10 @@
 #include <optional>
 #include <functional>
 #include <memory>
+#include <initializer_list>
+#include <iterator>
+
+struct record_description;
 
 namespace OpenModelica
 {
@@ -38,7 +42,13 @@ namespace OpenModelica
         class ArrowProxy;
 
       public:
-        Value(void *value) noexcept;
+        explicit Value(void *value) noexcept;
+        explicit Value(int64_t value) noexcept;
+        explicit Value(int value) noexcept;
+        explicit Value(double value) noexcept;
+        explicit Value(bool value) noexcept;
+        explicit Value(std::string_view value) noexcept;
+        explicit Value(const char *value) noexcept;
 
         Type getType() const noexcept;
         bool isInteger() const noexcept;
@@ -71,6 +81,9 @@ namespace OpenModelica
         // Converts an Array or List value to an std::vector<T> using T(value)
         // for each value in the array/list.
         template<typename T> std::vector<T> mapVector() const;
+        // Converts an Array or List value to an std::vector<T> using f(value)
+        // for each value in the array/list.
+        template<typename T, typename ConvertFunc> std::vector<T> mapVector(ConvertFunc f) const;
 
         // Converts the value using the corresponding Value::toX method for T.
         template<typename T> T to() const;
@@ -93,7 +106,7 @@ namespace OpenModelica
     class Value::ArrowProxy
     {
       public:
-        ArrowProxy(void *value) noexcept : _value{value} {}
+        explicit ArrowProxy(void *value) noexcept : _value{value} {}
         const Value* operator->() const noexcept { return &_value; }
 
       private:
@@ -105,14 +118,46 @@ namespace OpenModelica
     class Option
     {
       public:
-        Option(void *value) noexcept;
+        Option() noexcept;
+        explicit Option(Value value) noexcept;
+        explicit Option(void *value) noexcept;
 
+        template<typename T>
+        explicit Option(const std::optional<T> &value) noexcept
+          : Option(value ? Value{*value} : Value{static_cast<void*>(nullptr)})
+        {
+
+        }
+
+        template<typename T, typename ConvertFunc>
+        Option(const std::optional<T> &value, ConvertFunc f) noexcept
+          : Option(value ? f(*value) : Value{static_cast<void*>(nullptr)})
+        {
+
+        }
+
+        template<typename T>
+        explicit Option(T *value) noexcept
+          : Option(value ? Value{*value} : Value{static_cast<void*>(nullptr)})
+        {
+
+        }
+
+        template<typename T, typename ConvertFunc>
+        Option(T *value, ConvertFunc f) noexcept
+          : Option(value ? f(*value) : Value{static_cast<void*>(nullptr)})
+        {
+
+        }
+
+        operator Value() const noexcept { return Value(_value); };
         Value operator*() const noexcept;
         Value::ArrowProxy operator->() const noexcept;
         explicit operator bool() const noexcept;
 
         bool hasValue() const noexcept;
         Value value() const;
+        void* data() const noexcept;
 
       private:
         void *_value;
@@ -132,7 +177,7 @@ namespace OpenModelica
             using pointer           = value_type*;
             using reference         = value_type&;
 
-            ConstIterator(void *value) noexcept;
+            explicit ConstIterator(void *value) noexcept;
 
             value_type operator*() const noexcept;
             Value::ArrowProxy operator->() const noexcept;
@@ -147,7 +192,58 @@ namespace OpenModelica
         };
 
       public:
-        List(void *value) noexcept;
+        List() noexcept;
+        explicit List(void *value) noexcept;
+
+        // Constructs a List from a container of a type convertible to Value.
+        template<typename Container>
+        explicit List(const Container &values) noexcept
+          : List()
+        {
+          for (auto it = values.rbegin(); it != values.rend(); ++it) {
+            cons(Value{*it});
+          }
+        }
+
+        // Constructs a List from an iterator range of a type convertible to Value.
+        template<typename BidirIt>
+        List(BidirIt first, BidirIt last) noexcept
+          : List()
+        {
+          auto it = std::make_reverse_iterator(last);
+          auto end = std::make_reverse_iterator(first);
+
+          for (; it != end; ++it) {
+            cons(Value{*it});
+          }
+        }
+
+        // Constructs a List from a container using the given conversion
+        // function to convert each element to a Value.
+        template<typename Container, typename ConvertFunc>
+        List(const Container &values, ConvertFunc f) noexcept
+          : List()
+        {
+          for (auto it = values.rbegin(); it != values.rend(); ++it) {
+            cons(f(*it));
+          }
+        }
+
+        // Constructs a List from an iterator range using the given conversion
+        // function to convert each element to a Value.
+        template<typename BidirIt, typename ConvertFunc>
+        List(BidirIt first, BidirIt last, ConvertFunc f) noexcept
+          : List()
+        {
+          auto it = std::make_reverse_iterator(last);
+          auto end = std::make_reverse_iterator(first);
+
+          for (; it != end; ++it) {
+            cons(f(*it));
+          }
+        }
+
+        operator Value() const noexcept { return Value{_value}; }
 
         Value front() const noexcept;
         List rest() const noexcept;
@@ -158,11 +254,24 @@ namespace OpenModelica
         bool empty() const noexcept;
         size_t size() const noexcept;
 
+        void cons(Value v) noexcept;
+        void* data() const noexcept;
+
         template<typename T>
         std::vector<T> mapVector() const
         {
           std::vector<T> v;
-          for (const auto &e: *this) v.emplace_back(e);
+          v.reserve(size());
+          for (const auto e: *this) v.emplace_back(e);
+          return v;
+        }
+
+        template<typename T, typename ConvertFunc>
+        std::vector<T> mapVector(ConvertFunc f) const
+        {
+          std::vector<T> v;
+          v.reserve(size());
+          for (const auto e: *this) v.emplace_back(f(e));
           return v;
         }
 
@@ -170,7 +279,8 @@ namespace OpenModelica
         std::vector<T> toVector() const
         {
           std::vector<T> v;
-          for (const auto &e: *this) v.emplace_back(e.to<T>());
+          v.reserve(size());
+          for (const auto e: *this) v.emplace_back(e.to<T>());
           return v;
         }
       private:
@@ -211,7 +321,7 @@ namespace OpenModelica
     class Array
     {
       public:
-        Array(void *value) noexcept;
+        explicit Array(void *value) noexcept;
 
         Value front() const noexcept;
         Value back() const noexcept;
@@ -224,12 +334,23 @@ namespace OpenModelica
 
         Value operator[](size_t index) const noexcept;
         Value at(size_t index) const;
+        void* data() const noexcept;
 
         template<typename T>
         std::vector<T> mapVector() const
         {
           std::vector<T> v;
-          for (const auto &e: *this) v.emplace_back(e);
+          v.reserve(size());
+          for (const auto e: *this) v.emplace_back(e);
+          return v;
+        }
+
+        template<typename T, typename ConvertFunc>
+        std::vector<T> mapVector(ConvertFunc f) const
+        {
+          std::vector<T> v;
+          v.reserve(size());
+          for (const auto e: *this) v.emplace_back(f(e));
           return v;
         }
 
@@ -237,7 +358,8 @@ namespace OpenModelica
         std::vector<T> toVector() const
         {
           std::vector<T> v;
-          for (const auto &e: *this) v.emplace_back(e.to<T>());
+          v.reserve(size());
+          for (const auto e: *this) v.emplace_back(e.to<T>());
           return v;
         }
       private:
@@ -249,7 +371,10 @@ namespace OpenModelica
     class Tuple
     {
       public:
-        Tuple(void *value) noexcept;
+        explicit Tuple(void *value) noexcept;
+        explicit Tuple(std::initializer_list<Value> lst) noexcept;
+
+        operator Value() const noexcept { return Value{_value}; }
 
         IndexedConstIterator begin() const noexcept;
         IndexedConstIterator cbegin() const noexcept;
@@ -259,6 +384,7 @@ namespace OpenModelica
 
         Value operator[](size_t index) const noexcept;
         Value at(size_t index) const;
+        void* data() const noexcept;
 
       private:
         void *_value;
@@ -269,8 +395,11 @@ namespace OpenModelica
     class Record
     {
       public:
-        Record(void *value) noexcept;
+        explicit Record(void *value) noexcept;
         Record(Value value);
+        Record(int index, record_description &desc, std::initializer_list<Value> values = {});
+
+        operator Value() const noexcept { return Value{_value}; }
 
         // Returns the full name of the record (e.g. SCode.Element.CLASS).
         std::string fullName() const noexcept;
@@ -292,6 +421,7 @@ namespace OpenModelica
         Value at(size_t index) const;
         IndexedConstIterator find(std::string_view name) const noexcept;
         bool contains(std::string_view name) const noexcept;
+        void* data() const noexcept;
 
       private:
         void *_value;
@@ -321,6 +451,12 @@ namespace OpenModelica
     std::vector<T> Value::mapVector() const
     {
       return isList() ? toList().mapVector<T>() : toArray().mapVector<T>();
+    }
+
+    template<typename T, typename ConvertFunc>
+    std::vector<T> Value::mapVector(ConvertFunc f) const
+    {
+      return isList() ? toList().mapVector<T>(f) : toArray().mapVector<T>(f);
     }
 
     template<typename T>

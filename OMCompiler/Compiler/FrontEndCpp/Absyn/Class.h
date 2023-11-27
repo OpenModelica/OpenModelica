@@ -17,6 +17,8 @@ namespace OpenModelica::Absyn
     public:
       Class(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept override;
+
       const std::string& name() const noexcept;
       const Comment& comment() const noexcept;
 

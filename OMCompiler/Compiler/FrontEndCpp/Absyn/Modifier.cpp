@@ -5,10 +5,18 @@
 #include "Element.h"
 #include "Modifier.h"
 
+using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
 constexpr int MOD = 0;
 constexpr int REDECL = 1;
+constexpr int NOMOD = 2;
+
+extern record_description SCode_Mod_MOD__desc;
+extern record_description SCode_Mod_REDECL__desc;
+extern record_description SCode_Mod_NOMOD__desc;
+
+extern record_description SCode_SubMod_NAMEMOD__desc;
 
 std::unique_ptr<Modifier::Base> fromMM(OpenModelica::MetaModelica::Record value)
 {
@@ -51,6 +59,12 @@ Modifier& Modifier::operator= (const Modifier &other) noexcept
   return *this;
 }
 
+MetaModelica::Value Modifier::toSCode() const noexcept
+{
+  if (_value) return _value->toSCode();
+  return MetaModelica::Record(NOMOD, SCode_Mod_NOMOD__desc);
+}
+
 bool Modifier::isEmpty() const noexcept
 {
   return _value == nullptr;
@@ -91,13 +105,13 @@ void Modifier::print(std::ostream &os, std::string_view name) const noexcept
 BindingModifier::BindingModifier(MetaModelica::Record value)
   : _final{value[0]},
     _each{value[1]},
+    _subMods{value[2].mapVector<Modifier::SubMod>([](MetaModelica::Record v) {
+      return Modifier::SubMod{v[0].toString(), v[1]};
+    })},
     _binding{value[3].mapOptional<Expression>()},
     _info{value[4]}
 {
-  for (auto e: value[2].toList()) {
-    auto v = e.toRecord();
-    _subMods.emplace_back(v[0].toString(), v[1]);
-  }
+
 }
 
 BindingModifier::BindingModifier(Final finalPrefix, Each eachPrefix, std::vector<Modifier::SubMod> subMods,
@@ -105,6 +119,22 @@ BindingModifier::BindingModifier(Final finalPrefix, Each eachPrefix, std::vector
   : _final(finalPrefix), _each(eachPrefix), _subMods(std::move(subMods)),
     _binding(std::move(binding)), _info(info)
 {
+}
+
+MetaModelica::Value BindingModifier::toSCode() const noexcept
+{
+  return MetaModelica::Record(MOD, SCode_Mod_MOD__desc, {
+    _final.toSCode(),
+    _each.toSCode(),
+    MetaModelica::List(_subMods, [](const auto &m) {
+      return MetaModelica::Record(0, SCode_SubMod_NAMEMOD__desc, {
+        MetaModelica::Value(m.first),
+        m.second.toSCode()
+      });
+    }),
+    MetaModelica::Option(_binding, [](const auto &b) { return b.toAbsyn(); }),
+    _info
+  });
 }
 
 const Modifier::SubMod* BindingModifier::lookupSubMod(std::string_view name) const noexcept
@@ -158,6 +188,15 @@ RedeclareModifier::RedeclareModifier(Final isFinal, Each isEach, Element element
   : _final(isFinal), _each(isEach), _element(std::move(element))
 {
 
+}
+
+MetaModelica::Value RedeclareModifier::toSCode() const noexcept
+{
+  return MetaModelica::Record(REDECL, SCode_Mod_REDECL__desc, {
+    _final.toSCode(),
+    _each.toSCode(),
+    _element.toSCode()
+  });
 }
 
 std::unique_ptr<Modifier::Base> RedeclareModifier::clone() const noexcept

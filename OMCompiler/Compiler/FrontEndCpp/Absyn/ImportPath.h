@@ -16,9 +16,12 @@ namespace OpenModelica::Absyn
     public:
       ImportPath(MetaModelica::Record value);
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
       const std::optional<Path>& packageName() const noexcept { return _pkgName; }
       const std::vector<std::string>& definitionNames() const noexcept { return _defNames; }
       const std::string& shortName() const noexcept { return _shortName; }
+      Path fullPath() const noexcept;
 
     private:
       std::optional<Path> _pkgName;

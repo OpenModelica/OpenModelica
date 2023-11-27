@@ -65,18 +65,22 @@ namespace OpenModelica
       static Restriction OperatorFunction() noexcept  { return {Prefix::Operator, Kind::Function}; }
       static Restriction ExternalObject() noexcept    { return Kind::ExternalObject; }
 
-      bool is(Restriction::Prefix prefix, Restriction::Kind kind) const noexcept;
-      bool is(Restriction::Kind kind) const noexcept;
-      bool is(Restriction::Prefix prefix) const noexcept;
+      MetaModelica::Value toSCode() const noexcept;
+
+      Kind kind() const noexcept;
+      Purity purity() const noexcept;
+      bool is(Prefix prefix, Kind kind) const noexcept;
+      bool is(Kind kind) const noexcept;
+      bool is(Prefix prefix) const noexcept;
 
       std::string str() const noexcept;
 
     private:
       // Private so that users can't create their own combinations.
       Restriction() = default;
-      Restriction(Restriction::Prefix prefix, Restriction::Kind kind) noexcept;
-      Restriction(Restriction::Kind kind) noexcept;
-      Restriction(Restriction::Prefix prefix) noexcept;
+      Restriction(Prefix prefix, Kind kind) noexcept;
+      Restriction(Kind kind) noexcept;
+      Restriction(Prefix prefix) noexcept;
 
     private:
       int _value = 0;

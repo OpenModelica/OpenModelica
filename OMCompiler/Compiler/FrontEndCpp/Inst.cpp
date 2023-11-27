@@ -1,18 +1,57 @@
 #include <iostream>
+#include <chrono>
 
 #include "MetaModelica.h"
 #include "Absyn/Element.h"
 #include "Inst.h"
 
-#include "Absyn/Expression.h"
-
 using namespace OpenModelica;
 
-void Inst_test(void *scode)
+class Timer
+{
+  using clock = std::chrono::steady_clock;
+
+  public:
+    Timer(std::string name)
+      : _start{clock::now()},
+        _name{std::move(name)}
+    {
+    }
+
+    ~Timer()
+    {
+      auto end = clock::now();
+      auto diff = std::chrono::duration<double>(end - _start);
+      auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
+      std::cout << _name << ": " << ms << "ms" << std::endl;
+    }
+
+  private:
+    clock::time_point _start;
+    std::string _name;
+};
+
+void* Inst_test(void *scode)
 {
   MetaModelica::Value value(scode);
+  std::vector<Absyn::Element> elements;
 
-  for (auto e: value.toList()) {
-    std::cout << Absyn::Element{e} << ';' << std::endl;
+  {
+    Timer t{"Creating elements"};
+    for (auto e: value.toList()) {
+      elements.emplace_back(e);
+      //std::cout << elements.back() << ';' << std::endl;
+    }
   }
+
+  MetaModelica::List lst;
+
+  {
+    Timer t{"Generating SCode"};
+    for (auto it = elements.rbegin(); it != elements.rend(); ++it) {
+      lst.cons(it->toSCode());
+    }
+  }
+
+  return lst.data();
 }

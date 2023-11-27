@@ -11,6 +11,8 @@ namespace OpenModelica::Absyn
     public:
       Algorithm(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       const std::vector<Statement>& statements() const noexcept { return _statements; }
 
     private:

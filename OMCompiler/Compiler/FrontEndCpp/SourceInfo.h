@@ -15,6 +15,8 @@ namespace OpenModelica
       SourceInfo(std::string filename, bool readonly, int64_t line_start, int64_t column_start,
           int64_t line_end, int64_t column_end, double modified) noexcept;
 
+      operator MetaModelica::Value() const noexcept;
+
       static const SourceInfo& dummyInfo() noexcept;
 
       const std::string& filename() const noexcept { return _filename; }

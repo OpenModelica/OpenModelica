@@ -14,6 +14,15 @@ constexpr int ENUMERATION = 3;
 constexpr int OVERLOAD = 4;
 constexpr int PDER = 5;
 
+extern record_description SCode_ClassDef_PARTS__desc;
+extern record_description SCode_ClassDef_CLASS__EXTENDS__desc;
+extern record_description SCode_ClassDef_DERIVED__desc;
+extern record_description SCode_ClassDef_ENUMERATION__desc;
+extern record_description SCode_ClassDef_OVERLOAD__desc;
+extern record_description SCode_ClassDef_PDER__desc;
+
+extern record_description SCode_Enum_ENUM__desc;
+
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
@@ -47,6 +56,11 @@ ClassDef& ClassDef::operator= (const ClassDef &other) noexcept
 {
   _impl = other._impl->clone();
   return *this;
+}
+
+MetaModelica::Value ClassDef::toSCode() const noexcept
+{
+  return _impl->toSCode();
 }
 
 void ClassDef::print(std::ostream &os, const Class &parent) const noexcept
@@ -104,6 +118,20 @@ std::unique_ptr<ClassDef::Base> Parts::clone() const noexcept
   return std::make_unique<Parts>(*this);
 }
 
+MetaModelica::Value Parts::toSCode() const noexcept
+{
+  return MetaModelica::Record(PARTS, SCode_ClassDef_PARTS__desc, {
+    Element::toSCodeList(_elements),
+    Equation::toSCodeList(_equations),
+    Equation::toSCodeList(_initialEquations),
+    MetaModelica::List(_algorithms, [](const auto &alg) { return alg.toSCode(); }),
+    MetaModelica::List(_initialAlgorithms, [](const auto &alg) { return alg.toSCode(); }),
+    MetaModelica::List(),
+    MetaModelica::List(),
+    MetaModelica::Option(_externalDecl.get(), [](const auto &decl) { return decl.toSCode(); })
+  });
+}
+
 void Parts::print(std::ostream &os, const Class &parent) const noexcept
 {
   os << parent.name();
@@ -146,6 +174,14 @@ std::unique_ptr<ClassDef::Base> ClassExtends::clone() const noexcept
   return std::make_unique<ClassExtends>(*this);
 }
 
+MetaModelica::Value ClassExtends::toSCode() const noexcept
+{
+  return MetaModelica::Record(CLASS_EXTENDS, SCode_ClassDef_CLASS__EXTENDS__desc, {
+    _modifier.toSCode(),
+    _composition.toSCode()
+  });
+}
+
 void ClassExtends::print(std::ostream &os, const Class &parent) const noexcept
 {
   os << "extends " << parent.name() << _modifier;
@@ -174,6 +210,15 @@ std::unique_ptr<ClassDef::Base> Derived::clone() const noexcept
   return std::make_unique<Derived>(*this);
 }
 
+MetaModelica::Value Derived::toSCode() const noexcept
+{
+  return MetaModelica::Record(DERIVED, SCode_ClassDef_DERIVED__desc, {
+    _typeSpec.toAbsyn(),
+    _modifier.toSCode(),
+    _attributes.toSCode()
+  });
+}
+
 void Derived::print(std::ostream &os, const Class &parent) const noexcept
 {
   os << parent.name();
@@ -197,6 +242,18 @@ Enumeration::Enumeration(MetaModelica::Record value)
 std::unique_ptr<ClassDef::Base> Enumeration::clone() const noexcept
 {
   return std::make_unique<Enumeration>(*this);
+}
+
+MetaModelica::Value Enumeration::toSCode() const noexcept
+{
+  return MetaModelica::Record(ENUMERATION, SCode_ClassDef_ENUMERATION__desc, {
+    MetaModelica::List(_literals, [](const auto &lit) {
+      return MetaModelica::Record(0, SCode_Enum_ENUM__desc, {
+        MetaModelica::Value(lit.first),
+        lit.second.toSCode()
+      });
+    })
+  });
 }
 
 namespace OpenModelica::Absyn
@@ -238,6 +295,13 @@ std::unique_ptr<ClassDef::Base> Overload::clone() const noexcept
   return std::make_unique<Overload>(*this);
 }
 
+MetaModelica::Value Overload::toSCode() const noexcept
+{
+  return MetaModelica::Record(OVERLOAD, SCode_ClassDef_OVERLOAD__desc, {
+    MetaModelica::List(_paths, [](const Path &path) { return path.toAbsyn(); })
+  });
+}
+
 void Overload::print(std::ostream &os, const Class &parent) const noexcept
 {
   os << parent.name();
@@ -259,6 +323,14 @@ PartialDerivative::PartialDerivative(MetaModelica::Record value)
 std::unique_ptr<ClassDef::Base> PartialDerivative::clone() const noexcept
 {
   return std::make_unique<PartialDerivative>(*this);
+}
+
+MetaModelica::Value PartialDerivative::toSCode() const noexcept
+{
+  return MetaModelica::Record(PDER, SCode_ClassDef_PDER__desc, {
+    _functionPath.toAbsyn(),
+    MetaModelica::List(_derivedVariables)
+  });
 }
 
 void PartialDerivative::print(std::ostream &os, const Class &parent) const noexcept

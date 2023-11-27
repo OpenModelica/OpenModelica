@@ -15,6 +15,8 @@ namespace OpenModelica::Absyn
       ElementPrefixes() = default;
       ElementPrefixes(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       Visibility visibility() const noexcept { return _visibility; }
       Redeclare redeclare() const noexcept { return _redeclare; }
       Final final() const noexcept { return _final; }

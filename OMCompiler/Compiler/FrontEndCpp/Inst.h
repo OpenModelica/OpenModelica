@@ -5,7 +5,7 @@
   extern "C" {
 #endif
 
-extern void Inst_test(void *scode);
+extern void* Inst_test(void *scode);
 
 #ifdef __cplusplus
   }

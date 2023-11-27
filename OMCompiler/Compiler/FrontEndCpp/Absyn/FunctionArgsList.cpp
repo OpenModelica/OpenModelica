@@ -7,21 +7,35 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-FunctionArgsList::FunctionArgsList(MetaModelica::Record value)
-{
-  for (auto arg: value[0].toList()) {
-    _args.emplace_back(arg);
-  }
+extern record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
 
-  for (auto namedArg: value[1].toList()) {
-    auto arg = namedArg.toRecord();
-    _namedArgs.emplace_back(arg[0].toString(), arg[1]);
-  }
+extern record_description Absyn_NamedArg_NAMEDARG__desc;
+
+FunctionArgsList::FunctionArgsList(MetaModelica::Record value)
+  : _args{value[0].mapVector<Expression>()},
+    _namedArgs{value[1].mapVector<NamedArg>([](MetaModelica::Record v) {
+      return std::make_pair(v[0].toString(), v[1]); })
+    }
+{
+
 }
 
 std::unique_ptr<FunctionArgs::Base> FunctionArgsList::clone() const noexcept
 {
   return std::make_unique<FunctionArgsList>(*this);
+}
+
+MetaModelica::Value FunctionArgsList::toAbsyn() const noexcept
+{
+  return MetaModelica::Record(FunctionArgs::FUNCTIONARGS, Absyn_FunctionArgs_FUNCTIONARGS__desc, {
+    MetaModelica::List(_args, [](const auto &arg) { return arg.toAbsyn(); }),
+    MetaModelica::List(_namedArgs, [](const auto &arg) {
+      return MetaModelica::Record(0, Absyn_NamedArg_NAMEDARG__desc, {
+        MetaModelica::Value(arg.first),
+        arg.second.toAbsyn()
+      });
+    })
+  });
 }
 
 namespace OpenModelica::Absyn

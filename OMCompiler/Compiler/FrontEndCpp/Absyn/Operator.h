@@ -41,6 +41,12 @@ namespace OpenModelica::Absyn
     public:
       explicit Operator(MetaModelica::Record value);
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
+      bool isArithmetic() const noexcept;
+      bool isLogical() const noexcept;
+      bool isRelational() const noexcept;
+
       std::string_view symbol() const noexcept;
       std::string_view spacedSymbol() const noexcept;
 

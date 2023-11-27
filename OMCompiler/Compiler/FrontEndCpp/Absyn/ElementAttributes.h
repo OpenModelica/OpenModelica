@@ -15,6 +15,8 @@ namespace OpenModelica::Absyn
     public:
       explicit ElementAttributes(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+
       const std::vector<Subscript>& arrayDims() const noexcept { return _arrayDims; }
       ConnectorType connectorType() const noexcept { return _connectorType; }
       Parallelism parallelism() const noexcept { return _parallelism; }

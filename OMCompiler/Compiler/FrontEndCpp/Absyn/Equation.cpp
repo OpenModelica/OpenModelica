@@ -4,6 +4,9 @@
 #include "Util.h"
 #include "Equation.h"
 
+using namespace OpenModelica;
+using namespace OpenModelica::Absyn;
+
 constexpr int EQ_IF = 0;
 constexpr int EQ_EQUALS = 1;
 constexpr int EQ_PDE = 2;
@@ -15,8 +18,16 @@ constexpr int EQ_TERMINATE = 7;
 constexpr int EQ_REINIT = 8;
 constexpr int EQ_NORETCALL = 9;
 
-using namespace OpenModelica;
-using namespace OpenModelica::Absyn;
+extern record_description SCode_Equation_EQ__IF__desc;
+extern record_description SCode_Equation_EQ__EQUALS__desc;
+extern record_description SCode_Equation_EQ__PDE__desc;
+extern record_description SCode_Equation_EQ__CONNECT__desc;
+extern record_description SCode_Equation_EQ__FOR__desc;
+extern record_description SCode_Equation_EQ__WHEN__desc;
+extern record_description SCode_Equation_EQ__ASSERT__desc;
+extern record_description SCode_Equation_EQ__TERMINATE__desc;
+extern record_description SCode_Equation_EQ__REINIT__desc;
+extern record_description SCode_Equation_EQ__NORETCALL__desc;
 
 Equation::Base::Base(Comment comment, SourceInfo info)
   : _comment{std::move(comment)}, _info{std::move(info)}
@@ -59,6 +70,16 @@ Equation& Equation::operator= (const Equation &other) noexcept
   return *this;
 }
 
+MetaModelica::Value Equation::toSCode() const noexcept
+{
+  return _impl->toSCode();
+}
+
+MetaModelica::Value Equation::toSCodeList(const std::vector<Equation> &eqs) noexcept
+{
+  return MetaModelica::List(eqs, [](const auto &eq) { return eq.toSCode(); });
+}
+
 void Equation::print(std::ostream &os, std::string_view indent) const noexcept
 {
   os << indent;
@@ -82,6 +103,16 @@ EqualityEquation::EqualityEquation(MetaModelica::Record value)
 std::unique_ptr<Equation::Base> EqualityEquation::clone() const noexcept
 {
   return std::make_unique<EqualityEquation>(*this);
+}
+
+MetaModelica::Value EqualityEquation::toSCode() const noexcept
+{
+  return MetaModelica::Record(EQ_EQUALS, SCode_Equation_EQ__EQUALS__desc, {
+    _lhs.toAbsyn(),
+    _rhs.toAbsyn(),
+    _comment.toSCode(),
+_info
+  });
 }
 
 void EqualityEquation::print(std::ostream &os) const noexcept
@@ -108,6 +139,24 @@ IfEquation::IfEquation(MetaModelica::Record value)
 std::unique_ptr<Equation::Base> IfEquation::clone() const noexcept
 {
   return std::make_unique<IfEquation>(*this);
+}
+
+MetaModelica::Value IfEquation::toSCode() const noexcept
+{
+  MetaModelica::List conditions, branches;
+
+  for (auto it = _branches.rbegin(); it != _branches.rend(); ++it) {
+    conditions.cons(it->first.toAbsyn());
+    branches.cons(MetaModelica::List(it->second, [](const auto &eq) { return eq.toSCode(); }));
+  }
+
+  return MetaModelica::Record(EQ_IF, SCode_Equation_EQ__IF__desc, {
+    conditions,
+    branches,
+    MetaModelica::List(_else, [](const auto &eq) { return eq.toSCode(); }),
+    _comment.toSCode(),
+    _info
+  });
 }
 
 void IfEquation::print(std::ostream &os) const noexcept
@@ -146,6 +195,16 @@ std::unique_ptr<Equation::Base> ConnectEquation::clone() const noexcept
   return std::make_unique<ConnectEquation>(*this);
 }
 
+MetaModelica::Value ConnectEquation::toSCode() const noexcept
+{
+  return MetaModelica::Record(EQ_CONNECT, SCode_Equation_EQ__CONNECT__desc, {
+    _lhs.get<Cref>().cref().toAbsyn(),
+    _rhs.get<Cref>().cref().toAbsyn(),
+    _comment.toSCode(),
+    _info
+  });
+}
+
 void ConnectEquation::print(std::ostream &os) const noexcept
 {
   os << "connect(" << _lhs << ", " << _rhs << ')';
@@ -163,6 +222,17 @@ ForEquation::ForEquation(MetaModelica::Record value)
 std::unique_ptr<Equation::Base> ForEquation::clone() const noexcept
 {
   return std::make_unique<ForEquation>(*this);
+}
+
+MetaModelica::Value ForEquation::toSCode() const noexcept
+{
+  return MetaModelica::Record(EQ_FOR, SCode_Equation_EQ__FOR__desc, {
+    MetaModelica::Value(_iterator),
+    MetaModelica::Option(_range, [](const auto &r) { return r.toAbsyn(); }),
+    MetaModelica::List(_body, [](const auto &eq) { return eq.toSCode(); }),
+    _comment.toSCode(),
+    _info
+  });
 }
 
 void ForEquation::print(std::ostream &os) const noexcept
@@ -190,6 +260,21 @@ WhenEquation::WhenEquation(MetaModelica::Record value)
 std::unique_ptr<Equation::Base> WhenEquation::clone() const noexcept
 {
   return std::make_unique<WhenEquation>(*this);
+}
+
+MetaModelica::Value WhenEquation::toSCode() const noexcept
+{
+  auto branches = MetaModelica::List(++_branches.begin(), _branches.end(), [](const auto &b) {
+    return MetaModelica::Tuple({b.first.toAbsyn(), Equation::toSCodeList(b.second)});
+  });
+
+  return MetaModelica::Record(EQ_WHEN, SCode_Equation_EQ__WHEN__desc, {
+    _branches.front().first.toAbsyn(),
+    Equation::toSCodeList(_branches.front().second),
+    branches,
+    _comment.toSCode(),
+    _info
+  });
 }
 
 void WhenEquation::print(std::ostream &os) const noexcept
@@ -224,6 +309,17 @@ std::unique_ptr<Equation::Base> AssertEquation::clone() const noexcept
   return std::make_unique<AssertEquation>(*this);
 }
 
+MetaModelica::Value AssertEquation::toSCode() const noexcept
+{
+  return MetaModelica::Record(EQ_ASSERT, SCode_Equation_EQ__ASSERT__desc, {
+    _condition.toAbsyn(),
+    _message.toAbsyn(),
+    _level.toAbsyn(),
+    _comment.toSCode(),
+    _info
+  });
+}
+
 void AssertEquation::print(std::ostream &os) const noexcept
 {
   os << "assert(" << _condition << ", " << _message << ", " << _level << ')';
@@ -239,6 +335,15 @@ TerminateEquation::TerminateEquation(MetaModelica::Record value)
 std::unique_ptr<Equation::Base> TerminateEquation::clone() const noexcept
 {
   return std::make_unique<TerminateEquation>(*this);
+}
+
+MetaModelica::Value TerminateEquation::toSCode() const noexcept
+{
+  return MetaModelica::Record(EQ_TERMINATE, SCode_Equation_EQ__TERMINATE__desc, {
+    _message.toAbsyn(),
+    _comment.toSCode(),
+    _info
+  });
 }
 
 void TerminateEquation::print(std::ostream &os) const noexcept
@@ -259,6 +364,16 @@ std::unique_ptr<Equation::Base> ReinitEquation::clone() const noexcept
   return std::make_unique<ReinitEquation>(*this);
 }
 
+MetaModelica::Value ReinitEquation::toSCode() const noexcept
+{
+  return MetaModelica::Record(EQ_REINIT, SCode_Equation_EQ__REINIT__desc, {
+    _variable.toAbsyn(),
+    _exp.toAbsyn(),
+    _comment.toSCode(),
+    _info
+  });
+}
+
 void ReinitEquation::print(std::ostream &os) const noexcept
 {
   os << "reinit(" << _variable << ", " << _exp << ')';
@@ -274,6 +389,15 @@ CallEquation::CallEquation(MetaModelica::Record value)
 std::unique_ptr<Equation::Base> CallEquation::clone() const noexcept
 {
   return std::make_unique<CallEquation>(*this);
+}
+
+MetaModelica::Value CallEquation::toSCode() const noexcept
+{
+  return MetaModelica::Record(EQ_NORETCALL, SCode_Equation_EQ__NORETCALL__desc, {
+    _callExp.toAbsyn(),
+    _comment.toSCode(),
+    _info
+  });
 }
 
 void CallEquation::print(std::ostream &os) const noexcept

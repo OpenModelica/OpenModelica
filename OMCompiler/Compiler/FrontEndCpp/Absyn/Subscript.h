@@ -16,6 +16,9 @@ namespace OpenModelica::Absyn
       Subscript(MetaModelica::Record value);
       ~Subscript() noexcept;
 
+      MetaModelica::Value toAbsyn() const noexcept;
+      static MetaModelica::Value toAbsynList(const std::vector<Subscript> &subs) noexcept;
+
       const std::optional<Expression>& expression() const noexcept;
 
     private:

@@ -34,6 +34,11 @@ FunctionArgs& FunctionArgs::operator= (const FunctionArgs &other) noexcept
   return *this;
 }
 
+MetaModelica::Value FunctionArgs::toAbsyn() const noexcept
+{
+  return _impl->toAbsyn();
+}
+
 void FunctionArgs::print(std::ostream &os) const noexcept
 {
   return _impl->print(os);

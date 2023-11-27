@@ -17,12 +17,31 @@ constexpr int R_PACKAGE = 8;
 constexpr int R_FUNCTION = 9;
 constexpr int R_ENUMERATION = 10;
 
+extern record_description SCode_Restriction_R__CLASS__desc;
+extern record_description SCode_Restriction_R__OPTIMIZATION__desc;
+extern record_description SCode_Restriction_R__MODEL__desc;
+extern record_description SCode_Restriction_R__RECORD__desc;
+extern record_description SCode_Restriction_R__BLOCK__desc;
+extern record_description SCode_Restriction_R__CONNECTOR__desc;
+extern record_description SCode_Restriction_R__OPERATOR__desc;
+extern record_description SCode_Restriction_R__TYPE__desc;
+extern record_description SCode_Restriction_R__PACKAGE__desc;
+extern record_description SCode_Restriction_R__FUNCTION__desc;
+extern record_description SCode_Restriction_R__ENUMERATION__desc;
+
 constexpr int FR_NORMAL_FUNCTION = 0;
 constexpr int FR_EXTERNAL_FUNCTION = 1;
 constexpr int FR_OPERATOR_FUNCTION = 2;
 constexpr int FR_RECORD_CONSTRUCTOR = 3;
 constexpr int FR_PARALLEL_FUNCTION = 4;
 constexpr int FR_KERNEL_FUNCTION = 5;
+
+extern record_description SCode_FunctionRestriction_FR__NORMAL__FUNCTION__desc;
+extern record_description SCode_FunctionRestriction_FR__EXTERNAL__FUNCTION__desc;
+extern record_description SCode_FunctionRestriction_FR__OPERATOR__FUNCTION__desc;
+extern record_description SCode_FunctionRestriction_FR__RECORD__CONSTRUCTOR__desc;
+extern record_description SCode_FunctionRestriction_FR__PARALLEL__FUNCTION__desc;
+extern record_description SCode_FunctionRestriction_FR__KERNEL__FUNCTION__desc;
 
 int to_value(Restriction::Prefix prefix, Restriction::Kind kind) noexcept
 {
@@ -59,6 +78,29 @@ Restriction from_mm_function(MetaModelica::Record value) noexcept
     case FR_KERNEL_FUNCTION:    return Restriction::KernelFunction();
     default:                    return Restriction::Function(Purity::None);
   }
+}
+
+MetaModelica::Value to_mm_function(Restriction res) noexcept
+{
+  if (res.is(Restriction::Prefix::External)) {
+    return MetaModelica::Record{FR_EXTERNAL_FUNCTION,
+      SCode_FunctionRestriction_FR__EXTERNAL__FUNCTION__desc, {res.purity().toAbsyn()}};
+  } else if (res.is(Restriction::Prefix::Operator)) {
+    return MetaModelica::Record{FR_OPERATOR_FUNCTION,
+      SCode_FunctionRestriction_FR__OPERATOR__FUNCTION__desc};
+  } else if (res.is(Restriction::Prefix::Constructor)) {
+    return MetaModelica::Record{FR_RECORD_CONSTRUCTOR,
+      SCode_FunctionRestriction_FR__RECORD__CONSTRUCTOR__desc};
+  } else if (res.is(Restriction::Prefix::Parallel)) {
+    return MetaModelica::Record{FR_PARALLEL_FUNCTION,
+      SCode_FunctionRestriction_FR__PARALLEL__FUNCTION__desc};
+  } else if (res.is(Restriction::Prefix::Kernel)) {
+    return MetaModelica::Record{FR_KERNEL_FUNCTION,
+      SCode_FunctionRestriction_FR__KERNEL__FUNCTION__desc};
+  }
+
+  return MetaModelica::Record{FR_NORMAL_FUNCTION,
+    SCode_FunctionRestriction_FR__NORMAL__FUNCTION__desc, {res.purity().toAbsyn()}};
 }
 
 Restriction res_from_mm(MetaModelica::Record value) noexcept
@@ -99,6 +141,64 @@ Restriction Restriction::ExternalFunction(Purity purity) noexcept
   Restriction res{Prefix::External, Kind::Function};
   res._value |= static_cast<int>(purity_to_prefix(purity));
   return res;
+}
+
+MetaModelica::Value Restriction::toSCode() const noexcept
+{
+  switch (kind()) {
+    case Kind::Class:
+      return MetaModelica::Record(R_CLASS, SCode_Restriction_R__CLASS__desc);
+    case Kind::Model:
+      return MetaModelica::Record(R_MODEL, SCode_Restriction_R__MODEL__desc);
+    case Kind::Package:
+      return MetaModelica::Record(R_PACKAGE, SCode_Restriction_R__PACKAGE__desc);
+    case Kind::Block:
+      return MetaModelica::Record(R_BLOCK, SCode_Restriction_R__BLOCK__desc);
+    case Kind::Optimization:
+      return MetaModelica::Record(R_OPTIMIZATION, SCode_Restriction_R__OPTIMIZATION__desc);
+    case Kind::Connector:
+      return MetaModelica::Record(R_CONNECTOR, SCode_Restriction_R__CONNECTOR__desc, {
+        MetaModelica::Value{is(Prefix::Expandable)}
+      });
+    case Kind::Type:
+      return MetaModelica::Record(R_TYPE, SCode_Restriction_R__TYPE__desc);
+    case Kind::Enumeration:
+      return MetaModelica::Record(R_ENUMERATION, SCode_Restriction_R__ENUMERATION__desc);
+    case Kind::Record:
+      if (is(Prefix::Constructor)) {
+        return MetaModelica::Record(R_FUNCTION, SCode_Restriction_R__FUNCTION__desc, {
+          to_mm_function(Prefix::Constructor)
+        });
+      } else {
+        return MetaModelica::Record(R_RECORD, SCode_Restriction_R__RECORD__desc, {
+          MetaModelica::Value{is(Prefix::Operator)}
+        });
+      }
+    case Kind::Operator:
+      return MetaModelica::Record(R_OPERATOR, SCode_Restriction_R__OPERATOR__desc);
+    case Kind::Function:
+      return MetaModelica::Record(R_FUNCTION, SCode_Restriction_R__FUNCTION__desc, {
+        to_mm_function(*this)
+      });
+    default:
+      return MetaModelica::Record(R_CLASS, SCode_Restriction_R__CLASS__desc);
+  }
+}
+
+Restriction::Kind Restriction::kind() const noexcept
+{
+  return static_cast<Kind>(_value & 0x0000FFFF);
+}
+
+Purity Restriction::purity() const noexcept
+{
+  if (is(Prefix::Pure)) {
+    return Purity::Pure;
+  } else if (is(Prefix::Impure)) {
+    return Purity::Impure;
+  }
+
+  return Purity::None;
 }
 
 bool Restriction::is(Restriction::Prefix prefix, Restriction::Kind kind) const noexcept

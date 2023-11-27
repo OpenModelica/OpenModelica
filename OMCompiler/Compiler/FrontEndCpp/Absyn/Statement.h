@@ -27,6 +27,7 @@ namespace OpenModelica::Absyn
           virtual ~Base() = default;
 
           virtual std::unique_ptr<Base> clone() const noexcept = 0;
+          virtual MetaModelica::Value toSCode() const noexcept = 0;
           virtual void print(std::ostream &os) const noexcept = 0;
 
         protected:
@@ -42,6 +43,9 @@ namespace OpenModelica::Absyn
       Statement& operator= (const Statement &other) noexcept;
       Statement& operator= (Statement &&other) = default;
 
+      MetaModelica::Value toSCode() const noexcept;
+      static MetaModelica::Value toSCodeList(const std::vector<Statement> &stmts) noexcept;
+
       void print(std::ostream &os, std::string_view indent = {}) const noexcept;
 
     private:
@@ -56,6 +60,7 @@ namespace OpenModelica::Absyn
       AssignmentStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -72,6 +77,7 @@ namespace OpenModelica::Absyn
       IfStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -85,6 +91,7 @@ namespace OpenModelica::Absyn
       ForStatement(MetaModelica::Record value, bool parallel = false);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -100,6 +107,7 @@ namespace OpenModelica::Absyn
       WhileStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -116,6 +124,7 @@ namespace OpenModelica::Absyn
       WhenStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -128,6 +137,7 @@ namespace OpenModelica::Absyn
       AssertStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -142,6 +152,7 @@ namespace OpenModelica::Absyn
       TerminateStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -154,6 +165,7 @@ namespace OpenModelica::Absyn
       ReinitStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -167,6 +179,7 @@ namespace OpenModelica::Absyn
       CallStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -179,6 +192,7 @@ namespace OpenModelica::Absyn
       ReturnStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
   };
 
@@ -188,6 +202,7 @@ namespace OpenModelica::Absyn
       BreakStatement(MetaModelica::Record value);
 
       std::unique_ptr<Statement::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
   };
 }
