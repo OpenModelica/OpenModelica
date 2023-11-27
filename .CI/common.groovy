@@ -492,13 +492,13 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
-def shouldWeBuildMINGW() {
+def shouldWeBuildUCRT() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/Build MINGW")) {
+    if (pullRequest.labels.contains("CI/Build MSYS2-UCRT64")) {
       return true
     }
   }
-  return params.BUILD_MINGW
+  return params.BUILD_UCRT
 }
 
 def shouldWeDisableAllCMakeBuilds() {
@@ -510,13 +510,13 @@ def shouldWeDisableAllCMakeBuilds() {
   return params.DISABLE_ALL_CMAKE_BUILDS
 }
 
-def shouldWeEnableMinGWCMakeBuild() {
+def shouldWeEnableUCRTCMakeBuild() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/CMake/Enable/MinGW")) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/MSYS2-UCR64T")) {
       return true
     }
   }
-  return params.ENABLE_MINGW_CMAKE_BUILD
+  return params.ENABLE_UCRT_CMAKE_BUILD
 }
 
 def shouldWeEnableMacOSCMakeBuild() {
