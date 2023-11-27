@@ -1,8 +1,8 @@
 def common
-def shouldWeBuildMINGW
+def shouldWeBuildUCRT
 def shouldWeDisableAllCMakeBuilds_value
 def shouldWeEnableMacOSCMakeBuild_value
-def shouldWeEnableMinGWCMakeBuild_value
+def shouldWeEnableUCRTCMakeBuild_value
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -15,9 +15,9 @@ pipeline {
     LC_ALL = 'C.UTF-8'
   }
   parameters {
-    booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
+    booleanParam(name: 'BUILD_UCRT', defaultValue: false, description: 'Build with Win/UCRT')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
-    booleanParam(name: 'ENABLE_MINGW_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MinGW')
+    booleanParam(name: 'ENABLE_UCRT_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on msys2 / ucrt')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on macOS')
   }
   // stages are ordered according to execution time; highest time first
@@ -37,14 +37,14 @@ pipeline {
           common = load("${env.workspace}/.CI/common.groovy")
           isPR = common.isPR()
           print "isPR: ${isPR}"
-          shouldWeBuildMINGW = common.shouldWeBuildMINGW()
-          print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
+          shouldWeBuildUCRT = common.shouldWeBuildUCRT()
+          print "shouldWeBuildUCRT: ${shouldWeBuildUCRT}"
           shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
           print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
           shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
           print "shouldWeEnableMacOSCMakeBuild: ${shouldWeEnableMacOSCMakeBuild_value}"
-          shouldWeEnableMinGWCMakeBuild_value = common.shouldWeEnableMinGWCMakeBuild()
-          print "shouldWeEnableMinGWCMakeBuild: ${shouldWeEnableMinGWCMakeBuild_value}"
+          shouldWeEnableUCRTCMakeBuild_value = common.shouldWeEnableUCRTCMakeBuild()
+          print "shouldWeEnableUCRTCMakeBuild: ${shouldWeEnableUCRTCMakeBuild_value}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -98,7 +98,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeBuildMINGW }
+            expression { shouldWeBuildUCRT }
           }
           environment {
             RUNTESTDB = '/c/dev/'
@@ -106,7 +106,7 @@ pipeline {
           }
           steps {
             script {
-              withEnv (["PATH=C:\\OMDev\\tools\\msys64\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
                 common.buildOMC('cc', 'c++', '', true, false)
                 common.makeLibsAndCache()
@@ -181,7 +181,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMinGWCMakeBuild_value}
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
           }
           steps {
             script {

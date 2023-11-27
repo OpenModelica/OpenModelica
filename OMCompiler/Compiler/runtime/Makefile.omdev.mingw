@@ -33,15 +33,9 @@ SHREXT=.a
 OMPCC = gcc -fopenmp
 
 ifdef USE_CORBA
-	ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-		CORBA_C_CLFAGS = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4
-		CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw32/include
-		IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
-	else # 64 bit
-		CORBA_C_CLFAGS = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4 -D_WIN64 -DMS_WIN64
-		CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw64/include
-		IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
-	endif
+	CORBA_C_CLFAGS = -DUSE_CORBA -D__x86__ -D__NT__ -D__OSVERSION__=4 -D_WIN64 -DMS_WIN64
+	CORBAINCL = -I$(CORBAHOME)/lib/omniORB-4.2.0-mingw64/include
+	IDL	= $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
 	OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 else
 	CORBA_C_CLFAGS =

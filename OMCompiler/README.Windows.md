@@ -85,7 +85,6 @@ export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
 export OPENMODELICAHOME="/c/path/to/OpenModelica/build"
 export OPENMODELICALIBRARY="/c/Users/<user name>/AppData/Roaming/.openmodelica/libraries"
 export OMDEV="/c/OMDev"
-export OMDEV_MSYS="/c/OMDev/tools/msys"
 ```
 
 You can add this to your `.bashrc` file

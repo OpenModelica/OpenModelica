@@ -20,9 +20,9 @@ set OLD_PATH=%PATH%
 call :CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME "%OPENMODELICAHOME%"
 set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
-REM If OMDEV_MSYS is set, use Msys from there instead of OPENMODELICAHOME
+REM If OMDEV is set, use msys2-ucrt64 from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
-if not %OMDEV_MSYS%a==a set MINGW=%OMDEV_MSYS%\%OM_PLATFORM%
+if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
 REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1
 REM echo MINGW = %MINGW% >>%1.log 2>&1
 call :CONVERT_CD_TO_SHORT_PATH_NAME "%CD%"
