@@ -5417,7 +5417,13 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   verticalLayout->setContentsMargins(0, 0, 0, 0);
   verticalLayout->addWidget(mpTopFrame, 0, Qt::AlignTop);
   verticalLayout->addWidget(mpSplitter, 1);
-  verticalLayout->addWidget(mpBottomFrame, 0, Qt::AlignBottom);
+  // Issue #10235. Use QScrollArea so we can resize.
+  QScrollArea *pBottomScrollArea = new QScrollArea;
+  pBottomScrollArea->setFrameShape(QFrame::NoFrame);
+  pBottomScrollArea->setBackgroundRole(QPalette::Base);
+  pBottomScrollArea->setWidgetResizable(true);
+  pBottomScrollArea->setWidget(mpBottomFrame);
+  verticalLayout->addWidget(pBottomScrollArea, 0, Qt::AlignBottom);
   // main frame layout
   mpMainFrame->setLayout(verticalLayout);
   QHBoxLayout *layout = new QHBoxLayout;
