@@ -4645,6 +4645,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
  */
 bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   bool result = false;
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
@@ -4698,6 +4699,7 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
     return;
@@ -4732,6 +4734,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
   saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
