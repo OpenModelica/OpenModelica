@@ -5267,6 +5267,7 @@ protected
   UnorderedMap<String, String> rename_map;
   String new_name;
   Integer index;
+  list<String> conflicting_names = {};
 algorithm
   // Collect the existing names in a hash set.
   old_names := UnorderedSet.new(stringHashDjb2, stringEq);
@@ -5276,26 +5277,40 @@ algorithm
     end for;
   end for;
 
-  // Check if any of the new names already exist in the old element.
+  // Go through the names in the new content.
   rename_map := UnorderedMap.new<String>(stringHashDjb2, stringEq);
   for e in AbsynUtil.getElementItemsInClassDef(newContent) loop
     for name in AbsynUtil.elementItemNames(e) loop
-      if not UnorderedSet.contains(name, old_names) then
-        continue;
+      if UnorderedSet.contains(name, old_names) then
+        // If the name conflicts with an existing name, save it for later.
+        conflicting_names := name :: conflicting_names;
+      else
+        // If the name doesn't conflict, add it to the set of existing names to
+        // take it into account when generating new names for conflicting names.
+        UnorderedSet.add(name, old_names);
       end if;
-
-      // If the name exists, try name1, name2, etc. until a non-conflicting name
-      // is found.
-      index := 1;
-      new_name := name + String(index);
-      while UnorderedSet.contains(new_name, old_names) loop
-        index := index + 1;
-        new_name := name + String(index);
-      end while;
-
-      // Save the mapping for name->new_name to apply to the class.
-      UnorderedMap.add(name, new_name, rename_map);
     end for;
+  end for;
+
+  if listEmpty(conflicting_names) then
+    return;
+  end if;
+
+  // Go through the conflicting names and find a non-conflicting name for them.
+  for name in listReverse(conflicting_names) loop
+    // Try name1, name2, etc. until a non-conflicting name is found.
+    index := 1;
+    new_name := name + String(index);
+    while UnorderedSet.contains(new_name, old_names) loop
+      index := index + 1;
+      new_name := name + String(index);
+    end while;
+
+    // Save the mapping for name->new_name to apply to the class.
+    UnorderedMap.add(name, new_name, rename_map);
+
+    // Add the new name to the set of existing names.
+    UnorderedSet.add(new_name, old_names);
   end for;
 
   // Apply the new names to the class definition.
@@ -5473,17 +5488,212 @@ function renameElementsInEquationItems
   input output list<Absyn.EquationItem> items;
   input UnorderedMap<String, String> nameMap;
 algorithm
-  (items, _) := AbsynUtil.traverseEquationItemListBidir(items,
-    renameElementsInExp, AbsynUtil.dummyTraverseExp, nameMap);
+  items := list(renameElementsInEquationItem(i, nameMap) for i in items);
 end renameElementsInEquationItems;
+
+function renameElementsInEquationItem
+  input output Absyn.EquationItem item;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match item
+    case Absyn.EquationItem.EQUATIONITEM()
+      algorithm
+        item.equation_ := renameElementsInEquation(item.equation_, nameMap);
+        item.comment := renameElementsInCommentOpt(item.comment, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInEquationItem;
+
+function renameElementsInEquation
+  input output Absyn.Equation eq;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match eq
+    case Absyn.Equation.EQ_IF()
+      algorithm
+        eq.ifExp := AbsynUtil.traverseExp(eq.ifExp, renameElementsInExp, nameMap);
+        eq.equationTrueItems := renameElementsInEquationItems(eq.equationTrueItems, nameMap);
+        eq.elseIfBranches := list(renameElementsInEquationBranch(b, nameMap) for b in eq.elseIfBranches);
+        eq.equationElseItems := renameElementsInEquationItems(eq.equationElseItems, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_EQUALS()
+      algorithm
+        eq.leftSide := AbsynUtil.traverseExp(eq.leftSide, renameElementsInExp, nameMap);
+        eq.rightSide := AbsynUtil.traverseExp(eq.rightSide, renameElementsInExp, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_PDE()
+      algorithm
+        eq.leftSide := AbsynUtil.traverseExp(eq.leftSide, renameElementsInExp, nameMap);
+        eq.rightSide := AbsynUtil.traverseExp(eq.rightSide, renameElementsInExp, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_CONNECT()
+      algorithm
+        eq.connector1 := renameElementsInCref(eq.connector1, nameMap);
+        eq.connector2 := renameElementsInCref(eq.connector2, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_FOR()
+      algorithm
+        eq.iterators := list(renameElementsInIterator(i, nameMap) for i in eq.iterators);
+        eq.forEquations := renameElementsInEquationItems(eq.forEquations, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_WHEN_E()
+      algorithm
+        eq.whenExp := AbsynUtil.traverseExp(eq.whenExp, renameElementsInExp, nameMap);
+        eq.whenEquations := renameElementsInEquationItems(eq.whenEquations, nameMap);
+        eq.elseWhenEquations := list(renameElementsInEquationBranch(b, nameMap) for b in eq.elseWhenEquations);
+      then
+        ();
+
+    case Absyn.Equation.EQ_NORETCALL()
+      algorithm
+        eq.functionName := renameElementsInCref(eq.functionName, nameMap);
+        eq.functionArgs := AbsynUtil.traverseExpBidirFunctionArgs(eq.functionArgs, renameElementsInExp,
+          AbsynUtil.dummyTraverseExp, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_FAILURE()
+      algorithm
+        eq.equ := renameElementsInEquationItem(eq.equ, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInEquation;
+
+function renameElementsInEquationBranch
+  input output tuple<Absyn.Exp, list<Absyn.EquationItem>> branch;
+  input UnorderedMap<String, String> nameMap;
+protected
+  Absyn.Exp cond;
+  list<Absyn.EquationItem> body;
+algorithm
+  (cond, body) := branch;
+  cond := AbsynUtil.traverseExp(cond, renameElementsInExp, nameMap);
+  body := renameElementsInEquationItems(body, nameMap);
+  branch := (cond, body);
+end renameElementsInEquationBranch;
+
+function renameElementsInIterator
+  input output Absyn.ForIterator iter;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  if isSome(iter.range) then
+    iter.range := SOME(AbsynUtil.traverseExp(Util.getOption(iter.range), renameElementsInExp, nameMap));
+  end if;
+end renameElementsInIterator;
 
 function renameElementsInAlgorithmItems
   input output list<Absyn.AlgorithmItem> items;
   input UnorderedMap<String, String> nameMap;
 algorithm
-  (items, _) := AbsynUtil.traverseAlgorithmItemListBidir(items,
-    renameElementsInExp, AbsynUtil.dummyTraverseExp, nameMap);
+  items := list(renameElementsInAlgorithmItem(i, nameMap) for i in items);
 end renameElementsInAlgorithmItems;
+
+function renameElementsInAlgorithmItem
+  input output Absyn.AlgorithmItem item;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match item
+    case Absyn.AlgorithmItem.ALGORITHMITEM()
+      algorithm
+        item.algorithm_ := renameElementsInAlgorithm(item.algorithm_, nameMap);
+        item.comment := renameElementsInCommentOpt(item.comment, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInAlgorithmItem;
+
+function renameElementsInAlgorithm
+  input output Absyn.Algorithm alg;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match alg
+    case Absyn.Algorithm.ALG_ASSIGN()
+      algorithm
+        alg.assignComponent := AbsynUtil.traverseExp(alg.assignComponent, renameElementsInExp, nameMap);
+        alg.value := AbsynUtil.traverseExp(alg.value, renameElementsInExp, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_IF()
+      algorithm
+        alg.ifExp := AbsynUtil.traverseExp(alg.ifExp, renameElementsInExp, nameMap);
+        alg.trueBranch := renameElementsInAlgorithmItems(alg.trueBranch, nameMap);
+        alg.elseIfAlgorithmBranch := list(renameElementsInAlgorithmBranch(b, nameMap) for b in alg.elseIfAlgorithmBranch);
+        alg.elseBranch := renameElementsInAlgorithmItems(alg.elseBranch, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_FOR()
+      algorithm
+        alg.iterators := list(renameElementsInIterator(i, nameMap) for i in alg.iterators);
+        alg.forBody := renameElementsInAlgorithmItems(alg.forBody, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_PARFOR()
+      algorithm
+        alg.iterators := list(renameElementsInIterator(i, nameMap) for i in alg.iterators);
+        alg.parforBody := renameElementsInAlgorithmItems(alg.parforBody, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_WHILE()
+      algorithm
+        alg.boolExpr := AbsynUtil.traverseExp(alg.boolExpr, renameElementsInExp, nameMap);
+        alg.whileBody := renameElementsInAlgorithmItems(alg.whileBody, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_WHEN_A()
+      algorithm
+        alg.boolExpr := AbsynUtil.traverseExp(alg.boolExpr, renameElementsInExp, nameMap);
+        alg.whenBody := renameElementsInAlgorithmItems(alg.whenBody, nameMap);
+        alg.elseWhenAlgorithmBranch := list(renameElementsInAlgorithmBranch(b, nameMap) for b in alg.elseWhenAlgorithmBranch);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_NORETCALL()
+      algorithm
+        alg.functionCall := renameElementsInCref(alg.functionCall, nameMap);
+        alg.functionArgs := AbsynUtil.traverseExpBidirFunctionArgs(alg.functionArgs, renameElementsInExp,
+          AbsynUtil.dummyTraverseExp, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInAlgorithm;
+
+function renameElementsInAlgorithmBranch
+  input output tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> branch;
+  input UnorderedMap<String, String> nameMap;
+protected
+  Absyn.Exp cond;
+  list<Absyn.AlgorithmItem> body;
+algorithm
+  (cond, body) := branch;
+  cond := AbsynUtil.traverseExp(cond, renameElementsInExp, nameMap);
+  body := renameElementsInAlgorithmItems(body, nameMap);
+  branch := (cond, body);
+end renameElementsInAlgorithmBranch;
 
 function renameElementsInElementArg
   input output Absyn.ElementArg arg;
