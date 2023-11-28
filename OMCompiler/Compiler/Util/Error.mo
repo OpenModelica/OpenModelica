@@ -891,6 +891,8 @@ public constant ErrorTypes.Message UNSPECIFIED_ENUM_COMPONENT = ErrorTypes.MESSA
   Gettext.gettext("Component '%s' has an unspecified enumeration type (enumeration(:))."));
 public constant ErrorTypes.Message ELEMENT_REPLACEABLE_NOT_ALLOWED = ErrorTypes.MESSAGE(408, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("'%s' may not be replaceable."));
+public constant ErrorTypes.Message INVALID_NEGATIVE_POW = ErrorTypes.MESSAGE(409, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid operation %s ^ %s, exponent must be an Integer when the base is negative."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

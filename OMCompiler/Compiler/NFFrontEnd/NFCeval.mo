@@ -981,7 +981,7 @@ algorithm
     case Op.SUB then evalBinarySub(exp1, exp2);
     case Op.MUL then evalBinaryMul(exp1, exp2);
     case Op.DIV then evalBinaryDiv(exp1, exp2, target);
-    case Op.POW then evalBinaryPow(exp1, exp2);
+    case Op.POW then evalBinaryPow(exp1, exp2, target);
     case Op.ADD_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryAdd);
     case Op.ADD_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryAdd);
     case Op.SUB_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinarySub);
@@ -996,8 +996,8 @@ algorithm
       then evalBinaryScalarArray(exp1, exp2, function evalBinaryDiv(target = target));
     case Op.DIV_ARRAY_SCALAR
       then evalBinaryArrayScalar(exp1, exp2, function evalBinaryDiv(target = target));
-    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryPow);
-    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryPow);
+    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(target = target));
+    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(target = target));
     case Op.POW_MATRIX then evalBinaryPowMatrix(exp1, exp2);
     else
       algorithm
@@ -1132,16 +1132,28 @@ end evalBinaryDiv;
 function evalBinaryPow
   input Expression exp1;
   input Expression exp2;
+  input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    case (Expression.REAL(), Expression.REAL())
+      guard exp1.value < 0 and realInt(exp2.value) <> exp2.value
+      algorithm
+        if EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.INVALID_NEGATIVE_POW,
+            {Expression.toString(exp1), Expression.toString(exp2)}, EvalTarget.getInfo(target));
+          fail();
+        end if;
+      then
+        Expression.BINARY(exp1, Operator.makePow(Type.REAL()), exp2);
+
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value ^ exp2.value);
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
-        Array.threadMap(exp1.elements, exp2.elements, evalBinaryPow),
+        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(target = target)),
         literal = true);
 
     else
