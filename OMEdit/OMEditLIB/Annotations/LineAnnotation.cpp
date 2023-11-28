@@ -1206,7 +1206,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
   prepareGeometryChange();
   if (mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType) {
     if (!mpGraphicsView->isCreatingConnection() && !mpGraphicsView->isCreatingTransition()) {
-      manhattanizeShape();
+      manhattanizeShape(false);
       removeRedundantPointsGeometriesAndCornerItems();
     }
     int lastIndex = mPoints.size() - 1;
