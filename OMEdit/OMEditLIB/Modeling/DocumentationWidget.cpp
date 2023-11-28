@@ -927,11 +927,6 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
         pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldDocAnnotationString, newDocAnnotationString);
         pLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
         pLibraryTreeItem->getModelWidget()->updateModelText();
-      } else {
-        // send the documentation annotation to OMC
-        MainWindow::instance()->getOMCProxy()->addClassAnnotation(pLibraryTreeItem->getNameStructure(), newDocAnnotationString);
-        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-        pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
       }
       /* ticket:5190 Save the class when documentation save button is hit. */
       MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);

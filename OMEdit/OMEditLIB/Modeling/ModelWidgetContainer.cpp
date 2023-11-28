@@ -6785,10 +6785,6 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   loadModelInstance(false, modelInfo);
   // update the icon
   mpLibraryTreeItem->handleIconUpdated();
-  // if documentation view is visible then update it
-  if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
-    MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
-  }
   updateViewButtonsBasedOnAccess();
   QApplication::restoreOverrideCursor();
 }
@@ -10040,7 +10036,6 @@ void ModelWidgetContainer::saveModelWidget()
                              GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
     return;
   }
-  pModelWidget->processPendingModelUpdate();
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
   MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
 }
