@@ -498,7 +498,7 @@ def shouldWeBuildUCRT() {
       return true
     }
   }
-  return params.BUILD_UCRT
+  return params.BUILD_MSYS2_UCRT64
 }
 
 def shouldWeDisableAllCMakeBuilds() {
@@ -512,11 +512,11 @@ def shouldWeDisableAllCMakeBuilds() {
 
 def shouldWeEnableUCRTCMakeBuild() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/CMake/Enable/MSYS2-UCR64T")) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/MSYS2-UCRT64")) {
       return true
     }
   }
-  return params.ENABLE_UCRT_CMAKE_BUILD
+  return params.ENABLE_MSYS2_UCRT64_CMAKE_BUILD
 }
 
 def shouldWeEnableMacOSCMakeBuild() {

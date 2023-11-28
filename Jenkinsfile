@@ -15,10 +15,10 @@ pipeline {
     LC_ALL = 'C.UTF-8'
   }
   parameters {
-    booleanParam(name: 'BUILD_UCRT', defaultValue: false, description: 'Build with Win/UCRT')
+    booleanParam(name: 'BUILD_MSYS2_UCRT64', defaultValue: false, description: 'Build with Win/MSYS2-UCRT64')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
-    booleanParam(name: 'ENABLE_UCRT_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on msys2 / ucrt')
-    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on macOS')
+    booleanParam(name: 'ENABLE_MSYS2_UCRT64_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MSYS2-UCRT64')
+    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
