@@ -136,6 +136,7 @@ private:
   bool mShowingPendingMessages;
 public:
   static MessagesWidget* instance() {return mpInstance;}
+  MessagesTabWidget* getMessagesTabWidget() const {return mpMessagesTabWidget;}
   MessageWidget* getAllMessageWidget() {return mpAllMessageWidget;}
   MessageWidget* getNotificationMessageWidget() {return mpNotificationMessageWidget;}
   MessageWidget* getWarningMessageWidget() {return mpWarningMessageWidget;}
@@ -146,7 +147,9 @@ public:
   int getSimulationOutputTabsSize();
   SimulationOutputWidget* getSimulationOutputWidget(const QString &className);
 signals:
-  void MessageAdded();
+  void messageAdded();
+  void messageTabAdded(QWidget *pSimulationOutputTab, const QString &name);
+  void messageTabClosed(int index);
 private slots:
   bool closeTab(int index);
 public slots:

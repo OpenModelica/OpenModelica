@@ -304,7 +304,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     process = QString("python");
     QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
     QString OMHOME = QString(Helper::OpenModelicaHome);
-    processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PYTHONPATH"));
+    processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib/omc;" + processEnvironment.value("PYTHONPATH"));
     processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
     mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #else
@@ -360,6 +360,7 @@ void OMSSimulationOutputWidget::parseSimulationProgress(const QVariant progress)
   int progressValue = progressMap.value("progress").toInt(&ok);
   if (ok) {
     mpProgressBar->setValue(progressValue);
+    updateMessageTabProgress();
   }
 }
 
@@ -383,15 +384,36 @@ void OMSSimulationOutputWidget::parseSimulationVariables(const QVariant variable
 }
 
 /*!
+ * \brief OMSSimulationOutputWidget::updateMessageTab
+ * Updates the corresponsing MessageTab.
+ */
+void OMSSimulationOutputWidget::updateMessageTab(const QString &text)
+{
+  emit updateText(text);
+  emit updateProgressBar(mpProgressBar);
+}
+
+/*!
+ * \brief OMSSimulationOutputWidget::updateMessageTabProgress
+ * Updates the progress bar of MessageTab
+ */
+void OMSSimulationOutputWidget::updateMessageTabProgress()
+{
+  emit updateProgressBar(mpProgressBar);
+}
+
+/*!
  * \brief OMSSimulationOutputWidget::simulationProcessStarted
  * Updates the simulation output window when the simulation has started.
  */
 void OMSSimulationOutputWidget::simulationProcessStarted()
 {
   mIsSimulationProcessRunning = true;
-  mpProgressLabel->setText(tr("Running simulation of %1. Please wait for a while.").arg(mCref));
+  const QString progressStr = tr("Running simulation of %1. Please wait for a while.").arg(mCref);
+  mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
+  updateMessageTab(progressStr);
   mpCancelSimulationButton->setEnabled(true);
   mpArchivedSimulationItem->setStatus(Helper::running);
   mpSimulationSubscriberSocket->setSocketConnected(true);
@@ -516,15 +538,19 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
 {
   mIsSimulationProcessRunning = false;
   QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
+  QString progressStr;
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writeSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo);
+    progressStr = tr("Simulation of %1 finished.").arg(mCref);
   } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
     writeSimulationOutput(exitCodeStr, StringHandler::Error);
+    progressStr = tr("Simulation of %1 failed.").arg(mCref);
   } else {
     writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error);
+    progressStr = tr("Simulation of %1 failed.").arg(mCref);
   }
-
-  mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mCref));
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
   mpCancelSimulationButton->setEnabled(false);
   // simulation finished show the results
   if (!mpSimulationRequestSocket) {
@@ -551,7 +577,9 @@ void OMSSimulationOutputWidget::cancelSimulation()
   if (isSimulationProcessRunning()) {
     mIsSimulationProcessKilled = true;
     mpSimulationProcess->kill();
-    mpProgressLabel->setText(tr("Simulation of %1 is cancelled.").arg(mCref));
+    const QString progressStr = tr("Simulation of %1 is cancelled.").arg(mCref);
+    mpProgressLabel->setText(progressStr);
+    updateMessageTab(progressStr);
     mpCancelSimulationButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
   }

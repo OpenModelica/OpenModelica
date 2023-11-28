@@ -71,6 +71,12 @@
 #include <QClipboard>
 #include <QStringBuilder>
 
+const QString cutCopyPasteComponentsConnectionsFormat("application/OMEdit.cut-copy-paste-components-connections");
+const QString cutCopyPasteComponentsFormat("application/OMEdit.cut-copy-paste-components");
+const QString cutCopyPasteConnectionsFormat("application/OMEdit.cut-copy-paste-connections");
+const QString cutCopyPasteShapesFormat("application/OMEdit.cut-copy-paste-shapes");
+const QString cutCopyPasteShapesOMCFormat("application/OMEdit.cut-copy-paste-shapes-omc");
+
 ModelInfo::ModelInfo()
 {
   mName = "";
@@ -453,6 +459,8 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
                 }
               }
             }
+          } else {
+            qDebug() << "Got an element from getModelInstance that is not handled." << pModelInstanceElement->toString();
           }
         }
       }
@@ -568,6 +576,8 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
               addConnectionToList(pConnectionLineAnnotation);
               deleteConnectionFromOutOfSceneList(pConnectionLineAnnotation);
             }
+          } else {
+            qDebug() << "Got a connection from getModelInstance that is not handled." << pConnection->toString();
           }
         }
       }
@@ -1101,12 +1111,12 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
     pDiagramGraphicsView->addElementToList(pDiagramElement);
     if (addElementToOMC) {
       pDiagramGraphicsView->addElementToClass(pDiagramElement);
-      if (clearSelection) {
-        if (mViewType == StringHandler::Diagram) {
-          pDiagramGraphicsView->clearSelection(pDiagramElement);
-        } else {
-          pIconGraphicsView->clearSelection(pIconElement);
-        }
+    }
+    if (clearSelection) {
+      if (mViewType == StringHandler::Diagram) {
+        pDiagramGraphicsView->clearSelection(pDiagramElement);
+      } else {
+        pIconGraphicsView->clearSelection(pIconElement);
       }
     }
   }
@@ -3585,6 +3595,13 @@ void GraphicsView::copyItems()
  */
 void GraphicsView::copyItems(bool cut)
 {
+  //! @todo Remove this check once the old API is completely removed.
+  if (!mpModelWidget->isNewApi()) {
+    QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
+                             Helper::ok);
+    return;
+  }
   /* Issue #9515
    * scene()->selectedItems() returns a list of all currently selected items. The items are returned in no particular order.
    * So use items() instead and then check which items are selected.
@@ -3592,41 +3609,91 @@ void GraphicsView::copyItems(bool cut)
   QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
   QList<QGraphicsItem*> itemsList = items();
   if (!selectedItems.isEmpty()) {
-    QStringList components, connections, shapes, allItems;
-    connections << "equation";
-    MimeData *pMimeData = new MimeData(mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    QStringList components, connections, shapes, shapesOMC, allItems;
+    QJsonArray componentsJsonArray, connectionsJsonArray;
     for (int i = itemsList.size() - 1 ; i >= 0 ; i--) {
       if (itemsList.at(i)->isSelected()) {
         if (Element *pElement = dynamic_cast<Element*>(itemsList.at(i))) {
-          if (mpModelWidget->isNewApi()) {
-            pMimeData->addModifier(pElement->getModelComponent()->getModifier());
-          } else {
-            // we need to get the modifiers here instead of inside pasteItems() because in case of cut the component is removed and then we can't fetch the modifiers.
-            pElement->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), pElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), pElement);
+          QString modifiers;
+          if (pElement->getModelComponent()->getModifier()) {
+            modifiers = pElement->getModelComponent()->getModifier()->toString();
           }
-          pMimeData->addComponent(pElement);
-          components << pElement->getClassName() % " " % pElement->getName() % " " % "annotation(" % pElement->getPlacementAnnotation(true) % ")";
+          components << pElement->getClassName() % " " % pElement->getName() % modifiers % " " % "annotation(" % pElement->getPlacementAnnotation(true) % ");";
+          // component JSON
+          QJsonObject componentJsonObject;
+          componentJsonObject.insert(QLatin1String("classname"), pElement->getClassName());
+          componentJsonObject.insert(QLatin1String("name"), pElement->getName());
+          componentJsonObject.insert(QLatin1String("placement"), pElement->getOMCPlacementAnnotation(QPointF(0, 0)));
+          componentsJsonArray.append(componentJsonObject);
         } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemsList.at(i))) {
           LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(itemsList.at(i));
           if (pLineAnnotation && pLineAnnotation->isConnection()) {
             // Only consider the connection for copying if both the start and the end components are selected.
             if (pLineAnnotation->getStartElement()->getRootParentElement()->isSelected() && pLineAnnotation->getEndElement()->getRootParentElement()->isSelected()) {
-              pMimeData->addConnection(pLineAnnotation);
-              connections << QString("connect(%1, %2) annotation %3;").arg(pLineAnnotation->getStartElementName(), pLineAnnotation->getEndElementName(), pLineAnnotation->getShapeAnnotation());
+              connections << "connect(" % pLineAnnotation->getStartElementName() % ", " % pLineAnnotation->getEndElementName() % ") annotation ("
+                             % pLineAnnotation->getShapeAnnotation() % ");";
+              // connection JSON
+              QJsonObject connectionJsonObject;
+              connectionJsonObject.insert(QLatin1String("from"), pLineAnnotation->getStartElementName());
+              connectionJsonObject.insert(QLatin1String("to"), pLineAnnotation->getEndElementName());
+              connectionJsonObject.insert(QLatin1String("annotation"), pLineAnnotation->getOMCShapeAnnotationWithShapeName());
+              connectionsJsonArray.append(connectionJsonObject);
             }
           } else {
-            pMimeData->addShape(pShapeAnnotation);
             shapes << pShapeAnnotation->getShapeAnnotation();
+            shapesOMC << pShapeAnnotation->getOMCShapeAnnotationWithShapeName();
           }
         }
       }
     }
-    allItems << components << connections << (shapes.isEmpty() ? "" : QString("annotation (%1)").arg(shapes.join(", ")));
-    pMimeData->setText(allItems.join("\n"));
-    QApplication::clipboard()->setMimeData(pMimeData);
-    // if cut flag is set
-    if (cut) {
-      deleteItems();
+
+    QJsonObject jsonObject;
+    jsonObject.insert(QLatin1String("components"), componentsJsonArray);
+    jsonObject.insert(QLatin1String("connections"), connectionsJsonArray);
+    QJsonDocument jsonDocument(jsonObject);
+    QByteArray json = jsonDocument.toJson(QJsonDocument::Compact);
+
+    const QString view = (mViewType == StringHandler::Icon) ? "Icon" : "Diagram";
+    QString annotation;
+    if (!shapes.isEmpty()) {
+      annotation = "annotation (" % view % "(graphics={" % shapes.join(", ") % "}));";
+    }
+
+    if (!connections.isEmpty()) {
+      connections.prepend("equation");
+    }
+
+    allItems << components << connections << annotation;
+    QString allItemsStr = allItems.join("\n");
+    if (!allItemsStr.isEmpty() && QApplication::clipboard()) { // do not push empty strings to the clipboard.
+      QMimeData *pMimeData = new QMimeData;
+      pMimeData->setText(allItemsStr);
+      pMimeData->setData(Helper::cutCopyPasteFormat, allItemsStr.toUtf8());
+
+      if (!json.isEmpty()) {
+        pMimeData->setData(cutCopyPasteComponentsConnectionsFormat, json);
+      }
+      if (!components.isEmpty()) {
+        const QString componentsStr = components.join("\n");
+        pMimeData->setData(cutCopyPasteComponentsFormat, componentsStr.toUtf8());
+      }
+      if (!connections.isEmpty()) {
+        const QString connectionsStr = connections.join("\n");
+        pMimeData->setData(cutCopyPasteConnectionsFormat, connectionsStr.toUtf8());
+      }
+      if (!shapes.isEmpty()) {
+        const QString shapesStr = shapes.join(", ");
+        pMimeData->setData(cutCopyPasteShapesFormat, shapesStr.toUtf8());
+      }
+      if (!shapesOMC.isEmpty()) {
+        const QString shapesStr = shapesOMC.join(", ");
+        pMimeData->setData(cutCopyPasteShapesOMCFormat, shapesStr.toUtf8());
+      }
+      QApplication::clipboard()->setMimeData(pMimeData);
+      // if cut flag is set
+      if (cut) {
+        deleteItems();
+      }
     }
   }
 }
@@ -3647,8 +3714,7 @@ void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
     bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView();
     mpPasteAction->setEnabled(!isSystemLibrary
                               && QApplication::clipboard()->mimeData()
-                              && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat)
-                              && qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData()));
+                              && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat));
     pMenu->addAction(mpPasteAction);
     pMenu->addSeparator();
     pMenu->addAction(MainWindow::instance()->getPrintModelAction());
@@ -3672,16 +3738,15 @@ void GraphicsView::modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation
   pMenu->addSeparator();
   pMenu->addAction(mpCutAction);
   pMenu->addAction(mpCopyAction);
-  if (pLineAnnotation && pLineAnnotation->isConnection()) {
-    // nothing special for connection
-  } else if (pLineAnnotation && pLineAnnotation->isTransition()) {
+  if (pLineAnnotation && pLineAnnotation->isTransition()) {
     pMenu->addSeparator();
     pMenu->addAction(pShapeAnnotation->getEditTransitionAction());
-  } else if (pLineAnnotation && pLineAnnotation->isLineShape()) {
-    pMenu->addAction(mpDuplicateAction);
+  }
+  if (pLineAnnotation && pLineAnnotation->isLineShape()) {
     pMenu->addSeparator();
     pMenu->addAction(mpManhattanizeAction);
-  } else {
+  }
+  if (!pLineAnnotation || pLineAnnotation->isLineShape()) {
     pMenu->addAction(mpDuplicateAction);
     pMenu->addSeparator();
     pMenu->addAction(mpRotateClockwiseAction);
@@ -3906,88 +3971,88 @@ void GraphicsView::omsMultipleItemsContextMenu(QMenu *pMenu)
 }
 
 /*!
- * \brief replaceComponentNameInConnection
- * Helper function to GraphicsView::pasteItems(). Updates the connections component names if the component name is changed during paste operation.
- * \param oldConnectionComponentName
- * \param newConnectionComponentName
- * \return
- */
-QString replaceComponentNameInConnection(const QString &oldConnectionComponentName, const QString &newConnectionComponentName)
-{
-  QString connectionComponentName;
-  QStringList connectionComponentList = oldConnectionComponentName.split(".");
-  if (connectionComponentList.size() > 1) {
-    connectionComponentName = QString("%1.%2").arg(newConnectionComponentName, connectionComponentList.at(1));
-  } else {
-    connectionComponentName = connectionComponentList.at(0);
-    if (connectionComponentName.contains("[")) {
-      connectionComponentName = QString("%1%2").arg(newConnectionComponentName, connectionComponentName.mid(connectionComponentName.indexOf("[")));
-    } else {
-      connectionComponentName = newConnectionComponentName;
-    }
-  }
-  return connectionComponentName;
-}
-
-/*!
  * \brief GraphicsView::pasteItems
  * Slot activated when mpPasteAction triggered SIGNAL is raised.
  * Reads the items from the clipboard and adds them to the view.
  */
 void GraphicsView::pasteItems()
 {
-  if (QApplication::clipboard()->mimeData() && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
-    if (const MimeData *pMimeData = qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData())) {
+  //! @todo Remove this check once the old API is completely removed.
+  if (!mpModelWidget->isNewApi()) {
+    QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
+                             Helper::ok);
+    return;
+  }
+  QClipboard *pClipboard = QApplication::clipboard();
+  if (pClipboard && pClipboard->mimeData() && pClipboard->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
+    ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+
+    QJsonObject jsonObject;
+    if (pClipboard->mimeData()->hasFormat(cutCopyPasteComponentsConnectionsFormat)) {
+      const QByteArray json = pClipboard->mimeData()->data(cutCopyPasteComponentsConnectionsFormat);
+      QJsonParseError jsonParserError;
+      QJsonDocument jsonDocument = QJsonDocument::fromJson(json, &jsonParserError);
+      if (jsonDocument.isNull()) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              QString("Failed to parse json %1 for pasting with error %2.")
+                                                              .arg(json, jsonParserError.errorString()), Helper::scriptingKind, Helper::errorLevel));
+      } else {
+        jsonObject = jsonDocument.object();
+      }
+    }
+
+    QStringList allItems;
+    if (pClipboard->mimeData()->hasFormat(cutCopyPasteComponentsFormat)) {
+      allItems << pClipboard->mimeData()->data(cutCopyPasteComponentsFormat);
+    }
+
+    if (pClipboard->mimeData()->hasFormat(cutCopyPasteConnectionsFormat)) {
+      allItems << pClipboard->mimeData()->data(cutCopyPasteConnectionsFormat);
+    }
+
+    QString shapes;
+    if (pClipboard->mimeData()->hasFormat(cutCopyPasteShapesFormat)) {
+      shapes = pClipboard->mimeData()->data(cutCopyPasteShapesFormat);
+    }
+
+    QString shapesOMC;
+    if (pClipboard->mimeData()->hasFormat(cutCopyPasteShapesOMCFormat)) {
+      shapesOMC = pClipboard->mimeData()->data(cutCopyPasteShapesOMCFormat);
+    }
+
+    const QString view = (mViewType == StringHandler::Icon) ? "Icon" : "Diagram";
+    QString annotation;
+    if (!shapes.isEmpty()) {
+      annotation = "annotation (" % view % "(graphics={" % shapes % "}));";
+    }
+
+    allItems << annotation;
+    allItems.removeAll(QString(""));
+    const QString allItemsStr = allItems.join("\n");
+    // Load the text in the model.
+    if (!allItemsStr.isEmpty() && MainWindow::instance()->getOMCProxy()->loadClassContentString(allItemsStr, mpModelWidget->getLibraryTreeItem()->getNameStructure())) {
       const QString action = "Paste items from clipboard";
       mpModelWidget->beginMacro(action);
-      ModelInfo oldModelInfo;
-      if (mpModelWidget->isNewApi()) {
-        oldModelInfo = mpModelWidget->createModelInfo();
+      // add components
+      if (jsonObject.contains("components")) {
+        QJsonArray componentsArray = jsonObject.value("components").toArray();
+        for (int i = 0; i < componentsArray.size(); ++i) {
+          QJsonObject componentObject = componentsArray.at(i).toObject();
+          const QString className = componentObject.value("classname").toString();
+          const QString name = componentObject.value("name").toString();
+          const QString placement = componentObject.value("placement").toString();
+          addElementToView(GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className), false, false, false, QPointF(0, 0), placement, false);
+          mElementsList.last()->setSelected(true);
+        }
       }
-      // map to store
-      QMap<Element*, QString> renamedComponents;
-      // paste the components
-      int index = 0;
-      foreach (Element *pComponent, pMimeData->getComponents()) {
-        QString name = pComponent->getName();
-        const QString className = pComponent->getClassName();
-        if (!checkElementName(className, name)) {
-          name = getUniqueElementName(className, StringHandler::toCamelCase(StringHandler::getLastWordAfterDot(className)));
-          renamedComponents.insert(pComponent, name);
-        }
-
-        if (mpModelWidget->isNewApi()) {
-          ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className);
-          addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), false);
-          // set modifiers
-          ModelInstance::Modifier *pModifier = pMimeData->getModifiers().at(index);
-          if (pModifier) {
-            MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name, pModifier->toString());
-          }
-        } else {
-          ElementInfo *pComponentInfo = new ElementInfo(pComponent->getElementInfo());
-          pComponentInfo->setName(name);
-          addComponentToView(name, pComponent->getLibraryTreeItem(), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), QPointF(0, 0), pComponentInfo, true, true, true);
-        }
-        Element *pNewElement = mElementsList.last();
-        pNewElement->setSelected(true);
-        index++;
-      }
-      // paste the connections
-      foreach (LineAnnotation *pConnectionLineAnnotation, pMimeData->getConnections()) {
-        QString startComponentName = pConnectionLineAnnotation->getStartElementName();
-        if (renamedComponents.contains(pConnectionLineAnnotation->getStartElement()->getRootParentElement())) {
-          startComponentName = replaceComponentNameInConnection(startComponentName, renamedComponents.value(pConnectionLineAnnotation->getStartElement()->getRootParentElement()));
-        }
-        QString endComponentName = pConnectionLineAnnotation->getEndElementName();
-        if (renamedComponents.contains(pConnectionLineAnnotation->getEndElement()->getRootParentElement())) {
-          endComponentName = replaceComponentNameInConnection(endComponentName, renamedComponents.value(pConnectionLineAnnotation->getEndElement()->getRootParentElement()));
-        }
-
-        QString connectionAnnotation = pConnectionLineAnnotation->getOMCShapeAnnotationWithShapeName();
-        if (mpModelWidget->isNewApi()) {
+      // add connections
+      if (jsonObject.contains("connections")) {
+        QJsonArray connectionsArray = jsonObject.value("connections").toArray();
+        for (int i = 0; i < connectionsArray.size(); ++i) {
+          QJsonObject connectionObject = connectionsArray.at(i).toObject();
           // connection annotation
-          QStringList shapesList = StringHandler::getStrings(connectionAnnotation);
+          QStringList shapesList = StringHandler::getStrings(connectionObject.value("annotation").toString());
           // Now parse the shapes available in list
           QString lineShape = "";
           foreach (QString shape, shapesList) {
@@ -3998,32 +4063,20 @@ void GraphicsView::pasteItems()
             }
           }
           LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, 0, 0, this);
-          pConnectionLineAnnotation->setStartElementName(startComponentName);
-          pConnectionLineAnnotation->setEndElementName(endComponentName);
+          pConnectionLineAnnotation->setStartElementName(connectionObject.value("from").toString());
+          pConnectionLineAnnotation->setEndElementName(connectionObject.value("to").toString());
           addConnectionToView(pConnectionLineAnnotation, false);
-          addConnectionToClass(pConnectionLineAnnotation);
-        } else {
-          QStringList connectionList;
-          connectionList << startComponentName << endComponentName << QString("");
-          mpModelWidget->addConnection(connectionList, connectionAnnotation, true, true);
+          mConnectionsList.last()->setSelected(true);
         }
-        LineAnnotation *pNewConnectionLineAnnotation = mConnectionsList.last();
-        pNewConnectionLineAnnotation->setSelected(true);
       }
-      // paste the shapes
-      QStringList shapes;
-      foreach (ShapeAnnotation *pShapeAnnotation, pMimeData->getShapes()) {
-        shapes << pShapeAnnotation->getOMCShapeAnnotationWithShapeName();
-      }
-      if (!shapes.isEmpty()) {
-        mpModelWidget->drawModelIconDiagramShapes(shapes, this, true);
-      }
+      // add shapes
+      QStringList shapesList = StringHandler::getStrings(shapesOMC);
+      bool state = isAddClassAnnotationNeeded();
+      mpModelWidget->drawModelIconDiagramShapes(shapesList, this, true);
+      setAddClassAnnotationNeeded(state);
+      ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
       // update the model text
-      mpModelWidget->updateClassAnnotationIfNeeded();
-      if (mpModelWidget->isNewApi()) {
-        ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-        mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
-      }
       mpModelWidget->updateModelText();
       mpModelWidget->endMacro();
     }
@@ -5364,7 +5417,13 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   verticalLayout->setContentsMargins(0, 0, 0, 0);
   verticalLayout->addWidget(mpTopFrame, 0, Qt::AlignTop);
   verticalLayout->addWidget(mpSplitter, 1);
-  verticalLayout->addWidget(mpBottomFrame, 0, Qt::AlignBottom);
+  // Issue #10235. Use QScrollArea so we can resize.
+  QScrollArea *pBottomScrollArea = new QScrollArea;
+  pBottomScrollArea->setFrameShape(QFrame::NoFrame);
+  pBottomScrollArea->setBackgroundRole(QPalette::Base);
+  pBottomScrollArea->setWidgetResizable(true);
+  pBottomScrollArea->setWidget(mpBottomFrame);
+  verticalLayout->addWidget(pBottomScrollArea, 0, Qt::AlignBottom);
   // main frame layout
   mpMainFrame->setLayout(verticalLayout);
   QHBoxLayout *layout = new QHBoxLayout;
@@ -6731,10 +6790,6 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   loadModelInstance(false, modelInfo);
   // update the icon
   mpLibraryTreeItem->handleIconUpdated();
-  // if documentation view is visible then update it
-  if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
-    MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
-  }
   updateViewButtonsBasedOnAccess();
   QApplication::restoreOverrideCursor();
 }
@@ -9986,7 +10041,6 @@ void ModelWidgetContainer::saveModelWidget()
                              GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
     return;
   }
-  pModelWidget->processPendingModelUpdate();
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
   MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
 }

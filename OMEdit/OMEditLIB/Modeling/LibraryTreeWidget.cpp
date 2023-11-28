@@ -2793,13 +2793,6 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
   MainWindow *pMainWindow = MainWindow::instance();
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
-    // clear model from clipboard
-    if (QApplication::clipboard()->mimeData() && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
-      const MimeData *pMimeData = qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData());
-      if (pMimeData && pMimeData->getName().compare(pLibraryTreeItem->getNameStructure()) == 0) {
-        QApplication::clipboard()->clear();
-      }
-    }
     // if ModelWidget is used by DiagramWindow
     if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()
         && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget() == pLibraryTreeItem->getModelWidget()) {
@@ -3196,7 +3189,24 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeView::copyClassPathHelper(const QString &classPath)
 {
-  QApplication::clipboard()->setText(classPath);
+  QClipboard *pClipboard = QApplication::clipboard();
+  if (!pClipboard) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Unable to get the clipboard using QApplication::clipboard().",
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    pClipboard = qApp->clipboard();
+    if (!pClipboard) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Unable to get the clipboard using qApp->clipboard().",
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      pClipboard = QGuiApplication::clipboard();
+      if (!pClipboard) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Unable to get the clipboard using QGuiApplication::clipboard().",
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+    }
+  }
+  if (pClipboard) {
+    pClipboard->setText(classPath);
+  }
 }
 
 /*!
@@ -4635,6 +4645,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
  */
 bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   bool result = false;
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
@@ -4688,6 +4699,7 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
     return;
@@ -4722,6 +4734,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
   saveTotalLibraryTreeItemHelper(pLibraryTreeItem);

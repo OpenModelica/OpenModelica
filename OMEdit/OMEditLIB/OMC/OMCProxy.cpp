@@ -1710,6 +1710,20 @@ bool OMCProxy::loadString(QString value, QString fileName, QString encoding, boo
 }
 
 /*!
+ * \brief OMCProxy::loadClassContentString
+ * Loads class elements from a string data and inserts them into the given loaded class.
+ * \param data
+ * \param className
+ * \return
+ */
+bool OMCProxy::loadClassContentString(const QString &data, const QString &className)
+{
+  bool result = mpOMCInterface->loadClassContentString(data, className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   Parse the file. Doesn't load it into OMC.
   \param fileName - the file to parse.
   \return true on success

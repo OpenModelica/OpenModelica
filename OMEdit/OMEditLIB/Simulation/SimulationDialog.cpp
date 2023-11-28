@@ -1423,6 +1423,7 @@ void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptio
     }
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     MessagesWidget::instance()->addSimulationOutputTab(pSimulationOutputWidget, simulationOptions.getOutputFileName());
+    pSimulationOutputWidget->start();
     if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
       MainWindow::instance()->switchToPlottingPerspectiveSlot();
     } else {

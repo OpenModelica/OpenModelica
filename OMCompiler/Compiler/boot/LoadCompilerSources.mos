@@ -190,6 +190,7 @@ if true then /* Suppress output */
     "../Util/System.mo",
     "../Util/Testsuite.mo",
     "../Util/UnorderedMap.mo",
+    "../Util/UnorderedSet.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
     "../Util/Vector.mo",
@@ -527,7 +528,6 @@ if true then /* Suppress output */
     "../Util/SBSet.mo",
     "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo",
-    "../Util/UnorderedSet.mo",
     "../Util/Unzip.mo",
 
     "../../SimulationRuntime/c/RuntimeSources.mo"

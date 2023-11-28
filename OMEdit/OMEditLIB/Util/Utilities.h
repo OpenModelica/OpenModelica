@@ -523,6 +523,7 @@ namespace Utilities {
   QString convertSymbolToUnit(const QString &symbol);
   QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
+  bool isMultiline(const QString &text);
 } // namespace Utilities
 
 #endif // UTILITIES_H

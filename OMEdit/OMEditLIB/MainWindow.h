@@ -91,6 +91,7 @@ class TraceabilityInformationURI;
 class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
+class MessageTab;
 
 class MainWindow : public QMainWindow
 {
@@ -117,6 +118,7 @@ public:
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
   int getNumberOfProcessors() {return mNumberOfProcessors;}
+  QDockWidget* getMessagesDockWidget() {return mpMessagesDockWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
@@ -314,6 +316,7 @@ private:
   CommitChangesDialog *mpCommitChangesDialog;
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
+  QTabWidget *mpMessagesTabWidget;
   QProgressBar *mpProgressBar;
   Label *mpPositionLabel;
   QTabBar *mpPerspectiveTabbar;
@@ -589,6 +592,10 @@ private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
   void threeDViewerDockWidgetVisibilityChanged(bool visible);
+  void messagesTabBarClicked(int index);
+  void messagesDockWidgetVisibilityChanged(bool visible);
+  void messageTabAdded(QWidget *pSimulationOutputTab, const QString &name);
+  void messageTabClosed(int index);
   void autoSave();
   void showDataReconciliationDialog();
   void showDebugConfigurationsDialog();
@@ -613,6 +620,7 @@ private:
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel = QString());
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
+  MessageTab* createMessageTab(const QString &name, bool fixedTab);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event) override;
   virtual void dragMoveEvent(QDragMoveEvent *event) override;
@@ -631,6 +639,26 @@ public slots:
   void showReportIssue();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
+};
+
+class MessageTab : public QWidget
+{
+  Q_OBJECT
+public:
+  MessageTab(bool fixedTab);
+  void setIndex(int index) {mIndex = index;}
+private:
+  int mIndex = -1;
+  Label *mpProgressLabel;
+  QProgressBar *mpProgressBar;
+public slots:
+  void updateText(const QString &text);
+  void updateProgress(QProgressBar *pProgressBar);
+signals:
+  void clicked(int index);
+  // QObject interface
+public:
+  virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 };
 
 #endif // MAINWINDOW_H

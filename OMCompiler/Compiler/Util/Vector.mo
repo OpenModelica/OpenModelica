@@ -134,6 +134,35 @@ public
     arrayUpdateNoBoundsChecking(data, sz, value);
   end push;
 
+  function insert
+    "Inserts a value at the given index, moving the elements after to make place.
+     Fails if the index is out of bounds, except for when the index is one past
+     the end of the vector in which case the operation is equivalent to a push
+     (to allow inserting at the end of the vector)."
+    input Vector<T> v;
+    input T value;
+    input Integer index;
+  protected
+    array<T> data;
+    Integer sz = Mutable.access(v.size);
+  algorithm
+    if index == sz + 1 then
+      push(v, value);
+    elseif index < 1 or index > sz then
+      fail();
+    end if;
+
+    sz := sz + 1;
+    Mutable.update(v.size, sz);
+    data := reserveCapacity(v, sz);
+
+    for i in sz:-1:index+1 loop
+      arrayUpdateNoBoundsChecking(data, i, arrayGetNoBoundsChecking(data, i - 1));
+    end for;
+
+    arrayUpdateNoBoundsChecking(data, index, value);
+  end insert;
+
   function append
     "Appends v2 to the end of v1."
     input Vector<T> v1;
@@ -558,6 +587,37 @@ public
     oe := NONE();
     index := -1;
   end find;
+
+  function findLast
+    "Returns the last element and the index of that element for which the given
+     function returns true, or NONE() and -1 if no such element exists."
+    input Vector<T> v;
+    input PredFn fn;
+    output Option<T> oe;
+    output Integer index;
+
+    partial function PredFn
+      input T e;
+      output Boolean res;
+    end PredFn;
+  protected
+    array<T> data = Mutable.access(v.data);
+    Integer sz = Mutable.access(v.size);
+    T e;
+  algorithm
+    for i in sz:-1:1 loop
+      e := arrayGetNoBoundsChecking(data, i);
+
+      if fn(e) then
+        oe := SOME(e);
+        index := i;
+        return;
+      end if;
+    end for;
+
+    oe := NONE();
+    index := -1;
+  end findLast;
 
   function findFold<FT>
     "Returns the first element and the index of that element for which the given

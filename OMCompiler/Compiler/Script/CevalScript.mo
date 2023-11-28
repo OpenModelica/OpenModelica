@@ -665,7 +665,7 @@ algorithm
     case ("parseString",{Values.STRING(str1),Values.STRING(str2)})
       algorithm
         Absyn.PROGRAM(classes=classes,within_=within_) := Parser.parsestring(str1,str2);
-        paths := List.map(classes,AbsynUtil.className);
+        paths := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in classes);
         paths := List.map1r(paths,AbsynUtil.joinWithinPath,within_);
         vals := List.map(paths,ValuesUtil.makeCodeTypeName);
       then
