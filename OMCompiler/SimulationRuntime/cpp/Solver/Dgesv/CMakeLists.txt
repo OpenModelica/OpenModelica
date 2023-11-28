@@ -4,7 +4,6 @@ project(${DgesvName})
 
 IF(DGESV_FOUND)
   MESSAGE(STATUS "DGESV enabled")
-  MESSAGE(STATUS "AHeu: Target name ${DgesvName}")
   include_directories (${DGESV_INCLUDE_DIR})
   add_library(${DgesvName}_static STATIC ${DGESV_SRCS})
   install(TARGETS ${DgesvName}_static DESTINATION ${LIBINSTALLEXT})

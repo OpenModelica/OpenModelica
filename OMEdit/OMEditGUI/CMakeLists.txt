@@ -42,12 +42,23 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt5/plugins/    # Note the slash at the end!
           TYPE BIN)
 
+  # This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
+  # It needs to link to libs that are isntalled to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
+  # but if I add that to DIRECTORIES it will throw errors on the second run.
+  set(OMPLOT_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMPlot/OMPlot/OMPlotGUI ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMPlot/qwt/src)
+  set(OMSIMULATOR_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMSimulator/src/OMSimulatorLib)
+  set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
+  set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
+  set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
+  set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
+  message(STATUS "install will search for OMEdit runtime dependencies in ${RUNTIME_LIB_DIRS}")
+
   install(TARGETS OMEdit
           RUNTIME_DEPENDENCIES
-            DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
+            DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}
             PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
             POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
 else()
   install(TARGETS OMEdit
-    BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
+          BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
 endif()

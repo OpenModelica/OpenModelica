@@ -27,8 +27,7 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
-  // TODO AHeu: On older msys zlib is called libzlib.dll, on newer it is libz.dll
+  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lryu -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
   // Same for szip instead of sz.
   constant String ldflags_zip = if isNewNewOMDev then "-lz -lsz " else "-lzip -lszip ";
   constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
