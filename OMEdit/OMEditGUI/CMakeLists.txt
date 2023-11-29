@@ -42,7 +42,7 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt5/plugins/    # Note the slash at the end!
           TYPE BIN)
 
-  # This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
+  # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
   # It needs to link to libs that are isntalled to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
   # but if I add that to DIRECTORIES it will throw errors on the second run.
   set(OMPLOT_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMPlot/OMPlot/OMPlotGUI ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMPlot/qwt/src)
@@ -52,6 +52,11 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
   set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
   message(STATUS "install will search for OMEdit runtime dependencies in ${RUNTIME_LIB_DIRS}")
+
+  # TODO: OMPlot should add this? Or OMEdit needs to link to it directly?
+  install(FILES
+          ${MSYSTEM_PREFIX_ESCAPED}/bin/Qt5OpenGL.dll
+          TYPE BIN)
 
   install(TARGETS OMEdit
           RUNTIME_DEPENDENCIES
