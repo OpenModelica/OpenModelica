@@ -1,0 +1,27 @@
+// name: ScalableTestSuite.Thermal.DistrictHeating.Verification.TestHist
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadModel(ScalableTestSuite); getErrorString();
+
+simulate(ScalableTestSuite.Thermal.DistrictHeating.Verification.TestHist); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Thermal.DistrictHeating.Verification.TestHist_res.mat",
+  "ReferenceFiles/ScalableTestSuite.Thermal.DistrictHeating.Verification.TestHist_res.mat",
+  "ScalableTestSuite.Thermal.DistrictHeating.Verification.TestHist_diff.csv",0.01,0.0001,
+  {"y"});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ScalableTestSuite.Thermal.DistrictHeating.Verification.TestHist_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Thermal.DistrictHeating.Verification.TestHist', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

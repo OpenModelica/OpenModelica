@@ -1,11 +1,31 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+ManyEvents.mos \
 ManyEventsManyConditions.mos \
+TransmissionLineModelica.mos \
+DistributionSystemModelicaIndividual.mos \
+Table.mos \
+Verification_Table.mos \
+CascadedFirstOrder.mos \
+HarmonicOscillatorNetwork.mos \
+HarmonicOscillator.mos \
+AdvectionReaction.mos \
+HeatingSystem.mos \
+TestHist.mos \
+TestHysteresis.mos \
+TestSat.mos \
+OneDHeatTransferTI_FD.mos \
+OneDHeatTransferTI_Modelica.mos \
+OneDHeatTransferTT_FD.mos \
+OneDHeatTransferTT_Modelica.mos \
+CocurrentHeatExchangerEquations.mos \
+CounterCurrentHeatExchangerEquations.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+TransmissionLineEquations.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
