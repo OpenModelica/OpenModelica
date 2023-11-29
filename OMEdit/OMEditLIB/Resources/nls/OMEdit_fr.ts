@@ -1984,7 +1984,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="772"/>
         <source>Insert in class &lt;b&gt;%1&lt;/b&gt; is a system library. System libraries are read-only.</source>
-        <translation>Insérer dans la classe &lt;b&gt;%1&lt;/b&gt; est une librairie système. Les librairies systèmes sont en lecture-seule.</translation>
+        <translation>Insérer dans la classe &lt;b&gt;%1&lt;/b&gt; est une bibliothèque système. Les bibliothèques systèmes sont en lecture-seule.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="778"/>
@@ -2419,7 +2419,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3632"/>
         <source>Libraries Browser</source>
-        <translation>Navigateur de Librairies</translation>
+        <translation>Navigateur de Bibliothèques</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3640"/>
@@ -4163,7 +4163,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="447"/>
         <source>Libraries</source>
-        <translation>Librairies</translation>
+        <translation>Bibliothèques</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="580"/>
@@ -4468,7 +4468,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3848"/>
         <source>The system libraries are read from the MODELICAPATH and are always read-only.</source>
-        <translation>Les librairies systèmes sont lues à partir de MODELICAPATH et sont toujours en lecture seule.</translation>
+        <translation>Les bibliothèques systèmes sont lues à partir de MODELICAPATH et sont toujours en lecture seule.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3851"/>
@@ -4792,12 +4792,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="3718"/>
         <source>Load Library</source>
-        <translation>Charger une Librairie</translation>
+        <translation>Charger une Bibliothèque</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3719"/>
         <source>Loads the Modelica library</source>
-        <translation>Charge la Librairie Modelica</translation>
+        <translation>Charge la bibliothèque Modelica</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3739"/>
@@ -5047,7 +5047,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="256"/>
         <source>Libraries Browser</source>
-        <translation>Navigateur de Librairies</translation>
+        <translation>Navigateur de Bibliothèques</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="313"/>
@@ -5638,12 +5638,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="4282"/>
         <source>&amp;System Libraries</source>
-        <translation>Librairies &amp;Système</translation>
+        <translation>Bibliothèques &amp;Système</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4288"/>
         <source>&amp;Manage Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gérer les Bibliothèques</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4297"/>
@@ -6038,7 +6038,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="576"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a system library class. System libraries are always read-only. Your changes will not be saved.</source>
-        <translation>&lt;b&gt;Avertissement: &lt;/b&gt; Vous êtes en train de modifier une classe de la librairie système. Les librairies système sont toujours en lecture seule. Vos changements ne seront pas sauvegardés.</translation>
+        <translation>&lt;b&gt;Avertissement: &lt;/b&gt; Vous êtes en train de modifier une classe d'une bibliothèque système. Les bibliothèques système sont toujours en lecture seule. Vos changements ne seront pas sauvegardés.</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="579"/>
