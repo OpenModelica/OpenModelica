@@ -104,53 +104,29 @@ std::string VisualizerAttribute::getValueString() const
 }
 
 template<typename VisualizerObject>
-AbstractVisualProperties::Color::Type VisualProperties<VisualizerObject>::Color::getDefault() const
+AbstractVisualProperties::Color::Type VisualProperties<VisualizerObject>::Color::getProperty() const
 {
-  return QColor(0.0, 0.0, 0.0, 0.0);
+  const VisualizerObject* visualizer = static_cast<const VisualizerObject*>(mpParent);
+  return QColor(visualizer->_color[0].exp, visualizer->_color[1].exp, visualizer->_color[2].exp);
 }
 
 template<typename VisualizerObject>
-AbstractVisualProperties::Specular::Type VisualProperties<VisualizerObject>::Specular::getDefault() const
+AbstractVisualProperties::Specular::Type VisualProperties<VisualizerObject>::Specular::getProperty() const
 {
-  return 0.7;
+  const VisualizerObject* visualizer = static_cast<const VisualizerObject*>(mpParent);
+  return visualizer->_specCoeff.exp;
 }
 
 template<typename VisualizerObject>
-AbstractVisualProperties::Transparency::Type VisualProperties<VisualizerObject>::Transparency::getDefault() const
+AbstractVisualProperties::Transparency::Type VisualProperties<VisualizerObject>::Transparency::getProperty() const
 {
   return 0.0;
 }
 
 template<typename VisualizerObject>
-AbstractVisualProperties::TextureImagePath::Type VisualProperties<VisualizerObject>::TextureImagePath::getDefault() const
+AbstractVisualProperties::TextureImagePath::Type VisualProperties<VisualizerObject>::TextureImagePath::getProperty() const
 {
   return "";
-}
-
-template<typename VisualizerObject>
-AbstractVisualProperties::Color::Type VisualProperties<VisualizerObject>::Color::get() const
-{
-  const VisualizerObject* visualizer = static_cast<const VisualizerObject*>(mpParent);
-  return mCustom ? mProperty : QColor(visualizer->_color[0].exp, visualizer->_color[1].exp, visualizer->_color[2].exp);
-}
-
-template<typename VisualizerObject>
-AbstractVisualProperties::Specular::Type VisualProperties<VisualizerObject>::Specular::get() const
-{
-  const VisualizerObject* visualizer = static_cast<const VisualizerObject*>(mpParent);
-  return mCustom ? mProperty : visualizer->_specCoeff.exp;
-}
-
-template<typename VisualizerObject>
-AbstractVisualProperties::Transparency::Type VisualProperties<VisualizerObject>::Transparency::get() const
-{
-  return AbstractVisualProperties::Transparency::get();
-}
-
-template<typename VisualizerObject>
-AbstractVisualProperties::TextureImagePath::Type VisualProperties<VisualizerObject>::TextureImagePath::get() const
-{
-  return AbstractVisualProperties::TextureImagePath::get();
 }
 
 AbstractVisualizerObject::AbstractVisualizerObject(const VisualizerType type)

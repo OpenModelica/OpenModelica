@@ -107,15 +107,16 @@ public:
   VisualProperty() {reset();}
   virtual ~VisualProperty() = default;
 protected:
-  virtual Type getDefault() const {return Type();}
+  virtual Type getProperty() const {return mProperty;}
 public:
   virtual bool custom() const {return mCustom;}
-  virtual Type get() const {return mCustom ? mProperty : getDefault();}
-  virtual void reset() {mCustom = false, mProperty = getDefault();}
+  virtual Type get() const {return mCustom ? mProperty : getProperty();}
   virtual void set(const Type& rProperty) {mCustom = true, mProperty = rProperty;}
+  virtual void reset() {mCustom = false, mProperty = Type();}
   virtual void parent(const AbstractVisualProperties* pParent) final {mpParent = pParent;}
 protected:
   const AbstractVisualProperties* mpParent;
+private:
   Type mProperty;
   bool mCustom;
 };
@@ -141,17 +142,13 @@ class VisualProperties : public AbstractVisualProperties
 {
 private:
   class Color final : public AbstractVisualProperties::Color
-  { protected: virtual Type getDefault() const override final;
-    public: virtual Type get() const override final; };
+  { protected: virtual Type getProperty() const override final; };
   class Specular final : public AbstractVisualProperties::Specular
-  { protected: virtual Type getDefault() const override final;
-    public: virtual Type get() const override final; };
+  { protected: virtual Type getProperty() const override final; };
   class Transparency final : public AbstractVisualProperties::Transparency
-  { protected: virtual Type getDefault() const override final;
-    public: virtual Type get() const override final; };
+  { protected: virtual Type getProperty() const override final; };
   class TextureImagePath final : public AbstractVisualProperties::TextureImagePath
-  { protected: virtual Type getDefault() const override final;
-    public: virtual Type get() const override final; };
+  { protected: virtual Type getProperty() const override final; };
 public:
   VisualProperties() noexcept
   {
