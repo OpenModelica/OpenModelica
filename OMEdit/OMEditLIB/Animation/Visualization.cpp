@@ -1613,6 +1613,8 @@ void UpdateVisitor::apply(osg::Geode& node)
   }//end switch action
 
   if (changeMaterial || changeTexture) {
+    AbstractVisualProperties* visualProperties = _visualizer->getVisualProperties();
+
     osg::ref_ptr<osg::StateSet> stateSet = nullptr;
     bool geometryColors = false;
     bool is3DSShape = false;
@@ -1625,7 +1627,7 @@ void UpdateVisitor::apply(osg::Geode& node)
           osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
           if (cad.valid()) {
             stateSet = cad->getOrCreateStateSet();
-            geometryColors = !shape->getVisualProperties()->getColor().custom();
+            geometryColors = !visualProperties->getColor().custom();
             is3DSShape = is3DSType(shape->_type);
           }
         }
@@ -1635,7 +1637,6 @@ void UpdateVisitor::apply(osg::Geode& node)
     osg::ref_ptr<osg::StateSet> ss = stateSet.valid() ? stateSet.get() : node.getOrCreateStateSet();
     osg::Material::ColorMode mode = geometryColors ? osg::Material::AMBIENT_AND_DIFFUSE : osg::Material::OFF;
 
-    AbstractVisualProperties* visualProperties = _visualizer->getVisualProperties();
     QColor      color            = visualProperties->getColor().get();
     float       specular         = visualProperties->getSpecular().get();
     float       transparency     = visualProperties->getTransparency().get();
