@@ -527,6 +527,8 @@ private:
     const QString &getVariability() const {return mVariability;}
     const QString &getDirection() const {return mDirection;}
     QString toString(bool skipTopLevel = false) const;
+    QString typePrefixes() const;
+
   private:
     Model *mpParentModel;
     bool mPublic;
