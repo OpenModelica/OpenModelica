@@ -276,6 +276,22 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 
 /*!
+ * \brief PlotWindowContainer::removePlotCurves
+ * Removes all the plot curves from PlotWindow
+ * \param pPlotWindow
+ */
+void PlotWindowContainer::removePlotCurves(PlotWindow *pPlotWindow)
+{
+  int i = 0;
+  while(i != pPlotWindow->getPlot()->getPlotCurvesList().size()) {
+    PlotCurve *pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList()[i];
+    pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+    pPlotCurve->detach();
+    i = 0;   //Restart iteration
+  }
+}
+
+/*!
  * \brief PlotWindowContainer::addPlotWindow
  * Adds a new Plot Window.
  * \param maximized - sets the window state maximized
@@ -521,7 +537,7 @@ void PlotWindowContainer::removeInteractivePlotWindow()
 {
   PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(sender());
   QString owner = pPlotWindow->getInteractiveOwner();
-  MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->removeVariableTreeItem(owner);
+  MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->removeVariableTreeItem(owner, false);
 }
 
 /*!
@@ -561,13 +577,7 @@ void PlotWindowContainer::clearPlotWindow()
                              tr("No plot window is active for clearing curves."), Helper::ok);
     return;
   }
-  int i = 0;
-  while(i != pPlotWindow->getPlot()->getPlotCurvesList().size()) {
-    PlotCurve *pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList()[i];
-    pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-    pPlotCurve->detach();
-    i = 0;   //Restart iteration
-  }
+  removePlotCurves(pPlotWindow);
   pPlotWindow->fitInView();
   MainWindow::instance()->getVariablesWidget()->updateVariablesTreeHelper(subWindowList(QMdiArea::ActivationHistoryOrder).last());
 }

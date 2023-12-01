@@ -208,12 +208,14 @@ public:
   void setTime(double time){mTime = time;}
   double getTime() {return mTime;}
   void updateTimeText();
-  void updateCurves();
-  void updateYAxis(QPair<double, double> minMaxValues);
   void updatePlot();
+private:
+  void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
 public slots:
+  void updateCurves();
+  void updateYAxis(QPair<double, double> minMaxValues);
   void enableZoomMode(bool on);
   void enablePanMode(bool on);
   void exportDocument();
@@ -226,6 +228,8 @@ public slots:
   bool toggleSign(PlotCurve *pPlotCurve, bool checked);
   void showSetupDialog();
   void showSetupDialog(QString variable);
+  void interactiveSimulationStarted();
+  void interactiveSimulationPaused();
 };
 
 //Exception classes

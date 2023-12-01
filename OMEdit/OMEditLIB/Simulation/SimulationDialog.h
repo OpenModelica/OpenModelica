@@ -67,7 +67,6 @@ public:
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
   void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation, bool enableDataReconciliation);
   OpcUaClient* getOpcUaClient(int port);
-  void removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget);
 private:
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
@@ -202,14 +201,13 @@ private:
   void saveTranslationFlagsAnnotation();
   void performSimulation(const SimulationOptions &simulationOptions);
   void saveDialogGeometry();
-  void killSimulationProcess(int port);
-  void removeVariablesFromTree(QString className);
-  void setInteractiveControls(bool enabled);
 public:
+  void stopInteractiveSimulationSampling(SimulationOptions simulationOptions);
+  void removeInteractiveSimulation(bool isInteractiveSimulation, QString className, bool closeInteractivePlotWindow);
   void reSimulate(SimulationOptions simulationOptions);
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
   void simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime);
-  void createOpcUaClient(SimulationOptions simulationOptions);
+  bool createOpcUaClient(SimulationOptions simulationOptions, QString *pErrorString);
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);
@@ -222,13 +220,9 @@ public slots:
   void showSimulationFlagsHelp();
   void simulate();
   void reject();
-  void updateInteractiveSimulationCurves();
-  void updateYAxis(double min, double max);
 private slots:
   void resultFileNameChanged(QString text);
   void showVariableFilterHelp();
-  void simulationStarted();
-  void simulationPaused();
 };
 
 class DataReconciliationDialog : public QDialog
