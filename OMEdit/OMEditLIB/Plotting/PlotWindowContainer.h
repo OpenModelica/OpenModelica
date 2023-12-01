@@ -67,6 +67,7 @@ public:
   bool isDiagramWindow(QObject *pObject);
   bool isUniqueName(QString name);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
+  void removePlotCurves(OMPlot::PlotWindow *pPlotWindow);
 private:
   void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;

@@ -161,7 +161,7 @@ public:
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList *variablesList);
-  bool removeVariableTreeItem(QString variable);
+  bool removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
   void plotAllVariables(VariablesTreeItem *pVariablesTreeItem, OMPlot::PlotWindow *pPlotWindow);
 private:
@@ -226,15 +226,13 @@ public:
   VariablesTreeView* getVariablesTreeView() {return mpVariablesTreeView;}
   void enableVisualizationControls(bool enable);
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
-  void addSelectedInteractiveVariables(const QString &modelName, const QList<QString> &selectedVariables);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
   void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
                                  QHash<QString, QHash<QString, QString> > *variables);
   void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
   void reSimulate(bool showSetup);
-  void interactiveReSimulation(QString modelName);
-  void updateInitXmlFile(SimulationOptions simulationOptions);
+  void updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions);
   void initializeVisualization();
   void updateVisualization();
   void updatePlotWindows();
@@ -260,7 +258,6 @@ private:
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
   QVector<PlotParametricCurve> mPlotParametricCurves;
-  QHash<QString, QList<QString>> mSelectedInteractiveVariables;
   QMdiSubWindow *mpLastActiveSubWindow;
   ModelicaMatReader mModelicaMatReader;
   csv_data *mpCSVData;

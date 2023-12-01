@@ -538,7 +538,10 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
  */
 void SimulationOutputWidget::embeddedServerInitialized()
 {
-  MainWindow::instance()->getSimulationDialog()->createOpcUaClient(mSimulationOptions);
+  QString errorString;
+  if (!MainWindow::instance()->getSimulationDialog()->createOpcUaClient(mSimulationOptions, &errorString)) {
+    writeSimulationOutput(errorString, StringHandler::Error, true);
+  }
 }
 
 /*!
@@ -987,6 +990,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   if (isCompilationProcessRunning()) {
     setCompilationProcessKilled(true);
     mpCompilationProcess->kill();
+    mIsCompilationProcessRunning = false;
     progressStr = tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
     mpProgressBar->setRange(0, 1);
     mpProgressBar->setValue(0);
@@ -995,6 +999,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   } else if (isPostCompilationProcessRunning()) {
     setPostCompilationProcessKilled(true);
     mpPostCompilationProcess->kill();
+    mIsPostCompilationProcessRunning = false;
     progressStr = tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
     mpProgressBar->setRange(0, 1);
     mpProgressBar->setValue(0);
@@ -1003,6 +1008,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   } else if (isSimulationProcessRunning()) {
     setSimulationProcessKilled(true);
     mpSimulationProcess->kill();
+    mIsSimulationProcessRunning = false;
     progressStr = tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
     mpCancelButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
@@ -1260,6 +1266,7 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   if (mSocketState != SocketState::Connected) {
     simulationProcessFinishedHelper();
   }
+  MainWindow::instance()->getSimulationDialog()->stopInteractiveSimulationSampling(mSimulationOptions);
 }
 
 /*!

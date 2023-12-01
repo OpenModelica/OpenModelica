@@ -296,6 +296,7 @@ void PlotWindow::setupToolbar()
     mpStartSimulationToolButton->setIcon(QIcon(":/Resources/icons/play_animation.svg"));
     mpStartSimulationToolButton->setToolTip(tr("Start"));
     mpStartSimulationToolButton->setAutoRaise(true);
+    connect(mpStartSimulationToolButton, SIGNAL(clicked(bool)), SLOT(interactiveSimulationStarted()));
     // pause tool button
     mpPauseSimulationToolButton = new QToolButton;
     mpPauseSimulationToolButton->setEnabled(false);
@@ -303,6 +304,7 @@ void PlotWindow::setupToolbar()
     mpPauseSimulationToolButton->setIcon(QIcon(":/Resources/icons/pause.svg"));
     mpPauseSimulationToolButton->setToolTip(tr("Pause"));
     mpPauseSimulationToolButton->setAutoRaise(true);
+    connect(mpPauseSimulationToolButton, SIGNAL(clicked(bool)), SLOT(interactiveSimulationPaused()));
     // speed label and combo box
     mpSimulationSpeedLabel = new QLabel(tr("Speed:"));
     QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
@@ -1398,22 +1400,6 @@ void PlotWindow::setTitle(QString title)
   mpPlot->setTitle(title);
 }
 
-void PlotWindow::updateCurves()
-{
-  for (auto & p : mpPlot->getPlotCurvesList()) {
-    // append the last point to the plotting curve
-    p->getPlotDirectPainter()->drawSeries(p, p->getSize() - 2, -1);
-  }
-}
-
-void PlotWindow::updateYAxis(QPair<double, double> minMaxValues)
-{
-  // replot if a value is out of bounds
-  if (minMaxValues.first < mpPlot->axisScaleDiv(QwtPlot::yLeft).lowerBound() || minMaxValues.second > mpPlot->axisScaleDiv(QwtPlot::yLeft).upperBound()) {
-    mpPlot->replot();
-  }
-}
-
 /*!
  * \brief PlotWindow::updatePlot
  * This function is called by OMEdit when auto scale is false.
@@ -1426,6 +1412,15 @@ void PlotWindow::updatePlot()
   if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
     mpPlot->getPlotZoomer()->setZoomBase(false);
   }
+}
+
+void PlotWindow::setInteractiveControls(bool enabled)
+{
+  // control buttons
+  mpStartSimulationToolButton->setEnabled(enabled);
+  mpPauseSimulationToolButton->setEnabled(!enabled);
+  //plotpicker
+  mpPlot->getPlotPicker()->setEnabled(enabled);
 }
 
 void PlotWindow::setGrid(QString grid)
@@ -1667,6 +1662,22 @@ void PlotWindow::closeEvent(QCloseEvent *event)
   event->accept();
 }
 
+void PlotWindow::updateCurves()
+{
+  for (auto & p : mpPlot->getPlotCurvesList()) {
+    // append the last point to the plotting curve
+    p->getPlotDirectPainter()->drawSeries(p, p->getSize() - 2, -1);
+  }
+}
+
+void PlotWindow::updateYAxis(QPair<double, double> minMaxValues)
+{
+  // replot if a value is out of bounds
+  if (minMaxValues.first < mpPlot->axisScaleDiv(QwtPlot::yLeft).lowerBound() || minMaxValues.second > mpPlot->axisScaleDiv(QwtPlot::yLeft).upperBound()) {
+    mpPlot->replot();
+  }
+}
+
 void PlotWindow::enableZoomMode(bool on)
 {
   mpPlot->getPlotZoomer()->setEnabled(on);
@@ -1872,6 +1883,16 @@ void PlotWindow::showSetupDialog(QString variable)
   SetupDialog *pSetupDialog = new SetupDialog(this);
   pSetupDialog->selectVariable(variable);
   pSetupDialog->exec();
+}
+
+void PlotWindow::interactiveSimulationStarted()
+{
+  setInteractiveControls(false);
+}
+
+void PlotWindow::interactiveSimulationPaused()
+{
+  setInteractiveControls(true);
 }
 
 /*!
