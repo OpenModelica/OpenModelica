@@ -5736,7 +5736,11 @@ case BINARY(__) then
       let &preExp +=
         <<
         <%tmp%> = <%e1%>;
-        <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+        if(<%tmp%> < 0.0) {
+          <%if acceptMetaModelicaGrammar()
+            then '<%generateThrow()%>;<%\n%>'
+            else 'throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp%>, 0.5);<%\n%>'%>
+        }
         >>
       'sqrt(<%tmp%>)'
     else match realExpIntLit(exp2)

@@ -4087,7 +4087,7 @@ algorithm
     then expPow(makeDiv(e4,e3), negate(e2));
 
     // x^0.5 => sqrt(x)
-    case (_, _) guard(isHalf(e2))
+    case (_, _) guard(isHalf(e2) and isPositiveOrZero(e1))
     then Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
 
     else equation
