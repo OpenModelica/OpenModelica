@@ -184,12 +184,12 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
  *
  * @param data                Runtime data struct.
  * @param threadData          Thread data for error handling.
- * @param systemData          Pointer to non-linear system data.
+ * @param nlsData             Pointer to non-linear system data.
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData)
+NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
 {
-  DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+  DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
 
   int eqSystemNumber = 0;
   int i;
@@ -204,13 +204,13 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   int retries2 = 0;
   int nonContinuousCase = 0;
   modelica_boolean *relationsPreBackup = NULL;
-  int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
+  int casualTearingSet = nlsData->strictTearingFunctionCall != NULL;
 
   /*
    * We are given the number of the non-linear system.
    * We want to look it up among all equations.
    */
-  eqSystemNumber = systemData->equationIndex;
+  eqSystemNumber = nlsData->equationIndex;
 
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
 
@@ -220,7 +220,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   solverData->calculate_jacobian = 0;
 
   // Initialize lambda variable
-  if (systemData->homotopySupport) {
+  if (nlsData->homotopySupport) {
     solverData->x[solverData->n] = 1.0;
     solverData->x_new[solverData->n] = 1.0;
   }
@@ -232,14 +232,15 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
-    int indexes[2] = {1,eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "Start solving Non-Linear System %d at time %g with Newton Solver",
-        eqSystemNumber, data->localData[0]->timeValue);
+    int indexes[2] = {1, eqSystemNumber};
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
+      "Start solving Non-Linear System %d (size %d) at time %g with Newton Solver",
+      eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
 
     for(i = 0; i < solverData->n; i++) {
-      infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo->discreteCall ? systemData->nlsx[i] : systemData->nlsxExtrapolation[i]);
+      infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo->discreteCall ? nlsData->nlsx[i] : nlsData->nlsxExtrapolation[i]);
       infoStreamPrint(LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
-          systemData->nominal[i], systemData->nlsx[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
+          nlsData->nominal[i], nlsData->nlsx[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
       messageClose(LOG_NLS_V);
     }
     messageClose(LOG_NLS_V);
@@ -247,9 +248,9 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
 
   /* set x vector */
   if(data->simulationInfo->discreteCall) {
-    memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+    memcpy(solverData->x, nlsData->nlsx, solverData->n*(sizeof(double)));
   } else {
-    memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
+    memcpy(solverData->x, nlsData->nlsxExtrapolation, solverData->n*(sizeof(double)));
   }
   solverData->time = data->localData[0]->timeValue;
   solverData->initial = data->simulationInfo->initial;
@@ -284,14 +285,16 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS_V))
       {
-        infoStreamPrint(LOG_NLS_V, 0, "*** System solved ***\n%d restarts", retries);
+        infoStreamPrint(LOG_NLS_V, 1, "System solved");
+        infoStreamPrint(LOG_NLS_V, 0, "%d restarts", retries);
         infoStreamPrint(LOG_NLS_V, 0, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
         for(i = 0; i < solverData->n; i++)
           infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
+        messageClose(LOG_NLS_V);
       }
 
       /* take the solution */
-      memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
+      memcpy(nlsData->nlsx, solverData->x, solverData->n*(sizeof(double)));
 
       /* Then try with old values (instead of extrapolating )*/
     }
@@ -303,7 +306,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     }
     else if(retries < 1)
     {
-      memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
+      memcpy(solverData->x, nlsData->nlsxOld, solverData->n*(sizeof(double)));
 
       retries++;
       giveUp = 0;
@@ -317,7 +320,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     else if(retries < 2)
     {
       for(i = 0; i < solverData->n; i++)
-        solverData->x[i] += systemData->nominal[i] * 0.01;
+        solverData->x[i] += nlsData->nominal[i] * 0.01;
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
@@ -327,7 +330,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     else if(retries < 3)
     {
       for(i = 0; i < solverData->n; i++)
-        solverData->x[i] = systemData->nominal[i];
+        solverData->x[i] = nlsData->nominal[i];
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
@@ -340,7 +343,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
        * stuck in event iteration. e.g.: Modelica.Mechanics.Rotational.Examples.HeatLosses
        */
 
-      memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
+      memcpy(solverData->x, nlsData->nlsxOld, solverData->n*(sizeof(double)));
       retries++;
 
       /* try to solve a discontinuous system */
@@ -355,7 +358,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     }
     else if(retries2 < 4)
     {
-      memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
+      memcpy(solverData->x, nlsData->nlsxOld, solverData->n*(sizeof(double)));
       /* reduce tolarance */
       local_tol = local_tol*10;
 
@@ -378,14 +381,12 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
       }
     }
   }
-  if(ACTIVE_STREAM(LOG_NLS_V))
-    messageClose(LOG_NLS_V);
 
   free(relationsPreBackup);
 
   /* write statistics */
-  systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
-  systemData->numberOfIterations = solverData->numberOfIterations;
+  nlsData->numberOfFEval = solverData->numberOfFunctionEvaluations;
+  nlsData->numberOfIterations = solverData->numberOfIterations;
 
   return success;
 }

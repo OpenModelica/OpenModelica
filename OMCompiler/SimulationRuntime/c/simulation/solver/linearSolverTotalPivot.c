@@ -424,9 +424,9 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   int success = 1;
   double tmpJacEvalTime;
 
-  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Total Pivot Solver",
-                                     eqSystemNumber, (int) systemData->size,
-                                     data->localData[0]->timeValue);
+  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes,
+    "Start solving Linear System %d (size %d) at time %g with Total Pivot Solver",
+    eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
   debugVectorDoubleLS(LOG_LS_V,"SCALING",systemData->nominal,n);
   debugVectorDoubleLS(LOG_LS_V,"Old VALUES",aux_x,n);

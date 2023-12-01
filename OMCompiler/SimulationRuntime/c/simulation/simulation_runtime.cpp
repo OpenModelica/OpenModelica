@@ -1212,13 +1212,13 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   }
 #endif
 
+  /* set log activation from equationIndex and lv_system */
+  setLVSystems(data, threadData);
+
   /* initialize static data of mixed/linear/non-linear system solvers */
   initializeMixedSystems(data, threadData);
   initializeLinearSystems(data, threadData);
   initializeNonlinearSystems(data, threadData);
-
-  /* set log activation from equationIndex and lv_system */
-  setLVSystems(data, threadData);
 
   sim_noemit = omc_flag[FLAG_NOEMIT];
 

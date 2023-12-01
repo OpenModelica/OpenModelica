@@ -724,7 +724,7 @@ void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const 
   infoStreamPrint(stream, 1, "%s", name);
   for (i = 0; i < vec->size; ++i)
   {
- //   infoStreamPrint(stream, 0, "[%3d] %-40s = %20.12g",   (int)i+1, eqnInfo.vars[i], vec->data[i]);
+    infoStreamPrint(stream, 0, "[%3d] %-40s = %20.12g", (int)i+1, eqnInfo.vars[i], vec->data[i]);
   }
   messageClose(stream);
 }
