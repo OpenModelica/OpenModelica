@@ -2517,6 +2517,8 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
   }
   free(relationsPreBackup);
 
+  messageClose(LOG_NLS_V);
+
   /* write statistics */
   nlsData->numberOfFEval = homotopyData->numberOfFunctionEvaluations;
   nlsData->numberOfIterations = homotopyData->numberOfIterations;
