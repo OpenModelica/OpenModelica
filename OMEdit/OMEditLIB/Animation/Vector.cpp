@@ -62,11 +62,13 @@ std::ostream& operator<<(std::ostream& os, const VectorQuantity quantity)
 
 VectorObject::VectorObject()
     : AbstractVisualizerObjectWithVisualProperties(VisualizerType::vector),
-      mScaleLength(1.0),
-      mScaleRadius(1.0),
-      mScaleTransf(1.0),
+      mLengthScale(1.0),
+      mRadiusScale(1.0),
+      mAutoLengthScaleCancellation(1.0),
+      mAutoRadiusScaleCancellation(1.0),
       mAutoScaleCancellationRequired(false),
       mOnlyShaftLengthCounted(false),
+      mHidden(false),
       _quantity(VisualizerAttribute(0.0)),
       _headAtOrigin(VisualizerAttribute(0.0)),
       _twoHeadedArrow(VisualizerAttribute(0.0))
