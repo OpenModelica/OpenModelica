@@ -238,7 +238,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LV */                           "[string list] value specifies the logging level",
   /* FLAG_LV_MAX_WARN */                  "[int (default " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ")] maximum times repeating warnings will be displayed",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
-  /* FLAG_LV_SYSTEM */                    "[int list] list of systems for which solver logs are shown",
+  /* FLAG_LV_SYSTEM */                    "[int list] list of system indices for which solver logs are shown (by default logs for all systems are shown)",
   /* FLAG_MAX_BISECTION_ITERATIONS */     "[int (default 0)] value specifies the maximum number of bisection iterations for state event detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */         "[int (default 20)] value specifies the maximum number of event iterations",
   /* FLAG_MAX_ORDER */                    "value specifies maximum integration order for supported solver",
@@ -480,7 +480,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\n"
   "  LOG_SUCCESS, LOG_STATS, LOG_STATS_V.",
   /* FLAG_LV_SYSTEM */
-  "  Value is a comma-separated list of equation indices for which solver logs are shown",
+  "  Value is a comma-separated list of equation indices (available in the transformational debugger) for which solver logs are shown (by default logs for all systems are shown)",
   /* FLAG_MAX_BISECTION_ITERATIONS */
   "  Value specifies the maximum number of bisection iterations for state event\n"
   "  detection or zero for default behavior",

@@ -517,6 +517,7 @@ void damping_heuristic(double* x, genericResidualFunc f,
 {
   int i,j=0;
   double enorm_new, treshold = 1e-2;
+  modelica_boolean startDamping = FALSE; /* remember to close log message */
 
   /* calculate new function values */
   (*f)(n, solverData->x_new, fvec, userData, 1);
@@ -524,8 +525,10 @@ void damping_heuristic(double* x, genericResidualFunc f,
 
   enorm_new=enorm_(&n,fvec);
 
-  if (enorm_new >= current_fvec_enorm)
+  if (enorm_new >= current_fvec_enorm) {
+    startDamping = TRUE;
     infoStreamPrint(LOG_NLS_V, 1, "Start Damping: enorm_new : %e; current_fvec_enorm: %e ", enorm_new, current_fvec_enorm);
+  }
 
   while (enorm_new >= current_fvec_enorm)
   {
@@ -569,7 +572,8 @@ void damping_heuristic(double* x, genericResidualFunc f,
 
   *lambda = 1;
 
-  messageClose(LOG_NLS_V);
+  if (startDamping)
+    messageClose(LOG_NLS_V);
 }
 
 /*! \fn damping_heuristic2
@@ -587,6 +591,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 {
   int i,j=0;
   double enorm_new, treshold = 1e-4, lambda=1;
+  modelica_boolean startDamping = FALSE; /* remember to close log message */
 
   /* calculate new function values */
   (*f)(n, solverData->x_new, fvec, userdata, 1);
@@ -594,8 +599,10 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 
   enorm_new=enorm_(&n,fvec);
 
-  if (enorm_new >= current_fvec_enorm)
-    infoStreamPrint(LOG_NLS_V, 1, "StartDamping: ");
+  if (enorm_new >= current_fvec_enorm) {
+    startDamping = TRUE;
+    infoStreamPrint(LOG_NLS_V, 1, "StartDamping:");
+  }
 
   while (enorm_new >= current_fvec_enorm)
   {
@@ -638,7 +645,8 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
     }
   }
 
-  messageClose(LOG_NLS_V);
+  if (startDamping)
+    messageClose(LOG_NLS_V);
 }
 
 /*! \fn LineSearch

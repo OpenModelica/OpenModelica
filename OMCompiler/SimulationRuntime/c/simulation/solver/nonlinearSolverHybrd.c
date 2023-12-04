@@ -472,9 +472,11 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
     int indexes[2] = {1,eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "Start solving non-linear system >>%d<< using Hybrd solver at time %g", eqSystemNumber, data->localData[0]->timeValue);
-    for(i=0; i<hybrdData->n; i++)
-    {
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
+      "Start solving Non-Linear System %d (size %d) at time %g with Hybrd Solver",
+      eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
+
+    for(i = 0; i < hybrdData->n; i++) {
       infoStreamPrint(LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], nlsData->nlsx[i]);
       infoStreamPrint(LOG_NLS_V, 0, "    nominal = %f\nold = %f\nextrapolated = %f",
           nlsData->nominal[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
@@ -711,21 +713,10 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
       success = NLS_SOLVED;
       nfunc_evals += hybrdData->nfev;
-      if(ACTIVE_STREAM(LOG_NLS_V))
-      {
-        int indexes[2] = {1,eqSystemNumber};
-        /* output solution */
-        infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "solution for NLS %d at t=%g", eqSystemNumber, data->localData[0]->timeValue);
-        for(i=0; i<hybrdData->n; ++i)
-        {
-          infoStreamPrint(LOG_NLS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],  hybrdData->x[i]);
-        }
-        messageClose(LOG_NLS_V);
-      }else if (ACTIVE_STREAM(LOG_NLS_V)){
-        infoStreamPrint(LOG_NLS_V, 1, "system solved");
+      if (ACTIVE_STREAM(LOG_NLS_V)){
+        infoStreamPrint(LOG_NLS_V, 1, "System solved");
         infoStreamPrint(LOG_NLS_V, 0, "%d retries\n%d restarts", retries, retries2+retries3);
         messageClose(LOG_NLS_V);
-        printStatus(data, hybrdData, eqSystemNumber, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
       scaling = hybrdData->useXScaling;
       if(scaling)

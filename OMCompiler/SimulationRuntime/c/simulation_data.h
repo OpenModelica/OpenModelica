@@ -303,7 +303,7 @@ typedef struct NLS_USERDATA NLS_USERDATA;
 typedef enum {
   NLS_FAILED = 0,                   /* NLS Solver failed to solve system */
   NLS_SOLVED = 1,                   /* NLS Solver solved system successfully */
-  NLS_SOLVED_LESS_ACCURACY = 2     /* NLS Solver found a solution with low accuracy */
+  NLS_SOLVED_LESS_ACCURACY = 2      /* NLS Solver found a solution with low accuracy */
 } NLS_SOLVER_STATUS;
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0

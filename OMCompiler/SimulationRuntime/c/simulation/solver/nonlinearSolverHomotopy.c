@@ -1602,11 +1602,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         vecCopy(solverData->n, solverData->x1, x);
       }
 
-      /* debug information */
-      debugString(LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION!!!");
-      printUnknowns(LOG_NLS_V, solverData);
-      debugString(LOG_NLS_V, "******************************************************");
-
       /* update statistics */
       solverData->numberOfIterations += numberOfIterations;
       solverData->error_f_sqrd = error_f_sqrd;
@@ -2176,7 +2171,6 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
   int tries = 0;
   int runHomotopy = 0;
   int skipNewton = 0;
-  int numberOfFunctionEvaluationsOld = homotopyData->numberOfFunctionEvaluations;
   homotopyData->casualTearingSet = nlsData->strictTearingFunctionCall != NULL;
   int constraintViolated;
   homotopyData->initHomotopy = nlsData->initHomotopy;
@@ -2197,14 +2191,17 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
   vecConst(homotopyData->m,1.0,homotopyData->ones);
 
-  debugString(LOG_NLS_V, "------------------------------------------------------");
-  if (!homotopyData->initHomotopy)
-    debugString(LOG_NLS_V, "SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)");
-  else
+  if (!homotopyData->initHomotopy) {
+    int indexes[2] = {1,eqSystemNumber};
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
+      "Start solving Non-Linear System %d (size %d) at time %g with Mixed (Newton/Homotopy) Solver",
+      eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
+  } else {
+    debugString(LOG_NLS_V, "------------------------------------------------------");
     debugString(LOG_NLS_V, "SOLVING HOMOTOPY INITIALIZATION PROBLEM WITH THE HOMOTOPY SOLVER");
-  debugInt(LOG_NLS_V, "EQUATION NUMBER:", eqSystemNumber);
-  debugDouble(LOG_NLS_V, "TIME:", homotopyData->timeValue);
-  debugInt(LOG_NLS_V,   "number of function calls (so far!): ",numberOfFunctionEvaluationsOld);
+    debugInt(LOG_NLS_V, "EQUATION NUMBER:", eqSystemNumber);
+    debugDouble(LOG_NLS_V, "TIME:", homotopyData->timeValue);
+  }
 
   /* set x vector */
   if(data->simulationInfo->discreteCall)
@@ -2397,14 +2394,8 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       }
       if (success == NLS_SOLVED)
       {
-        debugString(LOG_NLS_V,"SYSTEM SOLVED");
-        debugInt(LOG_NLS_V,   "homotopy method:          ",runHomotopy);
-        debugInt(LOG_NLS_V,   "number of function calls: ",homotopyData->numberOfFunctionEvaluations-numberOfFunctionEvaluationsOld);
-        printUnknowns(LOG_NLS_V, homotopyData);
-        debugString(LOG_NLS_V, "------------------------------------------------------");
         /* take the solution */
         vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
-        debugVectorDouble(LOG_NLS_V,"Solution", homotopyData->x, homotopyData->n);
         /* reset continous flag */
         ((DATA*)data)->simulationInfo->solveContinuous = 0;
         break;
@@ -2525,6 +2516,8 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
     debugString(LOG_NLS_V,"Homotopy solver did not converge!");
   }
   free(relationsPreBackup);
+
+  messageClose(LOG_NLS_V);
 
   /* write statistics */
   nlsData->numberOfFEval = homotopyData->numberOfFunctionEvaluations;

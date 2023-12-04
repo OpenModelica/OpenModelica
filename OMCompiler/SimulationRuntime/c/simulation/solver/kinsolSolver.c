@@ -976,7 +976,6 @@ static void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData,
   _omc_initVector(&vecFScaling, kinsolData->size,
                   NV_DATA_S(kinsolData->fScale));
 
-  infoStreamPrint(LOG_NLS_V, 1, "Kinsol Configuration");
   _omc_printVectorWithEquationInfo(
       &vecStart, "Initial guess values", LOG_NLS_V,
       modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber));
@@ -998,8 +997,6 @@ static void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData,
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL max step %g", kinsolData->mxnstepin);
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL linear solver %d",
                   kinsolData->linearSolverMethod);
-
-  messageClose(LOG_NLS_V);
 }
 
 /**
@@ -1169,7 +1166,8 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
-  int indexes[2] = {1, nlsData->equationIndex};
+  int eqSystemNumber = nlsData->equationIndex;
+  int indexes[2] = {1, eqSystemNumber};
 
   int flag;
   long nFEval;
@@ -1180,8 +1178,8 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
   double fNormValue;
 
   infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
-                                     "Start Kinsol solver at time %g",
-                                     data->localData[0]->timeValue);
+    "Start solving Non-Linear System %d (size %d) at time %g with Kinsol Solver",
+    eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
 
   /* Solve nonlinear system with KINSol() */
   kinsolData->retries = 0;
