@@ -263,51 +263,51 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // |                 | |       | | initial variable values:
 // |                 | |       | | | [ 1]                              x  =       -77390.689		 nom =           100000
 // |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05
-// LOG_NLS_V         | info    | | Start solving Non-Linear System 18 (size 2) at time 0 with Mixed (Newton/Homotopy) Solver
-// |                 | |       | | | System values [2-dim]
-// |                 | |       | | | |       -77390.689    3.3118158e-06
-// |                 | |       | | | Nominal values [2-dim]
-// |                 | |       | | | |           100000            1e-05
-// |                 | |       | | | Scaling values [3-dim]
-// |                 | |       | | | |           100000            1e-05                1
-// |                 | |       | | | x0 [2-dim]
-// |                 | |       | | | |       -77390.689    3.3118158e-06
-// |                 | |       | | | indRow: [2-dim]
-// |                 | |       | | | | 0 1
-// |                 | |       | | | indCol: [3-dim]
-// |                 | |       | | | | 1 0 2
-// |                 | |       | | | vector x (solution): [3-dim]
-// |                 | |       | | | |   -2.9880129e-17   -6.2675771e-17                1
-// |                 | |       | | | regular initial point!!!
-// |                 | |       | | | ******************************************************
-// |                 | |       | | | NEWTON SOLVER STARTED! equation number:  18
-// |                 | |       | | | maximum number of function evaluation:  200
-// |                 | |       | | | nls status
-// |                 | |       | | | | variables
-// |                 | |       | | | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | | Iteration: 1
-// |                 | |       | | | newton step
-// |                 | |       | | | | variables
-// |                 | |       | | | | [ 1]                              x  =       -77390.689		 step =   -2.9880129e-12		 old =       -77390.689
-// |                 | |       | | | | [ 2]                              y  =    3.3118158e-06		 step =   -6.2675771e-22		 old =    3.3118158e-06
-// |                 | |       | | | Need to damp, grad_f =   -9.8607613153e-32
-// |                 | |       | | | Need to damp, error_f =    2.2204460493e-16
-// |                 | |       | | | Need to damp this!! lambda1 =    1.0000000000e+00
-// |                 | |       | | | Need to damp, error_f1 =    2.2204460493e-16
-// |                 | |       | | | Need to damp, forced error =    3.9443045261e-32
-// |                 | |       | | | function values: [2-dim]
-// |                 | |       | | | |    -2.220446e-16                0
-// |                 | |       | | | scaled function values: [2-dim]
-// |                 | |       | | | |   -4.4236473e-17                0
-// |                 | |       | | | error measurements:
-// |                 | |       | | | delta_x        =   2.9880129153e-12
-// |                 | |       | | | delta_x_scaled =   6.9433956834e-17
-// |                 | |       | | | newtonXTol          =   1.0000000000e-12
-// |                 | |       | | | error_f        =   2.2204460493e-16
-// |                 | |       | | | error_f_scaled =   4.4236473073e-17
-// |                 | |       | | | newtonFTol          =   1.0000000000e-12
-// |                 | |       | | | Note: newton solver rejected last x because previous was as good
+// LOG_NLS_V         | info    | Start solving Non-Linear System 18 (size 2) at time 0 with Mixed (Newton/Homotopy) Solver
+// |                 | |       | | System values [2-dim]
+// |                 | |       | | |       -77390.689    3.3118158e-06
+// |                 | |       | | Nominal values [2-dim]
+// |                 | |       | | |           100000            1e-05
+// |                 | |       | | Scaling values [3-dim]
+// |                 | |       | | |           100000            1e-05                1
+// |                 | |       | | x0 [2-dim]
+// |                 | |       | | |       -77390.689    3.3118158e-06
+// |                 | |       | | indRow: [2-dim]
+// |                 | |       | | | 0 1
+// |                 | |       | | indCol: [3-dim]
+// |                 | |       | | | 1 0 2
+// |                 | |       | | vector x (solution): [3-dim]
+// |                 | |       | | |   -2.9880129e-17   -6.2675771e-17                1
+// |                 | |       | | regular initial point!!!
+// |                 | |       | | ******************************************************
+// |                 | |       | | NEWTON SOLVER STARTED! equation number:  18
+// |                 | |       | | maximum number of function evaluation:  200
+// |                 | |       | | nls status
+// |                 | |       | | | variables
+// |                 | |       | | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | Iteration: 1
+// |                 | |       | | newton step
+// |                 | |       | | | variables
+// |                 | |       | | | [ 1]                              x  =       -77390.689		 step =   -2.9880129e-12		 old =       -77390.689
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 step =   -6.2675771e-22		 old =    3.3118158e-06
+// |                 | |       | | Need to damp, grad_f =   -9.8607613153e-32
+// |                 | |       | | Need to damp, error_f =    2.2204460493e-16
+// |                 | |       | | Need to damp this!! lambda1 =    1.0000000000e+00
+// |                 | |       | | Need to damp, error_f1 =    2.2204460493e-16
+// |                 | |       | | Need to damp, forced error =    3.9443045261e-32
+// |                 | |       | | function values: [2-dim]
+// |                 | |       | | |    -2.220446e-16                0
+// |                 | |       | | scaled function values: [2-dim]
+// |                 | |       | | |   -4.4236473e-17                0
+// |                 | |       | | error measurements:
+// |                 | |       | | delta_x        =   2.9880129153e-12
+// |                 | |       | | delta_x_scaled =   6.9433956834e-17
+// |                 | |       | | newtonXTol          =   1.0000000000e-12
+// |                 | |       | | error_f        =   2.2204460493e-16
+// |                 | |       | | error_f_scaled =   4.4236473073e-17
+// |                 | |       | | newtonFTol          =   1.0000000000e-12
+// |                 | |       | | Note: newton solver rejected last x because previous was as good
 // LOG_NLS           | info    | | Solution status: SOLVED
 // |                 | |       | | |  number of iterations           : 1
 // |                 | |       | | |  number of function evaluations : 2
@@ -320,51 +320,51 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // |                 | |       | | initial variable values:
 // |                 | |       | | | [ 1]                              x  =       -77390.689		 nom =           100000
 // |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05
-// LOG_NLS_V         | info    | | | Start solving Non-Linear System 18 (size 2) at time 0 with Mixed (Newton/Homotopy) Solver
-// |                 | |       | | | | System values [2-dim]
-// |                 | |       | | | | |       -77390.689    3.3118158e-06
-// |                 | |       | | | | Nominal values [2-dim]
-// |                 | |       | | | | |           100000            1e-05
-// |                 | |       | | | | Scaling values [3-dim]
-// |                 | |       | | | | |           100000            1e-05                1
-// |                 | |       | | | | x0 [2-dim]
-// |                 | |       | | | | |       -77390.689    3.3118158e-06
-// |                 | |       | | | | indRow: [2-dim]
-// |                 | |       | | | | | 0 1
-// |                 | |       | | | | indCol: [3-dim]
-// |                 | |       | | | | | 1 0 2
-// |                 | |       | | | | vector x (solution): [3-dim]
-// |                 | |       | | | | |    2.9880129e-17    6.2675771e-17                1
-// |                 | |       | | | | regular initial point!!!
-// |                 | |       | | | | ******************************************************
-// |                 | |       | | | | NEWTON SOLVER STARTED! equation number:  18
-// |                 | |       | | | | maximum number of function evaluation:  200
-// |                 | |       | | | | nls status
-// |                 | |       | | | | | variables
-// |                 | |       | | | | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | | | Iteration: 1
-// |                 | |       | | | | newton step
-// |                 | |       | | | | | variables
-// |                 | |       | | | | | [ 1]                              x  =       -77390.689		 step =    2.9880129e-12		 old =       -77390.689
-// |                 | |       | | | | | [ 2]                              y  =    3.3118158e-06		 step =    6.2675771e-22		 old =    3.3118158e-06
-// |                 | |       | | | | Need to damp, grad_f =   -9.8607613153e-32
-// |                 | |       | | | | Need to damp, error_f =    2.2204460493e-16
-// |                 | |       | | | | Need to damp this!! lambda1 =    1.0000000000e+00
-// |                 | |       | | | | Need to damp, error_f1 =    2.2204460493e-16
-// |                 | |       | | | | Need to damp, forced error =    3.9443045261e-32
-// |                 | |       | | | | function values: [2-dim]
-// |                 | |       | | | | |     2.220446e-16                0
-// |                 | |       | | | | scaled function values: [2-dim]
-// |                 | |       | | | | |    4.4236473e-17                0
-// |                 | |       | | | | error measurements:
-// |                 | |       | | | | delta_x        =   2.9880129153e-12
-// |                 | |       | | | | delta_x_scaled =   6.9433956834e-17
-// |                 | |       | | | | newtonXTol          =   1.0000000000e-12
-// |                 | |       | | | | error_f        =   2.2204460493e-16
-// |                 | |       | | | | error_f_scaled =   4.4236473073e-17
-// |                 | |       | | | | newtonFTol          =   1.0000000000e-12
-// |                 | |       | | | | Note: newton solver rejected last x because previous was as good
+// LOG_NLS_V         | info    | Start solving Non-Linear System 18 (size 2) at time 0 with Mixed (Newton/Homotopy) Solver
+// |                 | |       | | System values [2-dim]
+// |                 | |       | | |       -77390.689    3.3118158e-06
+// |                 | |       | | Nominal values [2-dim]
+// |                 | |       | | |           100000            1e-05
+// |                 | |       | | Scaling values [3-dim]
+// |                 | |       | | |           100000            1e-05                1
+// |                 | |       | | x0 [2-dim]
+// |                 | |       | | |       -77390.689    3.3118158e-06
+// |                 | |       | | indRow: [2-dim]
+// |                 | |       | | | 0 1
+// |                 | |       | | indCol: [3-dim]
+// |                 | |       | | | 1 0 2
+// |                 | |       | | vector x (solution): [3-dim]
+// |                 | |       | | |    2.9880129e-17    6.2675771e-17                1
+// |                 | |       | | regular initial point!!!
+// |                 | |       | | ******************************************************
+// |                 | |       | | NEWTON SOLVER STARTED! equation number:  18
+// |                 | |       | | maximum number of function evaluation:  200
+// |                 | |       | | nls status
+// |                 | |       | | | variables
+// |                 | |       | | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | Iteration: 1
+// |                 | |       | | newton step
+// |                 | |       | | | variables
+// |                 | |       | | | [ 1]                              x  =       -77390.689		 step =    2.9880129e-12		 old =       -77390.689
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 step =    6.2675771e-22		 old =    3.3118158e-06
+// |                 | |       | | Need to damp, grad_f =   -9.8607613153e-32
+// |                 | |       | | Need to damp, error_f =    2.2204460493e-16
+// |                 | |       | | Need to damp this!! lambda1 =    1.0000000000e+00
+// |                 | |       | | Need to damp, error_f1 =    2.2204460493e-16
+// |                 | |       | | Need to damp, forced error =    3.9443045261e-32
+// |                 | |       | | function values: [2-dim]
+// |                 | |       | | |     2.220446e-16                0
+// |                 | |       | | scaled function values: [2-dim]
+// |                 | |       | | |    4.4236473e-17                0
+// |                 | |       | | error measurements:
+// |                 | |       | | delta_x        =   2.9880129153e-12
+// |                 | |       | | delta_x_scaled =   6.9433956834e-17
+// |                 | |       | | newtonXTol          =   1.0000000000e-12
+// |                 | |       | | error_f        =   2.2204460493e-16
+// |                 | |       | | error_f_scaled =   4.4236473073e-17
+// |                 | |       | | newtonFTol          =   1.0000000000e-12
+// |                 | |       | | Note: newton solver rejected last x because previous was as good
 // LOG_NLS           | info    | | Solution status: SOLVED
 // |                 | |       | | |  number of iterations           : 2
 // |                 | |       | | |  number of function evaluations : 4
