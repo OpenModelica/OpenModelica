@@ -687,7 +687,7 @@ void ShapeAnnotation::applyTransformation()
     pGraphicsView = mpReferenceShapeAnnotation->getGraphicsView();
   }
 
-  if (!mpParentComponent && pGraphicsView && (pLineAnnotation && pLineAnnotation->isLineShape())
+  if (!mpParentComponent && pGraphicsView && (!pLineAnnotation || pLineAnnotation->isLineShape())
       && ((mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) || (pGraphicsView->getModelWidget()->isNewApi() && mIsInheritedShape))) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
     ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
