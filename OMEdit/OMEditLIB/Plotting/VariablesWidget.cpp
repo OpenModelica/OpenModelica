@@ -630,9 +630,10 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
  * \brief VariablesTreeModel::removeVariableTreeItem
  * Removes the VariablesTreeItem.
  * \param variable
+ * \param closeInteractivePlotWindow
  * \return
  */
-bool VariablesTreeModel::removeVariableTreeItem(QString variable)
+bool VariablesTreeModel::removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow)
 {
   VariablesTreeItem *pVariablesTreeItem = findVariablesTreeItem(variable, mpRootVariablesTreeItem);
   if (pVariablesTreeItem) {
@@ -647,14 +648,8 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
     pVariablesTreeItem->removeChildren();
     VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
     pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
-
-    if (pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation()) {
-      // remove the right interactive simulation output widget
-      SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(pVariablesTreeItem->getFileName());
-      if (pSimulationOutputWidget) {
-        MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(pSimulationOutputWidget);
-      }
-    }
+    MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation(),
+                                                                               pVariablesTreeItem->getFileName(), closeInteractivePlotWindow);
     if (pVariablesTreeItem) {
       delete pVariablesTreeItem;
     }
@@ -795,7 +790,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
    * But don't make them checkable so user can't plot them.
    */
   QStringList variableListFromResultFile;
-  if (readingVariablesFromInitFile) {
+  if (readingVariablesFromInitFile && !simulationOptions.isInteractiveSimulation()) {
     variableListFromResultFile = MainWindow::instance()->getOMCProxy()->readSimulationResultVars(QString("%1%2%3").arg(filePath, QDir::separator(), fileName));
   }
   QStringList variables;
@@ -1231,7 +1226,7 @@ void VariablesTreeModel::removeVariableTreeItem()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
-    removeVariableTreeItem(pAction->data().toString());
+    removeVariableTreeItem(pAction->data().toString(), true);
     emit variableTreeItemRemoved(pAction->data().toString());
   }
 }
@@ -1409,7 +1404,7 @@ void VariablesTreeView::keyPressEvent(QKeyEvent *event)
     index = mpVariablesWidget->getVariableTreeProxyModel()->mapToSource(index);
     VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
     if (event->key() == Qt::Key_Delete && pVariablesTreeItem->isRootItem()) {
-      mpVariablesWidget->getVariablesTreeModel()->removeVariableTreeItem(pVariablesTreeItem->getVariableName());
+      mpVariablesWidget->getVariablesTreeModel()->removeVariableTreeItem(pVariablesTreeItem->getVariableName(), true);
       return;
     }
   }
@@ -1565,10 +1560,6 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
   // insert the plot variables
   bool updateVariables = mpVariablesTreeModel->insertVariablesItems(fileName, filePath, variablesList, simulationOptions);
-  // handle interactive re-simulation
-  if (simulationOptions.isInteractiveSimulation() && simulationOptions.isReSimulate()) {
-    interactiveReSimulation(simulationOptions.getClassName());
-  }
   // update the plot variables tree
   if (updateVariables) {
     variablesUpdated();
@@ -1704,24 +1695,6 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
   mpVariableTreeProxyModel->invalidate();
 }
 
-void VariablesWidget::interactiveReSimulation(QString modelName)
-{
-  QList<QString> selectedVariables = mSelectedInteractiveVariables.value(modelName);
-
-  foreach (QString variable, selectedVariables) {
-    QString curveNameStructure = modelName + "." + variable;
-    VariablesTreeItem *pVariableTreeItem;
-    pVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
-    if (pVariableTreeItem) {
-      bool state = mpVariablesTreeModel->blockSignals(true);
-      QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariableTreeItem);
-      mpVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-      plotVariables(index, 1, 1, false);
-      mpVariablesTreeModel->blockSignals(state);
-    }
-  }
-}
-
 /*!
  * \brief VariablesWidget::readVariablesAndUpdateXML
  * Reads the updated values
@@ -1800,16 +1773,13 @@ void VariablesWidget::reSimulate(bool showSetup)
   pVariablesTreeItem = pVariablesTreeItem->rootParent();
   SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
   if (simulationOptions.isValid()) {
-    if (simulationOptions.isInteractiveSimulation()) {
-      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("You cannot re-simulate an interactive simulation."), Helper::ok);
+    MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
+    simulationOptions.setReSimulate(true);
+    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
+    if (showSetup) {
+      MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
     } else {
-      simulationOptions.setReSimulate(true);
-      updateInitXmlFile(simulationOptions);
-      if (showSetup) {
-        MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
-      } else {
-        MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
-      }
+      MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
     }
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
@@ -1817,7 +1787,13 @@ void VariablesWidget::reSimulate(bool showSetup)
   }
 }
 
-void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
+/*!
+ * \brief VariablesWidget::updateInitXmlFile
+ * Updates the model_init.xml file
+ * \param pVariablesTreeItem
+ * \param simulationOptions
+ */
+void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions)
 {
   /* Update the _init.xml file with new values. */
   /* open the model_init.xml file for writing */
@@ -1826,11 +1802,9 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
   QDomDocument initXmlDocument;
   if (initFile.open(QIODevice::ReadOnly)) {
     if (initXmlDocument.setContent(&initFile)) {
-      VariablesTreeItem *pTopVariableTreeItem;
-      pTopVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(simulationOptions.getFullResultFileName(), mpVariablesTreeModel->getRootVariablesTreeItem());
-      if (pTopVariableTreeItem) {
+      if (pVariablesTreeItem) {
         QHash<QString, QHash<QString, QString> > variables;
-        readVariablesAndUpdateXML(pTopVariableTreeItem, simulationOptions.getFullResultFileName(), &variables);
+        readVariablesAndUpdateXML(pVariablesTreeItem, simulationOptions.getFullResultFileName(), &variables);
         findVariableAndUpdateValue(initXmlDocument, variables);
       }
     } else {
@@ -2301,11 +2275,6 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
   }
-}
-
-void VariablesWidget::addSelectedInteractiveVariables(const QString &modelName, const QList<QString> &selectedVariables)
-{
-  mSelectedInteractiveVariables.insert(modelName, selectedVariables);
 }
 
 /*!

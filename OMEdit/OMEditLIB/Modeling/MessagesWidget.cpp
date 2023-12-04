@@ -563,15 +563,17 @@ SimulationOutputWidget* MessagesWidget::getSimulationOutputWidget(const QString 
  */
 bool MessagesWidget::closeTab(int index)
 {
+  // Close SimulationOutputWidget
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
-  if (pSimulationOutputWidget && !pSimulationOutputWidget->isCompilationProcessRunning() && !pSimulationOutputWidget->isSimulationProcessRunning()) {
+  if (pSimulationOutputWidget
+      && !pSimulationOutputWidget->isCompilationProcessRunning()
+      && !pSimulationOutputWidget->isPostCompilationProcessRunning()
+      && !pSimulationOutputWidget->isSimulationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
-    if (pSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
-      MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(pSimulationOutputWidget);
-    }
     emit messageTabClosed(index);
     return true;
   }
+  // Close OMSSimulationOutputWidget
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);

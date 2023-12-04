@@ -968,6 +968,17 @@ namespace ModelInstance
     return value.join(" ");
   }
 
+  QString Prefixes::typePrefixes() const
+  {
+    QStringList value;
+
+    if (!mConnector.isEmpty()) value.append(mConnector);
+    if (!mVariability.isEmpty()) value.append(mVariability);
+    if (!mDirection.isEmpty()) value.append(mDirection);
+
+    return value.join(" ");
+  }
+
   Source::Source()
   {
     mFileName = "";
@@ -2047,6 +2058,12 @@ namespace ModelInstance
     QStringList value;
 
     value.append(Element::toString(skipTopLevel));
+
+    if (mpPrefixes) {
+      auto prefixes = mpPrefixes->typePrefixes();
+      if (!prefixes.isEmpty()) value.append(prefixes);
+    }
+
     value.append(mType);
     value.append(mName);
     if (mpModifier) {
@@ -2118,7 +2135,12 @@ namespace ModelInstance
     value.append(mType);
     value.append(mName);
     if (!mBaseClass.isEmpty()) {
-      value.append("= " % mBaseClass);
+      value.append("= ");
+
+      auto dir = getDirectionPrefix();
+      if (!dir.isEmpty()) value.append(dir);
+
+      value.append(mBaseClass);
     }
 
     value.removeAll(QString(""));

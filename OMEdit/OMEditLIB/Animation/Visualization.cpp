@@ -43,6 +43,7 @@
 
 #include <osg/Array>
 #include <osg/Drawable>
+#include <osg/Geometry>
 #include <osg/Shape>
 #include <osg/ShapeDrawable>
 #include <osg/StateAttribute>
@@ -57,9 +58,11 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <functional>
 #include <limits>
 #include <map>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
 
@@ -787,7 +790,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     std::vector<std::reference_wrapper<VectorObject>> fixedRadiusVectors;
     std::vector<std::reference_wrapper<VectorObject>> adjustableRadiusVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableRadius()) {
+      if (vector.isRadiusAdjustable()) {
         adjustableRadiusVectors.push_back(vector);
       } else {
         fixedRadiusVectors.push_back(vector);
@@ -872,7 +875,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
       // Apply the radius scale to all adjustable-radius vectors
       for (VectorObject& vector : adjustableRadiusVectors) {
-        vector.setScaleRadius(scale);
+        vector.setRadiusScale(scale);
         updateVisualizer(vector);
       }
 
@@ -886,7 +889,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
     // Initialize a container of adjustable-length vectors
     std::vector<std::reference_wrapper<VectorObject>> adjustableLengthVectors;
     for (VectorObject& vector : _vectors) {
-      if (vector.isAdjustableLength()) {
+      if (vector.isLengthAdjustable()) {
         adjustableLengthVectors.push_back(vector);
       }
     }
@@ -904,12 +907,6 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
         numberOfSamples[vector] = timeSamples > 0 && (timeIncrement <= 0 || vector.areCoordinatesConstant()) ? 1 : timeSamples;
       }
 
-      // Initialize a map of actual transform scales, one for each adjustable-length vector
-      std::unordered_map<const std::reference_wrapper<VectorObject>, float> transformScales;
-      for (VectorObject& vector : adjustableLengthVectors) {
-        transformScales[vector] = vector.getScaleTransf();
-      }
-
       // Store whether only the shaft length is counted for all adjustable-length vectors
       for (VectorObject& vector : adjustableLengthVectors) {
         vector.setOnlyShaftLengthCounted(!countUpToApex);
@@ -917,7 +914,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
       // Update the bounds of the whole scene without any adjustable-length vectors
       for (VectorObject& vector : adjustableLengthVectors) {
-        vector.setScaleTransf(0);
+        vector.setInvisible();
         updateVisualizer(vector);
       }
 
@@ -956,7 +953,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
         // Make the vectors of the current quantity visible again
         // (the update is not necessary here because it is done inside and after the while loop in any case)
         for (VectorObject& vector : vectors) {
-          vector.setScaleTransf(transformScales[vector]);
+          vector.setVisible();
         }
 
         // Adjust the length scale for the current quantity as long as the criteria have not been met
@@ -988,7 +985,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
           // Apply the new length scale to the vectors of the current quantity
           for (VectorObject& vector : vectors) {
-            vector.setScaleLength(scale);
+            vector.setLengthScale(scale);
             updateVisualizer(vector);
           }
 
@@ -1064,14 +1061,14 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
         // Make the vectors of the current quantity invisible again
         // (until all length scales have been carefully adjusted)
         for (VectorObject& vector : vectors) {
-          vector.setScaleTransf(0);
+          vector.setInvisible();
           updateVisualizer(vector);
         }
       }
 
       // Update the bounds of the whole scene with all adjustable-length vectors using their adjusted length scales
       for (VectorObject& vector : adjustableLengthVectors) {
-        vector.setScaleTransf(transformScales[vector]);
+        vector.setVisible();
         updateVisualizer(vector);
       }
 
@@ -1089,7 +1086,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
         // Make all adjustable-length vectors invisible
         for (VectorObject& vector : adjustableLengthVectors) {
-          vector.setScaleTransf(0);
+          vector.setInvisible();
           updateVisualizer(vector);
         }
 
@@ -1098,7 +1095,7 @@ void OMVisualBase::chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex*
 
         // Make all adjustable-length vectors visible
         for (VectorObject& vector : adjustableLengthVectors) {
-          vector.setScaleTransf(transformScales[vector]);
+          vector.setVisible();
           updateVisualizer(vector);
         }
       }
@@ -1154,9 +1151,25 @@ void AutoTransformCullCallback::operator()(osg::Node* node, osg::NodeVisitor* nv
         }
         if (visualizer && visualizer->isVector()) {
           VectorObject* vector = visualizer->asVector();
+          const float scale = 1 / at->getScale().z(); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
+          bool update = false;
           if (vector->getAutoScaleCancellationRequired()) {
             vector->setAutoScaleCancellationRequired(false);
-            vector->setScaleTransf(1 / at->getScale().z()); // See osg::AutoTransform::accept(osg::NodeVisitor&) or in later versions osg::AutoTransform::computeMatrix(const osg::NodeVisitor*) (since OSG commit 92092a5)
+            vector->setAutoRadiusScaleCancellation(scale);
+            vector->setAutoLengthScaleCancellation(scale);
+            update = true;
+          } else if (vector->isLengthScaleInvariant() && !vector->isRadiusScaleInvariant()) {
+            if (vector->getAutoRadiusScaleCancellation() != scale) {
+              vector->setAutoRadiusScaleCancellation(scale);
+              update = true;
+            }
+          } else if (vector->isRadiusScaleInvariant() && !vector->isLengthScaleInvariant()) {
+            if (vector->getAutoLengthScaleCancellation() != scale) {
+              vector->setAutoLengthScaleCancellation(scale);
+              update = true;
+            }
+          }
+          if (update) {
             _visualization->getBaseData()->updateVisualizer(vector);
           }
         }
@@ -1394,14 +1407,17 @@ void OSGScene::setUpScene(std::vector<VectorObject>& vectors)
 {
   for (VectorObject& vector : vectors)
   {
+    const bool isScaleInvariant = vector.isLengthScaleInvariant() || vector.isRadiusScaleInvariant();
+    const bool isDrawnOnTop = vector.isDrawnOnTop();
+
     osg::ref_ptr<AutoTransformVisualizer> transf = new AutoTransformVisualizer(&vector);
     transf->setName(vector._id);
     transf->setAutoRotateMode(osg::AutoTransform::NO_ROTATION);
     transf->setAutoScaleTransitionWidthRatio(0);
-    transf->setAutoScaleToScreen(vector.isScaleInvariant());
-    transf->setCullingActive(!vector.isScaleInvariant()); // Work-around for osg::AutoTransform::setAutoScaleToScreen(bool) (see OSG commit 5c48904)
-    transf->getOrCreateStateSet()->setMode(GL_NORMALIZE, vector.isScaleInvariant() ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
-    transf->getOrCreateStateSet()->setRenderBinDetails(VectorObject::kAutoScaleRenderBinNum - !vector.isDrawnOnTop(), VectorObject::kAutoScaleRenderBinName);
+    transf->setAutoScaleToScreen(isScaleInvariant);
+    transf->setCullingActive(!isScaleInvariant); // Work-around for osg::AutoTransform::setAutoScaleToScreen(bool) (see OSG commit 5c48904)
+    transf->getOrCreateStateSet()->setMode(GL_NORMALIZE, isScaleInvariant ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
+    transf->getOrCreateStateSet()->setRenderBinDetails(VectorObject::kAutoScaleRenderBinNum - !isDrawnOnTop, VectorObject::kAutoScaleRenderBinName);
     transf->addCullCallback(_atCullCallback.get());
 
     osg::ref_ptr<osg::ShapeDrawable> shapeDraw0 = new osg::ShapeDrawable(); // shaft cylinder
@@ -1613,6 +1629,8 @@ void UpdateVisitor::apply(osg::Geode& node)
   }//end switch action
 
   if (changeMaterial || changeTexture) {
+    AbstractVisualProperties* visualProperties = _visualizer->getVisualProperties();
+
     osg::ref_ptr<osg::StateSet> stateSet = nullptr;
     bool geometryColors = false;
     bool is3DSShape = false;
@@ -1625,7 +1643,7 @@ void UpdateVisitor::apply(osg::Geode& node)
           osg::ref_ptr<CADFile> cad = dynamic_cast<CADFile*>(transformNode->getChild(0));
           if (cad.valid()) {
             stateSet = cad->getOrCreateStateSet();
-            geometryColors = !shape->getVisualProperties()->getColor().custom();
+            geometryColors = !visualProperties->getColor().custom();
             is3DSShape = is3DSType(shape->_type);
           }
         }
@@ -1635,7 +1653,6 @@ void UpdateVisitor::apply(osg::Geode& node)
     osg::ref_ptr<osg::StateSet> ss = stateSet.valid() ? stateSet.get() : node.getOrCreateStateSet();
     osg::Material::ColorMode mode = geometryColors ? osg::Material::AMBIENT_AND_DIFFUSE : osg::Material::OFF;
 
-    AbstractVisualProperties* visualProperties = _visualizer->getVisualProperties();
     QColor      color            = visualProperties->getColor().get();
     float       specular         = visualProperties->getSpecular().get();
     float       transparency     = visualProperties->getTransparency().get();
