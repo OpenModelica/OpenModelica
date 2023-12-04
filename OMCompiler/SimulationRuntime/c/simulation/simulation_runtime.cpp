@@ -832,13 +832,15 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
 /**
  * @brief Set log activation from equationIndex and list from lv_system.
  *
+ * Requires `nonlinsys[i].equationIndex` to be set already!
+ *
  * @param data  Data object
  */
 static void setLVSystems(DATA *data, threadData_t *threadData)
 {
   int i;
   int N = 0; /* largest equationIndex */
-  modelica_boolean* a = NULL;
+  modelica_boolean* isSystemActive = NULL;
   const char* p;
   char* endptr;
 
@@ -858,11 +860,11 @@ static void setLVSystems(DATA *data, threadData_t *threadData)
       if (nonlinsys[i].equationIndex > N)
         N = nonlinsys[i].equationIndex;
 
-    /* initialize a with FALSE */
-    a = (modelica_boolean*) calloc(N+1, sizeof(modelica_boolean));
-    assertStreamPrint(threadData, NULL != a, "setLVSystems: Out of memory.");
+    /* initialize isSystemActive with FALSE */
+    isSystemActive = (modelica_boolean*) calloc(N+1, sizeof(modelica_boolean));
+    assertStreamPrint(threadData, NULL != isSystemActive, "setLVSystems: Out of memory.");
 
-    /* set a[i] to true for all i in lv_system */
+    /* set isSystemActive[i] to true for all i in lv_system */
     p = omc_flagValue[FLAG_LV_SYSTEM];
     do {
       errno = 0;
@@ -876,32 +878,32 @@ static void setLVSystems(DATA *data, threadData_t *threadData)
         throwStreamPrint(threadData,
           "setLVSystems: %d is not a valid equation index", i);
       }
-      a[i] = TRUE;
+      isSystemActive[i] = TRUE;
       p = endptr;
     } while(*(p++) == ',');
 
     /* activate corresponding system */
     for (i = 0; i < data->modelData->nMixedSystems; ++i) {
-      mixedsys[i].logActive = a[mixedsys[i].equationIndex];
-      a[mixedsys[i].equationIndex] = FALSE;
+      mixedsys[i].logActive = isSystemActive[mixedsys[i].equationIndex];
+      isSystemActive[mixedsys[i].equationIndex] = FALSE;
     }
     for (i = 0; i < data->modelData->nLinearSystems; ++i) {
-      linsys[i].logActive = a[linsys[i].equationIndex];
-      a[linsys[i].equationIndex] = FALSE;
+      linsys[i].logActive = isSystemActive[linsys[i].equationIndex];
+      isSystemActive[linsys[i].equationIndex] = FALSE;
     }
     for (i = 0; i < data->modelData->nNonLinearSystems; ++i) {
-      nonlinsys[i].logActive = a[nonlinsys[i].equationIndex];
-      a[nonlinsys[i].equationIndex] = FALSE;
+      nonlinsys[i].logActive = isSystemActive[nonlinsys[i].equationIndex];
+      isSystemActive[nonlinsys[i].equationIndex] = FALSE;
     }
 
     for (i = 0; i <= N; ++i){
-      if (a[i]) {
+      if (isSystemActive[i]) {
         throwStreamPrint(threadData,
           "setLVSystems: %d is not a valid equation index.", i);
       }
     }
     /* done */
-    free(a);
+    free(isSystemActive);
   } else {
     /* if no list is given then all systems are active */
     for (i = 0; i < data->modelData->nMixedSystems; ++i)
