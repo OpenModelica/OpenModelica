@@ -6446,28 +6446,52 @@ let &sub = buffer ""
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '_event_mod_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '<%expTypeModelica(ty)%>_mod(<%var1%>, <%var2%>)'
+    else
+      '_event_mod_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '_event_div_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      match ty
+      case T_INTEGER(__) then
+        'modelica_div_integer(<%var1%>,<%var2%>).quot'
+      else
+        'trunc((<%var1%>) / (<%var2%>))'
+    else
+      '_event_div_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
 
   case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '(_event_integer(<%exp%>, <%constIndex%>, data))'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '((modelica_integer)floor(<%exp%>))'
+    else
+      '(_event_integer(<%exp%>, <%constIndex%>, data))'
 
   case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '((modelica_<%expTypeShort(ty)%>)_event_floor(<%exp%>, <%constIndex%>, data))'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '((<%expTypeModelica(ty)%>)floor(<%exp%>))'
+    else
+      '((<%expTypeModelica(ty)%>)_event_floor(<%exp%>, <%constIndex%>, data))'
 
   case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '((modelica_<%expTypeShort(ty)%>)_event_ceil(<%exp%>, <%constIndex%>, data))'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '((<%expTypeModelica(ty)%>)ceil(<%exp%>))'
+    else
+      '((<%expTypeModelica(ty)%>)_event_ceil(<%exp%>, <%constIndex%>, data))'
 
   /* end codegeneration of event triggering math functions */
 
