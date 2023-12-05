@@ -782,9 +782,9 @@ type_specifier_no_dims returns [void* ast]
       if (ts != NULL) {
         modelicaParserAssert(metamodelica_enabled(),"Algebraic data types are only available in MetaModelica", type_specifier_no_dims, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
 
-        $ast = Absyn__TCOMPLEX(np,ts,mmc_mk_nil());
+        $ast = Absyn__TCOMPLEX(np,ts,mmc_mk_none());
       } else {
-        $ast = Absyn__TPATH(np,mmc_mk_nil());
+        $ast = Absyn__TPATH(np,mmc_mk_none());
       }
     }
   ;
