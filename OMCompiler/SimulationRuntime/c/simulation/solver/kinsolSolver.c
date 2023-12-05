@@ -1031,10 +1031,15 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
 
   switch (errorCode) {
   case KIN_MEM_NULL:
+    throwStreamPrint(NULL, "KINSOL: Memory NULL ERROR %d\n", errorCode);
+    return FALSE;
+    break;
   case KIN_ILL_INPUT:
+    throwStreamPrint(NULL, "KINSOL: Ill input ERROR %d\n", errorCode);
+    return FALSE;
+    break;
   case KIN_NO_MALLOC:
-    errorStreamPrint(LOG_NLS_V, 0,
-                     "KINSOL: Memory issue ERROR %d\n", errorCode);
+    throwStreamPrint(NULL, "KINSOL: Memory issue ERROR %d\n", errorCode);
     return FALSE;
     break;
   /* Just retry with new initial guess */
