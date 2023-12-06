@@ -100,14 +100,13 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
 }
 
 /**
- * @brief (Re-) Initialize KINSOL data.
+ * @brief Initialize KINSOL data.
  *
- * Initialize KINSOL data. If the KINSOL memory block was already initialized
- * free it first and then reinitialize.
+ * Allocate memory for KINSOL data and Jacobian.
  *
  * @param kinsolData          KINSOL data.
  */
-void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
+void initKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
   int flag;
   int printLevel;
   int size = kinsolData->size;
@@ -115,8 +114,9 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
   SPARSE_PATTERN* sparsePattern = nlsData->sparsePattern;
 
   /* Free KINSOL memory block */
-  if (kinsolData->kinsolMemory) {
-    KINFree((void *)&kinsolData->kinsolMemory);
+  if (kinsolData->kinsolMemory != NULL || kinsolData->J != NULL || kinsolData->scaledJ != NULL) {
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: Already allocated kinsol memory. Loosing memory!");
   }
 
   /* Create KINSOL memory block */
@@ -136,6 +136,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
   } else {
     printLevel = 0;
   }
+  infoStreamPrint(LOG_NLS, 0, "KINSOL: log level %i", printLevel);
   flag = KINSetPrintLevel(kinsolData->kinsolMemory, printLevel);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetPrintLevel");
 
@@ -164,8 +165,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
       kinsolData->nnz = sparsePattern->numberOfNonZeros;
     }
     kinsolData->J = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
-  } else {
-    kinsolData->J = NULL;
+    kinsolData->scaledJ = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
   }
 
   /* Create linear solver object */
@@ -203,7 +203,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
     } else if (sparsePattern != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac); /* Use numeric Jacobian with sparsity pattern */
     } else {
-      throwStreamPrint(NULL, "KINSOL: In function resetKinsolMemory: Sparse linear solver KLU needs sparse Jacobian, but no sparsity pattern is available. Use a dense non-linear solver instead of KINSOL.");
+      throwStreamPrint(NULL, "KINSOL: In function initKinsolMemory: Sparse linear solver KLU needs sparse Jacobian, but no sparsity pattern is available. Use a dense non-linear solver instead of KINSOL.");
     }
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
   }
@@ -243,18 +243,26 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_bo
   kinsolData->fTmp = N_VNew_Serial(size);
 
   kinsolData->y = N_VNew_Serial(size);
-  if (isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    kinsolData->tmp1 = N_VNew_Serial(size);
-    kinsolData->tmp2 = N_VNew_Serial(size);
-  } else {
+  kinsolData->J = NULL;
+
+  /* tmp1, tmp2 only needed for numeric Jacobian */
+  if (userData->nlsData->analyticalJacobianColumn != NULL &&
+      isPatternAvailable &&
+      kinsolData->linearSolverMethod == NLS_LS_KLU)
+  {
     kinsolData->tmp1 = NULL;
     kinsolData->tmp2 = NULL;
+  } else {
+    kinsolData->tmp1 = N_VNew_Serial(size);
+    kinsolData->tmp2 = N_VNew_Serial(size);
   }
+  /* Scaled Jacobian is allocated with J */
+  kinsolData->scaledJ = NULL;
 
   kinsolData->kinsolMemory = NULL;
   kinsolData->userData = userData;
 
-  resetKinsolMemory(kinsolData);
+  initKinsolMemory(kinsolData);
 
   return kinsolData;
 }
@@ -572,8 +580,8 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
  *
  * @param vecX
  * @param vecFX     just for interface compatibility, will not be used here
- * @param Jac
- * @param userData
+ * @param Jac       Allocated Jacobian, contains symbolic Jacobian on exit
+ * @param userData  Void pointer to user data of type NLS_USERDATA*.
  * @param tmp1      Unused, only to match interface of KINLsJacFn
  * @param tmp2      Unused, only to match interface of KINLsJacFn
  * @return int
@@ -890,7 +898,8 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
         }
       }
       /* Scale the current Jacobian */
-      ret = _omc_SUNSparseMatrixVecScaling(kinsolData->J, kinsolData->xScale);
+      SUNMatCopy_Sparse(kinsolData->J, kinsolData->scaledJ);  /* Copy J into scaledJ */
+      ret = _omc_SUNSparseMatrixVecScaling(kinsolData->scaledJ, kinsolData->xScale);
       if (ret != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "KINSOL: _omc_SUNSparseMatrixVecScaling failed.");
       }
@@ -911,9 +920,9 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     switch (SUNMatGetID(kinsolData->J))
     {
     case SUNMATRIX_SPARSE:
-      for (i = 0; i < SM_NNZ_S(kinsolData->J); ++i) {
-        if (fScaling[SM_INDEXVALS_S(kinsolData->J)[i]] < fabs(SM_DATA_S(kinsolData->J)[i])) {
-          fScaling[SM_INDEXVALS_S(kinsolData->J)[i]] = fabs(SM_DATA_S(kinsolData->J)[i]);
+      for (i = 0; i < SM_NNZ_S(kinsolData->scaledJ); ++i) {
+        if (fScaling[SM_INDEXVALS_S(kinsolData->scaledJ)[i]] < fabs(SM_DATA_S(kinsolData->scaledJ)[i])) {
+          fScaling[SM_INDEXVALS_S(kinsolData->scaledJ)[i]] = fabs(SM_DATA_S(kinsolData->scaledJ)[i]);
         }
       }
       break;
@@ -1022,10 +1031,15 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
 
   switch (errorCode) {
   case KIN_MEM_NULL:
+    throwStreamPrint(NULL, "KINSOL: Memory NULL ERROR %d\n", errorCode);
+    return FALSE;
+    break;
   case KIN_ILL_INPUT:
+    throwStreamPrint(NULL, "KINSOL: Ill input ERROR %d\n", errorCode);
+    return FALSE;
+    break;
   case KIN_NO_MALLOC:
-    errorStreamPrint(LOG_NLS_V, 0,
-                     "KINSOL: Memory issue ERROR %d\n", errorCode);
+    throwStreamPrint(NULL, "KINSOL: Memory issue ERROR %d\n", errorCode);
     return FALSE;
     break;
   /* Just retry with new initial guess */
