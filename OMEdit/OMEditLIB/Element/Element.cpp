@@ -1193,12 +1193,8 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
 {
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModel) {
-    if (mpModel->isConnector()) {
-      if ((mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
-        coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
-      } else {
-        coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
-      }
+    if (mpModel->isConnector() && (mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
+      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     } else {
       coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
     }
@@ -1579,7 +1575,7 @@ void Element::createClassElements()
     foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
-        if (pComponent->getModel() && pComponent->getModel()->isConnector()) {
+        if (pComponent->isPublic() && pComponent->getModel() && pComponent->getModel()->isConnector()) {
           mElementsList.append(new Element(pComponent, this, getRootParentElement()));
         }
       }
@@ -2653,17 +2649,24 @@ void Element::createClassShapes()
 {
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
     mpGraphicsView->getModelWidget()->addDependsOnModel(mpModel->getName());
-    QList<ModelInstance::Shape*> shapes;
+    ModelInstance::Extend *pExtendModel = 0;
+    if (mElementType == Element::Extend) {
+      pExtendModel = mpModel->getParentExtend();
+    }
     /* issue #9557
      * For connectors, the icon layer is used to represent a connector when it is shown in the icon layer of the enclosing model.
      * The diagram layer of the connector is used to represent it when shown in the diagram layer of the enclosing model.
      *
      * Always use the icon annotation when element type is port.
      */
-    if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
-      shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
-    } else {
-      shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
+    QList<ModelInstance::Shape*> shapes;
+    // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
+    if (!(pExtendModel && !pExtendModel->getAnnotation()->getIconMap().getprimitivesVisible())) {
+      if (mpModel->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
+        shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
+      } else {
+        shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
+      }
     }
 
     foreach (auto shape, shapes) {
