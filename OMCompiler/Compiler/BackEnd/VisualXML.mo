@@ -419,14 +419,14 @@ algorithm
   (crefOut, wasCut) := matchcontinue(crefIn, crefCut)
     local
       DAE.ComponentRef crefCut1, crefIn1;
-
+/* Issue #5953
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL())
       algorithm
         // the crefs are not equal, check the next cref in crefIn
         true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
       then
         splitCrefAfter(crefIn1,crefCut);
-
+*/
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
       algorithm
         // the crefs are equal, continue checking
@@ -471,8 +471,8 @@ algorithm
     case (BackendDAE.VAR(varName=cref), (vars, vis as SHAPE(ident=ident)))
       algorithm
         //this var belongs to the visualization object
-        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
-        (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
+        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the visualizer ident
+        (cref1,true) := splitCrefAfter(cref,ident); // check if this occurs in the qualified var cref
         filled_vis := fillShapeObject(cref1,varIn,storeProtectedCrefs,program,vis);
       then
         (vars, filled_vis);
@@ -480,8 +480,8 @@ algorithm
     case (BackendDAE.VAR(varName=cref), (vars, vis as VECTOR(ident=ident)))
       algorithm
         //this var belongs to the visualization object
-        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
-        (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
+        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the visualizer ident
+        (cref1,true) := splitCrefAfter(cref,ident); // check if this occurs in the qualified var cref
         filled_vis := fillVectorObject(cref1,varIn,storeProtectedCrefs,program,vis);
       then
         (vars, filled_vis);
@@ -489,8 +489,8 @@ algorithm
     case (BackendDAE.VAR(varName=cref), (vars, vis as SURFACE(ident=ident)))
       algorithm
         //this var belongs to the visualization object
-        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
-        (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
+        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the visualizer ident
+        (cref1,true) := splitCrefAfter(cref,ident); // check if this occurs in the qualified var cref
         filled_vis := fillSurfaceObject(cref1,varIn,storeProtectedCrefs,program,vis);
       then
         (vars, filled_vis);
