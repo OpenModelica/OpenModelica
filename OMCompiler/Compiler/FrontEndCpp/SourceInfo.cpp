@@ -4,6 +4,8 @@
 
 using namespace OpenModelica;
 
+extern record_description SourceInfo_SOURCEINFO__desc;
+
 SourceInfo::SourceInfo() noexcept
   : _isReadOnly{false}, _lineNumberStart{0}, _columnNumberStart{0},
     _lineNumberEnd{0}, _columnNumberEnd{0}, _lastModification{0.0}
@@ -28,6 +30,19 @@ SourceInfo::SourceInfo(std::string filename, bool readonly, int64_t line_start, 
     _lastModification{modified}
 {
 
+}
+
+SourceInfo::operator MetaModelica::Value() const noexcept
+{
+  return MetaModelica::Record{0, SourceInfo_SOURCEINFO__desc, {
+    MetaModelica::Value{_filename},
+    MetaModelica::Value{_isReadOnly},
+    MetaModelica::Value{_lineNumberStart},
+    MetaModelica::Value{_columnNumberStart},
+    MetaModelica::Value{_lineNumberEnd},
+    MetaModelica::Value{_columnNumberEnd},
+    MetaModelica::Value{_lastModification}
+  }};
 }
 
 const SourceInfo& SourceInfo::dummyInfo() noexcept

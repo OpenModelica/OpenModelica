@@ -22,6 +22,7 @@ namespace OpenModelica::Absyn
           virtual ~Base() = default;
 
           virtual std::unique_ptr<Base> clone() const noexcept = 0;
+          virtual MetaModelica::Value toSCode() const noexcept = 0;
           virtual void print(std::ostream &os) const noexcept = 0;
 
         protected:
@@ -37,6 +38,9 @@ namespace OpenModelica::Absyn
       Equation& operator= (const Equation &other) noexcept;
       Equation& operator= (Equation &&other) = default;
 
+      MetaModelica::Value toSCode() const noexcept;
+      static MetaModelica::Value toSCodeList(const std::vector<Equation> &eqs) noexcept;
+
       void print(std::ostream &os, std::string_view indent = {}) const noexcept;
 
     private:
@@ -51,6 +55,7 @@ namespace OpenModelica::Absyn
       EqualityEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -67,6 +72,7 @@ namespace OpenModelica::Absyn
       IfEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -80,6 +86,7 @@ namespace OpenModelica::Absyn
       ConnectEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -93,6 +100,7 @@ namespace OpenModelica::Absyn
       ForEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -110,6 +118,7 @@ namespace OpenModelica::Absyn
       WhenEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -122,6 +131,7 @@ namespace OpenModelica::Absyn
       AssertEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -136,6 +146,7 @@ namespace OpenModelica::Absyn
       TerminateEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -148,6 +159,7 @@ namespace OpenModelica::Absyn
       ReinitEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -161,6 +173,7 @@ namespace OpenModelica::Absyn
       CallEquation(MetaModelica::Record value);
 
       std::unique_ptr<Equation::Base> clone() const noexcept override;
+      MetaModelica::Value toSCode() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:

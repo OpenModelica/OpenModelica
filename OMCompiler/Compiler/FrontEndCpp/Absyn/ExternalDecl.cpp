@@ -5,7 +5,10 @@
 #include "ExternalDecl.h"
 #include "Subscript.h"
 
+using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
+
+extern record_description SCode_ExternalDecl_EXTERNALDECL__desc;
 
 ExternalDecl::ExternalDecl(MetaModelica::Record value)
   : _functionName{value[0].toOptional<std::string>().value_or("")},
@@ -19,6 +22,17 @@ ExternalDecl::ExternalDecl(MetaModelica::Record value)
 }
 
 ExternalDecl::~ExternalDecl() = default;
+
+MetaModelica::Value ExternalDecl::toSCode() const noexcept
+{
+  return MetaModelica::Record(0, SCode_ExternalDecl_EXTERNALDECL__desc, {
+    _functionName.empty() ? MetaModelica::Option() : MetaModelica::Option(MetaModelica::Value(_functionName)),
+    _language.empty() ? MetaModelica::Option() : MetaModelica::Option(MetaModelica::Value(_language)),
+    MetaModelica::Option(_outputParam, [](const auto &o) { return o.toAbsyn(); }),
+    MetaModelica::List(_args, [](const auto &a) { return a.toAbsyn(); }),
+    _annotation.toSCodeOpt()
+  });
+}
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream& os, const ExternalDecl &externalDecl) noexcept
 {

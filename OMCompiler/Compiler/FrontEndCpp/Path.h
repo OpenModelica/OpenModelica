@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <string_view>
 #include <iosfwd>
 
 #include "MetaModelica.h"
@@ -13,11 +14,15 @@ namespace OpenModelica
   {
     public:
       Path(std::vector<std::string> path, bool fullyQualified = false);
+      Path(std::string_view path);
       Path(MetaModelica::Record value);
+
+      MetaModelica::Value toAbsyn() const noexcept;
 
       void push_back(std::string name) noexcept;
       void pop_back() noexcept;
 
+      size_t size() const noexcept;
       bool isIdent() const noexcept;
       bool isQualified() const noexcept;
       bool isFullyQualified() const noexcept;
@@ -36,7 +41,7 @@ namespace OpenModelica
 
     private:
       std::vector<std::string> _names;
-      bool _fullyQualified;
+      bool _fullyQualified = false;
   };
 
   std::ostream& operator<< (std::ostream &os, const Path &path) noexcept;

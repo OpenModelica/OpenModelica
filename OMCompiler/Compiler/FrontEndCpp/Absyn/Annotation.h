@@ -15,6 +15,9 @@ namespace OpenModelica::Absyn
       Annotation() = default;
       Annotation(MetaModelica::Record value);
 
+      MetaModelica::Value toSCode() const noexcept;
+      MetaModelica::Value toSCodeOpt() const noexcept;
+
       const Modifier& modifier() const noexcept { return _modifier; }
 
       void print(std::ostream &os, std::string_view indent = {}) const noexcept;

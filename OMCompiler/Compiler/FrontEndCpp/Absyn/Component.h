@@ -20,6 +20,8 @@ namespace OpenModelica::Absyn
       Component(MetaModelica::Record value);
       ~Component();
 
+      MetaModelica::Value toSCode() const noexcept override;
+
       const std::string& name() const noexcept;
       const Comment& comment() const noexcept;
 

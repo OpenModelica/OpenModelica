@@ -21,6 +21,8 @@ namespace OpenModelica::Absyn
       ExternalDecl(MetaModelica::Record value);
       ~ExternalDecl();
 
+      MetaModelica::Value toSCode() const noexcept;
+
       const std::string& functionName() const noexcept { return _functionName; }
       const std::string& language() const noexcept { return _language; }
       const std::optional<ComponentRef>& outputParam() const noexcept { return _outputParam; }

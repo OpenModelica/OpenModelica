@@ -16,6 +16,8 @@ namespace OpenModelica::Absyn
       Comment(MetaModelica::Record value);
       Comment(std::string description, Annotation annotation = Annotation()) noexcept;
 
+      MetaModelica::Value toSCode() const noexcept;
+
       std::optional<std::string> descriptionString() const noexcept;
       const Annotation& annotation() const noexcept;
 

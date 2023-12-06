@@ -2,7 +2,10 @@
 
 #include "Comment.h"
 
+using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
+
+extern record_description SCode_Comment_COMMENT__desc;
 
 Comment::Comment(MetaModelica::Record value)
   : _annotation{value[0].mapOptionalOrDefault<Annotation>()},
@@ -14,6 +17,14 @@ Comment::Comment(std::string description, Annotation annotation) noexcept
   : _description{std::move(description)}, _annotation{std::move(annotation)}
 {
 
+}
+
+MetaModelica::Value Comment::toSCode() const noexcept
+{
+  return MetaModelica::Record(0, SCode_Comment_COMMENT__desc, {
+    _annotation.toSCodeOpt(),
+    MetaModelica::Option(_description)
+  });
 }
 
 std::optional<std::string> Comment::descriptionString() const noexcept

@@ -2,7 +2,10 @@
 
 #include "Import.h"
 
+using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
+
+extern record_description SCode_Element_IMPORT__desc;
 
 Import::Import(MetaModelica::Record value)
   : Element::Base(SourceInfo(value[2])),
@@ -10,6 +13,15 @@ Import::Import(MetaModelica::Record value)
     _visibility(value[1])
 {
 
+}
+
+MetaModelica::Value Import::toSCode() const noexcept
+{
+  return MetaModelica::Record(Element::IMPORT, SCode_Element_IMPORT__desc, {
+    _path.toAbsyn(),
+    _visibility.toSCode(),
+    _info
+  });
 }
 
 std::unique_ptr<Element::Base> Import::clone() const noexcept

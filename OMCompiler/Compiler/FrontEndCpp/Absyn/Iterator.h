@@ -14,6 +14,8 @@ namespace OpenModelica::Absyn
     public:
       Iterator(MetaModelica::Record value);
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
       friend std::ostream& operator<< (std::ostream& os, const Iterator &iterator);
 
     private:

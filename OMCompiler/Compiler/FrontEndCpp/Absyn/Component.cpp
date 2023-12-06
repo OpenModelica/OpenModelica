@@ -3,7 +3,10 @@
 #include "Expression.h"
 #include "Component.h"
 
+using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
+
+extern record_description SCode_Element_COMPONENT__desc;
 
 Component::Component(MetaModelica::Record value)
   : Element::Base(SourceInfo{value[7]}),
@@ -19,6 +22,20 @@ Component::Component(MetaModelica::Record value)
 }
 
 Component::~Component() = default;
+
+MetaModelica::Value Component::toSCode() const noexcept
+{
+  return MetaModelica::Record(Element::COMPONENT, SCode_Element_COMPONENT__desc, {
+    MetaModelica::Value(_name),
+    _prefixes.toSCode(),
+    _attributes.toSCode(),
+    _typeSpec.toAbsyn(),
+    _modifier.toSCode(),
+    _comment.toSCode(),
+    MetaModelica::Option(_condition, [](const auto &c) { return c.toAbsyn(); }),
+    _info
+  });
+}
 
 const std::string& Component::name() const noexcept
 {

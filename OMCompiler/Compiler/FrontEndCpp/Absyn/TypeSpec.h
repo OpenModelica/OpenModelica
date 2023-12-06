@@ -14,12 +14,15 @@ namespace OpenModelica::Absyn
     public:
       TypeSpec(MetaModelica::Record value);
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
       const Path& path() const noexcept;
       const std::vector<Subscript>& dimensions() const noexcept;
 
     private:
       Path _path;
       std::vector<Subscript> _arrayDims;
+      std::vector<TypeSpec> _typeSpecs;
   };
 
   std::ostream& operator<< (std::ostream &os, const TypeSpec &typeSpec) noexcept;

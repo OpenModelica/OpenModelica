@@ -22,6 +22,8 @@ namespace OpenModelica::Absyn
       explicit ComponentRef(MetaModelica::Record value);
       ~ComponentRef();
 
+      MetaModelica::Value toAbsyn() const noexcept;
+
       void push_back(Part part) noexcept;
 
       bool isIdent() const noexcept;

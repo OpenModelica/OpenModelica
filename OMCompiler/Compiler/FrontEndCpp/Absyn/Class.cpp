@@ -2,7 +2,10 @@
 
 #include "Class.h"
 
+using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
+
+extern record_description Absyn_Class_CLASS__desc;
 
 Class::Class(MetaModelica::Record value)
   : Element::Base(SourceInfo{value[7]}),
@@ -15,6 +18,20 @@ Class::Class(MetaModelica::Record value)
     _comment{value[6]}
 {
 
+}
+
+MetaModelica::Value Class::toSCode() const noexcept
+{
+  return MetaModelica::Record{Element::CLASS, Absyn_Class_CLASS__desc, {
+    MetaModelica::Value{_name},
+    _prefixes.toSCode(),
+    _encapsulated.toSCode(),
+    _partial.toSCode(),
+    _restriction.toSCode(),
+    _classDef.toSCode(),
+    _comment.toSCode(),
+    _info
+  }};
 }
 
 const std::string& Class::name() const noexcept

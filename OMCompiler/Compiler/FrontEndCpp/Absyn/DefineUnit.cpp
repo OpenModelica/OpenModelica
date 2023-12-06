@@ -2,6 +2,7 @@
 
 #include "DefineUnit.h"
 
+using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
 DefineUnit::DefineUnit(MetaModelica::Record value)
@@ -12,6 +13,11 @@ DefineUnit::DefineUnit(MetaModelica::Record value)
     _weight{value[3].toOptional<double>()}
 {
 
+}
+
+MetaModelica::Value DefineUnit::toSCode() const noexcept
+{
+  return MetaModelica::Value(4);
 }
 
 std::unique_ptr<Element::Base> DefineUnit::clone() const noexcept

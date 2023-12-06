@@ -7,12 +7,6 @@
 #include "DefineUnit.h"
 #include "Element.h"
 
-constexpr int IMPORT = 0;
-constexpr int EXTENDS = 1;
-constexpr int CLASS = 2;
-constexpr int COMPONENT = 3;
-constexpr int DEFINEUNIT = 4;
-
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
@@ -25,11 +19,11 @@ Element::Base::Base(SourceInfo info)
 std::unique_ptr<Element::Base> element_from_mm(MetaModelica::Record value)
 {
   switch (value.index()) {
-    case IMPORT:     return std::make_unique<Absyn::Import>(value);
-    case EXTENDS:    return std::make_unique<Absyn::Extends>(value);
-    case CLASS:      return std::make_unique<Absyn::Class>(value);
-    case COMPONENT:  return std::make_unique<Absyn::Component>(value);
-    case DEFINEUNIT: return std::make_unique<Absyn::DefineUnit>(value);
+    case Element::IMPORT:     return std::make_unique<Absyn::Import>(value);
+    case Element::EXTENDS:    return std::make_unique<Absyn::Extends>(value);
+    case Element::CLASS:      return std::make_unique<Absyn::Class>(value);
+    case Element::COMPONENT:  return std::make_unique<Absyn::Component>(value);
+    case Element::DEFINEUNIT: return std::make_unique<Absyn::DefineUnit>(value);
   }
 
   throw std::runtime_error("Element::Element: invalid record index");
@@ -51,6 +45,16 @@ Element& Element::operator= (const Element &other) noexcept
 {
   _impl = other._impl->clone();
   return *this;
+}
+
+MetaModelica::Value Element::toSCode() const noexcept
+{
+  return _impl->toSCode();
+}
+
+MetaModelica::Value Element::toSCodeList(const std::vector<Element> &elements) noexcept
+{
+  return MetaModelica::List(elements, [](const auto &e) { return e.toSCode(); });
 }
 
 void Element::print(std::ostream &os, Each each) const noexcept

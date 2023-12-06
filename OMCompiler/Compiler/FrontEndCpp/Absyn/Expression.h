@@ -25,6 +25,7 @@ namespace OpenModelica::Absyn
           virtual ~Base() = default;
 
           virtual std::unique_ptr<Base> clone() const noexcept = 0;
+          virtual MetaModelica::Value toAbsyn() const noexcept = 0;
           virtual void print(std::ostream &os) const noexcept = 0;
       };
 
@@ -36,6 +37,16 @@ namespace OpenModelica::Absyn
 
       Expression& operator= (const Expression &other) noexcept;
       Expression& operator= (Expression &&other) = default;
+
+      MetaModelica::Value toAbsyn() const noexcept;
+
+      template<typename T>
+      const T& get() const
+      {
+        return dynamic_cast<const T&>(*_impl.get());
+      }
+
+      std::optional<ComponentRef> toCref() const noexcept;
 
       void print(std::ostream &os) const noexcept;
 
@@ -54,6 +65,7 @@ namespace OpenModelica::Absyn
       int64_t value() const noexcept { return _value; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -69,6 +81,7 @@ namespace OpenModelica::Absyn
       double value() const noexcept;
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -84,6 +97,7 @@ namespace OpenModelica::Absyn
       bool value() const noexcept { return _value; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -99,6 +113,7 @@ namespace OpenModelica::Absyn
       const std::string& value() const noexcept { return _value; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -114,6 +129,7 @@ namespace OpenModelica::Absyn
       const ComponentRef& cref() const { return _cref; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -131,6 +147,7 @@ namespace OpenModelica::Absyn
       const Expression& exp2() const noexcept { return _exp2; };
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -149,6 +166,7 @@ namespace OpenModelica::Absyn
       const Expression& exp() const noexcept { return _exp; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -167,6 +185,7 @@ namespace OpenModelica::Absyn
       const Expression& falseBranch() const noexcept { return _false; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -185,6 +204,7 @@ namespace OpenModelica::Absyn
       const FunctionArgs& args() const noexcept { return _args; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -202,6 +222,7 @@ namespace OpenModelica::Absyn
       const FunctionArgs& args() const noexcept { return _args; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -218,6 +239,7 @@ namespace OpenModelica::Absyn
       const std::vector<Expression>& elements() const noexcept { return _elements; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -233,6 +255,7 @@ namespace OpenModelica::Absyn
       const std::vector<Array>& elements() const noexcept { return _matrix; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -251,6 +274,7 @@ namespace OpenModelica::Absyn
       const std::optional<Expression>& step() const { return _step; }
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -266,6 +290,7 @@ namespace OpenModelica::Absyn
       Tuple(std::vector<Expression> elements) noexcept;
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -278,6 +303,7 @@ namespace OpenModelica::Absyn
       End() = default;
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
   };
 
@@ -287,6 +313,7 @@ namespace OpenModelica::Absyn
       explicit Code(MetaModelica::Record value);
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -299,6 +326,7 @@ namespace OpenModelica::Absyn
       explicit SubscriptedExp(MetaModelica::Record value);
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
 
     private:
@@ -312,6 +340,7 @@ namespace OpenModelica::Absyn
       Break() = default;
 
       std::unique_ptr<Base> clone() const noexcept override;
+      MetaModelica::Value toAbsyn() const noexcept override;
       void print(std::ostream &os) const noexcept override;
   };
 }
