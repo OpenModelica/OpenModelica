@@ -80,11 +80,13 @@ private:
   ExtentAnnotation mExtentDiagram;
   RealAnnotation mRotateAngleDiagram;
   PointAnnotation mPositionDiagram;
+  QPointF mExtentCenterDiagram;
   BooleanAnnotation mVisibleIcon;
   PointAnnotation mOriginIcon;
   ExtentAnnotation mExtentIcon;
   RealAnnotation mRotateAngleIcon;
-  QPointF mPositionIcon;
+  PointAnnotation mPositionIcon;
+  QPointF mExtentCenterIcon;
 
   QTransform getTransformationMatrixDiagram() const;
   StringHandler::ViewType getViewType() const {return mViewType;}
