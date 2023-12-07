@@ -273,13 +273,13 @@ annotation(Documentation(info="<html>
 </html>"));
 end log10;
 
-function homotopy
+function homotopy "Homotopy operator actual*lambda + simplified*(1-lambda)"
   input Real actual;
   input Real simplified;
   output Real outValue;
 external "builtin";
-annotation(version="Modelica 3.2",Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'homotopy()'\">homotopy()</a> (experimental implementation)
+annotation(__OpenModelica_builtin=true, version="Modelica 3.2",Documentation(info="<html>
+  See <a href=\"https://specification.modelica.org/maint/3.6/operators-and-expressions.html#homotopy\">homotopy()</a>
 </html>"));
 end homotopy;
 
@@ -742,7 +742,7 @@ If no class was being simulated, the last simulated class or a default will be u
 "),version="Modelica 3.3");
 end getInstanceName;
 
-function spatialDistribution "Not yet implemented"
+function spatialDistribution "Approximation of variable-speed transport of properties"
   input Real in0;
   input Real in1;
   input Real x;
@@ -752,7 +752,9 @@ function spatialDistribution "Not yet implemented"
   output Real out0;
   output Real out1;
 external "builtin";
-annotation(version="Modelica 3.3");
+annotation(Documentation(info="<html>
+spatialDistribution allows approximation of variable-speed transport of properties. For further details, see the Modelica Language Specification <a href=\"https://specification.modelica.org/maint/3.6/operators-and-expressions.html#spatialdistribution\">spatialdistribution()</a>.
+</html>"), version="Modelica 3.3");
 end spatialDistribution;
 
 function previous<T> "Access previous value of a clocked variable"
