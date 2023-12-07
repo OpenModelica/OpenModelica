@@ -357,6 +357,24 @@ public
     end if;
   end getImplicitBinding;
 
+  function getTypeAttributeBinding
+    input Component component;
+    input String attrName;
+    output Binding binding;
+  protected
+    InstNode start_node;
+    Component start_comp;
+  algorithm
+    try
+      start_node := Class.lookupElement(attrName, InstNode.getClass(classInstance(component)));
+      start_comp := InstNode.component(start_node);
+      true := Component.isTypeAttribute(start_comp);
+      binding := Component.getBinding(start_comp);
+    else
+      binding := NFBinding.EMPTY_BINDING;
+    end try;
+  end getTypeAttributeBinding;
+
   function setBinding
     input Binding binding;
     input output Component component;

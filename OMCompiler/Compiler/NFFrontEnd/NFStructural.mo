@@ -58,11 +58,15 @@ public
     output Boolean isStructural;
   protected
     Boolean is_fixed;
+    Binding binding;
   algorithm
     if compAttrs.variability <> Variability.PARAMETER then
       // Only parameters can be structural.
       isStructural := false;
     elseif compEval or parentEval then
+      binding := if Binding.isBound(compBinding) then
+        compBinding else Component.getTypeAttributeBinding(component, "start");
+
       // If the component or any of its parents has an Evaluate=true annotation
       // we should probably evaluate the parameter, which we do by marking it as
       // structural.
@@ -72,7 +76,7 @@ public
       elseif Component.isExternalObject(component) then
         // Except external objects.
         isStructural := false;
-      elseif not InstNode.hasBinding(compNode) then
+      elseif not (Binding.isBound(binding) or InstNode.hasBinding(compNode)) then
         // Except parameters with no bindings.
         if not parentEval and not Flags.getConfigBool(Flags.CHECK_MODEL) then
           // Print a warning if a parameter has an Evaluate=true annotation but no binding.
@@ -81,7 +85,7 @@ public
         end if;
 
         isStructural := false;
-      elseif isBindingNotFixed(compBinding, requireFinal = false) then
+      elseif isBindingNotFixed(binding, requireFinal = false) then
         // Except parameters that depend on non-fixed parameters.
         isStructural := false;
       else
@@ -92,7 +96,7 @@ public
     //  // If a parameter is fixed and final we might also want to evaluate it,
     //  // since its binding can't be modified. But only if all parameters it
     //  // depends on are also fixed and final.
-    //  if Binding.isUnbound(compBinding) or isBindingNotFixed(compBinding, requireFinal = true) then
+    //  if Binding.isUnbound(binding) or isBindingNotFixed(binding, requireFinal = true) then
     //    isStructural := false;
     //  else
     //    isStructural := true;
@@ -143,7 +147,8 @@ public
         if InstNode.isComponent(parent) and InstNode.isRecord(parent) then
           isNotFixed := isComponentBindingNotFixed(InstNode.component(parent), parent, requireFinal, maxDepth, true);
         else
-          isNotFixed := true;
+          binding := Component.getTypeAttributeBinding(component, "start");
+          isNotFixed := isBindingNotFixed(binding, requireFinal, maxDepth);
         end if;
       end if;
     else

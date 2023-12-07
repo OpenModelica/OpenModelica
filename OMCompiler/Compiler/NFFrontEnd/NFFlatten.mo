@@ -1708,7 +1708,7 @@ protected
   InstNode scope;
 algorithm
   Equation.IF(branches = branches, scope = scope, source = src) := eq;
-  has_connect := Equation.contains(eq, isConnectEq);
+  has_connect := Equation.contains(eq, Equation.isConnection);
 
   // Print errors for unbound constants/parameters if the if-equation contains
   // connects, since we must select a branch in that case.
@@ -1791,21 +1791,6 @@ algorithm
     equations := Equation.IF(listReverseInPlace(bl), scope, src) :: equations;
   end if;
 end flattenIfEquation;
-
-function isConnectEq
-  input Equation eq;
-  output Boolean isConnect;
-algorithm
-  isConnect := match eq
-    local
-      Function fn;
-
-    case Equation.CONNECT() then true;
-    case Equation.NORETCALL(exp = Expression.CALL(call = Call.TYPED_CALL(fn = fn)))
-      then AbsynUtil.pathFirstIdent(Function.name(fn)) == "Connections";
-    else false;
-  end match;
-end isConnectEq;
 
 function flattenEqBranch
   input output Equation.Branch branch;

@@ -2988,6 +2988,10 @@ algorithm
         e1 := typeIterator(eq.iterator, e1, context, structural = true);
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := list(typeEquation(e, next_context) for e in eq.body);
+
+        if Equation.containsList(body, Equation.isConnection) then
+          Structural.markExp(e1);
+        end if;
       then
         Equation.FOR(eq.iterator, SOME(e1), body, eq.scope, eq.source);
 
@@ -3497,7 +3501,8 @@ algorithm
       // connections in the branch, mark the context so we can check that when
       // typing the body of the branch.
       next_context := InstContext.set(next_context, NFInstContext.NONEXPANDABLE);
-    elseif var == Variability.PARAMETER and accum_var <= Variability.PARAMETER then
+    elseif var == Variability.PARAMETER and
+           (accum_var <= Variability.PARAMETER or Equation.containsList(eql, Equation.isConnection)) then
       // If all conditions up to and including this one are parameter
       // expressions, consider the condition to be structural.
       var := Variability.STRUCTURAL_PARAMETER;
