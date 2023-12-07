@@ -3624,9 +3624,12 @@ void MainWindow::messagesTabBarClicked(int index)
  */
 void MainWindow::messagesDockWidgetVisibilityChanged(bool visible)
 {
-  mpMessagesTabWidget->setVisible(!visible);
-  if (!visible && MessagesWidget::instance()) {
-    mpMessagesTabWidget->setCurrentIndex(MessagesWidget::instance()->getMessagesTabWidget()->currentIndex());
+  // Avoid firing a paint event on the animation window when the main window is closing
+  if (MessagesWidget::instance()) {
+    mpMessagesTabWidget->setVisible(!visible);
+    if (!visible) {
+      mpMessagesTabWidget->setCurrentIndex(MessagesWidget::instance()->getMessagesTabWidget()->currentIndex());
+    }
   }
 }
 
