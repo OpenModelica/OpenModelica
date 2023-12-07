@@ -259,8 +259,6 @@ namespace ModelInstance
     return 0;
   }
 
-  Shape::~Shape() = default;
-
   Line::Line(Model *pParentModel)
     : Shape(pParentModel)
   {
@@ -2192,8 +2190,6 @@ namespace ModelInstance
     }
   }
 
-  Name::Name() = default;
-
   Name::Name(QString str)
   {
     while (!str.isEmpty()) {
@@ -2377,15 +2373,10 @@ namespace ModelInstance
     return "initialState(" % mpStartConnector->getName() % ")";
   }
 
-  IconDiagramMap::IconDiagramMap()
-  {
-    mExtent = QVector<QPointF>(2, QPointF(0, 0));
-    mPrimitivesVisible = true;
-  }
-
   void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("extent")) {
+      mHasExtent = true;
       mExtent.deserialize(jsonObject.value("extent"));
     }
 

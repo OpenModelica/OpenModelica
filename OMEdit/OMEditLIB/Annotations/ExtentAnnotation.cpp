@@ -34,6 +34,12 @@ ExtentAnnotation::ExtentAnnotation()
   clear();
 }
 
+ExtentAnnotation::ExtentAnnotation(const QVector<QPointF> &value)
+{
+  mValue = value;
+  setExp();
+}
+
 void ExtentAnnotation::clear()
 {
   mValue.replace(0, QPointF(-100.0, -100.0));

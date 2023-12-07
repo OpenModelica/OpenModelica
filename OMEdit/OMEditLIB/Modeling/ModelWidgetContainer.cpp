@@ -343,7 +343,7 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
   QList<ModelInstance::Shape*> shapes;
   ModelInstance::Extend *pExtendModel = 0;
   if (inhertied) {
-    pExtendModel = static_cast<ModelInstance::Extend*>(pModelInstance->getParentElement());
+    pExtendModel = pModelInstance->getParentExtend();
   }
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     if (!(pExtendModel && !pExtendModel->getAnnotation()->getIconMap().getprimitivesVisible())) {

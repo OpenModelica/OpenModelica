@@ -140,7 +140,7 @@ private:
   {
   public:
     Shape(Model *pParentModel);
-    virtual ~Shape();
+    virtual ~Shape() = default;
 
     Model *getParentModel() const {return mpParentModel;}
     Extend *getParentExtend() const;
@@ -378,14 +378,16 @@ private:
   class IconDiagramMap
   {
   public:
-    IconDiagramMap();
+    IconDiagramMap() = default;
     void deserialize(const QJsonObject &jsonObject);
 
     const ExtentAnnotation &getExtent() const {return mExtent;}
+    bool hasExtent() const {return mHasExtent;}
     const BooleanAnnotation &getprimitivesVisible() const {return mPrimitivesVisible;}
   private:
-    ExtentAnnotation mExtent;
-    BooleanAnnotation mPrimitivesVisible;
+    ExtentAnnotation mExtent = QVector<QPointF>(2, QPointF(0, 0));
+    bool mHasExtent = false;
+    BooleanAnnotation mPrimitivesVisible = true;
   };
 
   class Annotation
@@ -782,7 +784,7 @@ private:
   class Name
   {
   public:
-    Name();
+    Name() = default;
     Name(QString str);
     void deserialize(const QJsonArray &jsonArray);
 
