@@ -45,6 +45,7 @@ protected
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
+  import Call = NFCall;
 
 public
   uniontype Branch
@@ -1180,6 +1181,7 @@ public
   end replaceIteratorList;
 
   function isConnect
+    "Checks if an equation is a connect equation."
     input Equation eq;
     output Boolean isConnect;
   algorithm
@@ -1188,6 +1190,21 @@ public
       else false;
     end match;
   end isConnect;
+
+  function isConnection
+    "Checks if an equation is a connect equation or a Connections.* call."
+    input Equation eq;
+    output Boolean res;
+  protected
+    Call call;
+  algorithm
+    res := match eq
+      case Equation.CONNECT() then true;
+      case Equation.NORETCALL(exp = Expression.CALL(call = call))
+        then Call.functionNameFirst(call) == "Connections";
+      else false;
+    end match;
+  end isConnection;
 
   function sizeOfList
     input list<Equation> eqs;
