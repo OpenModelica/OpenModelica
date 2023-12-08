@@ -481,12 +481,12 @@ algorithm
     case (f::_)
       algorithm
         if System.regularFileExists(f) then
-          print("Error processing file: "); System.fflush();
+          print("Error processing file: ");
         else
-          print(System.gettext("File does not exist: ")); System.fflush();
+          print(System.gettext("File does not exist: "));
         end if;
 
-        print(f); print("\n");
+        print(f); print("\n"); System.fflush();
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then
