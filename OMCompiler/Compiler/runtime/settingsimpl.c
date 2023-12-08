@@ -228,10 +228,14 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
 
   {
     /* if we are running the testsuite, use the default */
-    const char *path = runningTestsuite ? NULL : getenv("OPENMODELICALIBRARY");
+    const char *path = getenv("OPENMODELICALIBRARY");
     if (path != NULL)
     {
       omc_modelicaPath = strdup(path);
+    }
+    else if (runningTestsuite) {
+      fprintf(stderr, "When using --running-testsuite, OPENMODELICALIBRARY must be set\n");
+      exit(1);
     }
     else
     {

@@ -70,7 +70,11 @@ sub symlink_if_exists {
   my $dst = shift;
 
   if (-e $src) {
-    symlink($src, $dst)
+    if (defined $ENV{'WSLENV'}) {
+      link($src, $dst);
+    } else {
+      symlink($src, $dst);
+    }
   }
 }
 

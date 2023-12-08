@@ -9,15 +9,21 @@ if (defined $ENV{"RTEST_OMCFLAGS"}) {
     $omcflags="--alarm=900";
 }
 
-(undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 1, SUFFIX => ".tmp", UNLINK => 1);
+(undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 0, SUFFIX => ".tmp", UNLINK => 1);
 $cwd = getcwd;
+if (defined $ENV{'WSLENV'}) {
+  $OMCEXE = "omc.exe";
+} else {
+  $OMCEXE = "omc";
+}
+
 if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   # See if we have the the CMake config's common install dirs.
-  if (-e "$1build/install_cmake/bin/omc") {
+  if (-e "$1build/install_cmake/bin/$OMCEXE") {
     $OPENMODELICAHOME = "$1build/install_cmake";
   }
   # See if we have the the CMake config's common install dirs.
-  elsif (-e "$1build_cmake/install_cmake/bin/omc") {
+  elsif (-e "$1build_cmake/install_cmake/bin/$OMCEXE") {
     $OPENMODELICAHOME = "$1build_cmake/install_cmake";
   }
   # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
@@ -31,6 +37,11 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   $ENV{'REFERENCEFILES'} = "$1testsuite/ReferenceFiles";
   $ENV{'OMLIBRARYCOMMON'} = "$1testsuite/simulation/libraries/common";
   $ENV{'OMCOMPILERSOURCES'} = "$1OMCompiler/Compiler";
+  $ENV{'OPENMODELICALIBRARY'} = "$1/libraries/.openmodelica/libraries";
+  # In WSL, we need to mark the environment variable as one we pass from WSL to WIN32
+  if (defined $ENV{'WSLENV'}) {
+    $ENV{'WSLENV'} = "$ENV{'WSLENV'}:OPENMODELICALIBRARY/p";
+  }
 } else {
   print "You must run rtest from the testsuite (was run from $cwd)\n";
   exit 0;
@@ -76,7 +87,6 @@ $eps_mo = 1.0e-7;
 $eps_mos = 5e-3;
 $set_modelica_lib = 1;
 $nodelete = 0;
-$OMCEXE = "omc";
 
 sub ulimit_cmd
 {
