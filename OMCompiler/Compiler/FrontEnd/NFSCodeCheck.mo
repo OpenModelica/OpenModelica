@@ -231,7 +231,7 @@ algorithm
         SCode.CLASS(prefixes = SCode.PREFIXES()))
       algorithm
         ty := SCodeDump.restrictionStringPP(res);
-        ok := checkClassRedeclarationReplaceable(name, ty, repl, inInfo, info);
+        ok := checkClassRedeclarationReplaceable(name, repl, inInfo, info);
         ok := checkRedeclarationFinal(name, ty, fin, inInfo, info) and ok;
         //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
         true := ok;
@@ -263,7 +263,6 @@ end checkRedeclaredElementPrefix;
 
 protected function checkClassRedeclarationReplaceable
   input SCode.Ident inName;
-  input String inType;
   input SCode.Replaceable inReplaceable;
   input SourceInfo inOriginInfo;
   input SourceInfo inInfo;
@@ -273,7 +272,7 @@ algorithm
     case SCode.NOT_REPLACEABLE() guard not Flags.getConfigBool(Flags.IGNORE_REPLACEABLE)
       algorithm
         Error.addMultiSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
-          {inType, inName}, {inOriginInfo, inInfo});
+          {inName}, {inOriginInfo, inInfo});
       then
         false;
 
@@ -301,7 +300,7 @@ algorithm
     case SCode.NOT_REPLACEABLE() guard not Flags.getConfigBool(Flags.IGNORE_REPLACEABLE)
       algorithm
         Error.addMultiSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
-          {"component", inName}, {inOriginInfo, inInfo});
+          {inName}, {inOriginInfo, inInfo});
       then
         fail();
 

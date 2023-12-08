@@ -2081,6 +2081,14 @@ algorithm
   new_comp := match (orig_comp, rdcl_comp)
     case (Component.COMPONENT(ty = orig_ty as Type.UNTYPED()), Component.COMPONENT(ty = rdcl_ty as Type.UNTYPED()))
       algorithm
+        if not InstNode.isReplaceable(orig_node) and
+           not InstContext.inInstanceAPI(context) and
+           not Type.isEqual(Type.arrayElementType(orig_ty), Type.arrayElementType(rdcl_ty)) then
+          Error.addMultiSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
+              {InstNode.name(orig_node)}, {InstNode.info(orig_node), InstNode.info(rdcl_node)});
+          fail();
+        end if;
+
         // Take the binding from the outer modifier, the redeclare, or the
         // original component, in that order of priority.
         binding := Modifier.binding(outerMod);

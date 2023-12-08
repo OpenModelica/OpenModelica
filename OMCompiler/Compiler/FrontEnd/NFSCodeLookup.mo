@@ -1231,7 +1231,7 @@ algorithm
         _, SCode.NOT_REPLACEABLE(), _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {"class", name}, info);
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {name}, info);
       then
         fail();
 
