@@ -155,7 +155,7 @@ public constant ErrorTypes.Message LOOKUP_BASECLASS_ERROR = ErrorTypes.MESSAGE(3
 public constant ErrorTypes.Message INVALID_REDECLARE_AS = ErrorTypes.MESSAGE(40, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid redeclaration of %s %s as %s."));
 public constant ErrorTypes.Message REDECLARE_NON_REPLACEABLE = ErrorTypes.MESSAGE(41, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Trying to redeclare %1 %2 but %1 not declared as replaceable."));
+  Gettext.gettext("Redeclaration with a new type requires '%s' to be replaceable."));
 public constant ErrorTypes.Message COMPONENT_INPUT_OUTPUT_MISMATCH = ErrorTypes.MESSAGE(42, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Component declared as %s when having the variable %s declared as %s."));
 public constant ErrorTypes.Message ARRAY_DIMENSION_MISMATCH = ErrorTypes.MESSAGE(43, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

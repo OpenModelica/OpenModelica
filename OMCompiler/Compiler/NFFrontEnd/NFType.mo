@@ -677,6 +677,7 @@ public
     elementTy := match ty
       case ARRAY() then ty.elementType;
       case CONDITIONAL_ARRAY() then arrayElementType(ty.trueType);
+      case UNTYPED() guard not arrayEmpty(ty.dimensions) then UNTYPED(ty.typeNode, listArray({}));
       else ty;
     end match;
   end arrayElementType;
@@ -1197,7 +1198,7 @@ public
       case (COMPLEX(), COMPLEX()) then InstNode.isSame(ty1.cls, ty2.cls);
 
       case (UNTYPED(), UNTYPED())
-        then InstNode.refEqual(ty1.typeNode, ty2.typeNode) and
+        then InstNode.isSame(ty1.typeNode, ty2.typeNode) and
              Array.isEqualOnTrue(ty1.dimensions, ty2.dimensions, Dimension.isEqualKnown);
 
       else true;

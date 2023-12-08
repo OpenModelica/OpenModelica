@@ -1527,11 +1527,13 @@ uniontype InstNode
     if referenceEq(n1, n2) then
       same := true;
       return;
-    // TODO: This is not enough. We need a better way.
-    elseif stringEqual(name(n1), name(n2)) then
-      same := true;
-      return;
     end if;
+
+    try
+      same := referenceEq(definition(node1), definition(node2));
+    else
+      same := false;
+    end try;
   end isSame;
 
   function checkIdentical
