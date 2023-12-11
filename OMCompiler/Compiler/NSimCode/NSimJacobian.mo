@@ -209,7 +209,8 @@ public
       simJacobian := match jacobian
         local
           // dummy map for strong component creation (no alias possible here)
-          UnorderedMap<ComponentRef, SimVar> dummy_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, SimVar> dummy_sim_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, SimStrongComponent.Block> dummy_eqn_map = UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
           SimStrongComponent.Block columnEqn;
           VarData varData;
           VariablePointers seed_scalar, res_scalar, tmp_scalar;
@@ -232,7 +233,7 @@ public
           sim_map := indices.generic_call_map;
           indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
           for i in arrayLength(jacobian.comps):-1:1 loop
-            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBSystem.SystemType.JAC, dummy_map);
+            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBSystem.SystemType.JAC, dummy_sim_map, dummy_eqn_map);
             columnEqns := columnEqn :: columnEqns;
           end for;
 
