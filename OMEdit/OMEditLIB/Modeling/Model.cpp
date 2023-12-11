@@ -2135,8 +2135,10 @@ namespace ModelInstance
     if (!mBaseClass.isEmpty()) {
       value.append("= ");
 
-      auto dir = getDirectionPrefix();
-      if (!dir.isEmpty()) value.append(dir);
+      if (mpPrefixes) {
+        auto prefixes = mpPrefixes->typePrefixes();
+        if (!prefixes.isEmpty()) value.append(prefixes);
+      }
 
       value.append(mBaseClass);
     }
