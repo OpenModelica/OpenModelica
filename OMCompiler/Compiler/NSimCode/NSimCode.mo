@@ -203,6 +203,7 @@ public
       //*** a protected section *** not exported to SimCodeTV
       //HashTableCrILst.HashTable varToIndexMapping;
       UnorderedMap<ComponentRef, SimVar> simcode_map;
+      UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
       //HashTable.HashTable crefToClockIndexHT "map variables to clock indices";
       //Option<BackendMapping> backendMapping;
       //FMI 2.0 data for model structure
@@ -256,7 +257,7 @@ public
     algorithm
       simCode := match bdae
         local
-          BackendDAE qual;
+          // auxillaries
           VarData varData;
           EqData eqData;
           FunctionTree funcTree;
@@ -284,6 +285,7 @@ public
           list<ComponentRef> discreteVars;
           list<SimJacobian> jacobians;
           UnorderedMap<ComponentRef, SimVar> simcode_map;
+          UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
@@ -299,6 +301,9 @@ public
             (vars, simCodeIndices)  := SimVars.create(varData, residual_vars, simCodeIndices);
             simcode_map             := SimCodeUtil.createSimCodeMap(vars);
 
+            // create empty equation map and fill while creating the blocks
+            equation_map := UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
+
             literals := {};
             externalFunctionIncludes := {};
 
@@ -312,15 +317,15 @@ public
             algorithms := {};
 
             // init before everything else!
-            (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, simcode_map);
+            (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, simcode_map, equation_map);
             if isSome(bdae.init_0) then
-              init_0 := SimStrongComponent.Block.createInitialBlocks(Util.getOption(bdae.init_0), simCodeIndices, simcode_map);
+              init_0 := SimStrongComponent.Block.createInitialBlocks(Util.getOption(bdae.init_0), simCodeIndices, simcode_map, equation_map);
             else
               init_0 := {};
             end if;
 
             // start allSim with no return equations
-            (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBSystem.SystemType.ODE, simcode_map);
+            (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBSystem.SystemType.ODE, simcode_map, equation_map);
             init_no_ret := {};
             start := {};
             discreteVars := {};
@@ -333,14 +338,14 @@ public
               else
                 algebraic := {};
               end if;
-              (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(bdae.dae), simCodeIndices, simcode_map, equation_map);
             else
               // Normal Simulation
               daeModeData := NONE();
-              (ode, allSim, simCodeIndices)                     := SimStrongComponent.Block.createBlocks(bdae.ode, allSim, simCodeIndices, simcode_map);
-              (algebraic, allSim, simCodeIndices)               := SimStrongComponent.Block.createBlocks(bdae.algebraic, allSim, simCodeIndices, simcode_map);
-              (ode, allSim, event_blocks, simCodeIndices)       := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks, simCodeIndices, simcode_map);
-              (algebraic, allSim, event_blocks, simCodeIndices) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks, simCodeIndices, simcode_map);
+              (ode, allSim, simCodeIndices)                     := SimStrongComponent.Block.createBlocks(bdae.ode, allSim, simCodeIndices, simcode_map, equation_map);
+              (algebraic, allSim, simCodeIndices)               := SimStrongComponent.Block.createBlocks(bdae.algebraic, allSim, simCodeIndices, simcode_map, equation_map);
+              (ode, allSim, event_blocks, simCodeIndices)       := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
+              (algebraic, allSim, event_blocks, simCodeIndices) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               if not listEmpty(no_ret) then
                 algebraic := no_ret :: algebraic;
                 allSim := listAppend(no_ret, allSim);
@@ -416,6 +421,7 @@ public
               simulationSettingsOpt     = simSettingsOpt,
               fileNamePrefix            = fileNamePrefix,
               simcode_map               = simcode_map,
+              equation_map              = equation_map,
               eventInfo                 = bdae.eventInfo,
               daeModeData               = daeModeData,
               inlineEquations           = inlineEquations
@@ -444,7 +450,7 @@ public
       list<SimVar> residualVars;
     algorithm
       modelInfo := ModelInfo.convert(simCode.modelInfo);
-      (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo);
+      (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
 
       (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeUtil.createVarToArrayIndexMapping(modelInfo);
       crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
@@ -799,12 +805,13 @@ public
       output Option<DaeModeData> data;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
     protected
       list<list<SimStrongComponent.Block>> blcks;
       list<SimVar> residualVars, algebraicVars;
       Option<SimJacobian> daeModeJac;
     algorithm
-      (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, simcode_map);
+      (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, simcode_map, equation_map);
       //(daeModeJac, simCodeIndices) := SimJacobian.fromSystems(systems, simCodeIndices);
       //data := SOME(DAE_MODE_DATA(blcks, daeModeJac, residualVars, {}, {}, DaeModeConfig.ALL));
       data := NONE();

@@ -73,6 +73,7 @@ protected
   // SimCode
   import NSimGenericCall.SimIterator;
   import OldSimIterator = BackendDAE.SimIterator;
+  import Block = NSimStrongComponent.Block;
 
   // Util
   import BackendUtil = NBBackendUtil;
@@ -264,6 +265,7 @@ public
       output list<OldBackendDAE.ZeroCrossing> zeroCrossings;
       output list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
       output list<OldBackendDAE.TimeEvent> timeEvents;
+      input UnorderedMap<ComponentRef, Block> equation_map;
     protected
       list<TimeEvent> tev_lst;
       list<tuple<Condition, CompositeEvent>> cev_lst;
@@ -271,7 +273,7 @@ public
     algorithm
       // add composite at some point?
       (tev_lst, cev_lst, sev_lst) := toLists(eventInfo);
-      zeroCrossings := list(StateEvent.convert(sev_tpl) for sev_tpl in sev_lst);
+      zeroCrossings := list(StateEvent.convert(sev_tpl, equation_map) for sev_tpl in sev_lst);
       relations := zeroCrossings;
       timeEvents := list(TimeEvent.convert(tev) for tev in tev_lst);
     end convert;
@@ -668,6 +670,7 @@ public
 
     function convert
       input tuple<Condition, StateEvent> sev_tpl;
+      input UnorderedMap<ComponentRef, Block> equation_map;
       output OldBackendDAE.ZeroCrossing oldZc;
     protected
       Condition cond;
@@ -679,7 +682,7 @@ public
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
         relation_   = Expression.toDAE(cond.exp),
-        occurEquLst = {}, //ToDo: low priority - only for debugging
+        occurEquLst = list(Block.getIndex(UnorderedMap.getSafe(Equation.getEqnName(eqn), equation_map, sourceInfo())) for eqn in sev.eqns), //ToDo: low priority - only for debugging
         iter        = iter
       );
     end convert;
@@ -855,7 +858,7 @@ public
     algorithm
       str := Expression.toString(cond.exp);
       if not Iterator.isEmpty(cond.iter) then
-        str := str + " " + Iterator.toString(cond.iter);
+        str := str + " for {" + Iterator.toString(cond.iter) + "}";
       end if;
     end toString;
 

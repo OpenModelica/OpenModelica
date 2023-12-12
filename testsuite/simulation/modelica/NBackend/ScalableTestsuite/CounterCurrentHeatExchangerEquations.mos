@@ -1,0 +1,27 @@
+// name: ScalableTestSuite.Thermal.HeatExchanger.ScaledExperiments.CounterCurrentHeatExchangerEquations_N_10
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadModel(ScalableTestSuite); getErrorString();
+
+simulate(ScalableTestSuite.Thermal.HeatExchanger.ScaledExperiments.CounterCurrentHeatExchangerEquations_N_10); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Thermal.HeatExchanger.ScaledExperiments.CounterCurrentHeatExchangerEquations_N_10_res.mat",
+  "ReferenceFiles/ScalableTestSuite.Thermal.HeatExchanger.ScaledExperiments.CounterCurrentHeatExchangerEquations_N_10_res.mat",
+  "ScalableTestSuite.Thermal.HeatExchanger.ScaledExperiments.CounterCurrentHeatExchangerEquations_N_10_diff.csv",0.01,0.0001,
+  {"TA[2]"});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ScalableTestSuite.Thermal.HeatExchanger.ScaledExperiments.CounterCurrentHeatExchangerEquations_N_10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Thermal.HeatExchanger.ScaledExperiments.CounterCurrentHeatExchangerEquations_N_10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=\\'ida\\''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult
