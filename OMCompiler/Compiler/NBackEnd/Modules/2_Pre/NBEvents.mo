@@ -858,7 +858,7 @@ public
     algorithm
       str := Expression.toString(cond.exp);
       if not Iterator.isEmpty(cond.iter) then
-        str := str + " " + Iterator.toString(cond.iter);
+        str := str + " for {" + Iterator.toString(cond.iter) + "}";
       end if;
     end toString;
 
