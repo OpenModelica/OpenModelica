@@ -1238,7 +1238,12 @@ public
     algorithm
       try
         SOME(SCode.COMMENT(annotation_=SOME(anno))) := optComment;
-        SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "__OpenModelica_tearingSelect");
+        try
+          SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "__OpenModelica_tearingSelect");
+        else
+          SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "tearingSelect");
+          Error.addCompilerWarning("Deprecated vendor annotation 'tearingSelect' found. Use '__OpenModelica_tearingSelect' instead.");
+        end try;
         name := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
         tearingSelect := SOME(lookupTearingSelectMember(name));
       else

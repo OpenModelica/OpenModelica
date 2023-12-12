@@ -1140,7 +1140,12 @@ protected
 algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
-    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "__OpenModelica_tearingSelect");
+    try
+      SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "__OpenModelica_tearingSelect");
+    else
+      SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "tearingSelect");
+      Error.addCompilerWarning("Deprecated vendor annotation 'tearingSelect' found. Use '__OpenModelica_tearingSelect' instead.");
+    end try;
     ts := match AbsynUtil.crefIdent(AbsynUtil.expCref(val))
       case "always"   then SOME(BackendDAE.ALWAYS());
       case "prefer"   then SOME(BackendDAE.PREFER());
