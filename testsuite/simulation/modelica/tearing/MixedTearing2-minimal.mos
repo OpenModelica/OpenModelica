@@ -6,8 +6,8 @@
 loadString("
 model mixedTest2
   Real a(start=0);
-  Integer b annotation(tearingSelect = always);
-  Boolean c annotation(tearingSelect = prefer);
+  Integer b annotation(__OpenModelica_tearingSelect = always);
+  Boolean c annotation(__OpenModelica_tearingSelect = prefer);
 equation
   a = b * time;
   c = a > 0;
@@ -36,8 +36,8 @@ simulate(mixedTest2); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 3
 //  * Number of variables: 3
-// [<interactive>:5:3-5:47:writable] Warning: Minimal Tearing is ignoring tearingSelect=prefer annotation for discrete variable: c:DISCRETE(fixed = false )  type: Boolean
-// [<interactive>:4:3-4:47:writable] Warning: Minimal Tearing is ignoring tearingSelect=always annotation for discrete variable: b:DISCRETE(fixed = false )  type: Integer
+// [<interactive>:5:3-5:47:writable] Warning: Minimal Tearing is ignoring '__OpenModelica_tearingSelect = prefer' annotation for discrete variable: c:DISCRETE(fixed = false )  type: Boolean
+// [<interactive>:4:3-4:47:writable] Warning: Minimal Tearing is ignoring '__OpenModelica_tearingSelect = always' annotation for discrete variable: b:DISCRETE(fixed = false )  type: Integer
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
@@ -59,8 +59,8 @@ simulate(mixedTest2); getErrorString();
 //  * Linear torn systems (#iteration vars, #inner vars, density): 0 systems
 //  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
 //    {(1,2)}
-// [<interactive>:4:3-4:47:writable] Warning: Minimal Tearing is ignoring tearingSelect=always annotation for discrete variable: b:DISCRETE()  type: Integer
-// [<interactive>:5:3-5:47:writable] Warning: Minimal Tearing is ignoring tearingSelect=prefer annotation for discrete variable: c:DISCRETE()  type: Boolean
+// [<interactive>:4:3-4:47:writable] Warning: Minimal Tearing is ignoring '__OpenModelica_tearingSelect = always' annotation for discrete variable: b:DISCRETE()  type: Integer
+// [<interactive>:5:3-5:47:writable] Warning: Minimal Tearing is ignoring '__OpenModelica_tearingSelect = prefer' annotation for discrete variable: c:DISCRETE()  type: Boolean
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)

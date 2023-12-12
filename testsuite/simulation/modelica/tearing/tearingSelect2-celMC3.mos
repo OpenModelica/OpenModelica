@@ -29,7 +29,7 @@ simulate(tearingSelect2); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 6
 //  * Number of variables: 6
-// Warning: The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.
+// Warning: The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.
 // Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
@@ -52,7 +52,7 @@ simulate(tearingSelect2); getErrorString();
 //  * Linear torn systems (#iteration vars, #inner vars, density): 0 systems
 //  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
 //    {(1,5)}
-// Warning: The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.
+// Warning: The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)

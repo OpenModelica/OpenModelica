@@ -1131,24 +1131,22 @@ end simplifySubscript;
 
 
 public function setTearingSelectAttribute
-  "Returns the expression of the tearingSelect annotation"
+  "Returns the expression of the __OpenModelica_tearingSelect annotation"
   input Option<SCode.Comment> comment;
   output Option<BackendDAE.TearingSelect> ts;
 protected
   SCode.Annotation ann;
   Absyn.Exp val;
-  String ts_str;
 algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
-    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "tearingSelect");
-    ts_str := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
-    ts := match(ts_str)
-      case "always" then SOME(BackendDAE.ALWAYS());
-      case "prefer" then SOME(BackendDAE.PREFER());
-      case "avoid"  then SOME(BackendDAE.AVOID());
-      case "never"  then SOME(BackendDAE.NEVER());
-      case "default" then SOME(BackendDAE.DEFAULT());
+    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "__OpenModelica_tearingSelect");
+    ts := match AbsynUtil.crefIdent(AbsynUtil.expCref(val))
+      case "always"   then SOME(BackendDAE.ALWAYS());
+      case "prefer"   then SOME(BackendDAE.PREFER());
+      case "avoid"    then SOME(BackendDAE.AVOID());
+      case "never"    then SOME(BackendDAE.NEVER());
+      case "default"  then SOME(BackendDAE.DEFAULT());
       else NONE();
     end match;
   else

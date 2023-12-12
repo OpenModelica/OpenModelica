@@ -2282,7 +2282,7 @@ getErrorString();
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Error: It is not possible to select a new tearing variable, because all remaining variables have the attribute tearingSelect=never
+// Error: It is not possible to select a new tearing variable, because all remaining variables have the attribute __OpenModelica_tearingSelect=never
 // Warning: Function Tearing.selectTearingVar failed at least once. Use -d=tearingdump or -d=tearingdumpV for more information.
 // "
 // endResult

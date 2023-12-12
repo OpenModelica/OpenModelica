@@ -939,37 +939,29 @@ public
     function stateSelectString
       input Option<StateSelect> optStateSelect;
       input output list<String> buffer;
-    protected
-      StateSelect stateSelect;
     algorithm
-      if isSome(optStateSelect) then
-        SOME(stateSelect) := optStateSelect;
-        buffer := match stateSelect
-          case StateSelect.NEVER    then "StateSelect = never" :: buffer;
-          case StateSelect.AVOID    then "StateSelect = avoid" :: buffer;
-          case StateSelect.DEFAULT  then "StateSelect = default" :: buffer;
-          case StateSelect.PREFER   then "StateSelect = prefer" :: buffer;
-          case StateSelect.ALWAYS   then "StateSelect = always" :: buffer;
-        end match;
-      end if;
+      buffer := match optStateSelect
+        case SOME(StateSelect.NEVER)    then "StateSelect = never" :: buffer;
+        case SOME(StateSelect.AVOID)    then "StateSelect = avoid" :: buffer;
+        case SOME(StateSelect.DEFAULT)  then "StateSelect = default" :: buffer;
+        case SOME(StateSelect.PREFER)   then "StateSelect = prefer" :: buffer;
+        case SOME(StateSelect.ALWAYS)   then "StateSelect = always" :: buffer;
+        else buffer;
+      end match;
     end stateSelectString;
 
     function tearingSelectString
       input Option<TearingSelect> optTearingSelect;
       input output list<String> buffer;
-    protected
-      TearingSelect tearingSelect;
     algorithm
-      if isSome(optTearingSelect) then
-        SOME(tearingSelect) := optTearingSelect;
-        buffer := match tearingSelect
-          case TearingSelect.NEVER    then "TearingSelect = never" :: buffer;
-          case TearingSelect.AVOID    then "TearingSelect = avoid" :: buffer;
-          case TearingSelect.DEFAULT  then "TearingSelect = default" :: buffer;
-          case TearingSelect.PREFER   then "TearingSelect = prefer" :: buffer;
-          case TearingSelect.ALWAYS   then "TearingSelect = always" :: buffer;
-        end match;
-      end if;
+      buffer := match optTearingSelect
+        case SOME(TearingSelect.NEVER)    then "TearingSelect = never" :: buffer;
+        case SOME(TearingSelect.AVOID)    then "TearingSelect = avoid" :: buffer;
+        case SOME(TearingSelect.DEFAULT)  then "TearingSelect = default" :: buffer;
+        case SOME(TearingSelect.PREFER)   then "TearingSelect = prefer" :: buffer;
+        case SOME(TearingSelect.ALWAYS)   then "TearingSelect = always" :: buffer;
+        else buffer;
+      end match;
     end tearingSelectString;
 
     function createReal
@@ -1236,7 +1228,7 @@ public
     end getStateSelectName;
 
     function createTearingSelect
-      "tearingSelect is an annotation and has to be extracted from the comment."
+      "__OpenModelica_tearingSelect is an annotation and has to be extracted from the comment."
       input Option<SCode.Comment> optComment;
       output Option<TearingSelect> tearingSelect;
     protected
@@ -1246,7 +1238,7 @@ public
     algorithm
       try
         SOME(SCode.COMMENT(annotation_=SOME(anno))) := optComment;
-        SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "tearingSelect");
+        SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "__OpenModelica_tearingSelect");
         name := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
         tearingSelect := SOME(lookupTearingSelectMember(name));
       else
@@ -1277,11 +1269,11 @@ public
       output StateSelect stateSelect;
     algorithm
       stateSelect := match name
-        case "never" then TearingSelect.NEVER;
-        case "avoid" then TearingSelect.AVOID;
-        case "default" then TearingSelect.DEFAULT;
-        case "prefer" then TearingSelect.PREFER;
-        case "always" then TearingSelect.ALWAYS;
+        case "never"    then TearingSelect.NEVER;
+        case "avoid"    then TearingSelect.AVOID;
+        case "default"  then TearingSelect.DEFAULT;
+        case "prefer"   then TearingSelect.PREFER;
+        case "always"   then TearingSelect.ALWAYS;
         else
           algorithm
             Error.assertion(false, getInstanceName() + " got unknown TearingSelect literal " + name, sourceInfo());
@@ -1313,7 +1305,7 @@ public
   uniontype Annotations
     record ANNOTATIONS
       "all annotations that are vendor specific
-      note: doesn't inculde tearingSelect, this is considered a first class attribute"
+      note: doesn't inculde __OpenModelica_tearingSelect, this is considered a first class attribute"
       Boolean hideResult;
     end ANNOTATIONS;
 
