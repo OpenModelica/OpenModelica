@@ -42,6 +42,8 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#include "CRML/CRMLProxy.h"
+#include "CRML/CRMLModelDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -201,6 +203,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mNumberOfProcessors = mpOMCProxy->numProcessors();
   // create an object of OMSProxy
   OMSProxy::create();
+  // create an object of CRMLProxy
+  CRMLProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
@@ -570,6 +574,20 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+    pSettings->beginGroup(ToolBars::modelingTextPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CRML) {
     pSettings->beginGroup(ToolBars::modelingTextPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -2207,6 +2225,55 @@ void MainWindow::loadExternalModels()
 }
 
 /*!
+ * \brief MainWindow::createNewCRMLFile
+ * Opens the new CRML Model dialog.
+ */
+void MainWindow::createNewCRMLFile()
+{
+  CreateCRMLModelDialog *pCreateCRMLModelDialog = new CreateCRMLModelDialog(this);
+  pCreateCRMLModelDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::openCRMLFile
+ * Opens the CRML file(s).\n
+ * Slot activated when mpOpenCRMLFileAction triggered signal is raised.
+ */
+void MainWindow::openCRMLFile()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
+                                              Helper::crmlFileTypes, NULL);
+  if (fileNames.isEmpty()) {
+    return;
+  }
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames) {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file)) {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else {
+      mpLibraryWidget->openFile(file, Helper::utf8, false);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
+
+/*!
  * \brief MainWindow::openDirectory
  * Opens the directory.
  */
@@ -3739,6 +3806,31 @@ void MainWindow::showDataReconciliationDialog()
 }
 
 /*!
+ * \brief MainWindow::showRunCRMLTestsuiteDialog
+ * Slot activated when mpRunCRMLTestsuiteAction triggered signal is raised.\n
+ * Shows the data reconciliation dialog.
+ */
+void MainWindow::showRunCRMLTestsuiteDialog()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    DataReconciliationDialog *pDataReconciliationDialog = new DataReconciliationDialog(pLibraryTreeItem);
+    if (pDataReconciliationDialog->exec()) {
+      if (!mpSimulationDialog) {
+        mpSimulationDialog = new SimulationDialog(this);
+      }
+      /* if Modelica text is changed manually by user then validate it before saving. */
+      if (pModelWidget && !pModelWidget->validateText(&pLibraryTreeItem)) {
+        return;
+      }
+      mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, true);
+    }
+  }
+}
+
+
+/*!
  * \brief MainWindow::showDebugConfigurationsDialog
  * Slot activated when mpDebugConfigurationsAction triggered signal is raised.\n
  * Shows the debugger configurations.
@@ -3904,6 +3996,14 @@ void MainWindow::createActions()
   mpOpenCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Composite Model(s)"), this);
   mpOpenCompositeModelFileAction->setStatusTip(tr("Opens the Composite Model file(s)"));
   connect(mpOpenCompositeModelFileAction, SIGNAL(triggered()), SLOT(openCompositeModelFile()));
+  // create new CRML action
+  mpNewCRMLFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newCRMLModel, this);
+  mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
+  connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
+  // open CRML file action
+  mpOpenCRMLFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open CRML Model(s)"), this);
+  mpOpenCRMLFileAction->setStatusTip(tr("Opens the CRML file(s)"));
+  connect(mpOpenCRMLFileAction, SIGNAL(triggered()), SLOT(openCRMLFile()));
   // load External Model action
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
@@ -4136,6 +4236,11 @@ void MainWindow::createActions()
   mpCalculateDataReconciliationAction = new QAction(tr("Calculate Data Reconciliation"), this);
   mpCalculateDataReconciliationAction->setStatusTip(tr("Calculates the data reconciliation"));
   connect(mpCalculateDataReconciliationAction, SIGNAL(triggered()), SLOT(showDataReconciliationDialog()));
+  // CRML menu
+  // run testsuite
+  mpRunCRMLTestsuiteAction = new QAction(tr("Run CRML Testsuite"), this);
+  mpRunCRMLTestsuiteAction->setStatusTip(tr("Run the CRML Testsuite and display report"));
+  connect(mpRunCRMLTestsuiteAction, SIGNAL(triggered()), SLOT(showRunCRMLTestsuiteDialog()));
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -4407,6 +4512,9 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpOpenCompositeModelFileAction);
   mpFileMenu->addAction(mpLoadExternModelAction);
   mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpNewCRMLFileAction);
+  mpFileMenu->addAction(mpOpenCRMLFileAction);
+  mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpSaveAction);
@@ -4578,6 +4686,13 @@ void MainWindow::createMenus()
   pDataReconciliationMenu->addAction(mpCalculateDataReconciliationAction);
   // add data reconciliation menu to menu bar
   menuBar()->addAction(pDataReconciliationMenu->menuAction());
+  // CRML menu
+  QMenu *pCRMLMenu = new QMenu(menuBar());
+  pCRMLMenu->setTitle(tr("&CRML"));
+  // add actions to CRML menu
+  pCRMLMenu->addAction(mpRunCRMLTestsuiteAction);
+  // add data CRML menu to menu bar
+  menuBar()->addAction(pCRMLMenu->menuAction());
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());

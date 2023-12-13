@@ -87,6 +87,7 @@ void CRMLEditor::popUpCompleter()
 QList<CompleterItem> CRMLEditor::getCodeSnippets()
 {
   QList<CompleterItem> codesnippetslist;
+<<<<<<< HEAD
   codesnippetslist << CompleterItem("match" ,"match (control)\n  case (condition) then (value);\n  case (condition) then (value);\nend match;", "control")
                    << CompleterItem("matchcontinue" ,"matchcontinue (control)\n  case (condition) then (value);\n  case (condition) then (value);\nend matchcontinue;", "control")
                    << CompleterItem("function" ,"function name\n  \nend name;", "name")
@@ -102,6 +103,11 @@ QList<CompleterItem> CRMLEditor::getCodeSnippets()
                    << CompleterItem("for" ,"for condition loop\n  \nend for;", "condition")
                    << CompleterItem("when", "when condition then\n  \nend when;", "condition")
                    << CompleterItem("when", "when condition then\n  \nelsewhen condition then\n  \nend when;", "condition");
+=======
+  codesnippetslist << CompleterItem("model" ,"model name is {\n  \n};", "name")
+                   << CompleterItem("package" ,"package name is {\n  \n};", "name")
+                   << CompleterItem("library" ,"library name is {\n  \n};", "name");
+>>>>>>> 7d35bf4472 (preliminary CRML support)
   return codesnippetslist;
 }
 
@@ -211,86 +217,30 @@ void CRMLHighlighter::initializeSettings()
 QStringList CRMLHighlighter::getKeywords()
 {
   QStringList keywordsList;
-  keywordsList << "algorithm"
-               << "and"
-               << "annotation"
-               << "assert"
-               << "block"
-               << "break"
-               << "class"
-               << "connect"
-               << "connector"
-               << "constant"
-               << "constrainedby"
-               << "der"
-               << "discrete"
-               << "each"
-               << "else"
-               << "elseif"
-               << "elsewhen"
-               << "encapsulated"
-               << "end"
-               << "enumeration"
-               << "equation"
-               << "expandable"
-               << "extends"
-               << "external"
-               << "false"
-               << "final"
-               << "flow"
-               << "for"
-               << "function"
-               << "if"
-               << "import"
-               << "impure"
-               << "in"
-               << "initial"
-               << "inner"
-               << "input"
-               << "loop"
-               << "model"
-               << "not"
-               << "operator"
-               << "or"
-               << "outer"
-               << "output"
-               << "optimization"
-               << "package"
-               << "parameter"
-               << "partial"
-               << "protected"
-               << "public"
-               << "pure"
-               << "record"
-               << "redeclare"
-               << "replaceable"
-               << "return"
-               << "stream"
+  keywordsList << "if"
                << "then"
-               << "true"
-               << "type"
-               << "when"
+               << "else"
                << "while"
-               << "within"
-               /* CRML specific keywords */
-               << "as"
-               << "case"
-               << "continue"
-               << "equality"
-               << "failure"
-               << "guard"
-               << "local"
-               << "match"
-               << "matchcontinue"
-               << "uniontype"
-               << "subtypeof"
-               << "try"
-               << "parfor"
-               << "parallel"
-               << "parlocal"
-               << "parglobal"
-               << "parkernel"
-               << "threaded";
+               << "for"
+               << "return"
+               << "is"
+               << "and"
+               << "or"
+               << "new"
+               << "at"
+               << "not"
+               << "card"
+               << "true"
+               << "false"
+               << "undefined"
+               << "undecided"
+               << "time"
+               << "start"
+               << "end"
+               << "model"
+               << "external"
+               << "package"
+               << "library";
   return keywordsList;
 }
 
@@ -302,11 +252,11 @@ QStringList CRMLHighlighter::getTypes()
              << "Integer"
              << "Boolean"
              << "Real"
-             << "Option"
-             << "SOME"
-             << "NONE"
-             << "list"
-             << "array";
+             << "Clock"
+             << "Operator"
+             << "Template"
+             << "Event"
+             << "Period";
   return typesList;
 }
 

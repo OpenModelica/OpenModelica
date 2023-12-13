@@ -121,6 +121,7 @@ SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
+  Util/PathSelector.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
@@ -142,6 +143,7 @@ SOURCES += Util/Helper.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
   Editors/CompositeModelEditor.cpp \
+  Editors/CRMLEditor.cpp \
   Editors/OMSimulatorEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Editors/HTMLEditor.cpp \
@@ -208,6 +210,8 @@ SOURCES += Util/Helper.cpp \
   CrashReport/backtrace.c \
   CrashReport/GDBBacktrace.cpp \
   CrashReport/CrashReportDialog.cpp \
+  CRML/CRMLProxy.cpp \
+  CRML/CRMLModelDialog.cpp \
   Git/GitCommands.cpp \
   Git/CommitChangesDialog.cpp \
   Git/RevertCommitsDialog.cpp \
@@ -233,6 +237,7 @@ HEADERS  += Util/Helper.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
+  Util/PathSelector.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
@@ -255,6 +260,7 @@ HEADERS  += Util/Helper.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
   Editors/CompositeModelEditor.h \
+  Editors/CRMLEditor.h \
   Editors/OMSimulatorEditor.h \
   Editors/MetaModelicaEditor.h \
   Editors/HTMLEditor.h \
@@ -323,6 +329,8 @@ HEADERS  += Util/Helper.h \
   CrashReport/backtrace.h \
   CrashReport/GDBBacktrace.h \
   CrashReport/CrashReportDialog.h \
+  CRML/CRMLProxy.h \
+  CRML/CRMLModelDialog.h \
   Git/GitCommands.h \
   Git/CommitChangesDialog.h \
   Git/RevertCommitsDialog.h \
