@@ -9,8 +9,8 @@ getErrorString();
 loadString("
 model testAlgLoop5
   parameter Real one = 1;
-  Real t1(start=1, min = -0.4) annotation(tearingSelect = always);
-  Real t2(start=1,min=-2,max=1/2) annotation(tearingSelect = always);
+  Real t1(start=1, min = -0.4) annotation(__OpenModelica_tearingSelect = always);
+  Real t2(start=1,min=-2,max=1/2) annotation(__OpenModelica_tearingSelect = always);
   Real t3(start=5);
   Real t4(start=5, min=1, max=5);
   Real x(start=1,fixed=true,min=-3,max=3.0);
@@ -22,7 +22,7 @@ model testAlgLoop5
   input Real u3(min=-1,max=1, start=1);
   Real cost annotation(isLagrange = true);
   Real costM = sin(u*u1) annotation(isMayer = true);
-  Real dummyCon = one*con annotation(tearingSelect = always);
+  Real dummyCon = one*con annotation(__OpenModelica_tearingSelect = always);
   Real con(min=1, start=1, max = 2.5) = 2*t3 + 3*t1 + t2 annotation(isConstraint=true);
   Real conDer(min=-2, start=1, max = 2) = der(x) annotation(isConstraint=true);
   Real fcon(min=0,max=0) = 10*der(x) annotation(isFinalConstraint = true);

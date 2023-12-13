@@ -257,6 +257,6 @@ simulate(Tearing15); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are tearing variables with annotation attribute 'tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.
+// "Warning: There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.
 // "
 // endResult
