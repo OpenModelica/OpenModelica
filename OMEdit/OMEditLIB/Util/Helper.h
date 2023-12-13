@@ -59,6 +59,7 @@ public:
   static QString OMCServerName;
   static QString omFileTypes;
   static QString omEncryptedFileTypes;
+  static QString crmlFileTypes;
   static QString omnotebookFileTypes;
   static QString ngspiceNetlistFileTypes;
   static QString imageFileTypes;
@@ -73,6 +74,7 @@ public:
   static QString exeFileTypes;
   static QString txtFileTypes;
   static QString figaroFileTypes;
+  static QString jarFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
   static QString omScriptTypes;
@@ -139,6 +141,8 @@ public:
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
+  static QString newCRMLModel;
+  static QString newCRMLModelTip;
   static QString libraries;
   static QString clearRecentFiles;
   static QString encoding;
@@ -170,6 +174,8 @@ public:
   static QString saveTotalTip;
   static QString apply;
   static QString chooseDirectory;
+  static QString addPath;
+  static QString removePath;
   static QString general;
   static QString output;
   static QString parameters;
@@ -227,6 +233,7 @@ public:
   static QString unloadClass;
   static QString unloadClassTip;
   static QString unloadCompositeModelOrTextTip;
+  static QString unloadCRMLTip;
   static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
@@ -287,6 +294,7 @@ public:
   static QString endAngle;
   static QString curveStyle;
   static QString figaro;
+  static QString crml;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;
@@ -440,6 +448,8 @@ public:
   static QString upgradeInstalledLibraries;
   static QString updateLibraryIndex;
   static QString dataReconciliation;
+  static QString modelicaPathTip;
+  static QString pathListTip;
 };
 
 class GUIMessages : public QObject
