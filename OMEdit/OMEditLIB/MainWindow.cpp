@@ -184,13 +184,13 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of MessagesWidget.
   MessagesWidget::create();
   // Create MessagesDockWidget dock
-  mpMessagesDockWidget = new QDockWidget(tr("Messages Browser"), this);
+  mpMessagesDockWidget = new QDockWidget(tr("Messages"), this);
   mpMessagesDockWidget->setObjectName("Messages");
   mpMessagesDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea);
   mpMessagesDockWidget->setWidget(MessagesWidget::instance());
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
-  connect(MessagesWidget::instance(), SIGNAL(messageAdded()), SLOT(showMessagesBrowser()));
+  connect(MessagesWidget::instance(), SIGNAL(messageAdded()), SLOT(showMessageBrowser()));
   // Create the OMCProxy object.
   mpOMCProxy = new OMCProxy(threadData, this);
   if (getExitApplicationStatus()) {
@@ -254,7 +254,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of LibraryWidget
   mpLibraryWidget = new LibraryWidget(this);
   // Create LibraryDockWidget
-  mpLibraryDockWidget = new QDockWidget(tr("Libraries Browser"), this);
+  mpLibraryDockWidget = new QDockWidget(tr("Libraries"), this);
   mpLibraryDockWidget->setObjectName("Libraries");
   mpLibraryDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpLibraryDockWidget->setWidget(mpLibraryWidget);
@@ -262,7 +262,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpLibraryWidget->getLibraryTreeView()->setFocus(Qt::ActiveWindowFocusReason);
   // Create an object of SearchWidget
   mpSearchWidget = new SearchWidget(this);
-  mpSearchDockWidget = new QDockWidget(tr("Search Browser"),this);
+  mpSearchDockWidget = new QDockWidget(tr("Search"),this);
   mpSearchDockWidget->setObjectName("Search");
   mpSearchDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
   mpSearchDockWidget->setWidget(mpSearchWidget);
@@ -273,14 +273,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create stack frames widget
   mpStackFramesWidget = new StackFramesWidget(this);
   // Create stack frames dock widget
-  mpStackFramesDockWidget = new QDockWidget(tr("Stack Frames Browser"), this);
+  mpStackFramesDockWidget = new QDockWidget(tr("Stack Frames"), this);
   mpStackFramesDockWidget->setObjectName("StackFrames");
   mpStackFramesDockWidget->setWidget(mpStackFramesWidget);
   addDockWidget(Qt::TopDockWidgetArea, mpStackFramesDockWidget);
   // create breakpoints widget
   mpBreakpointsWidget = new BreakpointsWidget(this);
   // Create breakpoints dock widget
-  mpBreakpointsDockWidget = new QDockWidget(tr("BreakPoints Browser"), this);
+  mpBreakpointsDockWidget = new QDockWidget(tr("Breakpoints"), this);
   mpBreakpointsDockWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
   mpBreakpointsDockWidget->setObjectName("BreakPoints");
   mpBreakpointsDockWidget->setWidget(mpBreakpointsWidget);
@@ -288,14 +288,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create locals widget
   mpLocalsWidget = new LocalsWidget(this);
   // Create locals dock widget
-  mpLocalsDockWidget = new QDockWidget(tr("Locals Browser"), this);
+  mpLocalsDockWidget = new QDockWidget(tr("Locals"), this);
   mpLocalsDockWidget->setObjectName("Locals");
   mpLocalsDockWidget->setWidget(mpLocalsWidget);
   addDockWidget(Qt::RightDockWidgetArea, mpLocalsDockWidget);
   // Create target output widget
   mpTargetOutputWidget = new TargetOutputWidget(this);
   // Create GDB console dock widget
-  mpTargetOutputDockWidget = new QDockWidget(tr("Output Browser"), this);
+  mpTargetOutputDockWidget = new QDockWidget(tr("Console Output"), this);
   mpTargetOutputDockWidget->setObjectName("OutputBrowser");
   mpTargetOutputDockWidget->setWidget(mpTargetOutputWidget);
   addDockWidget(Qt::BottomDockWidgetArea, mpTargetOutputDockWidget);
@@ -311,7 +311,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create an object of DocumentationWidget
   mpDocumentationWidget = new DocumentationWidget(this);
   // Create DocumentationWidget dock
-  mpDocumentationDockWidget = new QDockWidget(tr("Documentation Browser"), this);
+  mpDocumentationDockWidget = new QDockWidget(tr("Documentation"), this);
   mpDocumentationDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
   mpDocumentationDockWidget->setObjectName("Documentation");
   mpDocumentationDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -324,7 +324,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create an object of VariablesWidget
   mpVariablesWidget = new VariablesWidget(this);
   // Create VariablesWidget dock
-  mpVariablesDockWidget = new QDockWidget(Helper::variablesBrowser, this);
+  mpVariablesDockWidget = new QDockWidget(Helper::variableBrowser, this);
   mpVariablesDockWidget->setObjectName("Variables");
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
@@ -339,7 +339,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
    */
   mpThreeDViewer = 0;
   // Create ThreeDViewer dock
-  mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer Browser"), this);
+  mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer"), this);
   mpThreeDViewerDockWidget->setObjectName("3DViewer");
   mpThreeDViewerDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
@@ -357,7 +357,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   createActions();
   createToolbars();
   createMenus();
-  // enable/disable re-simulation toolbar based on variables browser visibiltiy.
+  // enable/disable re-simulation toolbar based on variable browser visibiltiy.
   connect(mpVariablesDockWidget, SIGNAL(visibilityChanged(bool)), this, SLOT(enableReSimulationToolbar(bool)));
   // Create the archived simulation widget
   ArchivedSimulationsWidget::create();
@@ -388,7 +388,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   pCentralWidgetLayout->setContentsMargins(0, 0, 0, 0);
   QWidget *pCentralWidget = new QWidget;
   pCentralWidgetLayout->addWidget(mpCentralStackedWidget, 1);
-  // Create a QTabWidget that mimicks the Messages Browser
+  // Create a QTabWidget that mimicks the Message Browser
   mpMessagesTabWidget = new QTabWidget(this);
   mpMessagesTabWidget->setTabsClosable(true);
   mpMessagesTabWidget->setDocumentMode(true);
@@ -426,7 +426,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
     pSettings->endGroup();
     if (restoreMessagesWidget) {
-      showMessagesBrowser();
+      showMessageBrowser();
     }
   }
   switchToWelcomePerspective();
@@ -1073,7 +1073,7 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
-  // check clear messages browser before instantiating
+  // check clear message browser before instantiating
   if (OptionsDialog::instance()->getMessagesPage()->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->clearMessages();
   }
@@ -1106,7 +1106,7 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
-  // check clear messages browser before checking
+  // check clear message browser before checking
   if (OptionsDialog::instance()->getMessagesPage()->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->clearMessages();
   }
@@ -1596,7 +1596,7 @@ void MainWindow::findFileAndGoToLine(QString fileName, QString lineNumber)
 
 /*!
  * \brief MainWindow::printStandardOutAndErrorFilesMessages
- * Reads the omeditoutput.txt and omediterror.txt files and add the data to Messages Browser if there is any.
+ * Reads the omeditoutput.txt and omediterror.txt files and add the data to Message Browser if there is any.
  */
 void MainWindow::printStandardOutAndErrorFilesMessages()
 {
@@ -1816,14 +1816,14 @@ void MainWindow::writeNewApiProfiling(const QString &str)
 }
 
 /*!
- * \brief MainWindow::showMessagesBrowser
+ * \brief MainWindow::showMessageBrowser
  * Slot activated when MessagesWidget::messageAdded signal is raised.\n
- * Shows the Messages Browser.
+ * Shows the Message Browser.
  */
-void MainWindow::showMessagesBrowser()
+void MainWindow::showMessageBrowser()
 {
   mpMessagesDockWidget->show();
-  // In case user has tabbed the dock widgets then make Messages Browser active.
+  // In case user has tabbed the dock widgets then make Message Browser active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpMessagesDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpMessagesDockWidget);
@@ -2288,7 +2288,7 @@ void MainWindow::redo()
 
 /*!
  * \brief MainWindow::focusFilterClasses
- * Sets the focus on filter classes text box in Libraries Browser.
+ * Sets the focus on filter classes text box in Library Browser.
  */
 void MainWindow::focusFilterClasses()
 {
@@ -3613,7 +3613,7 @@ void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
  */
 void MainWindow::messagesTabBarClicked(int index)
 {
-  showMessagesBrowser();
+  showMessageBrowser();
   MessagesWidget::instance()->getMessagesTabWidget()->setCurrentIndex(index);
 }
 
@@ -5295,7 +5295,7 @@ void AboutOMEditDialog::showReportIssue()
 
 /*!
  * \class MessageTab
- * \brief Creates a tab that mimicks the tab of Messages Browser.
+ * \brief Creates a tab that mimicks the tab of Message Browser.
  */
 /*!
  * \brief MessageTab::MessageTab
@@ -5308,7 +5308,7 @@ MessageTab::MessageTab(bool fixedTab)
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpProgressLabel->installEventFilter(this);
   if (fixedTab) {
-    mpProgressLabel->setText(tr("Click to open Messages Browser."));
+    mpProgressLabel->setText(tr("Click to open message browser."));
   }
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);

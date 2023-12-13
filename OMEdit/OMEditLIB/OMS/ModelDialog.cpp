@@ -436,7 +436,7 @@ void AddSubModelDialog::addSubModel()
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Failed to add submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)), Helper::ok);
+                          tr("Failed to add submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), Helper::ok);
   }
 }
 
@@ -563,7 +563,7 @@ void ReplaceSubModelDialog::replaceSubModel()
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Failed to replace submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)), Helper::ok);
+                          tr("Failed to replace submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), Helper::ok);
   }
 }
 

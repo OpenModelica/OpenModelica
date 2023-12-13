@@ -92,7 +92,7 @@ bool CompositeModelEditor::validateText()
                                                                             NotificationsDialog::CriticalIcon,
                                                                             MainWindow::instance());
         pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Composite Model")
-                                                         .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
+                                                         .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER))
                                                          .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
         pNotificationsDialog->getOkButton()->setText(Helper::revertToLastCorrectVersion);
         pNotificationsDialog->getOkButton()->setAutoDefault(false);

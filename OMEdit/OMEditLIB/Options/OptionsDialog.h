@@ -313,7 +313,7 @@ private:
   QComboBox *mpActivateAccessAnnotationsComboBox;
   QCheckBox *mpCreateBackupFileCheckbox;
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
-  QGroupBox *mpLibrariesBrowserGroupBox;
+  QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
   Label *mpLibraryIconTextLengthLabel;
