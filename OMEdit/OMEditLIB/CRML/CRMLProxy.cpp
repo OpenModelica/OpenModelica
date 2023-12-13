@@ -85,7 +85,7 @@ CRMLProxy::CRMLProxy()
 #endif
   mTotalCRMLCallsTime = 0.0;
   // CRML Compiler global settings
-  setLogFile(QString(Utilities::tempDirectory() + "/omslog.txt"));
+  setLogFile(QString(Utilities::tempDirectory() + "/crmllog.txt"));
   setTempDirectory(Utilities::tempDirectory());
   qRegisterMetaType<MessageItem>("MessageItem");
   connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));

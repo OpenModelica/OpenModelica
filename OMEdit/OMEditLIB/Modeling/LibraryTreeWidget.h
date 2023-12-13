@@ -58,7 +58,8 @@ public:
   enum LibraryType {
     Modelica,         /* Used to represent Modelica models. */
     Text,             /* Used to represent text based files. */
-    OMS               /* Used to represent OMSimulator models. */
+    OMS,              /* Used to represent OMSimulator models. */
+    CRML              /* Used to represent CRML models. */
   };
   enum Access {
     hide,
@@ -86,6 +87,7 @@ public:
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   bool isModelica() const {return mLibraryType == LibraryTreeItem::Modelica;}
   bool isText() const {return mLibraryType == LibraryTreeItem::Text;}
+  bool isCRML() const {return mLibraryType == LibraryTreeItem::CRML;}
   bool isSSP() const {return mLibraryType == LibraryTreeItem::OMS;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
   bool isSystemLibrary() {return mSystemLibrary;}
@@ -293,6 +295,7 @@ public:
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true, bool doDeleteClass = true);
   bool reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadCRMLFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
@@ -379,6 +382,7 @@ private:
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
   QAction *mpUnloadTextFileAction;
+  QAction *mpUnloadCRMLFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -427,6 +431,7 @@ public slots:
   void unloadClass();
   void reloadClass();
   void unloadTextFile();
+  void unloadCRMLFile();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();
@@ -461,6 +466,7 @@ public:
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
   void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTextFile(QFileInfo fileInfo, bool showProgress = true);
+  void openCRMLFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);

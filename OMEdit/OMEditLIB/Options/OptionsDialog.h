@@ -38,6 +38,7 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
+#include "Util/PathSelector.h"
 
 #include <QFontComboBox>
 #include <QStackedWidget>
@@ -52,6 +53,7 @@ class LibrariesPage;
 class TextEditorPage;
 class ModelicaEditorPage;
 class MetaModelicaEditorPage;
+class CRMLEditorPage;
 class OMSimulatorEditorPage;
 class CEditorPage;
 class HTMLEditorPage;
@@ -63,6 +65,7 @@ class LineStylePage;
 class FillStylePage;
 class PlottingPage;
 class FigaroPage;
+class CRMLPage;
 class DebuggerPage;
 class FMIPage;
 class OMSimulatorPage;
@@ -96,6 +99,7 @@ public:
   void readTextEditorSettings();
   void readModelicaEditorSettings();
   void readMetaModelicaEditorSettings();
+  void readCRMLEditorSettings();
   void readOMSimulatorEditorSettings();
   void readCEditorSettings();
   void readHTMLEditorSettings();
@@ -107,6 +111,7 @@ public:
   void readFillStyleSettings();
   void readPlottingSettings();
   void readFigaroSettings();
+  void readCRMLSettings();
   void readDebuggerSettings();
   void readFMISettings();
   void readOMSimulatorSettings();
@@ -117,6 +122,7 @@ public:
   void saveTextEditorSettings();
   void saveModelicaEditorSettings();
   void saveMetaModelicaEditorSettings();
+  void saveCRMLEditorSettings();
   void saveOMSimulatorEditorSettings();
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
@@ -131,6 +137,7 @@ public:
   void saveFillStyleSettings();
   void savePlottingSettings();
   void saveFigaroSettings();
+  void saveCRMLSettings();
   void saveDebuggerSettings();
   void saveFMISettings();
   void setUpDialog();
@@ -142,6 +149,7 @@ public:
   TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
   ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
   MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
+  CRMLEditorPage* getCRMLEditorPage() {return mpCRMLEditorPage;}
   OMSimulatorEditorPage* getOMSimulatorEditorPage() {return mpOMSimulatorEditorPage;}
   CEditorPage* getCEditorPage() {return mpCEditorPage;}
   HTMLEditorPage* getHTMLEditorPage() {return mpHTMLEditorPage;}
@@ -153,6 +161,7 @@ public:
   FillStylePage* getFillStylePage() {return mpFillStylePage;}
   PlottingPage* getPlottingPage() {return mpPlottingPage;}
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
+  CRMLPage* getCRMLPage() {return mpCRMLPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
@@ -166,6 +175,7 @@ signals:
   void textSettingsChanged();
   void modelicaEditorSettingsChanged();
   void metaModelicaEditorSettingsChanged();
+  void crmlEditorSettingsChanged();
   void omsimulatorEditorSettingsChanged();
   void cEditorSettingsChanged();
   void HTMLEditorSettingsChanged();
@@ -181,6 +191,7 @@ private:
   TextEditorPage *mpTextEditorPage;
   ModelicaEditorPage *mpModelicaEditorPage;
   MetaModelicaEditorPage *mpMetaModelicaEditorPage;
+  CRMLEditorPage *mpCRMLEditorPage;
   OMSimulatorEditorPage *mpOMSimulatorEditorPage;
   CEditorPage *mpCEditorPage;
   HTMLEditorPage *mpHTMLEditorPage;
@@ -201,6 +212,7 @@ private:
   FillStylePage *mpFillStylePage;
   PlottingPage *mpPlottingPage;
   FigaroPage *mpFigaroPage;
+  CRMLPage *mpCRMLPage;
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   OMSimulatorPage *mpOMSimulatorPage;
@@ -481,6 +493,24 @@ class MetaModelicaEditorPage : public QWidget
   Q_OBJECT
 public:
   MetaModelicaEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
+private:
+  OptionsDialog *mpOptionsDialog;
+  CodeColorsWidget *mpCodeColorsWidget;
+signals:
+  void updatePreview();
+public slots:
+  void setLineWrapping(bool enabled);
+};
+
+class CRMLEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  CRMLEditorPage(OptionsDialog *pOptionsDialog);
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   void setColor(QString item, QColor color);
   QColor getColor(QString item);
@@ -1047,5 +1077,35 @@ private slots:
 public slots:
   int exec();
 };
+
+class CRMLPage : public QWidget
+{
+  Q_OBJECT
+public:
+  CRMLPage(OptionsDialog *pOptionsDialog);
+  QLineEdit* getCRMLCompilerJarTextBox() {return mpCRMLCompilerJarTextBox;}
+  QLineEdit* getCRMLCompilerCommandLineOptionsTextBox() {return mpCRMLCompilerCommandLineOptionsTextBox;}
+  QLineEdit* getCRMLCompilerProcessTextBox() {return mpCRMLCompilerProcessTextBox;}
+  PathSelector* getCRMLLibraryPaths() {return mpCRMLLibraryPaths;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpCRMLGroupBox;
+  Label *mpCRMLCompilerJarFileLabel;
+  QLineEdit *mpCRMLCompilerJarTextBox;
+  QPushButton *mpBrowseCRMLCompilerJarFileButton;
+  Label *mpCRMLCompilerCommandLineOptionsLabel;
+  QLineEdit *mpCRMLCompilerCommandLineOptionsTextBox;
+  Label *mpCRMLCompilerProcessLabel;
+  QLineEdit *mpCRMLCompilerProcessTextBox;
+  QPushButton *mpBrowseCRMLCompilerProcessButton;
+  QPushButton *mpResetCRMLCompilerProcessButton;
+  PathSelector *mpCRMLLibraryPaths;
+
+private slots:
+  void browseCRMLCompilerJarFile();
+  void browseCRMLCompilerProcessFile();
+  void resetCRMLCompilerProcessPath();
+};
+
 
 #endif // OPTIONSDIALOG_H

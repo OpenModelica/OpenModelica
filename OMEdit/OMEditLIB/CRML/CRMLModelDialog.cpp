@@ -96,15 +96,28 @@ void CreateCRMLModelDialog::createNewModel()
 
     // create new model
   if (CRMLProxy::instance()->newModel(mpNameTextBox->text())) {
+<<<<<<< HEAD
     QString fileName = QString("%1.%2").arg(mpNameTextBox->text(),".crml");
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
+=======
+    QString fileName = QString("%1.%2").arg(mpNameTextBox->text(),"crml");
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem =
+      pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::CRML, fileName, "",
+                                                                 fileName, true,
+                                                                 pLibraryTreeModel->getRootLibraryTreeItem());
+>>>>>>> 7d35bf4472 (preliminary CRML support)
     if (pLibraryTreeItem) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
       accept();
     } else {
       // if creating the CRML model failed then delete the model created.
+<<<<<<< HEAD
       CRMLProxy::instance()->crmlDelete(mpNameTextBox->text());
+=======
+      CRMLProxy::instance()->crmlDelete(fileName);
+>>>>>>> 7d35bf4472 (preliminary CRML support)
     }
   }
 }

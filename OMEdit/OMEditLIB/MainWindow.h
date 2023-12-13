@@ -316,11 +316,16 @@ private:
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
+  // CRML File Actions
+  QAction *mpNewCRMLFileAction;
+  QAction *mpOpenCRMLFileAction;
+  // Directory actions
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
   QAction *mpSaveTotalAction;
+  // FMU
   QAction *mpImportFMUAction;
   QAction *mpImportFMUModelDescriptionAction;
   QAction *mpImportFromOMNotebookAction;
@@ -371,6 +376,8 @@ private:
   QAction *mpArchivedSimulationsAction;
   // Data reconciliation action
   QAction *mpCalculateDataReconciliationAction;
+  // CRML run testsuite action
+  QAction *mpRunCRMLTestsuiteAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -476,6 +483,8 @@ public slots:
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
+  void createNewCRMLFile();
+  void openCRMLFile();
   void openDirectory();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
@@ -562,6 +571,7 @@ private slots:
   void messageTabClosed(int index);
   void autoSave();
   void showDataReconciliationDialog();
+  void showRunCRMLTestsuiteDialog();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();
