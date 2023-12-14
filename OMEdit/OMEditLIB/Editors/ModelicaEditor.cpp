@@ -408,7 +408,7 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
                                                                             NotificationsDialog::CriticalIcon,
                                                                             MainWindow::instance());
         pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Modelica")
-                                                         .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
+                                                         .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER))
                                                          .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
         pNotificationsDialog->getOkButton()->setText(Helper::revertToLastCorrectVersion);
         pNotificationsDialog->getOkButton()->setAutoDefault(false);
@@ -438,7 +438,7 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
       mLastValidText = mpPlainTextEdit->toPlainText();
     }
   }
-  /* Update the Libraries Browser when Modelica text change is done
+  /* Update the Library Browser when Modelica text change is done
    * See discussion #10728
    */
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();

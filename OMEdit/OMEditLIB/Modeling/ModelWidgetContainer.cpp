@@ -5618,7 +5618,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
       getModelIconDiagramShapes(StringHandler::Icon);
       /* Ticket:2960
      * Just a workaround to make browsing faster.
-     * We don't get the components here i.e items are shown without connectors in the Libraries Browser.
+     * We don't get the components here i.e items are shown without connectors in the Library Browser.
      * Fetch the components when we really need to draw them.
      */
       /*! @todo Uncomment the following code once we have new faster frontend and remove the flag mComponentsLoaded. */

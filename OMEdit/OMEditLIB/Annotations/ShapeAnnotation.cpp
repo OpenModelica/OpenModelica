@@ -533,7 +533,7 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
   pen.setCosmetic(true);
   /* Ticket #2272, Ticket #2268.
    * If thickness is greater than 4 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
-   * Use non cosmetic pens for Libraries Browser and shapes inside component when thickness is greater than 4.
+   * Use non cosmetic pens for Library Browser and shapes inside component when thickness is greater than 4.
    */
   if (thickness > 4
       && ((mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) || mpParentComponent)) {

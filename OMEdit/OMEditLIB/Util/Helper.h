@@ -321,7 +321,7 @@ public:
   static QString dontShowThisMessageAgain;
   static QString clickAndDragToResize;
   static QString variables;
-  static QString variablesBrowser;
+  static QString variableBrowser;
   static QString description;
   static QString previous;
   static QString next;
@@ -446,7 +446,7 @@ class GUIMessages : public QObject
   Q_OBJECT
 public:
   enum MessagesTypes {
-    CHECK_MESSAGES_BROWSER,
+    CHECK_MESSAGE_BROWSER,
     SAME_COMPONENT_NAME,
     SAME_COMPONENT_CONNECT,
     MISMATCHED_CONNECTORS_IN_CONNECT,
