@@ -964,7 +964,7 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
     }
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-    // update the icon in the libraries browser view.
+    // update the icon in the library browser view.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   }
   emit loaded(this);
@@ -986,7 +986,7 @@ void LibraryTreeItem::handleUnloaded()
     MainWindow *pMainWindow = MainWindow::instance();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-    // update the icon in the libraries browser view.
+    // update the icon in the library browser view.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   }
   emit unLoaded();
@@ -1061,7 +1061,7 @@ void LibraryTreeItem::handleIconUpdated()
   MainWindow *pMainWindow = MainWindow::instance();
   // load new icon for the class.
   pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-  // update the icon in the libraries browser view.
+  // update the icon in the library browser view.
   pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   emit iconUpdated();
 }
@@ -1080,7 +1080,7 @@ void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
 
 /*!
  * \class LibraryTreeProxyModel
- * \brief A sort filter proxy model for Libraries Browser.
+ * \brief A sort filter proxy model for Library Browser.
  */
 /*!
  * \brief LibraryTreeProxyModel::LibraryTreeProxyModel
@@ -1139,7 +1139,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
 
 /*!
  * \class LibraryTreeModel
- * \brief A model for Libraries Browser.
+ * \brief A model for Library Browser.
  */
 /*!
  * \brief LibraryTreeModel::LibraryTreeModel
@@ -1476,7 +1476,7 @@ LibraryTreeItem* LibraryTreeModel::createNonExistingLibraryTreeItem(QString name
 
 /*!
  * \brief LibraryTreeModel::createLibraryTreeItem
- * Creates a LibraryTreeItem and add it to the Libraries Browser.
+ * Creates a LibraryTreeItem and add it to the Library Browser.
  * \param type
  * \param name
  * \param nameStructure
@@ -1501,7 +1501,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
 
 /*!
  * \brief LibraryTreeModel::createLibraryTreeItem
- * Creates a OMS LibraryTreeItem and add it to the Libraries Browser.
+ * Creates a OMS LibraryTreeItem and add it to the Library Browser.
  * \param name
  * \param nameStructure
  * \param path
@@ -1567,7 +1567,7 @@ void LibraryTreeModel::checkIfAnyNonExistingClassLoaded()
 
 /*!
  * \brief LibraryTreeModel::updateLibraryTreeItem
- * Triggers a view update for the LibraryTreeItem in the Libraries Browser.
+ * Triggers a view update for the LibraryTreeItem in the Library Browser.
  * \param pLibraryTreeItem
  */
 void LibraryTreeModel::updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
@@ -2050,7 +2050,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   if (!sameModelAndEditedCref && pEditedLibraryTreeItem) {
     pEditedLibraryTreeItem->setModelWidget(0);
   }
-  // Get the position of LibraryTreeItem in the Libraries Browser.
+  // Get the position of LibraryTreeItem in the Library Browser.
   const int row = pModelLibraryTreeItem->row();
   // unload the LibraryTreeItems and close the ModelWidgets
   unloadOMSModel(pModelLibraryTreeItem, false, false);
@@ -2091,7 +2091,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
    */
   if (!doDeleteClass || MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     int row = pLibraryTreeItem->row();
-    // remove the LibraryTreeItem from Libraries Browser
+    // remove the LibraryTreeItem from Library Browser
     row = pLibraryTreeItem->row();
     beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem->parent()), row, row);
     int i = 0;
@@ -2131,7 +2131,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
  */
 bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
-  // remove the LibraryTreeItem from Libraries Browser
+  // remove the LibraryTreeItem from Library Browser
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem->parent()), row, row);
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -2176,7 +2176,7 @@ bool LibraryTreeModel::deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
     }
   }
   int row = pLibraryTreeItem->row();
-  // remove the LibraryTreeItem from Libraries Browser
+  // remove the LibraryTreeItem from Library Browser
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem->parent()), row, row);
   // Deletes the LibraryTreeItem children if any and then deletes the LibraryTreeItem.
   deleteFileChildren(pLibraryTreeItem);
@@ -2942,6 +2942,7 @@ LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
   setUniformRowHeights(true);
+  setHeaderHidden(true);
   createActions();
   connect(this, SIGNAL(expanded(QModelIndex)), SLOT(libraryTreeItemExpanded(QModelIndex)));
   connect(this, SIGNAL(doubleClicked(QModelIndex)), SLOT(libraryTreeItemDoubleClicked(QModelIndex)));
@@ -4059,7 +4060,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
 
 /*!
  * \class LibraryWidget
- * \brief A widget for Libraries Browser.
+ * \brief A widget for Library Browser.
  */
 /*!
  * \brief LibraryWidget::LibraryWidget
@@ -4091,7 +4092,7 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpLibraryTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   connect(mpLibraryTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   mpTreeSearchFilters->getExpandAllButton()->setEnabled(false);
-  mpTreeSearchFilters->getExpandAllButton()->setToolTip(tr("Expanding the Libraries Browser is a time consuming and non-responsive operation so this button is disabled intentionally."));
+  mpTreeSearchFilters->getExpandAllButton()->setToolTip(tr("Expanding the Library Browser is a time consuming and non-responsive operation so this button is disabled intentionally."));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
   // create a dummy librarytreeItem
   mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "All", "OMEdit.Search.Feature", "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
@@ -5436,7 +5437,7 @@ void LibraryWidget::scrollToActiveLibraryTreeItem()
 
 /*!
  * \brief LibraryWidget::searchClasses
- * Searches the classes in the Libraries Browser.
+ * Searches the classes in the Library Browser.
  */
 void LibraryWidget::searchClasses()
 {

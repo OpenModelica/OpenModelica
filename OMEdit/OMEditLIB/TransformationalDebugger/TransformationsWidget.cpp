@@ -564,8 +564,8 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pStatusBar->addPermanentWidget(pReloadToolButton, 0);
   pStatusBar->addPermanentWidget(pInfoXMLFilePathLabel, 1);
   /* Variables Heading */
-  Label *pVariablesBrowserLabel = new Label(Helper::variablesBrowser);
-  pVariablesBrowserLabel->setObjectName("LabelWithBorder");
+  Label *pVariableBrowserLabel = new Label(Helper::variableBrowser);
+  pVariableBrowserLabel->setObjectName("LabelWithBorder");
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
@@ -587,7 +587,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   QGridLayout *pVariablesGridLayout = new QGridLayout;
   pVariablesGridLayout->setSpacing(1);
   pVariablesGridLayout->setContentsMargins(0, 0, 0, 0);
-  pVariablesGridLayout->addWidget(pVariablesBrowserLabel, 0, 0);
+  pVariablesGridLayout->addWidget(pVariableBrowserLabel, 0, 0);
   pVariablesGridLayout->addWidget(mpTreeSearchFilters, 1, 0);
   pVariablesGridLayout->addWidget(mpTVariablesTreeView, 2, 0);
   QFrame *pVariablesFrame = new QFrame;
@@ -631,15 +631,15 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   QFrame *pVariableOperationsFrame = new QFrame;
   pVariableOperationsFrame->setLayout(pVariableOperationsGridLayout);
   /* Equations Heading */
-  Label *pEquationsBrowserLabel = new Label(tr("Equations Browser"));
-  pEquationsBrowserLabel->setObjectName("LabelWithBorder");
+  Label *pEquationBrowserLabel = new Label(tr("Equations"));
+  pEquationBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree widget */
   mpEquationsTreeWidget = new EquationTreeWidget(this);
   mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
-  pEquationsGridLayout->addWidget(pEquationsBrowserLabel, 0, 0);
+  pEquationsGridLayout->addWidget(pEquationBrowserLabel, 0, 0);
   pEquationsGridLayout->addWidget(mpEquationsTreeWidget, 1, 0);
   QFrame *pEquationsFrame = new QFrame;
   pEquationsFrame->setLayout(pEquationsGridLayout);
@@ -1306,7 +1306,7 @@ void TransformationsWidget::reloadTransformations()
 
 /*!
  * \brief TransformationsWidget::findVariables
- * Finds the variables in the TransformationsWidget Variables Browser.
+ * Finds the variables in the TransformationsWidget Variable Browser.
  */
 void TransformationsWidget::findVariables()
 {

@@ -488,7 +488,7 @@ private:
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
-  void showMessagesBrowser();
+  void showMessageBrowser();
   void switchToWelcomePerspectiveSlot();
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
