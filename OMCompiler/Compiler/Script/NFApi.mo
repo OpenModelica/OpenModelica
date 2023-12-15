@@ -842,9 +842,15 @@ uniontype InstanceTree
     Boolean isExtends;
   end CLASS;
 
+  record BUILTIN_BASE_CLASS
+    String name;
+  end BUILTIN_BASE_CLASS;
+
   record EMPTY
   end EMPTY;
 end InstanceTree;
+
+constant InstanceTree ENUM_BASE = InstanceTree.BUILTIN_BASE_CLASS("enumeration");
 
 function getModelInstance
   input Absyn.Path classPath;
@@ -955,7 +961,7 @@ algorithm
   cls_node := InstNode.resolveInner(node);
   cls := InstNode.getClass(cls_node);
 
-  if not isDerived and Class.isOnlyBuiltin(cls) then
+  if not isDerived and Class.isOnlyBuiltin(cls) and not Class.isEnumeration(cls) then
     tree := InstanceTree.EMPTY();
     return;
   end if;
@@ -976,7 +982,7 @@ algorithm
         InstanceTree.CLASS(node, elems, isDerived);
 
     case (_, ClassTree.FLAT_TREE())
-      then InstanceTree.CLASS(node, {}, isDerived);
+      then InstanceTree.CLASS(node, if InstNode.isEnumerationType(cls_node) then {ENUM_BASE} else {}, isDerived);
 
     else
       algorithm
@@ -1099,7 +1105,7 @@ algorithm
 
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
-    JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
+    JSON.makeString(SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(def))), json);
 
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, InstNode.parent(node)), json);
 
@@ -1232,6 +1238,7 @@ algorithm
         case InstanceTree.CLASS(isExtends = true) then dumpJSONExtends(e, isDeleted);
         case InstanceTree.CLASS() then dumpJSONReplaceableClass(e.node, scope);
         case InstanceTree.COMPONENT() then dumpJSONComponent(e.node, e.binding, e.cls);
+        case InstanceTree.BUILTIN_BASE_CLASS() then dumpJSONBuiltinBaseClass(e.name);
         else JSON.makeNull();
       end match;
 
@@ -1246,6 +1253,7 @@ function dumpJSONExtends
   output JSON json = JSON.makeNull();
 protected
   InstNode node;
+  Class cls;
   SCode.Element cls_def, ext_def;
   SCode.Mod mod;
 algorithm
@@ -1257,12 +1265,21 @@ algorithm
   json := dumpJSONSCodeMod(getExtendsModifier(ext_def, node), node, json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
 
-  if Class.isOnlyBuiltin(InstNode.getClass(node)) then
+  cls := InstNode.getClass(node);
+  if Class.isOnlyBuiltin(cls) and not Class.isEnumeration(cls) then
     json := JSON.addPair("baseClass", JSON.makeString(InstNode.name(node)), json);
   else
     json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, node, root = false, isDeleted = isDeleted), json);
   end if;
 end dumpJSONExtends;
+
+function dumpJSONBuiltinBaseClass
+  input String name;
+  output JSON json = JSON.makeNull();
+algorithm
+  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
+  json := JSON.addPair("baseClass", JSON.makeString(name), json);
+end dumpJSONBuiltinBaseClass;
 
 function getExtendsModifier
   input SCode.Element definition;
@@ -1377,7 +1394,7 @@ function dumpJSONComponentType
   output JSON json;
 algorithm
   json := match (cls, Type.arrayElementType(ty))
-    case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
+    case (_, Type.ENUMERATION()) then dumpJSONEnumType(cls, node);
     case (_, Type.UNKNOWN()) then dumpJSONSCodeElementType(InstNode.definition(node));
     case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls, node, isDeleted = isDeleted);
     else dumpJSONTypeName(ty);
@@ -1401,23 +1418,31 @@ algorithm
 end dumpJSONSCodeElementType;
 
 function dumpJSONEnumType
+  input InstanceTree tree;
   input InstNode enumNode;
   output JSON json;
 protected
   InstNode node = InstNode.resolveInner(InstNode.classScope(enumNode));
   SCode.Element def;
   array<InstNode> comps;
+  JSON json_elems, json_ext;
+  list<InstanceTree> elems;
 algorithm
   def := InstNode.definition(node);
 
   json := JSON.makeNull();
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
-  json := JSON.addPair("restriction", JSON.makeString("enumeration"), json);
+  json := JSON.addPair("restriction",
+    JSON.makeString(SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(def))), json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(def), node, json);
 
+  InstanceTree.CLASS(elements = elems) := tree;
+  json_elems := dumpJSONElements(elems, node, false);
+
   comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(node)));
-  json := JSON.addPair("elements", dumpJSONEnumTypeLiterals(comps, InstNode.parent(node)), json);
+  json_elems := dumpJSONEnumTypeLiterals(comps, InstNode.parent(node), json_elems);
+  json := JSON.addPair("elements", json_elems, json);
 
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONEnumType;
@@ -1425,7 +1450,7 @@ end dumpJSONEnumType;
 function dumpJSONEnumTypeLiterals
   input array<InstNode> literals;
   input InstNode scope;
-  output JSON json = JSON.emptyArray();
+  input output JSON json = JSON.emptyArray();
 algorithm
   for i in 6:arrayLength(literals) loop
     json := JSON.addElement(dumpJSONEnumTypeLiteral(literals[i], scope), json);

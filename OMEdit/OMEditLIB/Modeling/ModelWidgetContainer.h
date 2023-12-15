@@ -369,7 +369,8 @@ private:
   Element* connectorElementAtPosition(QPoint position);
   Element* stateElementAtPosition(QPoint position);
   static bool updateElementConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Element *pElement);
-  QString getConnectorName(Element *connector);
+  Element* getConnectorElement(ModelInstance::Connector *pConnector);
+  QString getConnectorName(Element *pConnector);
   bool handleDoubleClickOnComponent(QMouseEvent *event);
   void uncheckAllShapeDrawingActions();
   void setOriginAdjustAndInitialize(ShapeAnnotation* shapeAnnotation);
