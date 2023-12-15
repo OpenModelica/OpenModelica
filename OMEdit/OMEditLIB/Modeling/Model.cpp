@@ -1184,7 +1184,7 @@ namespace ModelInstance
 
   bool Model::isEnumeration() const
   {
-    return (mRestriction.compare(QStringLiteral("enumeration")) == 0);
+    return getRootType() == QLatin1String("enumeration");
   }
 
   bool Model::isType() const

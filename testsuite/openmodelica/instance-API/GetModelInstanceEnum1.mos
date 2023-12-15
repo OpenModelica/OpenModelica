@@ -29,12 +29,16 @@ getModelInstance(M, prettyPrint=true);
 //       \"name\": \"analogFil\",
 //       \"type\": {
 //         \"name\": \"AnalogFilter\",
-//         \"restriction\": \"enumeration\",
+//         \"restriction\": \"type\",
 //         \"comment\": \"Enumeration defining the method of filtering\",
 //         \"annotation\": {
 //           \"Evaluate\": true
 //         },
 //         \"elements\": [
+//           {
+//             \"$kind\": \"extends\",
+//             \"baseClass\": \"enumeration\"
+//           },
 //           {
 //             \"$kind\": \"component\",
 //             \"name\": \"CriticalDamping\",

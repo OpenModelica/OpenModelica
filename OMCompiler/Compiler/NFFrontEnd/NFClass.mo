@@ -655,6 +655,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   algorithm
     isEnum := match cls
       case PARTIAL_BUILTIN(ty = Type.ENUMERATION()) then true;
+      case INSTANCED_BUILTIN(ty = Type.ENUMERATION()) then true;
       case EXPANDED_DERIVED() then isEnumeration(InstNode.getClass(cls.baseClass));
       case TYPED_DERIVED() then isEnumeration(InstNode.getClass(cls.baseClass));
       else false;

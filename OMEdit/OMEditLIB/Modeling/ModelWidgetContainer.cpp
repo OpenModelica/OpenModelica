@@ -487,72 +487,24 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
       // if connection is valid and has line annotation
       if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getAnnotation()->getLine()
           && !connectionExists(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName(), inherited)) {
-        // get start and end elements
-        QStringList startElementList = pConnection->getStartConnector()->getNameParts();
-        QStringList endElementList = pConnection->getEndConnector()->getNameParts();
-        // get start element
-        Element *pStartElement = 0;
-        if (startElementList.size() > 0) {
-          QString startElementName = startElementList.at(0);
-          if (startElementName.contains("[")) {
-            startElementName = startElementName.mid(0, startElementName.indexOf("["));
-          }
-          pStartElement = getElementObject(startElementName);
-        }
-        // get start connector
-        Element *pStartConnectorElement = 0;
-        Element *pEndConnectorElement = 0;
-        if (pStartElement) {
-          // if a element type is connector then we only get one item in startElementList
-          // check the startElementlist
-          // if conditional connector or condition is false or if type is missing then connect with the red cross box
-          if (startElementList.size() < 2 || pStartElement->isExpandableConnector() || !pStartElement->getModelComponent()->getCondition() || pStartElement->getModel()->isMissing()) {
-            pStartConnectorElement = pStartElement;
-          } else {
-            // look for port from the parent element
-            QString startElementName = startElementList.at(1);
-            if (startElementName.contains("[")) {
-              startElementName = startElementName.mid(0, startElementName.indexOf("["));
-            }
-            pStartConnectorElement = mpModelWidget->getConnectorElement(pStartElement, startElementName);
-          }
-        }
+        //// get start and end elements
+        auto pStartConnectorElement = getConnectorElement(pConnection->getStartConnector());
         // show error message if start element is not found.
         if (!pStartConnectorElement) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION_NEW)
-                                                                .arg(pConnection->getStartConnector()->getName()).arg(pConnection->toString())
-                                                                .arg(mpModelWidget->getLibraryTreeItem()->getNameStructure()), Helper::scriptingKind, Helper::errorLevel));
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION_NEW)
+              .arg(pConnection->getStartConnector()->getName()).arg(pConnection->toString())
+              .arg(mpModelWidget->getLibraryTreeItem()->getNameStructure()), Helper::scriptingKind, Helper::errorLevel));
           continue;
         }
-        // get end element
-        Element *pEndElement = 0;
-        if (endElementList.size() > 0) {
-          QString endElementName = endElementList.at(0);
-          if (endElementName.contains("[")) {
-            endElementName = endElementName.mid(0, endElementName.indexOf("["));
-          }
-          pEndElement = getElementObject(endElementName);
-        }
-        // get the end connector
-        if (pEndElement) {
-          // if a element type is connector then we only get one item in endElementList
-          // check the endElementList
-          // if conditional connector or condition is false or if type is missing then connect with the red cross box
-          if (endElementList.size() < 2 || pEndElement->isExpandableConnector() || !pEndElement->getModelComponent()->getCondition() || pEndElement->getModel()->isMissing()) {
-            pEndConnectorElement = pEndElement;
-          } else {
-            QString endElementName = endElementList.at(1);
-            if (endElementName.contains("[")) {
-              endElementName = endElementName.mid(0, endElementName.indexOf("["));
-            }
-            pEndConnectorElement = mpModelWidget->getConnectorElement(pEndElement, endElementName);
-          }
-        }
+
+        auto pEndConnectorElement = getConnectorElement(pConnection->getEndConnector());
         // show error message if end element is not found.
         if (!pEndConnectorElement) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION_NEW)
-                                                                .arg(pConnection->getEndConnector()->getName()).arg(pConnection->toString())
-                                                                .arg(mpModelWidget->getLibraryTreeItem()->getNameStructure()), Helper::scriptingKind, Helper::errorLevel));
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION_NEW)
+              .arg(pConnection->getEndConnector()->getName()).arg(pConnection->toString())
+              .arg(mpModelWidget->getLibraryTreeItem()->getNameStructure()), Helper::scriptingKind, Helper::errorLevel));
           continue;
         }
 
@@ -3131,8 +3083,42 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
   return false;
 }
 
-/*!
- * \brief GraphicsView::getConnectorName
+/*!  * \brief GraphicsView::getConnectorElement
+ * Returns the element associated with a Connector.
+ * \param pConnector
+ */
+Element* GraphicsView::getConnectorElement(ModelInstance::Connector *pConnector)
+{
+  QStringList elementList = pConnector->getNameParts();
+  Element *element = nullptr;
+
+  // Get element.
+  if (elementList.size() > 0) {
+    QString elementName = elementList.front();
+    elementName = elementName.left(elementName.indexOf('['));
+    element = getElementObject(elementName);
+  }
+
+  // Get connector element.
+  Element *connectorElement = nullptr;
+  if (element) {
+    // If an element type is connector then we only get one item in elementList
+    // Check the elementList
+    // If conditional connector or condition is false or if type is missing then connect with the red cross box
+    if (elementList.size() < 2 || element->isExpandableConnector() || !element->getModelComponent()->getCondition() || element->getModel()->isMissing()) {
+      connectorElement = element;
+    } else {
+      // Look for port from the parent element
+      QString elementName = elementList.at(1);
+      elementName = elementName.left(elementName.indexOf('['));
+      connectorElement = mpModelWidget->getConnectorElement(element, elementName);
+    }
+  }
+
+  return connectorElement;
+}
+
+/*!  * \brief GraphicsView::getConnectorName
  * Returns the name of the connector element as a string.
  * \param pConnector
  */
