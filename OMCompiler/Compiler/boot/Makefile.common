@@ -1,4 +1,4 @@
-ifeq ($(wildcard $(OMC)),)
+ifeq ($(wildcard $(OMC))$(WSL_OMC),)
 all:
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-from-tarball
 else
@@ -143,7 +143,7 @@ interfaces: $(ALL_INTERFACES) $(ALL_SOURCES)
 	@touch $@
 %.interface.mo: %.stamp.mo
 
-ifeq ($(wildcard $(OMC)),)
+ifeq ($(wildcard $(OMC))$(WSL_OMC),)
 else
 Makefile.sources: LoadCompilerSources.mos MakeSources.mos ../Util/Autoconf.mo
 	$(OMC) -g=MetaModelica -n=1 MakeSources.mos
