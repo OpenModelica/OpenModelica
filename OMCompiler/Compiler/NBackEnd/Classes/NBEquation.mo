@@ -2216,6 +2216,7 @@ public
     end getResidualExp;
 
     function toStatement
+      "converts an if equation body to an algorithmic statement"
       input IfEquationBody body;
       output list<tuple<Expression, list<Statement>>> stmts;
     protected
@@ -2228,6 +2229,48 @@ public
         stmts := {stmt};
       end if;
     end toStatement;
+
+    function split
+      "splits an if equation body with multiple equations into multiple bodies of each one equation
+      NOTE: does not care for branch matching, it combines first equation of each branch to one
+      new body and does the same for second, third, etc."
+      input IfEquationBody body;
+      output list<IfEquationBody> bodies = {};
+    protected
+      list<Expression> conditions = {};
+      array<list<Pointer<Equation>>> then_eqns = arrayCreate(listLength(body.then_eqns), {});
+      Expression condition;
+      Pointer<Equation> eqn;
+      Option<IfEquationBody> tmp;
+    algorithm
+      (conditions, then_eqns) := splitCollect(body, conditions, then_eqns);
+      for i in 1:arrayLength(then_eqns) loop
+        tmp := NONE();
+        for tpl in List.zip(conditions, then_eqns[i]) loop
+          (condition, eqn) := tpl;
+          tmp := SOME(IF_EQUATION_BODY(condition, {eqn}, tmp));
+        end for;
+        bodies := Util.getOption(tmp) :: bodies;
+      end for;
+    end split;
+
+    protected function splitCollect
+      "collects the equations of each branch to create single branch equation bodies afterwards."
+      input IfEquationBody body;
+      input output list<Expression> conditions;
+      input output array<list<Pointer<Equation>>> then_eqns;
+    protected
+      Integer i = 1;
+    algorithm
+      conditions := body.condition :: conditions;
+      for eqn in body.then_eqns loop
+        then_eqns[i] := eqn :: then_eqns[i];
+        i := i + 1;
+      end for;
+      if Util.isSome(body.else_if) then
+        (conditions, then_eqns) := splitCollect(Util.getOption(body.else_if), conditions, then_eqns);
+      end if;
+    end splitCollect;
   end IfEquationBody;
 
   uniontype WhenEquationBody
