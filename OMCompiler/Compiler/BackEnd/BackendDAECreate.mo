@@ -613,6 +613,11 @@ algorithm
     (extAliasVars,repl) := match (crefs_lhs, crefs_rhs)
       local
         DAE.ComponentRef lhs, rhs;
+
+      // lhs or rhs does not have external alias vars -> do nothing at all
+      case ({}, _) then (extAliasVars,repl);
+      case (_, {}) then (extAliasVars,repl);
+
       case ({lhs}, {rhs}) algorithm
         // no arrays, but crefs might be arrays to expand
         crefs_lhs := ComponentReference.expandCref(lhs, true);
