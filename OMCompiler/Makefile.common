@@ -686,7 +686,7 @@ clean-sundials:
 LIBFFI=3rdParty/libffi
 libffi: $(LIBFFI)
 	(cd "$(LIBFFI)" && (test -f Makefile || ./autogen.sh))
-	(cd "$(LIBFFI)" && (test -f Makefile || (./configure --prefix="`pwd`/install" --enable-shared=no --disable-docs CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
+	(cd "$(LIBFFI)" && (test -f Makefile || (./configure --prefix="`pwd`/install" "--host=$(host)" --enable-shared=no --disable-docs CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
 	$(MAKE) -C "$(LIBFFI)"
 	$(MAKE) -C "$(LIBFFI)" install
 
