@@ -224,7 +224,7 @@ pipeline {
     }
     stage('tests') {
       parallel {
-        stage('cross-build-fmu') {
+        stage('07 cross-build-fmu') {
           agent {
             label 'linux'
           }
@@ -256,7 +256,7 @@ pipeline {
             }
           }
         }
-        stage('testsuite-clang 1/3') {
+        stage('04 testsuite-clang 1/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -290,7 +290,7 @@ pipeline {
             }
           }
         }
-        stage('testsuite-clang 2/3') {
+        stage('05 testsuite-clang 2/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -324,7 +324,7 @@ pipeline {
             }
           }
         }
-        stage('testsuite-clang 3/3') {
+        stage('06 testsuite-clang 3/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -359,7 +359,7 @@ pipeline {
           }
         }
 
-        stage('testsuite-gcc 1/3') {
+        stage('01 testsuite-gcc 1/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -387,7 +387,7 @@ pipeline {
             }
           }
         }
-        stage('testsuite-gcc 2/3') {
+        stage('02 testsuite-gcc 2/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -415,7 +415,7 @@ pipeline {
             }
           }
         }
-        stage('testsuite-gcc 3/3') {
+        stage('03 testsuite-gcc 3/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -444,7 +444,7 @@ pipeline {
           }
         }
 
-        stage('testsuite-compliance') {
+        stage('08 testsuite-compliance') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -474,7 +474,7 @@ pipeline {
           }
         }
 
-        stage('build-gui-clang-qt5') {
+        stage('10 build-gui-clang-qt5') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -491,7 +491,7 @@ pipeline {
           }
         }
 
-        stage('build-usersguide') {
+        stage('09 build-usersguide') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -531,7 +531,7 @@ pipeline {
           }
         }
 
-        stage('testsuite-clang-parmod') {
+        stage('11 testsuite-clang-parmod') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -553,7 +553,7 @@ pipeline {
           }
         }
 
-        stage('testsuite-clang-metamodelica') {
+        stage('12 testsuite-clang-metamodelica') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -571,7 +571,7 @@ pipeline {
           }
         }
 
-        stage('testsuite-matlab-translator') {
+        stage('13 testsuite-matlab-translator') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -593,7 +593,7 @@ pipeline {
           }
         }
 
-        stage('test-clang-icon-generator') {
+        stage('14 test-clang-icon-generator') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
