@@ -723,6 +723,7 @@ protected
         Integer rec_size;
         Statement stmt;
         Algorithm alg;
+        list<IfEquationBody> bodies;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty)) algorithm
@@ -744,7 +745,18 @@ protected
           // E.g.: DISCRETE, EvalStages
           iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
           for eq in frontend_equation.body loop
-            new_body := listAppend(lowerEquation(eq, init), new_body);
+            for body_elem_ptr in lowerEquation(eq, init) loop
+              body_elem := Pointer.access(body_elem_ptr);
+              new_body := match body_elem
+                case Equation.IF_EQUATION() algorithm
+                  bodies := IfEquationBody.split(body_elem.body);
+                  for body in bodies loop
+                    new_body := Pointer.create(BEquation.IF_EQUATION(IfEquationBody.size(body), body, body_elem.source, body_elem.attr)) :: new_body;
+                  end for;
+                then new_body;
+                else body_elem_ptr :: new_body;
+              end match;
+            end for;
           end for;
           for body_elem_ptr in new_body loop
             body_elem := Pointer.access(body_elem_ptr);
