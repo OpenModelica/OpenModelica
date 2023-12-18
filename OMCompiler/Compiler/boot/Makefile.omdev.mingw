@@ -53,7 +53,11 @@ CPPFLAGS= -DOM_HAVE_PTHREADS -I"$(OMHOME)/include/omc/c" -I../Util/ -DADD_METARE
 CORBALIBS=
 ULIMIT_CMD=true
 SHREXT=.dll
+ifeq ($(WSL_OMC),)
 OMC=$(OMHOME)/bin/omc.exe
+else
+OMC=$(WSL_OMC)
+endif
 RPATH=
 #STATIC=static
 BOOTSTRAP_OMC=$(OMBUILDDIR)/bin/omc.exe
