@@ -2,6 +2,8 @@
 use Cwd;
 use File::Temp qw/ tempfile /;
 
+my $OPENMODELICAHOME = "";
+
 #delete($ENV{'OPENMODELICALIBRARY'});
 if (defined $ENV{"RTEST_OMCFLAGS"}) {
     $omcflags=$ENV{"RTEST_OMCFLAGS"} . " --alarm=900";
@@ -18,17 +20,28 @@ if (defined $ENV{'WSLENV'}) {
 }
 
 if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
-  # See if we have the the CMake config's common install dirs.
-  if (-e "$1build/install_cmake/bin/$OMCEXE") {
-    $OPENMODELICAHOME = "$1build/install_cmake";
+  my @omcExe = qw( omc omc.exe );
+  foreach (@omcExe) {
+    $OMCEXE = $_;
+    # See if we have the the CMake config's common install dirs.
+    if (-e "$1build/install_cmake/bin/$OMCEXE") {
+      $OPENMODELICAHOME = "$1build/install_cmake";
+      last;
+    }
+    # See if we have the the CMake config's common install dirs.
+    elsif (-e "$1build_cmake/install_cmake/bin/$OMCEXE") {
+      $OPENMODELICAHOME = "$1build_cmake/install_cmake";
+      last;
+    }
+    # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
+    elsif (-e "$1build/bin/$OMCEXE") {
+      $OPENMODELICAHOME = "$1build";
+      last;
+    }
   }
-  # See if we have the the CMake config's common install dirs.
-  elsif (-e "$1build_cmake/install_cmake/bin/$OMCEXE") {
-    $OPENMODELICAHOME = "$1build_cmake/install_cmake";
-  }
-  # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
-  else {
-    $OPENMODELICAHOME = "$1build";
+  if (!$OPENMODELICAHOME) {
+    print "Couldn't find omc executable\n";
+    exit 0;
   }
   $dirname=$2;
   $ENV{'HOME'} = "$1/libraries";
