@@ -238,9 +238,10 @@ Here we just give two examples:
    negligible loss of precision, substituting :math:`abs(x)` with :math:`sqrt(x^2+\varepsilon)`,
    where eps is very low in comparison with the values :math:`x` usually assumes
    during the simulation.
-- Carefully consider having in the code asserts that cause simulation to stop. If for instance we have
+
+-  Carefully consider having in the code asserts that cause simulation to stop. If for instance we have
    an assert that stops simulation when a variable gets outside its limiting value, it may happen that
-   during the optimisation cycle the limit is hit and simulation is stopped, which may not desirable.
+   during the optimisation cycle the limit is hit and simulation is stopped, which may not be desirable.
    Asserts can still be left in place, adding a boolean variable, e.g.:
 
    .. code-block :: modelica
@@ -324,12 +325,12 @@ The code is very simple and it is as follows:
 
 The constraint on power is especially worth considering. Above, we
 stated that path constraints can be
-:math:`g_min \leq g(\mathbf{x}(t),\mathbf{u}(t), t) \leg g_max`. Here we have box limits on
+:math:`g_min \leq g(\mathbf{x}(t),\mathbf{u}(t), t) \leq g_max`. Here we have box limits on
 `pow`, which are expressed as limits on `g(v,f) = f*v = pow`
 
 .. math:: - 30 \leq v*f = f*v \leq 30
 
-This usage of constrains allows implementing variable (non-boxed) constraints, which are not allowed
+This usage of constraints allows implementing variable (non-boxed) constraints, which are not allowed
 explicitly. Doing this the above code implements through `g(.)` a variable (so non-boxed) limit on force `f`.
 
 The results can be expressed in terms of force and power applied to the
