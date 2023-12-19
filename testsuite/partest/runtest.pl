@@ -17,6 +17,7 @@ my $no_colour = 0;
 my $withxml = 0;
 my $rtest_extra_args = "";
 my $test_baseline = 0;
+my $isWSL = (defined $ENV{'WSLENV'} && rindex(Cwd::abs_path(),"/mnt/",0)==0);
 
 for(@ARGV){
   if(/--no-colour/) {
@@ -70,7 +71,7 @@ sub symlink_if_exists {
   my $dst = shift;
 
   if (-e $src) {
-    if (defined $ENV{'WSLENV'}) {
+    if ($isWSL) {
       link($src, $dst);
     } else {
       symlink($src, $dst);
