@@ -148,6 +148,10 @@ language. They are listed and commented below.
    example will be provided later). Going up to 1e-8 may be advisable in
    some cases.
 
+-  *Define the variable to be determined by DO*.
+   The variable the DO must determine is the one having input attribute.
+   It can have (constant) min and max attributes, which are interpreted as boxed path constraints on input.
+
 -  *Indicate the minimisation goal*. We can indicate whether we must
    just minimise a quantity, or the integral of a quantity (see (1)., as
    follows:
@@ -235,6 +239,43 @@ Here we just give two examples:
    where eps is very low in comparison with the values :math:`x` usually assumes
    during the simulation.
 
+-  Carefully consider having in the code asserts that cause simulation to stop. If for instance we have
+   an assert that stops simulation when a variable gets outside its limiting value, it may happen that
+   during the optimisation cycle the limit is hit and simulation is stopped, which may not be desirable.
+   Asserts can still be left in place, adding a boolean variable, e.g.:
+
+   .. code-block :: modelica
+
+      parameter Boolean insideDynOpt=true; // "true asks skipping the next assert inside dyn. optimization";
+      assert(SOC <= SOCmax or insideDynOpt, "\n****\n" + "Battery is fully charged:\n" 
+      + "State of charge reached maximum limit (=" + String(SOCmax) + ")" + "\n****\n");
+
+Initialization
+==============
+DO algorithm requires initialization. This is controlled through the simulation flag `ipopt_init`. This flag
+has three options: `SIM`, `CONST`, `FILE`. The preferred option can be selected adding the model the system
+annotation `__OpenModelica_simulationFlags`. For instance, the following example requires optimisation
+with `SIM`` initialisation:
+
+   .. code-block :: modelica
+
+      __OpenModelica_simulationFlags(s = "optimization", optimizerNP = "1", ipopt_init= "SIM")
+
+The three options operate as follows:
+* `SIM` (the default). With this option, OM first makes an ordinary simulation; the simulation result is
+the initial “point” for the optimization. During this simulation the input is constantly kept at its
+value “start”.
+* `CONST`. With this option, the initial "point" for optimization is with all the quantities being
+constant, and equal to their "start" values
+* `FILE`. In this case the initial point for optimization is taken from a file, created by a previous
+simulation, usually with a non-constant input (otherwise it would be simpler to use `SIM`).
+OpenModelica maps the variables between file and optimization via their name. The syntax is as in
+the following example:
+
+   .. code-block :: modelica
+
+   __OpenModelica_simulationFlags(ipopt_init="FILE" -iif "simModel_res.mat"),
+
 Example 1: minimum time to destination
 ======================================
 
@@ -283,18 +324,14 @@ The code is very simple and it is as follows:
    end BangBang2021;
 
 The constraint on power is especially worth considering. Above, we
-stated that path constraints are
-:math:`0 \leq g(\mathbf{x}(t),\mathbf{u}(t))` here we have box limits on
-pow, which is indeed a function of state variables as follows:
+stated that path constraints can be
+:math:`g_min \leq g(\mathbf{x}(t),\mathbf{u}(t), t) \leq g_max`. Here we have box limits on
+`pow`, which are expressed as limits on `g(v,f) = f*v = pow`
 
-.. math:: - 30 \leq fv \leq 30\  = > \  - 30 \leq mav \leq 30
+.. math:: - 30 \leq v*f = f*v \leq 30
 
-And *a* and *v* are two state variables. So, these are two box
-constraints of the type
-:math:`0 \leq \ g\left( \mathbf{x}(t),\mathbf{u}(t) \right)\ ` as
-follows:
-
-:math:`mav = m\text{\ x}_{1}\text{\ x}_{2} \geq - 30\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ mav = m\text{\ x}_{1}\text{\ x}_{2} \leq \ 30`.
+This usage of constraints allows implementing variable (non-boxed) constraints, which are not allowed
+explicitly. Doing this the above code implements through `g(.)` a variable (so non-boxed) limit on force `f`.
 
 The results can be expressed in terms of force and power applied to the
 vehicle. They are as follows:
