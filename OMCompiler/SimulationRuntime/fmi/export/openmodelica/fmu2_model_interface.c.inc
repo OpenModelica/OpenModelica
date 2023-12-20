@@ -617,6 +617,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   if (fmuResourceLocation) {
     comp->fmuData->modelData->resourcesDir = functions->allocateMemory(1 + strlen(fmuResourceLocation), sizeof(char));
     strcpy(comp->fmuData->modelData->resourcesDir, fmuResourceLocation);
+    free(fmuResourceLocation);
   } else {
     FILTERED_LOG(comp, fmi2OK, LOG_STATUSWARNING, "fmi2Instantiate: Ignoring unknown resource URI: %s", fmuResourceLocation)
   }
