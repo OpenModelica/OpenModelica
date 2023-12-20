@@ -274,7 +274,7 @@ the following example:
 
    .. code-block :: modelica
 
-   __OpenModelica_simulationFlags(ipopt_init="FILE" -iif "simModel_res.mat"),
+      __OpenModelica_simulationFlags(ipopt_init="FILE" -iif "simModel_res.mat"),
 
 Example 1: minimum time to destination
 ======================================
@@ -325,7 +325,7 @@ The code is very simple and it is as follows:
 
 The constraint on power is especially worth considering. Above, we
 stated that path constraints can be
-:math:`g_min \leq g(\mathbf{x}(t),\mathbf{u}(t), t) \leq g_max`. Here we have box limits on
+:math:`g_{\min} \leq g(\mathbf{x}(t),\mathbf{u}(t), t) \leq g_{\max}`. Here we have box limits on
 `pow`, which are expressed as limits on `g(v,f) = f*v = pow`
 
 .. math:: - 30 \leq v*f = f*v \leq 30
