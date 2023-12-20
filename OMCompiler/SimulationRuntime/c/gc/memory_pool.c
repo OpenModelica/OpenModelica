@@ -73,7 +73,6 @@ static void pool_init(void)
   // pool_init is called unconditionally in fmi2Instantiate, so let's put the condition here
   if (!memory_pools) {
     memory_pools = (OMCMemPoolBlock*) omc_alloc_interface.malloc_uncollectable(sizeof(OMCMemPoolBlock));
-    printf("pool_init %p\n", memory_pools);
     memory_pools->used = 0;
     memory_pools->size = OMC_INITIAL_BLOCK_SIZE;
     memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
