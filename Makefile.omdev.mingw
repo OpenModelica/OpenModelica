@@ -100,9 +100,17 @@ omparser:
 	$(MAKE) -C OMParser OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omsimulator:
-	$(MAKE) -C OMSimulator config-3rdParty CC="gcc" CXX="g++" OMTLM=OFF CERES=OFF
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="gcc" CXX="g++" OMTLM=OFF
-	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="gcc" CXX="g++" OMTLM=OFF
+	mkdir -p OMSimulator/build
+	cd OMSimulator/build && cmake .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE=ON \
+		-DCMAKE_INSTALL_PREFIX=../install
+	$(MAKE) -C OMSimulator/build/ install
+	cp -vpPR OMSimulator/install/include/OMSimulator/ $(OMBUILDDIR)/include/omc
+	cp -vpPR OMSimulator/install/bin/* $(OMBUILDDIR)/bin
+	cp -vpPR OMSimulator/install/share/OMSimulator/ $(OMBUILDDIR)/share
+	cp -vpPR OMSimulator/install/lib/* $(OMBUILDDIR)/lib/omc/
+
 
 omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
@@ -176,6 +184,15 @@ qtclientsDLLs:
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgUtil.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgGA.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgText.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libmd4c.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsharpyuv-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcurl-4.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcrypto-3-x64.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libidn2-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpsl-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssh2-1.dll  $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssl-3-x64.dll  $(builddir_bin)/
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
 
 clean-qtclients:
