@@ -1538,15 +1538,6 @@ public
       end match;
     end getForIterator;
 
-    function getForIteratorCrefs
-      input Equation eqn;
-      output list<ComponentRef> iterators;
-    protected
-      Iterator iter = getForIterator(eqn);
-    algorithm
-      (iterators, _) := Iterator.getFrames(iter);
-    end getForIteratorCrefs;
-
     function getForFrames
       input Equation eqn;
       output list<Frame> frames;

@@ -388,7 +388,8 @@ protected
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous;
     VariablePointers inputs, parameters, constants, records, artificials;
-    Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
+    UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+    list<Pointer<Variable>> binding_iter_lst;
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
     vars := List.flatten(list(Variable.expandChildren(v) for v in varList));
@@ -492,10 +493,11 @@ protected
     artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
-    variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-    variables       := VariablePointers.addList(Pointer.access(binding_iter_lst), variables);
-    knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
-    artificials     := VariablePointers.addList(Pointer.access(binding_iter_lst), artificials);
+    variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, set = binding_iter_set));
+    binding_iter_lst:= UnorderedSet.toList(binding_iter_set);
+    variables       := VariablePointers.addList(binding_iter_lst, variables);
+    knowns          := VariablePointers.addList(binding_iter_lst, knowns);
+    artificials     := VariablePointers.addList(binding_iter_lst, artificials);
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
 
     /* lower the records to add children */
@@ -587,14 +589,14 @@ protected
   function collectVariableBindingIterators
     input output Variable var;
     input VariablePointers variables;
-    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+    input UnorderedSet<VariablePointer> set;
   protected
     Option<Expression> exp_opt;
   algorithm
-    BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+    BackendExtension.BackendInfo.map(var.backendinfo, function collectIterators(variables = variables, set = set));
     exp_opt := Binding.typedExp(var.binding);
     if isSome(exp_opt) then
-      Expression.map(Util.getOption(exp_opt), function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+      Expression.map(Util.getOption(exp_opt), function collectIterators(variables = variables, set = set));
     end if;
   end collectVariableBindingIterators;
 
@@ -633,7 +635,7 @@ protected
     output EqData eqData;
     input output VarData varData;
   protected
-    list<ComponentRef> iterators = {};
+    UnorderedSet<VariablePointer> set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Equation>> equation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     EquationPointers equations;
     Pointer<Equation> eq;
@@ -642,10 +644,9 @@ protected
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
       Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
-      iterators := listAppend(Equation.getForIteratorCrefs(Pointer.access(eqn_ptr)), iterators);
+      lowerEquationIterators(Pointer.access(eqn_ptr), VarData.getVariables(varData), set);
     end for;
-    iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
-    varData := VarData.addTypedList(varData, list(lowerIterator(iter) for iter in iterators), NBVariable.VarData.VarType.ITERATOR);
+    varData   := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, VarData.getVariables(varData));
 
@@ -1160,32 +1161,31 @@ protected
     end try;
   end lowerComponentReference;
 
-  function collectBindingIterators
-    "collects all iterators in bindings and creates variables for them.
+  function collectIterators
+    "collects all iterators in expressions and creates variables for them.
     in bindings they are only known locally but they still need a respective variable"
     input output Expression exp;
     input VariablePointers variables;
-    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+    input UnorderedSet<VariablePointer> set;
   algorithm
     try
     () := match exp
       local
         Call call;
 
-      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables)
-        or ComponentRef.isNameNode(exp.cref))) algorithm
-        Pointer.update(binding_iter_lst, lowerIterator(exp.cref) :: Pointer.access(binding_iter_lst));
+      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables) or ComponentRef.isNameNode(exp.cref))) algorithm
+        UnorderedSet.add(lowerIterator(exp.cref), set);
       then ();
 
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
         for tpl in call.iters loop
-          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+          collectIterator(Util.tuple21(tpl), variables, set);
         end for;
       then ();
 
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         for tpl in call.iters loop
-          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+          collectIterator(Util.tuple21(tpl), variables, set);
         end for;
       then ();
       else ();
@@ -1194,20 +1194,20 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Expression.toString(exp)});
       fail();
     end try;
-  end collectBindingIterators;
+  end collectIterators;
 
   function collectIterator
     "collects all iterators in bindings and creates variables for them.
     in bindings they are only known locally but they still need a respective variable"
     input InstNode iterator;
     input VariablePointers variables;
-    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+    input UnorderedSet<VariablePointer> set;
   protected
     ComponentRef cref;
   algorithm
     cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
     if not VariablePointers.containsCref(cref, variables) then
-      Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      UnorderedSet.add(lowerIterator(cref), set);
     end if;
   end collectIterator;
 
@@ -1242,6 +1242,25 @@ public
       else cref;
     end match;
   end lowerComponentReferenceInstNode;
+
+  function lowerEquationIterators
+    "lowers all iterators that occur in this equation and
+    add the generated variables to a set"
+    input Equation eqn;
+    input VariablePointers variables;
+    input UnorderedSet<VariablePointer> set;
+  protected
+    Iterator iter = Equation.getForIterator(eqn);
+    list<ComponentRef> iterators;
+  algorithm
+    // get all iterators from the for-loop-frames (if there are any)
+    (iterators, _) := Iterator.getFrames(iter);
+    for iter in iterators loop
+      UnorderedSet.add(lowerIterator(iter), set);
+    end for;
+    // get all iterators from the equation body
+    Equation.map(eqn, function collectIterators(variables = variables, set = set));
+  end lowerEquationIterators;
 
   function lowerIterator
     input ComponentRef iterator;
