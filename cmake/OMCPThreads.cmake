@@ -21,4 +21,6 @@ else()
   target_link_libraries(OMCPThreads INTERFACE ${CMAKE_DL_LIBS})
 endif()
 
+target_compile_definitions(OMCPThreads INTERFACE OM_HAVE_PTHREADS)
+
 add_library(OMCPThreads::OMCPThreads ALIAS OMCPThreads)

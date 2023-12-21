@@ -49,7 +49,7 @@ $(LDFLAGS_CURL) \
 $(EXTRA_LD_FLAGS) -Wl,--export-all-symbols
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
-CPPFLAGS=-I"$(OMHOME)/include/omc/c" -I../Util/ -DADD_METARECORD_DEFINITIONS=
+CPPFLAGS= -DOM_HAVE_PTHREADS -I"$(OMHOME)/include/omc/c" -I../Util/ -DADD_METARECORD_DEFINITIONS=
 CORBALIBS=
 ULIMIT_CMD=true
 SHREXT=.dll

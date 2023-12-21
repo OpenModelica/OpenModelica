@@ -44,6 +44,10 @@ all: install
 install: libomcruntime$(SHREXT) libomcbackendruntime.a
 	cp libomcruntime$(SHREXT) $(builddir_lib)/$(TRIPLE)/omc/
 
+
+# If we are using the Makefiles then assume we have PThreads available.
+CPPFLAGS += -DOM_HAVE_PTHREADS
+
 OBJEXT=.o
 BOOTH=../OpenModelicaBootstrappingHeader.h
 ifeq ($(BOOTSTRAPPING),1)

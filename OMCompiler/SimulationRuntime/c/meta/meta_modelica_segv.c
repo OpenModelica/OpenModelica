@@ -55,8 +55,6 @@ int mmc_hasStacktraceMessages(threadData_t *threadData)
   return threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] != 0;
 }
 
-pthread_key_t mmc_stack_overflow_jumper;
-
 #if defined(__linux__) || defined(__APPLE_CC__) || defined(__FreeBSD__)
 #include <stdlib.h>
 #include <stdio.h>

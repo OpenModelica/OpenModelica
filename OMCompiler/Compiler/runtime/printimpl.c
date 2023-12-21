@@ -80,7 +80,7 @@ static void free_printimpl(void *data)
   free(members);
 }
 
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 #include <pthread.h>
 
 pthread_once_t printimpl_once_create_key = PTHREAD_ONCE_INIT;
@@ -94,14 +94,14 @@ static void make_key()
 
 static print_members* getMembers(threadData_t *threadData)
 {
-#if defined(OMC_NO_THREADS)
+#if !defined(OM_HAVE_PTHREADS)
   static
 #endif
   print_members *res = NULL;
   if (threadData && threadData->localRoots[LOCAL_ROOT_PRINT_MO]) {
     return threadData->localRoots[LOCAL_ROOT_PRINT_MO];
   }
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
   pthread_once(&printimpl_once_create_key,make_key);
   res = (print_members*) pthread_getspecific(printimplKey);
 #endif

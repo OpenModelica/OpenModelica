@@ -6,6 +6,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 # Set the C++ standard.
 CONFIG += c++1z
 
+DEFINES += OM_HAVE_PTHREADS
+
 TRANSLATIONS = \
   OMShell_de.ts \
   OMShell_sv.ts

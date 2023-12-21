@@ -66,3 +66,4 @@ DESTDIR = $$OMEDIT_ROOT/bin/tests
 
 MOC_DIR = generatedfiles/moc
 
+DEFINES += OM_HAVE_PTHREADS
