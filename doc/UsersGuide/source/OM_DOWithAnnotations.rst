@@ -148,9 +148,17 @@ language. They are listed and commented below.
    example will be provided later). Going up to 1e-8 may be advisable in
    some cases.
 
--  *Define the variable to be determined by DO*.
-   The variable the DO must determine is the one having input attribute.
-   It can have (constant) min and max attributes, which are interpreted as boxed path constraints on input.
+-  *Define the variable(s) to be determined by DO*.
+   The variables the DO must determine must have the input attribute.
+   They can have (with parameter variability) `min` and `max` attributes, which are interpreted as boxed path constraints on input.
+   It is recommended to also define a start value for them, since it is used for initialization (see sect. `DO Initialization`_).
+   Here's an example:
+
+   .. code-block :: modelica
+      
+      input Real u1(start=0.5, min=0.0, max = 100/par1, );
+      input Real u2(start=0.5, min=0.0, max = 1.0);
+
 
 -  *Indicate the minimisation goal*. We can indicate whether we must
    just minimise a quantity, or the integral of a quantity (see (1)., as
@@ -249,6 +257,8 @@ Here we just give two examples:
       parameter Boolean insideDynOpt=true; // "true asks skipping the next assert inside dyn. optimization";
       assert(SOC <= SOCmax or insideDynOpt, "\n****\n" + "Battery is fully charged:\n" 
       + "State of charge reached maximum limit (=" + String(SOCmax) + ")" + "\n****\n");
+
+.. _DO Initialization:
 
 Initialization
 ==============
