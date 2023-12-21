@@ -21,7 +21,6 @@ endif()
 if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
 
   # Escape the environment variable path
-<<<<<<< HEAD
   if(NOT DEFINED ENV{OMDEV})
     message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
   endif()
