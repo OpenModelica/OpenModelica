@@ -1173,7 +1173,8 @@ protected
       local
         Call call;
 
-      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables) or ComponentRef.isNameNode(exp.cref))) algorithm
+      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables)
+        or ComponentRef.isNameNode(exp.cref) or ComponentRef.isWild(exp.cref))) algorithm
         UnorderedSet.add(lowerIterator(exp.cref), set);
       then ();
 
