@@ -201,6 +201,11 @@ public
   //    StrongComponent.collectCrefs()
   // ############################################################
 
+  function getSliceCandidates
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> slice_candidates;
+  end getSliceCandidates;
+
   function getDependentCref
     "checks if crefs are relevant in the given context and collects them."
     input output ComponentRef cref                "the cref to check";

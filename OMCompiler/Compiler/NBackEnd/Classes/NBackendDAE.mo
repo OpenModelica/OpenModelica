@@ -734,6 +734,7 @@ protected
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
         attr := lowerEquationAttributes(ty, init);
         result := match ty
+          case Type.ARRAY()   then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
           case Type.COMPLEX() then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
           case Type.TUPLE()   then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
                               else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
