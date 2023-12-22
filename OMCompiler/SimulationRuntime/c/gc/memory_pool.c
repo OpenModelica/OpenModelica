@@ -70,11 +70,14 @@ static int GC_collect_a_little_or_not(void)
 
 static void pool_init(void)
 {
-  memory_pools = (OMCMemPoolBlock*) omc_alloc_interface.malloc_uncollectable(sizeof(OMCMemPoolBlock));
-  memory_pools->used = 0;
-  memory_pools->size = OMC_INITIAL_BLOCK_SIZE;
-  memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
-  memory_pools->previous = NULL;
+  // pool_init is called unconditionally in fmi2Instantiate, so let's put the condition here
+  if (!memory_pools) {
+    memory_pools = (OMCMemPoolBlock*) omc_alloc_interface.malloc_uncollectable(sizeof(OMCMemPoolBlock));
+    memory_pools->used = 0;
+    memory_pools->size = OMC_INITIAL_BLOCK_SIZE;
+    memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
+    memory_pools->previous = NULL;
+  }
 }
 
 static inline size_t round_up(size_t num, size_t factor)
@@ -115,9 +118,7 @@ static void* pool_malloc(size_t requested_size)
 #endif
 
   /// If we forgot to explicitly initialize the pool, initialize it now.
-  if (!memory_pools) {
-    pool_init();
-  }
+  pool_init();
 
   /// If the current block does not have enough remaining space, expand the pool
   /// by creating another block. The new block should, at least, be as big as
@@ -151,9 +152,7 @@ static void print_mem_pool(OMCMemPoolBlock* chunk) {
 MemPoolState omc_util_get_pool_state() {
   MemPoolState state;
   /// If we forgot to explicitly initialize the pool, initialize it now.
-  if (!memory_pools) {
-    pool_init();
-  }
+  pool_init();
 
   state.block = memory_pools;
   state.used = memory_pools->used;
