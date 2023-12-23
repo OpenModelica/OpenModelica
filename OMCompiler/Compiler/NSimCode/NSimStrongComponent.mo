@@ -765,7 +765,7 @@ public
         then tmp;
 
         case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
-          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), eqn.rhs, eqn.source, eqn.attr);
+          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, eqn.lhs, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 

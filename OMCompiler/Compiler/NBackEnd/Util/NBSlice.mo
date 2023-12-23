@@ -194,23 +194,52 @@ public
     input T t;
   end applyMutableT;
 
+  partial function filterCref
+    "partial function that needs to be provided.
+    decides if the the cref is added to the list pointer."
+    input output ComponentRef cref;
+    input UnorderedSet<ComponentRef> acc;
+  end filterCref;
+
   // ############################################################
   //                cref accumulation Functions
   // use with:
   //    Equation.collectCrefs()
-  //    StrongComponent.collectCrefs()
+  //    filterExp()
   // ############################################################
+
+  function filterExp
+    "wrapper function that applies filter cref to
+    a cref expression."
+    input output Expression exp;
+    input filterCref filter;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    () := match exp
+      case Expression.CREF() algorithm filter(exp.cref, acc); then ();
+      else ();
+    end match;
+  end filterExp;
+
+  function getSliceCandidates
+    "Used to collect all slices of a certain variable name.
+    Note: the name has to be stripped of all subscripts for this to work."
+  extends filterCref;
+    input ComponentRef name "the name of the variable";
+  algorithm
+    if ComponentRef.isEqual(name, ComponentRef.stripSubscriptsAll(cref)) then
+      UnorderedSet.add(cref, acc);
+    end if;
+  end getSliceCandidates;
 
   function getDependentCref
     "checks if crefs are relevant in the given context and collects them."
-    input output ComponentRef cref                "the cref to check";
-    input Pointer<list<ComponentRef>> acc         "accumulator for relevant crefs";
+  extends filterCref;
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input Boolean pseudo;
   protected
     ComponentRef checkCref, childCref;
     list<Pointer<Variable>> record_children;
-    list<ComponentRef> crefs = {};
   algorithm
     // if causalized in pseudo array mode, the variables will only have subscript-free variables
     checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
@@ -218,32 +247,27 @@ public
     if listEmpty(record_children) then
       // not a record
       if UnorderedMap.contains(checkCref, map) then
-        Pointer.update(acc, cref :: Pointer.access(acc));
+        UnorderedSet.add(cref, acc);
       end if;
     else
       // its a record, instead parse all the children
       for child in record_children loop
         childCref := BVariable.getVarName(child);
         if UnorderedMap.contains(childCref, map) then
-          crefs := childCref :: crefs;
+          UnorderedSet.add(childCref, acc);
         end if;
       end for;
-      if not listEmpty(crefs) then
-        Pointer.update(acc, listAppend(crefs, Pointer.access(acc)));
-      end if;
     end if;
   end getDependentCref;
 
   function getDependentCrefCausalized
     "checks if crefs are relevant in the given context and collects them.
     previously found crefs are replaced by their dependencies! only works on causalized systems."
-    input output ComponentRef cref                              "the cref to check";
-    input Pointer<list<ComponentRef>> acc                       "accumulator for relevant crefs";
-    input UnorderedSet<ComponentRef> set                        "unordered set to check for array crefs for relevance";
+  extends filterCref;
+    input UnorderedSet<ComponentRef> set "unordered set to check for array crefs for relevance";
   protected
     ComponentRef checkCref, childCref;
     list<Pointer<Variable>> record_children;
-    list<ComponentRef> crefs = {};
   algorithm
     // always remove subscripts here, this analysis is for sparsity pattern -> currently always scalarized!
     checkCref := ComponentRef.stripSubscriptsAll(cref);
@@ -251,34 +275,31 @@ public
     if listEmpty(record_children) then
       // not a record
       if UnorderedSet.contains(checkCref, set) then
-        Pointer.update(acc, cref :: Pointer.access(acc));
+        UnorderedSet.add(cref, acc);
       end if;
     else
       // its a record, instead parse all the children
       for child in record_children loop
         childCref := BVariable.getVarName(child);
         if UnorderedSet.contains(childCref, set) then
-          crefs := childCref :: crefs;
+          UnorderedSet.add(childCref, acc);
         end if;
       end for;
-      if not listEmpty(crefs) then
-        Pointer.update(acc, listAppend(crefs, Pointer.access(acc)));
-      end if;
     end if;
   end getDependentCrefCausalized;
 
   function getUnsolvableExpCrefs
     "finds all unsolvable crefs in an expression."
     input output Expression exp                   "the exp to check for unsolvable crefs";
-    input Pointer<list<ComponentRef>> acc         "accumulator for relevant crefs";
+    input UnorderedSet<ComponentRef> acc          "accumulator for relevant crefs";
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input Boolean pseudo;
   algorithm
     // put all unsolvable logic here!
     exp := match exp
-      case Expression.RANGE()     then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
-      case Expression.LBINARY()   then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
-      case Expression.RELATION()  then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.RANGE()     then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.LBINARY()   then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.RELATION()  then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
       else exp;
     end match;
   end getUnsolvableExpCrefs;

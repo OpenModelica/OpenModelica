@@ -55,7 +55,7 @@ public
   import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, SlicingStatus};
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
   import BVariable = NBVariable;
   import Replacements = NBReplacements;
   import Slice = NBSlice;
@@ -186,12 +186,15 @@ public
     (solved_comps, solve_status) := match comp
         local
           Equation eqn;
+          Slice<VariablePointer> var_slice;
           Slice<EquationPointer> eqn_slice;
           Pointer<Equation> eqn_ptr;
           ComponentRef var_cref, eqn_cref;
           SlicingStatus slicing_status;
           list<Integer> sizes, eqn_indices;
           UnorderedMap<ComponentRef, Expression> replacements;
+          UnorderedSet<ComponentRef> slice_candidates;
+          list<ComponentRef> slices_lst;
           Integer index;
           list<Equation> entwined_eqns = {};
           list<Pointer<Equation>> rest, sliced_eqns = {};
@@ -245,6 +248,32 @@ public
           UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
 
         then (solved_comps, solve_status);
+
+        case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
+          // array equation solved for the a sliced variable.
+          // get all slices of the variable ocurring in the equation and select the slice that fits the indices
+          slice_candidates := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          eqn := Pointer.access(Slice.getT(eqn_slice));
+          Equation.map(eqn, function Slice.filterExp(
+            filter = function Slice.getSliceCandidates(name = BVariable.getVarName(Slice.getT(var_slice))), acc = slice_candidates));
+          slices_lst := UnorderedSet.toList(slice_candidates);
+
+          if listLength(slices_lst) == 1 then
+            var_cref := List.first(slices_lst);
+            solve_status := Status.UNPROCESSED;
+          else
+            // todo: choose best slice of list if more than one.
+            // only fail for listLength == 0
+            solve_status := Status.UNSOLVABLE;
+            break;
+          end if;
+
+          if solve_status < Status.UNSOLVABLE then
+            (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcTree, systemType, implicit_index, slicing_map);
+            comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
+            comp.status := solve_status;
+          end if;
+        then ({comp}, solve_status);
 
         case StrongComponent.SLICED_COMPONENT() algorithm
           // just a regular equation solved for a sliced variable

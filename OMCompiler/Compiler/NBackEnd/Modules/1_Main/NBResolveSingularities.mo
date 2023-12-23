@@ -411,13 +411,13 @@ protected
 
   function getStateCandidate
     input output ComponentRef cref          "the cref to check";
-    input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
+    input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
   protected
     Pointer<Variable> var;
   algorithm
     var := BVariable.getVarPointer(cref);
     if (BVariable.isContinuous(var) and not BVariable.isTime(var)) then
-      Pointer.update(acc, cref :: Pointer.access(acc));
+      UnorderedSet.add(cref, acc);
     end if;
   end getStateCandidate;
 
