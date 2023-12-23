@@ -972,7 +972,7 @@ public
           list<OldSimCode.SimEqSystem> else_branch = {};
 
         case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
-        case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case ARRAY_RESIDUAL()   then OldSimCode.SES_ARRAY_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case FOR_RESIDUAL() algorithm
           for iterator in listReverse(blck.iterators) loop
             (iter, range) := iterator;

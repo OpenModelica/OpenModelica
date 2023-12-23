@@ -2416,7 +2416,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
               <%preExp%>res[<%i0%>] = <%expPart%>;
               <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
               >>
-            case SES_FOR_RESIDUAL(__) then "case 1"
           ;separator="\n")
        <<
        <%auxFunction%>
@@ -2452,7 +2451,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
               let &preExp = buffer "" /*BUFD*/
               let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
               '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
-            case SES_FOR_RESIDUAL(__) then "case 2"
           ;separator="\n")
 
          let &varDecls2 = buffer "" /*BUFD*/
@@ -2507,7 +2505,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
               <%preExp%>res[<%i0%>] = <%expPart%>;
               <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
               >>
-            case SES_FOR_RESIDUAL(__) then "case 3"
            ;separator="\n")
          // for casual tearing set
          let &varDeclsRes2 = buffer "" /*BUFD*/
@@ -2527,7 +2524,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
              <%preExp2%>res[<%i0%>] = <%expPart2%>;
              <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
              >>
-            case SES_FOR_RESIDUAL(__) then "case 4"
            ;separator="\n")
        <<
        <%auxFunction%>
@@ -2589,7 +2585,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
              let &preExp = buffer "" /*BUFD*/
              let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
                '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData, threadData);'
-           case SES_FOR_RESIDUAL(__) then "case 5"
           ;separator="\n")
 
          let &varDecls2 = buffer "" /*BUFD*/
@@ -2606,7 +2601,6 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
              let &preExp3 = buffer "" /*BUFD*/
              let expPart3 = daeExp(exp, contextSimulationDiscrete, &preExp3,  &varDecls3, &auxFunction2)
                '<%preExp3%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart3%>, <%i0%>, linearSystemData, threadData);'
-           case SES_FOR_RESIDUAL(__) then "case 6"
           ;separator="\n")
 
          let &varDecls4 = buffer "" /*BUFD*/
@@ -2804,6 +2798,8 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNa
   match eq
   case e as SES_RESIDUAL(__)
    then ""
+  case e as SES_ARRAY_RESIDUAL(__)
+   then ""
   case e as SES_FOR_RESIDUAL(__)
    then ""
   case e as SES_GENERIC_RESIDUAL(__)
@@ -2824,6 +2820,8 @@ template functionExtraResidualsPreBodyJacobian(SimEqSystem eq, Text &eqs, String
   let () = tmpTickReset(0)
   match eq
   case e as SES_RESIDUAL(__)
+   then ""
+  case e as SES_ARRAY_RESIDUAL(__)
    then ""
   case e as SES_FOR_RESIDUAL(__)
    then ""
@@ -3076,6 +3074,16 @@ match system
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%preExp%>res[<%res_index%>] = <%expPart%>;
             <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+            >>
+          case SES_ARRAY_RESIDUAL(__) then //kab
+            let &preExp = buffer ""
+            let name = 'res[<%res_index%>]'
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+            let lhs = daeLhs(name, typeof(exp), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
+            let ty = expTypeFromExpShort(exp)
+            <<
+            <%preExp%>
+            <%ty%>_array_copy_data(<%expPart%>, <%lhs%>);
             >>
           case SES_FOR_RESIDUAL(__) then
             let &preExp = buffer ""
@@ -5867,6 +5875,9 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         case e as SES_RESIDUAL(__)
         then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
 
+        case e as SES_ARRAY_RESIDUAL(__)
+        then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
+
         case e as SES_FOR_RESIDUAL(__)
         then "NOT IMPLEMENTED EQUATION SES_FOR_RESIDUAL"
 
@@ -6151,28 +6162,11 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction, false)
-  match expTypeFromExpShort(eqn.exp)
-  case "boolean" then
-    <<
-    <%preExp%>
-    boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  case "integer" then
-    <<
-    <%preExp%>
-    integer_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  case "real" then
-    <<
-    <%preExp%>
-    real_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  case "string" then
-    <<
-    <%preExp%>
-    string_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
+  let ty = expTypeFromExpShort(eqn.exp)
+  <<
+  <%preExp%>
+  <%ty%>_array_copy_data(<%expPart%>, <%lhsstr%>);
+  >>
 %>
 <%endModelicaLine()%>
 >>
@@ -6974,6 +6968,7 @@ template simEqAttrIsDiscreteKind(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
+  case SES_ARRAY_RESIDUAL(__)
   case SES_FOR_RESIDUAL(__)
   case SES_GENERIC_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)
@@ -7010,6 +7005,7 @@ template simEqAttrEval(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
+  case SES_ARRAY_RESIDUAL(__)
   case SES_FOR_RESIDUAL(__)
   case SES_GENERIC_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)

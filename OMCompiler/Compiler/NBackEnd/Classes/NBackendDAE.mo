@@ -276,6 +276,7 @@ public
     end if;
 
     backenddaeinfo(bdae);
+    dumpLoops(bdae);
   end main;
 
   function applyModules
@@ -1392,6 +1393,39 @@ public
       + " * Number of for-loop strong components: ......... " + for_sc + "\n"
       + " * Number of algebraic-loop strong components: ... " + alg_sc);
   end strongcomponentinfo;
+
+  function dumpLoops
+    input BackendDAE bdae;
+  protected
+    Pointer<list<StrongComponent>> loops;
+    list<list<System>> systems = {};
+    System firstSys;
+    Integer idx;
+  algorithm
+    if Flags.isSet(Flags.DUMP_LOOPS) then
+      _ := match bdae
+        case MAIN() algorithm
+          systems := if Util.isSome(bdae.dae) then Util.getOption(bdae.dae) :: systems else systems;
+          systems := if Util.isSome(bdae.init_0) then Util.getOption(bdae.init_0) :: systems else systems;
+          systems := bdae.ode :: bdae.algebraic :: bdae.ode_event :: bdae.alg_event :: bdae.init :: systems;
+          for sys_lst in systems loop
+            if not listEmpty(sys_lst) then
+              firstSys := List.first(sys_lst);
+              for sys in sys_lst loop
+                idx := 1;
+                loops := Pointer.create({});
+                _ := System.mapStrongComponents(sys, function StrongComponent.collectAlgebraicLoops(loops = loops));
+                print(StringUtil.headline_2("Algebraic loops for partition: " + System.systemTypeString(firstSys.systemType) + " " + intString(idx)) + "\n");
+                print(List.toString(Pointer.access(loops), function StrongComponent.toString(index = -1), "", "", "\n", ""));
+                idx := idx + 1;
+              end for;
+            end if;
+          end for;
+        then ();
+        else ();
+      end match;
+    end if;
+  end dumpLoops;
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

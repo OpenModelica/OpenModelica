@@ -5394,45 +5394,44 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     let &preExp += '<%record_type_name%>_wrap_vars(threadData,<%tmpRec%><%vars%>);<%\n%>'
     '<%tmpRec%>'
 
-  case ecr as CREF(componentRef=cr, ty=T_ARRAY(ty=aty, dims=dims)) then
-    let type = expTypeShort(aty)
-    let arrayType = type + "_array"
-    let wrapperArray = tempDecl(arrayType, &varDecls)
-    if crefSubIsScalar(cr) then
-      let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-      let dimsLenStr = listLength(dims)
-      let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-      let arrayData = if hasZeroDimension(dims) then
-        'NULL'
-      else
-        let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-        '((modelica_<%type%>*)&(<%nosubname%>))'
-      let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-      let &preExp += t
-    wrapperArray
-    else
-      let &sub = buffer ""
-      let dimsLenStr = listLength(crefDims(cr))
-      let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-      let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-      let slicedArray = tempDecl(arrayType, &varDecls)
-      let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
-      let &preExp += 'index_alloc_<%type%>_array(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
-    slicedArray
-
-  case ecr as CREF(componentRef=cr, ty=ty) then
-    if crefIsScalarWithAllConstSubs(cr) then
-      // let cast = typeCastContextInt(context, ty)
-      let &sub = buffer ""
-      '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
-    else if crefIsScalarWithVariableSubs(cr) then
-      let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-      let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-      // let cast = typeCastContextInt(context, ty)
-      '<%nosubname%>'
-    else
-      error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+  case ecr as CREF(componentRef=cr) then
+      match ComponentReference.crefTypeFull(cr)
+        case ty as T_ARRAY(ty=aty, dims=dims) then
+          let type = expTypeShort(aty)
+          let arrayType = type + "_array"
+          let wrapperArray = tempDecl(arrayType, &varDecls)
+          if crefSubIsScalar(cr) then
+            let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+            let dimsLenStr = listLength(dims)
+            let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+            let arrayData = if hasZeroDimension(dims) then
+              'NULL'
+            else
+              let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+              '((modelica_<%type%>*)&(<%nosubname%>))'
+              let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+              let &preExp += t
+            wrapperArray
+          else
+            let &sub = buffer ""
+            let dimsLenStr = listLength(crefDims(cr))
+            let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+            let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+            let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+            let slicedArray = tempDecl(arrayType, &varDecls)
+            let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
+            let &preExp += 'index_alloc_<%type%>_array(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
+            slicedArray
+      case ty then
+        if crefIsScalarWithAllConstSubs(cr) then
+          let &sub = buffer ""
+          '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
+        else if crefIsScalarWithVariableSubs(cr) then
+          let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+          let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+          '<%nosubname%>'
+        else
+          error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsSimContext;
 
 template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
@@ -5574,7 +5573,6 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     else
         error(sourceInfo(),'daeExpCrefLhsSimContext: This should have been handled in indexed assign and should not have gotten here <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 
-
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
         contextCrefIsPre(cr,context, &auxFunction, isPre)
@@ -5583,6 +5581,22 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     else
       error(sourceInfo(),'daeExpCrefLhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefLhsSimContext;
+
+template daeLhs(String name, Type ty, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::=
+  match ty
+    case T_ARRAY(ty=aty, dims=dims) then
+      let type = expTypeShort(aty)
+      let arrayType = type + "_array"
+      let wrapperArray = tempDecl(arrayType, &varDecls)
+      let dimsLenStr = listLength(dims)
+      let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+      let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&((&<%name%>)[((modelica_integer) 1) - 1])), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let &preExp += t
+    wrapperArray
+    else
+    name
+end daeLhs;
 
 template indexSubs(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=

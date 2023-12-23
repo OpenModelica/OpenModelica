@@ -74,6 +74,7 @@ template equationIndex(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
+  case SES_ARRAY_RESIDUAL(__)
   case SES_FOR_RESIDUAL(__)
   case SES_GENERIC_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)

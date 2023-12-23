@@ -1734,25 +1734,18 @@ algorithm
   outDims := {};
   for sub in inSubs loop
     dim::dims := dims;
-
     _ := match sub
       case DAE.INDEX() then ();
-
       case DAE.SLICE() algorithm
         slice_dim::_ := Types.getDimensions(Expression.typeof(sub.exp));
         outDims := slice_dim::outDims;
       then ();
-
       case DAE.WHOLEDIM() algorithm
         outDims := dim::outDims;
       then ();
-
     end match;
-
   end for;
-
   outDims := listAppend(outDims, dims) annotation(__OpenModelica_DisableListAppendWarning=true);
-
 end crefTypeFullComputeDims;
 
 public function crefTypeFull2
@@ -1770,12 +1763,16 @@ algorithm
       list<DAE.Subscript> subs;
 
     case DAE.CREF_IDENT(identType = ty, subscriptLst = subs)
-      equation
-        (ty,dims) = Types.flattenArrayType(ty);
-        dims = crefTypeFullComputeDims(dims, subs);
+      algorithm
+        (ty,dims) := Types.flattenArrayType(ty);
+        // kabdelhak: check if there are any dimensions.
+        // for some reason sometimes there are subscripts at non array variables
+        if not listEmpty(dims) then
+          dims := crefTypeFullComputeDims(dims, subs);
+        end if;
 
         if not listEmpty(accumDims) then
-          dims = listReverse(List.append_reverse(dims, accumDims));
+          dims := listReverse(List.append_reverse(dims, accumDims));
         end if;
       then (ty, dims);
 

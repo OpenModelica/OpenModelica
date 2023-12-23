@@ -914,7 +914,6 @@ protected
         bucket_ptr := Pointer.create(bucket);
         EquationPointers.mapPtr(eqData.equations, function collectEvents(bucket_ptr = bucket_ptr, funcTree = funcTree));
         bucket := Pointer.access(bucket_ptr);
-
         (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex);
 
         // add auxiliary variables

@@ -275,6 +275,16 @@ public
     end match;
   end strongComponentInfo;
 
+  function collectAlgebraicLoops
+    input output StrongComponent comp;
+    input Pointer<list<StrongComponent>> loops;
+  algorithm
+    _ := match comp
+      case ALGEBRAIC_LOOP() algorithm Pointer.update(loops, comp :: Pointer.access(loops)); then ();
+      else ();
+    end match;
+  end collectAlgebraicLoops;
+
   function hash
     "only hashes basic types, isEqual is used to differ between sliced/entwined loops"
     input StrongComponent comp;

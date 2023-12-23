@@ -159,6 +159,7 @@ algorithm
     local
       DAE.Statement stmt;
     case SimCode.SES_RESIDUAL() then Expression.hashExp(eq.exp);
+    case SimCode.SES_ARRAY_RESIDUAL() then Expression.hashExp(eq.exp);
     case SimCode.SES_FOR_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
     case SimCode.SES_GENERIC_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
     case SimCode.SES_SIMPLE_ASSIGN() then ComponentReference.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
@@ -10511,6 +10512,7 @@ public function eqInfo
 algorithm
   info := match eq
     case SimCode.SES_RESIDUAL(source=DAE.SOURCE(info=info)) then info;
+    case SimCode.SES_ARRAY_RESIDUAL(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_FOR_RESIDUAL(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_GENERIC_RESIDUAL(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_SIMPLE_ASSIGN(source=DAE.SOURCE(info=info)) then info;
@@ -10529,6 +10531,7 @@ public function simEqSystemIndex
 algorithm
   index := match eq
     case SimCode.SES_RESIDUAL(index=index) then index;
+    case SimCode.SES_ARRAY_RESIDUAL(index=index) then index;
     case SimCode.SES_FOR_RESIDUAL(index=index) then index;
     case SimCode.SES_GENERIC_RESIDUAL(index=index) then index;
     case SimCode.SES_SIMPLE_ASSIGN(index=index) then index;
@@ -11160,6 +11163,12 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
 
     case (SimCode.SES_RESIDUAL(source = source), files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+      then
+        (inSimEqSystem, files);
+
+    case (SimCode.SES_ARRAY_RESIDUAL(source = source), files)
       equation
         files = getFilesFromDAEElementSource(source, files);
       then
@@ -11929,6 +11938,15 @@ algorithm
         eq_ = eq;
       else
         eq_ = SimCode.SES_RESIDUAL(index, res_index, exp_, source, eqAttr);
+      end if;
+    then (eq_, a);
+
+    case (SimCode.SES_ARRAY_RESIDUAL(index, res_index, exp, source, eqAttr), _, a) equation
+      (exp_, a) = func(exp, a);
+      if referenceEq(exp,exp_) then
+        eq_ = eq;
+      else
+        eq_ = SimCode.SES_ARRAY_RESIDUAL(index, res_index, exp_, source, eqAttr);
       end if;
     then (eq_, a);
 
@@ -13412,6 +13430,11 @@ algorithm
       SimCode.SimEqSystem simEqSys;
 
     case (simEqSys as SimCode.SES_RESIDUAL())
+      equation
+        simEqSys.index = inputIndex;
+    then simEqSys;
+
+    case (simEqSys as SimCode.SES_ARRAY_RESIDUAL())
       equation
         simEqSys.index = inputIndex;
     then simEqSys;
@@ -15018,6 +15041,8 @@ algorithm
         case ({},_)
             then res;
         case (SimCode.SES_RESIDUAL(exp=exp) :: tail,_)
+            then getNLSysRHS(tail,listAppend(res,Expression.getAllCrefs(exp)));
+        case (SimCode.SES_ARRAY_RESIDUAL(exp=exp) :: tail,_)
             then getNLSysRHS(tail,listAppend(res,Expression.getAllCrefs(exp)));
         case (SimCode.SES_FOR_RESIDUAL(exp=exp) :: tail,_)
             then getNLSysRHS(tail,listAppend(res,Expression.getAllCrefs(exp))); // strip crefs?
