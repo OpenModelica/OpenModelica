@@ -55,7 +55,7 @@ public
   import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, SlicingStatus};
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
   import BVariable = NBVariable;
   import Replacements = NBReplacements;
   import Slice = NBSlice;
@@ -186,6 +186,7 @@ public
     (solved_comps, solve_status) := match comp
         local
           Equation eqn;
+          Slice<VariablePointer> var_slice;
           Slice<EquationPointer> eqn_slice;
           Pointer<Equation> eqn_ptr;
           ComponentRef var_cref, eqn_cref;
@@ -248,12 +249,13 @@ public
 
         then (solved_comps, solve_status);
 
-        case StrongComponent.SLICED_COMPONENT(eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
+        case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
           // array equation solved for the a sliced variable.
           // get all slices of the variable ocurring in the equation and select the slice that fits the indices
           slice_candidates := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           eqn := Pointer.access(Slice.getT(eqn_slice));
-          Equation.map(eqn, function Slice.filterExp(filter = Slice.getSliceCandidates, acc = slice_candidates));
+          Equation.map(eqn, function Slice.filterExp(
+            filter = function Slice.getSliceCandidates(name = BVariable.getVarName(Slice.getT(var_slice))), acc = slice_candidates));
           slices_lst := UnorderedSet.toList(slice_candidates);
 
           if listLength(slices_lst) == 1 then

@@ -222,8 +222,14 @@ public
   end filterExp;
 
   function getSliceCandidates
-    "ToDo"
+    "Used to collect all slices of a certain variable name.
+    Note: the name has to be stripped of all subscripts for this to work."
   extends filterCref;
+    input ComponentRef name "the name of the variable";
+  algorithm
+    if ComponentRef.isEqual(name, ComponentRef.stripSubscriptsAll(cref)) then
+      UnorderedSet.add(cref, acc);
+    end if;
   end getSliceCandidates;
 
   function getDependentCref
