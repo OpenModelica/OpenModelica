@@ -9,8 +9,9 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -28,50 +29,33 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Adrian.Pop@liu.se
  */
 
-#ifndef CRMLPROXY_H
-#define CRMLPROXY_H
-
-#include "Modeling/MessagesWidget.h"
-#include "CRML/CRMLFile.h"
+#ifndef CRMLFILE_H
+#define CRMLFILE_H
 
 #include <QObject>
-#include <QElapsedTimer>
+#include <QString>
 
-class CRMLProxy : public QObject
+
+class CRMLFile : public QObject
 {
-  Q_OBJECT
 private:
   // the only class that is allowed to create and destroy
-  friend class MainWindow;
+  QString mContents;
+  QString mPath;
+  bool mSaved;
 
-  static void create();
-  static void destroy();
-  CRMLProxy();
-  ~CRMLProxy();
-
-  static CRMLProxy *mpInstance;
-
-  QList<CRMLFile> *mpCRMLFileList;
-
-  FILE *mpCommunicationLogFile;
-  double mTotalCRMLCallsTime;
-
-  void logCommand(QString command);
-  void logResponse(QString command, int status, QElapsedTimer *responseTime);
 public:
-  static CRMLProxy* instance() {return mpInstance;}
-
-  void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
-
-  bool newModel(QString cref);
-  bool crmlDelete(QString cref);
-  void setLogFile(QString filename);
-  void setTempDirectory(QString path);
-signals:
-  void logGUIMessage(MessageItem messageItem);
+  CRMLFile(QString &path, QString &contents);
+  CRMLFile();
+  QString getPath();
+  QString getContents();
+  void setPath(QString &path);
+  void setContents(QString &contents);
+  int save();
+  bool getSaved();
 };
 
-#endif // CRMLPROXY_H
+#endif // CRMLFILE_H

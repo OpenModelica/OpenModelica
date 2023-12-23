@@ -52,12 +52,12 @@ PathSelector::PathSelector(QWidget *parent, QString labelText) : QWidget(parent)
     pathList = new QListWidget(this);
     addButton = new QPushButton(Helper::addPath, this);
     removeButton = new QPushButton(Helper::removePath, this);
-
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(pathLabel, 0, 0);
     layout->addWidget(pathText, 1, 0, 1, 2);
-    layout->addWidget(pathList, 2, 0, 1, 2);
-    layout->addWidget(addButton, 3, 0, 1, 1);
-    layout->addWidget(removeButton, 3, 1, 1, 1);
+    layout->addWidget(addButton, 2, 0, 1, 1);
+    layout->addWidget(removeButton, 2, 1, 1, 1);
+    layout->addWidget(pathList, 3, 0, 1, 2);
 
     connect(addButton, &QPushButton::clicked, this, &PathSelector::addPath);
     connect(removeButton, &QPushButton::clicked, this, &PathSelector::removePath);
