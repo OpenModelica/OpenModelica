@@ -253,7 +253,7 @@ public
           // get all slices of the variable ocurring in the equation and select the slice that fits the indices
           slice_candidates := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           eqn := Pointer.access(Slice.getT(eqn_slice));
-          Equation.map(eqn, function Slice.getSliceCandidates(slice_candidates = slice_candidates));
+          Equation.map(eqn, function Slice.filterExp(filter = Slice.getSliceCandidates, acc = slice_candidates));
           slices_lst := UnorderedSet.toList(slice_candidates);
 
           if listLength(slices_lst) == 1 then

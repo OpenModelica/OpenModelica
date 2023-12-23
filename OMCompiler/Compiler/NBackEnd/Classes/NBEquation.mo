@@ -1098,37 +1098,16 @@ public
       "filters all crefs of an equation and adds them
       to a list of crefs. needs cref filter function."
       input Equation eq;
-      input filterCref filter;
+      input Slice.filterCref filter;
       output list<ComponentRef> cref_lst;
     protected
-      Pointer<list<ComponentRef>> acc = Pointer.create({});
-      list<ComponentRef> tmp;
+      UnorderedSet<ComponentRef> acc = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       // map with the expression and cref filter functions
-      _ := map(eq, function filterExp(filter = filter, acc = acc),
+      _ := map(eq, function Slice.filterExp(filter = filter, acc = acc),
               SOME(function filter(acc = acc)));
-      cref_lst := Pointer.access(acc);
+      cref_lst := UnorderedSet.toList(acc);
     end collectCrefs;
-
-    partial function filterCref
-      "partial function that needs to be provided.
-      decides if the the cref is added to the list pointer."
-      input output ComponentRef cref;
-      input Pointer<list<ComponentRef>> acc;
-    end filterCref;
-
-    function filterExp
-      "wrapper function that applies filter cref to
-      a cref expression."
-      input output Expression exp;
-      input filterCref filter;
-      input Pointer<list<ComponentRef>> acc;
-    algorithm
-      () := match exp
-        case Expression.CREF() algorithm filter(exp.cref, acc); then ();
-        else ();
-      end match;
-    end filterExp;
 
     function getLHS
       "gets the left hand side expression of an equation."

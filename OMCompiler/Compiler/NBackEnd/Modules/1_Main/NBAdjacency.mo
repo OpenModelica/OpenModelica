@@ -782,7 +782,7 @@ public
       input Option<FunctionTree> funcTree = NONE()  "only needed for LINEAR without existing derivatives";
     protected
       Equation eqn;
-      Pointer<list<ComponentRef>> unsolvable_ptr = Pointer.create({});
+      UnorderedSet<ComponentRef> unsolvables = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
       list<ComponentRef> dependencies, nonlinear_dependencies, remove_dependencies = {};
       BEquation.EquationAttributes attr;
       Pointer<Equation> derivative;
@@ -798,8 +798,8 @@ public
       if (st < MatrixStrictness.FULL) then
         // SOLVABLE & LINEAR
         // remove all unsolvables
-        BEquation.Equation.map(eqn, function Slice.getUnsolvableExpCrefs(acc = unsolvable_ptr, map = map, pseudo = true));
-        remove_dependencies := Pointer.access(unsolvable_ptr);
+        BEquation.Equation.map(eqn, function Slice.getUnsolvableExpCrefs(acc = unsolvables, map = map, pseudo = true));
+        remove_dependencies := UnorderedSet.toList(unsolvables);
       end if;
 
       if (st < MatrixStrictness.SOLVABLE) then
