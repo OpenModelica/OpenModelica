@@ -210,6 +210,7 @@ SOURCES += Util/Helper.cpp \
   CrashReport/backtrace.c \
   CrashReport/GDBBacktrace.cpp \
   CrashReport/CrashReportDialog.cpp \
+  CRML/CRMLFile.cpp \
   CRML/CRMLProxy.cpp \
   CRML/CRMLModelDialog.cpp \
   Git/GitCommands.cpp \
@@ -229,6 +230,7 @@ SOURCES += Util/Helper.cpp \
   Animation/TimeManager.cpp \
   Util/ResourceCache.cpp \
   Util/NetworkAccessManager.cpp \
+  Util/GitHubArtifactDownloader.cpp \
   FlatModelica/Expression.cpp \
   FlatModelica/ExpressionFuncs.cpp \
   FlatModelica/Parser.cpp
@@ -329,6 +331,7 @@ HEADERS  += Util/Helper.h \
   CrashReport/backtrace.h \
   CrashReport/GDBBacktrace.h \
   CrashReport/CrashReportDialog.h \
+  CRML/CRMLFile.h \
   CRML/CRMLProxy.h \
   CRML/CRMLModelDialog.h \
   Git/GitCommands.h \
@@ -350,6 +353,7 @@ HEADERS  += Util/Helper.h \
   Interfaces/ModelInterface.h \
   Util/ResourceCache.h \
   Util/NetworkAccessManager.h \
+  Util/GitHubArtifactDownloader.h \
   FlatModelica/Expression.h \
   FlatModelica/ExpressionFuncs.h \
   FlatModelica/Parser.h
