@@ -7858,16 +7858,19 @@ end crefVarInfo;
 
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
+  let &sub = buffer ""
   let len = listLength(vars)
-  let indices = (vars |> var => varIndexWithComment(var) ;separator=", ")
   <<
-  void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
+  void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* sysData, modelica_boolean initSparsePattern)
   {
-    const int indices[<%len%>] = {<%indices%>};
+    const REAL_ATTRIBUTE* ptr[<%len%>] = {
+      <%(vars |> var => '&(<%varAttributes(var, &sub)%>)' ;separator=",\n")%>
+    };
+    /* static data */
     for (int i = 0; i < <%len%>; ++i) {
-      linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
-      linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
-      linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+      sysData->min[i]     = ptr[i]->min;
+      sysData->max[i]     = ptr[i]->max;
+      sysData->nominal[i] = ptr[i]->nominal;
     }
   }
   >>

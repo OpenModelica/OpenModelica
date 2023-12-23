@@ -2395,6 +2395,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let &varDeclsRes = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
          let &tmp = buffer ""
+         /* FIXME make a for-loop for xloc (also in other places) */
          let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (match ls.partOfJac
            case true then
@@ -2726,7 +2727,6 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
                            'nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFuncConstraints = residualFuncConstraints<%nls.index%>;'
       <<
       <%innerSystems%>
-
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
@@ -3196,14 +3196,7 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
   match sparsepattern
-  case {} then
-      <<
-      void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
-      {
-        /* no sparsity pattern available */
-        inSysData->isPatternAvailable = FALSE;
-      }
-      >>
+  case {} then generateStaticEmptySparseData(indexName, systemType)
   case _ then
       let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
@@ -3305,22 +3298,20 @@ end generateStaticNonlinearData;
 template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   "Generates initial function for nonlinear loops."
 ::=
-  let systemType = 'NONLINEAR_SYSTEM_DATA'
-  let bodyStaticData = (crefs |> cr hasindex i0 =>
-    <<
-    /* static nls data for <%crefStrNoUnderscore(cr)%> */
-    sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
-    sysData->min[i]     = <%crefAttributes(cr)%>.min;
-    sysData->max[i++]   = <%crefAttributes(cr)%>.max;
-    >>
-  ;separator="\n")
+  let len = listLength(crefs)
   <<
-
   OMC_DISABLE_OPT
   void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
   {
-    int i=0;
-    <%bodyStaticData%>
+    const REAL_ATTRIBUTE* ptr[<%len%>] = {
+      <%(crefs |> cr => '&(<%crefAttributes(cr)%>)' ;separator=",\n")%>
+    };
+    /* static data */
+    for (int i = 0; i < <%len%>; ++i) {
+      sysData->min[i]     = ptr[i]->min;
+      sysData->max[i]     = ptr[i]->max;
+      sysData->nominal[i] = ptr[i]->nominal;
+    }
     /* initial sparse pattern */
     if (initSparsePattern) {
       initializeSparsePattern<%indexName%>(sysData);
@@ -3336,11 +3327,8 @@ template getIterationVars(list<ComponentRef> crefs, String indexName)
   "Generates iteration variables update."
 ::=
   let &sub = buffer ""
-  let vars = (crefs |> cr hasindex i0 =>
-      'array[<%i0%>] = <%cref(cr, &sub)%>;'
-  ;separator="\n")
+  let vars = (crefs |> cr hasindex i => 'array[<%i%>] = <%cref(cr, &sub)%>;' ;separator="\n")
   <<
-
   OMC_DISABLE_OPT
   void getIterationVars<%indexName%>(DATA* data, double *array)
   {
