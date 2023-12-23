@@ -23,11 +23,6 @@ ifndef OMDEV
 	@echo See OpenModelica/OMCompiler/README.Windows.md
 	ABORT
 endif
-ifndef OMDEV_MSYS
-	@echo You have to set the OMDEV_MSYS variabile pointing to your OMDev package root! Exiting....
-	@echo See OpenModelica/OMCompiler/README.Windows.md
-	ABORT
-endif
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
@@ -36,13 +31,7 @@ ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
 
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	IS_MINGW32 = -DIS_MINGW32=ON
-	IS_MINGW64 = -DIS_MINGW64=OFF
-else
-	IS_MINGW32 = -DIS_MINGW32=OFF
-	IS_MINGW64 = -DIS_MINGW64=ON
-endif
+IS_MINGW64 = -DIS_MINGW64=ON
 
 BOOST_STATIC_LINKING="false"
 ifeq ($(BOOST_STATIC_LINKING),"true")

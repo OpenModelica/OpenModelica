@@ -25,9 +25,6 @@ OMBUILDDIR=$(REALPATH)/build
 ifndef OMDEV
 $(error Environment variable OMDEV not set!)
 endif
-#ifndef OMDEV_MSYS
-#$(error Environment variable OMDEV_MSYS not set!)
-#endif
 ifndef MSYSTEM_PREFIX
 $(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
 endif
