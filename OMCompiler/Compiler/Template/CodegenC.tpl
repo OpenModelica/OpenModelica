@@ -2737,6 +2737,7 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticDataNLS<%nls.index%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].freeStaticNLSData = freeStaticDataNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].getIterationVars = getIterationVarsNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].checkConstraints = <%constraintsCall%>;
       >>
@@ -2909,6 +2910,8 @@ template getNLSPrototypes(Integer index)
   <<
   void residualFunc<%index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag);
   void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
+  void freeSparsePatternNLS<%index%>(NONLINEAR_SYSTEM_DATA *inSystemData);
+  void freeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData);
   void getIterationVarsNLS<%index%>(DATA* data, double *array);
   >>
 end getNLSPrototypes;
@@ -3188,6 +3191,11 @@ template generateStaticEmptySparseData(String indexName, String systemType)
     /* no sparsity pattern available */
     inSysData->isPatternAvailable = FALSE;
   }
+
+  void freeSparsePattern<%indexName%>(<%systemType%>* inSysData)
+  {
+    /* nothing to free */
+  }
   >>
 end generateStaticEmptySparseData;
 
@@ -3197,13 +3205,10 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
 ::=
   match sparsepattern
   case {} then
-      <<
-      void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
-      {
-        /* no sparsity pattern available */
-        inSysData->isPatternAvailable = FALSE;
-      }
-      >>
+     let emptySparse = generateStaticEmptySparseData(indexName, systemType)
+     <<
+     <%emptySparse%>
+     >>
   case _ then
       let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
@@ -3233,6 +3238,16 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
 
         /* write color array */
         <%colorString%>
+      }
+
+      void freeSparsePattern<%indexName%>(<%systemType%>* inSysData)
+      {
+        if (inSysData->isPatternAvailable) {
+          freeSparsePattern(inSysData->sparsePattern);
+          free(inSysData->sparsePattern);
+          inSysData->sparsePattern = NULL;
+          inSysData->isPatternAvailable = FALSE;
+        }
       }
       >>
    end match
@@ -3328,6 +3343,12 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
     if (initNonlinearPattern) {
       initializeNonlinearPattern<%indexName%>(sysData);
     }
+  }
+
+  OMC_DISABLE_OPT
+  void freeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData)
+  {
+    freeSparsePattern<%indexName%>(sysData);
   }
   >>
 end generateStaticInitialData;

@@ -690,6 +690,8 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
   free(nonlinsys->nominal);
   free(nonlinsys->min);
   free(nonlinsys->max);
+  nonlinsys->freeStaticNLSData(data, threadData, nonlinsys);
+
   freeValueList(nonlinsys->oldValueList, 1);
   freeNonlinearPattern(nonlinsys->nonlinearPattern);
 

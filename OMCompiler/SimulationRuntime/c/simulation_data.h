@@ -338,6 +338,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
   void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
+  void (*freeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys);
   int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
   void (*getIterationVars)(DATA* data, double* array);
   int (*checkConstraints)(DATA* data, threadData_t *threadData);
