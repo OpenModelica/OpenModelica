@@ -91,7 +91,6 @@ import FNode;
 import GCExt;
 import Flags;
 import FlagsUtil;
-import GC;
 import GenerateAPIFunctionsTpl;
 import Global;
 import Graph;
