@@ -765,7 +765,10 @@ public
       case _ algorithm
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
-          case ({var_slice}, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+          case ({var_slice}, {eqn_slice}) guard(
+            not Equation.isForEquation(Slice.getT(eqn_slice))
+            and not Equation.isAlgorithm(Slice.getT(eqn_slice)))
+            algorithm
             if Slice.isFull(var_slice) then
               comp := SINGLE_COMPONENT(
                 var       = Slice.getT(var_slice),
