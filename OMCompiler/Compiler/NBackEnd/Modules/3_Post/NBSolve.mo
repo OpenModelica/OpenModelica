@@ -193,7 +193,6 @@ public
           SlicingStatus slicing_status;
           list<Integer> sizes, eqn_indices;
           UnorderedMap<ComponentRef, Expression> replacements;
-          UnorderedSet<ComponentRef> slice_candidates;
           list<ComponentRef> slices_lst;
           Integer index;
           list<Equation> entwined_eqns = {};
@@ -252,11 +251,8 @@ public
         case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
           // array equation solved for the a sliced variable.
           // get all slices of the variable ocurring in the equation and select the slice that fits the indices
-          slice_candidates := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           eqn := Pointer.access(Slice.getT(eqn_slice));
-          Equation.map(eqn, function Slice.filterExp(
-            filter = function Slice.getSliceCandidates(name = BVariable.getVarName(Slice.getT(var_slice))), acc = slice_candidates));
-          slices_lst := UnorderedSet.toList(slice_candidates);
+          slices_lst := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = BVariable.getVarName(Slice.getT(var_slice))));
 
           if listLength(slices_lst) == 1 then
             var_cref := List.first(slices_lst);
