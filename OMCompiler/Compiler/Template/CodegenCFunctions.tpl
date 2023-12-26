@@ -5571,16 +5571,8 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
       let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&((&<%nosubname%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
-    else
-      let &sub = buffer ""
-      let dimsLenStr = listLength(crefDims(cr))
-      let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-      let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-      let slicedArray = tempDecl(arrayType, &varDecls)
-      let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
-      let &preExp += 'index_alloc_<%type%>_array(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
-    slicedArray
+  else
+    error(sourceInfo(),'daeExpCrefLhsSimContext: This should have been handled in indexed assign and should not have gotten here <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
