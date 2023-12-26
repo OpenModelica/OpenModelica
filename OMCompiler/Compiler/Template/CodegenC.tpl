@@ -6171,29 +6171,36 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction, false)
-  match expTypeFromExpShort(eqn.exp)
-  case "boolean" then
+  if crefSubIsScalar(lhs.componentRef) then
+    let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction, false)
+    match expTypeFromExpShort(eqn.exp)
+      case "boolean" then
+      <<
+      <%preExp%>
+      boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    case "integer" then
+      <<
+      <%preExp%>
+      integer_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    case "real" then
+      <<
+      <%preExp%>
+      real_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    case "string" then
+      <<
+      <%preExp%>
+      string_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
+  else
+    let assign = algStmtAssignArrWithRhsExpStr(lhs, expPart, context, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
+    <%assign%>
     >>
-  case "integer" then
-    <<
-    <%preExp%>
-    integer_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  case "real" then
-    <<
-    <%preExp%>
-    real_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  case "string" then
-    <<
-    <%preExp%>
-    string_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
 %>
 <%endModelicaLine()%>
 >>
