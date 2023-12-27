@@ -201,6 +201,15 @@ public
     input UnorderedSet<ComponentRef> acc;
   end filterCref;
 
+  partial function getDependentCrefIndices
+    input list<ComponentRef> dependencies                   "dependent var crefs";
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input Mapping mapping                                   "array <-> scalar index mapping";
+    input Integer eqn_arr_idx;
+    output array<list<Integer>> indices;
+    output array<array<Integer>> mode_to_var;
+  end getDependentCrefIndices;
+
   // ############################################################
   //                cref accumulation Functions
   // use with:
@@ -334,12 +343,7 @@ public
   function getDependentCrefIndicesPseudoArray
     "[Adjacency.MatrixType.PSEUDO] Array equations.
     Turns cref dependencies into index lists, used for adjacency."
-    input list<ComponentRef> dependencies                   "dependent var crefs";
-    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input Mapping mapping                                   "array <-> scalar index mapping";
-    input Integer eqn_arr_idx;
-    output array<list<Integer>> indices;
-    output array<array<Integer>> mode_to_var;
+    extends getDependentCrefIndices;
   protected
     ComponentRef stripped;
     Integer eqn_start, eqn_size, var_arr_idx, var_scal_idx, mode = 1;
@@ -397,13 +401,8 @@ public
   function getDependentCrefIndicesPseudoFor
     "[Adjacency.MatrixType.PSEUDO] For-Loop equations.
     Turns cref dependencies into index lists, used for adjacency."
-    input list<ComponentRef> dependencies                   "dependent var crefs";
-    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input Mapping mapping                                   "array <-> scalar index mapping";
+    extends getDependentCrefIndices;
     input Iterator iter                                     "iterator frames";
-    input Integer eqn_arr_idx;
-    output array<list<Integer>> indices;
-    output array<array<Integer>> mode_to_var;
   protected
     list<ComponentRef> names;
     list<Expression> ranges;

@@ -746,7 +746,7 @@ public
     "Returns all subscripts of a cref as a flat list in the correct order.
      Ex: a[1, 2].b[4].c[6, 3] => {1, 2, 4, 6, 3}"
     input ComponentRef cref;
-    output list<Subscript> subscripts = List.flattenReverse(subscriptsAllWithWhole(cref));
+    output list<Subscript> subscripts = List.flatten(subscriptsAllWithWhole(cref));
   end subscriptsAllWithWholeFlat;
 
  function subscriptsAll
