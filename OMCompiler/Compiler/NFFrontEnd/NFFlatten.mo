@@ -1179,7 +1179,12 @@ algorithm
         DAE.ElementSource src;
 
       // convert simple equality of crefs to array equality
+      // kabdelhak: only do it if all subscripts are simple enough
+      //            will lead to complicated code if not index or whole dim
+      //            and we are better of just using for loops for these
       case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
+        guard(List.all(ComponentRef.subscriptsAllWithWholeFlat(lhs.cref), Subscript.isSimple)
+          and List.all(ComponentRef.subscriptsAllWithWholeFlat(rhs.cref), Subscript.isSimple))
         algorithm
           ty := Type.liftArrayLeftList(eq.ty, dimensions);
           lhs := Expression.CREF(ty, lhs.cref);
