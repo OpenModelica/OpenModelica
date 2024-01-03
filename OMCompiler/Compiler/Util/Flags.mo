@@ -1067,6 +1067,7 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(72, "initOptModules",
   SOME(STRING_DESC_OPTION({
     ("calculateStrongComponentJacobians", Gettext.gettext("Generates analytical jacobian for torn linear and non-linear strong components. By default linear components and non-linear components with user-defined function calls are skipped. See also debug flags: LSanalyticJacobian, NLSanalyticJacobian and forceNLSanalyticJacobian")),
     ("collapseArrayExpressions", collapseArrayExpressionsText),
+    ("inlineArrayEqn", Gettext.gettext("This module expands all array equations to scalar equations.")),
     ("constantLinearSystem", Gettext.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
     ("extendDynamicOptimization", Gettext.gettext("Move loops to constraints.")),
     ("generateHomotopyComponents", Gettext.gettext("Finds the parts of the DAE that have to be handled by the homotopy solver and creates a strong component out of it.")),
