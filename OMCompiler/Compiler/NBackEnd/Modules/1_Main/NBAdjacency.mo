@@ -337,7 +337,6 @@ public
       input list<ComponentRef> unique_dependencies;
     protected
       // get clean pointers -> type checking fails otherwise
-      list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in unique_dependencies));
       array<array<Integer>> mode_to_var = modes.mode_to_var;
       array<array<ComponentRef>> mode_to_cref = modes.mode_to_cref;
     algorithm
@@ -352,7 +351,7 @@ public
       end for;
 
       // create array mode to cref mapping
-      arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(scalarized_dependencies), mode_to_cref[eqn_arr_idx]));
+      arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(unique_dependencies), mode_to_cref[eqn_arr_idx]));
     end update;
 
     function clean
@@ -712,7 +711,7 @@ public
           try
             updateRow(eqn_ptr, diffArgs_ptr, st, vars.map, m, mapping, modes, eqn_idx_arr, funcTree);
           else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Equation.pointerToString(eqn_ptr)});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.pointerToString(eqn_ptr)});
             fail();
           end try;
           eqn_idx_arr := eqn_idx_arr + 1;
