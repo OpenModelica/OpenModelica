@@ -321,11 +321,12 @@ public
     input Mapping mapping                         "array <-> scalar index mapping";
     output list<Integer> indices = {};
   protected
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
     ComponentRef stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
     list<Integer> sizes, int_subs;
   algorithm
-    for cref in dependencies loop
+    for cref in scalarized_dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
@@ -345,6 +346,7 @@ public
     Turns cref dependencies into index lists, used for adjacency."
     extends getDependentCrefIndices;
   protected
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
     ComponentRef stripped;
     Integer eqn_start, eqn_size, var_arr_idx, var_scal_idx, mode = 1;
     list<Integer> scal_lst;
@@ -359,9 +361,9 @@ public
     mode_to_var := arrayCreate(eqn_size, arrayCreate(0,0));
     // create unique array for each equation
     for i in 1:eqn_size loop
-      mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
+      mode_to_var[i] := arrayCreate(listLength(scalarized_dependencies),-1);
     end for;
-    for cref in dependencies loop
+    for cref in scalarized_dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
 

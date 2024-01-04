@@ -337,6 +337,7 @@ public
       input list<ComponentRef> unique_dependencies;
     protected
       // get clean pointers -> type checking fails otherwise
+      list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in unique_dependencies));
       array<array<Integer>> mode_to_var = modes.mode_to_var;
       array<array<ComponentRef>> mode_to_cref = modes.mode_to_cref;
     algorithm
@@ -351,7 +352,7 @@ public
       end for;
 
       // create array mode to cref mapping
-      arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(unique_dependencies), mode_to_cref[eqn_arr_idx]));
+      arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(scalarized_dependencies), mode_to_cref[eqn_arr_idx]));
     end update;
 
     function clean
@@ -793,7 +794,6 @@ public
         case Equation.ALGORITHM() then list(cref for cref guard(UnorderedMap.contains(cref, map)) in listAppend(eqn.alg.inputs, eqn.alg.outputs));
         else Equation.collectCrefs(eqn, function Slice.getDependentCref(map = map, pseudo = true));
       end match;
-      dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
 
       if (st < MatrixStrictness.FULL) then
         // SOLVABLE & LINEAR
@@ -845,7 +845,6 @@ public
       list<ComponentRef> unique_dependencies;
     algorithm
       unique_dependencies := list(ComponentRef.simplifySubscripts(dep) for dep in dependencies);
-      unique_dependencies := UnorderedSet.unique_list(unique_dependencies, ComponentRef.hash, ComponentRef.isEqual);
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
         print("\nFinding dependencies for:\n" + Equation.toString(eqn) + "\n");
         print("dependencies: " + List.toString(unique_dependencies, ComponentRef.toString) + "\n");
