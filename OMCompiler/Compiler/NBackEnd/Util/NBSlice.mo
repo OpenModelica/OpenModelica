@@ -413,6 +413,8 @@ public
     list<Integer> scal_lst;
     Integer idx;
     array<Integer> mode_to_var_row;
+    list<tuple<ComponentRef, list<Integer>>> scal_tpl_lst;
+    Integer num_flat_indices;
   algorithm
     // get iterator frames
     (names, ranges) := Iterator.getFrames(iter);
@@ -426,28 +428,57 @@ public
     for i in 1:eqn_size loop
       mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
     end for;
-    for cref in dependencies loop
-      scal_lst := getCrefInFrameIndices(cref, frames, mapping, map);
 
-      if listLength(scal_lst) <> eqn_size then
+    // create rows
+    for cref in dependencies loop
+      scal_tpl_lst := {};
+      // 1. scalarize cref and collect all indices per scalar cref
+      for scal_cref in ComponentRef.scalarizeAll(cref) loop
+        scal_lst := getCrefInFrameIndices(scal_cref, frames, mapping, map);
+        scal_tpl_lst := (scal_cref, scal_lst) :: scal_tpl_lst;
+      end for;
+
+      // 2. the total number of indices for this dependency has to be equal to
+      // the length of the equation. E.g following equation of size is 5*3=15
+      // for i in 1:5 loop
+      //   x[i].y[3:5] = ...
+      // end for;
+      // and the cref x[i].y[3:5] is scalarized to {x[i].y[3], x[i].y[4], x[i].y[5]}
+      // this list evaluated at each iterator position will each give 5 integers
+      // resulting in the desired 5*3 integers
+      num_flat_indices := sum(listLength(Util.tuple22(tpl)) for tpl in scal_tpl_lst);
+      if num_flat_indices <> eqn_size then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because number of flattened indices " + intString(listLength(scal_lst))
+          + " failed because number of flattened indices " + intString(num_flat_indices)
           + " differ from equation size " + intString(eqn_size) + "."});
         fail();
       end if;
 
+      // 3. create the causalization mode and adjacency matrix arrays
+      // Note that there is only one mode per array variable!
+      // for the previous example x[i].y[3:5] all 15 scalarized
+      // indices will get the same mode, but spread on their respective 15 scalar equations
       idx := 1;
-      for var_scal_idx in listReverse(scal_lst) loop
-        mode_to_var_row := mode_to_var[idx];
-        mode_to_var_row[mode] := var_scal_idx;
-        arrayUpdate(mode_to_var_row, mode, var_scal_idx);
-        indices[idx] := var_scal_idx :: indices[idx];
-        idx := idx + 1;
+      for tpl in scal_tpl_lst loop
+        (_, scal_lst) := tpl;
+        for var_scal_idx in listReverse(scal_lst) loop
+          // get the clean pointer to the scalar row to avoid double indexing (meta modelica jank)
+          mode_to_var_row := mode_to_var[idx];
+          // set the dependency mode for this scalar equation to the scalar variable
+          mode_to_var_row[mode] := var_scal_idx;
+          arrayUpdate(mode_to_var_row, mode, var_scal_idx);
+          // this is the adjacency matrix row. each dependency cref
+          // will add exactly one integer to each row belonging to this for-equation
+          indices[idx] := var_scal_idx :: indices[idx];
+          idx := idx + 1;
+        end for;
       end for;
+
+      // increase mode index
       mode := mode + 1;
     end for;
 
-    // sort
+    // sort (kabdelhak: is this needed? try to FixMe)
     for i in 1:arrayLength(indices) loop
       indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
     end for;
