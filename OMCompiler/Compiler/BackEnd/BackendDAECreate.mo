@@ -636,7 +636,8 @@ algorithm
     end match;
     tplOut := (extAliasVars,repl);
   else
-    Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAECreate.getExternalObjectAlias3 failed for " + BackendDump.equationString(eqIn)});
+    Error.addInternalError(getInstanceName() + " failed for " + BackendDump.equationString(eqIn), sourceInfo());
+    tplOut := tplIn;
   end try;
 end getExternalObjectAlias3;
 
