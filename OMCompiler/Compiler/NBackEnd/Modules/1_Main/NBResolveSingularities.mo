@@ -522,4 +522,3 @@ protected
 
   annotation(__OpenModelica_Interface="backend");
 end NBResolveSingularities;
-
