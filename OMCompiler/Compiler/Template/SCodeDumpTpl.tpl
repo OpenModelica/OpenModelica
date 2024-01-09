@@ -254,7 +254,7 @@ match component
       end match
     let cond_str = match condition case SOME(cond) then ' if <%AbsynDumpTpl.dumpExp(cond)%>'
     let cmt_str = dumpComment(comment, options)
-    '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cond_str%><%cc_str%><%cmt_str%>'
+    '<%prefix_str%><%attr_pre_str%><%type_str%> <%name%><%attr_dim_str%><%mod_str%><%cond_str%><%cc_str%><%cmt_str%>'
 end dumpComponent;
 
 template dumpDefineUnit(SCode.Element defineUnit)

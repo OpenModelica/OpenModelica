@@ -93,7 +93,7 @@ readFile("BranchingDynamicPipes.mo");
 //         n53.n54 n73(redeclare package n36 = n36, n55 = true, n56 = 5, n57 = 2.54e-2, n58 = 0.02, n59 = 50, n60 = 50, n61 = 120000, n62 = 100000, n63 = n1.n29.n44.n64.n65);
 //         n1.n29.n23.n49 n74(n50 = 1, redeclare package n36 = n36, n75 = true, n76 = false, n51 = 100000);
 //         n1.n9.n23.n25 n77(n20 = 1e5, n21 = 2, n26 = 1e5, n27 = 0);
-//         n1.n79.n67.n23.n80[n66.n56] n78(n81 = 200*n66.n82, n83 = -1e-2*ones(n66.n84));
+//         n1.n79.n67.n23.n80 n78[n66.n56](n81 = 200*n66.n82, n83 = -1e-2*ones(n66.n84));
 //       equation
 //         connect(n77.n18, n74.n85);
 //         connect(n48.n86[1], n52.n87);
@@ -136,9 +136,9 @@ readFile("BranchingDynamicPipes.mo");
 //         extends n68.n119(final n120 = fill(n60/n84, n84), final n121 = fill(n122, n84), final n123 = fill(4*n122/n124, n84), final n125 = fill(n126, n84), final n127 = n59*n82);
 //         parameter Boolean n70 = false;
 //         replaceable model n67 = n1.n29.n53.n68.n67.n129 constrainedby n1.n29.n53.n68.n67.n128;
-//         n12.n130[n56] n90 if n70;
+//         n12.n130 n90[n56] if n70;
 //         n67 n131(redeclare final package n36 = n36, final n84 = n84, final n132 = n132, final n133 = n124*n120, final n120 = n120, final n123 = n123, final n125 = n125, final n134 = n135.n136, final n137 = n137, final n138 = n70);
-//         final parameter Real[n84] n82 = n120/sum(n120);
+//         final parameter Real n82[n84] = n120/sum(n120);
 //       equation
 //         n139 = n131.n140;
 //         if n84 == 1 or n141 then
@@ -191,11 +191,11 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n29.n12.n148(final n115 = (n63 == n64.n116) or (n63 == n64.n71), final n117 = (n63 == n64.n118) or (n63 == n64.n71));
 //           extends n1.n29.n12.n157(final n84 = n56, final n158 = {n121[n146]*n120[n146] for n146 in 1:n84}*n132);
 //           parameter Real n132(min = 1) = 1;
-//           parameter n10.n149[n84] n120;
-//           parameter n10.n152[n84] n121;
-//           parameter n10.n149[n84] n123;
-//           parameter n1.n29.n44.n154[n84] n125;
-//           parameter n10.n149[n84] n127 = zeros(n84) annotation(Evaluate = true);
+//           parameter n10.n149 n120[n84];
+//           parameter n10.n152 n121[n84];
+//           parameter n10.n149 n123[n84];
+//           parameter n1.n29.n44.n154 n125[n84];
+//           parameter n10.n149 n127[n84] = zeros(n84) annotation(Evaluate = true);
 //           parameter n44.n45 n47 = n41.n47 annotation(Evaluate = true);
 //           parameter n36.n105 n58 = n41.n58 annotation(Evaluate = true);
 //           parameter Integer n56(min = 1) = 2 annotation(Evaluate = true);
@@ -208,21 +208,21 @@ readFile("BranchingDynamicPipes.mo");
 //           parameter Boolean n163 = false annotation(Evaluate = true);
 //           n36.n165 n164;
 //           n36.n165 n166;
-//           n36.n165[n159 + 1] n167;
+//           n36.n165 n167[n159 + 1];
 //           replaceable model n168 = n1.n29.n53.n68.n169.n171 constrainedby n1.n29.n53.n68.n169.n170;
 //           n168 n143(redeclare final package n36 = n36, final n84 = n159 + 1, final n134 = n167, final n137 = n172, final n47 = n47, final n99 = n99, final n61 = n61, final n62 = n62, final n58 = n58, final n132 = n132, final n173 = n173, final n121 = n174, final n123 = n175, final n125 = n176, final n127 = n177, final n95 = n41.n95);
-//           n36.n105[n84 + 1] n178(each min = if n99 then -n1.n97.n7 else 0, each start = n58);
-//           n36.n105[n84 + 1, n36.n180] n179;
-//           n36.n105[n84 + 1, n36.n182] n181;
-//           n36.n184[n84 + 1] n183;
-//           n10.n185[n84] n137 = {0.5*(n178[n146] + n178[n146 + 1])/n135[n146].n145/n121[n146] for n146 in 1:n84}/n132;
+//           n36.n105 n178[n84 + 1](each min = if n99 then -n1.n97.n7 else 0, each start = n58);
+//           n36.n105 n179[n84 + 1, n36.n180];
+//           n36.n105 n181[n84 + 1, n36.n182];
+//           n36.n184 n183[n84 + 1];
+//           n10.n185 n137[n84] = {0.5*(n178[n146] + n178[n146 + 1])/n135[n146].n145/n121[n146] for n146 in 1:n84}/n132;
 //         protected
-//           n10.n149[n159] n173;
-//           n10.n149[n159] n177;
-//           n10.n152[n159 + 1] n174;
-//           n10.n185[n159 + 1] n172;
-//           n10.n149[n159 + 1] n175;
-//           n1.n29.n44.n154[n159 + 1] n176;
+//           n10.n149 n173[n159];
+//           n10.n149 n177[n159];
+//           n10.n152 n174[n159 + 1];
+//           n10.n185 n172[n159 + 1];
+//           n10.n149 n175[n159 + 1];
+//           n1.n29.n44.n154 n176[n159 + 1];
 //         equation
 //           assert(n56 > 1 or n63 <> n64.n71, \"assert message 2525241109997939028\");
 //           if n141 then
@@ -401,13 +401,13 @@ readFile("BranchingDynamicPipes.mo");
 //           partial model n170
 //             replaceable package n36 = n1.n37.n12.n38;
 //             parameter Integer n84 = 2;
-//             input n36.n165[n84] n134;
-//             input n1.n11.n185[n84] n137;
+//             input n36.n165 n134[n84];
+//             input n1.n11.n185 n137[n84];
 //             parameter Real n132;
-//             input n10.n152[n84] n121;
-//             input n10.n149[n84] n123;
-//             input n1.n29.n44.n154[n84] n125;
-//             input n10.n149[n84 - 1] n127;
+//             input n10.n152 n121[n84];
+//             input n10.n149 n123[n84];
+//             input n1.n29.n44.n154 n125[n84];
+//             input n10.n149 n127[n84 - 1];
 //             parameter n10.n96 n95 = n41.n95;
 //             parameter Boolean n99 = n41.n99 annotation(Evaluate = true);
 //             parameter n1.n29.n44.n45 n47 = n41.n47 annotation(Evaluate = true);
@@ -417,15 +417,15 @@ readFile("BranchingDynamicPipes.mo");
 //             extends n1.n29.n12.n199(final n200 = n84 - 1);
 //             parameter Boolean n201 = true annotation(Evaluate = true);
 //             parameter Boolean n202 = n47 <> n44.n45.n104 annotation(Evaluate = true);
-//             n36.n204[n84] n203 = if n205 then fill(n206, n84) else n36.n198(n134);
-//             n36.n204[n84 - 1] n207;
-//             n36.n209[n84] n208 = if n210 then fill(n211, n84) else n36.n212(n134);
-//             n36.n209[n84 - 1] n213;
-//             n1.n11.n214[n84 - 1] n144(each start = (n61 - n62)/(n84 - 1));
+//             n36.n204 n203[n84] = if n205 then fill(n206, n84) else n36.n198(n134);
+//             n36.n204 n207[n84 - 1];
+//             n36.n209 n208[n84] = if n210 then fill(n211, n84) else n36.n212(n134);
+//             n36.n209 n213[n84 - 1];
+//             n1.n11.n214 n144[n84 - 1](each start = (n61 - n62)/(n84 - 1));
 //             parameter n10.n216 n215 = 4000;
 //             parameter Boolean n217 = false annotation(Evaluate = true);
-//             n10.n216[n84] n218 = n1.n29.n53.n68.n219.n216(n137, n203, n208, n123) if n217;
-//             n36.n105[n84 - 1] n220 = {n132*(n121[n146] + n121[n146 + 1])/(n123[n146] + n123[n146 + 1])*n213[n146]*n215 for n146 in 1:n84 - 1} if n217;
+//             n10.n216 n218[n84] = n1.n29.n53.n68.n219.n216(n137, n203, n208, n123) if n217;
+//             n36.n105 n220[n84 - 1] = {n132*(n121[n146] + n121[n146 + 1])/(n123[n146] + n123[n146 + 1])*n213[n146]*n215 for n146 in 1:n84 - 1} if n217;
 //           protected
 //             parameter Boolean n205 = false annotation(Evaluate = true);
 //             parameter n10.n204 n206 = n36.n224(n36.n221, n36.n222, n36.n223);
@@ -457,8 +457,8 @@ readFile("BranchingDynamicPipes.mo");
 //             parameter Boolean n231 = n47 >= n44.n45.n46 annotation(Evaluate = true);
 //             extends n1.n29.n53.n68.n169.n170(final n215 = 4000);
 //             replaceable package n232 = n1.n29.n53.n68.n232.n234 constrainedby n1.n29.n53.n68.n232.n233;
-//             input n10.n149[n84 - 1] n235;
-//             input n10.n216[n84 - 1] n236 = n215*ones(n84 - 1);
+//             input n10.n149 n235[n84 - 1];
+//             input n10.n216 n236[n84 - 1] = n215*ones(n84 - 1);
 //             parameter n10.n92 n237;
 //             parameter n10.n105 n109;
 //             parameter n10.n105 n110 = if n41.n108 then n41.n111*n109 else n41.n110;
@@ -466,7 +466,7 @@ readFile("BranchingDynamicPipes.mo");
 //             parameter n10.n92 n112(start = 1, fixed = false);
 //             final parameter Boolean n238 = n205 and (n210 or not n232.n239) annotation(Evaluate = true);
 //             final parameter Boolean n240 = (not n201) or n238 or not n99 annotation(Evaluate = true);
-//             n10.n149[n84 - 1] n241 = 0.5*(n123[1:n84 - 1] + n123[2:n84]);
+//             n10.n149 n241[n84 - 1] = 0.5*(n123[1:n84 - 1] + n123[2:n84]);
 //             n10.n92 n242 = sum(n232.n243(n109/n132, n206, n206, n211, n211, n235, n241, (n121[1:n84 - 1] + n121[2:n84])/2, (n125[1:n84 - 1] + n125[2:n84])/2, n110/n132, n236));
 //           initial equation
 //             if n41.n108 then
@@ -509,11 +509,11 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           partial model n128
 //             extends n1.n29.n12.n248;
-//             input n10.n185[n84] n137;
+//             input n10.n185 n137[n84];
 //             parameter Real n132;
-//             input n10.n149[n84] n120;
-//             input n10.n149[n84] n123;
-//             input n1.n29.n44.n154[n84] n125;
+//             input n10.n149 n120[n84];
+//             input n10.n149 n123[n84];
+//             input n1.n29.n44.n154 n125[n84];
 //           end n128;
 //
 //           model n129
@@ -525,14 +525,14 @@ readFile("BranchingDynamicPipes.mo");
 //           partial model n251
 //             extends n128;
 //             parameter n10.n253 n252 = 100;
-//             n10.n253[n84] n254(each start = n252);
-//             Real[n84] n218;
-//             Real[n84] n255;
-//             Real[n84] n256;
-//             n36.n204[n84] n257;
-//             n36.n209[n84] n208;
-//             n36.n259[n84] n258;
-//             n10.n149[n84] n241 = n123;
+//             n10.n253 n254[n84](each start = n252);
+//             Real n218[n84];
+//             Real n255[n84];
+//             Real n256[n84];
+//             n36.n204 n257[n84];
+//             n36.n209 n208[n84];
+//             n36.n259 n258[n84];
+//             n10.n149 n241[n84] = n123;
 //           equation
 //             n257 = n36.n198(n134);
 //             n208 = n36.n212(n134);
@@ -546,11 +546,11 @@ readFile("BranchingDynamicPipes.mo");
 //           model n69
 //             extends n251;
 //           protected
-//             Real[n84] n263;
-//             Real[n84] n264;
+//             Real n263[n84];
+//             Real n264[n84];
 //             Real n265;
-//             Real[n84] n266;
-//             Real[n84] n267;
+//             Real n266[n84];
+//             Real n267[n84];
 //           equation
 //             n265 = 3.66;
 //             for n146 in 1:n84 loop
@@ -1038,17 +1038,17 @@ readFile("BranchingDynamicPipes.mo");
 //         parameter Boolean n349 = false annotation(Evaluate = true, HideResult = true);
 //         parameter n36.n92 n51 = n36.n221;
 //         parameter n36.n94 n250 = n36.n222;
-//         parameter n36.n352[n36.n351] n350 = n36.n223;
-//         parameter n36.n354[n36.n182] n353(quantity = n36.n355) = n36.n356;
+//         parameter n36.n352 n350[n36.n351] = n36.n223;
+//         parameter n36.n354 n353[n36.n182](quantity = n36.n355) = n36.n356;
 //         n1.n9.n12.n14 n85 if n75;
 //         n1.n9.n12.n14 n357 if n76;
-//         n1.n9.n12.n14[n36.n351] n358 if n348;
-//         n1.n9.n12.n14[n36.n182] n359 if n349;
+//         n1.n9.n12.n14 n358[n36.n351] if n348;
+//         n1.n9.n12.n14 n359[n36.n182] if n349;
 //       protected
 //         n1.n9.n12.n14 n360;
 //         n1.n9.n12.n14 n361;
-//         n1.n9.n12.n14[n36.n351] n362;
-//         n1.n9.n12.n14[n36.n182] n363;
+//         n1.n9.n12.n14 n362[n36.n351];
+//         n1.n9.n12.n14 n363[n36.n182];
 //       equation
 //         n1.n29.n269.n367(n36.n364, n36.n365, n36.n366, true, n362, \"Boundary_pT\");
 //         connect(n85, n360);
@@ -1085,7 +1085,7 @@ readFile("BranchingDynamicPipes.mo");
 //           parameter Integer n50 = 0;
 //           replaceable package n36 = n1.n37.n12.n38 annotation(choicesAllMatching = true);
 //           n36.n373 n368;
-//           n12.n374[n50] n86(redeclare each package n36 = n36, n193(each max = if n375 == n44.n376.n377 then 0 else +n97.n7, each min = if n375 == n44.n376.n378 then 0 else -n97.n7));
+//           n12.n374 n86[n50](redeclare each package n36 = n36, n193(each max = if n375 == n44.n376.n377 then 0 else +n97.n7, each min = if n375 == n44.n376.n378 then 0 else -n97.n7));
 //         protected
 //           parameter n44.n376 n375 = n44.n376.n379 annotation(Evaluate = true);
 //         equation
@@ -1107,8 +1107,8 @@ readFile("BranchingDynamicPipes.mo");
 //         flow n36.n105 n193;
 //         n36.n92 n51;
 //         stream n36.n381 n194;
-//         stream n36.n352[n36.n180] n195;
-//         stream n36.n354[n36.n182] n196;
+//         stream n36.n352 n195[n36.n180];
+//         stream n36.n354 n196[n36.n182];
 //       end n380;
 //
 //       connector n382
@@ -1143,15 +1143,15 @@ readFile("BranchingDynamicPipes.mo");
 //       partial model n248
 //         replaceable package n36 = n1.n37.n12.n38;
 //         parameter Integer n84 = 1 annotation(Evaluate = true);
-//         input n36.n165[n84] n134;
-//         input n10.n152[n84] n133;
-//         output n10.n386[n84] n140;
+//         input n36.n165 n134[n84];
+//         input n10.n152 n133[n84];
+//         output n10.n386 n140[n84];
 //         parameter Boolean n138 = false;
 //         parameter n10.n253 n387 = 0 annotation(Evaluate = true);
 //         parameter n10.n94 n93 = n41.n93;
 //         outer n1.n29.n42 n41;
-//         n1.n29.n12.n130[n84] n90;
-//         n10.n94[n84] n249 = n36.n388(n134);
+//         n1.n29.n12.n130 n90[n84];
+//         n10.n94 n249[n84] = n36.n388(n134);
 //       equation
 //         if n138 then
 //           n140 = n90.n81 + {n387*n133[n146]*(n93 - n90[n146].n250) for n146 in 1:n84};
@@ -1167,32 +1167,32 @@ readFile("BranchingDynamicPipes.mo");
 //         outer n1.n29.n42 n41;
 //         replaceable package n36 = n1.n37.n12.n38 annotation(choicesAllMatching = true);
 //         parameter Integer n84 = 2;
-//         input n10.n156[n84] n158;
+//         input n10.n156 n158[n84];
 //         parameter n44.n45 n43 = n41.n43 annotation(Evaluate = true);
 //         parameter n44.n45 n101 = n41.n101 annotation(Evaluate = true);
 //         final parameter n44.n45 n102 = n101 annotation(Evaluate = true);
 //         final parameter n44.n45 n103 = n101 annotation(Evaluate = true);
 //         parameter n36.n92 n61 = n41.n106;
 //         parameter n36.n92 n62 = n61;
-//         final parameter n36.n92[n84] n389 = if n84 > 1 then linspace(n61, n62, n84) else {(n61 + n62)/2};
+//         final parameter n36.n92 n389[n84] = if n84 > 1 then linspace(n61, n62, n84) else {(n61 + n62)/2};
 //         parameter Boolean n55 = true annotation(Evaluate = true);
 //         parameter n36.n94 n107 = if n55 then n41.n107 else n36.n392((n61 + n62)/2, n390, n391) annotation(Evaluate = true);
 //         parameter n36.n381 n390 = if n55 then n36.n393((n61 + n62)/2, n107, n391) else n36.n394 annotation(Evaluate = true);
-//         parameter n36.n352[n36.n351] n391 = n36.n223;
-//         parameter n36.n354[n36.n182] n395(quantity = n36.n355) = n36.n356;
-//         n10.n397[n84] n396;
-//         n10.n399[n84] n398;
-//         n10.n399[n84, n36.n180] n400;
-//         n10.n399[n84, n36.n182] n401;
-//         n10.n399[n84, n36.n182] n402;
-//         n36.n354[n84, n36.n182] n192;
-//         n36.n373[n84] n135(each n403 = true, n51(start = n389), each n190(start = n390), each n250(start = n107), each n191(start = n391[1:n36.n180]));
-//         n36.n105[n84] n186;
-//         n36.n105[n84, n36.n180] n187;
-//         n36.n404[n84, n36.n182] n188;
-//         n10.n184[n84] n189;
-//         n10.n386[n84] n139;
-//         n10.n405[n84] n142;
+//         parameter n36.n352 n391[n36.n351] = n36.n223;
+//         parameter n36.n354 n395[n36.n182](quantity = n36.n355) = n36.n356;
+//         n10.n397 n396[n84];
+//         n10.n399 n398[n84];
+//         n10.n399 n400[n84, n36.n180];
+//         n10.n399 n401[n84, n36.n182];
+//         n10.n399 n402[n84, n36.n182];
+//         n36.n354 n192[n84, n36.n182];
+//         n36.n373 n135[n84](each n403 = true, n51(start = n389), each n190(start = n390), each n250(start = n107), each n191(start = n391[1:n36.n180]));
+//         n36.n105 n186[n84];
+//         n36.n105 n187[n84, n36.n180];
+//         n36.n404 n188[n84, n36.n182];
+//         n10.n184 n189[n84];
+//         n10.n386 n139[n84];
+//         n10.n405 n142[n84];
 //       protected
 //         parameter Boolean n406 = not n36.n366;
 //       initial equation
@@ -1284,14 +1284,14 @@ readFile("BranchingDynamicPipes.mo");
 //         replaceable package n36 = n1.n37.n12.n38;
 //         parameter Boolean n99 = n41.n99 annotation(Evaluate = true);
 //         parameter Integer n200 = 1;
-//         input n10.n149[n200] n173;
-//         n36.n105[n200] n178(each min = if n99 then -n1.n97.n7 else 0, each start = n58, each stateSelect = if n47 == n44.n45.n104 then StateSelect.default else StateSelect.prefer);
+//         input n10.n149 n173[n200];
+//         n36.n105 n178[n200](each min = if n99 then -n1.n97.n7 else 0, each start = n58, each stateSelect = if n47 == n44.n45.n104 then StateSelect.default else StateSelect.prefer);
 //         parameter n1.n29.n44.n45 n47 = n41.n47 annotation(Evaluate = true);
 //         parameter n36.n105 n58 = n41.n58;
-//         n10.n411[n200] n410;
-//         n10.n412[n200] n226;
-//         n10.n412[n200] n227;
-//         n10.n412[n200] n229;
+//         n10.n411 n410[n200];
+//         n10.n412 n226[n200];
+//         n10.n412 n227[n200];
+//         n10.n412 n229[n200];
 //       initial equation
 //         if n47 == n44.n45.n409 then
 //           n178 = fill(n58, n200);
@@ -1322,10 +1322,10 @@ readFile("BranchingDynamicPipes.mo");
 //       function n367
 //         extends n1.n2.n271;
 //         input String n364;
-//         input String[:] n365;
+//         input String n365[:];
 //         input Boolean n366;
 //         input Boolean n416;
-//         input Real[:] n417;
+//         input Real n417[:];
 //         input String n418 = \"??? boundary ???\";
 //       protected
 //         Integer n351 = size(n417, 1);
@@ -1510,23 +1510,23 @@ readFile("BranchingDynamicPipes.mo");
 //         extends n1.n2.n452;
 //         constant n1.n37.n12.n345.n346 n369;
 //         constant String n364 = \"unusablePartialMedium\";
-//         constant String[:] n365 = {n364};
-//         constant String[:] n355 = fill(\"\", 0);
+//         constant String n365[:] = {n364};
+//         constant String n355[:] = fill(\"\", 0);
 //         constant Boolean n366;
 //         constant Boolean n453 = true;
 //         constant Boolean n454 = false;
 //         constant n92 n455 = 101325;
-//         constant n352[n351] n456 = fill(1/n351, n351);
+//         constant n352 n456[n351] = fill(1/n351, n351);
 //         constant n92 n221 = 101325;
 //         constant n94 n222 = n1.n11.n31.n457(20);
 //         constant n381 n394 = n393(n221, n222, n223);
-//         constant n352[n351] n223 = n456;
-//         constant n354[n182] n356 = fill(0, n182);
+//         constant n352 n223[n351] = n456;
+//         constant n354 n356[n182] = fill(0, n182);
 //         final constant Integer n458 = size(n365, 1);
 //         constant Integer n351 = n458;
 //         constant Integer n180 = if n454 then 0 else if n453 then n458 - 1 else n458;
 //         final constant Integer n182 = size(n355, 1);
-//         constant Real[n182] n408(min = fill(n1.n97.n5, n182)) = 1.0e-6*ones(n182);
+//         constant Real n408[n182](min = fill(n1.n97.n5, n182)) = 1.0e-6*ones(n182);
 //         replaceable record n459 = n1.n37.n12.n44.n460.n459;
 //
 //         replaceable record n165
@@ -1535,11 +1535,11 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         replaceable partial model n373
 //           n462 n51;
-//           n463[n180] n191(start = n456[1:n180]);
+//           n463 n191[n180](start = n456[1:n180]);
 //           n464 n190;
 //           n204 n145;
 //           n94 n250;
-//           n352[n351] n350(start = n456);
+//           n352 n350[n351](start = n456);
 //           n465 n407;
 //           n467 n466;
 //           n469 n468;
@@ -1571,7 +1571,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n94 n250;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n165 n136;
 //         end n225;
 //
@@ -1579,7 +1579,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n381 n190;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n165 n136;
 //         end n197;
 //
@@ -1587,7 +1587,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n480 n479;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n165 n136;
 //         end n478;
 //
@@ -1595,7 +1595,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n204 n145;
 //           input n94 n250;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n165 n136;
 //         end n481;
 //
@@ -1746,7 +1746,7 @@ readFile("BranchingDynamicPipes.mo");
 //         replaceable partial function n523
 //           extends n1.n2.n271;
 //           input n165 n136;
-//           output n204[n351] n524;
+//           output n204 n524[n351];
 //         end n523;
 //
 //         replaceable partial function n525
@@ -1759,7 +1759,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n94 n250;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n381 n190;
 //         algorithm
 //           n190 := n372(n225(n51, n250, n350));
@@ -1770,7 +1770,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n94 n250;
-//           input n352[:] n350;
+//           input n352 n350[:];
 //           output n204 n145;
 //         algorithm
 //           n145 := n198(n225(n51, n250, n350));
@@ -1780,7 +1780,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n381 n190;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n94 n250;
 //         algorithm
 //           n250 := n388(n197(n51, n190, n350));
@@ -1795,10 +1795,10 @@ readFile("BranchingDynamicPipes.mo");
 //         redeclare replaceable record extends n165
 //           n92 n51;
 //           n94 n250;
-//           n352[n351] n350(start = n456);
+//           n352 n350[n351](start = n456);
 //         end n165;
 //
-//         constant n459[n458] n528;
+//         constant n459 n528[n458];
 //
 //         replaceable function n529
 //           extends n1.n2.n271;
@@ -1808,11 +1808,11 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         function n530
 //           extends n1.n2.n271;
-//           input n10.n352[:] n350;
-//           input n10.n469[:] n531;
-//           output n10.n533[size(n350, 1)] n532;
+//           input n10.n352 n350[:];
+//           input n10.n469 n531[:];
+//           output n10.n533 n532[size(n350, 1)];
 //         protected
-//           Real[size(n350, 1)] n534;
+//           Real n534[size(n350, 1)];
 //           n10.n469 n535;
 //         algorithm
 //           for n146 in 1:size(n350, 1) loop
@@ -1850,7 +1850,7 @@ readFile("BranchingDynamicPipes.mo");
 //         replaceable partial function n544
 //           extends n1.n2.n271;
 //           input n94 n250;
-//           input n352[:] n350;
+//           input n352 n350[:];
 //           output n381 n190;
 //         end n544;
 //
@@ -1972,7 +1972,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input Real n340;
 //           input Real n51 = 0.0;
-//           input Real[:] n350 = fill(0, 0);
+//           input Real n350[:] = fill(0, 0);
 //           input n585 n587;
 //           output Real n18;
 //         end n586;
@@ -1984,7 +1984,7 @@ readFile("BranchingDynamicPipes.mo");
 //           input Real n590;
 //           input Real n591;
 //           input Real n228 = 0.0;
-//           input Real[:] n350 = fill(0, 0);
+//           input Real n350[:] = fill(0, 0);
 //           input n585 n587;
 //           input Real n592 = 100*n1.n97.n5;
 //           output Real n593;
@@ -2092,7 +2092,7 @@ readFile("BranchingDynamicPipes.mo");
 //         constant Real n612 = n613.n468/n614.n468;
 //         constant n606.n581.n615 n614 = n606.n581.n616.n39;
 //         constant n606.n581.n615 n613 = n606.n581.n616.n608;
-//         constant n10.n469[2] n531 = {n613.n468, n614.n468};
+//         constant n10.n469 n531[2] = {n613.n468, n614.n468};
 //         import n1.n37.n12;
 //         import n1.n268;
 //         import n1.n97;
@@ -2135,7 +2135,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n94 n250;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n165 n136;
 //         algorithm
 //           n136 := if size(n350, 1) == n351 then n165(n51 = n51, n250 = n250, n350 = n350) else n165(n51 = n51, n250 = n250, n350 = cat(1, n350, {1 - sum(n350)}));
@@ -2146,7 +2146,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n381 n190;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n165 n136;
 //         algorithm
 //           n136 := if size(n350, 1) == n351 then n165(n51 = n51, n250 = n626(n51, n190, n350), n350 = n350) else n165(n51 = n51, n250 = n626(n51, n190, n350), n350 = cat(1, n350, {1 - sum(n350)}));
@@ -2157,7 +2157,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n204 n145;
 //           input n94 n250;
-//           input n352[:] n350 = n456;
+//           input n352 n350[:] = n456;
 //           output n165 n136;
 //         algorithm
 //           n136 := if size(n350, 1) == n351 then n165(n51 = n145*({n613.n466, n614.n466}*n350)*n250, n250 = n250, n350 = n350) else n165(n51 = n145*({n613.n466, n614.n466}*cat(1, n350, {1 - sum(n350)}))*n250, n250 = n250, n350 = cat(1, n350, {1 - sum(n350)}));
@@ -2183,8 +2183,8 @@ readFile("BranchingDynamicPipes.mo");
 //           n10.n94 n628 = 647.096;
 //           n10.n92 n629 = 22.064e6;
 //           Real n630 = (1 - n539/n628);
-//           Real[:] n504 = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502};
-//           Real[:] n84 = {1.0, 1.5, 3.0, 3.5, 4.0, 7.5};
+//           Real n504[:] = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502};
+//           Real n84[:] = {1.0, 1.5, 3.0, 3.5, 4.0, 7.5};
 //         algorithm
 //           n540 := exp(((n504[1]*n630^n84[1] + n504[2]*n630^n84[2] + n504[3]*n630^n84[3] + n504[4]*n630^n84[4] + n504[5]*n630^n84[5] + n504[6]*n630^n84[6])*n628)/n539)*n629;
 //           annotation(derivative = n631, Inline = false, smoothOrder = 5);
@@ -2200,8 +2200,8 @@ readFile("BranchingDynamicPipes.mo");
 //           n10.n92 n629 = 22.064e6;
 //           Real n630 = (1 - n539/n628);
 //           Real n634 = -1/n628*n632;
-//           Real[:] n504 = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502};
-//           Real[:] n84 = {1.0, 1.5, 3.0, 3.5, 4.0, 7.5};
+//           Real n504[:] = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502};
+//           Real n84[:] = {1.0, 1.5, 3.0, 3.5, 4.0, 7.5};
 //           Real n635 = (n504[1]*n630^n84[1] + n504[2]*n630^n84[2] + n504[3]*n630^n84[3] + n504[4]*n630^n84[4] + n504[5]*n630^n84[5] + n504[6]*n630^n84[6]);
 //         algorithm
 //           n633 := exp((n635*n628)/n539)*n629*((n504[1]*(n630^(n84[1] - 1)*n84[1]*n634) + n504[2]*(n630^(n84[2] - 1)*n84[2]*n634) + n504[3]*(n630^(n84[3] - 1)*n84[3]*n634) + n504[4]*(n630^(n84[4] - 1)*n84[4]*n634) + n504[5]*(n630^(n84[5] - 1)*n84[5]*n634) + n504[6]*(n630^(n84[6] - 1)*n84[6]*n634))*n628/n539 - n635*n628*n632/n539^2);
@@ -2216,8 +2216,8 @@ readFile("BranchingDynamicPipes.mo");
 //           n10.n94 n637 = 273.16;
 //           n10.n92 n638 = 611.657;
 //           Real n630 = n539/n637;
-//           Real[:] n504 = {-13.9281690, 34.7078238};
-//           Real[:] n84 = {-1.5, -1.25};
+//           Real n504[:] = {-13.9281690, 34.7078238};
+//           Real n84[:] = {-1.5, -1.25};
 //         algorithm
 //           n540 := exp(n504[1] - n504[1]*n630^n84[1] + n504[2] - n504[2]*n630^n84[2])*n638;
 //           annotation(Inline = false, smoothOrder = 5, derivative = n639);
@@ -2233,8 +2233,8 @@ readFile("BranchingDynamicPipes.mo");
 //           n10.n92 n638 = 611.657;
 //           Real n630 = n539/n637;
 //           Real n634 = n632/n637;
-//           Real[:] n504 = {-13.9281690, 34.7078238};
-//           Real[:] n84 = {-1.5, -1.25};
+//           Real n504[:] = {-13.9281690, 34.7078238};
+//           Real n84[:] = {-1.5, -1.25};
 //         algorithm
 //           n633 := exp(n504[1] - n504[1]*n630^n84[1] + n504[2] - n504[2]*n630^n84[2])*n638*(-(n504[1]*(n630^(n84[1] - 1)*n84[1]*n634)) - (n504[2]*(n630^(n84[2] - 1)*n84[2]*n634)));
 //           annotation(Inline = false, smoothOrder = 5);
@@ -2261,12 +2261,12 @@ readFile("BranchingDynamicPipes.mo");
 //           Real n628 = 647.096;
 //           Real n642 = 322;
 //           Real n629 = 22.064e6;
-//           Real[:] n84 = {1, 1.5, 3, 3.5, 4, 7.5};
-//           Real[:] n504 = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502};
-//           Real[:] n200 = {1/3, 2/3, 5/3, 16/3, 43/3, 110/3};
-//           Real[:] n597 = {1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.74694450e5};
-//           Real[:] n643 = {2/6, 4/6, 8/6, 18/6, 37/6, 71/6};
-//           Real[:] n425 = {-2.03150240, -2.68302940, -5.38626492, -17.2991605, -44.7586581, -63.9201063};
+//           Real n84[:] = {1, 1.5, 3, 3.5, 4, 7.5};
+//           Real n504[:] = {-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502};
+//           Real n200[:] = {1/3, 2/3, 5/3, 16/3, 43/3, 110/3};
+//           Real n597[:] = {1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.74694450e5};
+//           Real n643[:] = {2/6, 4/6, 8/6, 18/6, 37/6, 71/6};
+//           Real n425[:] = {-2.03150240, -2.68302940, -5.38626492, -17.2991605, -44.7586581, -63.9201063};
 //           Real n644 = 1 - n250/n628;
 //           Real n630 = (n504[1]*n628*n644^n84[1])/n250 + (n504[2]*n628*n644^n84[2])/n250 + (n504[3]*n628*n644^n84[3])/n250 + (n504[4]*n628*n644^n84[4])/n250 + (n504[5]*n628*n644^n84[5])/n250 + (n504[6]*n628*n644^n84[6])/n250;
 //           Real n635 = n504[1]*n84[1]*n644^n84[1] + n504[2]*n84[2]*n644^n84[2] + n504[3]*n84[3]*n644^n84[3] + n504[4]*n84[4]*n644^n84[4] + n504[5]*n84[5]*n644^n84[5] + n504[6]*n84[6]*n644^n84[6];
@@ -2335,7 +2335,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n381 n190;
-//           input n352[:] n350;
+//           input n352 n350[:];
 //           output n94 n250;
 //
 //         protected
@@ -2373,7 +2373,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n10.n214 n51;
 //           input n10.n94 n250;
-//           input n10.n352[:] n350;
+//           input n10.n352 n350[:];
 //           output n10.n381 n190;
 //         protected
 //           n10.n92 n625;
@@ -2395,10 +2395,10 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n10.n214 n51;
 //           input n10.n94 n250;
-//           input n10.n352[:] n350;
+//           input n10.n352 n350[:];
 //           input Real n283(unit = \"Pa/s\");
 //           input Real n652(unit = \"K/s\");
-//           input Real[:] n656(each unit = \"1/s\");
+//           input Real n656[:](each unit = \"1/s\");
 //           output Real n657(unit = \"J/(kg.s)\");
 //         protected
 //           n10.n92 n625;
@@ -2444,7 +2444,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n10.n214 n51;
 //           input n10.n94 n250;
-//           input n10.n352[:] n350;
+//           input n10.n352 n350[:];
 //           output n10.n465 n407;
 //         protected
 //           n10.n92 n625;
@@ -2468,10 +2468,10 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n10.n214 n51;
 //           input n10.n94 n250;
-//           input n10.n352[:] n350;
+//           input n10.n352 n350[:];
 //           input Real n283(unit = \"Pa/s\");
 //           input Real n652(unit = \"K/s\");
-//           input Real[:] n656(each unit = \"1/s\");
+//           input Real n656[:](each unit = \"1/s\");
 //           output Real n669(unit = \"J/(kg.s)\");
 //         protected
 //           n10.n92 n625;
@@ -2603,7 +2603,7 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n92 n51;
 //           input n480 n479;
-//           input n352[:] n350;
+//           input n352 n350[:];
 //           output n94 n250;
 //
 //         protected
@@ -2635,10 +2635,10 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n10.n214 n51;
 //           input n10.n94 n250;
-//           input n10.n352[:] n350;
+//           input n10.n352 n350[:];
 //           output n10.n480 n479;
 //         protected
-//           n533[2] n678 = n530(n350, {n613.n468, n614.n468});
+//           n533 n678[2] = n530(n350, {n613.n468, n614.n468});
 //         algorithm
 //           n479 := n1.n37.n606.n581.n610.n679(n614, n250)*(1 - n350[n611]) + n1.n37.n606.n581.n610.n679(n613, n250)*n350[n611] - n1.n97.n466*(n269.n663(n350[n611]/n531[n611], 0.0, 1e-9)*n1.n268.log(max(n678[n611], n1.n97.n5)*n51/n455) + n269.n663((1 - n350[n611])/n531[n39], 0.0, 1e-9)*n1.n268.log(max(n678[n39], n1.n97.n5)*n51/n455));
 //           annotation(derivative = n680, Inline = false);
@@ -2648,13 +2648,13 @@ readFile("BranchingDynamicPipes.mo");
 //           extends n1.n2.n271;
 //           input n10.n214 n51;
 //           input n10.n94 n250;
-//           input n10.n352[:] n350;
+//           input n10.n352 n350[:];
 //           input Real n283(unit = \"Pa/s\");
 //           input Real n652(unit = \"K/s\");
-//           input Real[n351] n656(each unit = \"1/s\");
+//           input Real n656[n351](each unit = \"1/s\");
 //           output Real n257(unit = \"J/(kg.K.s)\");
 //         protected
-//           n533[2] n678 = n530(n350, {n613.n468, n614.n468});
+//           n533 n678[2] = n530(n350, {n613.n468, n614.n468});
 //           n469 n468;
 //         algorithm
 //           n468 := n531[n611]*n531[n39]/(n350[n611]*n531[n39] + n350[n39]*n531[n611]);
@@ -2773,10 +2773,10 @@ readFile("BranchingDynamicPipes.mo");
 //           n10.n381 n697;
 //           n10.n381 n698;
 //           n10.n94 n699;
-//           Real[7] n700;
-//           Real[2] n701;
-//           Real[7] n702;
-//           Real[2] n703;
+//           Real n700[7];
+//           Real n701[2];
+//           Real n702[7];
+//           Real n703[2];
 //           n10.n467 n466;
 //         end n615;
 //
@@ -2942,21 +2942,21 @@ readFile("BranchingDynamicPipes.mo");
 //         constant Integer n761 = n757;
 //         constant Integer n762 = n757;
 //         constant Integer n763 = size(n764, 1);
-//         constant Real[:, 2] n753;
-//         constant Real[:, 2] n765;
-//         constant Real[:, 2] n764;
-//         constant Real[:, 2] n766;
-//         constant Real[:, 2] n767;
+//         constant Real n753[:, 2];
+//         constant Real n765[:, 2];
+//         constant Real n764[:, 2];
+//         constant Real n766[:, 2];
+//         constant Real n767[:, 2];
 //         constant Boolean n768;
 //         constant Boolean n769 = not (size(n753, 1) == 0);
 //         constant Boolean n770 = not (size(n765, 1) == 0);
 //         constant Boolean n771 = not (size(n764, 1) == 0);
 //         constant Boolean n772 = not (size(n766, 1) == 0);
-//         final constant Real[n763] n773 = if size(n764, 1) > 0 then (if n768 then 1./n764[:, 1] else 1./n30.n457(n764[:, 1])) else fill(0, n763);
-//         final constant Real[:] n774 = if n769 then n748.n775(n753[:, 1], n753[:, 2], n758) else zeros(n758 + 1);
-//         final constant Real[:] n776 = if n770 then n748.n775(n765[:, 1], n765[:, 2], n759) else zeros(n759 + 1);
-//         final constant Real[:] n777 = if n771 then n748.n775(n773, n268.log(n764[:, 2]), n760) else zeros(n760 + 1);
-//         final constant Real[:] n778 = if size(n767, 1) > 0 then n748.n775(n767[:, 1], n767[:, 2], n762) else zeros(n762 + 1);
+//         final constant Real n773[n763] = if size(n764, 1) > 0 then (if n768 then 1./n764[:, 1] else 1./n30.n457(n764[:, 1])) else fill(0, n763);
+//         final constant Real n774[:] = if n769 then n748.n775(n753[:, 1], n753[:, 2], n758) else zeros(n758 + 1);
+//         final constant Real n776[:] = if n770 then n748.n775(n765[:, 1], n765[:, 2], n759) else zeros(n759 + 1);
+//         final constant Real n777[:] = if n771 then n748.n775(n773, n268.log(n764[:, 2]), n760) else zeros(n760 + 1);
+//         final constant Real n778[:] = if size(n767, 1) > 0 then n748.n775(n767[:, 1], n767[:, 2], n762) else zeros(n762 + 1);
 //
 //         redeclare model extends n373(final n470 = true, n475 = n30.n477(n51), n471(start = n107 - 273.15) = n30.n474(n250), n250(start = n107, stateSelect = if n403 then StateSelect.prefer else StateSelect.default))
 //           n10.n467 n493;
@@ -3123,7 +3123,7 @@ readFile("BranchingDynamicPipes.mo");
 //             extends n1.n37.n581.n584;
 //
 //             redeclare record extends n585
-//               constant Real[5] n790 = {1, 2, 3, 4, 5};
+//               constant Real n790[5] = {1, 2, 3, 4, 5};
 //             end n585;
 //
 //             redeclare function extends n586
@@ -3147,7 +3147,7 @@ readFile("BranchingDynamicPipes.mo");
 //             extends n1.n37.n581.n584;
 //
 //             redeclare record extends n585
-//               constant Real[5] n790 = {1, 2, 3, 4, 5};
+//               constant Real n790[5] = {1, 2, 3, 4, 5};
 //             end n585;
 //
 //             redeclare function extends n586
@@ -3164,7 +3164,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n779
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n407;
 //             output Real n18;
 //           algorithm
@@ -3177,7 +3177,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n676
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n793;
 //             input Real n794;
 //             input Real n407;
@@ -3195,7 +3195,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n789
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n407;
 //             output Real n18;
 //           protected
@@ -3210,7 +3210,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n797
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n407;
 //             output Real n18;
 //           protected
@@ -3224,7 +3224,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n784
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n798;
 //             input Real n799 = 0;
 //             output Real n800 = 0.0;
@@ -3242,12 +3242,12 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n775
 //             extends n1.n2.n271;
-//             input Real[:] n407;
-//             input Real[size(n407, 1)] n18;
+//             input Real n407[:];
+//             input Real n18[size(n407, 1)];
 //             input Integer n84(min = 1);
-//             output Real[n84 + 1] n51;
+//             output Real n51[n84 + 1];
 //           protected
-//             Real[size(n407, 1), n84 + 1] n155;
+//             Real n155[size(n407, 1), n84 + 1];
 //           algorithm
 //             n155[:, n84 + 1] := ones(size(n407, 1));
 //             for n791 in n84:-1:1 loop
@@ -3258,7 +3258,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n792
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n407;
 //             input Real n805;
 //             output Real n695;
@@ -3274,7 +3274,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n795
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n793;
 //             input Real n794;
 //             input Real n407;
@@ -3292,7 +3292,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n802
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n798;
 //             input Real n799 = 0;
 //             input Real n806;
@@ -3304,7 +3304,7 @@ readFile("BranchingDynamicPipes.mo");
 //
 //           function n796
 //             extends n1.n2.n271;
-//             input Real[:] n51;
+//             input Real n51[:];
 //             input Real n407;
 //             input Real n805;
 //             output Real n695;
@@ -3373,14 +3373,14 @@ readFile("BranchingDynamicPipes.mo");
 //
 //       function n804
 //         extends n1.n2.n271;
-//         input Real[:, :] n812;
-//         input Real[size(n812, 1)] n597;
+//         input Real n812[:, :];
+//         input Real n597[size(n812, 1)];
 //         input Real n813 = 100*n1.n97.n5;
-//         output Real[size(n812, 2)] n340;
+//         output Real n340[size(n812, 2)];
 //         output Integer n814;
 //       protected
 //         Integer n815;
-//         Real[max(size(n812, 1), size(n812, 2))] n816;
+//         Real n816[max(size(n812, 1), size(n812, 2))];
 //       algorithm
 //         if min(size(n812)) > 0 then
 //           (n816, n815, n814) := n817.n818(n812, n597, n813);
@@ -3396,10 +3396,10 @@ readFile("BranchingDynamicPipes.mo");
 //
 //         function n818
 //           extends n1.n2.n271;
-//           input Real[:, :] n812;
-//           input Real[size(n812, 1)] n597;
+//           input Real n812[:, :];
+//           input Real n597[size(n812, 1)];
 //           input Real n813 = 0.0;
-//           output Real[max(size(n812, 1), size(n812, 2))] n340 = cat(1, n597, zeros(max(n819, n820) - n819));
+//           output Real n340[max(size(n812, 1), size(n812, 2))] = cat(1, n597, zeros(max(n819, n820) - n819));
 //           output Integer n815;
 //           output Integer n814;
 //         protected
@@ -3408,9 +3408,9 @@ readFile("BranchingDynamicPipes.mo");
 //           Integer n821 = 1;
 //           Integer n822 = max(n819, n820);
 //           Integer n823 = max(min(n819, n820) + 3*n820 + 1, 2*min(n819, n820) + 1);
-//           Real[max(min(size(n812, 1), size(n812, 2)) + 3*size(n812, 2) + 1, 2*min(size(n812, 1), size(n812, 2)) + 1)] n824;
-//           Real[size(n812, 1), size(n812, 2)] n825 = n812;
-//           Integer[size(n812, 2)] n826 = zeros(n820);
+//           Real n824[max(min(size(n812, 1), size(n812, 2)) + 3*size(n812, 2) + 1, 2*min(size(n812, 1), size(n812, 2)) + 1)];
+//           Real n825[size(n812, 1), size(n812, 2)] = n812;
+//           Integer n826[size(n812, 2)] = zeros(n820);
 //           external \"FORTRAN 77\" dgelsy(n819, n820, n821, n825, n819, n340, n822, n826, n813, n814, n824, n823, n815) annotation(Library = \"lapack\");
 //         end n818;
 //       end n817;
