@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=OMPlot
+Comment=Modelica-based modeling and simulation environment
+Exec=OMPlot
+Terminal=false
+Type=Application
+Icon=omplot
+Categories=Qt;Science;Development

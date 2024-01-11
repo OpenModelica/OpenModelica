@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=OMEdit
+Comment=Modelica-based modeling and simulation environment
+Exec=OMEdit
+Terminal=false
+Type=Application
+Icon=omedit
+Categories=Qt;Science;Development
