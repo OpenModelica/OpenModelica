@@ -33,18 +33,18 @@ encapsulated package NFStructural
   "Contains utility functions for handling structural parameters."
 
   import Attributes = NFAttributes;
-  import Component = NFComponent;
   import Binding = NFBinding;
+  import Call = NFCall;
+  import Component = NFComponent;
+  import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
+  import Expression = NFExpression;
+  import InstContext = NFInstContext;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
   import Subscript = NFSubscript;
-  import Expression = NFExpression;
-  import ComponentRef = NFComponentRef;
-  import Call = NFCall;
-  import Dimension = NFDimension;
 
 protected
-  import Flags;
   import Util;
 
 public
@@ -55,6 +55,7 @@ public
     input InstNode compNode;
     input Boolean compEval "If the component has an Evaluate=true annotation";
     input Boolean parentEval "If any parent has an Evaluate=true annotation";
+    input InstContext.Type context;
     output Boolean isStructural;
   protected
     Boolean is_fixed;
@@ -78,7 +79,7 @@ public
         isStructural := false;
       elseif not (Binding.isBound(binding) or InstNode.hasBinding(compNode)) then
         // Except parameters with no bindings.
-        if not parentEval and not Flags.getConfigBool(Flags.CHECK_MODEL) then
+        if not parentEval and not InstContext.inRelaxed(context) then
           // Print a warning if a parameter has an Evaluate=true annotation but no binding.
           Error.addSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
             {InstNode.name(compNode)}, InstNode.info(compNode));

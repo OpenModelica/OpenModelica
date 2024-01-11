@@ -180,7 +180,7 @@ algorithm
   execStat("NFInst.instExpressions");
 
   // Mark structural parameters.
-  updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
+  updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM), context);
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
@@ -3659,6 +3659,7 @@ end checkTopLevelOuter;
 function updateImplicitVariability
   input InstNode node;
   input Boolean parentEval;
+  input InstContext.Type context;
 protected
   Class cls = InstNode.getClass(node);
   ClassTree cls_tree;
@@ -3667,7 +3668,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          updateImplicitVariabilityComp(c, parentEval);
+          updateImplicitVariabilityComp(c, parentEval, context);
         end for;
 
         Sections.apply(cls.sections,
@@ -3682,14 +3683,14 @@ algorithm
           Structural.markDimension(dim);
         end for;
 
-        updateImplicitVariability(cls.baseClass, parentEval);
+        updateImplicitVariability(cls.baseClass, parentEval, context);
       then
         ();
 
     case Class.INSTANCED_BUILTIN(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          updateImplicitVariabilityComp(c, parentEval);
+          updateImplicitVariabilityComp(c, parentEval, context);
         end for;
       then
         ();
@@ -3701,6 +3702,7 @@ end updateImplicitVariability;
 function updateImplicitVariabilityComp
   input InstNode component;
   input Boolean parentEval;
+  input InstContext.Type context;
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c = InstNode.component(node);
@@ -3722,7 +3724,7 @@ algorithm
           InstNode.updateComponent(Component.setVariability(Variability.NON_STRUCTURAL_PARAMETER, c), node);
         else
           // Otherwise check if we should mark it as structural.
-          if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval) then
+          if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval, context) then
             Structural.markComponent(c, node);
           end if;
         end if;
@@ -3743,7 +3745,7 @@ algorithm
         end if;
 
         if not InstNode.isEmpty(c.classInst) then
-          updateImplicitVariability(c.classInst, eval or parentEval);
+          updateImplicitVariability(c.classInst, eval or parentEval, context);
         end if;
       then
         ();
