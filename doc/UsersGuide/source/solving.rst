@@ -416,7 +416,7 @@ in OMEdit is a sub-directory named as the full model pathname, located in the wo
 directory to access the root working directory.
 
 When running model `M`, the simulation process only relies on the initial and guess values provided by the Modelica source code. Regarding the
-parameter values, `p1 = 1, `p2 = 1`, `p3 = 3*p1 = 3`; regarding `v1`, the implicit cubic equation is solved iteratively using the start value
+parameter values, `p1 = 1`, `p2 = 1`, `p3 = 3*p1 = 3`; regarding `v1`, the implicit cubic equation is solved iteratively using the start value
 14 as an initial guess, thus converging to the nearest solution `v1 = 15`. The other variable `v2` can be computed explicitly, so there is no
 need of any guess value for it. Finally, the initial value of the state variable is set to `x = 6` by the initial equations.
 
