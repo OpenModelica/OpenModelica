@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+    <id>org.openmodelica.OpenModelica</id>
+    <launchable type="desktop-id">org.openmodelica.OpenModelica.desktop</launchable>
+    <name>OpenModelica</name>
+    <summary>Open-source Modelica-based modeling and simulation environment</summary>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>GPL-3.0-only</project_license>
+    <description>
+        <p>
+            OpenModelica is an open-source Modelica-based modeling and simulation environment intended for
+            industrial and academic usage. The goal with the OpenModelica effort is to create a comprehensive
+            Open Source Modelica modeling, compilation and simulation environment based on free software
+            distributed in binary and source code form for research, teaching, and industrial usage.
+            We invite researchers and students, or any interested developer to participate in the project
+            and cooperate around OpenModelica, tools, and applications.
+        </p>
+    </description>
+    <url type="homepage">https://openmodelica.org/</url>
+    <url type="help">https://openmodelica.org/useresresources/userdocumentation/</url>
+    <url type="bugtracker">https://github.com/OpenModelica/OpenModelica/issues</url>
+    <url type="contact">https://openmodelica.org/home/contact-us/</url>
+    <url type="donation">https://openmodelica.org/home/openmodelica-donation/</url>
+    <screenshots>
+        <screenshot type="default">
+            <image>https://www.openmodelica.org/images/M_images/om.jpg</image>
+        </screenshot>
+        <screenshot>
+            <image>https://openmodelica.org/doc/OpenModelicaUsersGuide/v1.11.0-dev.beta1/_images/omedit_visualization.png</image>
+        </screenshot>
+        <screenshot>
+            <image>https://openmodelica.org/doc/OpenModelicaUsersGuide/v1.11.0-dev.beta1/_images/omedit_simulate_animation.png</image>
+        </screenshot>
+    </screenshots>
+    <content_rating type="oars-1.1"/>
+    <releases>
+        <release version="v1.22.1" date="2023-12-13"/>
+    </releases>
+</component>
