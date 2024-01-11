@@ -212,7 +212,7 @@ algorithm
           NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
 
           // Mark structural parameters.
-          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
+          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM), ANNOTATION_CONTEXT);
 
           dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -253,7 +253,7 @@ algorithm
           NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
 
           // Mark structural parameters.
-          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
+          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM), ANNOTATION_CONTEXT);
 
           dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -671,7 +671,7 @@ algorithm
   NFInst.instExpressions(inst_cls, context = NFInstContext.RELAXED);
 
   // Mark structural parameters.
-  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
+  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM), NFInstContext.RELAXED);
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndFront_dispatch(" + name + ")");
@@ -884,7 +884,7 @@ algorithm
   inst_tree := buildInstanceTree(cls_node);
   execStat("NFApi.buildInstanceTree");
   Inst.instExpressions(cls_node, context = context, settings = inst_settings);
-  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM));
+  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
   execStat("Inst.instExpressions");
 
   Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
