@@ -14191,6 +14191,7 @@ protected
   String strMatchingAlgorithm, strIndexReductionMethod;
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   array<Integer> match1,match2;
+  SourceInfo info;
   Boolean debug = false;
   UnorderedSet<DAE.ComponentRef> initialUnknowns;
 algorithm
@@ -14219,7 +14220,17 @@ algorithm
     // check for param Vars, as we are only interested in causality = parameters
     if BackendVariable.isParam(var) and not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
+      if BackendVariable.varHasBindExp(var) then
+        rhs := BackendVariable.varBindExp(var) "bindings are optional";
+      elseif BackendVariable.varHasStartValue(var) then
+        rhs := BackendVariable.varStartValue(var) "start values are optional";
+        info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {ExpressionDump.printExpStr(lhs), ExpressionDump.printExpStr(rhs)}, info);
+      else
+        info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_ERROR, {ExpressionDump.printExpStr(lhs)}, info);
+        fail();
+      end if;
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       BackendEquation.add(eqn, currentSystem.orderedEqs);
       //var := BackendVariable.setBindExp(var,NONE());

@@ -4364,8 +4364,8 @@ algorithm
     diffExp := Differentiate.differentiateExpSolve(exp,seedVar,NONE());
     for var in diffVars loop
       if not ComponentReference.crefEqual(var.varName, state.varName) and Expression.expContains(diffExp,Expression.crefExp(var.varName)) then
-        // Heuristic to punish vars with a value of zero
-        if Expression.isZero(BackendVariable.varStartValue(var)) then
+        // Heuristic to punish vars without start attribute
+        if not BackendVariable.varHasStartValue(var) then
           nonlinearCount := nonlinearCount + 2;
         else
           nonlinearCount := nonlinearCount + 1;
