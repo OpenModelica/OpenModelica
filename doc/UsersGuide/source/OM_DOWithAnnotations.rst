@@ -156,7 +156,7 @@ language. They are listed and commented below.
 
    .. code-block :: modelica
       
-      input Real u1(start=0.5, min=0.0, max = 100/par1, );
+      input Real u1(start=0.5, min=0.0, max = 100/par1);
       input Real u2(start=0.5, min=0.0, max = 1.0);
 
 
