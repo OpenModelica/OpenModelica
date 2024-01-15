@@ -341,8 +341,8 @@ public
     end if;
   end getDependentCrefIndicesPseudoScalar;
 
-  function getDependentCrefIndicesPseudoArray
-    "[Adjacency.MatrixType.PSEUDO] Array equations.
+  function getDependentCrefIndicesPseudoFull
+    "[Adjacency.MatrixType.PSEUDO] equations that will get full dependency.
     Turns cref dependencies into index lists, used for adjacency."
     extends getDependentCrefIndices;
   protected
@@ -398,7 +398,7 @@ public
     for i in 1:arrayLength(indices) loop
       indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
     end for;
-  end getDependentCrefIndicesPseudoArray;
+  end getDependentCrefIndicesPseudoFull;
 
   function getDependentCrefIndicesPseudoFor
     "[Adjacency.MatrixType.PSEUDO] For-Loop equations.
