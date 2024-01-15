@@ -296,7 +296,8 @@ public
             StrongComponent.SLICED_COMPONENT(var_cref = var_cref, eqn = eqn_slice) := slice;
             (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(Slice.getT(eqn_slice), eqn_slice.indices, SOME(var_cref), funcTree);
             if slicing_status == NBEquation.SlicingStatus.FAILURE then break; end if;
-            eqn := Equation.renameIterators(Pointer.access(eqn_ptr), "$k");
+            Equation.renameIterators(eqn_ptr, "$i");
+            eqn := Pointer.access(eqn_ptr);
             entwined_eqns := Equation.splitIterators(eqn) :: entwined_eqns;
           end for;
 

@@ -559,6 +559,8 @@ constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
   Gettext.gettext("Dumps information about the detected event functions."));
 constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(194, "dumpBindings", false,
   Gettext.gettext("Dumps information about the equations created from bindings."));
+constant DebugFlag DUMP_SORTING = DEBUG_FLAG(195, "dumpSorting", false,
+  Gettext.gettext("Dumps information about the process of sorting."));
 
 public
 // CONFIGURATION FLAGS

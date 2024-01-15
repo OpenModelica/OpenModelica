@@ -531,21 +531,26 @@ public
       (iter_name, range) := frame;
       sub := match range
 
+
         // (iterator-start)/step + 1
         case Expression.RANGE() algorithm
           step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
-          sub_exp := Expression.MULTARY(
-          arguments = {Expression.MULTARY(
+          sub_exp := Expression.fromCref(iter_name);
+          // if start and step are equal to 1, make simple expression (simplify is not strong enough yet)
+          if not (Expression.isOne(range.start) or Expression.isOne(step)) then
+            sub_exp := Expression.MULTARY(
               arguments = {Expression.MULTARY(
-                arguments = {Expression.fromCref(iter_name)},
-                inv_arguments = {range.start},
-                operator = Operator.makeAdd(ty))},
-              inv_arguments = {step},
-              operator = Operator.makeMul(ty)),
-            Expression.INTEGER(1)},
-          inv_arguments = {},
-          operator = Operator.makeAdd(ty));
-          sub_exp := SimplifyExp.simplify(sub_exp, true);
+                arguments = {Expression.MULTARY(
+                  arguments = {sub_exp},
+                  inv_arguments = {range.start},
+                  operator = Operator.makeAdd(ty))},
+                inv_arguments = {step},
+                operator = Operator.makeMul(ty)),
+              Expression.INTEGER(1)},
+            inv_arguments = {},
+            operator = Operator.makeAdd(ty));
+            sub_exp := SimplifyExp.simplify(sub_exp, true);
+          end if;
           sub_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {sub_exp}, Variability.DISCRETE, Purity.PURE));
         then Subscript.INDEX(sub_exp);
 
@@ -1728,6 +1733,8 @@ public
           source = DAE.emptyElementSource,
           attr = eqnAttr));
         Equation.createName(eqn, idx, context);
+        // this could lead to non existing variables, should not be a problem though
+        Equation.renameIterators(eqn, "$i");
       end if;
     end generateBindingEquation;
 
@@ -1769,19 +1776,23 @@ public
     end splitIterators;
 
     function renameIterators
-      input output Equation eqn;
+      input Pointer<Equation> eqn_ptr;
       input String newBaseName;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
     algorithm
-      eqn := match eqn
+      _ := match eqn
         local
-          UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, Expression> replacements;
 
         case FOR_EQUATION() algorithm
+          replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
           eqn.iter := Iterator.rename(eqn.iter, newBaseName, replacements);
           eqn.body := list(map(body_eqn, function Replacements.applySimpleExp(replacements = replacements)) for body_eqn in eqn.body);
-        then eqn;
+          Pointer.update(eqn_ptr, eqn);
+        then ();
 
-        else eqn;
+        else ();
       end match;
     end renameIterators;
 
@@ -2864,17 +2875,31 @@ public
     function toString
       input EquationPointers equations;
       input output String str = "";
+      input Option<array<tuple<Integer,Integer>>> mapping_opt = NONE();
       input Boolean printEmpty = true;
     protected
       Integer luI = lastUsedIndex(equations);
-      Integer length = 10, current_index = 1;
+      Integer length, scal_start, current_index = 1;
       String index;
+      Boolean useMapping = Util.isSome(mapping_opt);
+      array<tuple<Integer,Integer>> mapping;
     algorithm
+      if useMapping then
+        length := 15;
+        mapping := Util.getOption(mapping_opt);
+      else
+        length := 10;
+      end if;
       if printEmpty or luI > 0 then
         str := StringUtil.headline_4(str + " Equations (" + intString(EquationPointers.size(equations)) + "/" + intString(scalarSize(equations)) + ")");
         for i in 1:luI loop
           if ExpandableArray.occupied(i, equations.eqArr) then
-            index := "(" + intString(current_index) + ")";
+            if useMapping then
+              (scal_start, _) := mapping[current_index];
+              index := "(" + intString(current_index) + "|" + intString(scal_start) + ")";
+            else
+              index := "(" + intString(current_index) + ")";
+            end if;
             index := index + StringUtil.repeat(" ", length - stringLength(index));
             str := str + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), index) + "\n";
             current_index := current_index + 1;
@@ -3400,37 +3425,40 @@ public
 
         case EQ_DATA_SIM()
           algorithm
+            tmp := "Equation Data Simulation (scalar simulation equations: " + intString(EquationPointers.scalarSize(eqData.simulation)) + ")";
+            tmp := StringUtil.headline_2(tmp) + "\n";
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Simulation", false);
+              tmp :=  tmp + EquationPointers.toString(eqData.equations, "Simulation", NONE(), false);
             else
-              tmp :=  EquationPointers.toString(eqData.continuous, "Continuous", false) +
-                      EquationPointers.toString(eqData.discretes, "Discrete", false) +
-                      EquationPointers.toString(eqData.initials, "(Exclusively) Initial", false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false) +
-                      EquationPointers.toString(eqData.removed, "Removed", false);
+
+              tmp :=  tmp + EquationPointers.toString(eqData.continuous, "Continuous", NONE(), false) +
+                      EquationPointers.toString(eqData.discretes, "Discrete", NONE(), false) +
+                      EquationPointers.toString(eqData.initials, "(Exclusively) Initial", NONE(), false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false) +
+                      EquationPointers.toString(eqData.removed, "Removed", NONE(), false);
             end if;
         then tmp;
 
         case EQ_DATA_JAC()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", NONE(), false);
             else
-              tmp :=  EquationPointers.toString(eqData.results, "Residual", false) +
-                      EquationPointers.toString(eqData.temporary, "Inner", false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
+              tmp :=  EquationPointers.toString(eqData.results, "Residual", NONE(), false) +
+                      EquationPointers.toString(eqData.temporary, "Inner", NONE(), false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false);
             end if;
         then tmp;
 
         case EQ_DATA_HES()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Hessian", false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Hessian", NONE(), false);
             else
               tmp :=  StringUtil.headline_4("Result Equation") + "\n" +
                       Equation.toString(Pointer.access(eqData.result)) + "\n" +
-                      EquationPointers.toString(eqData.temporary, "Temporary Inner", false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
+                      EquationPointers.toString(eqData.temporary, "Temporary Inner", NONE(), false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false);
             end if;
         then tmp;
 

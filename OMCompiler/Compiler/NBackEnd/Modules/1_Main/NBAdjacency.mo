@@ -50,7 +50,7 @@ protected
   // NB imports
   import Differentiate = NBDifferentiate;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationAttributes, EquationPointers};
+  import NBEquation.{Equation, EquationAttributes, EquationPointers, Iterator};
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
 
@@ -373,6 +373,36 @@ public
         end for;
       end for;
     end clean;
+
+    function toString
+      input CausalizeModes modes;
+      output String str;
+    protected
+      array<Integer> mtv;
+      array<ComponentRef> mtc;
+    algorithm
+      str := StringUtil.headline_2("Causalization Modes");
+
+      str := str + StringUtil.headline_3("(scalar) mode index -> variable index");
+      for j in 1:arrayLength(modes.mode_to_var) loop
+        mtv := modes.mode_to_var[j];
+        str := str + "[" + intString(j) + "]\t";
+        for i in 1:arrayLength(mtv) loop
+          str := str + "(" + intString(i) + "->" + intString(mtv[i]) + ")";
+        end for;
+        str := str + "\n";
+      end for;
+
+      str := str + "\n" + StringUtil.headline_3("(array) mode index -> variable cref");
+      for j in 1:arrayLength(modes.mode_to_cref) loop
+        mtc := modes.mode_to_cref[j];
+        str := str + "[" + intString(j) + "]\t";
+        for i in 1:arrayLength(mtc) loop
+          str := str + "(" + intString(i) + "->" + ComponentRef.toString(mtc[i]) + ")";
+        end for;
+        str := str + "\n";
+      end for;
+    end toString;
   end CausalizeModes;
 
   uniontype Matrix
@@ -858,11 +888,11 @@ public
         then ();
 
         case Equation.ARRAY_EQUATION() algorithm
-          fillMatrixArray(eqn, unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
+          fillMatrixArray(eqn, unique_dependencies, map, mapping, eqn_arr_idx, m, modes, function Slice.getDependentCrefIndicesPseudoFor(iter = Iterator.EMPTY()));
         then ();
 
         case Equation.RECORD_EQUATION() algorithm
-          fillMatrixArray(eqn, unique_dependencies, map, mapping, eqn_arr_idx, m, modes, Slice.getDependentCrefIndicesPseudoArray);
+          fillMatrixArray(eqn, unique_dependencies, map, mapping, eqn_arr_idx, m, modes, function Slice.getDependentCrefIndicesPseudoFor(iter = Iterator.EMPTY()));
         then ();
 
         case Equation.ALGORITHM() algorithm

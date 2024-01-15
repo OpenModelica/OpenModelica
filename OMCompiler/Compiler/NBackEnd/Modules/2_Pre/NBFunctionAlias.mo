@@ -223,7 +223,7 @@ protected
       local
         Call_Id id;
         Call_Aux aux;
-        Boolean disc = true;
+        Boolean disc;
         Pointer<Equation> new_eqn;
         list<Pointer<Variable>> new_vars;
 
@@ -235,6 +235,7 @@ protected
         for tpl in listReverse(UnorderedMap.toList(map)) loop
           (id, aux) := tpl;
           new_vars  := Call_Aux.getVars(aux);
+          disc := true;
           for new_var in new_vars loop
             if BVariable.isContinuous(new_var) then
               disc := false;
