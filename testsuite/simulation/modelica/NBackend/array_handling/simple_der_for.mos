@@ -54,11 +54,11 @@ simulate(simple_der_for); getErrorString();
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + ((-1.0) + i))]
+// 	$FUN_1[$i1]
 // ### Equation:
 // 	[FOR-] (10) ($RES_$AUX_4)
-// 	[----] for i in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + ((-1.0) + i))] = sin(i * time) ($RES_$AUX_5)
+// 	[----] for $i1 in 1:10 loop
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
@@ -66,11 +66,11 @@ simulate(simple_der_for); getErrorString();
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$DER.x[i]
+// 	$DER.x[$i1]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
-// 	[----] for i in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[i] = x[i] + $DER.x[1 + i] + $FUN_1[integer(1.0 + ((-1.0) + i))] ($RES_SIM_2)
+// 	[----] for $i1 in 1:10 loop
+// 	[----]   [SCAL] (1) $DER.x[$i1] = x[$i1] + $DER.x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1}
 //
@@ -78,11 +78,11 @@ simulate(simple_der_for); getErrorString();
 // BLOCK 5: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$DER.x[1 + i]
+// 	$DER.x[1 + $i1]
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
-// 	[----] for i in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[1 + i] = -((x[i] + $FUN_1[integer(1.0 + ((-1.0) + i))]) - $DER.x[i]) ($RES_SIM_2)
+// 	[----] for $i1 in 1:10 loop
+// 	[----]   [SCAL] (1) $DER.x[1 + $i1] = -((x[$i1] + $FUN_1[$i1]) - $DER.x[$i1]) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2}
 //
@@ -156,7 +156,7 @@ simulate(simple_der_for); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "simple_der_for_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_der_for', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_der_for', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

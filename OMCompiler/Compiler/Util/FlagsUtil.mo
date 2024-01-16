@@ -250,7 +250,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_SLICE,
   Flags.VECTORIZE_BINDINGS,
   Flags.DUMP_EVENTS,
-  Flags.DUMP_BINDINGS
+  Flags.DUMP_BINDINGS,
+  Flags.DUMP_SORTING
 };
 
 protected

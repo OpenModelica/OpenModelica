@@ -341,8 +341,8 @@ public
     end if;
   end getDependentCrefIndicesPseudoScalar;
 
-  function getDependentCrefIndicesPseudoArray
-    "[Adjacency.MatrixType.PSEUDO] Array equations.
+  function getDependentCrefIndicesPseudoFull
+    "[Adjacency.MatrixType.PSEUDO] equations that will get full dependency.
     Turns cref dependencies into index lists, used for adjacency."
     extends getDependentCrefIndices;
   protected
@@ -398,7 +398,7 @@ public
     for i in 1:arrayLength(indices) loop
       indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
     end for;
-  end getDependentCrefIndicesPseudoArray;
+  end getDependentCrefIndicesPseudoFull;
 
   function getDependentCrefIndicesPseudoFor
     "[Adjacency.MatrixType.PSEUDO] For-Loop equations.
@@ -409,20 +409,27 @@ public
     list<ComponentRef> names;
     list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
-    Integer eqn_start, eqn_size, var_scal_idx, mode = 1;
-    list<Integer> scal_lst;
-    Integer idx;
-    array<Integer> mode_to_var_row;
-    list<tuple<ComponentRef, list<Integer>>> scal_tpl_lst;
-    Integer num_flat_indices;
+    Integer eqn_size, iter_size, body_size, mode = 1;
+    updateDependencies func;
   algorithm
-    // get iterator frames
+    // get iterator size and frames
+    iter_size := Iterator.size(iter);
     (names, ranges) := Iterator.getFrames(iter);
     frames := List.zip(names, ranges);
 
-    (eqn_start, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+    // get eqn size and create the adjacency matrix and causalization mode arrays
+    (_, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
     indices := arrayCreate(eqn_size, {});
     mode_to_var := arrayCreate(eqn_size, arrayCreate(0,0));
+
+    // sanity check for eqn size and get size of body equation
+    if mod(eqn_size, iter_size) == 0 then
+      body_size := realInt(eqn_size/iter_size);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        + " failed because the equation size " + intString(eqn_size)
+        + " could not be devided by the iterator size " + intString(iter_size) + " without rest."});
+    end if;
 
     // create unique array for each equation
     for i in 1:eqn_size loop
@@ -430,50 +437,9 @@ public
     end for;
 
     // create rows
-    for cref in dependencies loop
-      scal_tpl_lst := {};
-      // 1. scalarize cref and collect all indices per scalar cref
-      for scal_cref in ComponentRef.scalarizeAll(cref) loop
-        scal_lst := getCrefInFrameIndices(scal_cref, frames, mapping, map);
-        scal_tpl_lst := (scal_cref, scal_lst) :: scal_tpl_lst;
-      end for;
-
-      // 2. the total number of indices for this dependency has to be equal to
-      // the length of the equation. E.g following equation of size is 5*3=15
-      // for i in 1:5 loop
-      //   x[i].y[3:5] = ...
-      // end for;
-      // and the cref x[i].y[3:5] is scalarized to {x[i].y[3], x[i].y[4], x[i].y[5]}
-      // this list evaluated at each iterator position will each give 5 integers
-      // resulting in the desired 5*3 integers
-      num_flat_indices := sum(listLength(Util.tuple22(tpl)) for tpl in scal_tpl_lst);
-      if num_flat_indices <> eqn_size then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because number of flattened indices " + intString(num_flat_indices)
-          + " differ from equation size " + intString(eqn_size) + "."});
-        fail();
-      end if;
-
-      // 3. create the causalization mode and adjacency matrix arrays
-      // Note that there is only one mode per array variable!
-      // for the previous example x[i].y[3:5] all 15 scalarized
-      // indices will get the same mode, but spread on their respective 15 scalar equations
-      idx := 1;
-      for tpl in scal_tpl_lst loop
-        (_, scal_lst) := tpl;
-        for var_scal_idx in listReverse(scal_lst) loop
-          // get the clean pointer to the scalar row to avoid double indexing (meta modelica jank)
-          mode_to_var_row := mode_to_var[idx];
-          // set the dependency mode for this scalar equation to the scalar variable
-          mode_to_var_row[mode] := var_scal_idx;
-          arrayUpdate(mode_to_var_row, mode, var_scal_idx);
-          // this is the adjacency matrix row. each dependency cref
-          // will add exactly one integer to each row belonging to this for-equation
-          indices[idx] := var_scal_idx :: indices[idx];
-          idx := idx + 1;
-        end for;
-      end for;
-
+    for dep in dependencies loop
+      func := function updateDependenciesInteger(mode = mode, mode_to_var = mode_to_var, indices = indices);
+      fillDependencyArray(dep, body_size, frames, mapping, map, func);
       // increase mode index
       mode := mode + 1;
     end for;
@@ -485,7 +451,7 @@ public
   end getDependentCrefIndicesPseudoFor;
 
   function getDependentCrefsPseudoForCausalized
-    "[Adjacency.MatrixType.PSEUDO] For-Loop equations.
+    "(Jacobian) [Adjacency.MatrixType.PSEUDO] For-Loop equations.
     Turns cref dependencies into index lists, used for adjacency."
     input ComponentRef row_cref                                   "cref representing the current row";
     input list<ComponentRef> dependencies                         "dependent var crefs";
@@ -494,81 +460,166 @@ public
     input Mapping var_rep_mapping                                 "index mapping for variable representatives";
     input Mapping eqn_rep_mapping                                 "index mapping for equation representatives";
     input Iterator iter                                           "iterator frames";
+    input Integer eqn_size                                        "full equation size (not considering the slice)";
     input list<Integer> slice = {}                                "optional slice, empty list implies full slice";
     input Boolean implicit = false                                "do not compute row cref indices if implicit";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
-    ComponentRef stripped;
     list<ComponentRef> names;
-    list<Expression> ranges, subs;
-    list<list<Expression>> new_subs, new_row_cref_subs;
-    list<Subscript> evaluated_subs;
+    list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
-    list<ComponentRef> new_row_crefs = {}, new_dep_crefs;
-    list<list<ComponentRef>> scalar_dependenciesT = {};
 
-    list<Integer> row_scal_lst, dep_scal_lst;
-    Integer num_rows;
-    list<list<ComponentRef>> accum_dep_lst = {};
+    Integer num_rows, iter_size, body_size;
     list<ComponentRef> row_crefs;
+    list<Integer> row_scal_lst;
+    list<list<Integer>> accum_row_lst = {};
+    array<list<ComponentRef>> accum_dep_arr;
+    list<list<ComponentRef>> accum_dep_lst;
+    updateDependencies func_var, func_eqn;
   algorithm
-    // get iterator frames
+    // create the array of maximum equation size and slice afterwards
+    accum_dep_arr := arrayCreate(eqn_size, {});
+
+    // get iterator size and frames
+    iter_size := Iterator.size(iter);
     (names, ranges) := Iterator.getFrames(iter);
     frames := List.zip(names, ranges);
+
+    // sanity check for eqn size and get size of body equation
+    if mod(eqn_size, iter_size) == 0 then
+      body_size := realInt(eqn_size/iter_size);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        + " failed because the equation size " + intString(eqn_size)
+        + " could not be devided by the iterator size " + intString(iter_size) + " without rest."});
+    end if;
 
     // get row cref lst
     if implicit then
       row_crefs := ComponentRef.scalarizeAll(row_cref);
-      row_crefs := if listEmpty(slice) then row_crefs else List.getAtIndexLst(row_crefs, slice, true);
-      num_rows := listLength(row_crefs);
     else
-      row_scal_lst := getCrefInFrameIndices(row_cref, frames, eqn_rep_mapping, eqn_rep.map);
-      row_scal_lst := if listEmpty(slice) then row_scal_lst else List.getAtIndexLst(row_scal_lst, slice, true);
-      num_rows := listLength(row_scal_lst);
-      row_crefs := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
-    end if;
-
-    if not listEmpty(dependencies) then
-      for dep in dependencies loop
-        if UnorderedMap.contains(dep, var_rep.map) then
-          // case 1: direct dependency as var
-          dep_scal_lst := getCrefInFrameIndices(dep, frames, var_rep_mapping, var_rep.map);
-          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
-
-          if listLength(dep_scal_lst) <> num_rows then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-              + " failed because number of flattened indices " + intString(listLength(dep_scal_lst))
-              + " differ from number of rows size " + intString(num_rows) + "."});
-            fail();
-          else
-            accum_dep_lst := list(VariablePointers.varSlice(var_rep, i, var_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
-          end if;
-        elseif UnorderedMap.contains(dep, eqn_rep.map) then
-          // case 2: indirect dependency as eqn
-          dep_scal_lst := getCrefInFrameIndices(dep, frames, eqn_rep_mapping, eqn_rep.map);
-          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
-
-          if listLength(dep_scal_lst) <> num_rows then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-              + " failed because number of flattened indices " + intString(listLength(dep_scal_lst))
-              + " differ from number of rows size " + intString(num_rows) + "."});
-            fail();
-          else
-            accum_dep_lst := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
-          end if;
-        end if;
+      for cref in ComponentRef.scalarizeAll(row_cref) loop
+        row_scal_lst  := getCrefInFrameIndices(cref, frames, eqn_rep_mapping, eqn_rep.map);
+        accum_row_lst := row_scal_lst :: accum_row_lst;
       end for;
-      accum_dep_lst := List.transposeList(accum_dep_lst);
-    else
-      accum_dep_lst := {};
+      row_scal_lst  := List.flatten(accum_row_lst);
+      row_crefs     := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
     end if;
+    row_crefs := if listEmpty(slice) then row_crefs else List.getAtIndexLst(row_crefs, slice, true);
+    num_rows := listLength(row_crefs);
 
-    if listEmpty(accum_dep_lst) then
-      accum_dep_lst := List.fill({}, num_rows);
-    end if;
+    // prepare the functions to update dependencies
+    func_var := function updateDependenciesCref(accum_dep_arr = accum_dep_arr, vars = var_rep, mapping = var_rep_mapping);
+    func_eqn := function updateDependenciesCref(accum_dep_arr = accum_dep_arr, vars = eqn_rep, mapping = eqn_rep_mapping);
+
+    for dep in dependencies loop
+      if UnorderedMap.contains(dep, var_rep.map) then
+        fillDependencyArray(dep, body_size, frames, var_rep_mapping, var_rep.map, func_var);
+      elseif UnorderedMap.contains(dep, eqn_rep.map) then
+        fillDependencyArray(dep, body_size, frames, eqn_rep_mapping, eqn_rep.map, func_eqn);
+      end if;
+    end for;
+
+    accum_dep_lst := listReverse(arrayList(accum_dep_arr));
+    accum_dep_lst := if listEmpty(slice) then accum_dep_lst else List.getAtIndexLst(accum_dep_lst, slice, true);
 
     tpl_lst := List.zip(row_crefs, accum_dep_lst);
   end getDependentCrefsPseudoForCausalized;
+
+  function fillDependencyArray
+    "body function of getDependentCrefsPseudoFor and getDependentCrefsPseudoForCausalized
+    this generates all entries to jacobian or adjacency matrices for a specific dependency.
+    This dependency might be an array cref, part of a reduction or contain slices."
+    input ComponentRef dep;
+    input Integer body_size;
+    input list<tuple<ComponentRef, Expression>> frames;
+    input Mapping mapping;
+    input UnorderedMap<ComponentRef, Integer> map;
+    input updateDependencies func;
+  protected
+    Integer scal_length, body_repeat, eqn_idx;
+    list<Integer> scal_lst;
+    list<tuple<ComponentRef, list<Integer>>> scal_tpl_lst = {};
+  algorithm
+    // get all dependencies for each scalarized cref
+    // Note: scalarization does not remove the iterators, therefore it can still yield
+    //   multiple scalar indices when evaluated along the iterator frames
+    for scal_cref in ComponentRef.scalarizeAll(dep) loop
+      scal_lst := getCrefInFrameIndices(scal_cref, frames, mapping, map);
+      scal_tpl_lst := (scal_cref, scal_lst) :: scal_tpl_lst;
+    end for;
+
+    // check wether or not the element has to be repeated to fit the body
+    scal_length := listLength(scal_tpl_lst);
+    if mod(scal_length, body_size) == 0 then
+      body_repeat := realInt(scal_length/body_size);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        + " failed because number of flattened indices " + intString(scal_length)
+        + " for dependency " + ComponentRef.toString(dep)
+        + " could not be devided by the body size " + intString(body_size) + " without rest."});
+      fail();
+    end if;
+
+    eqn_idx := 1;
+    for tpl in scal_tpl_lst loop
+      (_, scal_lst) := tpl;
+
+      // reverse the scalar index list to traverse it in the correct order
+      scal_lst := listReverse(scal_lst);
+
+      // check if body_repeat > 1 to set the causalization mode to -1 for unsolvable
+      if body_repeat > 1 then
+        // reset the counter to 1 if the body is supposed to be repeated
+        // ToDo: reductions are only tested for body equations of size 1!
+        eqn_idx := 1;
+      end if;
+
+      for var_idx in scal_lst loop
+        // we now know that there is a dependency of equation (eqn_idx) to variable (var_idx)
+        // call the function that adds this specific variable to the correct structure
+        eqn_idx := func(eqn_idx, var_idx);
+      end for;
+    end for;
+  end fillDependencyArray;
+
+  partial function updateDependencies
+    input output Integer eqn_idx;
+    input Integer var_idx;
+  end updateDependencies;
+
+  function updateDependenciesCref
+    "(jacobian) adds the variable of (var_idx) as a dependency to (eqn_idx)
+    jacobian depencies are stored as component references"
+    extends updateDependencies;
+    input array<list<ComponentRef>> accum_dep_arr; //mutable
+    input VariablePointers vars;
+    input Mapping mapping;
+  algorithm
+    arrayUpdate(accum_dep_arr, eqn_idx, VariablePointers.varSlice(vars, var_idx, mapping) :: accum_dep_arr[eqn_idx]);
+    eqn_idx := eqn_idx + 1;
+  end updateDependenciesCref;
+
+  function updateDependenciesInteger
+    "(adjacency) adds the variable of (var_idx) as a dependency to (eqn_idx)
+    adjacency dependencies are stored as integers
+    also updates the causalization modes"
+    extends updateDependencies;
+    input Integer mode;
+    input array<array<Integer>> mode_to_var;  //mutable
+    input array<list<Integer>> indices;       //mutable
+  protected
+    array<Integer> mode_to_var_row;
+  algorithm
+    // get the clean pointer to the scalar row to avoid double indexing (meta modelica jank)
+    mode_to_var_row := mode_to_var[eqn_idx];
+    // set the dependency mode for this scalar equation to the scalar variable
+    arrayUpdate(mode_to_var_row, mode, var_idx);
+    // this is the adjacency matrix row. each dependency cref
+    // will add exactly one integer to each row belonging to this for-equation
+    arrayUpdate(indices, eqn_idx, var_idx :: indices[eqn_idx]);
+    eqn_idx := eqn_idx + 1;
+  end updateDependenciesInteger;
 
   function getDependentCrefsPseudoArrayCausalized
     "[Adjacency.MatrixType.PSEUDO] Array equations.
@@ -607,11 +658,9 @@ public
   algorithm
     for tpl in listReverse(size_val_tpl_lst) loop
       (size, val) := tpl;
-      //print("(" + intString(size) + "," + intString(val) + ")");
       index := index + (val-1) * factor;
       factor := factor * size;
     end for;
-    //print("=>" + intString(index) + "\n");
   end locationToIndex;
 
   function indexToLocation
@@ -983,7 +1032,9 @@ protected
         list<tuple<Integer, Integer>> ranges;
 
       // only occurs for non-for-loop equations (no frames to replace)
-      case {} then {first};
+      case {} algorithm
+        ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
+      then {locationToIndex(ranges, first)};
 
       // extract numeric information about the range
       case (iterator, range) :: rest algorithm

@@ -265,6 +265,8 @@ public
     list<Slice<VariablePointer>> unmatched_vars, matched_vars;
     list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
     String err_str;
+    Adjacency.Mapping mapping;
+    Option<array<tuple<Integer, Integer>>> var_opt, eqn_opt;
   algorithm
     (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if not listEmpty(unmatched_vars) then
@@ -274,11 +276,19 @@ public
         + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched Equations")
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
       if Flags.isSet(Flags.BLT_DUMP) then
+        if Util.isSome(mapping_opt) then
+          mapping := Util.getOption(mapping_opt);
+          var_opt := SOME(mapping.var_AtS);
+          eqn_opt := SOME(mapping.eqn_AtS);
+        else
+          var_opt := NONE();
+          eqn_opt := NONE();
+        end if;
         err_str := err_str + " \n" + StringUtil.headline_4("(" + intString(listLength(matched_vars)) + ") Matched Variables")
           + List.toString(matched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
           + StringUtil.headline_4("(" + intString(listLength(matched_eqns)) + ") Matched Equations")
           + List.toString(matched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-          + VariablePointers.toString(variables, "All ") + "\n" + EquationPointers.toString(equations, "All ") + "\n"
+          + VariablePointers.toString(variables, "All ", var_opt) + "\n" + EquationPointers.toString(equations, "All ", eqn_opt) + "\n"
           + Matching.toString(matching);
       end if;
       Error.addMessage(Error.INTERNAL_ERROR,{err_str});

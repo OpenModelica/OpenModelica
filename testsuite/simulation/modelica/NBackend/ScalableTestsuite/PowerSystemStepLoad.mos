@@ -1,0 +1,27 @@
+// name: ScalableTestSuite.Power.ConceptualPowerSystem.ScaledExperiments.PowerSystemStepLoad_N_2_M_4
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadModel(ScalableTestSuite); getErrorString();
+
+simulate(ScalableTestSuite.Power.ConceptualPowerSystem.ScaledExperiments.PowerSystemStepLoad_N_2_M_4); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Power.ConceptualPowerSystem.ScaledExperiments.PowerSystemStepLoad_N_2_M_4_res.mat",
+  "ReferenceFiles/ScalableTestSuite.Power.ConceptualPowerSystem.ScaledExperiments.PowerSystemStepLoad_N_2_M_4_res.mat",
+  "ScalableTestSuite.Power.ConceptualPowerSystem.ScaledExperiments.PowerSystemStepLoad_N_2_M_4_diff.csv",0.01,0.0001,
+  {"generator[1].theta"});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ScalableTestSuite.Power.ConceptualPowerSystem.ScaledExperiments.PowerSystemStepLoad_N_2_M_4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 4000, tolerance = 1e-7, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Power.ConceptualPowerSystem.ScaledExperiments.PowerSystemStepLoad_N_2_M_4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

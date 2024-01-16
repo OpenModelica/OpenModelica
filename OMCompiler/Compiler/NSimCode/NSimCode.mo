@@ -291,7 +291,7 @@ public
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
-          algorithm
+            algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
             funcTree := BackendDAE.getFunctionTree(bdae);
@@ -903,7 +903,7 @@ public
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");
-        var.index := SimVar.getIndex(UnorderedMap.getSafe(cref, simcode_map, sourceInfo()));
+        var.index := SimVar.getIndex(cref, simcode_map);
         daeModeAlgVars := var :: daeModeAlgVars;
       end for;
     end rewriteAlgebraicVarsIdx;

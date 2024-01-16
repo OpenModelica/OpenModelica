@@ -635,9 +635,11 @@ public
       case InstNode.VAR_NODE()
         algorithm
           state := getVarPointer(cref);
+          // append the $DER to the name
           derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
           der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(cref)));
-          var := fromCref(der_cref, Variable.attributes(Pointer.access(state)));
+          // make the actual derivative variable and make cref and the variable cyclic
+          var := fromCref(ComponentRef.stripSubscriptsAll(der_cref), Variable.attributes(Pointer.access(state)));
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
       then ();
@@ -1267,16 +1269,30 @@ public
     function toString
       input VariablePointers variables;
       input output String str = "";
+      input Option<array<tuple<Integer,Integer>>> mapping_opt = NONE();
       input Boolean printEmpty = true;
     protected
       Integer numberOfElements = VariablePointers.size(variables);
-      Integer length = 10;
+      Integer length, scal_start;
       String index;
+      Boolean useMapping = Util.isSome(mapping_opt);
+      array<tuple<Integer,Integer>> mapping;
     algorithm
+      if useMapping then
+        length := 15;
+        mapping := Util.getOption(mapping_opt);
+      else
+        length := 10;
+      end if;
       if printEmpty or numberOfElements > 0 then
         str := StringUtil.headline_4(str + " Variables (" + intString(numberOfElements) + "/" + intString(scalarSize(variables)) + ")");
         for i in 1:numberOfElements loop
-          index := "(" + intString(i) + ")";
+          if useMapping then
+            (scal_start, _) := mapping[i];
+            index := "(" + intString(i) + "|" + intString(scal_start) + ")";
+          else
+            index := "(" + intString(i) + ")";
+          end if;
           index := index + StringUtil.repeat(" ", length - stringLength(index));
           str := str + BVariable.toString(Pointer.access(ExpandableArray.get(i, variables.varArr)), index) + "\n";
         end for;
@@ -1834,58 +1850,59 @@ public
           VariablePointers lambdaVars;
 
         case VAR_DATA_SIM() algorithm
-          tmp := StringUtil.headline_2("Variable Data Simulation") + "\n";
+          tmp := "Variable Data Simulation (scalar unknowns: " + intString(VariablePointers.scalarSize(varData.unknowns)) + ")";
+          tmp := StringUtil.headline_2(tmp) + "\n";
           if not full then
-            tmp := tmp + VariablePointers.toString(varData.unknowns, "Unknown", false) +
-              VariablePointers.toString(varData.states, "Local Known", false) +
-              VariablePointers.toString(varData.knowns, "Global Known", false);
+            tmp := tmp + VariablePointers.toString(varData.unknowns, "Unknown", NONE(), false) +
+              VariablePointers.toString(varData.states, "Local Known", NONE(), false) +
+              VariablePointers.toString(varData.knowns, "Global Known", NONE(), false);
           else
-            tmp := tmp + VariablePointers.toString(varData.states, "State", false) +
-              VariablePointers.toString(varData.derivatives, "Derivative", false) +
-              VariablePointers.toString(varData.algebraics, "Algebraic", false) +
-              VariablePointers.toString(varData.discretes, "Discrete", false) +
-              VariablePointers.toString(varData.discrete_states, "Discrete States", false) +
-              VariablePointers.toString(varData.previous, "Previous", false) +
-              VariablePointers.toString(varData.top_level_inputs, "Top Level Inputs", false) +
-              VariablePointers.toString(varData.parameters, "Parameter", false) +
-              VariablePointers.toString(varData.constants, "Constant", false) +
-              VariablePointers.toString(varData.records, "Record", false) +
-              VariablePointers.toString(varData.artificials, "Artificial", false);
+            tmp := tmp + VariablePointers.toString(varData.states, "State", NONE(), false) +
+              VariablePointers.toString(varData.derivatives, "Derivative", NONE(), false) +
+              VariablePointers.toString(varData.algebraics, "Algebraic", NONE(), false) +
+              VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
+              VariablePointers.toString(varData.discrete_states, "Discrete States", NONE(), false) +
+              VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
+              VariablePointers.toString(varData.top_level_inputs, "Top Level Inputs", NONE(), false) +
+              VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
+              VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
+              VariablePointers.toString(varData.records, "Record", NONE(), false) +
+              VariablePointers.toString(varData.artificials, "Artificial", NONE(), false);
           end if;
-          tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-            VariablePointers.toString(varData.aliasVars, "Alias", false);
+          tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
+            VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
         then tmp;
 
         case VAR_DATA_JAC() algorithm
-          tmp := VariablePointers.toString(varData.unknowns, "Partial Derivative", false) +
-            VariablePointers.toString(varData.seedVars, "Seed", false);
+          tmp := VariablePointers.toString(varData.unknowns, "Partial Derivative", NONE(), false) +
+            VariablePointers.toString(varData.seedVars, "Seed", NONE(), false);
           if full then
-            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", false) +
-              VariablePointers.toString(varData.resultVars, "Residual", false) +
-              VariablePointers.toString(varData.tmpVars, "Inner", false) +
-              VariablePointers.toString(varData.dependencies, "Dependencies", false) +
-              VariablePointers.toString(varData.knowns, "Known", false) +
-              VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-              VariablePointers.toString(varData.aliasVars, "Alias", false);
+            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", NONE(), false) +
+              VariablePointers.toString(varData.resultVars, "Residual", NONE(), false) +
+              VariablePointers.toString(varData.tmpVars, "Inner", NONE(), false) +
+              VariablePointers.toString(varData.dependencies, "Dependencies", NONE(), false) +
+              VariablePointers.toString(varData.knowns, "Known", NONE(), false) +
+              VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
+              VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
           end if;
         then tmp;
 
         case VAR_DATA_HES() algorithm
           tmp := StringUtil.headline_2("Variable Data Hessian") + "\n" +
-            VariablePointers.toString(varData.unknowns, "Unknown", false) +
-            VariablePointers.toString(varData.knowns, "Known", false) +
-            VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-            VariablePointers.toString(varData.aliasVars, "Alias", false);
+            VariablePointers.toString(varData.unknowns, "Unknown", NONE(), false) +
+            VariablePointers.toString(varData.knowns, "Known", NONE(), false) +
+            VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
+            VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
           if full then
-            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", false) +
-              VariablePointers.toString(varData.dependencies, "Dependencies", false) +
-              VariablePointers.toString(varData.resultVars, "Result", false) +
-              VariablePointers.toString(varData.tmpVars, "Temporary", false) +
-              VariablePointers.toString(varData.seedVars, "First Seed", false) +
-              VariablePointers.toString(varData.seedVars2, "Second Seed", false);
+            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", NONE(), false) +
+              VariablePointers.toString(varData.dependencies, "Dependencies", NONE(), false) +
+              VariablePointers.toString(varData.resultVars, "Result", NONE(), false) +
+              VariablePointers.toString(varData.tmpVars, "Temporary", NONE(), false) +
+              VariablePointers.toString(varData.seedVars, "First Seed", NONE(), false) +
+              VariablePointers.toString(varData.seedVars2, "Second Seed", NONE(), false);
               if isSome(varData.lambdaVars) then
                 SOME(lambdaVars) := varData.lambdaVars;
-                tmp := tmp + VariablePointers.toString(lambdaVars, "Lagrangian Lambda", false);
+                tmp := tmp + VariablePointers.toString(lambdaVars, "Lagrangian Lambda", NONE(), false);
               end if;
           end if;
         then tmp;

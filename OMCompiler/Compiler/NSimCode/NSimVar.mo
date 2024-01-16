@@ -252,8 +252,19 @@ public
     end getName;
 
     function getIndex
-      input SimVar var;
-      output Integer index = var.index;
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, SimVar> sim_map;
+      output Integer index;
+    protected
+      SimVar var;
+    algorithm
+      try
+        var := UnorderedMap.getSafe(cref, sim_map, sourceInfo());
+        index := var.index;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
+        fail();
+      end try;
     end getIndex;
 
     function convert
