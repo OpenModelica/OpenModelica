@@ -94,33 +94,33 @@ val(x[2,1], 0.5);
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + ((-1.0) + j))]
+// 	$FUN_1[integer($i2)]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
-// 	[----] for j in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + ((-1.0) + j))] = sin(j * time) ($RES_$AUX_6)
+// 	[----] for $i2 in 1:3 loop
+// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	x[4, i]
+// 	x[4, $i1]
 // ### Equation:
 // 	[FOR-] (3) ($RES_SIM_0)
-// 	[----] for i in 1:3 loop
-// 	[----]   [SCAL] (1) x[4, i] = i * $FUN_2 ($RES_SIM_1)
+// 	[----] for $i1 in 1:3 loop
+// 	[----]   [SCAL] (1) x[4, $i1] = $i1 * $FUN_2 ($RES_SIM_1)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	x[i, j]
+// 	x[$i1, $i2]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
-// 	[----] for {i in 1:3, j in 1:3} loop
-// 	[----]   [SCAL] (1) x[i, j] = x[i + 1, j] + i * $FUN_1[integer(1.0 + ((-1.0) + j))] ($RES_SIM_3)
+// 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -144,33 +144,33 @@ val(x[2,1], 0.5);
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + ((-1.0) + j))]
+// 	$FUN_1[integer($i2)]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
-// 	[----] for j in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + ((-1.0) + j))] = sin(j * time) ($RES_$AUX_6)
+// 	[----] for $i2 in 1:3 loop
+// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	x[4, i]
+// 	x[4, $i1]
 // ### Equation:
 // 	[FOR-] (3) ($RES_SIM_0)
-// 	[----] for i in 1:3 loop
-// 	[----]   [SCAL] (1) x[4, i] = i * $FUN_2 ($RES_SIM_1)
+// 	[----] for $i1 in 1:3 loop
+// 	[----]   [SCAL] (1) x[4, $i1] = $i1 * $FUN_2 ($RES_SIM_1)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	x[i, j]
+// 	x[$i1, $i2]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
-// 	[----] for {i in 1:3, j in 1:3} loop
-// 	[----]   [SCAL] (1) x[i, j] = x[i + 1, j] + i * $FUN_1[integer(1.0 + ((-1.0) + j))] ($RES_SIM_3)
+// 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -194,33 +194,33 @@ val(x[2,1], 0.5);
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	x[4, i]
+// 	x[4, $i1]
 // ### Equation:
 // 	[FOR-] (3) ($RES_SIM_0)
-// 	[----] for i in 1:3 loop
-// 	[----]   [SCAL] (1) x[4, i] = i * $FUN_2 ($RES_SIM_1)
+// 	[----] for $i1 in 1:3 loop
+// 	[----]   [SCAL] (1) x[4, $i1] = $i1 * $FUN_2 ($RES_SIM_1)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + ((-1.0) + j))]
+// 	$FUN_1[integer($i2)]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
-// 	[----] for j in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + ((-1.0) + j))] = sin(j * time) ($RES_$AUX_6)
+// 	[----] for $i2 in 1:3 loop
+// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	x[i, j]
+// 	x[$i1, $i2]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
-// 	[----] for {i in 1:3, j in 1:3} loop
-// 	[----]   [SCAL] (1) x[i, j] = x[i + 1, j] + i * $FUN_1[integer(1.0 + ((-1.0) + j))] ($RES_SIM_3)
+// 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -246,11 +246,11 @@ val(x[2,1], 0.5);
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + ((-1.0) + j))]
+// 	$FUN_1[integer($i2)]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
-// 	[----] for j in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + ((-1.0) + j))] = sin(j * time) ($RES_$AUX_6)
+// 	[----] for $i2 in 1:3 loop
+// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
@@ -258,11 +258,11 @@ val(x[2,1], 0.5);
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	x[4, i]
+// 	x[4, $i1]
 // ### Equation:
 // 	[FOR-] (3) ($RES_SIM_0)
-// 	[----] for i in 1:3 loop
-// 	[----]   [SCAL] (1) x[4, i] = i * $FUN_2 ($RES_SIM_1)
+// 	[----] for $i1 in 1:3 loop
+// 	[----]   [SCAL] (1) x[4, $i1] = $i1 * $FUN_2 ($RES_SIM_1)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
@@ -270,11 +270,11 @@ val(x[2,1], 0.5);
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	x[i, j]
+// 	x[$i1, $i2]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
-// 	[----] for {i in 1:3, j in 1:3} loop
-// 	[----]   [SCAL] (1) x[i, j] = x[1 + i, j] + i * $FUN_1[integer(1.0 + ((-1.0) + j))] ($RES_SIM_3)
+// 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -298,39 +298,39 @@ val(x[2,1], 0.5);
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	x[4, i]
+// 	x[4, $i1]
 // ### Equation:
 // 	[FOR-] (3) ($RES_SIM_0)
-// 	[----] for i in 1:3 loop
-// 	[----]   [SCAL] (1) x[4, i] = i * $FUN_2 ($RES_SIM_1)
+// 	[----] for $i1 in 1:3 loop
+// 	[----]   [SCAL] (1) x[4, $i1] = $i1 * $FUN_2 ($RES_SIM_1)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + ((-1.0) + j))]
+// 	$FUN_1[integer($i2)]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
-// 	[----] for j in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + ((-1.0) + j))] = sin(j * time) ($RES_$AUX_6)
+// 	[----] for $i2 in 1:3 loop
+// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	x[i, j]
+// 	x[$i1, $i2]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
-// 	[----] for {i in 1:3, j in 1:3} loop
-// 	[----]   [SCAL] (1) x[i, j] = x[1 + i, j] + i * $FUN_1[integer(1.0 + ((-1.0) + j))] ($RES_SIM_3)
+// 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
 // record SimulationResult
 //     resultFile = "simple_nested_for5_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_nested_for5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_nested_for5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
