@@ -868,7 +868,7 @@ uniontype Function
     SCode.Mod annMod;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := IOStream.append(s, InstNode.toFlatString(fn.node));
+      s := Record.toFlatDeclarationStream(fn.node, s);
     elseif isPartialDerivative(fn) then
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 

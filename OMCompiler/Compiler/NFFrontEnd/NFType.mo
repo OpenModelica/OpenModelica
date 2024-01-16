@@ -997,7 +997,7 @@ public
           s;
 
       case COMPLEX(complexTy = ComplexType.RECORD())
-        then InstNode.toFlatStream(ty.cls, s);
+        then Record.toFlatDeclarationStream(ty.cls, s);
 
       case COMPLEX(complexTy = complexTy as ComplexType.EXTERNAL_OBJECT())
         algorithm
