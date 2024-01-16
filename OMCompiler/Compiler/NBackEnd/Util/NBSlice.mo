@@ -520,7 +520,7 @@ public
       end if;
     end for;
 
-    accum_dep_lst := arrayList(accum_dep_arr);
+    accum_dep_lst := listReverse(arrayList(accum_dep_arr));
     accum_dep_lst := if listEmpty(slice) then accum_dep_lst else List.getAtIndexLst(accum_dep_lst, slice, true);
 
     tpl_lst := List.zip(row_crefs, accum_dep_lst);
@@ -658,11 +658,9 @@ public
   algorithm
     for tpl in listReverse(size_val_tpl_lst) loop
       (size, val) := tpl;
-      //print("(" + intString(size) + "," + intString(val) + ")");
       index := index + (val-1) * factor;
       factor := factor * size;
     end for;
-    //print("=>" + intString(index) + "\n");
   end locationToIndex;
 
   function indexToLocation
