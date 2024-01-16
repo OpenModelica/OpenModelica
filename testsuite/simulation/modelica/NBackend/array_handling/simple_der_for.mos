@@ -54,11 +54,11 @@ simulate(simple_der_for); getErrorString();
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer($i1)]
+// 	$FUN_1[$i1]
 // ### Equation:
 // 	[FOR-] (10) ($RES_$AUX_4)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer($i1)] = sin($i1 * time) ($RES_$AUX_5)
+// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
@@ -70,7 +70,7 @@ simulate(simple_der_for); getErrorString();
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[$i1] = x[$i1] + $DER.x[1 + $i1] + $FUN_1[integer($i1)] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) $DER.x[$i1] = x[$i1] + $DER.x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {0, 1}
 //
@@ -82,7 +82,7 @@ simulate(simple_der_for); getErrorString();
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[1 + $i1] = -((x[$i1] + $FUN_1[integer($i1)]) - $DER.x[$i1]) ($RES_SIM_2)
+// 	[----]   [SCAL] (1) $DER.x[1 + $i1] = -((x[$i1] + $FUN_1[$i1]) - $DER.x[$i1]) ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2}
 //

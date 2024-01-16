@@ -94,11 +94,11 @@ val(x[2,1], 0.5);
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer($i2)]
+// 	$FUN_1[$i2]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
 // 	[----] for $i2 in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
+// 	[----]   [SCAL] (1) $FUN_1[$i2] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
@@ -120,7 +120,7 @@ val(x[2,1], 0.5);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
 // 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
-// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[$i2] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -144,11 +144,11 @@ val(x[2,1], 0.5);
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer($i2)]
+// 	$FUN_1[$i2]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
 // 	[----] for $i2 in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
+// 	[----]   [SCAL] (1) $FUN_1[$i2] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
@@ -170,7 +170,7 @@ val(x[2,1], 0.5);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
 // 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
-// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[$i2] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -205,11 +205,11 @@ val(x[2,1], 0.5);
 // BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer($i2)]
+// 	$FUN_1[$i2]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
 // 	[----] for $i2 in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
+// 	[----]   [SCAL] (1) $FUN_1[$i2] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
@@ -220,7 +220,7 @@ val(x[2,1], 0.5);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
 // 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
-// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[$i1 + 1, $i2] + $i1 * $FUN_1[$i2] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -246,11 +246,11 @@ val(x[2,1], 0.5);
 // BLOCK 2: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer($i2)]
+// 	$FUN_1[$i2]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
 // 	[----] for $i2 in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
+// 	[----]   [SCAL] (1) $FUN_1[$i2] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
@@ -274,7 +274,7 @@ val(x[2,1], 0.5);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
 // 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
-// 	[----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[$i2] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //
@@ -309,11 +309,11 @@ val(x[2,1], 0.5);
 // BLOCK 3: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer($i2)]
+// 	$FUN_1[$i2]
 // ### Equation:
 // 	[FOR-] (3) ($RES_$AUX_5)
 // 	[----] for $i2 in 1:3 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer($i2)] = sin($i2 * time) ($RES_$AUX_6)
+// 	[----]   [SCAL] (1) $FUN_1[$i2] = sin($i2 * time) ($RES_$AUX_6)
 // 	[----] end for;
 // 	 slice: {2, 1, 0}
 //
@@ -324,7 +324,7 @@ val(x[2,1], 0.5);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
 // 	[----] for {$i1 in 1:3, $i2 in 1:3} loop
-// 	[----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[integer($i2)] ($RES_SIM_3)
+// 	[----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[$i2] ($RES_SIM_3)
 // 	[----] end for;
 // 	 slice: {2, 5, 8, 1, 4, 7, 0, 3, 6}
 //

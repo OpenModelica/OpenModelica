@@ -531,7 +531,6 @@ public
       (iter_name, range) := frame;
       sub := match range
 
-
         // (iterator-start)/step + 1
         case Expression.RANGE() algorithm
           step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
@@ -550,8 +549,8 @@ public
             inv_arguments = {},
             operator = Operator.makeAdd(ty));
             sub_exp := SimplifyExp.simplify(sub_exp, true);
+            sub_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {sub_exp}, Variability.DISCRETE, Purity.PURE));
           end if;
-          sub_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {sub_exp}, Variability.DISCRETE, Purity.PURE));
         then Subscript.INDEX(sub_exp);
 
         else algorithm
