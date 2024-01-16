@@ -74,7 +74,7 @@ end SimpleCoolingCycle;
 // end 'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState';
 //
 // record 'T.DataRecord'
-//   constant Real 'MM'(quantity = "MolarMass");
+//   Real 'MM'(quantity = "MolarMass");
 // end 'T.DataRecord';
 //
 //   'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState' 'heatExchange_CounterFlowNTU.state';

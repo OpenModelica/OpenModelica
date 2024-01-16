@@ -8,12 +8,14 @@ else
 	# this DOES NOT WORK ON WINDOWS! PATH := ./;${PATH}
 endif
 
-TESTFILES = DoublePendulum.mos \
-  Tables.mos \
+TESTFILES = \
+	Comments.mo \
+  DoublePendulum.mos \
+	Expression1.mo \
+	Record1.mo \
 	SD.mo \
 	SimpleCoolingCycle.mo \
-	Comments.mo \
-	Expression1.mo
+  Tables.mos \
 
 
 # test that currently fail. Move up when fixed.
