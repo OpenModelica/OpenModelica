@@ -60,12 +60,14 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointer, EquationPointers, WhenEquationBody, WhenStatement, IfEquationBody, Iterator, SlicingStatus};
-  import BVariable = NBVariable;
+  import Inline = NBInline;
   import Jacobian = NBJacobian;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import Tearing = NBTearing;
+  import BVariable = NBVariable;
+  import NBVariable.VariablePointers;
 
   // Old SimCode imports
   import OldSimCode = SimCode;
@@ -452,7 +454,7 @@ public
       list<Block> tmp;
     algorithm
       for system in listReverse(systems) loop
-        BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
+        VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
         (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr), simcode_map, equation_map);
         blcks := tmp :: blcks;
       end for;
@@ -698,6 +700,7 @@ public
           Block tmp;
           list<ComponentRef> names;
           list<Expression> ranges;
+          Pointer<list<Pointer<Equation>>> record_residuals;
 
         case (BEquation.SCALAR_EQUATION(), {}) algorithm
           tmp := RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
@@ -711,7 +714,12 @@ public
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
-        // for equations have to be split up before. Since they are not causalized they
+        case (BEquation.RECORD_EQUATION(), {}) algorithm
+          record_residuals := Pointer.create({});
+          Inline.inlineRecordEquation(eqn, VariablePointers.empty(), record_residuals, Pointer.create(1));
+        then fail();
+
+        // for equations have to be split up before. Since they are not causalized
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(), {}) guard(listLength(eqn.body) == 1) algorithm
           rhs := Equation.getRHS(eqn);

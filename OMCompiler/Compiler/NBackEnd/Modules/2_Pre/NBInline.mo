@@ -189,7 +189,7 @@ protected
     eqData := EqData.compress(eqData);
   end inlineRecordsTuples;
 
-  function inlineRecordEquation
+  public function inlineRecordEquation
     "tries to inline a record equation. Removes the old equation by making it a dummy
     and appends new equations to the mutable list.
     EquationPointers.compress() should be used afterwards to remove the dummy equations."
@@ -239,7 +239,7 @@ protected
     end match;
   end inlineRecordEquation;
 
-  function inlineRecordEquationWork
+  protected function inlineRecordEquationWork
     input Expression lhs;
     input Expression rhs;
     input EquationAttributes attr;
