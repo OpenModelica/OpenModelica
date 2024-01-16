@@ -537,7 +537,7 @@ public
           step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
           sub_exp := Expression.fromCref(iter_name);
           // if start and step are equal to 1, make simple expression (simplify is not strong enough yet)
-          if not (Expression.isOne(range.start) or Expression.isOne(step)) then
+          if not (Expression.isOne(range.start) and Expression.isOne(step)) then
             sub_exp := Expression.MULTARY(
               arguments = {Expression.MULTARY(
                 arguments = {Expression.MULTARY(

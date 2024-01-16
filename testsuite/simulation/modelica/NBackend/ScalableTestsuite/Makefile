@@ -21,6 +21,7 @@ OneDHeatTransferTT_FD.mos \
 OneDHeatTransferTT_Modelica.mos \
 CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
+PowerSystemStepLoad.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
