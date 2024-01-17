@@ -32,6 +32,7 @@
 encapsulated uniontype NFVariable
   import Attributes = NFAttributes;
   import Binding = NFBinding;
+  import Class = NFClass;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -69,11 +70,13 @@ public
   end VARIABLE;
 
   function fromCref
+    "creates a variable from a component reference.
+    Note: does not flatten, do not use for instantiated elements!"
     input ComponentRef cref;
     output Variable variable;
   protected
     list<ComponentRef> crefs;
-    InstNode node;
+    InstNode node, child_node;
     Component comp;
     Type ty;
     Binding binding;
@@ -82,6 +85,8 @@ public
     Option<SCode.Comment> cmt;
     SourceInfo info;
     BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    list<Variable> children = {};
+    Option<Integer> complexSize;
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
@@ -90,6 +95,7 @@ public
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
+
     // kabdelhak: add dummy backend info, will be changed to actual value in
     // conversion to backend process (except for iterators). NBackendDAE.lower
     if ComponentRef.isIterator(cref) then
@@ -98,7 +104,17 @@ public
     else
       binding := Component.getImplicitBinding(comp);
     end if;
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, binfo);
+
+    // get the record children if the variable is a record
+    complexSize := Type.complexSize(ty);
+    if Util.isSome(complexSize) then
+      for i in Util.getOption(complexSize):-1:1 loop
+        child_node := Class.nthComponent(i, InstNode.getClass(node));
+        children := fromCref(ComponentRef.fromNode(child_node, InstNode.getType(child_node))) :: children;
+      end for;
+    end if;
+
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, children, cmt, info, binfo);
   end fromCref;
 
   function size
