@@ -70,6 +70,8 @@ public
   end VARIABLE;
 
   function fromCref
+    "creates a variable from a component reference.
+    Note: does not flatten, do not use for instantiated elements!"
     input ComponentRef cref;
     output Variable variable;
   protected
@@ -93,9 +95,9 @@ public
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
+
     // kabdelhak: add dummy backend info, will be changed to actual value in
     // conversion to backend process (except for iterators). NBackendDAE.lower
-
     if ComponentRef.isIterator(cref) then
       binding := NFBinding.EMPTY_BINDING;
       binfo.varKind := BackendExtension.ITERATOR();
@@ -103,6 +105,7 @@ public
       binding := Component.getImplicitBinding(comp);
     end if;
 
+    // get the record children if the variable is a record
     complexSize := Type.complexSize(ty);
     if Util.isSome(complexSize) then
       for i in Util.getOption(complexSize):-1:1 loop
