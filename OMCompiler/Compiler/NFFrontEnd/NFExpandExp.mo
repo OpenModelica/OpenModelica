@@ -90,6 +90,7 @@ public
       case Expression.LUNARY()   then expandLogicalUnary(exp);
       case Expression.RELATION() then (exp, true);
       case Expression.CAST()     then expandCast(exp);
+      case Expression.FILENAME() then (exp, true);
       else expandGeneric(exp);
     end match;
   end expand;

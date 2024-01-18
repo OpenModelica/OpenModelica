@@ -1389,6 +1389,8 @@ algorithm
     case Expression.PARTIAL_FUNCTION_APPLICATION()
       then Function.typePartialApplication(exp, context, info);
 
+    case Expression.FILENAME() then (exp, Type.STRING(),  Variability.CONSTANT, Purity.PURE);
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown expression: " + Expression.toString(exp), sourceInfo());

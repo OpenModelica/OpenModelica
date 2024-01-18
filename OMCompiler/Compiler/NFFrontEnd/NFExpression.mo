@@ -243,6 +243,10 @@ public
     Type ty;
   end PARTIAL_FUNCTION_APPLICATION;
 
+  record FILENAME
+    String filename;
+  end FILENAME;
+
   function isArray
     input Expression exp;
     output Boolean isArray;
@@ -702,6 +706,12 @@ public
         then
           comp;
 
+      case FILENAME()
+        algorithm
+          FILENAME(filename = s) := exp2;
+        then
+          Util.stringCompare(exp1.filename, s);
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -769,6 +779,7 @@ public
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
+      case FILENAME()        then Type.STRING();
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -952,11 +963,11 @@ public
     input Expression exp;
     output String value;
   algorithm
-    try
-      STRING(value=value) := exp;
-    else
-      value := "";
-    end try;
+    value := match exp
+      case STRING() then exp.value;
+      case FILENAME() then exp.filename;
+      else "";
+    end match;
   end stringValue;
 
   function booleanValue
@@ -1842,6 +1853,7 @@ public
         then "function " + ComponentRef.toString(exp.fn) + "(" + stringDelimitList(
           list(n + " = " + toString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
+      case FILENAME() then "\"" + System.escapedString(exp.filename, false) + "\"";
       else anyString(exp);
     end match;
   end toString;
@@ -1939,6 +1951,7 @@ public
         then "function " + ComponentRef.toFlatString(exp.fn) + "(" + stringDelimitList(
           list(n + " = " + toFlatString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
+      case FILENAME() then "\"" + Util.escapeModelicaStringToCString(exp.filename) + "\"";
       else anyString(exp);
     end match;
   end toFlatString;
@@ -2182,6 +2195,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION()
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
           Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
+      case FILENAME() then Absyn.Exp.STRING(exp.filename);
 
       else
         algorithm
@@ -2299,6 +2313,12 @@ public
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
       case MUTABLE() then toDAE(Mutable.access(exp.exp));
+      case FILENAME()
+        then if Flags.getConfigBool(Flags.BUILDING_FMU) then
+               DAE.CALL(Absyn.Path.IDENT("OpenModelica_fmuLoadResource"),
+                        {DAE.SCONST(exp.filename)}, DAE.callAttrBuiltinImpureString)
+             else
+               DAE.SCONST(exp.filename);
 
       else
         algorithm
@@ -2435,6 +2455,7 @@ public
         then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
       case ARRAY() then ValuesUtil.makeArray(list(toDAEValue(e) for e in exp.elements));
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
+      case FILENAME() then Values.STRING(exp.filename);
 
       else
         algorithm
@@ -4389,6 +4410,7 @@ public
       case STRING() then true;
       case BOOLEAN() then true;
       case ENUM_LITERAL() then true;
+      case FILENAME() then true;
       else false;
     end match;
   end isScalarLiteral;
@@ -4408,6 +4430,7 @@ public
       case RANGE() then isLiteral(exp.start) and
                         isLiteral(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteral, true);
+      case FILENAME() then true;
       else false;
     end match;
   end isLiteral;
@@ -4665,6 +4688,7 @@ public
       case RECORD()
         then RECORD(exp.path, Type.box(exp.ty), list(box(e) for e in exp.elements));
       case BOX() then exp;
+      case FILENAME() then exp;
       else BOX(exp);
     end match;
   end box;
@@ -5056,6 +5080,7 @@ public
       case MUTABLE() then variability(Mutable.access(exp.exp));
       case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
+      case FILENAME() then Variability.CONSTANT;
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -5133,6 +5158,7 @@ public
       case MUTABLE() then purity(Mutable.access(exp.exp));
       case EMPTY() then Purity.PURE;
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
+      case FILENAME() then Purity.PURE;
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -5911,11 +5937,11 @@ public
     end dump_arg;
   algorithm
     json := match exp
-      case Expression.INTEGER() then JSON.makeInteger(exp.value);
-      case Expression.REAL() then JSON.makeNumber(exp.value);
-      case Expression.STRING() then JSON.makeString(exp.value);
-      case Expression.BOOLEAN() then JSON.makeBoolean(exp.value);
-      case Expression.ENUM_LITERAL()
+      case INTEGER() then JSON.makeInteger(exp.value);
+      case REAL() then JSON.makeNumber(exp.value);
+      case STRING() then JSON.makeString(exp.value);
+      case BOOLEAN() then JSON.makeBoolean(exp.value);
+      case ENUM_LITERAL()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("enum"), json);
@@ -5924,12 +5950,12 @@ public
         then
           json;
 
-      case Expression.CLKCONST()
+      case CLKCONST()
         then ClockKind.toJSON(exp.clk);
 
-      case Expression.CREF() then ComponentRef.toJSON(exp.cref);
+      case CREF() then ComponentRef.toJSON(exp.cref);
 
-      case Expression.TYPENAME()
+      case TYPENAME()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("typename"), json);
@@ -5937,7 +5963,7 @@ public
         then
           json;
 
-      case Expression.ARRAY()
+      case ARRAY()
         algorithm
           json := JSON.emptyArray(arrayLength(exp.elements));
           for e in exp.elements loop
@@ -5946,7 +5972,7 @@ public
         then
           json;
 
-      case Expression.RANGE()
+      case RANGE()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("range"), json);
@@ -5960,7 +5986,7 @@ public
         then
           json;
 
-      case Expression.TUPLE()
+      case TUPLE()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("tuple"), json);
@@ -5969,7 +5995,7 @@ public
         then
           json;
 
-      case Expression.RECORD()
+      case RECORD()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("record"), json);
@@ -5979,10 +6005,10 @@ public
         then
           json;
 
-      case Expression.CALL()
+      case CALL()
         then Call.toJSON(exp.call);
 
-      case Expression.SIZE()
+      case SIZE()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("call"), json);
@@ -5997,7 +6023,7 @@ public
         then
           json;
 
-      case Expression.BINARY()
+      case BINARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
@@ -6007,7 +6033,7 @@ public
         then
           json;
 
-      case Expression.UNARY()
+      case UNARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
@@ -6016,7 +6042,7 @@ public
         then
           json;
 
-      case Expression.LBINARY()
+      case LBINARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
@@ -6026,7 +6052,7 @@ public
         then
           json;
 
-      case Expression.LUNARY()
+      case LUNARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
@@ -6035,7 +6061,7 @@ public
         then
           json;
 
-      case Expression.RELATION()
+      case RELATION()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
@@ -6045,7 +6071,7 @@ public
         then
           json;
 
-      case Expression.IF()
+      case IF()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("if"), json);
@@ -6055,11 +6081,11 @@ public
         then
           json;
 
-      case Expression.CAST() then toJSON(exp.exp);
-      case Expression.BOX() then toJSON(exp.exp);
-      case Expression.UNBOX() then toJSON(exp.exp);
+      case CAST() then toJSON(exp.exp);
+      case BOX() then toJSON(exp.exp);
+      case UNBOX() then toJSON(exp.exp);
 
-      case Expression.SUBSCRIPTED_EXP()
+      case SUBSCRIPTED_EXP()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("sub"), json);
@@ -6068,7 +6094,7 @@ public
         then
           json;
 
-      case Expression.TUPLE_ELEMENT()
+      case TUPLE_ELEMENT()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("tuple_element"), json);
@@ -6077,7 +6103,7 @@ public
         then
           json;
 
-      case Expression.RECORD_ELEMENT()
+      case RECORD_ELEMENT()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("record_element"), json);
@@ -6087,7 +6113,7 @@ public
         then
           json;
 
-      case Expression.PARTIAL_FUNCTION_APPLICATION()
+      case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("function"), json);
@@ -6096,6 +6122,8 @@ public
             list(dump_arg(name, arg) threaded for arg in exp.args, name in exp.argNames)), json);
         then
           json;
+
+      case FILENAME() then JSON.makeString(exp.filename);
 
       else JSON.makeString(toString(exp));
     end match;
