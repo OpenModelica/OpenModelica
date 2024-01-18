@@ -600,7 +600,7 @@ protected
     end if;
   end collectVariableBindingIterators;
 
-  function lowerRecordChildren
+  public function lowerRecordChildren
     input Pointer<Variable> var_ptr;
     input VariablePointers variables;
   protected
@@ -623,7 +623,7 @@ protected
     Pointer.update(var_ptr, var);
   end lowerRecordChildren;
 
-  function lowerEquationData
+  protected function lowerEquationData
     "Lowers all equations to backend structure.
     kabdelhak: Splitting up the creation of the equation array and the equation
     pointer arrays in two steps is slightly less effective, but way more readable
