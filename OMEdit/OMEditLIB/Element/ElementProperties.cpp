@@ -1344,18 +1344,17 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
         int index = pParameter->getUnitComboBox()->findData(displayUnit);
         if (index < 0) {
           // add modifier as additional display unit if compatible
-          index = pParameter->getUnitComboBox()->count() - 1;
           OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-          if (index > -1 &&
-              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
+          if (pParameter->getUnitComboBox()->count() > 0 && pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit).unitsCompatible) {
             pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
-            index++;
+            index = pParameter->getUnitComboBox()->count() - 1;
           }
         }
         if (index > -1) {
-          bool signalsState = pParameter->getUnitComboBox()->blockSignals(true);
+          /* Issue #11782.
+           * Setting the display unit trigger SIGNAL currentIndexChanged and calls SLOT unitComboBoxChanged which will set the correct value.
+           */
           pParameter->getUnitComboBox()->setCurrentIndex(index);
-          pParameter->getUnitComboBox()->blockSignals(signalsState);
           pParameter->setDisplayUnit(displayUnit);
           if (!defaultValue) {
             pParameter->setHasDisplayUnit(true);
