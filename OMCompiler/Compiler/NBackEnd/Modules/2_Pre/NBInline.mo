@@ -62,6 +62,7 @@ protected
   import NBVariable.{VariablePointers, VarData};
 
   // Util
+  import Slice = NBSlice;
   import StringUtil;
 
 // =========================================================================
@@ -146,6 +147,33 @@ public
     end if;
   end functionInlineable;
 
+  function inlineRecords
+    "also inlines simple record equalities"
+    input output EqData eqData;
+    input VariablePointers variables;
+  protected
+    Pointer<Integer> index = EqData.getUniqueIndex(eqData);
+    Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
+  algorithm
+    eqData := EqData.map(eqData, function inlineRecordEquation(variables = variables, record_eqns = new_eqns, index = index, inlineSimple = true));
+    eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
+    eqData := EqData.compress(eqData);
+  end inlineRecords;
+
+  function inlineRecordSliceEquation
+    input Slice<Pointer<Equation>> slice;
+    input VariablePointers variables;
+    input Pointer<Integer> index;
+    input Boolean inlineSimple;
+    output list<Slice<Pointer<Equation>>> slices;
+  protected
+    Pointer<list<Pointer<Equation>>> record_eqns = Pointer.create({});
+  algorithm
+    inlineRecordEquation(Pointer.access(Slice.getT(slice)), variables, record_eqns, index, inlineSimple);
+    // somehow split slice.indices
+    slices := list(Slice.SLICE(eqn, {}) for eqn in Pointer.access(record_eqns));
+  end inlineRecordSliceEquation;
+
 protected
   function inline extends Module.inlineInterface;
   protected
@@ -177,19 +205,20 @@ protected
   end collectInlineFunctions;
 
   function inlineRecordsTuples
+    "does not inline simple record equalities"
     input output EqData eqData;
     input VariablePointers variables;
   protected
     Pointer<Integer> index = EqData.getUniqueIndex(eqData);
     Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
   algorithm
-    eqData := EqData.map(eqData, function inlineRecordEquation(variables = variables, record_eqns = new_eqns, index = index));
+    eqData := EqData.map(eqData, function inlineRecordEquation(variables = variables, record_eqns = new_eqns, index = index, inlineSimple = false));
     eqData := EqData.map(eqData, function inlineTupleEquation(tuple_eqns = new_eqns, index = index));
     eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
     eqData := EqData.compress(eqData);
   end inlineRecordsTuples;
 
-  public function inlineRecordEquation
+  function inlineRecordEquation
     "tries to inline a record equation. Removes the old equation by making it a dummy
     and appends new equations to the mutable list.
     EquationPointers.compress() should be used afterwards to remove the dummy equations."
@@ -197,6 +226,7 @@ protected
     input VariablePointers variables;
     input Pointer<list<Pointer<Equation>>> record_eqns;
     input Pointer<Integer> index;
+    input Boolean inlineSimple;
   algorithm
     eqn := match eqn
       local
@@ -204,14 +234,14 @@ protected
         Integer size;
 
       // don't inline simple cref equalities
-      case Equation.RECORD_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()) then eqn;
-      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()) then eqn;
+      case Equation.RECORD_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()) guard(not inlineSimple) then eqn;
+      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF())  guard(not inlineSimple) then eqn;
 
       // try to inline other record equations. try catch to be sure to not discard
       case Equation.RECORD_EQUATION(ty = Type.COMPLEX()) algorithm
         try
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n"); end if;
-          new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, eqn.recordSize, variables, record_eqns, index);
+          new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, eqn.recordSize, variables, record_eqns, index, inlineSimple);
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("\n"); end if;
         else
           // inlining failed, keep old equation
@@ -223,7 +253,7 @@ protected
       case Equation.ARRAY_EQUATION(recordSize = SOME(size)) algorithm
         try
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n"); end if;
-          new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, size, variables, record_eqns, index);
+          new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, eqn.attr, eqn.source, size, variables, record_eqns, index, inlineSimple);
         else
           // inlining failed, keep old equation
           new_eqn := eqn;
@@ -232,14 +262,14 @@ protected
 
       // iterate over body equations of for-loop
       case Equation.FOR_EQUATION() algorithm
-        eqn.body := list(inlineRecordEquation(body_eqn, variables, record_eqns, index) for body_eqn in eqn.body);
+        eqn.body := list(inlineRecordEquation(body_eqn, variables, record_eqns, index, inlineSimple) for body_eqn in eqn.body);
       then eqn;
 
       else eqn;
     end match;
   end inlineRecordEquation;
 
-  protected function inlineRecordEquationWork
+  function inlineRecordEquationWork
     input Expression lhs;
     input Expression rhs;
     input EquationAttributes attr;
@@ -248,6 +278,7 @@ protected
     input VariablePointers variables;
     input Pointer<list<Pointer<Equation>>> record_eqns;
     input Pointer<Integer> index;
+    input Boolean inlineSimple;
     output Equation new_eqn;
   protected
     list<Pointer<Equation>> tmp_eqns;
@@ -274,7 +305,7 @@ protected
       // if the equation still has a record type, inline it further
       if Equation.isRecordEquation(tmp_eqn) then
         tmp_eqns_ptr := Pointer.create(tmp_eqns);
-        _ := inlineRecordEquation(Pointer.access(tmp_eqn), variables, tmp_eqns_ptr, index);
+        _ := inlineRecordEquation(Pointer.access(tmp_eqn), variables, tmp_eqns_ptr, index, inlineSimple);
         tmp_eqns := Pointer.access(tmp_eqns_ptr);
       else
         tmp_eqns := tmp_eqn :: tmp_eqns;

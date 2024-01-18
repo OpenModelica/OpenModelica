@@ -57,6 +57,7 @@ protected
   import BJacobian = NBJacobian;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
+  import Inline = NBInline;
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
   import Sorting = NBSorting;
@@ -119,28 +120,30 @@ public
     bdae := match (systemType, bdae)
       local
         list<System.System> systems;
+        VariablePointers variables;
+        Pointer<Integer> eq_index;
 
-      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree))
+      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree, variables, eq_index, systemType);
           bdae.ode := systems;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree))
+      case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree, variables, eq_index, systemType);
           bdae.init := systems;
           if Util.isSome(bdae.init_0) then
-            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), func, funcTree, systemType);
+            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), func, funcTree, variables, eq_index, systemType);
             bdae.init_0 := SOME(systems);
           end if;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree))
+      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree, variables, eq_index, systemType);
           bdae.dae := SOME(systems);
           bdae.funcTree := funcTree;
       then bdae;
@@ -149,7 +152,11 @@ public
     end match;
   end main;
 
-  function implicit extends Module.tearingInterface;
+  function implicit
+    input output StrongComponent comp     "the suspected algebraic loop.";
+    input output FunctionTree funcTree    "Function call bodies";
+    input output Integer index            "current unique loop index";
+    input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   algorithm
     (comp, funcTree, index) := match comp
       // create implicit equations
@@ -160,7 +167,7 @@ public
             casual  = NONE(),
             linear  = false,
             mixed   = false,
-            status  = NBSolve.Status.IMPLICIT), funcTree, index, systemType);
+            status  = NBSolve.Status.IMPLICIT), funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
 
       case StrongComponent.MULTI_COMPONENT()
       then tearingNone(StrongComponent.ALGEBRAIC_LOOP(
@@ -169,7 +176,7 @@ public
             casual  = NONE(),
             linear  = false,
             mixed   = false,
-            status  = NBSolve.Status.IMPLICIT), funcTree, index, systemType);
+            status  = NBSolve.Status.IMPLICIT), funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
 
       // do nothing otherwise
       else (comp, funcTree, index);
@@ -222,6 +229,8 @@ protected
     input Module.tearingInterface func;
     output list<System.System> new_systems = {};
     input output FunctionTree funcTree;
+    input VariablePointers variables;
+    input Pointer<Integer> eq_index;
     input System.SystemType systemType;
   protected
     array<StrongComponent> strongComponents;
@@ -232,7 +241,7 @@ protected
       if isSome(syst.strongComponents) then
         SOME(strongComponents) := syst.strongComponents;
         for i in 1:arrayLength(strongComponents) loop
-          (tmp, funcTree, idx) := func(strongComponents[i], funcTree, idx, systemType);
+          (tmp, funcTree, idx) := func(strongComponents[i], funcTree, idx, variables, eq_index, systemType);
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
             arrayUpdate(strongComponents, i, tmp);
@@ -251,14 +260,27 @@ protected
     list<StrongComponent> residual_comps;
     Option<Jacobian> jacobian;
     Tearing strict;
+  protected
+    list<Slice<EquationPointer>> tmp;
+    list<list<Slice<EquationPointer>>> acc = {};
   algorithm
     (comp, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         index := index + 1;
         comp.idx := index;
 
+        for eqn in listReverse(strict.residual_eqns) loop
+          tmp := Inline.inlineRecordSliceEquation(eqn, variables, eq_index, true);
+          if listEmpty(tmp) then
+            acc := {eqn} :: acc;
+          else
+            acc := tmp :: acc;
+          end if;
+        end for;
+
         // create residual equations
-        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in strict.residual_eqns);
+        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));
+        comp.strict := strict;
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 
         // update jacobian to take slices (just to have correct inner variables and such)

@@ -208,7 +208,7 @@ public
     Adjacency.Matrix adj;
     Matching matching;
   algorithm
-     // create scalar adjacency matrix for now
+    // create scalar adjacency matrix for now
     adj := Adjacency.Matrix.create(vars, eqs, matrixType);
     matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
     comps := Sorting.tarjan(adj, matching, vars, eqs);

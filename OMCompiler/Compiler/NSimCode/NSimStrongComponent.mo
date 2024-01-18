@@ -60,7 +60,6 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointer, EquationPointers, WhenEquationBody, WhenStatement, IfEquationBody, Iterator, SlicingStatus};
-  import Inline = NBInline;
   import Jacobian = NBJacobian;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
@@ -713,11 +712,6 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
-
-        case (BEquation.RECORD_EQUATION(), {}) algorithm
-          record_residuals := Pointer.create({});
-          Inline.inlineRecordEquation(eqn, VariablePointers.empty(), record_residuals, Pointer.create(1));
-        then fail();
 
         // for equations have to be split up before. Since they are not causalized
         // they can be executed in any order
