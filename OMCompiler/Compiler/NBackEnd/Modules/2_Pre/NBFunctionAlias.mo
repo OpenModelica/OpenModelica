@@ -213,7 +213,7 @@ protected
   protected
     UnorderedMap<Call_Id, Call_Aux> map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
     Pointer<Integer> index = Pointer.create(1);
-    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {};
+    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {};
     list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {};
     list<tuple<Call_Id, Call_Aux>> debug_lst_sim, debug_lst_ini;
     list<tuple<String, String>> debug_str;
@@ -236,13 +236,10 @@ protected
           (id, aux) := tpl;
           new_vars  := Call_Aux.getVars(aux);
           disc := true;
+
+          // categorize all aux variables
           for new_var in new_vars loop
-            if BVariable.isContinuous(new_var) then
-              disc := false;
-              new_vars_cont := new_var :: new_vars_cont;
-            else
-              new_vars_disc := new_var :: new_vars_disc;
-            end if;
+            (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, false);
           end for;
 
           // if any of the created variables is continuous, so is the equation
@@ -272,9 +269,9 @@ protected
           if not aux.parsed then
             // unfix parameters in initial system because we also add an equation
             new_vars := Call_Aux.getVars(aux);
+
             for new_var in new_vars loop
-              new_var := BVariable.setFixed(new_var, false);
-              new_vars_init := new_var :: new_vars_init;
+              (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, true);
             end for;
 
             new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
@@ -288,6 +285,7 @@ protected
     varData := VarData.addTypedList(varData, new_vars_cont, VarData.VarType.ALGEBRAIC);
     varData := VarData.addTypedList(varData, new_vars_disc, VarData.VarType.DISCRETE);
     varData := VarData.addTypedList(varData, new_vars_init, VarData.VarType.PARAMETER);
+    varData := VarData.addTypedList(varData, new_vars_recd, VarData.VarType.RECORD);
     eqData  := EqData.addTypedList(eqData, new_eqns_cont, EqData.EqType.CONTINUOUS, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_disc, EqData.EqType.DISCRETE, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_init, EqData.EqType.INITIAL, false);
@@ -471,6 +469,34 @@ protected
   names := Pointer.access(names_acc);
   ranges := Pointer.access(ranges_acc);
   end filterFrames;
+
+  function addAuxVar
+    input Pointer<Variable> new_var;
+    input output Boolean disc;
+    input output list<Pointer<Variable>> new_vars_disc;
+    input output list<Pointer<Variable>> new_vars_cont;
+    input output list<Pointer<Variable>> new_vars_init;
+    input output list<Pointer<Variable>> new_vars_recd;
+    input Boolean init;
+  protected
+    list<Variable> children;
+  algorithm
+    if BVariable.isRecord(new_var) then
+      new_vars_recd := new_var :: new_vars_recd;
+      // create record element variables (ignore first output since its the variable itself)
+      _ :: children := Variable.expandChildren(Pointer.access(new_var));
+      for elem_var in children loop
+        (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(Pointer.create(elem_var), disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
+      end for;
+    elseif init then
+      new_vars_init := BVariable.setFixed(new_var, false) :: new_vars_init;
+    elseif BVariable.isContinuous(new_var) then
+      disc := false;
+      new_vars_cont := new_var :: new_vars_cont;
+    else
+      new_vars_disc := new_var :: new_vars_disc;
+    end if;
+  end addAuxVar;
 
   annotation(__OpenModelica_Interface="backend");
 end NBFunctionAlias;

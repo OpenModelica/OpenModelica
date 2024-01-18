@@ -79,7 +79,8 @@ public
       case BackendDAE.MAIN()
         algorithm
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-            print(StringUtil.headline_4("[dumpBackendInline] Inlining operatations for: " + List.toString(inline_types, DAEDump.dumpInlineTypeBackendStr)));
+            print(StringUtil.headline_4("[dumpBackendInline] Inlining operatations for: "
+              + List.toString(inline_types, DAEDump.dumpInlineTypeBackendStr)));
           end if;
           bdae.eqData := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types);
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
