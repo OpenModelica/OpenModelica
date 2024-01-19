@@ -105,9 +105,9 @@ const char * const Helper::fmuPlatformNamePropertyId = "fmu-platform-name";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
 #ifdef Q_OS_MAC
-QString Helper::toolsOptionsPath = "OMEdit->Preferences";
+QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
 #else
-QString Helper::toolsOptionsPath = "Tools->Options";
+QString Helper::toolsOptionsPath = tr("Tools->Options");
 #endif
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
 /* Meta Modelica Types */
