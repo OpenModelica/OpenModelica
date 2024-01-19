@@ -639,9 +639,18 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
  */
 bool Utilities::isValueLiteralConstant(QString value)
 {
+  /* Issue #11795. Allow setting negative values for parameters.
+   * In future we should use proper regular expressions for this. Maybe when we switch to Qt 6.
+   */
+  if (value.compare(QStringLiteral("-")) == 0) {
+    return true;
+  }
+
   bool ok = true;
   value.toDouble(&ok);
-  if (ok) return true;
+  if (ok) {
+    return true;
+  }
 
   QStringList valuesArray = StringHandler::removeFirstLastCurlBrackets(value).split(",");
   foreach (QString valueElement, valuesArray) {
