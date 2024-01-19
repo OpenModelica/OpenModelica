@@ -4116,12 +4116,12 @@ void AddSystemLibraryDialog::addSystemLibrary()
 {
   // if name text box is empty show error and return
   if (mpNameComboBox->currentText().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("a")), Helper::ok);
     return;
   }
   // if value text box is empty show error and return
   if (mpVersionsComboBox->lineEdit()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("the value for a")), Helper::ok);
     return;
   }
   // if user is adding a new library
