@@ -2971,6 +2971,9 @@ algorithm
     case Expression.STRING()
       then Expression.FILENAME(OpenModelica.Scripting.uriToFilename(arg.value));
 
+    case Expression.FILENAME()
+      then Expression.FILENAME(OpenModelica.Scripting.uriToFilename(arg.filename));
+
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalUriToFilename;
