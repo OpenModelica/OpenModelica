@@ -64,6 +64,26 @@ public
     list<Expression> all;
   end REPEAT_ITERATOR;
 
+  function toString
+    input ExpressionIterator iter;
+    output String str;
+  algorithm
+    str := match iter
+      case ARRAY_ITERATOR() algorithm
+        str := "[ARRY] array iterator:\n";
+        for arr in iter.arrays loop
+          str := str + List.toString(arrayList(arr), Expression.toString) + "\n";
+        end for;
+      then str;
+
+      case REPEAT_ITERATOR() then "[REAP] repeat iterator:\n" + List.toString(iter.all, Expression.toString);
+      case SCALAR_ITERATOR() then "[SCAL] scalar iterator: " + Expression.toString(iter.exp) + "\n";
+      case EACH_ITERATOR() then "[EACH] each iterator: " + Expression.toString(iter.exp) + "\n";
+      case NONE_ITERATOR() then "[NONE] no iterator.\n";
+    end match;
+  end toString;
+
+
   function fromExp
     input Expression exp;
     input Boolean backend = false;
