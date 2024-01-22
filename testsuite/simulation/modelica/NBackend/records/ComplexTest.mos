@@ -396,10 +396,9 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ***************************************
 //
 //
-// Created Parameter Binding Equations (2):
+// Created Parameter Binding Equations (0):
 // ******************************************
-// 	[SCAL] (1) z.re = 1.0 ($RES_BND_5)
-// 	[SCAL] (1) z.im = 1.0 ($RES_BND_4)
+//
 //
 // Created Record Parameter Binding Equations (0):
 // *************************************************
