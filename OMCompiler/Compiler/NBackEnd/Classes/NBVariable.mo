@@ -1964,6 +1964,7 @@ public
     type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR, RECORD);
 
     function addTypedList
+      "can also be used to add single variables"
       input output VarData varData;
       input list<Pointer<Variable>> var_lst;
       input VarType varType;
@@ -1971,57 +1972,58 @@ public
       varData := match (varData, varType)
 
         case (VAR_DATA_SIM(), VarType.STATE) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
-          varData.states := VariablePointers.addList(var_lst, varData.states);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
+          varData.states      := VariablePointers.addList(var_lst, varData.states);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
           // also remove from algebraics in the case it was moved
-          varData.unknowns := VariablePointers.removeList(var_lst, varData.unknowns);
-          varData.algebraics := VariablePointers.removeList(var_lst, varData.algebraics);
+          varData.unknowns    := VariablePointers.removeList(var_lst, varData.unknowns);
+          varData.algebraics  := VariablePointers.removeList(var_lst, varData.algebraics);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.STATE_DER) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns    := VariablePointers.addList(var_lst, varData.unknowns);
           varData.derivatives := VariablePointers.addList(var_lst, varData.derivatives);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         // algebraic variables, dummy states and dummy derivatives are mathematically equal
         case (VAR_DATA_SIM(), VarType.ALGEBRAIC) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
-          varData.algebraics := VariablePointers.addList(var_lst, varData.algebraics);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns    := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.algebraics  := VariablePointers.addList(var_lst, varData.algebraics);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.DISCRETE) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
-          varData.discretes := VariablePointers.addList(var_lst, varData.discretes);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns    := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.discretes   := VariablePointers.addList(var_lst, varData.discretes);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.START) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
-          varData.parameters := VariablePointers.addList(var_lst, varData.parameters);
-          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
+          varData.parameters  := VariablePointers.addList(var_lst, varData.parameters);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
         then varData;
 
-        // IMPORTANT: does not add the record elements!
+        // IMPORTANT: requires the record elements to be added as children beforehand!
         case (VAR_DATA_SIM(), VarType.RECORD) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.records := VariablePointers.addList(var_lst, varData.records);
-          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.records     := VariablePointers.addList(var_lst, varData.records);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
+          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerRecordChildren(variables = varData.variables));
         then varData;
 
         // ToDo: other cases

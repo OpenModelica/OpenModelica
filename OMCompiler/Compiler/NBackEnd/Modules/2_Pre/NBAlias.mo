@@ -460,9 +460,9 @@ protected
           guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
         then tpl;
 
-        // fail for multidimensional crefs for now
+        // fail for multidimensional crefs and record elements for now
         case Expression.CREF()
-          guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1)
+          guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1 or Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref))))
         then FAILED_CREF_TPL;
 
         // variable found
