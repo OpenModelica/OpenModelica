@@ -7,14 +7,16 @@
 
 namespace OpenModelica::Absyn
 {
-  class DefineUnit : public Element::Base
+  class DefineUnit : public Element
   {
     public:
       DefineUnit(MetaModelica::Record value);
 
+      void apply(ElementVisitor &visitor) override;
+
       MetaModelica::Value toSCode() const noexcept override;
 
-      std::unique_ptr<Element::Base> clone() const noexcept override;
+      std::unique_ptr<Element> clone() const noexcept override;
       void print(std::ostream &os, Each) const noexcept override;
 
     private:

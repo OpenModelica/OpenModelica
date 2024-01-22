@@ -33,7 +33,7 @@ public:
           virtual bool isEach() const noexcept = 0;
 
           virtual const Expression* binding() const noexcept { return nullptr; }
-          virtual const Modifier::SubMod* lookupSubMod(std::string_view name) const noexcept { return nullptr; }
+          virtual const Modifier::SubMod* lookupSubMod(std::string_view /*name*/) const noexcept { return nullptr; }
 
           virtual std::unique_ptr<Base> clone() const noexcept = 0;
           virtual void print(std::ostream &os, std::string_view name) const noexcept = 0;
@@ -44,7 +44,7 @@ public:
       Modifier(MetaModelica::Record value);
       Modifier(Final finalPrefix, Each eachPrefix, std::vector<SubMod> subMods,
         std::optional<Expression> binding, const SourceInfo &info) noexcept;
-      Modifier(Final finalPrefix, Each eachPrefix, Element element) noexcept;
+      Modifier(Final finalPrefix, Each eachPrefix, std::unique_ptr<Element> element) noexcept;
       Modifier(const Modifier &other) noexcept;
       Modifier(Modifier &&other) = default;
 
@@ -99,14 +99,16 @@ public:
   {
     public:
       RedeclareModifier(MetaModelica::Record value);
-      RedeclareModifier(Final isFinal, Each isEach, Element element) noexcept;
+      RedeclareModifier(Final isFinal, Each isEach, std::unique_ptr<Element> element) noexcept;
+      RedeclareModifier(const RedeclareModifier &other) noexcept;
+      RedeclareModifier(RedeclareModifier &&other) noexcept = default;
 
       MetaModelica::Value toSCode() const noexcept override;
 
       bool isFinal() const noexcept override { return _final.isFinal(); }
       bool isEach() const noexcept override { return _each.isEach(); }
 
-      const Element& redeclareElement() const noexcept { return _element; }
+      const Element& redeclareElement() const noexcept { return *_element; }
 
       std::unique_ptr<Base> clone() const noexcept override;
       void print(std::ostream &os, std::string_view name) const noexcept override;
@@ -114,7 +116,7 @@ public:
     private:
       Final _final;
       Each _each;
-      Element _element;
+      std::unique_ptr<Element> _element;
   };
 }
 

@@ -11,6 +11,7 @@ set(OMC_FRONTEND_CPP_ABSYN_SOURCES
     Element.cpp
     ElementAttributes.cpp
     ElementPrefixes.cpp
+    ElementVisitor.cpp
     Equation.cpp
     Expression.cpp
     Extends.cpp

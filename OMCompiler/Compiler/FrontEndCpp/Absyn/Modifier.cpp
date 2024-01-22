@@ -41,7 +41,7 @@ Modifier::Modifier(Final finalPrefix, Each eachPrefix, std::vector<SubMod> subMo
 
 }
 
-Modifier::Modifier(Final finalPrefix, Each eachPrefix, Element element) noexcept
+Modifier::Modifier(Final finalPrefix, Each eachPrefix, std::unique_ptr<Element> element) noexcept
   : _value(std::make_unique<RedeclareModifier>(finalPrefix, eachPrefix, std::move(element)))
 {
 
@@ -179,13 +179,19 @@ void BindingModifier::print(std::ostream &os, std::string_view name) const noexc
 RedeclareModifier::RedeclareModifier(MetaModelica::Record value)
   : _final{value[0]},
     _each{value[1]},
-    _element{value[2]}
+    _element{Element::fromSCode(value[2])}
 {
 
 }
 
-RedeclareModifier::RedeclareModifier(Final isFinal, Each isEach, Element element) noexcept
+RedeclareModifier::RedeclareModifier(Final isFinal, Each isEach, std::unique_ptr<Element> element) noexcept
   : _final(isFinal), _each(isEach), _element(std::move(element))
+{
+
+}
+
+RedeclareModifier::RedeclareModifier(const RedeclareModifier &other) noexcept
+  : _final{other._final}, _each{other._each}, _element{other._element->clone()}
 {
 
 }
@@ -195,7 +201,7 @@ MetaModelica::Value RedeclareModifier::toSCode() const noexcept
   return MetaModelica::Record(REDECL, SCode_Mod_REDECL__desc, {
     _final.toSCode(),
     _each.toSCode(),
-    _element.toSCode()
+    _element->toSCode()
   });
 }
 
@@ -206,7 +212,7 @@ std::unique_ptr<Modifier::Base> RedeclareModifier::clone() const noexcept
 
 void RedeclareModifier::print(std::ostream &os, std::string_view) const noexcept
 {
-  _element.print(os, _each);
+  _element->print(os, _each);
 }
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream &os, const Modifier &modifier) noexcept

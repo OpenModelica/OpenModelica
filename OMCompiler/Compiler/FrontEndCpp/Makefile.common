@@ -17,7 +17,11 @@ else
 endif
 
 FRONTEND_CPP_OBJ = \
+	Class.o \
+	ClassNode.o \
+	ClassTree.o \
 	Inst.o \
+	InstNodeType.o \
 	MetaModelica.o \
 	Path.o \
 	Prefixes.o \
@@ -37,6 +41,7 @@ FRONTEND_CPP_ABSYN_OBJ = \
 	Absyn/Element.o \
 	Absyn/ElementAttributes.o \
 	Absyn/ElementPrefixes.o \
+	Absyn/ElementVisitor.o \
 	Absyn/Equation.o \
 	Absyn/Expression.o \
 	Absyn/Extends.o \

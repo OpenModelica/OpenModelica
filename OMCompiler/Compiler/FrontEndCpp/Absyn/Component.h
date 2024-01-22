@@ -14,18 +14,20 @@
 
 namespace OpenModelica::Absyn
 {
-  class Component : public Element::Base
+  class Component : public Element
   {
     public:
       Component(MetaModelica::Record value);
       ~Component();
+
+      void apply(ElementVisitor &visitor) override;
 
       MetaModelica::Value toSCode() const noexcept override;
 
       const std::string& name() const noexcept;
       const Comment& comment() const noexcept;
 
-      std::unique_ptr<Element::Base> clone() const noexcept override;
+      std::unique_ptr<Element> clone() const noexcept override;
       void print(std::ostream &os, Each each) const noexcept override;
 
     private:
