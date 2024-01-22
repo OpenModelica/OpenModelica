@@ -375,7 +375,7 @@ algorithm
   // For each non-partial connector class the number of flow variables shall
   // be equal to the number of variables that are neither parameter, constant,
   // input, output, stream nor flow.
-  if pots <> flows then
+  if pots <> flows and not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "unbalancedModel") then
     Error.addStrictMessage(Error.UNBALANCED_CONNECTOR,
       {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
   end if;
