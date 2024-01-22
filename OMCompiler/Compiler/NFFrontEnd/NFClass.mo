@@ -833,6 +833,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   function toFlatStream
     input Class cls;
     input InstNode clsNode;
+    input String indent;
     input output IOStream.IOStream s;
   protected
     String name;
@@ -842,17 +843,18 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     s := match cls
       case INSTANCED_CLASS()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, Restriction.toString(cls.restriction));
           s := IOStream.append(s, " ");
           s := IOStream.append(s, name);
           s := IOStream.append(s, "\n");
 
           for comp in ClassTree.getComponents(cls.elements) loop
-            s := IOStream.append(s, "  ");
-            s := IOStream.append(s, InstNode.toFlatString(comp));
+            s := IOStream.append(s, InstNode.toFlatString(comp, indent + "  "));
             s := IOStream.append(s, ";\n");
           end for;
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "end ");
           s := IOStream.append(s, name);
         then
@@ -860,6 +862,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
 
       case INSTANCED_BUILTIN()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "INSTANCED_BUILTIN(");
           s := IOStream.append(s, name);
           s := IOStream.append(s, ")");
@@ -868,6 +871,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
 
       case TYPED_DERIVED()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, Restriction.toString(cls.restriction));
           s := IOStream.append(s, " ");
           s := IOStream.append(s, name);
@@ -883,12 +887,13 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   function toFlatString
     input Class cls;
     input InstNode clsNode;
+    input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(cls, clsNode, s);
+    s := toFlatStream(cls, clsNode, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;

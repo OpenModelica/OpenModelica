@@ -221,60 +221,63 @@ public
     FlatModel flat_model = flatModel;
     Visibility visibility = Visibility.PUBLIC;
   algorithm
-    s := IOStream.append(s, "model '" + flat_model.name + "'");
-    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
-    s := IOStream.append(s, "\n");
-
+    s := IOStream.append(s, "package '" + flat_model.name + "'\n");
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
-        s := Function.toFlatStream(fn, s);
+        s := Function.toFlatStream(fn, "  ", s);
         s := IOStream.append(s, ";\n\n");
       end if;
     end for;
 
     for ty in collectFlatTypes(flat_model, functions) loop
-      s := Type.toFlatDeclarationStream(ty, s);
+      s := Type.toFlatDeclarationStream(ty, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
+
+    s := IOStream.append(s, "  model '" + flat_model.name + "'");
+    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
+    s := IOStream.append(s, "\n");
 
     for v in flat_model.variables loop
       if visibility <> Variable.visibility(v) then
         visibility := Variable.visibility(v);
+        s := IOStream.append(s, "  ");
         s := IOStream.append(s, Prefixes.visibilityString(visibility));
         s := IOStream.append(s, "\n");
       end if;
 
-      s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
+      s := Variable.toFlatStream(v, "    ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 
     if not listEmpty(flat_model.initialEquations) then
-      s := IOStream.append(s, "initial equation\n");
-      s := Equation.toFlatStreamList(flat_model.initialEquations, "  ", s);
+      s := IOStream.append(s, "  initial equation\n");
+      s := Equation.toFlatStreamList(flat_model.initialEquations, "    ", s);
     end if;
 
     if not listEmpty(flat_model.equations) then
-      s := IOStream.append(s, "equation\n");
-      s := Equation.toFlatStreamList(flat_model.equations, "  ", s);
+      s := IOStream.append(s, "  equation\n");
+      s := Equation.toFlatStreamList(flat_model.equations, "    ", s);
     end if;
 
     for alg in flat_model.initialAlgorithms loop
       if not listEmpty(alg.statements) then
-        s := IOStream.append(s, "initial algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+        s := IOStream.append(s, "  initial algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "    ", s);
       end if;
     end for;
 
     for alg in flat_model.algorithms loop
       if not listEmpty(alg.statements) then
-        s := IOStream.append(s, "algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+        s := IOStream.append(s, "  algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "    ", s);
       end if;
     end for;
 
-    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "  ", ";\n", s);
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "    ", ";\n", s);
+    s := IOStream.append(s, "  end '" + flat_model.name + "';\n");
     s := IOStream.append(s, "end '" + flat_model.name + "';\n");
   end appendFlatStream;
 

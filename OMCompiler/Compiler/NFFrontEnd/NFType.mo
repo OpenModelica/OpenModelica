@@ -966,6 +966,7 @@ public
 
   function toFlatDeclarationStream
     input Type ty;
+    input String indent;
     input output IOStream.IOStream s;
   algorithm
     s := match ty
@@ -979,6 +980,7 @@ public
 
       case ENUMERATION()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "type ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath)));
           s := IOStream.append(s, " = enumeration(");
@@ -997,36 +999,40 @@ public
           s;
 
       case COMPLEX(complexTy = ComplexType.RECORD())
-        then Record.toFlatDeclarationStream(ty.cls, s);
+        then Record.toFlatDeclarationStream(ty.cls, indent, s);
 
       case COMPLEX(complexTy = complexTy as ComplexType.EXTERNAL_OBJECT())
         algorithm
           path := InstNode.scopePath(ty.cls);
           name := Util.makeQuotedIdentifier(AbsynUtil.pathString(path));
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "class ");
           s := IOStream.append(s, name);
           s := IOStream.append(s, "\n  extends ExternalObject;\n\n");
           {f} := Function.typeNodeCache(complexTy.constructor);
-          s := Function.toFlatStream(f, s, overrideName="constructor");
+          s := Function.toFlatStream(f, indent + "  ", s, overrideName="constructor");
           s := IOStream.append(s, ";\n\n");
           {f} := Function.typeNodeCache(complexTy.destructor);
-          s := Function.toFlatStream(f, s, overrideName="destructor");
+          s := Function.toFlatStream(f, indent + "  ", s, overrideName="destructor");
           s := IOStream.append(s, ";\n\nend ");
           s := IOStream.append(s, name);
         then s;
 
       case SUBSCRIPTED()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "function ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
           s := IOStream.append(s, "\n");
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "  input ");
           s := IOStream.append(s, toString(ty.ty));
           s := IOStream.append(s, " exp;\n");
 
           index := 1;
           for sub in ty.subs loop
+            s := IOStream.append(s, indent);
             s := IOStream.append(s, "  input ");
             s := IOStream.append(s, toString(sub));
             s := IOStream.append(s, " s");
@@ -1035,6 +1041,7 @@ public
             index := index + 1;
           end for;
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "  output ");
           s := IOStream.append(s, toString(ty.subscriptedTy));
           s := IOStream.append(s, " result = exp[");
@@ -1042,6 +1049,7 @@ public
             stringDelimitList(list("s" + String(i) for i in 1:listLength(ty.subs)), ","));
           s := IOStream.append(s, "];\n");
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "end ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
         then

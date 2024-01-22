@@ -859,6 +859,7 @@ uniontype Function
 
   function toFlatStream
     input Function fn;
+    input String indent;
     input output IOStream.IOStream s;
     input String overrideName = "";
   protected
@@ -868,10 +869,11 @@ uniontype Function
     SCode.Mod annMod;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := Record.toFlatDeclarationStream(fn.node, s);
+      s := Record.toFlatDeclarationStream(fn.node, indent, s);
     elseif isPartialDerivative(fn) then
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
+      s := IOStream.append(s, indent);
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
       s := IOStream.append(s, " = der(");
@@ -884,34 +886,33 @@ uniontype Function
       cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
+      s := IOStream.append(s, indent);
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
       s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
-        s := IOStream.append(s, "  ");
-        s := IOStream.append(s, InstNode.toFlatString(i));
+        s := IOStream.append(s, InstNode.toFlatString(i, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       for o in fn.outputs loop
-        s := IOStream.append(s, "  ");
-        s := IOStream.append(s, InstNode.toFlatString(o));
+        s := IOStream.append(s, InstNode.toFlatString(o, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       if not listEmpty(fn.locals) then
+        s := IOStream.append(s, indent);
         s := IOStream.append(s, "protected\n");
 
         for l in fn.locals loop
-          s := IOStream.append(s, "  ");
-          s := IOStream.append(s, InstNode.toFlatString(l));
+          s := IOStream.append(s, InstNode.toFlatString(l, indent + "  "));
           s := IOStream.append(s, ";\n");
         end for;
       end if;
 
-      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, s);
+      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, indent, s);
 
       if isSome(cmt.annotation_) then
         SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
@@ -932,9 +933,10 @@ uniontype Function
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
         cmt := SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)), NONE());
-        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), "  ", ";\n", s);
+        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), indent + "  ", ";\n", s);
       end if;
 
+      s := IOStream.append(s, indent);
       s := IOStream.append(s, "end ");
       s := IOStream.append(s, fn_name);
     end if;
@@ -942,12 +944,13 @@ uniontype Function
 
   function toFlatString
     input Function fn;
+    input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(fn, s);
+    s := toFlatStream(fn, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;
