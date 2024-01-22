@@ -22,6 +22,7 @@ OneDHeatTransferTT_Modelica.mos \
 CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
 PowerSystemStepLoad.mos \
+SimpleAdvection.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

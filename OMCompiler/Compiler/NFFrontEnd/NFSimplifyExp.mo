@@ -1362,7 +1362,7 @@ algorithm
     local
       Expression new_exp;
       list<Expression> args, inv_args;
-      Operator inv_op;
+      Operator inv_op, fixed_op;
 
     case Expression.MULTARY() algorithm
       if listLength(exp.arguments) > 0 then
@@ -1396,11 +1396,13 @@ algorithm
       inv_op := Operator.invert(exp.operator);
       // chain all arguments
       for arg in args loop
-        new_exp := Expression.BINARY(new_exp, exp.operator, arg);
+        fixed_op := Operator.repairBinary(exp.operator, Expression.typeOf(new_exp), Expression.typeOf(arg));
+        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
       end for;
       // chain all inverse arguments
       for arg in inv_args loop
-        new_exp := Expression.BINARY(new_exp, inv_op, arg);
+        fixed_op := Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(arg));
+        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
       end for;
     then new_exp;
 

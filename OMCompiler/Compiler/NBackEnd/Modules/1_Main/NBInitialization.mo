@@ -301,7 +301,7 @@ public
     input Pointer<Integer> idx;
   protected
     Option<Expression> start_exp_opt;
-    Expression start_exp;
+    Expression start_exp, new_start_exp;
     Pointer<Variable> var_ptr, start_var;
     ComponentRef name, start_name;
     list<Dimension> dims;
@@ -316,43 +316,53 @@ public
     UnorderedMap<ComponentRef, Expression> replacements;
     InstNode old_iter;
     ComponentRef new_iter;
+    Iterator iterator;
   algorithm
     var_ptr := Slice.getT(state);
-    // make unique iterators for the new for-loop
     name    := BVariable.getVarName(var_ptr);
-    dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
-    (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-    iter_crefs := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
-    iter_crefs := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
-    subscripts := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
-    frames  := List.zip(iter_crefs, ranges);
-    (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
-
     start_exp_opt := BVariable.getStartAttribute(var_ptr);
     if Util.isSome(start_exp_opt) and Expression.variability(Util.getOption(start_exp_opt)) > NFPrefixes.Variability.STRUCTURAL_PARAMETER then
       // use the start attribute itself if it is not constant
-      // discard start_var/start_name
       SOME(start_exp) := start_exp_opt;
       // if it is some kind of array repeating structure, extract the repeated element e.g. fill()
       start_exp := match start_exp
         case Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+
+          // make unique iterators for the new for-loop
+          dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
+          (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
+          iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
+          iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
+          subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
+          frames      := List.zip(iter_crefs, ranges);
+          iterator    := Iterator.fromFrames(frames);
+
+          // create start variable name with subscripts and create start expression
+          (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
           replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
           for tpl in List.zip(array_constructor.iters, frames) loop
             ((old_iter, _), (new_iter, _)) := tpl;
             UnorderedMap.add(ComponentRef.fromNode(old_iter, InstNode.getType(old_iter)), Expression.fromCref(new_iter), replacements);
           end for;
-        then Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
-        else start_exp;
+          new_start_exp := Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
+        then new_start_exp;
+
+        else algorithm
+          (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
+          iterator := Iterator.EMPTY();
+        then start_exp;
       end match;
     else
       // create a start variable if it is constant
+      (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
       start_exp := Expression.fromCref(start_name);
       Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+      iterator := Iterator.EMPTY();
     end if;
 
     // make the new start equation
     kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-    start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
+    start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true));
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
       (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
