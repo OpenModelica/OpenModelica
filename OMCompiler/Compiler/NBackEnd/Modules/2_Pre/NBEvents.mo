@@ -676,13 +676,17 @@ public
       Condition cond;
       StateEvent sev; // don't even need state event? only condition relevant
       Option<list<OldSimIterator>> iter;
+      list<ComponentRef> eqn_names;
+      list<Integer> eqn_indices;
     algorithm
       (cond, sev) := sev_tpl;
-      iter := if Iterator.isEmpty(cond.iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(cond.iter)));
+      iter        := if Iterator.isEmpty(cond.iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(cond.iter)));
+      eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in sev.eqns);
+      eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name in eqn_names);
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
         relation_   = Expression.toDAE(cond.exp),
-        occurEquLst = list(Block.getIndex(UnorderedMap.getSafe(Equation.getEqnName(eqn), equation_map, sourceInfo())) for eqn in sev.eqns), //ToDo: low priority - only for debugging
+        occurEquLst = eqn_indices,
         iter        = iter
       );
     end convert;
