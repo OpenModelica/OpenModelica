@@ -519,7 +519,9 @@ public
             for i in arrayLength(comps):-1:1 loop
               (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, system.systemType, simcode_map, equation_map);
               // add it to the alias map
-              UnorderedMap.add(AliasInfo.ALIAS_INFO(system.systemType, system.partitionIndex, i), index, simCodeIndices.alias_map);
+              if not StrongComponent.isAlias(comps[i]) then
+                UnorderedMap.add(AliasInfo.ALIAS_INFO(system.systemType, system.partitionIndex, i), index, simCodeIndices.alias_map);
+              end if;
               result := tmp :: result;
             end for;
         then result;

@@ -717,6 +717,16 @@ public
     end match;
   end isDiscrete;
 
+  function isAlias
+    input StrongComponent comp;
+    output Boolean b;
+  algorithm
+    b := match comp
+      case ALIAS() then true;
+      else false;
+    end match;
+  end isAlias;
+
   function createPseudoScalar
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;

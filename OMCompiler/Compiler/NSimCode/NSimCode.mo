@@ -223,6 +223,9 @@ public
     algorithm
       str := StringUtil.headline_1("SimCode " + str + "(" + simCode.fileNamePrefix + ")");
       str := str + ModelInfo.toString(simCode.modelInfo);
+      if not listEmpty(simCode.init_0) then
+        str := str + SimStrongComponent.Block.listToString(simCode.init_0, "  ", "Initial Partition (Lambda = 0)") + "\n";
+      end if;
       str := str + SimStrongComponent.Block.listToString(simCode.init, "  ", "Initial Partition") + "\n";
       for blck_lst in simCode.ode loop
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "ODE Partition " + intString(idx)) + "\n";
@@ -319,7 +322,7 @@ public
             // init before everything else!
             (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, simcode_map, equation_map);
             if isSome(bdae.init_0) then
-              init_0 := SimStrongComponent.Block.createInitialBlocks(Util.getOption(bdae.init_0), simCodeIndices, simcode_map, equation_map);
+              (init_0, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(Util.getOption(bdae.init_0), simCodeIndices, simcode_map, equation_map);
             else
               init_0 := {};
             end if;
