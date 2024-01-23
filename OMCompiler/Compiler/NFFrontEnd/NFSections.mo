@@ -390,6 +390,7 @@ public
   function toFlatStream
     input Sections sections;
     input Absyn.Path scopeName;
+    input String indent;
     input output IOStream.IOStream s;
   protected
     Annotation ann;
@@ -399,12 +400,14 @@ public
       case SECTIONS()
         algorithm
           for alg in sections.algorithms loop
+            s := IOStream.append(s, indent);
             s := IOStream.append(s, "algorithm\n");
-            s := Statement.toFlatStreamList(alg.statements, "  ", s);
+            s := Statement.toFlatStreamList(alg.statements, indent + "  ", s);
           end for;
         then ();
       case EXTERNAL()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "external \"");
           s := IOStream.append(s, sections.language);
           s := IOStream.append(s, "\"");

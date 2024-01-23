@@ -7,7 +7,7 @@ writeFile("DoublePendulum.mo", OpenModelica.Scripting.instantiateModel(Modelica.
 clear();
 loadFile("DoublePendulum.mo");getErrorString();
 setCommandLineOptions("--std=experimental");
-translateModel('Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum', fileNamePrefix="DP");getErrorString();
+translateModel('Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum'.'Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum', fileNamePrefix="DP");getErrorString();
 // Result:
 // true
 // ""

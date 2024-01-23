@@ -359,13 +359,14 @@ end foldInputFields;
 
 function toFlatDeclarationStream
   input InstNode recordNode;
+  input String indent;
   input output IOStream.IOStream s;
 protected
   InstNode node;
 algorithm
   node := instRecord(recordNode);
   Typing.typeClass(node, NFInstContext.RELAXED);
-  s := IOStream.append(s, InstNode.toFlatString(node));
+  s := IOStream.append(s, InstNode.toFlatString(node, indent));
 end toFlatDeclarationStream;
 
 annotation(__OpenModelica_Interface="frontend");

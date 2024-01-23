@@ -1581,23 +1581,25 @@ uniontype InstNode
 
   function toFlatString
     input InstNode node;
+    input String indent;
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component));
-      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node);
+      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), indent);
+      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, indent);
       else name(node);
     end match;
   end toFlatString;
 
   function toFlatStream
     input InstNode node;
+    input String indent;
     input output IOStream.IOStream s;
   algorithm
     s := match node
-      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), s);
-      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, s);
-      else IOStream.append(s, toFlatString(node));
+      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), indent, s);
+      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, indent, s);
+      else IOStream.append(s, toFlatString(node, indent));
     end match;
   end toFlatStream;
 
