@@ -1934,11 +1934,9 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
-    bool showPlotWindow = true;
 #if !defined(WITHOUT_OSG)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
-      showPlotWindow = false;
       if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
         MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
         AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
@@ -1951,15 +1949,11 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       }
     }
 #endif
-    if (showPlotWindow) {
-      OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
-      if (pPlotWindow) {
-        MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
-      } else {
-        MainWindow::instance()->getPlotWindowContainer()->addPlotWindow(true);
-      }
-    }
     pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
+    /* issue #11811
+     * Make sure we always update the diagramWindow after simulation.
+     */
+    MainWindow::instance()->getPlotWindowContainer()->showDiagramWindow(0);
   }
   bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
