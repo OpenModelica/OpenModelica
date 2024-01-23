@@ -149,7 +149,13 @@ protected
 algorithm
   if index > 0 and (index > capacity or isNone(Dangerous.arrayGetNoBoundsChecking(data, index))) then
     if index > capacity then
-      expandToSize(index, exarray);
+      capacity := max(capacity, 1);
+
+      while index > capacity loop
+        capacity := capacity * 2;
+      end while;
+
+      expandToSize(capacity, exarray);
       data := Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
     end if;
 
