@@ -27,6 +27,7 @@ SimpleAdvection.mos \
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+CombiTimeTable.mos \
 TransmissionLineEquations.mos \
 
 # Dependency files that are not .mo .mos or Makefile
