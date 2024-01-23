@@ -140,37 +140,6 @@ PlotWindow* PlotWindowContainer::getInteractiveWindow(QString targetWindow)
   }
 }
 
-/*!
- * \brief PlotWindowContainer::getTopPlotWindow
- * Finds the top PlotWindow and returns it. If there is no PlotWindow then return 0.
- * \return
- */
-PlotWindow* PlotWindowContainer::getTopPlotWindow()
-{
-  QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
-    if (isPlotWindow(subWindowsList.at(i)->widget())) {
-      return qobject_cast<PlotWindow*>(subWindowsList.at(i)->widget());
-    }
-  }
-  return 0;
-}
-
-/*!
- * \brief PlotWindowContainer::setTopPlotWindowActive
- * Finds the top PlotWindow and sets it as active subwindow.
- */
-void PlotWindowContainer::setTopPlotWindowActive()
-{
-  QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
-    if (isPlotWindow(subWindowsList.at(i)->widget())) {
-      setActiveSubWindow(subWindowsList.at(i));
-      return;
-    }
-  }
-}
-
 #if !defined(WITHOUT_OSG)
 /*!
  * \brief PlotWindowContainer::getCurrentAnimationWindow
@@ -273,6 +242,18 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
     return true;
   }
   return QMdiArea::eventFilter(pObject, pEvent);
+}
+
+/*!
+ * \brief PlotWindowContainer::showDiagramWindow
+ * Shows/Updates the Diagram Window if there is any.
+ * \param pModelWidget
+ */
+void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget)
+{
+  if (mpDiagramWindow) {
+    mpDiagramWindow->showVisualizationDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
+  }
 }
 
 /*!
@@ -498,7 +479,7 @@ void PlotWindowContainer::addDiagramWindow(ModelWidget *pModelWidget, bool maxim
   if (!mpDiagramWindow) {
     mpDiagramWindow = new DiagramWindow(this);
   }
-  mpDiagramWindow->showVisualizationDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
+  showDiagramWindow(pModelWidget);
   QMdiSubWindow *pSubWindow = getDiagramSubWindowFromMdi();
   if (!pSubWindow) {
     pSubWindow = addSubWindow(mpDiagramWindow);
