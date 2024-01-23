@@ -1283,7 +1283,9 @@ public
         case ALGORITHM()       then eq;
         case IF_EQUATION()     then eq;
         case FOR_EQUATION()    then eq;
-        case WHEN_EQUATION()   then eq;
+        case WHEN_EQUATION() algorithm
+          eq.body := WhenEquationBody.simplify(eq.body, name, indent);
+        then eq;
         case AUX_EQUATION()    then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Equation.toString(eq)});
@@ -2466,6 +2468,29 @@ public
 
       bodies := listReverse(bodies);
     end split;
+
+    function simplify
+      input output WhenEquationBody body;
+      input String name = "";
+      input String indent = "";
+    algorithm
+      // simplify condition if it is an array with surplus false conditions
+      body.condition := match body.condition
+        local
+          Expression condition;
+          list<Expression> conditions;
+        case condition as Expression.ARRAY() algorithm
+          conditions := list(elem for elem guard(not Expression.isFalse(elem)) in arrayList(condition.elements));
+          body.condition := Expression.makeArrayCheckLiteral(Type.ARRAY(Type.BOOLEAN(), {Dimension.fromInteger(listLength(conditions))}), listArray(conditions));
+        then body.condition;
+        else body.condition;
+      end match;
+
+      // ToDo: add simplification of body! (WhenStatements)
+
+      body.condition := SimplifyExp.simplifyDump(body.condition, true, name, indent);
+      body.else_when := Util.applyOption(body.else_when, function simplify(name = name, indent = indent));
+    end simplify;
 
   protected
     function collectForSplit
