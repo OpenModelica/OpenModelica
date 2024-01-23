@@ -297,10 +297,10 @@ public
     output Boolean b;
   algorithm
     b := match(comp1, comp2)
-      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
-      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.equalName(comp1.eqn, comp2.eqn);
-      case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
-      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
+      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
+      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
       case (ENTWINED_COMPONENT(), ENTWINED_COMPONENT()) then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
       case (ALGEBRAIC_LOOP(), ALGEBRAIC_LOOP())         then Tearing.isEqual(comp1.strict, comp2.strict);
       case (ALIAS(), ALIAS())                           then AliasInfo.isEqual(comp1.aliasInfo, comp2.aliasInfo);
