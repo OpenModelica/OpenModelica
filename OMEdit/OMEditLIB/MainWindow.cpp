@@ -4741,9 +4741,8 @@ void MainWindow::switchToPlottingPerspective()
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow(true);
   }
-  QMdiSubWindow *pDiagramSubWindow = mpPlotWindowContainer->getDiagramSubWindowFromMdi();
-  if (pModelWidget && pDiagramSubWindow) {
-    mpPlotWindowContainer->getDiagramWindow()->showVisualizationDiagram(pModelWidget);
+  if (pModelWidget) {
+    mpPlotWindowContainer->showDiagramWindow(pModelWidget);
   }
   mpVariablesDockWidget->show();
   // show/hide toolbars

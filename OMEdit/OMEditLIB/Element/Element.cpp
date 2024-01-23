@@ -3934,7 +3934,7 @@ void Element::updateDynamicSelect(double time)
     double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
     setActiveState(value);
     foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
-      if (pTransitionLineAnnotation->getEndElement()->getName().compare(getName()) == 0) {
+      if (pTransitionLineAnnotation && pTransitionLineAnnotation->getEndElement() && pTransitionLineAnnotation->getEndElement()->getName().compare(getName()) == 0) {
         pTransitionLineAnnotation->setActiveState(value);
       }
     }
