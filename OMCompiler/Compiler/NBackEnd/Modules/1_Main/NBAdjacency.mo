@@ -102,6 +102,10 @@ public
       end for;
     end toString;
 
+    function empty
+      output Mapping mapping = MAPPING(arrayCreate(0, 0), arrayCreate(0, 0),arrayCreate(0, (0,0)),arrayCreate(0, (0,0)));
+    end empty;
+
     function create
       input EquationPointers eqns;
       input VariablePointers vars;

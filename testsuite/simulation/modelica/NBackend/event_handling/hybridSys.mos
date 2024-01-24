@@ -74,6 +74,24 @@ simulate(hybridSys); getErrorString();
 // (0) Unmatched equations:
 // **************************
 //
+// Created Start Equations for balancing the Initialization (15):
+// ****************************************************************
+// 	[SCAL] (1) $PRE.x_Start = $START.x_Start ($RES_SIM_41)
+// 	[SCAL] (1) $PRE.x_Loop1 = $START.x_Loop1 ($RES_SIM_42)
+// 	[SCAL] (1) $PRE.x_Loop2 = $START.x_Loop2 ($RES_SIM_43)
+// 	[SCAL] (1) $PRE.x_Loop3 = $START.x_Loop3 ($RES_SIM_44)
+// 	[SCAL] (1) $PRE.x_End = $START.x_End ($RES_SIM_45)
+// 	[SCAL] (1) $PRE.phase_Start = $START.phase_Start ($RES_SIM_46)
+// 	[SCAL] (1) $PRE.phase_Loop3 = $START.phase_Loop3 ($RES_SIM_47)
+// 	[SCAL] (1) $PRE.phase_Loop1 = $START.phase_Loop1 ($RES_SIM_48)
+// 	[SCAL] (1) $PRE.phase_Loop2 = $START.phase_Loop2 ($RES_SIM_49)
+// 	[SCAL] (1) x1 = $START.x1 ($RES_SIM_50)
+// 	[SCAL] (1) x_End = $PRE.x_End ($RES_SIM_51)
+// 	[SCAL] (1) x_Loop3 = $PRE.x_Loop3 ($RES_SIM_52)
+// 	[SCAL] (1) x_Loop2 = $PRE.x_Loop2 ($RES_SIM_53)
+// 	[SCAL] (1) x_Loop1 = $PRE.x_Loop1 ($RES_SIM_54)
+// 	[SCAL] (1) x_Start = $PRE.x_Start ($RES_SIM_55)
+//
 // Not underdetermined.
 // Not overdetermined.
 // (0) Unmatched variables:

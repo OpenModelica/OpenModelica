@@ -100,7 +100,7 @@ simulate(simple_der_for); getErrorString();
 //
 // Seed Variables (1/11)
 // ***********************
-// (1)       [STAT] (11) Real[11] x (fixed = {true for $i1 in 1:11})
+// (1)       [STAT] (11) Real[11] x
 //
 // ==============================
 // Sparsity Pattern (nnz: 10)
