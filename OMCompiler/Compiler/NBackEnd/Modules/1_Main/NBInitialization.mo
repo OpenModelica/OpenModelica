@@ -88,6 +88,8 @@ public
         local
           VarData varData;
           EqData eqData;
+          UnorderedMap<ComponentRef, Iterator> cref_map = UnorderedMap.new<Iterator>(ComponentRef.hash, ComponentRef.isEqual);
+
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
                               eqData = eqData as EqData.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
@@ -98,11 +100,16 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex, " ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
 
+
+            // clone all simulation equations and add them to the initial equations. also remove/replace when equations
+            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
+            initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
+
             varData.variables := variables;
             varData.initials := initialVars;
             eqData.equations := equations;
-            // clone all simulation equations and add them to the initial equations
-            eqData.initials := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
+            eqData.initials := EquationPointers.compress(initialEqs);
 
             bdae.varData := varData;
             bdae.eqData := eqData;
@@ -207,6 +214,58 @@ public
       else ();
     end match;
   end createStartEquation;
+
+  function createWhenReplacementEquations
+    "Creates start equations from fixed start values."
+    input UnorderedMap<ComponentRef, Iterator> cref_map;
+    input output EquationPointers equations;
+    input output EquationPointers initialEqs;
+    input Pointer<Integer> idx;
+  protected
+    Pointer<list<Pointer<Equation>>> ptr_start_eqs = Pointer.create({});
+    list<Pointer<Equation>> start_eqs;
+  algorithm
+    for tpl in UnorderedMap.toList(cref_map) loop
+      createWhenReplacementEquation(tpl, ptr_start_eqs, idx);
+    end for;
+    start_eqs := Pointer.access(ptr_start_eqs);
+
+    equations := EquationPointers.addList(start_eqs, equations);
+    initialEqs := EquationPointers.addList(start_eqs, initialEqs);
+
+    if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
+      print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
+       StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+    end if;
+  end createWhenReplacementEquations;
+
+  function createWhenReplacementEquation
+    "creates a start equation for a fixed state or discrete state."
+    input tuple<ComponentRef, Iterator> tpl;
+    input Pointer<list<Pointer<Equation>>> ptr_start_eqs;
+    input Pointer<Integer> idx;
+  protected
+    ComponentRef cref;
+    Iterator iter;
+    Pointer<Variable> var_ptr;
+    Option<Pointer<Variable>> pre_post;
+    ComponentRef pre;
+    list<Subscript> subscripts;
+    EquationKind kind;
+    Pointer<Equation> eq;
+  algorithm
+    (cref, iter) := tpl;
+    var_ptr := BVariable.getVarPointer(cref);
+    pre_post := BVariable.getPrePost(var_ptr);
+    if Util.isSome(pre_post) then
+      subscripts := ComponentRef.subscriptsAllWithWholeFlat(cref);
+      pre := BVariable.getVarName(Util.getOption(pre_post));
+      pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
+      kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+      eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
+      Pointer.update(ptr_start_eqs, eq :: Pointer.access(ptr_start_eqs));
+    end if;
+  end createWhenReplacementEquation;
 
   function createStartVar
     "creates start variable and cref.
@@ -371,7 +430,7 @@ public
 
     // make the new start equation
     kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-    start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true));
+    start_eq := Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true));
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
       (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
@@ -431,7 +490,7 @@ public
         name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
 
         kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-        pre_eq := Equation.makeAssignment(Expression.fromCref(name), Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
+        pre_eq := Equation.makeAssignment(Expression.fromCref(name, true), Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
 
         if not listEmpty(var_slice.indices) then
           // empty list indicates full array, slice otherwise
@@ -551,16 +610,19 @@ public
     "this function checks if an equation has to be removed before initialization.
     true for: when branch without condition initial()"
     input output Equation eqn;
+    input Iterator iter;
+    input UnorderedMap<ComponentRef, Iterator> cref_map;
   algorithm
     eqn := match eqn
       local
         Equation new_eqn;
         list<Statement> stmts;
+        list<ComponentRef> lhs_crefs;
         Option<IfEquationBody> if_body;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
-        eqn.body := list(removeWhenEquation(b) for b in eqn.body);
+        eqn.body := list(removeWhenEquation(b, eqn.iter, cref_map) for b in eqn.body);
       then if List.all(eqn.body, Equation.isDummy) then Equation.DUMMY_EQUATION() else eqn;
 
       // reduce the body of when equations
@@ -570,13 +632,15 @@ public
           new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
           new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
         else
+          lhs_crefs := WhenEquationBody.getAllAssigned(eqn.body);
+          for cref in lhs_crefs loop UnorderedMap.add(cref, iter, cref_map); end for;
           new_eqn := Equation.DUMMY_EQUATION();
         end if;
       then new_eqn;
 
       // reduce the body of if equations
       case Equation.IF_EQUATION() algorithm
-        eqn.body := removeWhenEquationIfBody(eqn.body);
+        eqn.body := removeWhenEquationIfBody(eqn.body, iter, cref_map);
         eqn.size := IfEquationBody.size(eqn.body);
       then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
 
@@ -619,10 +683,12 @@ public
 
   function removeWhenEquationIfBody
     input output IfEquationBody body;
+    input Iterator iter;
+    input UnorderedMap<ComponentRef, Iterator> cref_map;
   algorithm
-    body.then_eqns := list(Pointer.apply(e, removeWhenEquation) for e in body.then_eqns);
+    body.then_eqns := list(Pointer.apply(e, function removeWhenEquation(iter = iter, cref_map = cref_map)) for e in body.then_eqns);
     if Util.isSome(body.else_if) then
-      body.else_if := SOME(removeWhenEquationIfBody(Util.getOption(body.else_if)));
+      body.else_if := SOME(removeWhenEquationIfBody(Util.getOption(body.else_if), iter, cref_map));
     end if;
   end removeWhenEquationIfBody;
 

@@ -2554,6 +2554,23 @@ public
       body.else_when := Util.applyOption(body.else_when, function simplify(name = name, indent = indent));
     end simplify;
 
+    function getAllAssigned
+      "returns all assigned discrete variables as expressions.
+      Note: only needs to iterate first body because all need to have the same
+      variables assigned. ModelicaSpecification 3.6, Section 8.6"
+      input WhenEquationBody body;
+      output list<ComponentRef> assigned = {};
+    algorithm
+      for stmt in body.when_stmts loop
+        assigned := match stmt
+          local
+            ComponentRef lhs;
+          case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs)) then lhs :: assigned;
+          else assigned;
+        end match;
+      end for;
+    end getAllAssigned;
+
   protected
     function collectForSplit
       "collects all discrete states and regular states for splitting up

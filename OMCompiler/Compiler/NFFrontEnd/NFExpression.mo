@@ -4243,9 +4243,10 @@ public
 
   function fromCref
     input ComponentRef cref;
+    input Boolean includeScope = false;
     output Expression exp;
   algorithm
-    exp := CREF(ComponentRef.getSubscriptedType(cref), cref);
+    exp := CREF(ComponentRef.getSubscriptedType(cref, includeScope), cref);
   end fromCref;
 
   function toCref
