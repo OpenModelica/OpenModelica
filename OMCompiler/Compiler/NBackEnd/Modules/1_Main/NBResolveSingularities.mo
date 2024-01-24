@@ -364,6 +364,11 @@ public
 
         // add new equations to system pointer arrays
         equations := EquationPointers.addList(start_eqns, equations);
+
+        if Flags.isSet(Flags.INITIALIZATION) then
+          print(List.toString(start_eqns, function Equation.pointerToString(str = ""),
+            StringUtil.headline_4("Created Start Equations for balancing the Initialization (" + intString(listLength(start_eqns)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+        end if;
       else
         error_msg := getInstanceName()
           + " failed because following non-fixable variables could not be solved:\n"
