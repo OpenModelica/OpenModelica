@@ -39,6 +39,10 @@ simulate(underdetermined_init); getErrorString();
 // (0) Unmatched equations:
 // **************************
 //
+// Created Start Equations for balancing the Initialization (1):
+// ***************************************************************
+// 	[SCAL] (1) y = $START.y ($RES_SIM_6)
+//
 // Not underdetermined.
 // Not overdetermined.
 // (0) Unmatched variables:
