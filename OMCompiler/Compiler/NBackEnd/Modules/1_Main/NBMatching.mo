@@ -150,13 +150,13 @@ public
     changed := match systemType
       case NBSystem.SystemType.INI algorithm
         // ####### BALANCE INITIALIZATION #######
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
+        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, adj, matching, mapping, matrixType);
       then changed;
 
       else algorithm
         // ####### INDEX REDUCTION ######
         // for now no index reduction
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
+        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(vars, eqns, varData, eqData, funcTree, adj, matching, mapping, matrixType);
       then changed;
     end match;
 
