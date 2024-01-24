@@ -253,9 +253,18 @@ public
   protected
     list<Pointer<Equation>> parameter_eqs = {};
     list<Pointer<Variable>> initial_param_vars = {};
+    Pointer<Variable> parent;
+    Boolean skip_record_element;
   algorithm
 
     for var in VariablePointers.toList(parameters) loop
+
+      // check if the variable is a record element with bound parent
+      skip_record_element := match BVariable.getParent(var)
+        case SOME(parent) then BVariable.isBound(parent);
+        else false;
+      end match;
+
       // parse records slightly different
       if BVariable.isKnownRecord(var) then
         // only consider non constant parameter bindings
@@ -268,8 +277,8 @@ public
           end for;
         end if;
 
-      // all other variables that are not records
-      elseif not BVariable.isRecord(var) then
+      // all other variables that are not records and not record elements to be skipped
+      elseif not (BVariable.isRecord(var) or skip_record_element) then
         // only consider non constant parameter bindings
         if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
           // add variable to initial unknowns
