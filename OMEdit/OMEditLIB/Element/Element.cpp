@@ -1747,6 +1747,9 @@ void Element::reDrawElementNew()
   }
   createStateElement();
   drawElement();
+  prepareGeometryChange();
+  mTransformation.parseTransformation(mpModelComponent->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
+  setTransform(mTransformation.getTransformationMatrix());
   updateConnections();
   updateToolTip();
 }
