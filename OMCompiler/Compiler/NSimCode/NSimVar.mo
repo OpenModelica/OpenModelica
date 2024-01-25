@@ -1226,7 +1226,7 @@ public
 
     function toString
       input ExtObjInfo info;
-      output String str = SimVar.listToString(info.objects, "External Objects") + "\n";
+      output String str = SimVar.listToString(info.objects, "External Objects");
     end toString;
 
     function create
