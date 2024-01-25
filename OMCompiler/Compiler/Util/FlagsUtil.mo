@@ -396,7 +396,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.ZEROMQ_SERVER_ID,
   Flags.ZEROMQ_CLIENT_ID,
   Flags.FMI_VERSION,
-  Flags.FLAT_MODELICA,
+  Flags.BASE_MODELICA,
   Flags.FMI_FILTER,
   Flags.FMI_SOURCES,
   Flags.FMI_FLAGS,

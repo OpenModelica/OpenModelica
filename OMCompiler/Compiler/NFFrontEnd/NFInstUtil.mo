@@ -73,7 +73,7 @@ public
       print(stage);
       print("\n########################################\n\n");
 
-      if Flags.getConfigBool(Flags.FLAT_MODELICA) then
+      if Flags.getConfigBool(Flags.BASE_MODELICA) then
         FlatModel.printFlatString(flat_model, FunctionTree.listValues(functions));
       else
         FlatModel.printString(flat_model);

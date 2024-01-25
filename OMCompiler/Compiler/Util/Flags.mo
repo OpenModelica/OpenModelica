@@ -1345,9 +1345,9 @@ constant ConfigFlag FMI_VERSION = CONFIG_FLAG(137,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("returns the FMI Version either 1.0 or 2.0."));
 
-constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(138, "flatModelica",
+constant ConfigFlag BASE_MODELICA = CONFIG_FLAG(138, "baseModelica",
   SOME("f"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Outputs experimental flat Modelica."));
+  Gettext.gettext("Outputs experimental Base Modelica."));
 
 constant ConfigFlag FMI_FILTER = CONFIG_FLAG(139, "fmiFilter", NONE(), EXTERNAL(),
   ENUM_FLAG(FMI_PROTECTED, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
