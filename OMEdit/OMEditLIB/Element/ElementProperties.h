@@ -178,11 +178,13 @@ public slots:
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
-  void valueTextBoxEdited(const QString &text);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();
   void inheritedFixedClicked();
+  // QObject interface
+public:
+  virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) override;
 };
 
 class GroupBox : public QGroupBox
