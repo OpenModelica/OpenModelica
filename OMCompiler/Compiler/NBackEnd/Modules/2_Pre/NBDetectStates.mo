@@ -58,7 +58,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointers, EqData, WhenEquationBody, WhenStatement};
+  import NBEquation.{Equation, EquationPointers, EqData, WhenEquationBody, WhenStatement, IfEquationBody};
   import NBVariable.{VariablePointers, VarData};
 
   // Util
@@ -190,7 +190,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
   algorithm
     // collect all states on the lhs of a when
-    EquationPointers.map(equations, function collectDiscreteStatesFromWhen(acc_discrete_states = acc_discrete_states, scalarized = variables.scalarized));
+    EquationPointers.map(equations, function collectDiscreteStatesFromWhen(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous, scalarized = variables.scalarized));
     // collect all pre(d)
     EquationPointers.mapExp(equations, function collectPreAndPrevious(acc_previous = acc_previous, scalarized = variables.scalarized));
     // move stuff to their correct arrays
@@ -393,11 +393,20 @@ protected
     "All variables on the LHS in a when equation are considered discrete."
     input output Equation eqn "outputs equation just to fit the map() interface. does not change.";
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     () := match eqn
       case Equation.WHEN_EQUATION() algorithm
-        collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, scalarized);
+        collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, acc_previous, scalarized);
+      then ();
+      case Equation.FOR_EQUATION() algorithm
+        for b_eqn in eqn.body loop
+          collectDiscreteStatesFromWhen(b_eqn, acc_discrete_states, acc_previous, scalarized);
+        end for;
+      then ();
+      case Equation.IF_EQUATION() algorithm
+        collectDiscreteStatesFromWhenInIf(eqn.body, acc_discrete_states, acc_previous, scalarized);
       then ();
       else ();
     end match;
@@ -407,6 +416,7 @@ protected
     "All variables on the LHS in a when equation are considered discrete."
     input WhenEquationBody body;
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     for body_stmt in body.when_stmts loop
@@ -420,17 +430,28 @@ protected
           // but we don't need the actual pre cref it returns
           state_var := BVariable.getVarPointer(state_cref);
           BVariable.makeDiscreteStateVar(state_var);
+          getPreVar(state_cref, state_var, acc_previous, scalarized);
           Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
         then ();
 
         else ();
       end match;
     end for;
-
-    if Util.isSome(body.else_when) then
-      collectDiscreteStatesFromWhenBody(Util.getOption(body.else_when), acc_discrete_states, scalarized);
-    end if;
   end collectDiscreteStatesFromWhenBody;
+
+  function collectDiscreteStatesFromWhenInIf
+    input IfEquationBody body;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input Boolean scalarized;
+  algorithm
+    for eqn in body.then_eqns loop
+      collectDiscreteStatesFromWhen(Pointer.access(eqn), acc_discrete_states, acc_previous, scalarized);
+    end for;
+    if Util.isSome(body.else_if) then
+      collectDiscreteStatesFromWhenInIf(Util.getOption(body.else_if),  acc_discrete_states, acc_previous, scalarized);
+    end if;
+  end collectDiscreteStatesFromWhenInIf;
 
   function getPreVar
     input ComponentRef var_cref;
