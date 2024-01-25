@@ -68,7 +68,7 @@ protected
 
 public
   record FLAT_MODEL
-    String name;
+    Absyn.Path name;
     list<Variable> variables;
     list<Equation> equations;
     list<Equation> initialEquations;
@@ -116,6 +116,16 @@ public
     flatModel.initialAlgorithms := list(fn(alg) for alg in flatModel.initialAlgorithms);
   end mapAlgorithms;
 
+  function fullName
+    input FlatModel flatModel;
+    output String name = AbsynUtil.pathString(flatModel.name);
+  end fullName;
+
+  function className
+    input FlatModel flatModel;
+    output String name = AbsynUtil.pathLastIdent(flatModel.name);
+  end className;
+
   function toString
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
@@ -145,8 +155,10 @@ public
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
+  protected
+    String name = className(flatModel);
   algorithm
-    s := IOStream.append(s, "class " + flatModel.name + "\n");
+    s := IOStream.append(s, "class " + name + "\n");
 
     for v in flatModel.variables loop
       s := Variable.toStream(v, "  ", printBindingTypes, s);
@@ -177,7 +189,7 @@ public
       end if;
     end for;
 
-    s := IOStream.append(s, "end " + flatModel.name + ";\n");
+    s := IOStream.append(s, "end " + name + ";\n");
   end appendStream;
 
   function toFlatString
@@ -207,7 +219,7 @@ public
     input Boolean printBindingTypes = false;
     output IOStream.IOStream s;
   algorithm
-    s := IOStream.create(flatModel.name, IOStream.IOStreamType.LIST());
+    s := IOStream.create(className(flatModel), IOStream.IOStreamType.LIST());
     s := appendFlatStream(flatModel, functions, printBindingTypes, s);
   end toFlatStream;
 
@@ -220,8 +232,9 @@ public
   protected
     FlatModel flat_model = flatModel;
     Visibility visibility = Visibility.PUBLIC;
+    String name = className(flatModel);
   algorithm
-    s := IOStream.append(s, "package '" + flat_model.name + "'\n");
+    s := IOStream.append(s, "package '" + name + "'\n");
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
@@ -236,7 +249,7 @@ public
       s := IOStream.append(s, ";\n\n");
     end for;
 
-    s := IOStream.append(s, "  model '" + flat_model.name + "'");
+    s := IOStream.append(s, "  model '" + name + "'");
     s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
     s := IOStream.append(s, "\n");
 
@@ -277,8 +290,8 @@ public
     end for;
 
     s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "    ", ";\n", s);
-    s := IOStream.append(s, "  end '" + flat_model.name + "';\n");
-    s := IOStream.append(s, "end '" + flat_model.name + "';\n");
+    s := IOStream.append(s, "  end '" + name + "';\n");
+    s := IOStream.append(s, "end '" + name + "';\n");
   end appendFlatStream;
 
   function collectFlatTypes

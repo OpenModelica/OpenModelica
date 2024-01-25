@@ -197,7 +197,7 @@ algorithm
 
   // now we have the graph, remove the broken connects and evaluate the equation operators
   ieql := flatModel.initialEquations;
-  (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, flatModel.name, eql, ieql);
+  (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, FlatModel.fullName(flatModel), eql, ieql);
 
   eql := removeBrokenConnects(eql, connected, broken, isDeleted);
 

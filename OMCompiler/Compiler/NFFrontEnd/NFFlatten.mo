@@ -311,7 +311,7 @@ constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(InstNode.EMPTY_NODE
 
 function flatten
   input InstNode classInst;
-  input String name;
+  input Absyn.Path classPath;
   input Boolean getConnectionResolved = true;
   output FlatModel flatModel;
 protected
@@ -354,9 +354,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src);
+        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, src);
 
-      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, src);
   end match;
 
   // get inputs and outputs for algorithms now that types are computed
@@ -378,13 +378,13 @@ end flatten;
 
 function flattenConnection
   input InstNode classInst;
-  input String name;
+  input Absyn.Path classPath;
   output Connections conns;
 protected
   FlatModel flatModel;
   UnorderedSet<ComponentRef> deleted_vars;
 algorithm
-  flatModel := flatten(classInst, name, false);
+  flatModel := flatten(classInst, classPath, false);
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
   // get the connections from the model

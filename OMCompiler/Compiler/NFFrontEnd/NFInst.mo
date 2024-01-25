@@ -143,7 +143,6 @@ function instClassInProgram
   output String flatString "The flat model as a string if dumpFlat = true.";
 protected
   InstNode top, cls, inst_cls;
-  String name;
   InstContext.Type context;
   Integer var_count, eq_count, expose_local_ios;
   SCode.Program prog = program;
@@ -156,7 +155,6 @@ algorithm
 
   // Create a top scope from the given top-level classes.
   top := makeTopNode(prog, annotationProgram);
-  name := AbsynUtil.pathString(classPath);
 
   // Look up the class to instantiate.
   cls := lookupRootClass(classPath, top, context);
@@ -171,7 +169,7 @@ algorithm
 
   // Instantiate the class.
   inst_cls := instantiateRootClass(cls, context);
-  execStat("NFInst.instantiate(" + name + ")");
+  execStat("NFInst.instantiate(" + AbsynUtil.pathString(classPath) + ")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
@@ -187,7 +185,7 @@ algorithm
   Typing.typeClass(inst_cls, context);
 
   // Flatten the model and evaluate constants in it.
-  flatModel := Flatten.flatten(inst_cls, name);
+  flatModel := Flatten.flatten(inst_cls, classPath);
   flatModel := EvalConstants.evaluate(flatModel, context);
 
   InstUtil.dumpFlatModelDebug("eval", flatModel);
@@ -271,7 +269,6 @@ function instClassForConnection
 protected
   Connections conns;
   InstNode top, cls, inst_cls;
-  String name;
   InstContext.Type context;
 algorithm
   resetGlobalFlags();
@@ -280,7 +277,6 @@ algorithm
 
   // Create a top scope from the given top-level classes.
   top := makeTopNode(program, annotationProgram);
-  name := AbsynUtil.pathString(classPath);
 
   // Look up the class to instantiate.
   cls := lookupRootClass(classPath, top, context);
@@ -297,7 +293,7 @@ algorithm
   Typing.typeClass(inst_cls, context);
 
   // Flatten the model and get connections
-  conns := Flatten.flattenConnection(inst_cls, name);
+  conns := Flatten.flattenConnection(inst_cls, classPath);
   connList := Connections.toStringList(conns);
 
   clearCaches();
@@ -399,7 +395,7 @@ algorithm
     functions := Flatten.flattenFunction(fn, functions);
   end for;
 
-  flatModel := FlatModel.FLAT_MODEL(InstNode.name(funcNode), {}, {}, {}, {}, {},
+  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), {}, {}, {}, {}, {},
     ElementSource.createElementSource(InstNode.info(funcNode)));
 end instantiateRootFunction;
 

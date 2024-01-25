@@ -10,7 +10,7 @@ loadFile("Tables.mo");getErrorString();
 setCommandLineOptions("--std=experimental");
 setCommandLineOptions("-d=nonewInst");
 echo(false);
-res := simulate('ModelicaTest.Tables.CombiTable1D.Test33', fileNamePrefix="Tables");
+res := simulate('Test33'.'Test33', fileNamePrefix="Tables");
 echo(true);
 getErrorString();
 res.resultFile;

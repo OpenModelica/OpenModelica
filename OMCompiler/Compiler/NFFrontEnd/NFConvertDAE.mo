@@ -87,7 +87,7 @@ algorithm
   elems := convertAlgorithms(flatModel.algorithms, elems);
   elems := convertInitialAlgorithms(flatModel.initialAlgorithms, elems);
 
-  class_elem := DAE.COMP(flatModel.name, elems, flatModel.source, ElementSource.getOptComment(flatModel.source));
+  class_elem := DAE.COMP(FlatModel.fullName(flatModel), elems, flatModel.source, ElementSource.getOptComment(flatModel.source));
   dae := DAE.DAE({class_elem});
 
   execStat(getInstanceName());
