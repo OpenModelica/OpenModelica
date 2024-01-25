@@ -39,8 +39,7 @@ encapsulated package NSimCodeUtil
 import ComponentRef = NFComponentRef;
 
 // SimCode imports
-import NSimVar.SimVar;
-import NSimVar.SimVars;
+import NSimVar.{SimVar, SimVars, ExtObjInfo};
 
 // Old SimCode imports
 import HashTableCrefSimVar;
@@ -52,6 +51,7 @@ import UnorderedMap;
 public
   function createSimCodeMap
     input SimVars simVars;
+    input ExtObjInfo extObjInfo;
     output UnorderedMap<ComponentRef, SimVar> simcode_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     addListSimCodeMap(simVars.stateVars, simcode_map);
@@ -85,6 +85,7 @@ public
     addListSimCodeMap(simVars.dataReconSetcVars, simcode_map);
     addListSimCodeMap(simVars.dataReconinputVars, simcode_map);
     addListSimCodeMap(simVars.dataReconSetBVars, simcode_map);
+    addListSimCodeMap(extObjInfo.objects, simcode_map);
   end createSimCodeMap;
 
   function addListSimCodeMap

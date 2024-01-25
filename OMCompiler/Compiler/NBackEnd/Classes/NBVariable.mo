@@ -159,17 +159,19 @@ public
     vis  := InstNode.visibility(node);
     info := InstNode.info(node);
 
-    // get the record children if the variable is a record
-    children := match (Type.arrayElementType(ty), Type.complexSize(ty))
-      case (Type.COMPLEX(cls = class_node), SOME(complexSize)) algorithm
-        for i in complexSize:-1:1 loop
-          child_node  := Class.nthComponent(i, InstNode.getClass(class_node));
-          child_cref  := ComponentRef.prefixCref(child_node, InstNode.getType(child_node), {}, cref);
-          children    := fromCref(child_cref) :: children;
-        end for;
-      then children;
-      else {};
-    end match;
+    // get the record children if the variable is a record (and not an external object)
+    if not Type.isExternalObject(ty) then
+      children := match (Type.arrayElementType(ty), Type.complexSize(ty))
+        case (Type.COMPLEX(cls = class_node), SOME(complexSize)) algorithm
+          for i in complexSize:-1:1 loop
+            child_node  := Class.nthComponent(i, InstNode.getClass(class_node));
+            child_cref  := ComponentRef.prefixCref(child_node, InstNode.getType(child_node), {}, cref);
+            children    := fromCref(child_cref) :: children;
+          end for;
+        then children;
+        else {};
+      end match;
+    end if;
 
     variable := Variable.VARIABLE(cref, ty, binding, vis, attr, {}, children, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
@@ -1745,7 +1747,7 @@ public
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal with 1 or -1 coefficient";
-      VariablePointers nonTrivialAlias    "Variables removed due to alias removal";
+      VariablePointers nonTrivialAlias    "Variables removed due to alias removal with gain * alias + offset function";
 
       /* subset of unknowns */
       VariablePointers derivatives        "State derivatives (der(x) -> $DER.x)";
@@ -1761,6 +1763,7 @@ public
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
       VariablePointers records            "Records";
+      VariablePointers external_objects   "External Objects";
       VariablePointers artificials        "artificial variables to have pointers on crefs";
     end VAR_DATA_SIM;
 
@@ -1886,12 +1889,13 @@ public
               VariablePointers.toString(varData.derivatives, "Derivative", NONE(), false) +
               VariablePointers.toString(varData.algebraics, "Algebraic", NONE(), false) +
               VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
-              VariablePointers.toString(varData.discrete_states, "Discrete States", NONE(), false) +
+              VariablePointers.toString(varData.discrete_states, "Discrete State", NONE(), false) +
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
-              VariablePointers.toString(varData.top_level_inputs, "Top Level Inputs", NONE(), false) +
+              VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
               VariablePointers.toString(varData.records, "Record", NONE(), false) +
+              VariablePointers.toString(varData.external_objects, "External Object", NONE(), false) +
               VariablePointers.toString(varData.artificials, "Artificial", NONE(), false);
           end if;
           tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +

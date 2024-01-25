@@ -57,12 +57,15 @@ protected
 
   // Backend imports
   import BVariable = NBVariable;
+  import NBEvents.{EventInfo, Condition};
 
   // Old Simcode imports
+  import OldSimCode = SimCode;
   import OldSimCodeVar = SimCodeVar;
 
   // SimCode imports
   import SimCode = NSimCode;
+  import NSimCode.SimCodeIndices;
 
   // Util imports
   import Error;
@@ -461,21 +464,20 @@ public
     algorithm
       oldVarKind := match varKind
         local
-          BackendExtension.VariableKind qual;
           Variable var;
           Option<DAE.ComponentRef> oldCrefOpt;
           DAE.ComponentRef oldCref;
 
         case BackendExtension.ALGEBRAIC()               then OldBackendDAE.VARIABLE();
-        case qual as BackendExtension.STATE()
+        case BackendExtension.STATE()
           algorithm
-            if isSome(qual.derivative) then
-              var := Pointer.access(Util.getOption(qual.derivative));
+            if isSome(varKind.derivative) then
+              var := Pointer.access(Util.getOption(varKind.derivative));
               oldCrefOpt := SOME(ComponentRef.toDAE(var.name));
             else
               oldCrefOpt := NONE();
             end if;
-        then OldBackendDAE.STATE(qual.index, oldCrefOpt, qual.natural);
+        then OldBackendDAE.STATE(varKind.index, oldCrefOpt, varKind.natural);
         case BackendExtension.STATE_DER()               then OldBackendDAE.STATE_DER();
         case BackendExtension.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case BackendExtension.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
@@ -486,7 +488,7 @@ public
         case BackendExtension.CONSTANT()                then OldBackendDAE.CONST();
         //ToDo: check this! is this correct? need typechecking?
         case BackendExtension.START()                   then OldBackendDAE.VARIABLE();
-        case qual as BackendExtension.EXTOBJ()          then OldBackendDAE.EXTOBJ(qual.fullClassName);
+        case BackendExtension.EXTOBJ()                  then OldBackendDAE.EXTOBJ(varKind.fullClassName);
         case BackendExtension.JAC_VAR()                 then OldBackendDAE.JAC_VAR();
         case BackendExtension.JAC_TMP_VAR()             then OldBackendDAE.JAC_TMP_VAR();
         case BackendExtension.SEED_VAR()                then OldBackendDAE.SEED_VAR();
@@ -495,7 +497,7 @@ public
         case BackendExtension.OPT_INPUT_WITH_DER()      then OldBackendDAE.OPT_INPUT_WITH_DER();
         case BackendExtension.OPT_INPUT_DER()           then OldBackendDAE.OPT_INPUT_DER();
         case BackendExtension.OPT_TGRID()               then OldBackendDAE.OPT_TGRID();
-        case qual as BackendExtension.OPT_LOOP_INPUT()  then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(qual.replaceCref));
+        case BackendExtension.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
         // ToDo maybe deprecated:
         case BackendExtension.ALG_STATE()               then OldBackendDAE.ALG_STATE();
         case BackendExtension.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
@@ -1088,6 +1090,167 @@ public
 
   type SplitType  = enumeration(NONE, TYPE);
   type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL); // ToDo: PRE, OLD, RELATIONS...
+
+  uniontype VarInfo
+    record VAR_INFO
+      Integer numZeroCrossings;
+      Integer numTimeEvents;
+      Integer numRelations;
+      Integer numMathEventFunctions;
+      Integer numStateVars;
+      Integer numAlgVars;
+      Integer numDiscreteReal;
+      Integer numIntAlgVars;
+      Integer numBoolAlgVars;
+      Integer numAlgAliasVars;
+      Integer numIntAliasVars;
+      Integer numBoolAliasVars;
+      Integer numParams;
+      Integer numIntParams;
+      Integer numBoolParams;
+      Integer numOutVars;
+      Integer numInVars;
+      Integer numExternalObjects;
+      Integer numStringAlgVars;
+      Integer numStringParamVars;
+      Integer numStringAliasVars;
+      Integer numEquations;
+      Integer numLinearSystems;
+      Integer numNonLinearSystems;
+      Integer numMixedSystems;
+      Integer numStateSets;
+      Integer numJacobians;
+      Integer numOptimizeConstraints;
+      Integer numOptimizeFinalConstraints;
+      Integer numSensitivityParameters;
+      Integer numSetcVars;
+      Integer numDataReconVars;
+      Integer numRealIntputVars;
+      Integer numSetbVars;
+      Integer numRelatedBoundaryConditions;
+    end VAR_INFO;
+
+    function create
+      input SimVars vars;
+      input EventInfo eventInfo;
+      input SimCodeIndices simCodeIndices;
+      output VarInfo varInfo;
+    algorithm
+      varInfo := VAR_INFO(
+        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numTimeEvents                = listLength(UnorderedSet.toList(eventInfo.time_set)),
+        numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numMathEventFunctions        = eventInfo.numberMathEvents,
+        numStateVars                 = listLength(vars.stateVars),
+        numAlgVars                   = listLength(vars.algVars),
+        numDiscreteReal              = listLength(vars.discreteAlgVars),
+        numIntAlgVars                = listLength(vars.intAlgVars),
+        numBoolAlgVars               = listLength(vars.boolAlgVars),
+        numAlgAliasVars              = listLength(vars.aliasVars),
+        numIntAliasVars              = listLength(vars.intAliasVars),
+        numBoolAliasVars             = listLength(vars.boolAliasVars),
+        numParams                    = listLength(vars.paramVars),
+        numIntParams                 = listLength(vars.intParamVars),
+        numBoolParams                = listLength(vars.boolParamVars),
+        numOutVars                   = listLength(vars.outputVars),
+        numInVars                    = listLength(vars.inputVars),
+        numExternalObjects           = listLength(vars.extObjVars),
+        numStringAlgVars             = listLength(vars.stringAlgVars),
+        numStringParamVars           = listLength(vars.stringParamVars),
+        numStringAliasVars           = listLength(vars.stringAliasVars),
+        numEquations                 = simCodeIndices.equationIndex,
+        numLinearSystems             = simCodeIndices.linearSystemIndex,
+        numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
+        numMixedSystems              = 0,
+        numStateSets                 = 0,
+        numJacobians                 = simCodeIndices.nonlinearSystemIndex + 5, // #nonlinSystems + 5 simulation jacs (add state sets later!)
+        numOptimizeConstraints       = 0,
+        numOptimizeFinalConstraints  = 0,
+        numSensitivityParameters     = 0,
+        numSetcVars                  = 0,
+        numDataReconVars             = 0,
+        numRealIntputVars            = 0,
+        numSetbVars                  = 0,
+        numRelatedBoundaryConditions = 0);
+    end create;
+
+    function convert
+      input VarInfo varInfo;
+      output OldSimCode.VarInfo oldVarInfo;
+    algorithm
+      oldVarInfo := OldSimCode.VARINFO(
+        numZeroCrossings             = varInfo.numZeroCrossings,
+        numTimeEvents                = varInfo.numTimeEvents,
+        numRelations                 = varInfo.numRelations,
+        numMathEventFunctions        = varInfo.numMathEventFunctions,
+        numStateVars                 = varInfo.numStateVars,
+        numAlgVars                   = varInfo.numAlgVars,
+        numDiscreteReal              = varInfo.numDiscreteReal,
+        numIntAlgVars                = varInfo.numIntAlgVars,
+        numBoolAlgVars               = varInfo.numBoolAlgVars,
+        numAlgAliasVars              = varInfo.numAlgAliasVars,
+        numIntAliasVars              = varInfo.numIntAliasVars,
+        numBoolAliasVars             = varInfo.numBoolAliasVars,
+        numParams                    = varInfo.numParams,
+        numIntParams                 = varInfo.numIntParams,
+        numBoolParams                = varInfo.numBoolParams,
+        numOutVars                   = varInfo.numOutVars,
+        numInVars                    = varInfo.numInVars,
+        numExternalObjects           = varInfo.numExternalObjects,
+        numStringAlgVars             = varInfo.numStringAlgVars,
+        numStringParamVars           = varInfo.numStringParamVars,
+        numStringAliasVars           = varInfo.numStringAliasVars,
+        numEquations                 = varInfo.numEquations,
+        numLinearSystems             = varInfo.numLinearSystems,
+        numNonLinearSystems          = varInfo.numNonLinearSystems,
+        numMixedSystems              = varInfo.numMixedSystems,
+        numStateSets                 = varInfo.numStateSets,
+        numJacobians                 = varInfo.numJacobians,
+        numOptimizeConstraints       = varInfo.numOptimizeConstraints,
+        numOptimizeFinalConstraints  = varInfo.numOptimizeFinalConstraints,
+        numSensitivityParameters     = varInfo.numSensitivityParameters,
+        numSetcVars                  = varInfo.numSetcVars,
+        numDataReconVars             = varInfo.numDataReconVars,
+        numRealInputVars             = varInfo.numRealIntputVars,
+        numSetbVars                  = varInfo.numSetbVars,
+        numRelatedBoundaryConditions = varInfo.numRelatedBoundaryConditions);
+    end convert;
+  end VarInfo;
+
+  uniontype ExtObjInfo
+    record EXT_OBJ_INFO
+      list<SimVar> objects;
+      list<tuple<ComponentRef, ComponentRef>> aliases;
+    end EXT_OBJ_INFO;
+
+
+    function toString
+      input ExtObjInfo info;
+      output String str = SimVar.listToString(info.objects, "External Objects") + "\n";
+    end toString;
+
+    function create
+      input VariablePointers external_objects;
+      output ExtObjInfo info;
+      input output SimCodeIndices simCodeIndices;
+    protected
+      Pointer<SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
+      Pointer<list<SimVar>> acc = Pointer.create({});
+      VarType varType = VarType.SIMULATION;
+    algorithm
+      VariablePointers.map(external_objects, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
+      simCodeIndices := Pointer.access(indices_ptr);
+      // todo: alias
+      info := EXT_OBJ_INFO(listReverse(Pointer.access(acc)), {});
+    end create;
+
+    function convert
+      input ExtObjInfo info;
+      output OldSimCode.ExtObjInfo oldInfo;
+    algorithm
+      oldInfo := OldSimCode.EXTOBJINFO(SimVar.convertList(info.objects), {});
+    end convert;
+  end ExtObjInfo;
 
   annotation(__OpenModelica_Interface="backend");
 end NSimVar;
