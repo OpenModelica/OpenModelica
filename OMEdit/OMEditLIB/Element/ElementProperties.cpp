@@ -772,7 +772,7 @@ void Parameter::createValueWidget()
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
-      connect(mpValueTextBox, SIGNAL(textEdited(QString)), SLOT(valueTextBoxEdited(QString)));
+      mpValueTextBox->installEventFilter(this);
       break;
   }
 }
@@ -1049,16 +1049,6 @@ void Parameter::valueCheckBoxChanged(bool toggle)
   updateValueBinding(FlatModelica::Expression(toggle));
 }
 
-/*!
- * \brief Parameter::valueTextBoxEdited
- * This slot is only called when user manually edits the text.\n
- * \param text
- */
-void Parameter::valueTextBoxEdited(const QString &text)
-{
-  enableDisableUnitComboBox(text);
-}
-
 void Parameter::showFixedMenu()
 {
   // create a menu
@@ -1113,6 +1103,22 @@ void Parameter::falseFixedClicked()
 void Parameter::inheritedFixedClicked()
 {
   mpFixedCheckBox->setTickState(true, mpFixedCheckBox->getInheritedValue());
+}
+
+/*!
+ * \brief Parameter::eventFilter
+ * Handles the FocusOut event of value textbox.
+ * \param pWatched
+ * \param pEvent
+ * \return
+ */
+bool Parameter::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+  if (mpValueTextBox == pWatched && pEvent->type() == QEvent::FocusOut) {
+    enableDisableUnitComboBox(mpValueTextBox->text());
+  }
+
+  return QObject::eventFilter(pWatched, pEvent);
 }
 
 /*!
