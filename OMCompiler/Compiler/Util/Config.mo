@@ -84,18 +84,6 @@ algorithm
   end match;
 end noProcWork;
 
-public function latency
-  output Real outReal;
-algorithm
-  outReal := Flags.getConfigReal(Flags.LATENCY);
-end latency;
-
-public function bandwidth
-  output Real outReal;
-algorithm
-  outReal := Flags.getConfigReal(Flags.BANDWIDTH);
-end bandwidth;
-
 public function simulationCg
   output Boolean outBoolean;
 algorithm
