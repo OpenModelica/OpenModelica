@@ -54,6 +54,8 @@ protected
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
   import Call = NFCall;
+  import Class = NFClass;
+  import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
@@ -384,10 +386,10 @@ protected
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, previous_lst = {};
-    list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
+    list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous;
-    VariablePointers inputs, parameters, constants, records, artificials;
+    VariablePointers inputs, parameters, constants, records, external_objects, artificials;
     UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Variable>> binding_iter_lst;
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
@@ -463,6 +465,12 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
+        case BackendExtension.EXTOBJ() algorithm
+          lowVar_ptr := BVariable.setFixed(lowVar_ptr);
+          external_objects_lst := lowVar_ptr :: external_objects_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
         /* other cases should not occur up until now */
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
@@ -490,6 +498,7 @@ protected
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
     records         := VariablePointers.fromList(records_lst, scalarized);
+    external_objects:= VariablePointers.fromList(external_objects_lst, scalarized);
     artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
@@ -505,7 +514,8 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, discrete_states, previous, states, inputs, parameters, constants, records, artificials);
+                      derivatives, algebraics, discretes, discrete_states, previous,
+                      states, inputs, parameters, constants, records, external_objects, artificials);
   end lowerVariableData;
 
   function lowerVariable
@@ -556,6 +566,10 @@ protected
       case (NFPrefixes.Variability.CONTINUOUS, BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then BackendExtension.STATE(1, NONE(), false);
+
+      // get external object class
+      case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
+      then BackendExtension.EXTOBJ(Class.constrainingClassPath(ty.cls));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
       case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);

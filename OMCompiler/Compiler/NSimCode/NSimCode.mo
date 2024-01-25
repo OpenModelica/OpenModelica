@@ -60,7 +60,7 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
-  import NBEvents.{EventInfo, Condition};
+  import NBEvents.EventInfo;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import System = NBSystem;
@@ -70,8 +70,7 @@ protected
   import NSimJacobian.SimJacobian;
   import SimGenericCall = NSimGenericCall;
   import SimStrongComponent = NSimStrongComponent;
-  import NSimVar.SimVar;
-  import NSimVar.SimVars;
+  import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo};
   import SymbolTable;
 
   // Old SimCode imports
@@ -188,7 +187,7 @@ public
       //list<DAE.Constraint> constraints;
       //list<DAE.ClassAttributes> classAttributes;
       list<ComponentRef> discreteVars                   "List of discrete variables";
-      //ExtObjInfo extObjInfo;
+      ExtObjInfo extObjInfo;
       OldSimCodeFunction.MakefileParams makefileParams;
       //DelayedExpression delayedExps;
       list<SimJacobian> jacobians       "List of symbolic jacobians";
@@ -223,6 +222,7 @@ public
     algorithm
       str := StringUtil.headline_1("SimCode " + str + "(" + simCode.fileNamePrefix + ")");
       str := str + ModelInfo.toString(simCode.modelInfo);
+      str := str + ExtObjInfo.toString(simCode.extObjInfo);
       if not listEmpty(simCode.init_0) then
         str := str + SimStrongComponent.Block.listToString(simCode.init_0, "  ", "Initial Partition (Lambda = 0)") + "\n";
       end if;
@@ -286,6 +286,7 @@ public
           list<list<SimStrongComponent.Block>> ode, algebraic;
           list<SimStrongComponent.Block> linearLoops, nonlinearLoops;
           list<ComponentRef> discreteVars;
+          ExtObjInfo extObjInfo;
           list<SimJacobian> jacobians;
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
@@ -300,9 +301,10 @@ public
             funcTree := BackendDAE.getFunctionTree(bdae);
 
             // create sim vars before everything else
-            residual_vars           := BackendDAE.getLoopResiduals(bdae);
-            (vars, simCodeIndices)  := SimVars.create(varData, residual_vars, simCodeIndices);
-            simcode_map             := SimCodeUtil.createSimCodeMap(vars);
+            residual_vars                 := BackendDAE.getLoopResiduals(bdae);
+            (vars, simCodeIndices)        := SimVars.create(varData, residual_vars, simCodeIndices);
+            (extObjInfo, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, simCodeIndices);
+            simcode_map                   := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
             // create empty equation map and fill while creating the blocks
             equation_map := UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
@@ -419,6 +421,7 @@ public
               init_0                    = init_0,
               init_no_ret               = init_no_ret,
               discreteVars              = discreteVars,
+              extObjInfo                = extObjInfo,
               makefileParams            = makefileParams,
               jacobians                 = jacobians,
               simulationSettingsOpt     = simSettingsOpt,
@@ -497,7 +500,7 @@ public
         relations                     = relations,
         timeEvents                    = timeEvents,
         discreteModelVars             = discreteModelVars,
-        extObjInfo                    = OldSimCode.EXTOBJINFO({}, {}), // ToDo: add this once external object info is supported
+        extObjInfo                    = ExtObjInfo.convert(simCode.extObjInfo), // ToDo: add this once external object info is supported
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
         spatialInfo                   = OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0),
@@ -650,132 +653,6 @@ public
       );
     end convert;
   end ModelInfo;
-
-  uniontype VarInfo
-    record VAR_INFO
-      Integer numZeroCrossings;
-      Integer numTimeEvents;
-      Integer numRelations;
-      Integer numMathEventFunctions;
-      Integer numStateVars;
-      Integer numAlgVars;
-      Integer numDiscreteReal;
-      Integer numIntAlgVars;
-      Integer numBoolAlgVars;
-      Integer numAlgAliasVars;
-      Integer numIntAliasVars;
-      Integer numBoolAliasVars;
-      Integer numParams;
-      Integer numIntParams;
-      Integer numBoolParams;
-      Integer numOutVars;
-      Integer numInVars;
-      Integer numExternalObjects;
-      Integer numStringAlgVars;
-      Integer numStringParamVars;
-      Integer numStringAliasVars;
-      Integer numEquations;
-      Integer numLinearSystems;
-      Integer numNonLinearSystems;
-      Integer numMixedSystems;
-      Integer numStateSets;
-      Integer numJacobians;
-      Integer numOptimizeConstraints;
-      Integer numOptimizeFinalConstraints;
-      Integer numSensitivityParameters;
-      Integer numSetcVars;
-      Integer numDataReconVars;
-      Integer numRealIntputVars;
-      Integer numSetbVars;
-      Integer numRelatedBoundaryConditions;
-    end VAR_INFO;
-
-    function create
-      input SimVars vars;
-      input EventInfo eventInfo;
-      input SimCodeIndices simCodeIndices;
-      output VarInfo varInfo;
-    algorithm
-      varInfo := VAR_INFO(
-        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
-        numTimeEvents                = listLength(UnorderedSet.toList(eventInfo.time_set)),
-        numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
-        numMathEventFunctions        = eventInfo.numberMathEvents,
-        numStateVars                 = listLength(vars.stateVars),
-        numAlgVars                   = listLength(vars.algVars),
-        numDiscreteReal              = listLength(vars.discreteAlgVars),
-        numIntAlgVars                = listLength(vars.intAlgVars),
-        numBoolAlgVars               = listLength(vars.boolAlgVars),
-        numAlgAliasVars              = listLength(vars.aliasVars),
-        numIntAliasVars              = listLength(vars.intAliasVars),
-        numBoolAliasVars             = listLength(vars.boolAliasVars),
-        numParams                    = listLength(vars.paramVars),
-        numIntParams                 = listLength(vars.intParamVars),
-        numBoolParams                = listLength(vars.boolParamVars),
-        numOutVars                   = listLength(vars.outputVars),
-        numInVars                    = listLength(vars.inputVars),
-        numExternalObjects           = listLength(vars.extObjVars),
-        numStringAlgVars             = listLength(vars.stringAlgVars),
-        numStringParamVars           = listLength(vars.stringParamVars),
-        numStringAliasVars           = listLength(vars.stringAliasVars),
-        numEquations                 = simCodeIndices.equationIndex,
-        numLinearSystems             = simCodeIndices.linearSystemIndex,
-        numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
-        numMixedSystems              = 0,
-        numStateSets                 = 0,
-        numJacobians                 = simCodeIndices.nonlinearSystemIndex + 5, // #nonlinSystems + 5 simulation jacs (add state sets later!)
-        numOptimizeConstraints       = 0,
-        numOptimizeFinalConstraints  = 0,
-        numSensitivityParameters     = 0,
-        numSetcVars                  = 0,
-        numDataReconVars             = 0,
-        numRealIntputVars            = 0,
-        numSetbVars                  = 0,
-        numRelatedBoundaryConditions = 0);
-    end create;
-
-    function convert
-      input VarInfo varInfo;
-      output OldSimCode.VarInfo oldVarInfo;
-    algorithm
-      oldVarInfo := OldSimCode.VARINFO(
-        numZeroCrossings             = varInfo.numZeroCrossings,
-        numTimeEvents                = varInfo.numTimeEvents,
-        numRelations                 = varInfo.numRelations,
-        numMathEventFunctions        = varInfo.numMathEventFunctions,
-        numStateVars                 = varInfo.numStateVars,
-        numAlgVars                   = varInfo.numAlgVars,
-        numDiscreteReal              = varInfo.numDiscreteReal,
-        numIntAlgVars                = varInfo.numIntAlgVars,
-        numBoolAlgVars               = varInfo.numBoolAlgVars,
-        numAlgAliasVars              = varInfo.numAlgAliasVars,
-        numIntAliasVars              = varInfo.numIntAliasVars,
-        numBoolAliasVars             = varInfo.numBoolAliasVars,
-        numParams                    = varInfo.numParams,
-        numIntParams                 = varInfo.numIntParams,
-        numBoolParams                = varInfo.numBoolParams,
-        numOutVars                   = varInfo.numOutVars,
-        numInVars                    = varInfo.numInVars,
-        numExternalObjects           = varInfo.numExternalObjects,
-        numStringAlgVars             = varInfo.numStringAlgVars,
-        numStringParamVars           = varInfo.numStringParamVars,
-        numStringAliasVars           = varInfo.numStringAliasVars,
-        numEquations                 = varInfo.numEquations,
-        numLinearSystems             = varInfo.numLinearSystems,
-        numNonLinearSystems          = varInfo.numNonLinearSystems,
-        numMixedSystems              = varInfo.numMixedSystems,
-        numStateSets                 = varInfo.numStateSets,
-        numJacobians                 = varInfo.numJacobians,
-        numOptimizeConstraints       = varInfo.numOptimizeConstraints,
-        numOptimizeFinalConstraints  = varInfo.numOptimizeFinalConstraints,
-        numSensitivityParameters     = varInfo.numSensitivityParameters,
-        numSetcVars                  = varInfo.numSetcVars,
-        numDataReconVars             = varInfo.numDataReconVars,
-        numRealInputVars             = varInfo.numRealIntputVars,
-        numSetbVars                  = varInfo.numSetbVars,
-        numRelatedBoundaryConditions = varInfo.numRelatedBoundaryConditions);
-    end convert;
-  end VarInfo;
 
   uniontype DaeModeData
     "contains data that belongs to the dae mode"
