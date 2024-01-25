@@ -636,6 +636,7 @@ public
           new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
           new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
         else
+          // get all the discrete crefs that where in this when equation to create cref = pre.cref
           lhs_crefs := WhenEquationBody.getAllAssigned(eqn.body);
           for cref in lhs_crefs loop UnorderedMap.add(cref, iter, cref_map); end for;
           new_eqn := Equation.DUMMY_EQUATION();
