@@ -302,10 +302,10 @@ public
             funcTree := BackendDAE.getFunctionTree(bdae);
 
             // create sim vars before everything else
-            residual_vars                 := BackendDAE.getLoopResiduals(bdae);
-            (vars, simCodeIndices)        := SimVars.create(varData, residual_vars, simCodeIndices);
-            (extObjInfo, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, simCodeIndices);
-            simcode_map                   := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
+            residual_vars                       := BackendDAE.getLoopResiduals(bdae);
+            (vars, simCodeIndices)              := SimVars.create(varData, residual_vars, simCodeIndices);
+            (extObjInfo, vars, simCodeIndices)  := ExtObjInfo.create(varData.external_objects, vars, simCodeIndices);
+            simcode_map                         := SimCodeUtil.createSimCodeMap(vars, extObjInfo);
 
             // create empty equation map and fill while creating the blocks
             equation_map := UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);

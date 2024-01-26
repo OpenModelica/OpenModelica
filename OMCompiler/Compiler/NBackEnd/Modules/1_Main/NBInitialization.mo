@@ -748,18 +748,18 @@ public
   end removeWhenEquationStatement;
 
   function isInitialCall
-    "checks if the expression is an initial call or can be simplified to be one.
-    ToDo: better apprach is to replace all initial calls with true and see if the expression can be simplified to true.
-    do this once ExpressionSimplify is mature enough"
+    "checks if the expression is an initial call or can be simplified to be one."
     input Expression condition;
     output Boolean b;
   algorithm
     b := match condition
       // it's an initial call -> true;
       case Expression.CALL() then Call.isNamed(condition.call, "initial");
-      // its an "or" expression, check if either argument is an initial call
+      // it's an "or" expression, check if either argument is an initial call
       case Expression.LBINARY(operator = Operator.OPERATOR(op = NFOperator.Op.OR))
       then isInitialCall(condition.exp1) or isInitialCall(condition.exp2);
+      // it's an array where any of the elements is an initialCall
+      case Expression.ARRAY() then List.any(arrayList(condition.elements), isInitialCall);
       // not an initial call. Ignore "and" constructs
       else false;
     end match;

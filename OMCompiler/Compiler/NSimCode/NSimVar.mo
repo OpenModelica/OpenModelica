@@ -737,10 +737,12 @@ public
       str := str + SimVar.listToString(vars.stateVars, "States");
       str := str + SimVar.listToString(vars.derivativeVars, "Derivatives");
       str := str + SimVar.listToString(vars.algVars, "Algebraic Variables");
+      str := str + SimVar.listToString(vars.discreteAlgVars, "Discrete Algebraic Variables");
       str := str + SimVar.listToString(vars.intAlgVars, "Integer Algebraic Variables");
       str := str + SimVar.listToString(vars.boolAlgVars, "Boolean Algebraic Variables");
       str := str + SimVar.listToString(vars.paramVars, "Real Parameters");
       str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters");
+      str := str + SimVar.listToString(vars.boolParamVars, "Boolean Parameters");
       str := str + SimVar.listToString(vars.residualVars, "Residual Variables");
       str := str + SimVar.listToString(vars.aliasVars, "Real Alias", true);
       // ToDo: all the other stuff
@@ -772,26 +774,21 @@ public
       list<SimVar> dataReconSetBVars = {};
     algorithm
       _ := match varData
-        local
-          BVariable.VarData qual;
-
-        case qual as BVariable.VAR_DATA_SIM()
-          algorithm
-            ({stateVars}, simCodeIndices)                                                   := createSimVarLists(qual.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({derivativeVars}, simCodeIndices)                                              := createSimVarLists(qual.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({algVars}, simCodeIndices)                                                     := createSimVarLists(qual.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({nonTrivialAlias}, simCodeIndices)                                             := createSimVarLists(qual.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices)     := createSimVarLists(qual.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-            ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2}, simCodeIndices) := createSimVarLists(qual.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices)     := createSimVarLists(qual.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
-            ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices)     := createSimVarLists(qual.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
-            ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices)     := createSimVarLists(qual.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-            ({inputVars}, simCodeIndices)                                                   := createSimVarLists(qual.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({residualVars}, simCodeIndices)                                                := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
+        case BVariable.VAR_DATA_SIM() algorithm
+          ({stateVars}, simCodeIndices)                                                   := createSimVarLists(varData.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({derivativeVars}, simCodeIndices)                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({algVars}, simCodeIndices)                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({nonTrivialAlias}, simCodeIndices)                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices)     := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2}, simCodeIndices) := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices)     := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
+          ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices)     := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
+          ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices)     := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({inputVars}, simCodeIndices)                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({residualVars}, simCodeIndices)                                                := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
         then ();
-
-        case qual as BVariable.VAR_DATA_JAC() then ();
-        case qual as BVariable.VAR_DATA_HES() then ();
+        case BVariable.VAR_DATA_JAC() then ();
+        case BVariable.VAR_DATA_HES() then ();
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
@@ -1238,16 +1235,20 @@ public
     function create
       input VariablePointers external_objects;
       output ExtObjInfo info;
+      input output SimVars vars;
       input output SimCodeIndices simCodeIndices;
     protected
       Pointer<SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
       Pointer<list<SimVar>> acc = Pointer.create({});
       VarType varType = VarType.EXTERNAL_OBJECT;
+      list<SimVar> var_lst;
     algorithm
       VariablePointers.map(external_objects, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
       simCodeIndices := Pointer.access(indices_ptr);
+      var_lst := listReverse(Pointer.access(acc));
+      vars.extObjVars := var_lst;
       // todo: alias
-      info := EXT_OBJ_INFO(listReverse(Pointer.access(acc)), {});
+      info := EXT_OBJ_INFO(var_lst, {});
     end create;
 
     function convert
