@@ -362,44 +362,45 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
  */
 void TextAnnotation::drawAnnotation(QPainter *painter)
 {
+  QPointF p1 = mExtent.size() > 0 ? mExtent.at(0) : QPointF(-100.0, -100.0);
+  QPointF p2 = mExtent.size() > 1 ? mExtent.at(1) : QPointF(100.0, 100.0);
+  bool startInv = p1.x() > p2.x();
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */
   /*applyFillPattern(painter);*/
   // store the existing transformations
   const QTransform painterTransform = painter->transform();
-  const qreal scaleX = painterTransform.m11();
-  const qreal scaleY = painterTransform.m22();
-  const qreal shearX = painterTransform.m21();
-  const qreal shearY = painterTransform.m12();
+  const qreal m11 = painterTransform.m11();
+  const qreal m22 = painterTransform.m22();
+  const qreal m12 = painterTransform.m12();
+  const qreal m21 = painterTransform.m21();
+  qreal xScale = qSqrt(m11*m11 + m12*m12);
+  qreal yScale = qSqrt(m22*m22 + m21*m21);
+  qreal curScale = qMin(xScale, yScale);
   // set new transformation for the text based on rotation or scale.
-  qreal sx, sy;
-  if (painterTransform.type() == QTransform::TxRotate) {
-    // if no flip or XY flip
-    if ((shearX >= 0 && shearY >= 0) || (shearX < 0 && shearY < 0)) {
-      painter->setTransform(QTransform(painterTransform.m11(), (shearY < 0 ? -1.0 : 1.0), painterTransform.m13(),
-                                       (shearX >= 0 ? -1.0 : 1.0), painterTransform.m22(), painterTransform.m23(),
-                                       painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
-      sx = shearX * (shearX < 0 ? -1.0 : 1.0);
-      sy = shearY * (shearY >= 0 ? -1.0 : 1.0);
-    } else { // if x or y flip
-      painter->setTransform(QTransform(painterTransform.m11(), (shearY < 0 ? 1.0 : -1.0), painterTransform.m13(),
-                                       (shearX >= 0 ? -1.0 : 1.0), painterTransform.m22(), painterTransform.m23(),
-                                       painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
-      sx = shearX * (shearX < 0 ? 1.0 : -1.0);
-      sy = shearY * (shearY >= 0 ? -1.0 : 1.0);
+  qreal invx = (m11 >= 0) ? 1.0 : -1.0;
+  qreal invy = (m22 >= 0) ? 1.0 : -1.0;
+  if ((m11 == 0) && (m22 == 0))
+  {
+    invx = (m12 > 0) ? -1.0 : 1.0;
+    invy = (m21 > 0) ? 1.0 : -1.0;
+
+    if ((!startInv && (m12 > 0)) || (startInv && (m12 < 0)))
+    {
+      invx = -1.0 * invx;
+      invy = -1.0 * invy;
     }
-  } else {
-    painter->setTransform(QTransform(1.0, painterTransform.m12(), painterTransform.m13(),
-                                     painterTransform.m21(), 1.0, painterTransform.m23(),
-                                     painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
-    sx = scaleX;
-    sy = scaleY;
   }
+  QTransform curTransform = QTransform(qAbs(painterTransform.m11()), invx * painterTransform.m12(), painterTransform.m13(),
+                                  invy * painterTransform.m21(), qAbs(painterTransform.m22()), painterTransform.m23(),
+                                  painterTransform.m31(), painterTransform.m32(), painterTransform.m33())
+                            .scale(1/xScale, 1/yScale);
+  painter->setTransform(curTransform);
   // map the existing bounding rect to new transformation
   QRectF boundingRectangle = boundingRect();
-  QRectF mappedBoundingRect = QRectF(boundingRectangle.x() * sx, boundingRectangle.y() * sy, boundingRectangle.width() * sx, boundingRectangle.height() * sy);
-  // map the existing bounding rect to new transformation but with positive width and height so that font metrics can work
-  QRectF absMappedBoundingRect = QRectF(boundingRectangle.x() * sx, boundingRectangle.y() * sy, qAbs(boundingRectangle.width() * sx), qAbs(boundingRectangle.height() * sy));
+  qreal xtl = (invx >= 0) ? boundingRectangle.left() : -boundingRectangle.right();
+  qreal ytl = (invy >= 0) ? boundingRectangle.top() : -boundingRectangle.bottom();
+  QRectF mappedBoundingRect = QRectF(xtl * curScale, ytl * curScale, boundingRectangle.width() * curScale, boundingRectangle.height() * curScale);
   // normalize the text for drawing
   QString textString = StringHandler::removeFirstLastQuotes(mTextString);
   textString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
@@ -420,14 +421,14 @@ void TextAnnotation::drawAnnotation(QPainter *painter)
   // if absolute font size is defined and is greater than 0 then we don't need to calculate the font size.
   if (mFontSize <= 0) {
     QFontMetrics fontMetrics(painter->font());
-    QRect fontBoundRect = fontMetrics.boundingRect(absMappedBoundingRect.toRect(), Qt::TextDontClip, textString);
-    const qreal xFactor = absMappedBoundingRect.width() / fontBoundRect.width();
-    const qreal yFactor = absMappedBoundingRect.height() / fontBoundRect.height();
+    QRect fontBoundRect = fontMetrics.boundingRect(mappedBoundingRect.toRect(), Qt::TextDontClip, textString);
+    const qreal xFactor = mappedBoundingRect.width() / fontBoundRect.width();
+    const qreal yFactor = mappedBoundingRect.height() / fontBoundRect.height();
     /* Ticket:4256
      * Text aspect when x1=x2 i.e, width is 0.
      * Use height.
      */
-    const qreal factor = (absMappedBoundingRect.width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
+    const qreal factor = (mappedBoundingRect.width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
     qreal fontSizeFactor = font.pointSizeF() * factor;
     // Yes we don't go below Helper::minimumTextFontSize font pt.
     font.setPointSizeF(qMax(fontSizeFactor, Helper::minimumTextFontSize));
@@ -437,17 +438,25 @@ void TextAnnotation::drawAnnotation(QPainter *painter)
    * OR if font size is absolute and text is not multiline.
    */
   QString textToDraw = textString;
-  if (absMappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || (mFontSize > 0 && !Utilities::isMultiline(textString)))) {
+  if (mappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || (mFontSize > 0 && !Utilities::isMultiline(textString)))) {
     QFontMetrics fontMetrics(painter->font());
-    textToDraw = fontMetrics.elidedText(textString, Qt::ElideRight, absMappedBoundingRect.width());
+    textToDraw = fontMetrics.elidedText(textString, Qt::ElideRight, mappedBoundingRect.width());
     // if we get "..." i.e., QChar(0x2026) as textToDraw then don't draw anything
     if (textToDraw.compare(QChar(0x2026)) == 0) {
       textToDraw = "";
     }
   }
+  Qt::Alignment alignment = StringHandler::getTextAlignment(mHorizontalAlignment);
+  if ((invx < 0) ^ startInv)
+  {
+    if (alignment == Qt::AlignLeft)
+      alignment = Qt::AlignRight;
+    else if (alignment == Qt::AlignRight)
+      alignment = Qt::AlignLeft;
+  }
   // draw the font
   if (mpElement || mappedBoundingRect.width() != 0 || mappedBoundingRect.height() != 0) {
-    painter->drawText(mappedBoundingRect, StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
+    painter->drawText(mappedBoundingRect, alignment | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
   }
 }
 
