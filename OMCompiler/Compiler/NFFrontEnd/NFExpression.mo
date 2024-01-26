@@ -2242,7 +2242,7 @@ public
         then DAE.CLKCONST(ClockKind.toDAE(exp.clk));
 
       case CREF()
-        then DAE.CREF(ComponentRef.toDAE(exp.cref), Type.toDAE(exp.ty));
+        then DAE.CREF(ComponentRef.toDAE(exp.cref), Type.toDAE(Type.simplify(exp.ty)));
 
       case TYPENAME()
         then toDAE(ExpandExp.expandTypename(exp.ty));

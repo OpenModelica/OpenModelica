@@ -1370,14 +1370,13 @@ public
   function simplify
     input output Type ty;
   algorithm
-    () := match ty
+    ty := match ty
       case ARRAY()
         algorithm
           ty.dimensions := list(Dimension.simplify(d) for d in ty.dimensions);
-        then
-          ();
+        then if List.all(ty.dimensions, Dimension.isOne) then ty.elementType else ty;
 
-      else ();
+      else ty;
     end match;
   end simplify;
 
