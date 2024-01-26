@@ -1370,6 +1370,19 @@ public
   function simplify
     input output Type ty;
   algorithm
+    () := match ty
+      case ARRAY()
+        algorithm
+          ty.dimensions := list(Dimension.simplify(d) for d in ty.dimensions);
+        then ();
+
+      else ();
+    end match;
+  end simplify;
+
+  function removeSizeOneArray
+    input output Type ty;
+  algorithm
     ty := match ty
       case ARRAY()
         algorithm
@@ -1378,7 +1391,7 @@ public
 
       else ty;
     end match;
-  end simplify;
+  end removeSizeOneArray;
 
   function sizeOf
     input Type ty;

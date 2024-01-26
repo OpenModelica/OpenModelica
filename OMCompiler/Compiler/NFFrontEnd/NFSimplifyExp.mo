@@ -78,19 +78,23 @@ end simplifyDump;
 function simplify
   input output Expression exp;
   input Boolean backend = false;
+  input Boolean fromCall = false;
 algorithm
   exp := match exp
     case Expression.CREF()
       algorithm
         exp.cref := ComponentRef.simplifySubscripts(exp.cref);
         exp.ty := ComponentRef.getSubscriptedType(exp.cref, backend);
+        if not fromCall then
+          exp.ty := Type.removeSizeOneArray(exp.ty);
+        end if;
       then
         exp;
 
     case Expression.ARRAY()
       guard not exp.literal
       algorithm
-        exp.elements := Array.map(exp.elements, function simplify(backend = false));
+        exp.elements := Array.map(exp.elements, function simplify(backend = backend, fromCall = fromCall));
       then
         exp;
 
@@ -103,7 +107,7 @@ algorithm
       then
         exp;
 
-    case Expression.CALL()              then simplifyCall(exp);
+    case Expression.CALL()              then simplifyCall(exp, backend);
     case Expression.SIZE()              then simplifySize(exp);
     case Expression.MULTARY()           then simplifyMultary(exp);
     case Expression.BINARY()            then simplifyBinary(exp);
@@ -163,6 +167,7 @@ end simplifyRange;
 
 function simplifyCall
   input output Expression callExp;
+  input Boolean backend;
 protected
   Call call;
   list<Expression> args;
@@ -177,7 +182,7 @@ algorithm
           args := list(if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg) for arg in args);
         end if;
 
-        args := list(simplify(arg) for arg in args);
+        args := list(simplify(arg, backend, true) for arg in args);
         call.arguments := args;
         builtin := Function.isBuiltin(call.fn);
         is_pure := not Function.isImpure(call.fn);
@@ -205,7 +210,7 @@ algorithm
 
     case Call.TYPED_CALL(arguments = args)
       algorithm
-        args := list(simplify(arg) for arg in args);
+        args := list(simplify(arg, backend, true) for arg in args);
         call.arguments := args;
       then
         Expression.CALL(call);
@@ -636,7 +641,7 @@ algorithm
   end for;
 
   outExp := Expression.foldReduction(simplify(exp), listReverseInPlace(iters),
-    default_exp, function simplify(backend = false), function simplifyBinaryOp(op = op));
+    default_exp, function simplify(backend = false, fromCall = true), function simplifyBinaryOp(op = op));
 end simplifyReduction2;
 
 function simplifySize
