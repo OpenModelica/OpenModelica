@@ -215,25 +215,31 @@ public
         case VarType.SIMULATION algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.realVarIndex) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.realVarIndex := simCodeIndices.realVarIndex +1;
+          simCodeIndices.realVarIndex := simCodeIndices.realVarIndex + 1;
         then ();
 
         case VarType.PARAMETER algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.realParamIndex) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.realParamIndex := simCodeIndices.realParamIndex +1;
+          simCodeIndices.realParamIndex := simCodeIndices.realParamIndex + 1;
         then ();
 
         case VarType.ALIAS algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.realAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.realAliasIndex := simCodeIndices.realAliasIndex +1;
+          simCodeIndices.realAliasIndex := simCodeIndices.realAliasIndex + 1;
         then ();
 
         case VarType.RESIDUAL algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.residualIndex) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.residualIndex := simCodeIndices.residualIndex +1;
+          simCodeIndices.residualIndex := simCodeIndices.residualIndex + 1;
+        then ();
+
+        case VarType.EXTERNAL_OBJECT algorithm
+          Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.extObjIndex) :: Pointer.access(acc));
+          simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
+          simCodeIndices.extObjIndex := simCodeIndices.extObjIndex + 1;
         then ();
 
         else algorithm
@@ -1089,7 +1095,7 @@ public
    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
   type SplitType  = enumeration(NONE, TYPE);
-  type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL); // ToDo: PRE, OLD, RELATIONS...
+  type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL, EXTERNAL_OBJECT); // ToDo: PRE, OLD, RELATIONS...
 
   uniontype VarInfo
     record VAR_INFO
@@ -1236,7 +1242,7 @@ public
     protected
       Pointer<SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
       Pointer<list<SimVar>> acc = Pointer.create({});
-      VarType varType = VarType.SIMULATION;
+      VarType varType = VarType.EXTERNAL_OBJECT;
     algorithm
       VariablePointers.map(external_objects, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
       simCodeIndices := Pointer.access(indices_ptr);
