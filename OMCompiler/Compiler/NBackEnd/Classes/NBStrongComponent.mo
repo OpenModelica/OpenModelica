@@ -891,20 +891,27 @@ protected
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
     input JacobianType jacType                                "gives context";
   protected
-    list<ComponentRef> tmp_dependencies, fixed_dependencies = {};
+    list<ComponentRef> fixed_dependencies;
+    UnorderedSet<ComponentRef> set;
   algorithm
     try
       // replace non derivative dependencies with their previous dependencies (also remove self dependency)
       // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
       if jacType == NBJacobian.JacobianType.ODE then
+        set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for dep in listReverse(dependencies) loop
+          // if the dependency is a state add itself, otherwise add the dependencies already saved
+          // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
           if BVariable.checkCref(dep, BVariable.isState) then
-            fixed_dependencies := dep :: fixed_dependencies;
+            UnorderedSet.add(dep, set);
           else
-            tmp_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in UnorderedMap.getSafe(dep, map, sourceInfo()));
-            fixed_dependencies := listAppend(tmp_dependencies, fixed_dependencies);
+            for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop
+              UnorderedSet.add(tmp, set);
+            end for;
+            UnorderedSet.remove(cref, set);
           end if;
         end for;
+        fixed_dependencies := UnorderedSet.toList(set);
       else
         // only remove self dependency
         fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in dependencies);
