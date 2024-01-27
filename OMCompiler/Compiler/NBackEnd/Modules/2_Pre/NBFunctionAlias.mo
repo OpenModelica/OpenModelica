@@ -119,6 +119,12 @@ protected
     record CALL_ID
       Expression call;
       Iterator iter;
+      // ToDo: instead of skipping when and if, one could collect these conditions
+      //    and create the function call equations with them.
+      // Note: update hashing, isEqual and take into account that there can be
+      //    elseif/elsewhen which need to be chained
+      // Option<Expression> when_condition
+      // Option<Expression> if_condition
     end CALL_ID;
 
     function toString
@@ -316,12 +322,20 @@ protected
     input Boolean init;
   protected
     Iterator iter;
+    Boolean stop;
   algorithm
-    iter := match eq
-      case Equation.FOR_EQUATION() then eq.iter;
-      else Iterator.EMPTY();
+    (iter, stop) := match eq
+      local
+        Equation body;
+      case Equation.FOR_EQUATION(body = {body}) then (eq.iter, Equation.isWhenEquation(Pointer.create(body))
+                                                            or Equation.isIfEquation(Pointer.create(body)));
+      case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), true);
+      case Equation.IF_EQUATION()               then (Iterator.EMPTY(), true);
+                                                else (Iterator.EMPTY(), false);
     end match;
-    eq := Equation.map(eq, function introduceFunctionAlias(map = map, index = index, iter = iter, init = init));
+    if not stop then
+      eq := Equation.map(eq, function introduceFunctionAlias(map = map, index = index, iter = iter, init = init));
+    end if;
   end introduceFunctionAliasEquation;
 
   function introduceFunctionAlias

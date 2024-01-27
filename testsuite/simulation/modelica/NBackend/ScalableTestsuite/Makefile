@@ -23,6 +23,7 @@ CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
 PowerSystemStepLoad.mos \
 SimpleAdvection.mos \
+CombiTimeTable.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
