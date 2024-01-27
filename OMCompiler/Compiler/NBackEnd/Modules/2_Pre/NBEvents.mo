@@ -946,10 +946,20 @@ protected
     input Pointer<Bucket> bucket_ptr;
     input FunctionTree funcTree;
   protected
-    Equation eqn = Pointer.access(eqn_ptr);
+    Equation eqn = Pointer.access(eqn_ptr), body_eqn;
     Iterator iter;
     Boolean createAux = not Equation.isAlgorithm(eqn_ptr);
+    BEquation.MapFuncExp collector;
   algorithm
+    // create the traverser function
+    iter := Equation.getForIterator(eqn);
+    collector := function collectEventsTraverse(
+          bucket_ptr  = bucket_ptr,
+          iter        = iter,
+          eqn         = eqn_ptr,
+          funcTree    = funcTree,
+          createAux   = createAux);
+
     eqn := match eqn
       case Equation.ALGORITHM() algorithm
         for stmt in eqn.alg.statements loop
@@ -957,15 +967,27 @@ protected
         end for;
       then eqn;
 
-      else algorithm
-        iter := Equation.getForIterator(eqn);
-      then Equation.map(eqn, function collectEventsTraverse(
-          bucket_ptr  = bucket_ptr,
-          iter        = iter,
-          eqn         = eqn_ptr,
-          funcTree    = funcTree,
-          createAux   = createAux),
-        NONE(), Expression.mapReverse);
+      // For when equations only map the condition and not the body
+      case Equation.WHEN_EQUATION() algorithm
+        eqn.body := WhenEquationBody.mapCondition(eqn.body, collector, NONE(), Expression.mapReverse);
+      then eqn;
+
+      // Also don't do it for when equations in for-equations
+      case Equation.FOR_EQUATION(body = {body_eqn as Equation.WHEN_EQUATION()}) algorithm
+        body_eqn.body := WhenEquationBody.mapCondition(body_eqn.body, collector, NONE(), Expression.mapReverse);
+        eqn.body := {body_eqn};
+      then eqn;
+
+      // Map if equation body with this function to ensure that when equation bodies are not traversed
+      case Equation.IF_EQUATION() algorithm
+        eqn.body := IfEquationBody.mapEqnExpCref(eqn.body,
+          func        = function collectEvents(bucket_ptr = bucket_ptr, funcTree = funcTree),
+          funcExp     = collector,
+          funcCrefOpt = NONE(),
+          mapFunc     = Expression.mapReverse);
+      then eqn;
+
+      else Equation.map(eqn, collector, NONE(), Expression.mapReverse);
     end match;
 
     if not referenceEq(eqn, Pointer.access(eqn_ptr)) then
