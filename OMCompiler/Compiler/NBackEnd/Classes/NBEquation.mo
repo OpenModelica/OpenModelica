@@ -2191,6 +2191,21 @@ public
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
       input MapFuncExpWrapper mapFunc;
+    algorithm
+      ifBody := mapEqnExpCref(
+        ifBody      = ifBody,
+        func        = function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)),
+        funcExp     = funcExp,
+        funcCrefOpt = funcCrefOpt,
+        mapFunc     = mapFunc);
+    end map;
+
+    function mapEqnExpCref
+      input output IfEquationBody ifBody;
+      input MapFuncEqnPtr func;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
       IfEquationBody else_if, old_else_if;
@@ -2201,7 +2216,7 @@ public
       end if;
 
       // referenceEq for lists?
-      ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)));
+      ifBody.then_eqns := List.map(ifBody.then_eqns, func);
 
       if Util.isSome(ifBody.else_if) then
         old_else_if := Util.getOption(ifBody.else_if);
@@ -2210,7 +2225,7 @@ public
           ifBody.else_if := SOME(else_if);
         end if;
       end if;
-    end map;
+    end mapEqnExpCref;
 
     function size
       "only considers first branch"
@@ -2428,6 +2443,24 @@ public
       // map else when
       whenBody.else_when := Util.applyOption(whenBody.else_when, function map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
     end map;
+
+    function mapCondition
+      "only maps the conditions and not the body"
+      input output WhenEquationBody whenBody;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
+    protected
+      Expression condition;
+    algorithm
+      condition := mapFunc(whenBody.condition, funcExp);
+      if not referenceEq(condition, whenBody.condition) then
+        whenBody.condition := condition;
+      end if;
+
+      // map else when
+      whenBody.else_when := Util.applyOption(whenBody.else_when, function mapCondition(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+    end mapCondition;
 
     function split
       "this function splits up when equations while respecting to keep
