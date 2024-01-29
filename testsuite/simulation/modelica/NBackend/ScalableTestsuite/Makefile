@@ -29,6 +29,7 @@ SimpleAdvection.mos \
 FAILINGTESTFILES = \
 CombiTimeTable.mos \
 TransmissionLineEquations.mos \
+CombiTimeTable.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
