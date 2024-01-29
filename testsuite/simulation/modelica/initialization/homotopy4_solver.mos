@@ -12,7 +12,7 @@ within ;
 package initializationTests
   model homotopy4_solver
     Real x,y,z,x1,y1,z1,x2,y2,z2,x3,y3,z3,a,b,c,d,e,f;
-    // Real x,y,z,x1,y1,z1,x2,y2,z2 annotation(tearingSelect=always),x3,y3,z3,a,b,c,d,e,f;
+    // Real x,y,z,x1,y1,z1,x2,y2,z2 annotation(__OpenModelica_tearingSelect=always),x3,y3,z3,a,b,c,d,e,f;
     parameter Real p1 = 10;
 
   equation

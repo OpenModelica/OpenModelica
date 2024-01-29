@@ -1,10 +1,10 @@
 model tearingSelect
    Real u0;
-   Real i1 annotation(tearingSelect=prefer);
+   Real i1 annotation(__OpenModelica_tearingSelect=prefer);
    Real i2 (start=1);
    Real i3;
    Real u1;
-   Real u2 (start=1) annotation(tearingSelect=avoid);
+   Real u2 (start=1) annotation(__OpenModelica_tearingSelect=avoid);
    Real u3;
    parameter Real r1=10;
    parameter Real r2=10;
