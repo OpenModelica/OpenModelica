@@ -7040,6 +7040,7 @@ void ModelWidget::updateModelText()
     setWindowTitle(QString("%1*").arg(mpLibraryTreeItem->getName()));
     mUpdateModelTimer.start();
     if (isNewApi()) {
+      callHandleCollidingConnectionsIfNeeded();
       // announce the change.
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
     }
@@ -7050,6 +7051,18 @@ void ModelWidget::updateModelText()
     MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(this);
   }
 #endif
+}
+
+/*!
+ * \brief ModelWidget::callHandleCollidingConnectionsIfNeeded
+ * Calls GraphicsView::handleCollidingConnections if needed.
+ */
+void ModelWidget::callHandleCollidingConnectionsIfNeeded()
+{
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && mpDiagramGraphicsView && isHandleCollidingConnectionsNeeded()) {
+    mpDiagramGraphicsView->handleCollidingConnections();
+    setHandleCollidingConnectionsNeeded(false);
+  }
 }
 
 /*!
