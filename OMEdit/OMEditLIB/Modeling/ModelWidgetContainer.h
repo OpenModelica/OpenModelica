@@ -579,6 +579,8 @@ public:
   bool isNewApi();
   void addDependsOnModel(const QString &dependsOnModel);
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
+  void setHandleCollidingConnectionsNeeded(bool needed) {mHandleCollidingConnectionsNeeded = needed;}
+  bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
 
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
@@ -614,6 +616,7 @@ public:
   void clearSelection();
   void updateClassAnnotationIfNeeded();
   void updateModelText();
+  void callHandleCollidingConnectionsIfNeeded();
   void updateUndoRedoActions();
   bool writeCoSimulationResultFile(QString fileName);
   bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
@@ -671,6 +674,7 @@ private:
   QTimer mUpdateModelTimer;
   QStringList mDependsOnModelsList;
   bool mHasMissingType = false;
+  bool mHandleCollidingConnectionsNeeded = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();

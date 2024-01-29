@@ -363,8 +363,8 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && mpComponent->getGraphicsView()->getModelWidget()->isNewApi()) {
-    mpComponent->getGraphicsView()->handleCollidingConnections();
+  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && pModelWidget->isNewApi()) {
+    pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
 
@@ -405,8 +405,8 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && mpComponent->getGraphicsView()->getModelWidget()->isNewApi()) {
-    mpComponent->getGraphicsView()->handleCollidingConnections();
+  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && pModelWidget->isNewApi()) {
+    pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
 
