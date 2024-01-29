@@ -4737,8 +4737,6 @@ public function transformPathedElementInProgram
     input output Absyn.Element element;
   end Func;
 protected
-  String name;
-  Absyn.Class cls;
   list<Absyn.Class> clss;
 
   function transform_class
@@ -4767,7 +4765,6 @@ protected
     end if;
   end transform_class;
 algorithm
-  name := AbsynUtil.pathFirstIdent(path);
   (clss, success) := List.findMap(program.classes, function transform_class(path = path, func = func));
 
   if success then
