@@ -82,7 +82,7 @@ end LocalIOs;
 ");
 getErrorString();
 
-buildModelFMU(LocalIOs.System, version="2.0"); getErrorString();
+buildModelFMU(LocalIOs.System, version="2.0", fileNamePrefix="LocalIOs.System"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq LocalIOs.System.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");

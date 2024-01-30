@@ -12,7 +12,7 @@ setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives");
 getErrorString();
 
 // Build 2.0 FMU
-buildModelFMU(Modelica.Electrical.Analog.Examples.CauerLowPassAnalog, version="2.0", fmuType="me_cs", platforms={"static"});
+buildModelFMU(Modelica.Electrical.Analog.Examples.CauerLowPassAnalog, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Electrical.Analog.Examples.CauerLowPassAnalog", platforms={"static"});
 getErrorString();
 
 // Simulate with OMSimulator

@@ -6,7 +6,7 @@ loadModel(Modelica, {"3.2.3"}); getErrorString();
 
 system("mkdir -p resetWithLoops-fmu");
 echo(false); cd("resetWithLoops-fmu"); echo(true);
-buildModelFMU(Modelica.Electrical.Analog.Examples.Rectifier); getErrorString();
+buildModelFMU(Modelica.Electrical.Analog.Examples.Rectifier, fileNamePrefix="Modelica.Electrical.Analog.Examples.Rectifier"); getErrorString();
 echo(false); cd(".."); echo(true);
 
 writeFile("resetWithLoops.lua","
