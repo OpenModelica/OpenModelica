@@ -3483,12 +3483,12 @@ protected
   String sn;
 algorithm
   n := Flags.getConfigInt(Flags.NUM_PROC);
-  ns := intString(n);
+  sn := intString(n);
   s := if (n == 0)
        then ""
        else (if isMake
-             then ns
-             else stringAppend("-j", ns));
+             then sn
+             else stringAppend("-j", sn));
 end getProcsStr;
 
 protected function configureFMU_cmake
