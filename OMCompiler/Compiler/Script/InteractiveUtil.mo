@@ -4727,10 +4727,36 @@ algorithm
   end match;
 end getPathedElementInElement;
 
+public function transformPathedElementInList<T>
+  input list<T> inList;
+  input FuncType inFunc;
+  output list<T> outList = {};
+  output Option<Absyn.Element> outElement = NONE();
+  output Boolean outFound = false;
+
+  partial function FuncType
+    input output T t;
+          output Option<Absyn.Element> outElement;
+          output Boolean outFound;
+  end FuncType;
+protected
+  T e;
+  list<T> rest = inList;
+algorithm
+  while not listEmpty(rest) and not outFound loop
+    e :: rest := rest;
+    (e, outElement, outFound) := inFunc(e);
+    outList := e :: outList;
+  end while;
+
+  outList := List.append_reverse(outList, rest);
+end transformPathedElementInList;
+
 public function transformPathedElementInProgram
   input Absyn.Path path;
   input Func func;
   input output Absyn.Program program;
+        output Option<Absyn.Element> element;
         output Boolean success;
 
   partial function Func
@@ -4743,6 +4769,7 @@ protected
     input Absyn.Path path;
     input Func func;
     input output Absyn.Class cls;
+          output Option<Absyn.Element> outElement;
           output Boolean found;
   protected
     Absyn.Element elem;
@@ -4757,15 +4784,18 @@ protected
         elem := Absyn.Element.ELEMENT(false, NONE(), Absyn.InnerOuter.NOT_INNER_OUTER(),
           Absyn.ElementSpec.CLASSDEF(false, cls), cls.info, NONE());
         elem := func(elem);
+        outElement := SOME(elem);
         Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls)) := elem;
       else
         // The path points to an element inside the class.
-        (cls, found) := transformPathedElementInClass(AbsynUtil.pathRest(path), func, cls);
+        (cls, outElement, found) := transformPathedElementInClass(AbsynUtil.pathRest(path), func, cls);
       end if;
+    else
+      outElement := NONE();
     end if;
   end transform_class;
 algorithm
-  (clss, success) := List.findMap(program.classes, function transform_class(path = path, func = func));
+  (clss, element, success) := transformPathedElementInList(program.classes, function transform_class(path = path, func = func));
 
   if success then
     program.classes := clss;
@@ -4776,6 +4806,7 @@ protected function transformPathedElementInClass
   input Absyn.Path path;
   input Func func;
   input output Absyn.Class cls;
+        output Option<Absyn.Element> element;
         output Boolean success;
 
   partial function Func
@@ -4784,7 +4815,7 @@ protected function transformPathedElementInClass
 protected
   Absyn.ClassDef def;
 algorithm
-  (def, success) := transformPathedElementInClassDef(path, func, cls.body);
+  (def, element, success) := transformPathedElementInClassDef(path, func, cls.body);
 
   if success then
     cls.body := def;
@@ -4795,6 +4826,7 @@ protected function transformPathedElementInClassDef
   input Absyn.Path path;
   input Func func;
   input output Absyn.ClassDef def;
+        output Option<Absyn.Element> element;
         output Boolean success;
 
   partial function Func
@@ -4806,7 +4838,7 @@ algorithm
   success := match def
     case Absyn.ClassDef.PARTS()
       algorithm
-        (parts, success) := List.findMap(def.classParts,
+        (parts, element, success) := transformPathedElementInList(def.classParts,
           function transformPathedElementInClassPart(path = path, func = func));
 
         if success then
@@ -4817,7 +4849,7 @@ algorithm
 
     case Absyn.ClassDef.CLASS_EXTENDS()
       algorithm
-        (parts, success) := List.findMap(def.parts,
+        (parts, element, success) := transformPathedElementInList(def.parts,
           function transformPathedElementInClassPart(path = path, func = func));
 
         if success then
@@ -4834,6 +4866,7 @@ protected function transformPathedElementInClassPart
   input Absyn.Path path;
   input Func func;
   input output Absyn.ClassPart part;
+        output Option<Absyn.Element> element;
         output Boolean success;
 
   partial function Func
@@ -4845,7 +4878,7 @@ algorithm
   success := match part
     case Absyn.ClassPart.PUBLIC()
       algorithm
-        (items, success) := List.findMap(part.contents,
+        (items, element, success) := transformPathedElementInList(part.contents,
           function transformPathedElementInElementItem(path = path, func = func));
 
         if success then
@@ -4856,7 +4889,7 @@ algorithm
 
     case Absyn.ClassPart.PROTECTED()
       algorithm
-        (items, success) := List.findMap(part.contents,
+        (items, element, success) := transformPathedElementInList(part.contents,
           function transformPathedElementInElementItem(path = path, func = func));
 
         if success then
@@ -4873,6 +4906,7 @@ protected function transformPathedElementInElementItem
   input Absyn.Path path;
   input Func func;
   input output Absyn.ElementItem item;
+        output Option<Absyn.Element> outElement;
         output Boolean success;
 
   partial function Func
@@ -4887,9 +4921,10 @@ algorithm
       algorithm
         if AbsynUtil.pathIsIdent(path) then
           item.element := func(item.element);
+          outElement := SOME(item.element);
           success := true;
         else
-          (element, success) := transformPathedElementInElement(AbsynUtil.pathRest(path), func, item.element);
+          (element, outElement, success) := transformPathedElementInElement(AbsynUtil.pathRest(path), func, item.element);
 
           if success then
             item.element := element;
@@ -4906,6 +4941,7 @@ protected function transformPathedElementInElement
   input Absyn.Path path;
   input Func func;
   input output Absyn.Element element;
+        output Option<Absyn.Element> outElement;
         output Boolean success;
 
   partial function Func
@@ -4917,7 +4953,7 @@ algorithm
   success := match element
     case Absyn.Element.ELEMENT()
       algorithm
-        (spec, success) := transformPathedElementInElementSpec(path, func, element.specification);
+        (spec, outElement, success) := transformPathedElementInElementSpec(path, func, element.specification);
 
         if success then
           element.specification := spec;
@@ -4933,6 +4969,7 @@ protected function transformPathedElementInElementSpec
   input Absyn.Path path;
   input Func func;
   input output Absyn.ElementSpec spec;
+        output Option<Absyn.Element> element;
         output Boolean success;
 
   partial function Func
@@ -4944,7 +4981,7 @@ algorithm
   success := match spec
     case Absyn.ElementSpec.CLASSDEF()
       algorithm
-        (cls, success) := transformPathedElementInClass(path, func, spec.class_);
+        (cls, element, success) := transformPathedElementInClass(path, func, spec.class_);
 
         if success then
           spec.class_ := cls;
@@ -5016,6 +5053,7 @@ public function setElementAnnotation
 protected
   Option<Absyn.Annotation> ann;
   String name;
+  Option<Absyn.Element> elem_opt;
 algorithm
   try
     if listEmpty(annotationMod.elementArgLst) then
@@ -5025,8 +5063,12 @@ algorithm
     end if;
 
     name := AbsynUtil.pathLastIdent(elementPath);
-    (program, success) := transformPathedElementInProgram(elementPath,
+    (program, elem_opt, success) := transformPathedElementInProgram(elementPath,
       function AbsynUtil.setElementAnnotation(name = name, inAnnotation = ann), program);
+
+    if success then
+      SymbolTable.setAbsynElement(program, Util.getOption(elem_opt), elementPath);
+    end if;
   else
     success := false;
   end try;
@@ -5044,7 +5086,7 @@ algorithm
     Absyn.Program.PROGRAM(classes = {Absyn.Class.CLASS(body = parsed_body)}) :=
       Parser.parsestring(stringAppendList({"model dummy\n", content, "end dummy;\n"}));
 
-    (program, success) := transformPathedElementInProgram(classPath,
+    (program, _, success) := transformPathedElementInProgram(classPath,
       function mergeClassContents(newContent = parsed_body), program);
   else
     success := false;
