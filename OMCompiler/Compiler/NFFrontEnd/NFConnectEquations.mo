@@ -297,7 +297,6 @@ protected
   list<InstNode> iterators = {};
   list<Expression> ranges;
   list<Subscript> subs;
-  list<Equation> equations;
 algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
@@ -331,13 +330,11 @@ algorithm
   equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
 
   // wrap the equation in for loop if necessary
-  equations := {equalityAssert};
   while not listEmpty(iterators) loop
-    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, InstNode.EMPTY_NODE(), source)};
+    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, InstNode.EMPTY_NODE(), source);
     iterators := listRest(iterators);
     ranges := listRest(ranges);
   end while;
-  {equalityAssert} := equations;
 end makeEqualityAssert;
 
 //protected function shouldFlipPotentialEquation
