@@ -560,6 +560,7 @@ protected
   algorithm
     varKind := match(variability, attributes, ty)
       local
+        Type elemTy;
         list<Pointer<Variable>> children = {};
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
@@ -570,10 +571,12 @@ protected
       // get external object class
       case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
       then BackendExtension.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
+      then BackendExtension.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
       case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
-      case (_, _, _) guard(Type.isComplexArray(ty))                   then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
+      case (_, _, Type.ARRAY(elementType = Type.COMPLEX()))           then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
 
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();
