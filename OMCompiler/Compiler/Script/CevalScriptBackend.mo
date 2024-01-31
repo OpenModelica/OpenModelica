@@ -121,6 +121,7 @@ import SCodeUtil;
 import SemanticVersion;
 import Settings;
 import SimCodeMain;
+import SimCodeFunctionUtil;
 import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
@@ -3530,6 +3531,22 @@ algorithm
       className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
 end callTranslateModel;
 
+protected function getProcsStr
+  input Boolean isMake = false;
+  output String s;
+protected
+  Integer n;
+  String sn;
+algorithm
+  n := Flags.getConfigInt(Flags.NUM_PROC);
+  sn := intString(n);
+  s := if (n == 0)
+       then ""
+       else (if isMake
+             then sn
+             else stringAppend("-j", sn));
+end getProcsStr;
+
 protected function configureFMU_cmake
 "Configure and build binaries with CMake for target platform"
   input String platform;
@@ -3542,10 +3559,15 @@ protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
   String quote, dquote, defaultFmiIncludeDirectoy;
+  String CC, CXX;
+  SimCodeFunction.MakefileParams makefileParams;
 algorithm
+  makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
   quote := "'";
   dquote := if isWindows then "\"" else "'";
+  CC := "-DCMAKE_C_COMPILER=" + dquote + makefileParams.ccompiler + dquote;
+  CXX := "-DCMAKE_CXX_COMPILER=" + dquote + makefileParams.cxxcompiler + dquote;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
@@ -3579,15 +3601,15 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
-               Autoconf.cmake + " --build . --target install && " +
+               Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
         then();
@@ -3598,15 +3620,15 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
-               Autoconf.cmake + " --build . --target install && " +
+               Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
         then();
@@ -3678,7 +3700,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "cmake --build . &&  make  install && " +
+                  "cmake --build . &&  make " + getProcsStr(true) + " install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
@@ -4036,8 +4058,8 @@ algorithm
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
-  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix, ".", "_");
-  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix);
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
+  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix);
   if isSome(inSimSettings)  then
     SOME(simSettings) := inSimSettings;
   else

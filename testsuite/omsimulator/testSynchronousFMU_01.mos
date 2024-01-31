@@ -18,7 +18,7 @@ echo(true);
 simulate(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, stopTime=0.25, outputFormat="csv"); getErrorString();
 
 // Build FMU with Synchronous features
-buildModelFMU(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, version="2.0", fmuType="me"); getErrorString();
+buildModelFMU(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, version="2.0", fmuType="me", fileNamePrefix="Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample"); getErrorString();
 
 // Simulate FMU with OMSimulator
 system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu"

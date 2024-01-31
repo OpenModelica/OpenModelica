@@ -6,7 +6,7 @@
 loadModel(Modelica);
 getErrorString();
 
-buildModelFMU(Modelica.Blocks.Sources.IntegerConstant, version="2.0", fmuType="cs");
+buildModelFMU(Modelica.Blocks.Sources.IntegerConstant, version="2.0", fmuType="cs", fileNamePrefix="Modelica.Blocks.Sources.IntegerConstant");
 getErrorString();
 
 

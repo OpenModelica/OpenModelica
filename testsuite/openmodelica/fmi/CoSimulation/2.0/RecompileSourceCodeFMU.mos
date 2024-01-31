@@ -22,7 +22,7 @@ end Test;
 "); getErrorString();
 
 setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
-buildModelFMU(Test.SinSource, version="2.0", fmuType ="cs", platforms={"static"}); getErrorString();
+buildModelFMU(Test.SinSource, version="2.0", fmuType ="cs", fileNamePrefix="Test.SinSource", platforms={"static"}); getErrorString();
 
 // Check if CMake can re-compile a static library
 system("rm -rf Test_SinSource_FMU && unzip -qq Test.SinSource.fmu -d Test_SinSource_FMU && mkdir Test_SinSource_FMU/sources/build_cmake", outputFile="reCompile.log"); getErrorString();
