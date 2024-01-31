@@ -662,9 +662,10 @@ algorithm
     unfix := false;
   end if;
 
-  // If the component is an array component with a binding and at least discrete variability,
-  // move the binding into an equation. This avoids having to scalarize the binding.
-  if not settings.nfAPI then
+  // If the component is an array component with a binding and at least discrete
+  // variability, and scalarization is enabled, move the binding into an equation.
+  // This avoids having to scalarize the binding.
+  if not settings.nfAPI and settings.scalarize then
     if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
