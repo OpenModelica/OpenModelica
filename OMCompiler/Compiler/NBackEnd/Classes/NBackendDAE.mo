@@ -414,6 +414,11 @@ protected
       variables := VariablePointers.add(lowVar_ptr, variables);
       () := match lowVar.backendinfo.varKind
 
+        // do nothing for size 0 variables, they get removed
+        // Note: record elements need to exist in the full
+        //   variable array even if they are of size 0
+        case _ guard(Variable.size(var) == 0) then ();
+
         case _ guard(Variable.isTopLevelInput(var)) algorithm
           inputs_lst := lowVar_ptr :: inputs_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
