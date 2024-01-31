@@ -3,7 +3,7 @@
 // teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.log Pendulum_systemCall.log modelDescription.xml model_res.mat
 
 loadModel(Modelica); getErrorString();
-buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
+buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum", platforms={"static"}); getErrorString();
 
 system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu", "Pendulum_systemCall.log");
 readFile("Pendulum_systemCall.log");
