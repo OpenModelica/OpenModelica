@@ -223,7 +223,7 @@ algorithm
     end if;
   else
     // don't create asserts for empty arrays
-    if Type.isEmptyArray(ComponentRef.getSubscriptedType(c1.name)) then
+    if Type.isEmptyArray(c1.ty) then
       equations := {};
     else
       equations := list(makeEqualityAssert(c1.name, c1.source, c2.name, c2.source)
@@ -293,7 +293,7 @@ function makeEqualityAssert
 protected
   DAE.ElementSource source;
   Expression lhs_exp, rhs_exp, exp;
-  Type ty;
+  Type ty, elem_ty;
   list<InstNode> iterators = {};
   list<Expression> ranges;
   list<Subscript> subs;
@@ -316,16 +316,16 @@ algorithm
     rhs_exp := Expression.fromCref(rhsCref);
   end if;
 
-
-  if Type.isReal(Type.arrayElementType(ty)) then
+  elem_ty := Type.arrayElementType(ty);
+  if Type.isReal(elem_ty) then
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
-    exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
+    exp := Expression.BINARY(lhs_exp, Operator.makeSub(elem_ty), rhs_exp);
     exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp), Purity.PURE));
-    exp := Expression.RELATION(exp, Operator.makeLessEq(ty), Expression.REAL(0.0));
+    exp := Expression.RELATION(exp, Operator.makeLessEq(elem_ty), Expression.REAL(0.0));
   else
     // For any other type, generate assertion for 'lhs == rhs'.
-    exp := Expression.RELATION(lhs_exp, Operator.makeEqual(ty), rhs_exp);
+    exp := Expression.RELATION(lhs_exp, Operator.makeEqual(elem_ty), rhs_exp);
   end if;
 
   equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
