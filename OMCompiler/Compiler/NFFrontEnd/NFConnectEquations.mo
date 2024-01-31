@@ -222,8 +222,13 @@ algorithm
       end for;
     end if;
   else
-    equations := list(makeEqualityAssert(c1.name, c1.source, c2.name, c2.source)
-      for c2 in listRest(elements));
+    // don't create asserts for empty arrays
+    if Type.isEmptyArray(ComponentRef.getSubscriptedType(c1.name)) then
+      equations := {};
+    else
+      equations := list(makeEqualityAssert(c1.name, c1.source, c2.name, c2.source)
+        for c2 in listRest(elements));
+    end if;
   end if;
 end generatePotentialEquations;
 
@@ -289,15 +294,30 @@ protected
   DAE.ElementSource source;
   Expression lhs_exp, rhs_exp, exp;
   Type ty;
+  list<InstNode> iterators = {};
+  list<Expression> ranges;
+  list<Subscript> subs;
+  list<Equation> equations;
 algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
 
-  lhs_exp := Expression.fromCref(lhsCref);
-  rhs_exp := Expression.fromCref(rhsCref);
-  ty := Expression.typeOf(lhs_exp);
+  ty := ComponentRef.getSubscriptedType(lhsCref);
 
-  if Type.isReal(ty) then
+  // if the type is array, get subscripts and add them to the cref
+  // use the iterators and ranges later to generate the for loop
+  if Type.isArray(ty) then
+    (iterators, ranges, subs) := Flatten.makeIterators(lhsCref, Type.arrayDims(ty));
+    subs := listReverseInPlace(subs);
+    lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(subs, lhsCref));
+    rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(subs, rhsCref));
+  else
+    lhs_exp := Expression.fromCref(lhsCref);
+    rhs_exp := Expression.fromCref(rhsCref);
+  end if;
+
+
+  if Type.isReal(Type.arrayElementType(ty)) then
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
     exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
@@ -309,6 +329,15 @@ algorithm
   end if;
 
   equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
+
+  // wrap the equation in for loop if necessary
+  equations := {equalityAssert};
+  while not listEmpty(iterators) loop
+    equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, InstNode.EMPTY_NODE(), source)};
+    iterators := listRest(iterators);
+    ranges := listRest(ranges);
+  end while;
+  {equalityAssert} := equations;
 end makeEqualityAssert;
 
 //protected function shouldFlipPotentialEquation
