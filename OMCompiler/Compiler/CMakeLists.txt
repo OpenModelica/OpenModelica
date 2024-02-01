@@ -288,8 +288,29 @@ endif()
 # Install omc to the directory for RUNTIME (default=bin)
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
-install(TARGETS omc OpenModelicaCompiler
-            COMPONENT omc)
+if(WIN32)
+  # Escape the environment variable path
+  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
+    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
+  endif()
+  string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+
+  set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
+  set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
+  set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
+  set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
+
+  install(TARGETS OpenModelicaCompiler
+          RUNTIME_DEPENDENCIES
+            DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}
+            PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+            POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
+  install(TARGETS omc
+          COMPONENT omc)
+else(WIN32)
+  install(TARGETS omc OpenModelicaCompiler
+          COMPONENT omc)
+endif(WIN32)
 
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
 # They are also part of "compiler" installation component.

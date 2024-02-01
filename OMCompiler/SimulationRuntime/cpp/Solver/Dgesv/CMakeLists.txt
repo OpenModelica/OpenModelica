@@ -8,8 +8,11 @@ IF(DGESV_FOUND)
   add_library(${DgesvName}_static STATIC ${DGESV_SRCS})
   install(TARGETS ${DgesvName}_static DESTINATION ${LIBINSTALLEXT})
   install(FILES ${DGESV_HEADERS} DESTINATION include/omc/cpp/Solver/Dgesv)
-  GET_TARGET_PROPERTY(libDgesvLocation ${DgesvName}_static LOCATION)
-  GET_FILENAME_COMPONENT(libDgesvExt ${libDgesvLocation} EXT CACHE)
+  if(MSVC)
+    # TODO: This is not allowed: cmake --help-policy CMP0026
+    GET_TARGET_PROPERTY(libDgesvLocation ${DgesvName}_static LOCATION)
+    GET_FILENAME_COMPONENT(libDgesvExt ${libDgesvLocation} EXT CACHE)
+  endif()
 
   add_library(${DgesvSolverName} DgesvSolver.cpp DgesvSolverSettings.cpp FactoryExport.cpp)
 
@@ -20,7 +23,9 @@ IF(DGESV_FOUND)
   target_link_libraries(${DgesvSolverName}  ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
   add_precompiled_header(${DgesvSolverName} Core/Modelica.h)
 
-  install(FILES $<TARGET_PDB_FILE:${DgesvSolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+  if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:${DgesvSolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+  endif()
 
   install(TARGETS ${DgesvSolverName} DESTINATION ${LIBINSTALLEXT})
   install(FILES

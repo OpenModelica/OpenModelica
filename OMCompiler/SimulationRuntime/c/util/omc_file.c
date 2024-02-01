@@ -193,8 +193,9 @@ int omc_stat(const char *filename, omc_stat_t* statbuf)
   wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
   wchar_t* unicodeLongFileName = longabspath(unicodeFilename);
 
-  int res;
-  res = _wstat(unicodeLongFileName, statbuf);
+  // _wstat not working on MINGW64 with \\?\, because it links to the MSVCRT (Microsoft Visual C++ Runtime)
+  // We need to use UCRT64, which links to UCRT (Universal C Runtime)
+  int res = _wstat(unicodeLongFileName, statbuf);
 
   free(unicodeLongFileName);
   free(unicodeFilename);

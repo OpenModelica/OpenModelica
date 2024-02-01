@@ -56,6 +56,10 @@
 #include <QClipboard>
 #include <QDesktopServices>
 
+extern "C" {
+extern const char* System_openModelicaPlatform();
+}
+
 /*!
  * \class SimulationOutputTree
  * \brief A tree based structure for simulation output messages.
@@ -572,15 +576,10 @@ void SimulationOutputWidget::compileModel()
   if (OptionsDialog::instance()->getSimulationPage()->getUseStaticLinkingCheckBox()->isChecked()) {
     linkType = "static";
   }
-#if defined(__MINGW32__) && defined(__MINGW64__) /* on 64 bit */
-  const char* omPlatform = "mingw64";
-#else
-  const char* omPlatform = "mingw32";
-#endif
   SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
   args << mSimulationOptions.getOutputFileName()
        << pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString()
-       << omPlatform << "parallel" << linkType << numProcs << "0";
+       << System_openModelicaPlatform() << "parallel" << linkType << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
   writeCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start(compilationProcessPath, args);

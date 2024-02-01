@@ -166,7 +166,7 @@ SET(LibZName zlib) # only static version
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings${LIBSUFFIX})
 SET(SimControllerName ${LIBPREFIX}SimController${LIBSUFFIX})
 SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
-SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
+#SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
 SET(CppDASSLName ${LIBPREFIX}CppDASSL${LIBSUFFIX})
@@ -322,31 +322,41 @@ ENDIF(OMC_BUILD)
 #  - On windows boost,blas,lapack and sundial solvers from omdev are used else the installed versions are used
 IF(WIN32)
   SET(Boost_DEBUG 1)
-
   MESSAGE(STATUS "MINGW:")
-  MESSAGE(STATUS ${IS_MINGW32})
   MESSAGE(STATUS ${IS_MINGW64})
-  IF(IS_MINGW32)
-    SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw32/")
-  ELSEIF(IS_MINGW64)
-    SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw64/")
-  ELSE()
-     if(MSVC_VERSION GREATER 1800)
-        MESSAGE(STATUS "USE MSVC 2015 and greater:")
-        #SET(Boost_COMPILER  "-vc142")
-        SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_59/")
-        #SET(Boost_COMPILER  "-vc142")
-     elseif(MSVC_VERSION GREATER 1700)
-        SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_59/")
-     else()
-        SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
-     endif()
+
+  # Check environment variables
+  if(NOT DEFINED ENV{OMDEV})
+    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
+  endif()
+  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
+    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
+  endif()
+  string(REPLACE "\\" "/" OMDEV_ESCAPED "$ENV{OMDEV}")
+  string(REPLACE "\\" "/" OMDEV_MSYS_ESCAPED "$ENV{OMDEV}/tools/msys")
+  string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+
+  if(IS_MINGW64)
+    SET(BOOST_ROOT ${MSYSTEM_PREFIX_ESCAPED})
+  elseif(IS_MINGW632)
+    MESSAGE(FATAL_ERROR "32-bit version not supported")
+  else()
+    if(MSVC_VERSION GREATER 1800)
+      MESSAGE(STATUS "USE MSVC 2015 and greater:")
+      #SET(Boost_COMPILER  "-vc142")
+      SET(BOOST_ROOT ${OMDEV_ESCAPED}"/lib/3rdParty/boost-1_59/")
+      #SET(Boost_COMPILER  "-vc142")
+    elseif(MSVC_VERSION GREATER 1700)
+      SET(BOOST_ROOT ${OMDEV_ESCAPED}"/lib/3rdParty/boost-1_59/")
+    else()
+      SET(BOOST_ROOT ${OMDEV_ESCAPED}"/lib/3rdParty/boost-1_55/")
+    endif()
   ENDIF(IS_MINGW32)
   MESSAGE(STATUS "Boost root for omsicpp runtime:")
   MESSAGE(STATUS ${BOOST_ROOT} )
-  SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
-  SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
-  SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
+  SET(BLAS_blas_LIBRARY ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
+  SET(LAPACK_lapack_LIBRARY  ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
+  SET(BLAS_DIRY "${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
   # Disable Optimization for RelWithDebInfo on Windows
   IF(MSVC)
@@ -357,8 +367,8 @@ IF(WIN32)
   ENDIF(MSVC)
 
   #set mico paths
-  SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
-  SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
+  SET(MICO_LIB_HOME ${OMDEV_ESCAPED}/lib/mico-msys-mingw/)
+  SET(MICO_INCLUDE_HOME  ${OMDEV_ESCAPED}/include/mico-msys-mingw/)
 
   SET(INSTALL_OMDEV_LIBS OFF)
 ENDIF(WIN32)
@@ -438,6 +448,13 @@ ENDIF(PAPI_FOUND)
 
 
 # Find Boost
+# If MSVC, we do not want to use MSYS/MingGW installed boost's CMake config files for locating Boost
+# We have a manually provided boost already specified using BOOST_ROOT.
+# This is essentialy saying we do not want any help from boost itself in finding its libraries and setup.
+# Let CMake do it alone the old way by just finding the files it knows.
+IF(MSVC)
+  SET(Boost_NO_BOOST_CMAKE ON)
+ENDIF(MSVC)
 #  - The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
 #  - Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
 FIND_PACKAGE(Boost COMPONENTS log log_setup)
@@ -495,27 +512,15 @@ MESSAGE(STATUS "Boost Libraries for omsicpp runtime")
 MESSAGE(STATUS ${Boost_LIBRARIES})
 
 # Find Lapack and Blas
-FIND_PACKAGE(BLAS)
-FIND_PACKAGE(LAPACK)
-
 IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
-   SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
-  SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
+   SET(LAPACK_MSVC_10  ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
+  SET(BLAS_MSVC_10 ${OMDEV_ESCAPED}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
   SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
-ELSEIF(IS_MINGW32)
-  SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw32/bin/libopenblas.dll )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
-ELSEIF(IS_MINGW64)
-  SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw64/bin/libopenblas.dll )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW} )
+ELSE()
+  FIND_PACKAGE(BLAS)
+  FIND_PACKAGE(LAPACK)
 ENDIF(MSVC)
-
-FIND_LIBRARY(mkl_rt mkl_rt)
-IF (mkl_rt)
-  #workaround because find_package(lapack)-command returns the wrong libraries on Taurus (ZIH-TU Dresden)
-  SET(LAPACK_LIBRARIES ${mkl_rt})
-ENDIF(mkl_rt)
 
 LIST(LENGTH LAPACK_LIBRARIES LAPACKVARCOUNT)
 IF(LAPACKVARCOUNT GREATER 0)
@@ -524,8 +529,7 @@ IF(LAPACKVARCOUNT GREATER 0)
   SET(LAPACK_LIBS "${LAPACKLISTHEAD}")
 ENDIF()
 
-MESSAGE(STATUS "Lapack Libraries")
-MESSAGE(STATUS ${LAPACK_LIBRARIES})
+MESSAGE(STATUS "LAPACK Libraries: ${LAPACK_LIBRARIES}")
 
 
 IF(REDUCE_DAE)
@@ -706,7 +710,7 @@ IF(USE_OMSI)
   MESSAGE(STATUS "OSI linear and nonlinear solver interface enabled")
   #set exapat lib for visual studio compiler used by omsi xml and json  parser
   IF(MSVC)
-    INCLUDE_DIRECTORIES($ENV{OMDEV}/lib/expat-win32-msvc)
+    INCLUDE_DIRECTORIES(${OMDEV_ESCAPED}/lib/expat-win32-msvc)
   ENDIF(MSVC)
 
 

@@ -1,6 +1,10 @@
-# The path to the OMDev-mingw package MUST BE SET!
-#OMDEV=$OMDEV
-# Test if the needed variables are there...
+
+# Test if OMDEV is set
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
 
 top_builddir = ../../..
 builddir_bin=$(OMBUILDDIR)/bin

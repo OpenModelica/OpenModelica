@@ -612,15 +612,15 @@ end readSettingsFile;
 
 public function setWindowsPaths
 "@author: adrpo
- set the windows paths for MinGW.
- do some checks on where needed things are present.
+ Set the windows paths for MSYS.
+ Do some checks on where needed things are present.
  BIG WARNING: if MinGW gcc version from OMDev or OpenModelica/MinGW
               changes you will need to change here!"
   input String inOMHome;
 algorithm
   _ := match(inOMHome)
     local
-      String oldPath, newPath, omHome, omdevPath, mingwDir, binDir, libBinDir, msysBinDir;
+      String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir;
       Boolean hasBinDir, hasLibBinDir;
 
     // check if we have OMDEV set
@@ -628,16 +628,17 @@ algorithm
       equation
         System.setEnv("OPENMODELICAHOME",omHome,true);
         omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
-        mingwDir = System.openModelicaPlatform();
         // if we don't have something in OMDEV use OMHOME
         if stringEq(omdevPath, "") then
           omdevPath = omHome;
         end if;
-        msysBinDir = omdevPath + "\\tools\\msys\\usr\\bin";
-        binDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\bin";
+        msysPath = omdevPath + "\\tools\\msys";
+        mingwDir = System.openModelicaPlatform();
+        msysBinDir = msysPath + "\\usr\\bin";
+        binDir = msysPath + "\\" + mingwDir + "\\bin";
         // if compiler is gcc
         if System.getCCompiler() == "gcc" then
-          libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+          libBinDir = msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
         else // if is clang
           libBinDir = binDir;
         end if;

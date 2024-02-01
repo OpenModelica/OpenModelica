@@ -5,11 +5,11 @@
 <mapAttribute key="org.eclipse.debug.core.environmentVariables">
 <mapEntry key="CLASSPATH" value="${env_var:OMDEV}/bin/antlr/antlr.jar"/>
 <mapEntry key="COMSPEC" value="${env_var:COMSPEC}"/>
-<mapEntry key="MSYSTEM" value="MINGW64"/>
+<mapEntry key="MSYSTEM" value="UCRT64"/>
 <mapEntry key="OMDEV" value="/c/OMDev/"/>
 <mapEntry key="OPENMODELICAHOME" value="${project_loc}/build"/>
 <mapEntry key="OPENMODELICALIBRARY" value="${project_loc}\build\lib\omlibrary\"/>
-<mapEntry key="PATH" value="${env_var:OMDEV}/tools/msys/mingw64/bin;${env_var:OMDEV}/tools/msys/usr/bin;c:/windows;c:/windows/system32;"/>
+<mapEntry key="PATH" value="${env_var:OMDEV}/tools/msys/ucrt64/bin;${env_var:OMDEV}/tools/msys/usr/bin;c:/windows;c:/windows/system32;"/>
 <mapEntry key="SystemDrive" value="${env_var:SystemDrive}"/>
 <mapEntry key="SystemRoot" value="${env_var:SystemRoot}"/>
 <mapEntry key="TEMP" value="${env_var:TEMP}"/>

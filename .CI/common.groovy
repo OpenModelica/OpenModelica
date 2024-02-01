@@ -91,7 +91,7 @@ void partest(partition=1,partitionmodulo=1,cache=true, extraArgs='') {
      echo fi
      ) > runTestWindows.sh
 
-     set MSYSTEM=MINGW64
+     set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x runTestWindows.sh && ./runTestWindows.sh && rm -f ./runTestWindows.sh"
   """)
@@ -240,7 +240,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
      echo rm -rf ./path\\ with\\ space/
      ) > buildOMCWindows.sh
 
-     set MSYSTEM=MINGW64
+     set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
@@ -300,7 +300,7 @@ void buildOMSens() {
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omsens
      ) > buildOMSensWindows.sh
 
-     set MSYSTEM=MINGW64
+     set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
   """)
@@ -325,7 +325,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
      echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
      ) > buildOMCWindows.sh
 
-     set MSYSTEM=MINGW64
+     set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
@@ -357,7 +357,7 @@ void buildGUI(stash, isQt5) {
      echo ./build/bin/OMEdit --help
      ) > buildGUIWindows.sh
 
-     set MSYSTEM=MINGW64
+     set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
   """)
@@ -402,7 +402,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo ./RunOMEditTestsuite.sh
      ) > buildOMEditTestsuiteWindows.sh
 
-     set MSYSTEM=MINGW64
+     set MSYSTEM=UCRT64
      set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMEditTestsuiteWindows.sh && ./buildOMEditTestsuiteWindows.sh && rm -f ./buildOMEditTestsuiteWindows.sh"
   """)
@@ -445,7 +445,7 @@ void generateTemplates() {
 
 def getVersion() {
   if (isWindows()) {
-  return (bat (script: 'set OMDEV=C:\\OMDev && set MSYSTEM=MINGW64 && set MSYS2_PATH_TYPE=inherit && %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
+  return (bat (script: 'set OMDEV=C:\\OMDev && set MSYSTEM=UCRT64 && set MSYS2_PATH_TYPE=inherit && %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
   } else {
   return (sh (script: 'build/bin/omc --version | grep -o "v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*"', returnStdout: true)).replaceAll("\\s","")
   }
@@ -492,13 +492,13 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
-def shouldWeBuildMINGW() {
+def shouldWeBuildUCRT() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/Build MINGW")) {
+    if (pullRequest.labels.contains("CI/Build MSYS2-UCRT64")) {
       return true
     }
   }
-  return params.BUILD_MINGW
+  return params.BUILD_MSYS2_UCRT64
 }
 
 def shouldWeDisableAllCMakeBuilds() {
@@ -510,13 +510,13 @@ def shouldWeDisableAllCMakeBuilds() {
   return params.DISABLE_ALL_CMAKE_BUILDS
 }
 
-def shouldWeEnableMinGWCMakeBuild() {
+def shouldWeEnableUCRTCMakeBuild() {
   if (isPR()) {
-    if (pullRequest.labels.contains("CI/CMake/Enable/MinGW")) {
+    if (pullRequest.labels.contains("CI/CMake/Enable/MSYS2-UCRT64")) {
       return true
     }
   }
-  return params.ENABLE_MINGW_CMAKE_BUILD
+  return params.ENABLE_MSYS2_UCRT64_CMAKE_BUILD
 }
 
 def shouldWeEnableMacOSCMakeBuild() {

@@ -1,8 +1,8 @@
 def common
-def shouldWeBuildMINGW
+def shouldWeBuildUCRT
 def shouldWeDisableAllCMakeBuilds_value
 def shouldWeEnableMacOSCMakeBuild_value
-def shouldWeEnableMinGWCMakeBuild_value
+def shouldWeEnableUCRTCMakeBuild_value
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -15,10 +15,10 @@ pipeline {
     LC_ALL = 'C.UTF-8'
   }
   parameters {
-    booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
+    booleanParam(name: 'BUILD_MSYS2_UCRT64', defaultValue: false, description: 'Build with Win/MSYS2-UCRT64')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
-    booleanParam(name: 'ENABLE_MINGW_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MinGW')
-    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on macOS')
+    booleanParam(name: 'ENABLE_MSYS2_UCRT64_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MSYS2-UCRT64')
+    booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -37,14 +37,14 @@ pipeline {
           common = load("${env.workspace}/.CI/common.groovy")
           isPR = common.isPR()
           print "isPR: ${isPR}"
-          shouldWeBuildMINGW = common.shouldWeBuildMINGW()
-          print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
+          shouldWeBuildUCRT = common.shouldWeBuildUCRT()
+          print "shouldWeBuildUCRT: ${shouldWeBuildUCRT}"
           shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
           print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
           shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
           print "shouldWeEnableMacOSCMakeBuild: ${shouldWeEnableMacOSCMakeBuild_value}"
-          shouldWeEnableMinGWCMakeBuild_value = common.shouldWeEnableMinGWCMakeBuild()
-          print "shouldWeEnableMinGWCMakeBuild: ${shouldWeEnableMinGWCMakeBuild_value}"
+          shouldWeEnableUCRTCMakeBuild_value = common.shouldWeEnableUCRTCMakeBuild()
+          print "shouldWeEnableUCRTCMakeBuild: ${shouldWeEnableUCRTCMakeBuild_value}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -90,15 +90,15 @@ pipeline {
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
-        stage('Win/MinGW') {
+        stage('Win/UCRT64') {
           agent {
             node {
-              label 'windows'
+              label 'omdev-ucrt64'
             }
           }
           when {
             beforeAgent true
-            expression { shouldWeBuildMINGW }
+            expression { shouldWeBuildUCRT }
           }
           environment {
             RUNTESTDB = '/c/dev/'
@@ -176,12 +176,12 @@ pipeline {
         stage('cmake-OMDev-gcc') {
           agent {
             node {
-              label 'windows'
+              label 'omdev-ucrt64'
             }
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMinGWCMakeBuild_value}
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
           }
           steps {
             script {

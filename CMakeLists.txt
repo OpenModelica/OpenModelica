@@ -170,6 +170,7 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMSens_Qt)
 endif()
 
+omc_add_subdirectory(OMSens)
 omc_add_subdirectory(libraries)
 omc_add_subdirectory(testsuite)
 
