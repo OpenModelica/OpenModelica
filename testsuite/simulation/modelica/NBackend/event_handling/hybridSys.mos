@@ -79,11 +79,11 @@ simulate(hybridSys); getErrorString();
 // 	[SCAL] (1) $PRE.phase_Loop1 = $START.phase_Loop1 ($RES_SIM_43)
 // 	[SCAL] (1) $PRE.phase_Loop2 = $START.phase_Loop2 ($RES_SIM_44)
 // 	[SCAL] (1) x1 = $START.x1 ($RES_SIM_45)
-// 	[SCAL] (1) x_End = $PRE.x_End ($RES_SIM_46)
-// 	[SCAL] (1) x_Loop3 = $PRE.x_Loop3 ($RES_SIM_47)
-// 	[SCAL] (1) x_Loop2 = $PRE.x_Loop2 ($RES_SIM_48)
-// 	[SCAL] (1) x_Loop1 = $PRE.x_Loop1 ($RES_SIM_49)
-// 	[SCAL] (1) x_Start = $PRE.x_Start ($RES_SIM_50)
+// 	[SCAL] (1) $PRE.x_End = $START.x_End ($RES_SIM_46)
+// 	[SCAL] (1) $PRE.x_Loop3 = $START.x_Loop3 ($RES_SIM_47)
+// 	[SCAL] (1) $PRE.x_Loop2 = $START.x_Loop2 ($RES_SIM_48)
+// 	[SCAL] (1) $PRE.x_Loop1 = $START.x_Loop1 ($RES_SIM_49)
+// 	[SCAL] (1) $PRE.x_Start = $START.x_Start ($RES_SIM_50)
 //
 // Not underdetermined.
 // Not overdetermined.
