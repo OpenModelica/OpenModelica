@@ -2770,7 +2770,7 @@ algorithm
         absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
         absynClass := InteractiveUtil.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(annlst));
         p := InteractiveUtil.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
-        SymbolTable.setAbsyn(p);
+        SymbolTable.setAbsynClass(p, absynClass, classpath);
       then
         Values.BOOL(true);
 
@@ -3141,7 +3141,6 @@ algorithm
            Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
       algorithm
         (p, b) := InteractiveUtil.setElementAnnotation(path, mod, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
 

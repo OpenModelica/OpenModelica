@@ -54,6 +54,7 @@ import Lookup;
 import List;
 import AbsynToSCode;
 import System;
+import SCodeUtil;
 
 public
 
@@ -117,6 +118,101 @@ algorithm
   end if;
   update(table);
 end setAbsyn;
+
+function setAbsynElement
+  "Sets the Absyn program in the symbol table like setAbsyn, but also updates
+   the SCode if it's cached. This can be used to avoid invalidating the whole
+   SCode program when only updating a single element in the Absyn."
+  input Absyn.Program ast;
+  input Absyn.Element element;
+  input Absyn.Path path;
+protected
+  SymbolTable table;
+  SCode.Element scode_elem;
+  list<SCode.Element> scode_elems, scode_prog;
+
+  function update_element
+    input SCode.Element oldElement;
+    input output SCode.Element newElement;
+  algorithm
+    if SCodeUtil.isElementProtected(oldElement) then
+      newElement := SCodeUtil.makeElementProtected(newElement);
+    end if;
+  end update_element;
+algorithm
+  table := get();
+
+  if referenceEq(table.ast, ast) then
+    return;
+  end if;
+
+  table.ast := ast;
+  updateUriMapping(ast.classes);
+
+  if isSome(table.explodedAst) then
+    // Assume the element is public here since we don't know the actual
+    // visibility, and then update it later in update_element if it's not.
+    scode_elems := AbsynToSCode.translateElement(element, SCode.Visibility.PUBLIC());
+
+    if listLength(scode_elems) > 1 then
+      // translateElement can return multiple elements when multiple components
+      // are declared in the same declaration, pick the one matching the path.
+      SOME(scode_elem) := List.findOption(scode_elems,
+        function SCodeUtil.isElementNamed(name = AbsynUtil.pathLastIdent(path)));
+    else
+      scode_elem := listHead(scode_elems);
+    end if;
+
+    SOME(scode_prog) := table.explodedAst;
+    (scode_prog, true) := SCodeUtil.transformPathedElementInProgram(path,
+      function update_element(newElement = scode_elem), scode_prog);
+    table.explodedAst := SOME(scode_prog);
+  end if;
+
+  update(table);
+end setAbsynElement;
+
+function setAbsynClass
+  "Sets the Absyn program in the symbol table like setAbsyn, but also updates
+   the SCode if it's cached. This can be used to avoid invalidating the whole
+   SCode program when only updating a single class in the Absyn."
+  input Absyn.Program ast;
+  input Absyn.Class cls;
+  input Absyn.Path path;
+protected
+  SymbolTable table;
+  SCode.Element scode_elem;
+  list<SCode.Element> scode_prog;
+
+  function update_element
+    input SCode.Element oldElement;
+    input output SCode.Element newElement;
+  algorithm
+    // An SCode.Element created from an Absyn.Class will only have default prefixes set,
+    // so copy those from the old element to make sure they're not lost.
+    newElement := SCodeUtil.setElementPrefixes(SCodeUtil.elementPrefixes(oldElement), newElement);
+  end update_element;
+algorithm
+  table := get();
+
+  if referenceEq(table.ast, ast) then
+    return;
+  end if;
+
+  table.ast := ast;
+  updateUriMapping(ast.classes);
+
+  if isSome(table.explodedAst) then
+    scode_elem := AbsynToSCode.translateClass(cls);
+
+    SOME(scode_prog) := table.explodedAst;
+    (scode_prog, true) := SCodeUtil.transformPathedElementInProgram(path,
+      function update_element(newElement = scode_elem), scode_prog);
+    table.explodedAst := SOME(scode_prog);
+  end if;
+
+  update(table);
+end setAbsynClass;
 
 function getSCode
   output SCode.Program ast;

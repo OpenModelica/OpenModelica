@@ -3086,6 +3086,16 @@ algorithm
   end match;
 end elementPrefixes;
 
+public function setElementPrefixes
+  input SCode.Prefixes prefixes;
+  input output SCode.Element element;
+algorithm
+  () := match element
+    case SCode.CLASS()     algorithm element.prefixes := prefixes; then ();
+    case SCode.COMPONENT() algorithm element.prefixes := prefixes; then ();
+  end match;
+end setElementPrefixes;
+
 public function isElementReplaceable
   input SCode.Element inElement;
   output Boolean isReplaceable;
@@ -4061,6 +4071,19 @@ algorithm
     case SCode.CLASS(classDef = outCdef) then outCdef;
   end match;
 end getClassDef;
+
+public function setClassDef
+  input SCode.ClassDef classDef;
+  input output SCode.Element cls;
+algorithm
+  () := match cls
+    case SCode.CLASS()
+      algorithm
+        cls.classDef := classDef;
+      then
+        ();
+  end match;
+end setClassDef;
 
 public function getClassBody
   "Returns the body of a class, which for a class extends is the definition it
@@ -6145,6 +6168,86 @@ algorithm
     else true;
   end match;
 end onlyLiteralsInMod;
+
+function transformPathedElementInProgram
+  input Absyn.Path path;
+  input Func func;
+  input output SCode.Program program;
+        output Boolean success;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+algorithm
+  (program, success) := List.findMap(program,
+    function transformPathedElementInElement(path = path, func = func));
+end transformPathedElementInProgram;
+
+function transformPathedElementInElement
+  input Absyn.Path path;
+  input Func func;
+  input output SCode.Element element;
+        output Boolean success;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  SCode.ClassDef cdef;
+algorithm
+  success := isElementNamed(AbsynUtil.pathFirstIdent(path), element);
+
+  if success then
+    if AbsynUtil.pathIsIdent(path) then
+      element := func(element);
+    elseif isClass(element) then
+      (cdef, success) := transformPathedElementInClassDef(AbsynUtil.pathRest(path), func, getClassDef(element));
+
+      if success then
+        element := setClassDef(cdef, element);
+      end if;
+    end if;
+  end if;
+end transformPathedElementInElement;
+
+function transformPathedElementInClassDef
+  input Absyn.Path path;
+  input Func func;
+  input output SCode.ClassDef cls;
+        output Boolean success;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  list<SCode.Element> elems;
+  SCode.ClassDef cdef;
+algorithm
+  success := match cls
+    case SCode.ClassDef.PARTS()
+      algorithm
+        (elems, success) := transformPathedElementInProgram(path, func, cls.elementLst);
+
+        if success then
+          cls.elementLst := elems;
+        end if;
+      then
+        success;
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      algorithm
+        (cdef, success) := transformPathedElementInClassDef(path, func, cls.composition);
+
+        if success then
+          cls.composition := cdef;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInClassDef;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;
