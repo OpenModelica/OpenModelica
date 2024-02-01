@@ -304,11 +304,11 @@ protected
       end for;
       debug_lst_ini := UnorderedMap.toList(map);
       print(StringUtil.headline_3("Simulation Function Alias"));
-      debug_str := list((Call_Id.toString(Util.tuple21(tpl)), Call_Aux.toString(Util.tuple22(tpl))) for tpl in debug_lst_sim);
+      debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_sim);
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
       print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
       print(StringUtil.headline_3("Initial Function Alias"));
-      debug_str := list((Call_Id.toString(Util.tuple21(tpl)), Call_Aux.toString(Util.tuple22(tpl))) for tpl in debug_lst_ini);
+      debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_ini);
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
       print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
     end if;
@@ -365,8 +365,7 @@ protected
         // strip nested iterator for the iterators that actually occure in the function call
         if not Iterator.isEmpty(iter) then
           (names, ranges) := Iterator.getFrames(iter);
-          (names, ranges) := filterFrames(exp, names, ranges);
-          new_iter := Iterator.fromFrames(List.zip(names, ranges));
+          new_iter := Iterator.fromFrames(filterFrames(exp, names, ranges));
         else
           new_iter := iter;
         end if;
@@ -453,17 +452,19 @@ protected
   function filterFrames
     "filters the list of frames for all iterators that occure in exp"
     input Expression exp;
-    input output list<ComponentRef> names;
-    input output list<Expression> ranges;
+    input list<ComponentRef> names;
+    input list<Expression> ranges;
+    output list<tuple<ComponentRef, Expression>> frames;
   protected
     UnorderedMap<ComponentRef, Expression> frame_map = UnorderedMap.fromLists<Expression>(names, ranges, ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, Expression> new_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+
     Pointer<list<ComponentRef>> names_acc = Pointer.create({});
     Pointer<list<Expression>> ranges_acc = Pointer.create({});
     function collectFrames
       input output Expression exp;
       input UnorderedMap<ComponentRef, Expression> frame_map;
-      input Pointer<list<ComponentRef>> names_acc;
-      input Pointer<list<Expression>> ranges_acc;
+      input UnorderedMap<ComponentRef, Expression> new_map;
     algorithm
       _ := match exp
         local
@@ -471,17 +472,15 @@ protected
         case Expression.CREF() algorithm
           range := UnorderedMap.get(exp.cref, frame_map);
           if isSome(range) then
-            Pointer.update(names_acc, exp.cref  :: Pointer.access(names_acc));
-            Pointer.update(ranges_acc, Util.getOption(range) :: Pointer.access(ranges_acc));
+            UnorderedMap.add(exp.cref, Util.getOption(range), new_map);
           end if;
         then ();
         else ();
       end match;
     end collectFrames;
   algorithm
-    _ := Expression.map(exp, function collectFrames(frame_map = frame_map, names_acc = names_acc, ranges_acc = ranges_acc));
-  names := Pointer.access(names_acc);
-  ranges := Pointer.access(ranges_acc);
+    _ := Expression.map(exp, function collectFrames(frame_map = frame_map, new_map = new_map));
+    frames := UnorderedMap.toList(new_map);
   end filterFrames;
 
   function addAuxVar
