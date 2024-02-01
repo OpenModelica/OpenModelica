@@ -124,6 +124,7 @@ private:
   bool mIsCreatingTextShape;
   bool mIsCreatingBitmapShape;
   bool mIsPanning;
+  Element *mpElementUnderMouse;
   QPoint mLastMouseEventPos;
   Element *mpClickedComponent;
   Element *mpClickedState;
@@ -221,6 +222,7 @@ public:
   void setIsCreatingPrologue(const bool enable);
   void setIsPanning(bool enable);
   bool isPanning() {return mIsPanning;}
+  Element* getElementUnderMouse() const {return mpElementUnderMouse;}
   void setDragModeInternal(bool enable, bool updateCursor = false);
   void setItemsFlags(bool enable);
   void updateUndoRedoActions(bool enable);
@@ -365,6 +367,7 @@ private:
   void duplicateItems(const QString &action);
   bool isCreatingShape();
   Element* getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
+  ShapeAnnotation* getShapeFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
   Element* elementAtPosition(QPoint position);
   Element* connectorElementAtPosition(QPoint position);
   Element* stateElementAtPosition(QPoint position);

@@ -4043,3 +4043,19 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
   }
   return value;
 }
+
+/*!
+ * \brief Element::mousePressEvent
+ * The GraphicsView sets the Element under mouse object and then we use that to accept the mouse press event.
+ * Only accept the mouse press event for the Element set by GraphicsView and ignore all others.
+ * This allows us to select Element's by clicking on their drawn items instead of the bounding rectangle.
+ * \param event
+ */
+void Element::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+  if (mpGraphicsView->getElementUnderMouse() == this) {
+    QGraphicsItem::mousePressEvent(event);
+  } else {
+    event->ignore();
+  }
+}
