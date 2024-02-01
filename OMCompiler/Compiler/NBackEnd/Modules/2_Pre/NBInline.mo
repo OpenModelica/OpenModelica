@@ -213,7 +213,7 @@ protected
     Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
   algorithm
     eqData := EqData.map(eqData, function inlineRecordEquation(variables = variables, record_eqns = new_eqns, index = index, inlineSimple = false));
-    eqData := EqData.map(eqData, function inlineTupleEquation(tuple_eqns = new_eqns, index = index));
+    eqData := EqData.map(eqData, function inlineTupleEquation(index = index, iter = Iterator.EMPTY(), tuple_eqns = new_eqns));
     eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
     eqData := EqData.compress(eqData);
   end inlineRecordsTuples;
@@ -350,6 +350,7 @@ protected
     by the function alias module and need to be removed afterwards"
     input output Equation eqn;
     input Pointer<Integer> index;
+    input Iterator iter;
     input Pointer<list<Pointer<Equation>>> tuple_eqns;
   algorithm
     eqn := match eqn
@@ -358,7 +359,7 @@ protected
         list<Expression> lhs_elems, rhs_elems;
         Expression lhs, rhs;
         Pointer<Equation> tmp_eqn;
-        Equation new_eqn;
+        Equation new_eqn, body_eqn;
 
       case Equation.RECORD_EQUATION() algorithm
         lhs_elems := getElementList(eqn.lhs);
@@ -371,7 +372,7 @@ protected
           for tpl in List.zip(lhs_elems, rhs_elems) loop
             (lhs, rhs) := tpl;
             if not (Expression.isWildCref(lhs) or Expression.isWildCref(rhs)) then
-              tmp_eqn := Equation.makeAssignment(lhs, rhs, index, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), eqn.attr);
+              tmp_eqn := Equation.makeAssignment(lhs, rhs, index, NBVariable.AUXILIARY_STR, iter, eqn.attr);
               if Flags.isSet(Flags.DUMPBACKENDINLINE) then
                 print("-- Result: " + Equation.toString(Pointer.access(tmp_eqn)) + "\n");
               end if;
@@ -384,6 +385,19 @@ protected
           new_eqn := eqn;
         end if;
       then new_eqn;
+
+      // inline tuple equations in for loops
+      case Equation.FOR_EQUATION(body = {body_eqn}) algorithm
+        body_eqn := inlineTupleEquation(body_eqn, index, eqn.iter, tuple_eqns);
+        if Equation.isDummy(body_eqn) then
+          new_eqn := Equation.DUMMY_EQUATION();
+        else
+          new_eqn := eqn;
+        end if;
+      then new_eqn;
+
+      // ToDo: inline tuple in if and when
+
       else eqn;
     end match;
   end inlineTupleEquation;
