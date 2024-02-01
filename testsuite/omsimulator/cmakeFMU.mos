@@ -4,7 +4,7 @@
 // teardown_command: rm -rf DualMassOscillator.System1.fmu DualMassOscillator.System1_FMU* DualMassOscillator_System1_systemCall.log
 
 loadFile("DualMassOscillator.mo"); getErrorString();
-buildModelFMU(DualMassOscillator.System1, platforms={"dynamic"}); getErrorString();
+buildModelFMU(DualMassOscillator.System1, fileNamePrefix="DualMassOscillator.System1", platforms={"dynamic"}); getErrorString();
 
 system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator.System1.fmu", "DualMassOscillator_System1_systemCall.log");
 readFile("DualMassOscillator_System1_systemCall.log");
