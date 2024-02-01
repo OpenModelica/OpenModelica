@@ -222,8 +222,13 @@ algorithm
       end for;
     end if;
   else
-    equations := list(makeEqualityAssert(c1.name, c1.source, c2.name, c2.source)
-      for c2 in listRest(elements));
+    // don't create asserts for empty arrays
+    if Type.isEmptyArray(c1.ty) then
+      equations := {};
+    else
+      equations := list(makeEqualityAssert(c1.name, c1.source, c2.name, c2.source)
+        for c2 in listRest(elements));
+    end if;
   end if;
 end generatePotentialEquations;
 
@@ -288,27 +293,48 @@ function makeEqualityAssert
 protected
   DAE.ElementSource source;
   Expression lhs_exp, rhs_exp, exp;
-  Type ty;
+  Type ty, elem_ty;
+  list<InstNode> iterators = {};
+  list<Expression> ranges;
+  list<Subscript> subs;
 algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
 
-  lhs_exp := Expression.fromCref(lhsCref);
-  rhs_exp := Expression.fromCref(rhsCref);
-  ty := Expression.typeOf(lhs_exp);
+  ty := ComponentRef.getSubscriptedType(lhsCref);
 
-  if Type.isReal(ty) then
+  // if the type is array, get subscripts and add them to the cref
+  // use the iterators and ranges later to generate the for loop
+  if Type.isArray(ty) then
+    (iterators, ranges, subs) := Flatten.makeIterators(lhsCref, Type.arrayDims(ty));
+    subs := listReverseInPlace(subs);
+    lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(subs, lhsCref));
+    rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(subs, rhsCref));
+  else
+    lhs_exp := Expression.fromCref(lhsCref);
+    rhs_exp := Expression.fromCref(rhsCref);
+  end if;
+
+  elem_ty := Type.arrayElementType(ty);
+  if Type.isReal(elem_ty) then
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
-    exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
+    exp := Expression.BINARY(lhs_exp, Operator.makeSub(elem_ty), rhs_exp);
     exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp), Purity.PURE));
-    exp := Expression.RELATION(exp, Operator.makeLessEq(ty), Expression.REAL(0.0));
+    exp := Expression.RELATION(exp, Operator.makeLessEq(elem_ty), Expression.REAL(0.0));
   else
     // For any other type, generate assertion for 'lhs == rhs'.
-    exp := Expression.RELATION(lhs_exp, Operator.makeEqual(ty), rhs_exp);
+    exp := Expression.RELATION(lhs_exp, Operator.makeEqual(elem_ty), rhs_exp);
   end if;
 
   equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
+
+  // wrap the equation in for loop if necessary
+  while not listEmpty(iterators) loop
+    equalityAssert := Equation.FOR(listHead(iterators), SOME(listHead(ranges)), {equalityAssert}, InstNode.EMPTY_NODE(), source);
+    iterators := listRest(iterators);
+    ranges := listRest(ranges);
+  end while;
 end makeEqualityAssert;
 
 //protected function shouldFlipPotentialEquation
