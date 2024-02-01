@@ -208,6 +208,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mIsCreatingTextShape = false;
   mIsCreatingBitmapShape = false;
   mIsPanning = false;
+  mpElementUnderMouse = 0;
   mLastMouseEventPos = QPoint(0, 0);
   mpClickedComponent = 0;
   mpClickedState = 0;
@@ -2939,7 +2940,7 @@ void GraphicsView::duplicateItems(const QString &action)
  * A QGraphicsItem can be a Element or a ShapeAnnotation inside a Element.
  * \return
  */
-Element *GraphicsView::getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
+Element* GraphicsView::getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
 {
   if (pGraphicsItem) {
     Element *pElement = dynamic_cast<Element*>(pGraphicsItem);
@@ -2958,17 +2959,35 @@ Element *GraphicsView::getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
 }
 
 /*!
+ * \brief GraphicsView::getShapeFromQGraphicsItem
+ * \param pGraphicsItem
+ * A QGraphicsItem can be a ShapeAnnotation.
+ * \return
+ */
+ShapeAnnotation* GraphicsView::getShapeFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
+{
+  if (pGraphicsItem) {
+    ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(pGraphicsItem);
+    if (pShapeAnnotation && pShapeAnnotation->getParentComponent()) {
+      return pShapeAnnotation;
+    }
+  }
+  return 0;
+}
+
+/*!
  * \brief GraphicsView::elementAtPosition
  * Returns the first Element at the position.
  * \param position
  * \return
  */
-Element *GraphicsView::elementAtPosition(QPoint position)
+Element* GraphicsView::elementAtPosition(QPoint position)
 {
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    Element *pElement = getElementFromQGraphicsItem(pGraphicsItem);
-    if (pElement) {
+    ShapeAnnotation *pShapeAnnotation = getShapeFromQGraphicsItem(pGraphicsItem);
+    if (pShapeAnnotation && pShapeAnnotation->getParentComponent()) {
+      Element *pElement = pShapeAnnotation->getParentComponent();
       Element *pRootElement = pElement->getRootParentElement();
       if (pRootElement && ((pRootElement->getLibraryTreeItem() && !pRootElement->getLibraryTreeItem()->isNonExisting()) || (mpModelWidget->isNewApi()))) {
         return pRootElement;
@@ -4522,6 +4541,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
+  mpElementUnderMouse = elementAtPosition(event->pos());
   // if user is starting panning.
   if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
     setIsPanning(true);
@@ -4530,12 +4550,13 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();
-  QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
+  QPointF scenePos = mapToScene(event->pos());
+  QPointF snappedPoint = snapPointToGrid(scenePos);
   bool eventConsumed = false;
   // if left button presses and we are creating a connector
   if (isCreatingConnection()) {
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      mpConnectionLineAnnotation->addPoint(roundPoint(mapToScene(event->pos())));
+      mpConnectionLineAnnotation->addPoint(roundPoint(scenePos));
     } else {
       mpConnectionLineAnnotation->addPoint(snappedPoint);
     }
@@ -4596,7 +4617,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
       pInitialStateLineAnnotation->setOldAnnotation(pInitialStateLineAnnotation->getOMCShapeAnnotation());
     }
   }
-  // if some item is clicked
+  // if connector is clicked
   if (Element *pComponent = connectorElementAtPosition(event->pos())) {
     if (!isCreatingConnection()) {
       mpClickedComponent = pComponent;
@@ -4604,7 +4625,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
       addConnection(pComponent);  // end the connection
       eventConsumed = true; // consume the event so that connection line or end component will not become selected
     }
-  } else if (Element *pComponent = stateElementAtPosition(event->pos())) {
+  } else if (Element *pComponent = stateElementAtPosition(event->pos())) { // if state is clicked
     if (!isCreatingTransition()) {
       mpClickedState = pComponent;
     } else if (isCreatingTransition()) {
@@ -4704,6 +4725,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     return;
   }
   setIsPanning(false);
+  mpElementUnderMouse = 0;
   mpClickedComponent = 0;
   mpClickedState = 0;
 
@@ -4761,9 +4783,8 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
 
 bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
 {
-  QGraphicsItem *pGraphicsItem = itemAt(event->pos());
   bool shouldEnactQTDoubleClick = true;
-  Element *pComponent = getElementFromQGraphicsItem(pGraphicsItem);
+  Element *pComponent = elementAtPosition(event->pos());
   if (pComponent) {
     shouldEnactQTDoubleClick = false;
     Element *pRootComponent = pComponent->getRootParentElement();

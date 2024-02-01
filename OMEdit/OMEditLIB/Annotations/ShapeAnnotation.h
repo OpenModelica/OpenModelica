@@ -164,6 +164,7 @@ public:
   void updateExtent(const int index, const QPointF point);
   void setOriginItemPos(const QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  Element* getParentComponent() const {return mpParentComponent;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QVector<QPointF> points) {mPoints = points;}
   const PointArrayAnnotation &getPoints() {return mPoints;}
