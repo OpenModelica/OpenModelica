@@ -356,6 +356,7 @@ public:
   static QString attachToRunningProcess;
   static QString attachToRunningProcessTip;
   static QString reportIssue;
+  static QString crashTest;
   static QString parsingFailedJson;
   static QString expandAll;
   static QString collapseAll;

@@ -5221,6 +5221,11 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   pOMContributorsScrollArea->setFrameShape(QFrame::NoFrame);
   pOMContributorsScrollArea->setWidgetResizable(true);
   pOMContributorsScrollArea->setWidget(mpOMContributorsLabel);
+  // crash test button
+  QPushButton *pCrashTestButton = new QPushButton(Helper::crashTest);
+  pCrashTestButton->setAutoDefault(false);
+  pCrashTestButton->setToolTip("Tests if the crash report functionality works properly");
+  connect(pCrashTestButton, SIGNAL(clicked()), SLOT(crashTest()));
   // report button
   QPushButton *pReportButton = new QPushButton(Helper::reportIssue);
   pReportButton->setAutoDefault(false);
@@ -5231,6 +5236,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
   // create buttons box
   QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  pButtonBox->addButton(pCrashTestButton, QDialogButtonBox::ActionRole);
   pButtonBox->addButton(pReportButton, QDialogButtonBox::ActionRole);
   pButtonBox->addButton(pCloseButton, QDialogButtonBox::ActionRole);
   // logo label
@@ -5291,6 +5297,21 @@ void AboutOMEditDialog::showReportIssue()
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
   pCrashReportDialog->exec();
 }
+
+/*!
+ * \brief AboutOMEditDialog::crashTest
+ * Attempts to crash OMEdit to test the crash test reporting feature.
+ */
+void AboutOMEditDialog::crashTest()
+{
+  struct crash {
+    int a;
+    void *b;
+  };
+  struct crash *x = NULL;
+  fprintf(stderr, "%d %p\n", x->a, x->b);
+}
+
 
 /*!
  * \class MessageTab

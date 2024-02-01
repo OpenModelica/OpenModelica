@@ -637,6 +637,7 @@ private:
   Label *mpOMContributorsLabel;
 public slots:
   void showReportIssue();
+  void crashTest();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
 };
