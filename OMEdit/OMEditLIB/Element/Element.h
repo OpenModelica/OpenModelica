@@ -440,8 +440,10 @@ public slots:
   void showReplaceSubModelDialog();
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
+  // QGraphicsItem interface
 protected:
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 };
 
 #endif // ELEMENT_H
