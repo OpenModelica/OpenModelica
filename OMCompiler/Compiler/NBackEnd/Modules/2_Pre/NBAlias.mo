@@ -219,16 +219,17 @@ protected
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
-          eqData.equations := EquationPointers.compress(eqData.equations);
+          eqData.equations  := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
+          eqData.discretes  := EquationPointers.compress(eqData.discretes);
 
           // remove alias vars from all relevant arrays after splitting off non trivial alias vars
-          varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
-          varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
-          varData.algebraics := VariablePointers.removeList(alias_vars, varData.algebraics);
-          varData.states := VariablePointers.removeList(alias_vars, varData.states);
-          varData.discretes := VariablePointers.removeList(alias_vars, varData.discretes);
-          varData.initials := VariablePointers.removeList(alias_vars, varData.initials);
+          varData.variables   := VariablePointers.removeList(alias_vars, varData.variables);
+          varData.unknowns    := VariablePointers.removeList(alias_vars, varData.unknowns);
+          varData.algebraics  := VariablePointers.removeList(alias_vars, varData.algebraics);
+          varData.states      := VariablePointers.removeList(alias_vars, varData.states);
+          varData.discretes   := VariablePointers.removeList(alias_vars, varData.discretes);
+          varData.initials    := VariablePointers.removeList(alias_vars, varData.initials);
 
           // categorize alias vars and sort them to the correct arrays
           (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
