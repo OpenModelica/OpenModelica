@@ -2266,6 +2266,11 @@ void Element::reDrawConnector(QPainter *painter)
     painter->restore();
   }
 
+  // Skip when condition is false
+  if (!isCondition()) {
+    return;
+  }
+
   foreach (Element *pInheritedElement, mInheritedElementsList) {
     pInheritedElement->reDrawConnector(painter);
   }
