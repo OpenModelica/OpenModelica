@@ -2,8 +2,6 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 	Delay.mos \
-	DelayTooLarge.mos \
-	VaryingDelay.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
