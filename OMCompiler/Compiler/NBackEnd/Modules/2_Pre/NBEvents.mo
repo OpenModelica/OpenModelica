@@ -470,7 +470,7 @@ public
       input output Bucket bucket;
       output Boolean failed;
     algorithm
-      failed := match Call.getNameAndArgs(call)
+      failed := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
         local
           Integer value;
           Expression start, interval;
