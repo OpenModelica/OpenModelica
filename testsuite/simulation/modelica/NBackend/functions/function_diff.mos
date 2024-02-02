@@ -57,7 +57,6 @@ simulate(function_diff); getErrorString();
 //   input Real 'a';
 //   input Real '$fDER_a';
 //   output Real '$fDER_b';
-// protected
 //   Real 'b';
 // algorithm
 //   if 'a' >= 0.0 then
@@ -86,7 +85,7 @@ simulate(function_diff); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "function_diff_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'function_diff', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'function_diff', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

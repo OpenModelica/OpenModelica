@@ -79,7 +79,6 @@ end SimpleCoolingCycle;
 //
 //   model 'SimpleCoolingCycle'
 //     'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState' 'heatExchange_CounterFlowNTU.state';
-//   protected
 //     Real 'heatExchange_CounterFlowNTU.cpA_in' = 'SimpleCoolingCycle.heatExchange_CounterFlowNTU.MediumA.specificHeatCapacityCp'('heatExchange_CounterFlowNTU.state');
 //   end 'SimpleCoolingCycle';
 // end 'SimpleCoolingCycle';

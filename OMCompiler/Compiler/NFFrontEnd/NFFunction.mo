@@ -903,9 +903,6 @@ uniontype Function
       end for;
 
       if not listEmpty(fn.locals) then
-        s := IOStream.append(s, indent);
-        s := IOStream.append(s, "protected\n");
-
         for l in fn.locals loop
           s := IOStream.append(s, InstNode.toFlatString(l, indent + "  "));
           s := IOStream.append(s, ";\n");
@@ -2278,6 +2275,7 @@ protected
     Class cls;
     array<InstNode> comps;
     InstNode n;
+    Boolean check_vis;
   algorithm
     Error.assertion(InstNode.isClass(node), getInstanceName() + " got non-class node", sourceInfo());
     cls := InstNode.getClass(node);
@@ -2287,9 +2285,11 @@ protected
         algorithm
           for i in arrayLength(comps):-1:1 loop
             n := comps[i];
+            // Base Modelica does not have public/protected.
+            check_vis := not Flags.getConfigBool(Flags.BASE_MODELICA);
 
             // Sort the components based on their direction.
-            () := match paramDirection(n)
+            () := match paramDirection(n, check_vis)
               case Direction.INPUT algorithm inputs := n :: inputs; then ();
               case Direction.OUTPUT algorithm outputs := n :: outputs; then ();
               case Direction.NONE algorithm locals := n :: locals; then ();
@@ -2314,6 +2314,7 @@ protected
 
   function paramDirection
     input InstNode component;
+    input Boolean checkVisibility;
     output Direction direction;
   protected
     Component comp;
@@ -2349,19 +2350,21 @@ protected
       fail();
     end if;
 
-    // Formal parameters must be public, other function variables must be protected.
-    vis := InstNode.visibility(component);
+    if checkVisibility then
+      // Formal parameters must be public, other function variables must be protected.
+      vis := InstNode.visibility(component);
 
-    if direction <> Direction.NONE then
-      if vis == Visibility.PROTECTED then
-        Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+      if direction <> Direction.NONE then
+        if vis == Visibility.PROTECTED then
+          Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+            {InstNode.name(component)}, InstNode.info(component));
+          fail();
+        end if;
+      elseif vis == Visibility.PUBLIC then
+        Error.addSourceMessageAsError(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
           {InstNode.name(component)}, InstNode.info(component));
         fail();
       end if;
-    elseif vis == Visibility.PUBLIC then
-      Error.addSourceMessageAsError(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
-        {InstNode.name(component)}, InstNode.info(component));
-      fail();
     end if;
   end paramDirection;
 
