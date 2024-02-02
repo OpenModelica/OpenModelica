@@ -332,7 +332,7 @@ public
       // parse records slightly different
       if BVariable.isKnownRecord(var) then
         // only consider non constant parameter bindings
-        if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
+        if BVariable.isBound(var) and (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
           initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
           parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
         else
