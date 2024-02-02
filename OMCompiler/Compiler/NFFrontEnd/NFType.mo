@@ -350,6 +350,18 @@ public
     outType := CONDITIONAL_ARRAY(trueType, falseType, matched_branch);
   end setConditionalArrayTypes;
 
+  function removeSizeOneArrays
+    "only to be used for backend. removes size one arrays from type"
+    input output Type ty;
+  algorithm
+    ty := match ty
+      case ARRAY() algorithm
+        ty.dimensions := list(dim for dim guard(not Dimension.isOne(dim)) in ty.dimensions);
+      then if listEmpty(ty.dimensions) then ty.elementType else ty;
+      else ty;
+    end match;
+  end removeSizeOneArrays;
+
   function isMatchedBranch
     input Boolean condition;
     input Type condType;
