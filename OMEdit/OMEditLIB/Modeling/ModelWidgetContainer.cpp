@@ -1577,8 +1577,6 @@ int elementIndexInConnection(const QString &connectionElementName)
  */
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
 {
-  // unselect the connection so it will not receive further signals
-  pConnectionLineAnnotation->setSelected(false);
   MainWindow *pMainWindow = MainWindow::instance();
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
@@ -1695,6 +1693,7 @@ void GraphicsView::removeConnectionDetails(LineAnnotation *pConnectionLineAnnota
       }
     }
   }
+  pConnectionLineAnnotation->setStartElement(0);
   // Remove the end element connection details.
   Element *pEndElement = pConnectionLineAnnotation->getEndElement();
   if (pEndElement) {
@@ -1710,6 +1709,7 @@ void GraphicsView::removeConnectionDetails(LineAnnotation *pConnectionLineAnnota
       }
     }
   }
+  pConnectionLineAnnotation->setEndElement(0);
 }
 
 /*!
@@ -1719,6 +1719,9 @@ void GraphicsView::removeConnectionDetails(LineAnnotation *pConnectionLineAnnota
  */
 void GraphicsView::removeConnectionFromView(LineAnnotation *pConnectionLineAnnotation)
 {
+  // unselect the connection so it will not receive further signals
+  pConnectionLineAnnotation->setSelected(false);
+  pConnectionLineAnnotation->clearCollidingConnections();
   removeConnectionDetails(pConnectionLineAnnotation);
   deleteConnectionFromList(pConnectionLineAnnotation);
   addConnectionToOutOfSceneList(pConnectionLineAnnotation);
