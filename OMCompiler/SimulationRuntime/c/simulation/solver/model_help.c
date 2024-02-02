@@ -1218,6 +1218,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nDelayExpressions; i++)
   {
     // TODO: Calculate how big ringbuffer should be for each delay expression
+    // can be estimated by lower bound delayMax/stepSize
     data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
   }
 #endif

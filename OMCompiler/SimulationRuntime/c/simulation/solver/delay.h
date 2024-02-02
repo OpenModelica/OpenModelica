@@ -42,23 +42,16 @@ typedef struct TIME_AND_VALUE
   double value;
 } TIME_AND_VALUE;
 
-typedef struct EXPRESSION_DELAY_BUFFER
-{
-  long currentIndex;
-  long maxExpressionBuffer;
-  TIME_AND_VALUE *expressionDelayBuffer;
-}EXPRESSION_DELAY_BUFFER;
-
 #ifdef __cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
-  double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double t, double delayTime, double maxDelay);
-  void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax);
-  double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayValue, double delayTime, double delayMax);
+double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax);
+void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax);
+double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayTime);
 
 #ifdef __cplusplus
-  }
+}
 #endif
 
 #endif

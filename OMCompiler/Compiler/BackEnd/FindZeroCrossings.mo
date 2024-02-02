@@ -1008,7 +1008,7 @@ algorithm
         (delay, ((_, relations, samples, numMathFunctions), tp1))                 := Expression.traverseExpTopDown(delay, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
 
         // create zero crossing function
-        eres1 := DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {index, DAE.ICONST(DoubleEnded.length(relations)), e, delay, delayMax}, attr);
+        eres1 := DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {index, DAE.ICONST(DoubleEnded.length(relations)), delay}, attr);
         e_1 := DAE.RELATION(eres1, DAE.GREATER(DAE.T_REAL_DEFAULT) ,DAE.RCONST(0.0), DoubleEnded.length(relations), NONE());
         zc := createZeroCrossing(eres1, {eq_count});
         (eres, relations) := zcIndexRelation(e_1, relations, DoubleEnded.length(relations), zc);

@@ -697,7 +697,7 @@ typedef struct SIMULATION_INFO
   modelica_real stopTime;              /* Stop time of the simulation */
   int useStopTime;
   modelica_integer numSteps;
-  modelica_real stepSize;
+  modelica_real stepSize;              /* FIXME what is this? The integrator's current step size */
   modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;

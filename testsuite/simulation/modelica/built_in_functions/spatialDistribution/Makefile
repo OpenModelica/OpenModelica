@@ -15,16 +15,12 @@ TESTFILES = \
 # Run make testfailing
 FAILINGTESTFILES=  \
 
-
-
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-
-
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

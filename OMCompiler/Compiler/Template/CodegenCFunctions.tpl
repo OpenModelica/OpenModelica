@@ -6713,7 +6713,7 @@ let &sub = buffer ""
     let var1 = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(d, context, &preExp, &varDecls, &auxFunction)
     let var3 = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
-    let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, data->localData[0]->timeValue, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, <%var2%>, <%var3%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, posVelo}) then
@@ -6755,11 +6755,9 @@ let &sub = buffer ""
         'data->simulationInfo->samples[<%intSub(index, 1)%>]'
     end match
 
-  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), e, delay, delayMax}) then
-    let e_T = daeExp(e, context, &preExp, &varDecls, &auxFunction)
+  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &auxFunction)
-    let delayMax_T = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
-    'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%e_T%>, <%delay_T%>, <%delayMax_T%>)'
+    'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'
 
   case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &auxFunction)
