@@ -1,6 +1,6 @@
 // name:     DelayTooSmall
 // keywords: builtin delay
-// status: incorrect
+// status: correct
 
 // Test builtin function delay:
 // If delayTime > delayMax, the delayed signal can't be reconstructed and the
