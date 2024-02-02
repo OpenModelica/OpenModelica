@@ -8,7 +8,6 @@ writeFile("Tables.mo", OpenModelica.Scripting.instantiateModel(ModelicaTest.Tabl
 clear();
 loadFile("Tables.mo");getErrorString();
 setCommandLineOptions("--std=experimental");
-setCommandLineOptions("-d=nonewInst");
 echo(false);
 res := simulate('Test33'.'Test33', fileNamePrefix="Tables");
 echo(true);
@@ -28,7 +27,7 @@ res.resultFile;
 // ""
 // true
 // true
-// true
-// ""
+// "[openmodelica/basemodelica/Tables.mo:32:3-46:43:writable] Warning: Pure function ''Test33'.'Modelica.Utilities.Strings.isEmpty'' contains a call to impure function ''Test33'.'Modelica.Utilities.Strings.Advanced.skipWhiteSpace''.
+// "
 // "Tables_res.mat"
 // endResult

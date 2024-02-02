@@ -231,7 +231,6 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
-    Visibility visibility = Visibility.PUBLIC;
     String name = className(flatModel);
   algorithm
     s := IOStream.append(s, "package '" + name + "'\n");
@@ -254,13 +253,6 @@ public
     s := IOStream.append(s, "\n");
 
     for v in flat_model.variables loop
-      if visibility <> Variable.visibility(v) then
-        visibility := Variable.visibility(v);
-        s := IOStream.append(s, "  ");
-        s := IOStream.append(s, Prefixes.visibilityString(visibility));
-        s := IOStream.append(s, "\n");
-      end if;
-
       s := Variable.toFlatStream(v, "    ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;

@@ -23,7 +23,6 @@ end Expression1;
 //   function 'f'
 //     input Real[:] 'X';
 //     output Real 'Y';
-//   protected
 //     constant Real[2] 'Z' = {2.0, 3.0};
 //   algorithm
 //     'Y' := 1.0 / ('X' * 'Z');
