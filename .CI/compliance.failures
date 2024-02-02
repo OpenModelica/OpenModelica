@@ -98,7 +98,6 @@ ModelicaCompliance.Operators.Events.SampleIncorrect
 ModelicaCompliance.Operators.Overloading.VectorizeConstructAndApply
 ModelicaCompliance.Operators.Special.Cardinality
 ModelicaCompliance.Operators.Special.Delay
-ModelicaCompliance.Operators.Special.DelayIncorrect3
 ModelicaCompliance.Operators.Special.DerConstantIncorrect1
 ModelicaCompliance.Redeclare.ClassExtends.ClassExtendsNonReplaceable
 ModelicaCompliance.Redeclare.ClassExtends.NonRedeclareClassExtends
