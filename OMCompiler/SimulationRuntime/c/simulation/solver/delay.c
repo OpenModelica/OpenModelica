@@ -52,17 +52,14 @@ void printDelayBuffer(void* data, int stream, void* elemPointer);
  * @param[in] time          Time value to search for.
  * @param[in] delayStruct   Ringbuffer with stored delay values.
  *                          Looks like a matrix with columns of type TIME_AND_VALUE.
- * @param[out] foundEvent   Boolean indicating if an event was found while searching for time.
  * @return int              Row with maximum time value smaller equal to time.
  */
-static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
+static int findTime(double time, RINGBUFFER *delayStruct)
 {
   int end = ringBufferLength(delayStruct);
   int pos = 0;
   double curTime, prevTime;
   TIME_AND_VALUE* bufferElem;
-
-  *foundEvent = 0 /* false */;
 
   /* Check if ring buffer is valid */
   assertStreamPrint(NULL, ringBufferLength(delayStruct) > 0, "delay: In function findTime\nEmpty ring buffer.");
@@ -80,11 +77,7 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
     bufferElem = getRingData(delayStruct, pos);
     prevTime = curTime;
     curTime = bufferElem->t;
-    /* Check for an event */
-    if (fabs(prevTime-curTime)< 1e-12) {
-      *foundEvent = 1 /* true */;
-      printRingBuffer(delayStruct, LOG_DEBUG, printDelayBuffer);
-    }
+
     if (curTime > time) {
       pos--;
       // Found time in previous step
@@ -94,6 +87,55 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
   assertStreamPrint(NULL, pos < end, "delay: In function findTime\nCould not find time");
 
   return pos;
+}
+
+
+/**
+ * @brief Look for events between `oldTime` and `newTime`
+ *
+ * @param[in] time          Time value to search for.
+ * @param[in] delayStruct   Ringbuffer with stored delay values.
+ *                          Looks like a matrix with columns of type TIME_AND_VALUE.
+ * @return modelica_boolean Boolean indicating if an event was found.
+ */
+static modelica_boolean searchEvent(double time, RINGBUFFER *delayStruct)
+{
+  int end = ringBufferLength(delayStruct);
+  int pos = 0;
+  double curTime, prevTime;
+  TIME_AND_VALUE* bufferElem;
+  modelica_boolean foundEvent = FALSE;
+
+  bufferElem = getRingData(delayStruct, pos);
+  curTime = bufferElem->t;
+
+  /* If searched time is smaller then first element we have no event */
+  if (time < curTime) {
+    return FALSE;
+  }
+
+  /* Search for time starting at begin of ring buffer */
+  while (pos < end-1) {
+    pos++;
+    bufferElem = getRingData(delayStruct, pos);
+    prevTime = curTime;
+    curTime = bufferElem->t;
+
+    /* Check for an event */
+    if (fabs(prevTime-curTime) < 1e-12) {
+      foundEvent = TRUE;
+      break;
+    }
+    if (curTime > time) {
+      break;
+    }
+  }
+
+  if (foundEvent) {
+    printRingBuffer(delayStruct, LOG_DEBUG, printDelayBuffer);
+  }
+
+  return foundEvent;
 }
 
 
@@ -111,7 +153,6 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
 {
   RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
   int row;
-  int foundEvent;
   int length = ringBufferLength(delayStruct);
   double time = data->localData[0]->timeValue;
   TIME_AND_VALUE tpl;
@@ -138,7 +179,7 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   if (length > 0) {
     if (fabs(lastElem->t-time) < 1e-10 && fabs(lastElem->value-exprValue) < 1e-10) {
       /* Dequeue no longer needed values from ring buffer */
-      row = findTime(time-delayTime+1e-10, delayStruct, &foundEvent);
+      row = findTime(time-delayTime+1e-10, delayStruct);
       if (row > 0) {
         dequeueNFirstRingDatas(delayStruct, row);
       }
@@ -152,8 +193,8 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   appendRingData(delayStruct, &tpl);
 
   /* Dequeue no longer needed values from ring buffer */
-  row = findTime(time-delayTime+DBL_EPSILON, delayStruct, &foundEvent);
-  if (row > 0 && !foundEvent) {
+  row = findTime(time-delayTime+DBL_EPSILON, delayStruct);
+  if (row > 0 && !searchEvent(time-delayTime+DBL_EPSILON, delayStruct)) {
     dequeueNFirstRingDatas(delayStruct, row);
   }
 
@@ -184,7 +225,6 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   double dt1;
   double retVal;
   int i;
-  int foundEvent;
   int length = ringBufferLength(delayStruct);
   double time = data->localData[0]->timeValue;
 
@@ -225,7 +265,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
       time1 = time;
       value1 = exprValue;
     } else {
-      i = findTime(timeStamp, delayStruct, &foundEvent);
+      i = findTime(timeStamp, delayStruct);
       assertStreamPrint(threadData, i < length, "%d = i < length = %d", i, length);
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
@@ -271,7 +311,6 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
 double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayTime)
 {
   RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
-  int foundEvent;
   double zeroCrossingValue = data->simulationInfo->zeroCrossingsPre[relationIndex];
   double time = data->localData[0]->timeValue;
 
@@ -279,11 +318,8 @@ double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int expr
     return zeroCrossingValue;
   }
 
-  /* Find first event on ring buffer */
-  findTime(time - delayTime, delayStruct, &foundEvent);
-
   /* Flip sign of ZC if an event was found */
-  if (foundEvent) {
+  if (searchEvent(time - delayTime, delayStruct)) {
     return -zeroCrossingValue;
   } else {
     return zeroCrossingValue;
