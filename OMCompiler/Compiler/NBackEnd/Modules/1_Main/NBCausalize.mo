@@ -174,20 +174,12 @@ public
       for scc in Util.getOption(system.strongComponents) loop
         () := match scc
           case StrongComponent.SINGLE_COMPONENT() algorithm
-            if Variable.variability(Pointer.access(scc.var)) <
-              Prefixes.variabilityMax(
-                Expression.variability(Equation.getLHS(Pointer.access(scc.eqn))),
-                Expression.variability(Equation.getRHS(Pointer.access(scc.eqn)))
-              )
-            then
+            if not Type.isEqual(Variable.typeOf(Pointer.access(scc.var)), Equation.getType(Pointer.access(scc.eqn))) then
               // The variability of the equation must be greater or equal to that of the variable it solves.
               // See MLS section 3.8 Variability of Expressions
-              Error.addMessage(Error.COMPILER_ERROR, {"The following strong component has conflicting variabilities: "
-                + Prefixes.variabilityString(Variable.variability(Pointer.access(scc.var))) + " != "
-                + Prefixes.variabilityString(Prefixes.variabilityMax(
-                    Expression.variability(Equation.getLHS(Pointer.access(scc.eqn))),
-                    Expression.variability(Equation.getRHS(Pointer.access(scc.eqn)))
-                  ))
+              Error.addMessage(Error.COMPILER_ERROR, {getInstanceName() + " failed. The following strong component has conflicting types: "
+                + Type.toString(Variable.typeOf(Pointer.access(scc.var))) + " != "
+                + Type.toString(Equation.getType(Pointer.access(scc.eqn)))
                 + "\n" + StrongComponent.toString(scc)});
               violated := true;
             end if;
