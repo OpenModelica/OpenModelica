@@ -59,7 +59,8 @@ protected
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, Iterator};
   import Replacements = NBReplacements;
-  import NBVariable.{VariablePointers, VarData};
+  import BVariable = NBVariable;
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
 
   // Util
   import Slice = NBSlice;
@@ -77,13 +78,18 @@ public
     input list<DAE.InlineType> inline_types;
   algorithm
     bdae := match bdae
+      local
+        EqData eqData;
+        VarData varData;
       case BackendDAE.MAIN()
         algorithm
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
             print(StringUtil.headline_4("[dumpBackendInline] Inlining operatations for: "
               + List.toString(inline_types, DAEDump.dumpInlineTypeBackendStr)));
           end if;
-          bdae.eqData := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types);
+          (eqData, varData) := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types);
+          bdae.eqData := eqData;
+          bdae.varData := varData;
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
             print("\n");
           end if;
@@ -178,16 +184,24 @@ protected
   function inline extends Module.inlineInterface;
   protected
     UnorderedMap<Absyn.Path, Function> replacements "rules for replacements are stored inside here";
+    UnorderedSet<VariablePointer> set "new iterators from function bodies";
   algorithm
     // collect functions
     replacements := UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
     replacements := FunctionTree.fold(funcTree, function collectInlineFunctions(inline_types = inline_types), replacements);
 
     // apply replacements
-    eqData := Replacements.replaceFunctions(eqData, replacements);
+    eqData  := Replacements.replaceFunctions(eqData, replacements);
+
     // replace record constucters after functions because record operator
     // functions will produce record constructors once inlined
-    eqData := inlineRecordsTuples(eqData, VarData.getVariables(varData));
+    eqData  := inlineRecordsTuples(eqData, VarData.getVariables(varData));
+
+    // collect new iterators from replaced function bodies
+    set     := UnorderedSet.new(BVariable.hash, BVariable.equalName);
+    eqData  := EqData.map(eqData, function BackendDAE.lowerEquationIterators(variables = VarData.getVariables(varData), set = set));
+    varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
+    eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = VarData.getVariables(varData)));
   end inline;
 
   function collectInlineFunctions

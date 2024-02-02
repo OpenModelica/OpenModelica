@@ -1116,7 +1116,9 @@ protected
     size := sum(ComponentRef.size(out) for out in alg.outputs);
 
     // can an algorithm output even be discrete?
-    if ComponentRef.listHasDiscrete(alg.outputs) then
+    if listEmpty(alg.outputs) then
+      attr := EquationAttributes.default(EquationKind.EMPTY, init);
+    elseif ComponentRef.listHasDiscrete(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.DISCRETE, init);
     else
       attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
@@ -1273,7 +1275,7 @@ public
   function lowerEquationIterators
     "lowers all iterators that occur in this equation and
     add the generated variables to a set"
-    input Equation eqn;
+    input output Equation eqn;
     input VariablePointers variables;
     input UnorderedSet<VariablePointer> set;
   protected
