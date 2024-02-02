@@ -1,40 +1,20 @@
-TEST = ../../../rtest -v
+TEST = ../../../../rtest -v
 
 TESTFILES = \
-BuiltinMath.mos \
-Compare.mos \
-Delta.mos \
-DerInvalid.mos \
-DerValid.mos \
-dertest.mos \
-DummyDerMatching.mos \
-Epidemics1.mos \
-HydrogenIodide.mos \
-Identity.mos \
-LotkaVolterra.mos \
-MeasureTime.mos \
-SemiLinear.mos \
-SemiLinearTest2.mos \
-Sign.mos \
-Time.mos \
-TwoRateSampler.mos
-
-
+	Delay.mos \
+	DelayTooLarge.mos \
+	VaryingDelay.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=  \
-
-
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile
-
-
+Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

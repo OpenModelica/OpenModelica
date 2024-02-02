@@ -47,9 +47,7 @@ void printDelayBuffer(void* data, int stream, void* elemPointer);
 
 
 /**
- * @brief Find row with greatest time that is greater than or equal to 'time'
- *
- * So all buffer elements before returned row index need to be removed from buffer.
+ * @brief Find row with greatest time that is smaller than or equal to 'time'.
  *
  * @param[in] time          Time value to search for.
  * @param[in] delayStruct   Ringbuffer with stored delay values.
@@ -72,12 +70,12 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
   curTime = bufferElem->t;
 
   /* If searched time is smaller then first element return first position */
-  if(time < curTime) {
+  if (time < curTime) {
     return pos;
   }
 
   /* Search for time starting at begin of ring buffer */
-  while(pos < end-1) {
+  while (pos < end-1) {
     pos++;
     bufferElem = getRingData(delayStruct, pos);
     prevTime = curTime;
@@ -111,9 +109,10 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
  */
 void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax)
 {
+  RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
   int row;
   int foundEvent;
-  int length = ringBufferLength(data->simulationInfo->delayStructure[exprNumber]);
+  int length = ringBufferLength(delayStruct);
   double time = data->localData[0]->timeValue;
   TIME_AND_VALUE tpl;
   TIME_AND_VALUE* lastElem;
@@ -122,13 +121,14 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   assertStreamPrint(threadData, 0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
 
   /* Check if time is greater equal then last stored time in delay structure */
+  /* ph: Is this needed because of event search? */
   if (length > 0) {
-    lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
+    lastElem = getRingData(delayStruct, length-1);
     while (time < lastElem->t && length > 0) {
-      removeLastRingData(data->simulationInfo->delayStructure[exprNumber],1);
-      length = ringBufferLength(data->simulationInfo->delayStructure[exprNumber]);
+      removeLastRingData(delayStruct,1);
+      length = ringBufferLength(delayStruct);
       if (length > 0) {
-        lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
+        lastElem = getRingData(delayStruct, length-1);
       }
     }
   }
@@ -137,10 +137,10 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
    * This should happen after an event was found and the event iteration finished */
   if (length > 0) {
     if (fabs(lastElem->t-time) < 1e-10 && fabs(lastElem->value-exprValue) < 1e-10) {
-      /* Remove stuff that is not needed any more */
-      row = findTime(time-delayTime+1e-10, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
-      if(row > 0){
-        dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
+      /* Dequeue no longer needed values from ring buffer */
+      row = findTime(time-delayTime+1e-10, delayStruct, &foundEvent);
+      if (row > 0) {
+        dequeueNFirstRingDatas(delayStruct, row);
       }
       return;
     }
@@ -149,17 +149,17 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   /* Append expression value to delay ring buffer */
   tpl.t = time;
   tpl.value = exprValue;
-  appendRingData(data->simulationInfo->delayStructure[exprNumber], &tpl);
+  appendRingData(delayStruct, &tpl);
 
-  /* Dequeue not longer needed values from ring buffer */
-  row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
-  if(row > 0 && !foundEvent){
-    dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
+  /* Dequeue no longer needed values from ring buffer */
+  row = findTime(time-delayTime+DBL_EPSILON, delayStruct, &foundEvent);
+  if (row > 0 && !foundEvent) {
+    dequeueNFirstRingDatas(delayStruct, row);
   }
 
   /* Debug print */
-  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
-  printRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_DELAY, printDelayBuffer);
+  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(delayStruct));
+  printRingBuffer(delayStruct, LOG_DELAY, printDelayBuffer);
 }
 
 
@@ -170,12 +170,11 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
  * @param threadData    Pointer to thread data.
  * @param exprNumber    Index of delay expression.
  * @param exprValue     Value of delay expression.
- * @param time          Current simulation time.
  * @param delayTime     Amount of time exprValue should be delayed.
  * @param delayMax      Maximum time to delay exprValue.
  * @return double       Return delayed value.
  */
-double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
+double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax)
 {
   RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
   double timeStamp;
@@ -187,6 +186,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   int i;
   int foundEvent;
   int length = ringBufferLength(delayStruct);
+  double time = data->localData[0]->timeValue;
 
   infoStreamPrint(LOG_DELAY, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
 
@@ -199,65 +199,55 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   assertStreamPrint(threadData, delayTime <= delayMax, "Too large delay requested: delayTime = %g, delayMax = %g", delayTime, delayMax);
 
   /* Return expression value before simulation start */
-  if(time <= data->simulationInfo->startTime)
-  {
-    return (exprValue);
+  if (time <= data->simulationInfo->startTime) {
+    return exprValue;
   }
 
   /*  Empty delay buffer at initialization phase */
-  if(length == 0)
-  {
+  if (length == 0) {
     infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Missing initial value, using argument value %g instead.", exprValue);
-    return (exprValue);
+    return exprValue;
   }
 
   /* Return oldest element in ring buffer */
-  if(time <= data->simulationInfo->startTime + delayTime)
-  {
+  if (time <= data->simulationInfo->startTime + delayTime) {
     return ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
   }
   /* return expr(time-delayTime) */
-  else
-  {
+  else {
     timeStamp = time - delayTime;
 
     /* find the row for the lower limit */
-    if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t)
-    {
+    if (timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t) {
       /* delay between the last accepted time step and the current time */
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->value;
       time1 = time;
       value1 = exprValue;
-    }
-    else
-    {
+    } else {
       i = findTime(timeStamp, delayStruct, &foundEvent);
       assertStreamPrint(threadData, i < length, "%d = i < length = %d", i, length);
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
 
       /* was it the last value? */
-      if(i+1 == length)
-      {
+      if (i+1 == length) {
         return value0;
       }
       time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->t;
       value1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->value;
     }
     /* Return left value */
-    if(time0 == timeStamp)
-    {
+    if (time0 == timeStamp) {
       return value0;
     }
     /* Return right value */
-    else if(time1 == timeStamp)
-    {
+    else if (time1 == timeStamp) {
       return value1;
     }
     /* linear interpolation */
-    else
-    {
+    /* FIXME instead of linear, do the same interpolation order as the integrator */
+    else {
       timedif = time1 - time0;
       dt0 = time1 - timeStamp;
       dt1 = timeStamp - time0;
@@ -275,23 +265,17 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
  * @param threadData      Used for error handling.
  * @param exprNumber      Index of delay.
  * @param relationIndex   Index of relation used for zero crossing.
- * @param delayValue      Value to store in delay ringbuffer.
  * @param delayTime       Time to delay expValue.
- * @param delayMax        Maximum allowed delay time, defaults to delayTime.
  * @return double         Value of zeroCrossing at current simulation time.
  */
-double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayValue, double delayTime, double delayMax)
+double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayTime)
 {
+  RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
   int foundEvent;
-  int eventPos;
-  double zeroCrossingValue;
+  double zeroCrossingValue = data->simulationInfo->zeroCrossingsPre[relationIndex];
   double time = data->localData[0]->timeValue;
 
-  RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
-  zeroCrossingValue = data->simulationInfo->zeroCrossingsPre[relationIndex];
-
-  if (ringBufferLength(delayStruct) == 0)
-  {
+  if (ringBufferLength(delayStruct) == 0) {
     return zeroCrossingValue;
   }
 
@@ -299,13 +283,10 @@ double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int expr
   findTime(time - delayTime, delayStruct, &foundEvent);
 
   /* Flip sign of ZC if an event was found */
-  if (!foundEvent)
-  {
-    return zeroCrossingValue;
-  }
-  else
-  {
+  if (foundEvent) {
     return -zeroCrossingValue;
+  } else {
+    return zeroCrossingValue;
   }
 }
 

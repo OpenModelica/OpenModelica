@@ -56,7 +56,12 @@ simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
 simulationdaemode.log \
-simulationnewbackend.log \
+simulationnewbackend-arrayhandling.log \
+simulationnewbackend-basics.log \
+simulationnewbackend-event_handling.log \
+simulationnewbackend-functions.log \
+simulationnewbackend-records.log \
+simulationnewbackend-ScalableTestsuite.log \
 simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
@@ -77,7 +82,8 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
-simulationspartialDistribution.log \
+simulationBuiltin_delay.log \
+simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
 simulationmodelicamsl22.log \
 msl31mediasimulation.log \
@@ -129,7 +135,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
-simulationspartialDistribution.log \
+simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
 modelicaasserts.log \
 modelicaalgorithms-functions.log \
@@ -338,6 +344,7 @@ simulationnewbackend-functions.log: omc-diff
 	@echo $@ done
 simulationnewbackend-records.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/records/ -f Makefile test > $@
+	@echo $@ done
 simulationnewbackend-ScalableTestsuite.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/ScalableTestsuite/ -f Makefile test > $@
 	@echo $@ done
@@ -404,8 +411,11 @@ simulationrecords.log: omc-diff
 simulationsolver.log: omc-diff
 	$(MAKE) -C simulation/modelica/solver -f Makefile test > $@
 	@echo $@ done
-simulationspartialDistribution.log: omc-diff
-	$(MAKE) -C simulation/modelica/spatialDistribution -f Makefile test > $@
+simulationBuiltin_delay.log: omc-diff
+	$(MAKE) -C simulation/modelica/built_in_functions/delay -f Makefile test > $@
+	@echo $@ done
+simulationBuiltin_spatialDistribution.log: omc-diff
+	$(MAKE) -C simulation/modelica/built_in_functions/spatialDistribution -f Makefile test > $@
 	@echo $@ done
 simulationtypes.log: omc-diff
 	$(MAKE) -C simulation/modelica/types -f Makefile test > $@
