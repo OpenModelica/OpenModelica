@@ -173,13 +173,16 @@ public
     if isSome(system.strongComponents) then
       for scc in Util.getOption(system.strongComponents) loop
         () := match scc
+          local
+            Type ty1, ty2;
           case StrongComponent.SINGLE_COMPONENT() algorithm
-            if not Type.isEqual(Variable.typeOf(Pointer.access(scc.var)), Equation.getType(Pointer.access(scc.eqn))) then
+            ty1 := Type.removeSizeOneArrays(Variable.typeOf(Pointer.access(scc.var)));
+            ty2 := Type.removeSizeOneArrays(Equation.getType(Pointer.access(scc.eqn)));
+            if not Type.isEqual(ty1, ty2) then
               // The variability of the equation must be greater or equal to that of the variable it solves.
               // See MLS section 3.8 Variability of Expressions
               Error.addMessage(Error.COMPILER_ERROR, {getInstanceName() + " failed. The following strong component has conflicting types: "
-                + Type.toString(Variable.typeOf(Pointer.access(scc.var))) + " != "
-                + Type.toString(Equation.getType(Pointer.access(scc.eqn)))
+                + Type.toString(ty1) + " != " + Type.toString(ty2)
                 + "\n" + StrongComponent.toString(scc)});
               violated := true;
             end if;
