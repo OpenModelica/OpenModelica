@@ -429,7 +429,13 @@ protected
   protected
     Absyn.Path path;
   algorithm
-    if Function.isDefaultRecordConstructor(fn) or Function.isNonDefaultRecordConstructor(fn) then
+    // do not replace record constructors
+    if Function.isDefaultRecordConstructor(fn)
+    or Function.isNonDefaultRecordConstructor(fn)
+    // do not replace impure functions
+    or Function.isImpure(fn)
+    // do not replace functions with no output
+    or listEmpty(fn.outputs) then
       b := true;
       return;
     end if;
