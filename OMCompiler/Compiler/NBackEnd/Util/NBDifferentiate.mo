@@ -847,6 +847,14 @@ public
         list<Expression> rest;
         Type ty;
 
+      // DELAY
+      case (Expression.CALL()) guard(name == "delay")
+      algorithm
+        {arg1, arg2, arg3} := Call.arguments(exp.call);
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        exp.call := Call.setArguments(exp.call, {ret1, arg2, arg3});
+      then exp;
+
       // SMOOTH
       case (Expression.CALL()) guard(name == "smooth")
       algorithm
