@@ -446,9 +446,10 @@ void generateTemplates() {
 void cloneOMDev() {
 bat ("""
 set HOME=C:\\dev\\
-taskkill /F /IM omc.exe /T
-taskkill /F /IM perl.exe /T
+taskkill /F /IM omc.exe /T || ECHO.>NUL
+taskkill /F /IM perl.exe /T || ECHO.>NUL
 echo Current directory: %CD%
+echo OMDEV: %OMDEV%
 @If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
 if not exist "%OMDEV%" (
   echo Checkout %OMDEV%
