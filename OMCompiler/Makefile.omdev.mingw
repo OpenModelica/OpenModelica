@@ -274,7 +274,7 @@ else # 64-bit MSYS
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libquadmath-0.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libstdc++-6.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libsystre-0.dll $(builddir_bin)/)
-	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libszip*.dll $(builddir_bin)/) || (cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz.dll $(builddir_bin)/)
+	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz*.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libtre-5.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/libwinpthread*.dll $(builddir_bin)/)
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)

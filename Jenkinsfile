@@ -93,7 +93,7 @@ pipeline {
         stage('Win/UCRT64') {
           agent {
             node {
-              label 'omdev-ucrt64'
+              label 'windows-no-release'
             }
           }
           when {
@@ -106,8 +106,9 @@ pipeline {
           }
           steps {
             script {
-              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
+                common.cloneOMDev()
                 common.buildOMC('cc', 'c++', '', true, false)
                 common.makeLibsAndCache()
                 common.buildOMSens()
@@ -176,7 +177,7 @@ pipeline {
         stage('cmake-OMDev-gcc') {
           agent {
             node {
-              label 'omdev-ucrt64'
+              label 'windows-no-release'
             }
           }
           when {
@@ -186,8 +187,9 @@ pipeline {
           steps {
             script {
               echo "Running on: ${env.NODE_NAME}"
-              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}}tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
+                common.cloneOMDev()
                 common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
                                         + ' -DCMAKE_INSTALL_PREFIX=build'
                                         + ' -G "MSYS Makefiles"'

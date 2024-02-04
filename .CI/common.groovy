@@ -67,11 +67,11 @@ def numLogicalCPU() {
   return env.JENKINS_NUM_LOGICAL_CPU
 }
 
-void partest(partition=1,partitionmodulo=1,cache=true, extraArgs='') {
+void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   if (isWindows()) {
 
   bat ("""
-     set OMDEV=C:\\OMDev
+     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -167,7 +167,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
 
   if (isWindows()) {
   bat ("""
-     set OMDEV=C:\\OMDev
+     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -289,7 +289,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
 void buildOMSens() {
   if (isWindows()) {
   bat ("""
-     set OMDEV=C:\\OMDev
+     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -312,7 +312,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
 
   if (isWindows()) {
   bat ("""
-     set OMDEV=C:\\OMDev
+     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -342,7 +342,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
 void buildGUI(stash, isQt5) {
   if (isWindows()) {
   bat ("""
-     set OMDEV=C:\\OMDev
+     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -388,7 +388,7 @@ void buildGUI(stash, isQt5) {
 void buildAndRunOMEditTestsuite(stash) {
   if (isWindows()) {
   bat ("""
-     set OMDEV=C:\\OMDev
+     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
@@ -443,9 +443,28 @@ void generateTemplates() {
   }
 }
 
+void cloneOMDev() {
+bat ("""
+set HOME=C:\\dev\\
+REM taskkill /F /IM omc.exe /T || ECHO.>NUL
+REM taskkill /F /IM perl.exe /T || ECHO.>NUL
+echo Current directory: %CD%
+echo OMDEV: %OMDEV%
+If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+if not exist "%OMDEV%" (
+  echo Checkout %OMDEV%
+  cd c:\\
+  git clone https://gitlab.liu.se/OpenModelica/OMDevUCRT.git OMDevUCRT
+  cd %OMDEV%
+  git checkout master
+  call SETUP_OMDEV.bat
+)
+""")
+}
+
 def getVersion() {
   if (isWindows()) {
-  return (bat (script: 'set OMDEV=C:\\OMDev && set MSYSTEM=UCRT64 && set MSYS2_PATH_TYPE=inherit && %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
+  return (bat (script: 'set OMDEV=C:\\OMDevUCRT && set MSYSTEM=UCRT64 && set MSYS2_PATH_TYPE=inherit && %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "build/bin/omc --version | grep -o \"v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*\""', returnStdout: true)).replaceAll("\\s","")
   } else {
   return (sh (script: 'build/bin/omc --version | grep -o "v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*"', returnStdout: true)).replaceAll("\\s","")
   }
