@@ -2037,7 +2037,12 @@ namespace ModelInstance
   QString Component::getQualifiedName() const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      if (name.isEmpty()) {
+        return mName;
+      } else {
+        return name % "." % mName;
+      }
     } else {
       return mName;
     }
@@ -2119,7 +2124,12 @@ namespace ModelInstance
   QString ReplaceableClass::getQualifiedName() const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      if (name.isEmpty()) {
+        return mName;
+      } else {
+        return name % "." % mName;
+      }
     } else {
       return mName;
     }
