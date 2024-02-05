@@ -119,6 +119,7 @@ import VisualXML;
 import ZeroCrossings;
 import ReduceDAE;
 import Settings;
+import UnorderedSet;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -14188,8 +14189,12 @@ protected
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   array<Integer> match1,match2;
   Boolean debug = false;
+  UnorderedSet<DAE.ComponentRef> initialUnknowns;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
+  initialUnknowns := UnorderedSet.fromList(initialUnknownCrefs,
+    ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+
   if debug then
     print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
   end if;
@@ -14245,9 +14250,9 @@ algorithm
   indepVars := {}; // vars with causality = input and initial = approx or calculated, causality = calculatedParameter, states and derivative vars with initial = approx or calculated
   depVars := {}; // vars with causality = input and initial = exact
 
-  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknowns, crefSimVarHT);
   // search in globalKnownVars as they contains inputs and parameters with inital = exact
-  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknowns, crefSimVarHT);
 
   if debug then
     BackendDump.dumpVarList(depVars, "depVars");
@@ -14342,7 +14347,7 @@ protected function getDepAndIndepVarsForInitialUnknowns
   input list<BackendDAE.Var> inVar;
   input list<BackendDAE.Var> depVars;
   input list<BackendDAE.Var> indepVars;
-  input list<DAE.ComponentRef> initialUnknownCrefs;
+  input UnorderedSet<DAE.ComponentRef> initialUnknowns;
   input SimCode.HashTableCrefToSimVar crefSimVarHT;
   output list<BackendDAE.Var> outdepVars = depVars;
   output list<BackendDAE.Var> outindepVars = indepVars;
@@ -14355,7 +14360,7 @@ algorithm
   for var in inVar loop
     cref := BackendVariable.varCref(var);
     // get depVars, which is basically list of InitialUnknowns extracted according to FMI-2.0 specification from SimVar,
-    if listMember(cref, initialUnknownCrefs) then
+    if UnorderedSet.contains(cref, initialUnknowns) then
       outdepVars := var::outdepVars;
     end if;
     // get indepVars, which is bascially list of vars with causality = input or initial = exact
