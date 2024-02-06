@@ -211,7 +211,7 @@ public
       for tpl in cev_lst loop
         (cond, cev) := tpl;
         if not BVariable.isDummyVariable(cev.auxiliary) then
-          aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(cev.auxiliary)), cond.exp, idx, context, EquationAttributes.default(EquationKind.DISCRETE, false));
+          aux_eqn := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(cev.auxiliary)), cond.exp, idx, context, Iterator.EMPTY(), EquationAttributes.default(EquationKind.DISCRETE, false));
           auxiliary_vars := cev.auxiliary :: auxiliary_vars;
           auxiliary_eqns := aux_eqn :: auxiliary_eqns;
         end if;
@@ -413,7 +413,7 @@ public
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.RELATION)
           algorithm
             // create auxiliary equation and solve for TIME
-            tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
+            tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
             _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
               (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
