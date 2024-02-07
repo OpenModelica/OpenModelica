@@ -901,7 +901,7 @@ void Parameter::editRedeclareClassButtonClicked()
       const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
       ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
       pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
-      ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON);
+      ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
       mpModelInstanceElement->setModel(pNewModel);
       MainWindow::instance()->getProgressBar()->setRange(0, 0);
       MainWindow::instance()->showProgressBar();
