@@ -34,7 +34,7 @@ ifeq ($(CMAKE),)
 	CMAKE=cmake
 endif
 
-$(info "Selected CMAKE from configure: $(CMAKE)")
+$(info "Selected CMAKE from configure (OMCompiler): $(CMAKE)")
 
 CMAKE := CC="$(CC)" CXX="$(CXX)" FC="$(FC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" FFLAGS="$(FCFLAGS)" LDFLAGS="@LDFLAGS@" $(CMAKE) @CMAKE_EXTRA_DEFINES@
 CMAKE_NO_CHECK_UNDEFINED := CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@ @LDFLAGS@" $(CMAKE) @CMAKE_EXTRA_DEFINES@
@@ -42,7 +42,7 @@ CMAKE_RPATH := CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
 
-$(info "Constructed CMAKE with flags: $(CMAKE)")
+$(info "Constructed CMAKE with flags (OMCompiler): $(CMAKE)")
 
 defaultMakefileTarget = Makefile
 MAKEFILE_BOOT = LinkMain.makefile
@@ -158,15 +158,13 @@ emcc-simulationruntime:
 	mkdir -p build/lib/omc/emcc/
 	$(MAKE) -C SimulationRuntime/c emcc
 
-CMAKE=cmake
-
 checkMSVCwine:
 	@echo 'Test for WINE, VS140COMNTOOLS env.vars'
 	env
 	test ! -z "$(WINE)"
 	test ! -z "$(VS140COMNTOOLS)"
 	$(WINE) cl.exe
-	$(WINE) cmd /c "if not exist $(CMAKE) (exit 1)"
+	CMAKE=cmake $(WINE) cmd /c "if not exist $(CMAKE) (exit 1)"
 	# Remove wine-mono
 	$(WINE) uninstaller --remove '{E45D8920-A758-4088-B6C6-31DBB276992E}'
 
