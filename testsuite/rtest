@@ -82,7 +82,11 @@ $pager="cat";
 $diffcmd="diff -U 5 -w";
 $dwdiffcmd="dwdiff '-d()' -l -C 3 -c -L";
 $log="";
-$tmpdir = "/tmp/omc-rtest-".(getpwuid($<)||getlogin()||"unknown")."/$dirname";
+my $username = ( $^O ne 'MSWin32' ? getpwuid($<) : undef )
+          || getlogin()
+          || $ENV{'USER'}
+          || 'OM-tmp-user';
+$tmpdir = "/tmp/omc-rtest-".$username."/$dirname";
 $tmpdir =~ s/\s/_/g;
 system "mkdir -p $tmpdir";
 $got = "$tmpdir/equations-got";
