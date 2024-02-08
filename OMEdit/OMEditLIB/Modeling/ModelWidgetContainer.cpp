@@ -879,17 +879,20 @@ bool GraphicsView::performElementCreationChecks(LibraryTreeItem *pLibraryTreeIte
  * \param pModelInstance
  * \param name
  * \param className
+ * \param isConnector
  * \return
  */
-ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className)
+ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className, bool isConnector)
 {
   ModelInstance::Component *pComponent = new ModelInstance::Component(pModelInstance);
   pComponent->setName(name);
   pComponent->setType(className);
-  /* We use getModelInstanceAnnotation here for bettter performance
+  /* We use getModelInstance with icon flag for bettter performance
    * This model will be updated right after this so it doesn't matter if the Component has complete model or not.
    */
-  pComponent->setModel(new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", false, true)));
+  ModelInstance::Model *pModel = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", false, true));
+  pModel->setRestriction(isConnector ? "connector" : "model");
+  pComponent->setModel(pModel);
   pModelInstance->addElement(pComponent);
   return pComponent;
 }
@@ -963,7 +966,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           || (mViewType == StringHandler::Icon && (type == StringHandler::Connector || type == StringHandler::ExpandableConnector))) {
         if (mpModelWidget->isNewApi()) {
           ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-          ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure());
+          ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->isConnector());
           addElementToView(pComponent, false, true, true, position, "", true);
           ModelInfo newModelInfo = mpModelWidget->createModelInfo();
           mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element"));
@@ -3631,6 +3634,7 @@ void GraphicsView::copyItems(bool cut)
           QJsonObject componentJsonObject;
           componentJsonObject.insert(QLatin1String("classname"), pElement->getClassName());
           componentJsonObject.insert(QLatin1String("name"), pElement->getName());
+          componentJsonObject.insert(QLatin1String("connector"), pElement->getModel() ? pElement->getModel()->isConnector() : false);
           componentJsonObject.insert(QLatin1String("placement"), pElement->getOMCPlacementAnnotation(QPointF(0, 0)));
           componentsJsonArray.append(componentJsonObject);
         } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemsList.at(i))) {
@@ -4049,8 +4053,11 @@ void GraphicsView::pasteItems()
           QJsonObject componentObject = componentsArray.at(i).toObject();
           const QString className = componentObject.value("classname").toString();
           const QString name = componentObject.value("name").toString();
+          const bool connector = componentObject.value("connector").toBool();
           const QString placement = componentObject.value("placement").toString();
-          addElementToView(GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className), false, false, false, QPointF(0, 0), placement, false);
+          const int numberOfElements = mElementsList.size();
+          addElementToView(GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className, connector), false, false, false, QPointF(0, 0), placement, false);
+          assert(mElementsList.size() > numberOfElements);
           mElementsList.last()->setSelected(true);
         }
       }
@@ -4073,8 +4080,12 @@ void GraphicsView::pasteItems()
           LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, 0, 0, this);
           pConnectionLineAnnotation->setStartElementName(connectionObject.value("from").toString());
           pConnectionLineAnnotation->setEndElementName(connectionObject.value("to").toString());
-          addConnectionToView(pConnectionLineAnnotation, false);
-          mConnectionsList.last()->setSelected(true);
+          // always add the connections to diagram layer.
+          GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
+          pDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
+          if (mViewType == StringHandler::Diagram) {
+            mConnectionsList.last()->setSelected(true);
+          }
         }
       }
       // add shapes

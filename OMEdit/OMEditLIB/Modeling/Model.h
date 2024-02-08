@@ -582,6 +582,7 @@ private:
     const QString &getName() const {return mName;}
     const QString &getRootType() const;
     bool isMissing() const {return mMissing;}
+    void setRestriction(const QString &restriction) {mRestriction = restriction;}
     const QString &getRestriction() const {return mRestriction;}
     bool isConnector() const;
     bool isExpandableConnector() const;
