@@ -493,8 +493,12 @@ if($withxml) {
 # should not be needed anymore!
 # unlink("Compiler");
 # Clean up the temporary rtest directory, so it doesn't get overrun.
-my $username = getpwuid($<);
-my @dirs = glob "/tmp/omc-rtest-$username*";
+my $username = ( $^O ne 'MSWin32' ? getpwuid($<) : undef )
+          || getlogin()
+          || $ENV{'USER'}
+          || 'omtmpuser';
+my $tmpvar=( $^O ne 'MSWin32' ? '/tmp' : $ENV{'TEMP'} );
+my @dirs = glob "$tmpvar/omc-rtest-$username*";
 if (@dirs) {
   rmtree(@dirs);
 }
