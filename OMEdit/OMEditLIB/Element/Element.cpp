@@ -1233,7 +1233,6 @@ QString Element::getTransformationAnnotation(bool ModelicaSyntax)
   // add the origin
   if (mTransformation.getOrigin().isDynamicSelectExpression() || mTransformation.getOrigin().toQString().compare(QStringLiteral("{0,0}")) != 0) {
     annotationStringList.append(QString("origin=%1").arg(mTransformation.getOrigin().toQString()));
-
   }
   // add extent points
   if (mTransformation.getExtent().isDynamicSelectExpression() || mTransformation.getExtent().size() > 1) {
@@ -1261,7 +1260,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
       placementAnnotationString.append(QString("visible=%1,").arg(mTransformation.getVisible().toQString()));
     }
   }
-  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpGraphicsView->getModelWidget()->isNewApi() && mpModel->isConnector())) {
+  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isConnector())) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Element *pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementObject(getName());
@@ -1327,7 +1326,7 @@ QString Element::getOMCPlacementAnnotation(QPointF position)
   if (mTransformation.isValid()) {
     placementAnnotationString.append(mTransformation.getVisible() ? "true" : "false");
   }
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) {
+  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->isConnector())) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Element *pElement;
@@ -3585,7 +3584,7 @@ void Element::duplicate()
   QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   // add component
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpGraphicsView->getModelWidget()->getModelInstance(), name, getClassName());
+    ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpGraphicsView->getModelWidget()->getModelInstance(), name, getClassName(), false);
     mpGraphicsView->addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), getOMCPlacementAnnotation(gridStep), false);
     // set modifiers
     if (mpModelComponent->getModifier()) {
