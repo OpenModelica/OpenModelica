@@ -1359,7 +1359,7 @@ template extArgCXml(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BU
       <exp:Size>
         <%name%>
         <%dim%>
-      </exp:size>
+      </exp:Size>
       >>
 end extArgCXml;
 
@@ -1394,7 +1394,7 @@ template extArgF77Xml(SimExtArg extArg, Text &preExp, Text &varDecls)
       <exp:Size>
         <%name%>
         <%dim%>
-      </exp:size>
+      </exp:Size>
       >>
 end extArgF77Xml;
 
