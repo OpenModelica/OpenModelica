@@ -1737,7 +1737,7 @@ Messages Options
 
 -  General
 
-  -  *Output Size* - Specifies the maximum number of rows the Messages
+  -  *Output Size* - Specifies the maximum number of rows the Message
      Browser may have. If there are more rows then the rows are removed
      from the beginning.
 
@@ -1745,7 +1745,10 @@ Messages Options
      counter before starting the simulation.
 
   -  *Clear messages browser before checking, instantiation & simulation* - If enabled then the
-     messages browser is cleared before checking, instantiation & simulation of model.
+     message browser is cleared before checking, instantiation & simulation of model.
+
+  -  *Do not automatically enlarge message browser when a new message is available* - If enabled then the
+     message browser will not be enlarged instead the tabbar shown will start blinking indicating that a new message is available.
 
 -  Font and Colors
 

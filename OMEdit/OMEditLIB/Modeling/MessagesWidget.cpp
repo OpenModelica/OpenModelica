@@ -619,7 +619,11 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
       break;
   }
   mpMessagesTabWidget->setCurrentWidget(mpAllMessageWidget);
-  emit messageAdded();
+  if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
+    emit messageAdded();
+  } else {
+    MainWindow::instance()->animateMessagesTabWidgetForNewMessage(messageItem.getErrorType());
+  }
 }
 
 /*!
