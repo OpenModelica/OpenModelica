@@ -269,6 +269,7 @@ void TextAnnotation::parseShapeAnnotation()
   mExtent = mpText->getExtent();
   mExtent.evaluate(mpText->getParentModel());
   mTextString = mpText->getTextString();
+  mTextString.evaluate(mpText->getParentModel());
   mOriginalTextString = mTextString;
   initUpdateTextString();
 

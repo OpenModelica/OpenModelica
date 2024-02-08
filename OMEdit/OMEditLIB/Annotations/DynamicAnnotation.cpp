@@ -135,7 +135,13 @@ void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
       fromExp(expression.evaluate([&] (std::string name) -> auto& {
                 auto vname = QString::fromStdString(name);
                 // the instance api returns the qualified cref
-                vname = StringHandler::getLastWordAfterDot(vname);
+                // we need variable name relative to Element
+                // get full name of Element
+                QString curPath;
+                if (pModel->getParentElement()) {
+                   curPath = pModel->getParentElement()->getQualifiedName();
+                }
+                vname = StringHandler::makeClassNameRelative(vname, curPath);
                 auto exp = pModel->getVariableBinding(vname);
                 if (!exp) {
                   throw std::runtime_error(name + " could not be found");
