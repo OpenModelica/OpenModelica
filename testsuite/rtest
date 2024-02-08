@@ -85,8 +85,10 @@ $log="";
 my $username = ( $^O ne 'MSWin32' ? getpwuid($<) : undef )
           || getlogin()
           || $ENV{'USER'}
-          || 'OM-tmp-user';
-$tmpdir = "/tmp/omc-rtest-".$username."/$dirname";
+          || 'omtmpuser';
+$tmpvar=( $^O ne 'MSWin32' ? '/tmp' : $ENV{'TEMP'} );
+$tmpdir = $tmpvar . "/omc-rtest-".$username."/$dirname";
+# print("Directory: ", $tmpdir, "\n");
 $tmpdir =~ s/\s/_/g;
 system "mkdir -p $tmpdir";
 $got = "$tmpdir/equations-got";
@@ -336,8 +338,10 @@ sub dofile
     $log = "$tmpdir/log-$f";
     $tc_err = 1;
     # Find the expected result
-    open(OUT,">$expected");
-    open(IN,"<$f");
+	# print("Expected: ", $expected, "\n");
+	# print("In: ", $f, "\n");
+    open(OUT,">$expected") or die "$0: open $expected: $!";
+    open(IN,"<$f") or die "$0: open $f: $!";
     while(<IN>) {
     # @adrpo - uncomment for debugging
     # print ($_);
