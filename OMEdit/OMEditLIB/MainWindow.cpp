@@ -426,7 +426,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
     pSettings->endGroup();
     if (restoreMessagesWidget) {
-      showMessageBrowser();
+      if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
+        showMessageBrowser();
+      } else {
+        animateMessagesTabWidgetForNewMessage(StringHandler::NoOMError);
+      }
     }
   }
   switchToWelcomePerspective();
@@ -1812,6 +1816,39 @@ void MainWindow::writeNewApiProfiling(const QString &str)
   if (mpNewApiProfilingFile) {
     fputs(QString("%1\n").arg(str).toUtf8().constData(), mpNewApiProfilingFile);
     fflush(mpNewApiProfilingFile);
+  }
+}
+
+/*!
+ * \brief MainWindow::animateMessagesTabWidgetForNewMessage
+ * Start the animation of MessageTab.
+ * \param errorType
+ */
+void MainWindow::animateMessagesTabWidgetForNewMessage(StringHandler::OpenModelicaErrors errorType)
+{
+  MessageTab *pMessageTab = 0;
+  switch (errorType) {
+    case StringHandler::Notification:
+      pMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(1));
+      break;
+    case StringHandler::Warning:
+      pMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(2));
+      break;
+    case StringHandler::Internal:
+    case StringHandler::OMError:
+      pMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(3));
+      break;
+    default:
+      break;
+  }
+
+  if (pMessageTab) {
+    pMessageTab->startAnimation();
+  }
+
+  MessageTab *pAllMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(0));
+  if (pAllMessageTab) {
+    pAllMessageTab->startAnimation();
   }
 }
 
@@ -3614,6 +3651,7 @@ void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
 void MainWindow::messagesTabBarClicked(int index)
 {
   showMessageBrowser();
+  emit stopMessagesTabWidgetAnimation();
   MessagesWidget::instance()->getMessagesTabWidget()->setCurrentIndex(index);
 }
 
@@ -5118,8 +5156,10 @@ MessageTab *MainWindow::createMessageTab(const QString &name, bool fixedTab)
   MessageTab *pMessageTab = new MessageTab(fixedTab);
   int index = mpMessagesTabWidget->addTab(pMessageTab, name);
   pMessageTab->setIndex(index);
+  pMessageTab->setColor(mpMessagesTabWidget->tabBar()->tabTextColor(index));
   mpMessagesTabWidget->setCurrentIndex(index);
   connect(pMessageTab, SIGNAL(clicked(int)), mpMessagesTabWidget, SIGNAL(tabBarClicked(int)));
+  connect(this, SIGNAL(stopMessagesTabWidgetAnimation()), pMessageTab, SLOT(stopAnimation()));
   return pMessageTab;
 }
 
@@ -5333,6 +5373,9 @@ MessageTab::MessageTab(bool fixedTab)
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   mpProgressBar->installEventFilter(this);
+  // timer to change tab color
+  mTimer.setInterval(500); // 0.5 sec
+  connect(&mTimer, SIGNAL(timeout()), SLOT(updateTabTextColor()));
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
@@ -5341,6 +5384,15 @@ MessageTab::MessageTab(bool fixedTab)
     pMainLayout->addWidget(mpProgressBar, 0, 1);
   }
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MessageTab::startAnimation
+ * Starts the timer.
+ */
+void MessageTab::startAnimation()
+{
+  mTimer.start();
 }
 
 /*!
@@ -5363,6 +5415,32 @@ void MessageTab::updateProgress(QProgressBar *pProgressBar)
   mpProgressBar->setRange(pProgressBar->minimum(), pProgressBar->maximum());
   mpProgressBar->setValue(pProgressBar->value());
   mpProgressBar->setTextVisible(pProgressBar->isTextVisible());
+}
+
+/*!
+ * \brief MessageTab::stopAnimation
+ * Stops the timer.
+ * Sets the animation counter to 0 and resets the tab text color.
+ */
+void MessageTab::stopAnimation()
+{
+  mTimer.stop();
+  mAnimationCounter = 0;
+  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabTextColor(mIndex, mColor);
+}
+
+/*!
+ * \brief MessageTab::updateTabTextColor
+ * Updates the tab text color.
+ */
+void MessageTab::updateTabTextColor()
+{
+  mAnimationCounter++;
+  // We can stop the animation after certain number of times. But for now we use MainWindow::stopMessagesTabWidgetAnimation() signal.
+//  if (mCount > 10) {
+//    return;
+//  }
+  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabTextColor(mIndex, (mAnimationCounter % 2 == 0) ? mColor : Qt::transparent);
 }
 
 /*!
