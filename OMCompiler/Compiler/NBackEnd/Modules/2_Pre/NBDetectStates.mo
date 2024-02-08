@@ -58,7 +58,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointers, EqData, WhenEquationBody, WhenStatement, IfEquationBody};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
   import NBVariable.{VariablePointers, VarData};
 
   // Util
@@ -265,7 +265,7 @@ protected
           if Expression.fold(arg, checkAlgebraic, 0) > 1 then
             // more than one algebraic variable > create auxiliary state
             (state_var, state_cref, der_var, der_cref) := BVariable.makeAuxStateVar(Pointer.access(uniqueIndex), SOME(arg));
-            aux_equation := Equation.fromLHSandRHS(Expression.fromCref(state_cref), arg, uniqueIndex, NBVariable.AUXILIARY_STR);
+            aux_equation := Equation.makeAssignment(Expression.fromCref(state_cref), arg, uniqueIndex, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false));
             returnExp := Expression.fromCref(der_cref);
 
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));

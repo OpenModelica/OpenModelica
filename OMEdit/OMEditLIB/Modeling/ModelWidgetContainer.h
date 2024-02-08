@@ -249,7 +249,7 @@ public:
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix);
-  static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className);
+  static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className, bool isConnector);
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);

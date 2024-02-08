@@ -1228,31 +1228,6 @@ public
       end match;
     end setRHS;
 
-    function fromLHSandRHS
-      input Expression lhs;
-      input Expression rhs;
-      input Pointer<Integer> idx;
-      input String context;
-      input EquationAttributes attr = EquationAttributes.default(EquationKind.UNKNOWN, false);
-      input DAE.ElementSource src = DAE.emptyElementSource;
-      output Pointer<Equation> eqn_ptr;
-    protected
-      Type ty;
-      Equation eqn;
-      Option<Integer> opt_rec_size;
-      Integer rec_size;
-    algorithm
-      ty := Expression.typeOf(lhs);
-      opt_rec_size := Type.complexSize(ty);
-      eqn := match (ty, opt_rec_size)
-        case (Type.ARRAY(), _)                then ARRAY_EQUATION(ty, lhs, rhs, src, attr, opt_rec_size);
-        case (Type.COMPLEX(), SOME(rec_size)) then RECORD_EQUATION(ty, lhs, rhs, src, attr, rec_size);
-                                              else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
-      end match;
-      eqn_ptr := Pointer.create(eqn);
-      Equation.createName(eqn_ptr, idx, context);
-    end fromLHSandRHS;
-
     function updateLHSandRHS
       input output Equation eqn;
       input Expression lhs;
@@ -1767,20 +1742,13 @@ public
 
       if Iterator.isEmpty(iter) then
         lhs := Expression.fromCref(var.name);
-        eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
+        eqn := Equation.makeAssignment(lhs, rhs, idx, context, Iterator.EMPTY(), eqnAttr);
       else
         rhs := Expression.map(rhs, Expression.repairOperator);
         (sub_crefs, _) := Iterator.getFrames(iter);
         subs := list(Subscript.fromTypedExp(Expression.fromCref(cref)) for cref in sub_crefs);
         lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name, true, true));
-        eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
-        eqn := Pointer.create(Equation.FOR_EQUATION(
-          size = ComponentRef.size(var.name),
-          iter = iter,
-          body = {Pointer.access(eqn)},
-          source = DAE.emptyElementSource,
-          attr = eqnAttr));
-        Equation.createName(eqn, idx, context);
+        eqn := Equation.makeAssignment(lhs, rhs, idx, context, iter, eqnAttr);
         // this could lead to non existing variables, should not be a problem though
         Equation.renameIterators(eqn, "$i");
       end if;

@@ -212,7 +212,7 @@ QRectF PolygonAnnotation::boundingRect() const
 QPainterPath PolygonAnnotation::shape() const
 {
   QPainterPath path = getShape();
-  if (mFillPattern == StringHandler::FillNone) {
+  if (mFillPattern == StringHandler::FillNone && !mpParentComponent) {
     return addPathStroker(path);
   } else {
     return path;
