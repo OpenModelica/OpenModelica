@@ -59,11 +59,11 @@ compareSimulationResults("simpleLoop_OMS_res.mat",
 // ""
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.001000
+// "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: simpleLoop_OMS_res.mat (bufferSize=1)
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 1017 NumRhsEvals  = 1054 NumLinSolvSetups = 71
-//          NumNonlinSolvIters = 1053 NumNonlinSolvConvFails = 0 NumErrTestFails = 10
+//          NumSteps = 527 NumRhsEvals  = 586 NumLinSolvSetups = 57
+//          NumNonlinSolvIters = 585 NumNonlinSolvConvFails = 0 NumErrTestFails = 16
 // "
 // {"Files Equal!"}
 // endResult
