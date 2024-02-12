@@ -208,7 +208,6 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mIsCreatingTextShape = false;
   mIsCreatingBitmapShape = false;
   mIsPanning = false;
-  mpElementUnderMouse = 0;
   mLastMouseEventPos = QPoint(0, 0);
   mpClickedComponent = 0;
   mpClickedState = 0;
@@ -2965,23 +2964,6 @@ Element* GraphicsView::getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
 }
 
 /*!
- * \brief GraphicsView::getShapeFromQGraphicsItem
- * \param pGraphicsItem
- * A QGraphicsItem can be a ShapeAnnotation.
- * \return
- */
-ShapeAnnotation* GraphicsView::getShapeFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
-{
-  if (pGraphicsItem) {
-    ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(pGraphicsItem);
-    if (pShapeAnnotation && pShapeAnnotation->getParentComponent()) {
-      return pShapeAnnotation;
-    }
-  }
-  return 0;
-}
-
-/*!
  * \brief GraphicsView::elementAtPosition
  * Returns the first Element at the position.
  * \param position
@@ -2991,9 +2973,8 @@ Element* GraphicsView::elementAtPosition(QPoint position)
 {
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    ShapeAnnotation *pShapeAnnotation = getShapeFromQGraphicsItem(pGraphicsItem);
-    if (pShapeAnnotation && pShapeAnnotation->getParentComponent()) {
-      Element *pElement = pShapeAnnotation->getParentComponent();
+    Element *pElement = getElementFromQGraphicsItem(pGraphicsItem);
+    if (pElement) {
       Element *pRootElement = pElement->getRootParentElement();
       if (pRootElement && ((pRootElement->getLibraryTreeItem() && !pRootElement->getLibraryTreeItem()->isNonExisting()) || (mpModelWidget->isNewApi()))) {
         return pRootElement;
@@ -4555,7 +4536,6 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
-  mpElementUnderMouse = elementAtPosition(event->pos());
   // if user is starting panning.
   if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
     setIsPanning(true);
@@ -4739,7 +4719,6 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     return;
   }
   setIsPanning(false);
-  mpElementUnderMouse = 0;
   mpClickedComponent = 0;
   mpClickedState = 0;
 
