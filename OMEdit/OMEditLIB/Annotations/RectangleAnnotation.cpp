@@ -181,7 +181,7 @@ QPainterPath RectangleAnnotation::shape() const
 {
   QPainterPath path;
   path.addRoundedRect(getBoundingRect(), mRadius, mRadius);
-  if (mFillPattern == StringHandler::FillNone && !mpParentComponent) {
+  if (mFillPattern == StringHandler::FillNone) {
     return addPathStroker(path);
   } else {
     return path;

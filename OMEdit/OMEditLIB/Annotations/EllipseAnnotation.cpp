@@ -143,7 +143,7 @@ QPainterPath EllipseAnnotation::shape() const
 {
   QPainterPath path;
   path.addEllipse(getBoundingRect());
-  if (mFillPattern == StringHandler::FillNone && !mpParentComponent) {
+  if (mFillPattern == StringHandler::FillNone) {
     return addPathStroker(path);
   } else {
     return path;
