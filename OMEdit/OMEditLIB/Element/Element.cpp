@@ -531,8 +531,6 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
   mpNonExistingElementLine = 0;
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
-  createNonExistingElement();
-  createDefaultElement();
   createStateElement();
   mHasTransition = false;
   mIsInitialState = false;
@@ -599,7 +597,7 @@ Element::Element(ModelInstance::Model *pModel, Element *pParentElement)
   mIsInheritedElement = mpParentElement->isInheritedElement();
   mElementType = Element::Extend;
   mTransformationString = "";
-  createNonExistingElement();
+  mpNonExistingElementLine = 0;
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
   mpStateElementRectangle = 0;
@@ -638,7 +636,7 @@ Element::Element(ModelInstance::Component *pModelComponent, Element *pParentElem
   setChoicesAnnotation(QStringList());
   setChoicesAllMatchingAnnotation(QStringList());
   setChoices(QStringList());
-//  createNonExistingElement();
+  mpNonExistingElementLine = 0;
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
   mpStateElementRectangle = 0;
@@ -677,16 +675,16 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setElementFlags(true);
-  createNonExistingElement();
-  createDefaultElement();
+  mpNonExistingElementLine = 0;
+  mpDefaultElementRectangle = 0;
+  mpDefaultElementText = 0;
   createStateElement();
   mHasTransition = false;
   mIsInitialState = false;
   mActiveState = false;
   mpBusComponent = 0;
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-    mpDefaultElementRectangle->setVisible(true);
-    mpDefaultElementText->setVisible(true);
+    createDefaultElement();
     drawInterfacePoints();
   } else {
     drawElement();
@@ -765,7 +763,7 @@ Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
   mIsInheritedElement = mpParentElement->isInheritedElement();
   mElementType = Element::Extend;
   mTransformationString = "";
-  createNonExistingElement();
+  mpNonExistingElementLine = 0;
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
   mpStateElementRectangle = 0;
@@ -806,7 +804,7 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mChoicesAnnotation = mpReferenceElement->getChoicesAnnotation();
   mChoicesAllMatchingAnnotation = mpReferenceElement->getChoicesAllMatchingAnnotation();
   mChoices = mpReferenceElement->getChoices();
-  createNonExistingElement();
+  mpNonExistingElementLine = 0;
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
   mpStateElementRectangle = 0;
@@ -855,8 +853,9 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setElementFlags(true);
-  createNonExistingElement();
-  createDefaultElement();
+  mpNonExistingElementLine = 0;
+  mpDefaultElementRectangle = 0;
+  mpDefaultElementText = 0;
   createStateElement();
   mHasTransition = mpReferenceElement->hasTransition();;
   mIsInitialState = mpReferenceElement->isInitialState();
@@ -904,7 +903,7 @@ Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
   mChoicesAnnotation.clear();
   mChoicesAllMatchingAnnotation.clear();
   mChoices.clear();
-  createNonExistingElement();
+  mpNonExistingElementLine = 0;
   createDefaultElement();
   mpStateElementRectangle = 0;
   mHasTransition = false;
@@ -1027,20 +1026,44 @@ bool Element::hasNonExistingClass()
   }
 }
 
+/*!
+ * \brief Element::boundingRect
+ * Reimplementation of QGraphicsItem::boundingRect()
+ * We only set the bounding rectangle for root element.
+ * So childrenBoundingRect() gets correct bounding rectangle for inherited items when called from Element::shape()
+ * \return
+ */
 QRectF Element::boundingRect() const
 {
-  if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
-    return coordinateSystem.getExtentRectangle();
+  if (mElementType == Element::Root) {
+    if (mpGraphicsView->getModelWidget()->isNewApi()) {
+      ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
+      return coordinateSystem.getExtentRectangle();
+    } else {
+      CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
+      ExtentAnnotation extent = coOrdinateSystem.getExtent();
+      qreal left = extent.at(0).x();
+      qreal bottom = extent.at(0).y();
+      qreal right = extent.at(1).x();
+      qreal top = extent.at(1).y();
+      return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
+    }
   } else {
-    CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
-    ExtentAnnotation extent = coOrdinateSystem.getExtent();
-    qreal left = extent.at(0).x();
-    qreal bottom = extent.at(0).y();
-    qreal right = extent.at(1).x();
-    qreal top = extent.at(1).y();
-    return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
+    return QRectF();
   }
+}
+
+/*!
+ * \brief Element::shape
+ * Reimplementation of QGraphicsItem::shape()
+ * Calls QGraphicsItem::childrenBoundingRect() to get the proper bounding rectangle for shape.
+ * \return
+ */
+QPainterPath Element::shape() const
+{
+  QPainterPath path;
+  path.addRect(childrenBoundingRect());
+  return path;
 }
 
 /*!
@@ -2002,10 +2025,9 @@ QString Element::getInheritedDerivedClassModifierValue(Element *pElement, QStrin
  */
 void Element::shapeAdded()
 {
-  mpNonExistingElementLine->setVisible(false);
+  deleteNonExistingElement();
   if (mElementType == Element::Root) {
-    mpDefaultElementRectangle->setVisible(false);
-    mpDefaultElementText->setVisible(false);
+    deleteDefaultElement();
   }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
@@ -2029,10 +2051,9 @@ void Element::shapeUpdated()
  */
 void Element::shapeDeleted()
 {
-  mpNonExistingElementLine->setVisible(false);
+  deleteNonExistingElement();
   if (mElementType == Element::Root) {
-    mpDefaultElementRectangle->setVisible(false);
-    mpDefaultElementText->setVisible(false);
+    deleteDefaultElement();
   }
   showNonExistingOrDefaultElementIfNeeded();
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -2292,8 +2313,21 @@ void Element::reDrawConnector(QPainter *painter)
  */
 void Element::createNonExistingElement()
 {
-  mpNonExistingElementLine = new LineAnnotation(this);
-  mpNonExistingElementLine->setVisible(false);
+  if (!mpNonExistingElementLine) {
+    mpNonExistingElementLine = new LineAnnotation(this);
+  }
+}
+
+/*!
+ * \brief Element::deleteNonExistingElement
+ * Delete the non-existing element.
+ */
+void Element::deleteNonExistingElement()
+{
+  if (mpNonExistingElementLine) {
+    mpNonExistingElementLine->deleteLater();
+    mpNonExistingElementLine = 0;
+  }
 }
 
 /*!
@@ -2302,10 +2336,29 @@ void Element::createNonExistingElement()
  */
 void Element::createDefaultElement()
 {
-  mpDefaultElementRectangle = new RectangleAnnotation(this);
-  mpDefaultElementRectangle->setVisible(false);
-  mpDefaultElementText = new TextAnnotation(this);
-  mpDefaultElementText->setVisible(false);
+  if (!mpDefaultElementRectangle) {
+    mpDefaultElementRectangle = new RectangleAnnotation(this);
+  }
+  if (!mpDefaultElementText) {
+    mpDefaultElementText = new TextAnnotation(this);
+  }
+}
+
+/*!
+ * \brief Element::deleteDefaultElement
+ * Delete default element.
+ */
+void Element::deleteDefaultElement()
+{
+  if (mpDefaultElementRectangle) {
+    mpDefaultElementRectangle->deleteLater();
+    mpDefaultElementRectangle = 0;
+  }
+
+  if (mpDefaultElementText) {
+    mpDefaultElementText->deleteLater();
+    mpDefaultElementText = 0;
+  }
 }
 
 /*!
@@ -2419,11 +2472,10 @@ void Element::drawModelicaElement()
   } else {
     if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
       if (mElementType == Element::Root) {
-        mpDefaultElementRectangle->setVisible(true);
-        mpDefaultElementText->setVisible(true);
+        createDefaultElement();
       }
     } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
-      mpNonExistingElementLine->setVisible(true);
+      createNonExistingElement();
     } else {
       createClassInheritedElements();
       createClassShapes();
@@ -2569,14 +2621,10 @@ void Element::drawInheritedElementsAndShapes()
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
         if (mElementType == Element::Root) {
-          assert(mpDefaultElementRectangle);
-          assert(mpDefaultElementText);
-          mpDefaultElementRectangle->setVisible(true);
-          mpDefaultElementText->setVisible(true);
+          createDefaultElement();
         }
       } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
-        assert(mpNonExistingElementLine);
-        mpNonExistingElementLine->setVisible(true);
+        createNonExistingElement();
       } else {
         createClassInheritedElements();
         createClassShapes();
@@ -2601,22 +2649,14 @@ void Element::drawInheritedElementsAndShapes()
  */
 void Element::showNonExistingOrDefaultElementIfNeeded()
 {
-  mpNonExistingElementLine->setVisible(false);
-  if (mElementType == Element::Root) {
-    assert(mpDefaultElementRectangle);
-    assert(mpDefaultElementText);
-    mpDefaultElementRectangle->setVisible(false);
-    mpDefaultElementText->setVisible(false);
-  }
+  deleteNonExistingElement();
+  deleteDefaultElement();
+
   if (!hasShapeAnnotation(this)) {
     if (hasNonExistingClass()) {
-      assert(mpNonExistingElementLine);
-      mpNonExistingElementLine->setVisible(true);
+      createNonExistingElement();
     } else if (mElementType == Element::Root) {
-      assert(mpDefaultElementRectangle);
-      assert(mpDefaultElementText);
-      mpDefaultElementRectangle->setVisible(true);
-      mpDefaultElementText->setVisible(true);
+      createDefaultElement();
     }
   }
 }
@@ -4046,20 +4086,4 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
     return pos() + positionDifference;
   }
   return value;
-}
-
-/*!
- * \brief Element::mousePressEvent
- * The GraphicsView sets the Element under mouse object and then we use that to accept the mouse press event.
- * Only accept the mouse press event for the Element set by GraphicsView and ignore all others.
- * This allows us to select Element's by clicking on their drawn items instead of the bounding rectangle.
- * \param event
- */
-void Element::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-  if (mpGraphicsView->getElementUnderMouse() == this) {
-    QGraphicsItem::mousePressEvent(event);
-  } else {
-    event->ignore();
-  }
 }
