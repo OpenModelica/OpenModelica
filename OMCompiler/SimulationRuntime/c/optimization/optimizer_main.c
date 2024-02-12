@@ -37,7 +37,7 @@
 #include "simulation_data.h"
 #include "simulation/options.h"
 
-static inline void optimizationWithIpopt(OptData*optData);
+static inline int optimizationWithIpopt(OptData*optData);
 static inline void freeOptimizerData(OptData*optData);
 
 int runOptimizer(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
@@ -52,17 +52,19 @@ int runOptimizer(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
   initial_guess_optimizer(optData, solverInfo);
   allocate_der_struct(&optData->s, &optData->dim ,data, optData);
 
-  optimizationWithIpopt(optData);
+  const int res = optimizationWithIpopt(optData);
   res2file(optData, solverInfo, optData->ipop.vopt);
   freeOptimizerData(optData);
-  return 0;
+  if(res == 0 /*Solve_Succeeded*/ || res == 1 /*Solved_To_Acceptable_Level*/)
+    return 0;
+  return -1;
 }
 
 /*!
  *  run optimization with ipopt
  *  author: Vitalij Ruge
  **/
-static inline void optimizationWithIpopt(OptData*optData){
+static inline int optimizationWithIpopt(OptData*optData){
   IpoptProblem nlp = NULL;
 
   const int NV = optData->dim.NV;
@@ -218,6 +220,7 @@ static inline void optimizationWithIpopt(OptData*optData){
   if(res != 0 && !ACTIVE_STREAM(LOG_IPOPT))
     warningStreamPrint(LOG_STDOUT, 0, "No optimal solution found!\nUse -lv=LOG_IPOPT for more information.");
   FreeIpoptProblem(nlp);
+  return res;
 }
 
 
