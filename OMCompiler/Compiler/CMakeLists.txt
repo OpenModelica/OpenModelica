@@ -224,6 +224,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Ap
   target_compile_options(OpenModelicaCompiler PRIVATE -Wno-parentheses-equality)
 endif()
 
+# Silence GCC warnings about invalid reads of MetaModelica strings.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_compile_options(OpenModelicaCompiler PRIVATE -Wno-stringop-overread)
+endif()
+
 # There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
 target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
 

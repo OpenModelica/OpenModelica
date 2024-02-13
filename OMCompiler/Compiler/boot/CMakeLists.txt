@@ -45,6 +45,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Ap
   target_compile_options(bomc PRIVATE -Wno-parentheses-equality)
 endif()
 
+# Silence GCC warnings about invalid reads of MetaModelica strings.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_compile_options(bomc PRIVATE -Wno-stringop-overread)
+endif()
+
 # OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.
 # E.g., try translating the CodegenCpp* tpl files to mo files with
 # an omc compiled without large stack size. The tpl parser is quite recursive and will
