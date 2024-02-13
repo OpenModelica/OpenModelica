@@ -209,6 +209,7 @@ public:
   bool hasShapeAnnotation(Element *pElement);
   bool hasNonExistingClass();
   QRectF boundingRect() const override;
+  QPainterPath shape() const override;
   QRectF itemsBoundingRect();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   ModelInstance::Model *getModel() const {return mpModel;}
@@ -361,7 +362,9 @@ private:
   bool mActiveState;
   Element *mpBusComponent;
   void createNonExistingElement();
+  void deleteNonExistingElement();
   void createDefaultElement();
+  void deleteDefaultElement();
   void createStateElement();
   void drawInterfacePoints();
   void drawElement();
@@ -440,6 +443,7 @@ public slots:
   void showReplaceSubModelDialog();
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
+  // QGraphicsItem interface
 protected:
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };

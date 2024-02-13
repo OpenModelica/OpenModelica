@@ -1475,14 +1475,37 @@ namespace ModelInstance
 
   FlatModelica::Expression* Model::getVariableBinding(const QString &variableName)
   {
+    QString curName;
+    bool last;
+
+    if (variableName.contains("."))
+    {
+      curName = StringHandler::getFirstWordBeforeDot(variableName);
+      last = false;
+    }
+    else
+    {
+      curName = variableName;
+      last = true;
+    }
+
     foreach (auto pElement, mElements) {
       if (pElement->isComponent()) {
-        if (pElement->getName().compare(variableName) == 0) {
-          return &pElement->getBinding();
+        if (pElement->getName().compare(curName) == 0) {
+          if (last) {
+            return &pElement->getBinding();
+          } else {
+            if (!pElement->getModel()) {
+              return nullptr;
+            }
+            return pElement->getModel()->getVariableBinding(StringHandler::removeFirstWordAfterDot(variableName));
+          }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
         auto expression = pElement->getModel()->getVariableBinding(variableName);
-        if (expression) return expression;
+        if (expression) {
+          return expression;
+        }
       }
     }
 
@@ -2037,7 +2060,12 @@ namespace ModelInstance
   QString Component::getQualifiedName() const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      if (name.isEmpty()) {
+        return mName;
+      } else {
+        return name % "." % mName;
+      }
     } else {
       return mName;
     }
@@ -2119,7 +2147,12 @@ namespace ModelInstance
   QString ReplaceableClass::getQualifiedName() const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      if (name.isEmpty()) {
+        return mName;
+      } else {
+        return name % "." % mName;
+      }
     } else {
       return mName;
     }

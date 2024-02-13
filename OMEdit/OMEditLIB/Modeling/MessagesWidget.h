@@ -128,7 +128,6 @@ private:
   MessageWidget *mpNotificationMessageWidget;
   MessageWidget *mpWarningMessageWidget;
   MessageWidget *mpErrorMessageWidget;
-  QVector<QWidget*> mSimulationWidgetsVector;
 
   QStringList mSuppressMessagesList;
   QQueue<MessageItem> mPendingMessagesQueue;

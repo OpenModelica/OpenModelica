@@ -313,7 +313,7 @@ private:
   QComboBox *mpActivateAccessAnnotationsComboBox;
   QCheckBox *mpCreateBackupFileCheckbox;
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
-  QGroupBox *mpLibrariesBrowserGroupBox;
+  QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
   Label *mpLibraryIconTextLengthLabel;
@@ -717,6 +717,7 @@ public:
   QSpinBox* getOutputSizeSpinBox() {return mpOutputSizeSpinBox;}
   QCheckBox* getResetMessagesNumberBeforeSimulationCheckBox() {return mpResetMessagesNumberBeforeSimulationCheckBox;}
   QCheckBox* getClearMessagesBrowserBeforeSimulationCheckBox() {return mpClearMessagesBrowserBeforeSimulationCheckBox;}
+  QCheckBox* getEnlargeMessageBrowserCheckBox() {return mpEnlargeMessageBrowserCheckBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
@@ -736,6 +737,7 @@ private:
   QSpinBox *mpOutputSizeSpinBox;
   QCheckBox *mpResetMessagesNumberBeforeSimulationCheckBox;
   QCheckBox *mpClearMessagesBrowserBeforeSimulationCheckBox;
+  QCheckBox *mpEnlargeMessageBrowserCheckBox;
   QGroupBox *mpFontColorsGroupBox;
   Label *mpFontFamilyLabel;
   QFontComboBox *mpFontFamilyComboBox;

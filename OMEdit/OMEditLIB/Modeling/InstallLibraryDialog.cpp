@@ -243,7 +243,7 @@ void InstallLibraryDialog::installLibrary()
     accept();
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("The library <b>%1</b> is not installed. See Messages Browser for any possible messages.").arg(library), Helper::ok);
+                          tr("The library <b>%1</b> is not installed. See message browser for any possible messages.").arg(library), Helper::ok);
     mpProgressLabel->hide();
     mpOkButton->setEnabled(true);
   }
@@ -307,7 +307,7 @@ void UpgradeInstalledLibrariesDialog::upgradeInstalledLibraries()
     accept();
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Fail to upgrade libraries. See Messages Browser for any possible messages."), Helper::ok);
+                          tr("Failed to upgrade libraries. See message browser for any possible messages."), Helper::ok);
     mpProgressLabel->hide();
     mpUpgradeButton->setEnabled(true);
   }

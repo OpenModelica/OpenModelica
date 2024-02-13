@@ -1092,7 +1092,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
-  // check clear messages browser before simulation option
+  // check clear message browser before simulation option
   if (OptionsDialog::instance()->getMessagesPage()->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->clearMessages();
   }
@@ -1427,7 +1427,7 @@ void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptio
     if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
       MainWindow::instance()->switchToPlottingPerspectiveSlot();
     } else {
-      // stay in current perspective and show variables browser
+      // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
   }
@@ -1962,7 +1962,7 @@ OpcUaClient* SimulationDialog::getOpcUaClient(int port)
  * \param simulationOptions
  * \param resultFileLastModifiedDateTime
  * Handles what should be done after the simulation process has finished.\n
- * Reads the result variables and inserts them into the variables browser.\n
+ * Reads the result variables and inserts them into the variable browser.\n
  */
 void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
 {
@@ -1997,7 +1997,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
       MainWindow::instance()->switchToPlottingPerspectiveSlot();
     } else {
-      // stay in current perspective and show variables browser
+      // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
 #if !defined(WITHOUT_OSG)

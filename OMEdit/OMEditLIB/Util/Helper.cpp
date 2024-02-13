@@ -319,7 +319,7 @@ QString Helper::viewDocumentationTip;
 QString Helper::dontShowThisMessageAgain;
 QString Helper::clickAndDragToResize;
 QString Helper::variables;
-QString Helper::variablesBrowser;
+QString Helper::variableBrowser;
 QString Helper::description;
 QString Helper::previous;
 QString Helper::next;
@@ -627,7 +627,7 @@ void Helper::initHelperVariables()
   Helper::dontShowThisMessageAgain = tr("Don't show this message again");
   Helper::clickAndDragToResize = tr("Click and drag to resize");
   Helper::variables = tr("Variables");
-  Helper::variablesBrowser = tr("Variables Browser");
+  Helper::variableBrowser = tr("Variables");
   Helper::description = tr("Description");
   Helper::previous = tr("Previous");
   Helper::next = tr("Next");
@@ -750,8 +750,8 @@ QString GUIMessages::getMessage(int type)
 {
   switch (type)
   {
-    case CHECK_MESSAGES_BROWSER:
-      return tr("Please check the Messages Browser for more error specific details.");
+    case CHECK_MESSAGE_BROWSER:
+      return tr("Please check the message browser for more error specific details.");
     case SAME_COMPONENT_NAME:
       return tr("A component with the name <b>%1</b> already exists or is a Modelica keyword. Please choose another name.");
     case MISMATCHED_CONNECTORS_IN_CONNECT:

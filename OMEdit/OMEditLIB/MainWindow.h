@@ -41,6 +41,8 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 
+#include "Util/StringHandler.h"
+
 #include <QtGlobal>
 #if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
 #error "OMEdit requires Qt 5.0.0 or newer"
@@ -58,6 +60,7 @@ extern "C" {
 #include <QMdiArea>
 #include <QShortcut>
 #include <QRadioButton>
+#include <QTimer>
 
 class OMCProxy;
 class TransformationsWidget;
@@ -132,7 +135,6 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
-
 #if !defined(WITHOUT_OSG)
   bool isThreeDViewerInitialized();
   ThreeDViewer* getThreeDViewer();
@@ -146,6 +148,7 @@ public:
   GitCommands* getGitCommands() {return mpGitCommands;}
   CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
   TraceabilityInformationURI* getTraceabilityInformationURI() {return mpTraceabilityInformationURI;}
+  QTabWidget* getMessagesTabWidget() {return mpMessagesTabWidget;}
   StatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -267,6 +270,7 @@ public:
   void addSystemLibraries();
   QString getLibraryIndexFilePath() const;
   void writeNewApiProfiling(const QString &str);
+  void animateMessagesTabWidgetForNewMessage(StringHandler::OpenModelicaErrors errorType);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -487,8 +491,10 @@ private:
   QToolBar *mpTLMSimulationToolbar;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+signals:
+  void stopMessagesTabWidgetAnimation();
 public slots:
-  void showMessagesBrowser();
+  void showMessageBrowser();
   void switchToWelcomePerspectiveSlot();
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
@@ -647,13 +653,20 @@ class MessageTab : public QWidget
 public:
   MessageTab(bool fixedTab);
   void setIndex(int index) {mIndex = index;}
+  void setColor(const QColor &color) {mColor = color;}
+  void startAnimation();
 private:
   int mIndex = -1;
+  QColor mColor;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
+  QTimer mTimer;
+  int mAnimationCounter = 0;
 public slots:
   void updateText(const QString &text);
   void updateProgress(QProgressBar *pProgressBar);
+  void stopAnimation();
+  void updateTabTextColor();
 signals:
   void clicked(int index);
   // QObject interface

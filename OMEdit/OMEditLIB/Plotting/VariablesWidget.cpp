@@ -564,7 +564,7 @@ VariablesTreeItem* VariablesTreeModel::findVariablesTreeItemOneLevel(const QStri
 
 /*!
  * \brief VariablesTreeModel::updateVariablesTreeItem
- * Triggers a view update for the VariablesTreeItem in the Variables Browser.
+ * Triggers a view update for the VariablesTreeItem in the Variable Browser.
  * \param pVariablesTreeItem
  */
 void VariablesTreeModel::updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem)
@@ -667,7 +667,7 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
 
 /*!
  * \brief VariablesTreeModel::insertVariablesItems
- * Inserts the variables in the Variables Browser.
+ * Inserts the variables in the Variable Browser.
  * \param fileName
  * \param filePath
  * \param variablesList
@@ -790,7 +790,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   if (simulationOptions.isValid() && simulationOptions.getCPUTime()) {
     variablesList.append("$cpuTime");
   }
-  /* Issue #7632 Variables Browser show non-existing variable
+  /* Issue #7632 Variable Browser show non-existing variable
    * Show the non-existing variables as we want to use them for resimulation e.g., string variables.
    * But don't make them checkable so user can't plot them.
    */
@@ -1291,7 +1291,7 @@ void VariablesTreeModel::setVariableTreeItemActive()
 
 /*!
  * \class VariableTreeProxyModel
- * \brief A sort filter proxy model for Variables Browser.
+ * \brief A sort filter proxy model for Variable Browser.
  */
 /*!
  * \brief VariableTreeProxyModel::VariableTreeProxyModel
@@ -1550,7 +1550,7 @@ void VariablesWidget::enableVisualizationControls(bool enable)
 
 /*!
  * \brief VariablesWidget::insertVariablesItemsToTree
- * Inserts the result variables in the Variables Browser.
+ * Inserts the result variables in the Variable Browser.
  * \param fileName
  * \param filePath
  * \param variablesList
@@ -2016,11 +2016,11 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pPlotWindow->plotArray(timePercent, pPlotCurve);
         }
         /* Ticket:4231
-         * Only update the variables browser value and unit when updating some curve not when checking/unchecking variable.
+         * Only update the variable browser value and unit when updating some curve not when checking/unchecking variable.
          */
         if (pPlotCurve) {
           /* Ticket:2250
-           * Update the value of Variables Browser display unit according to the display unit of already plotted curve.
+           * Update the value of Variable Browser display unit according to the display unit of already plotted curve.
            */
           pVariablesTreeItem->setData(3, pPlotCurve->getYDisplayUnit(), Qt::EditRole);
           QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getPreviousUnit(), pVariablesTreeItem->getDisplayUnit()).toString();
@@ -2815,7 +2815,7 @@ void VariablesWidget::showContextMenu(QPoint point)
 
 /*!
  * \brief VariablesWidget::findVariables
- * Finds the variables in the Variables Browser.
+ * Finds the variables in the Variable Browser.
  */
 void VariablesWidget::findVariables()
 {
