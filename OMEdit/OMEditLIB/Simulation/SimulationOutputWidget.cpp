@@ -602,8 +602,7 @@ void SimulationOutputWidget::compileModel()
 void SimulationOutputWidget::runPostCompilation()
 {
   const QString postCompilationCommand = OptionsDialog::instance()->getSimulationPage()->getPostCompilationCommand();
-  if (postCompilationCommand.size())
-  {
+  if (postCompilationCommand.size()) {
     mpPostCompilationProcess = new QProcess;
     mpPostCompilationProcess->setWorkingDirectory(mSimulationOptions.getWorkingDirectory());
     connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
@@ -623,9 +622,7 @@ void SimulationOutputWidget::runPostCompilation()
   #else
     mpPostCompilationProcess->start(postCompilationCommand);
   #endif
-  }
-  else
-  {
+  } else {
     // no post-compilation step, run directly the simulation
     if (!mSimulationOptions.getBuildOnly() && !mSimulationOptions.getLaunchAlgorithmicDebugger()) {
       runSimulationExecutable();
@@ -713,15 +710,17 @@ void SimulationOutputWidget::postCompilationProcessFinished(int exitCode, QProce
 
 void SimulationOutputWidget::postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  const QString progressStr = tr("Post compilation of %1 is finished.").arg(mSimulationOptions.getClassName());
-  mpProgressLabel->setText(progressStr);
+  QString progressStr;
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(1);
+    progressStr = tr("Post compilation of %1 finished.").arg(mSimulationOptions.getClassName());
   } else {
     mpProgressBar->setValue(0);
+    progressStr = tr("Post compilation of %1 failed.").arg(mSimulationOptions.getClassName());
   }
+  mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
 }
 
@@ -835,8 +834,7 @@ void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color
 
 void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  const QString progressStr = tr("Compilation of %1 is finished.").arg(mSimulationOptions.getClassName());
-  mpProgressLabel->setText(progressStr);
+  QString progressStr;
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
@@ -848,9 +846,12 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
       MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling);
     }
     MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
+    progressStr = tr("Compilation of %1 finished.").arg(mSimulationOptions.getClassName());
   } else {
     mpProgressBar->setValue(0);
+    progressStr = tr("Compilation of %1 failed.").arg(mSimulationOptions.getClassName());
   }
+  mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files
