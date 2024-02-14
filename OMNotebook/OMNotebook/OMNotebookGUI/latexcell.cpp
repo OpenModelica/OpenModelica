@@ -272,7 +272,12 @@ namespace IAEX {
     }
   }
 
- void LatexCell::createLatexCell()
+  void LatexCell::addToHighlighter()
+  {
+    emit textChanged(true);
+  }
+
+  void LatexCell::createLatexCell()
   {
 
     input_ = new MyTextEdit3( mainWidget() );
@@ -299,7 +304,7 @@ namespace IAEX {
     connect( input_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
     connect( input_, SIGNAL( eval() ), this, SLOT( eval() ));
 
-    //connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
+    connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
     connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
        this, SLOT( charFormatChanged(const QTextCharFormat &) ));
     connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
@@ -328,10 +333,12 @@ namespace IAEX {
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     connect( output_, SIGNAL( textChanged() ), this, SLOT(contentChanged()));
+    connect( output_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
     connect( output_, SIGNAL( clickOnCell() ), this, SLOT( clickEventOutput() ));
     connect( output_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
     connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
     connect(output_, SIGNAL(textChanged()), output_, SLOT(setModified()));
+    connect(output_, SIGNAL( eval() ), this, SLOT( eval() ));
 
     setOutputStyle();
 
@@ -992,6 +999,7 @@ void LatexCell::eval(bool silent)
     }
     input_->blockSignals(false);
     output_->blockSignals(false);
+    emit textChanged(true);
 }
 
 
