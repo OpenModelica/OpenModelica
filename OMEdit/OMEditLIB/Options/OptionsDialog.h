@@ -87,11 +87,11 @@ private:
 
   static OptionsDialog *mpInstance;
 public:
+  static bool isCreated() {return mpInstance != 0;}
   static OptionsDialog* instance() {
     create();
     return mpInstance;
   }
-  ~OptionsDialog() { mpInstance = nullptr; }
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();
