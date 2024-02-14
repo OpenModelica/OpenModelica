@@ -411,6 +411,20 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   }
   OptionsDialog::instance()->saveSimulationSettings();
   OptionsDialog::instance()->saveNFAPISettings();
+  // create tabs from MessagesWidget
+  QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
+  MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
+  for (int i = 0; i < pMessagesTabWidget->count(); ++i) {
+    createMessageTab(pMessagesTabWidget->tabText(i), true);
+    QWidget *pTabButtonWidget = mpMessagesTabWidget->tabBar()->tabButton(i, closeSide);
+    if (pTabButtonWidget) {
+      pTabButtonWidget->deleteLater();
+    }
+    mpMessagesTabWidget->tabBar()->setTabButton(i, closeSide, 0);
+  }
+  // since createMessageTab() changes the index so switch it back to 0.
+  mpMessagesTabWidget->setCurrentIndex(0);
+  mpMessagesTabWidget->setVisible(!mpMessagesDockWidget->isVisible());
   // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
@@ -451,20 +465,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start();
   }
-  // create tabs from MessagesWidget
-  QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
-  MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
-  for (int i = 0; i < pMessagesTabWidget->count(); ++i) {
-    createMessageTab(pMessagesTabWidget->tabText(i), true);
-    QWidget *pTabButtonWidget = mpMessagesTabWidget->tabBar()->tabButton(i, closeSide);
-    if (pTabButtonWidget) {
-      pTabButtonWidget->deleteLater();
-    }
-    mpMessagesTabWidget->tabBar()->setTabButton(i, closeSide, 0);
-  }
-  // since createMessageTab() changes the index so switch it back to 0.
-  mpMessagesTabWidget->setCurrentIndex(0);
-  mpMessagesTabWidget->setVisible(!mpMessagesDockWidget->isVisible());
 }
 
 /*!
