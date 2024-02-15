@@ -7,7 +7,7 @@
 setCommandLineOptions("--obfuscate=full --showAnnotations");
 loadString("
   model M
-    Real x annotation(__OpenModelica_tearingSelect = always);
+    Real x annotation(__OpenModelica_tearingSelect = TearingSelect.always);
   end M;
 ");
 
@@ -17,7 +17,7 @@ instantiateModel(M); getErrorString();
 // true
 // true
 // "class n0
-//   Real n1 annotation(__OpenModelica_tearingSelect = always);
+//   Real n1 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
 // end n0;
 // "
 // ""

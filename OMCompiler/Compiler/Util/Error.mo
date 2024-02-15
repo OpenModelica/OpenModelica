@@ -893,6 +893,10 @@ public constant ErrorTypes.Message ELEMENT_REPLACEABLE_NOT_ALLOWED = ErrorTypes.
   Gettext.gettext("'%s' may not be replaceable."));
 public constant ErrorTypes.Message INVALID_NEGATIVE_POW = ErrorTypes.MESSAGE(409, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid operation %s ^ %s, exponent must be an Integer when the base is negative."));
+public constant ErrorTypes.Message DEPRECATED_EXPRESSION = ErrorTypes.MESSAGE(411, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("'%s' is deprecated, use '%s' instead."));
+public constant ErrorTypes.Message UNKNOWN_ANNOTATION_VALUE = ErrorTypes.MESSAGE(412, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("Unknown value '%s' for annotation '%s'"));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

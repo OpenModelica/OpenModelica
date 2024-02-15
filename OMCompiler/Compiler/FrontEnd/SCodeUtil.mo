@@ -3347,6 +3347,16 @@ algorithm
   end match;
 end hasBooleanNamedAnnotationInComponent;
 
+public function optCommentAnnotation
+  input Option<SCode.Comment> cmt;
+  output Option<SCode.Annotation> ann;
+algorithm
+  ann := match cmt
+    case SOME(SCode.COMMENT(annotation_ = ann)) then ann;
+    else NONE();
+  end match;
+end optCommentAnnotation;
+
 public function optCommentHasBooleanNamedAnnotation
 "check if the named annotation is present and has value true"
   input Option<SCode.Comment> comm;

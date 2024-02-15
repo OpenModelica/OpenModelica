@@ -1,5 +1,5 @@
 model tearingSelect2
-   Real x1 annotation(__OpenModelica_tearingSelect = avoid);
+   Real x1 annotation(__OpenModelica_tearingSelect = TearingSelect.avoid);
    Real x2;
    Real x3;
    Real x4;
