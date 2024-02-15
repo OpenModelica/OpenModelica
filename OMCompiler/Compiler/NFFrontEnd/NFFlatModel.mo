@@ -767,6 +767,7 @@ public
 
           cref.subscripts := list(Subscript.mapShallowExp(s,
             function obfuscateExp(obfuscationMap = obfuscationMap)) for s in cref.subscripts);
+          cref.restCref := obfuscateCref(cref.restCref, obfuscationMap);
         then
           ();
 
