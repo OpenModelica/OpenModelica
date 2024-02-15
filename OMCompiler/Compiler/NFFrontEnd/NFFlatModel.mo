@@ -744,21 +744,32 @@ public
   function obfuscateCref
     input output ComponentRef cref;
     input ObfuscationMap obfuscationMap;
+    output Boolean insideRecord = false;
   protected
     Option<String> name;
+    ComponentRef rest_cref;
   algorithm
     () := match cref
       case ComponentRef.CREF()
         algorithm
-          name := UnorderedMap.get(cref.node, obfuscationMap);
+          (rest_cref, insideRecord) := obfuscateCref(cref.restCref, obfuscationMap);
+          cref.restCref := rest_cref;
 
-          if isSome(name) then
-            cref.node := InstNode.rename(Util.getOption(name), cref.node);
+          // Only obfuscate variables that do not belong to a record instance,
+          // record field names need to be kept to keep them consistent with the
+          // record constructors.
+          if not insideRecord then
+            name := UnorderedMap.get(cref.node, obfuscationMap);
+
+            if isSome(name) then
+              cref.node := InstNode.rename(Util.getOption(name), cref.node);
+            end if;
           end if;
+
+          insideRecord := InstNode.isRecord(cref.node);
 
           cref.subscripts := list(Subscript.mapShallowExp(s,
             function obfuscateExp(obfuscationMap = obfuscationMap)) for s in cref.subscripts);
-          cref.restCref := obfuscateCref(cref.restCref, obfuscationMap);
         then
           ();
 
