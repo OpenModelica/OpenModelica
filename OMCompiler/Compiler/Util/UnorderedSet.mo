@@ -551,8 +551,8 @@ public
     "Takes a list of elements and returns a list with duplicates removed, so that
      each element in the new list is unique."
     input list<T> inList;
-    input UnorderedSet.Hash hashFunc;
-    input UnorderedSet.KeyEq keyEqFunc;
+    input Hash hashFunc;
+    input KeyEq keyEqFunc;
     output list<T> outList = toList(fromList(inList, hashFunc, keyEqFunc));
   end unique_list;
 
@@ -574,6 +574,74 @@ public
       add(e, set);
     end for;
   end union;
+
+  function union_list
+    "pass the hash and equality function if the list is empty"
+    input list<UnorderedSet<T>> set_lst;
+    input Hash hashFunc;
+    input KeyEq keyEqFunc;
+    output UnorderedSet<T> set;
+  protected
+    list<UnorderedSet<T>> rest;
+  algorithm
+    if listEmpty(set_lst) then
+      set := new<T>(hashFunc, keyEqFunc);
+    else
+      // determine the biggest set to make sure we always add to it
+      (set, rest) := extractFromLst(set_lst, intGt);
+      for tmp in rest loop
+        set := union(set, tmp);
+      end for;
+    end if;
+  end union_list;
+
+  function intersection
+    "pass the hash and equality function to create an empty list"
+    input UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+    output UnorderedSet<T> set;
+  protected
+    UnorderedSet<T> set_small, set_big;
+    list<T> acc = {};
+  algorithm
+    if Mutable.access(set1.size) > Mutable.access(set2.size) then
+      set_small := set2;
+      set_big   := set1;
+    else
+      set_small := set1;
+      set_big   := set2;
+    end if;
+    for t in toList(set_small) loop
+      if contains(t, set_big) then
+        acc := t :: acc;
+      end if;
+    end for;
+    set := fromList(acc, set1.hashFn, set1.eqFn);
+  end intersection;
+
+  function intersection_list
+    "pass the hash and equality function to create an empty list"
+    input list<UnorderedSet<T>> set_lst;
+    input Hash hashFunc;
+    input KeyEq keyEqFunc;
+    output UnorderedSet<T> set;
+  protected
+    UnorderedSet<T> set_small;
+    list<UnorderedSet<T>> rest;
+    list<T> acc = {};
+  algorithm
+    if not listEmpty(set_lst) then
+      // determine the smallest set to make sure we traverse the fewest elements
+      (set_small, rest) := extractFromLst(set_lst, intLt);
+      for t in toList(set_small) loop
+        if List.all(rest, function contains(key = t)) then
+          acc := t :: acc;
+        end if;
+      end for;
+    end if;
+    set := fromList(acc, hashFunc, keyEqFunc);
+  end intersection_list;
+
 protected
   function find
     "Tries to find a key in the set, returning the key as an option, and the
@@ -627,6 +695,36 @@ protected
     // Update the size of the set.
     Mutable.update(set.size, Mutable.access(set.size) + 1);
   end addKey;
+
+  function extractFromLst
+    "extracts a set from a list with smallest or biggest size
+    (use with intGt or intLt)
+    Note: input lst cannot be empty or else this fails!"
+    input list<UnorderedSet<T>> lst;
+    input size_compare func;
+    output UnorderedSet<T> single;
+    output list<UnorderedSet<T>> rest = {};
+  protected
+    partial function size_compare
+      input Integer i1;
+      input Integer i2;
+      output Boolean b;
+    end size_compare;
+    Integer size;
+    list<UnorderedSet<T>> tmp_lst;
+  algorithm
+      single :: tmp_lst := lst;
+      size := Mutable.access(single.size);
+      for tmp in tmp_lst loop
+        if func(Mutable.access(tmp.size), size) then
+          size := Mutable.access(single.size);
+          rest := single :: rest;
+          single := tmp;
+        else
+          rest := tmp :: rest;
+        end if;
+      end for;
+  end extractFromLst;
 
 annotation(__OpenModelica_Interface="util");
 end UnorderedSet;

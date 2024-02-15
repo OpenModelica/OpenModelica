@@ -270,9 +270,11 @@ public
     (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if not listEmpty(unmatched_vars) then
       err_str := getInstanceName()
-        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched Variables")
+        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + "|"
+        + intString(sum(Slice.size(v, BVariable.size) for v in unmatched_vars)) + ") Unmatched Variables")
         + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched Equations")
+        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
+        + intString(sum(Slice.size(e, Equation.size) for e in unmatched_eqns)) + ") Unmatched Equations")
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
       if Flags.isSet(Flags.BLT_DUMP) then
         if Util.isSome(mapping_opt) then

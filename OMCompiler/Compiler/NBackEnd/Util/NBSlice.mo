@@ -110,6 +110,18 @@ public
     output Boolean b = listEmpty(slice.indices);
   end isFull;
 
+  function size
+    input Slice<T> slice;
+    input sizeT func;
+    output Integer s;
+  algorithm
+    if listEmpty(slice.indices) then
+      s := func(slice.t);
+    else
+      s := listLength(slice.indices);
+    end if;
+  end size;
+
   function simplify
     "only to be used for unordered purposes!
     lists of all indices are meaningful if they are not in the natural ascending order

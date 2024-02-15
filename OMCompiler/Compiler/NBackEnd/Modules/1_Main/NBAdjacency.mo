@@ -39,6 +39,7 @@ public
 
 protected
   // NF imports
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -820,8 +821,15 @@ public
       list<ComponentRef> dependencies, nonlinear_dependencies, remove_dependencies = {};
       BEquation.EquationAttributes attr;
       Pointer<Equation> derivative;
+      UnorderedMap<ComponentRef, Dependencies> dep_map;
+      UnorderedMap<ComponentRef, Solvability> sol_map;
     algorithm
       eqn := Pointer.access(eqn_ptr);
+
+      print(Equation.toString(eqn) + "\n");
+      (dep_map, sol_map) := collectDependenciesEquation(eqn);
+      print(UnorderedMap.toString(dep_map, ComponentRef.toString, Dependency.toString) + "\n");
+      print(UnorderedMap.toString(sol_map, ComponentRef.toString, Solvability.toString) + "\n\n");
 
       dependencies := match eqn
         case Equation.ALGORITHM() then list(cref for cref guard(UnorderedMap.contains(cref, map)) in listAppend(eqn.alg.inputs, eqn.alg.outputs));
@@ -1050,6 +1058,415 @@ public
       end if;
     end updateIntegerRow;
   end Matrix;
+
+  uniontype Dependency
+    "the dependency kind to show how a component reference occurs in an equation.
+    for each dimension there has to be one dependency kind."
+    record FULL   end FULL;
+    record SINGLE end SINGLE;
+
+    record SLICE
+      Integer start;
+      Integer step;
+      Integer stop;
+    end SLICE;
+
+    record SUBSET
+      list<Integer> set;
+    end SUBSET;
+
+    function toStringSingle
+      input Dependency dep;
+      output String str;
+    algorithm
+      str := match dep
+        case FULL()   then ":";
+        case SINGLE() then ".";
+        case SLICE()  then intString(dep.start) + ":" + intString(dep.step) + ":" + intString(dep.stop);
+        case SUBSET() then List.toString(dep.set, intString, "", "", ", ", "");
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown dependency kind."});
+        then fail();
+      end match;
+    end toStringSingle;
+
+    function toString
+      input Dependencies deps;
+      output String str = List.toString(deps, toStringSingle);
+    end toString;
+
+    function create
+      input tuple<Dimension, Dimension> dim_tpl;
+      output Dependency dep;
+    algorithm
+      dep := match dim_tpl
+        local
+          Dimension d1, d2;
+
+        case (Dimension.BOOLEAN(), Dimension.BOOLEAN()) then SINGLE();
+        case (Dimension.ENUM(), Dimension.ENUM()) then SINGLE();
+        case (Dimension.INTEGER(size = 1), Dimension.INTEGER(size = 1)) then SINGLE();
+        case (d1 as Dimension.INTEGER(), d2 as Dimension.INTEGER()) guard(d1.size == d2.size) then FULL();
+
+        case (d1, d2) algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled dimension tuple: "
+          + Dimension.toString(d1) + "-" + Dimension.toString(d2)});
+        then fail();
+        else algorithm
+        then fail();
+      end match;
+    end create;
+
+    function createList
+      input Type sub_ty;
+      input Type org_ty;
+      output list<Dependency> deps;
+    algorithm
+      if Type.isArray(sub_ty) then
+        deps := list(create(tpl) for tpl in List.zip(Type.arrayDims(sub_ty), Type.arrayDims(org_ty)));
+      elseif Type.isArray(org_ty) then
+        deps := List.fill(SINGLE(), Type.dimensionCount(org_ty));
+      else
+        deps := {FULL()};
+      end if;
+    end createList;
+  end Dependency;
+
+  type Dependencies = list<Dependency>;
+
+  uniontype Solvability
+    record UNKNOWN end UNKNOWN;
+    record UNSOLVABLE end UNSOLVABLE;
+    record IMPLICIT end IMPLICIT;
+
+    record EXPLICIT_NONLINEAR
+      Boolean unique "true if it has a unique solution when solved";
+    end EXPLICIT_NONLINEAR;
+
+    record EXPLICIT_LINEAR
+      Boolean param                           "true if we need to devide by a parameter to solve";
+      Option<UnorderedSet<ComponentRef>> vars "variables we need to devide by to solve";
+    end EXPLICIT_LINEAR;
+
+    function toString
+      input Solvability sol;
+      output String str;
+    protected
+      function sgnN
+        input Boolean b;
+        output String str = if b then "+" else "-";
+      end sgnN;
+      function sgnL
+        input Boolean b1;
+        input Boolean b2;
+        output String str = if b2 then "V" elseif b1 then "P" else "C";
+      end sgnL;
+    algorithm
+      str := match sol
+        case UNSOLVABLE()         then "XX";
+        case IMPLICIT()           then "II";
+        case EXPLICIT_NONLINEAR() then "N" + sgnN(sol.unique);
+        case EXPLICIT_LINEAR()    then "L" + sgnL(sol.param, Util.isSome(sol.vars));
+        case UNKNOWN()            then "??";
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown solvability kind."});
+        then fail();
+      end match;
+    end toString;
+
+    function strictness
+      input Solvability sol;
+      output Integer r;
+    algorithm
+      r := match sol
+        case UNSOLVABLE()                                   then 7;
+        case IMPLICIT()                                     then 6;
+        case EXPLICIT_NONLINEAR(unique = false)             then 5;
+        case EXPLICIT_NONLINEAR()                           then 4;
+        case EXPLICIT_LINEAR() guard(Util.isSome(sol.vars)) then 3;
+        case EXPLICIT_LINEAR(param = true)                  then 2;
+        case EXPLICIT_LINEAR()                              then 1;
+        case UNKNOWN()                                      then 0;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown solvability kind."});
+        then fail();
+      end match;
+    end strictness;
+
+    function update
+      "sets the solvability of a component reference if it is of
+      higher strictness than previously determined"
+      input ComponentRef cref;
+      input Solvability sol;
+      input UnorderedMap<ComponentRef, Solvability> map;
+    algorithm
+      if strictness(sol) > strictness(Util.getOptionOrDefault(UnorderedMap.get(cref, map), UNKNOWN())) then
+        UnorderedMap.add(cref, sol, map);
+      end if;
+    end update;
+  end Solvability;
+
+  function collectDependenciesEquation
+    input Equation eqn;
+    output UnorderedMap<ComponentRef, Dependencies> dep_map = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
+    output UnorderedMap<ComponentRef, Solvability> sol_map  = UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    _ := match eqn
+      case Equation.SCALAR_EQUATION() algorithm
+        _ := collectDependencies(eqn.lhs, dep_map, sol_map);
+        _ := collectDependencies(eqn.rhs, dep_map, sol_map);
+      then ();
+
+      case Equation.ARRAY_EQUATION() algorithm
+        _ := collectDependencies(eqn.lhs, dep_map, sol_map);
+        _ := collectDependencies(eqn.rhs, dep_map, sol_map);
+      then ();
+
+      case Equation.RECORD_EQUATION() algorithm
+        _ := collectDependencies(eqn.lhs, dep_map, sol_map);
+        _ := collectDependencies(eqn.rhs, dep_map, sol_map);
+      then ();
+
+      case Equation.ALGORITHM() algorithm
+        /*
+        // pass mapFunc because the function itself does not map
+        alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp));
+        if isSome(funcCrefOpt) then
+          SOME(funcCref) := funcCrefOpt;
+          // ToDo referenceEq for lists?
+          //alg.inputs := List.map(alg.inputs, funcCref);
+          alg.outputs := List.map(alg.outputs, funcCref);
+        end if;
+        eq.alg := alg;
+        */
+      then ();
+
+      case Equation.IF_EQUATION() algorithm
+        /*
+        ifEqBody := IfEquationBody.map(eq.body, funcExp, funcCrefOpt, mapFunc);
+        if not referenceEq(ifEqBody, eq.body) then
+          eq.body := ifEqBody;
+        end if;
+        */
+      then ();
+
+      case Equation.FOR_EQUATION() algorithm
+        /*
+        iter := Iterator.map(eq.iter, funcExp, funcCrefOpt, mapFunc);
+        if not referenceEq(iter, eq.iter) then
+          eq.iter := iter;
+        end if;
+        eq.body := list(map(body_eqn, funcExp, funcCrefOpt) for body_eqn in eq.body);
+        */
+      then ();
+
+      case Equation.WHEN_EQUATION() algorithm
+        /*
+        whenEqBody := WhenEquationBody.map(eq.body, funcExp, funcCrefOpt, mapFunc);
+        if not referenceEq(whenEqBody, eq.body) then
+          eq.body := whenEqBody;
+        end if;
+        */
+      then ();
+      else ();
+    end match;
+  end collectDependenciesEquation;
+
+  /*
+  input map cref -> list<dependency>
+  input map cref -> solvability
+
+  output set cref
+  */
+
+  function collectDependencies
+    input Expression exp;
+    input UnorderedMap<ComponentRef, Dependencies> dep_map;
+    input UnorderedMap<ComponentRef, Solvability> sol_map;
+    output UnorderedSet<ComponentRef> set;
+  algorithm
+    set := match exp
+      local
+        list<Dependency> deps;
+        UnorderedSet<ComponentRef> set1, set2, inter;
+        list<UnorderedSet<ComponentRef>> sets = {}, sets_inv = {};
+        Expression call_exp;
+        Call call;
+
+      // ALL todo:
+      case Expression.CREF() algorithm
+        deps := Dependency.createList(ComponentRef.getSubscriptedType(exp.cref), ComponentRef.getSubscriptedType(ComponentRef.stripSubscriptsAll(exp.cref)));
+        UnorderedMap.add(exp.cref, deps, dep_map);
+        Solvability.update(exp.cref, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
+      then UnorderedSet.fromList({exp.cref}, ComponentRef.hash, ComponentRef.isEqual);
+
+      case Expression.ARRAY(literal = false) algorithm
+        // ToDo: need to update dependencies here
+        for elem in exp.elements loop
+          sets := collectDependencies(elem, dep_map, sol_map) :: sets;
+        end for;
+      then UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
+
+      case Expression.BINARY() algorithm
+        set1 := collectDependencies(exp.exp1, dep_map, sol_map);
+        set2 := collectDependencies(exp.exp2, dep_map, sol_map);
+        inter := UnorderedSet.intersection(set1, set2);
+        // + * array/vector/scalar/record
+      then UnorderedSet.union(set1, set2);
+
+      case Expression.MULTARY() algorithm
+        for arg in exp.arguments loop
+          sets := collectDependencies(arg, dep_map, sol_map) :: sets;
+        end for;
+        for arg in exp.inv_arguments loop
+          sets_inv := collectDependencies(arg, dep_map, sol_map) :: sets_inv;
+        end for;
+      then UnorderedSet.union_list(listAppend(sets, sets_inv), ComponentRef.hash, ComponentRef.isEqual);
+
+      // for reductions set the dependency to full
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION(exp = call_exp)) algorithm
+        set := collectDependencies(call_exp, dep_map, sol_map);
+      then set;
+
+      // for array constructors replace all iterators (temporarily)
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR(exp = call_exp)) algorithm
+        for iter in call.iters loop
+          call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
+        end for;
+      then collectDependencies(call_exp, dep_map, sol_map);
+
+
+
+  /*
+  record BINARY "Binary operations, e.g. a+4"
+    Expression exp1;
+    Operator operator;
+    Expression exp2;
+  end BINARY;
+
+
+  record MULTARY
+    "Multary expressions with the same operator, e.g. a+b+c
+    An empty list has to be interpreted as the neutral element of the operator space"
+    list<Expression> arguments      "arguments that are chained with the operator (+, *)";
+    list<Expression> inv_arguments  "arguments that are chained with the inverse operator (-, :)";
+    Operator operator               "Can only be + or * (commutative)";
+  end MULTARY;
+
+  record RANGE
+    Type ty;
+    Expression start;
+    Option<Expression> step;
+    Expression stop;
+  end RANGE;
+
+  record TUPLE
+    Type ty;
+    list<Expression> elements;
+  end TUPLE;
+
+  record RECORD
+    Path path; // Maybe not needed since the type contains the name. Prefix?
+    Type ty;
+    list<Expression> elements;
+  end RECORD;
+
+  record CALL
+    Call call;
+  end CALL;
+
+  record SIZE
+    Expression exp;
+    Option<Expression> dimIndex;
+  end SIZE;
+
+  record END
+  end END;
+
+
+
+  record UNARY "Unary operations, -(4x)"
+    Operator operator;
+    Expression exp;
+  end UNARY;
+
+  record LBINARY "Logical binary operations: and, or"
+    Expression exp1;
+    Operator operator;
+    Expression exp2;
+  end LBINARY;
+
+  record LUNARY "Logical unary operations: not"
+    Operator operator;
+    Expression exp;
+  end LUNARY;
+
+  record RELATION "Relation, e.g. a <= 0"
+    Expression exp1;
+    Operator operator;
+    Expression exp2;
+  end RELATION;
+
+
+  record IF
+    Type ty;
+    Expression condition;
+    Expression trueBranch;
+    Expression falseBranch;
+  end IF;
+
+  record CAST
+    Type ty;
+    Expression exp;
+  end CAST;
+
+  record BOX "MetaModelica boxed value"
+    Expression exp;
+  end BOX;
+
+  record UNBOX "MetaModelica value unboxing (similar to a cast)"
+    Expression exp;
+    Type ty;
+  end UNBOX;
+
+  record SUBSCRIPTED_EXP
+    Expression exp;
+    list<Subscript> subscripts;
+    Type ty;
+    Boolean split;
+  end SUBSCRIPTED_EXP;
+
+  record TUPLE_ELEMENT
+    Expression tupleExp;
+    Integer index;
+    Type ty;
+  end TUPLE_ELEMENT;
+
+  record RECORD_ELEMENT
+    Expression recordExp;
+    Integer index;
+    String fieldName;
+    Type ty;
+  end RECORD_ELEMENT;
+
+  record MUTABLE
+    Mutable<Expression> exp;
+  end MUTABLE;
+
+  record EMPTY
+    Type ty;
+  end EMPTY;
+
+  record PARTIAL_FUNCTION_APPLICATION
+    ComponentRef fn;
+    list<Expression> args;
+    list<String> argNames;
+    Type ty;
+  end PARTIAL_FUNCTION_APPLICATION;
+    */
+      else UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    end match;
+  end collectDependencies;
 
   annotation(__OpenModelica_Interface="backend");
 end NBAdjacency;
