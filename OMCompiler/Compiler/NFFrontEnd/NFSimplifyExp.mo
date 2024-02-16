@@ -928,11 +928,11 @@ algorithm
       outExp := Expression.BINARY(Expression.negate(exp2), op, Expression.negate(exp1));
     else
       // (-e1) - e2 = -(e1 + e2)
-      outExp := Expression.negate(Expression.BINARY(Expression.negate(exp1), Operator.invert(op), exp2));
+      outExp := Expression.negate(simplifyBinaryAdd(Expression.negate(exp1), Operator.invert(op), exp2));
     end if;
   elseif Expression.isNegated(exp2) then
     // e1 - (-e2) = e1 + e2
-    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
+    outExp := simplifyBinaryAdd(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
