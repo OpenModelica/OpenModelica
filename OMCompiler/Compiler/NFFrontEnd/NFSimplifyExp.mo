@@ -891,9 +891,12 @@ algorithm
   elseif Expression.isZero(exp2) then
     // e + 0 = e
     outExp := exp1;
+  elseif Expression.isNegated(exp1) then
+    // (-e1) + e2 = e2 - e1
+    outExp := simplifyBinarySub(exp2, Operator.invert(op), Expression.negate(exp1));
   elseif Expression.isNegated(exp2) then
-    // e1 + -(e2) = e1 - e2
-    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
+    // e1 + (-e2) = e1 - e2
+    outExp := simplifyBinarySub(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -907,12 +910,15 @@ function simplifyBinarySub
 algorithm
   if Expression.isZero(exp1) then
     // 0 - e = -e
-    outExp := Expression.UNARY(Operator.makeUMinus(Operator.typeOf(op)), exp2);
+    outExp := Expression.negate(exp2);
   elseif Expression.isZero(exp2) then
     // e - 0 = e
     outExp := exp1;
+  elseif Expression.isEqual(exp1, exp2) then
+    // e - e = 0
+    outExp := Expression.makeZero(Operator.typeOf(op));
   elseif Expression.isNegated(exp2) then
-    // e1 - -(e2) = e1 + e2
+    // e1 - (-e2) = e1 + e2
     outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
