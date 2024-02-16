@@ -54,7 +54,7 @@ end InStreamFlowThreshold;
 // equation
 //   a.s2.r = a.s3.r;
 //   a.s2.r = a.s1.r;
-//   (-a.s2.f) - a.s3.f - a.s1.f = 0.0;
+//   -(a.s2.f + a.s3.f + a.s1.f) = 0.0;
 //   a.s1.s = ($OMC$PositiveMax(a.s3.f, 2.0) * a.s3.s + $OMC$PositiveMax(a.s2.f, 2.0) * a.s2.s) / ($OMC$PositiveMax(a.s3.f, 2.0) + $OMC$PositiveMax(a.s2.f, 2.0)) " equation generated from stream connection";
 //   a.s3.s = ($OMC$PositiveMax(a.s1.f, 2.0) * a.s1.s + $OMC$PositiveMax(a.s2.f, 2.0) * a.s2.s) / ($OMC$PositiveMax(a.s1.f, 2.0) + $OMC$PositiveMax(a.s2.f, 2.0)) " equation generated from stream connection";
 //   a.s2.s = ($OMC$PositiveMax(a.s1.f, 2.0) * a.s1.s + $OMC$PositiveMax(a.s3.f, 2.0) * a.s3.s) / ($OMC$PositiveMax(a.s1.f, 2.0) + $OMC$PositiveMax(a.s3.f, 2.0)) " equation generated from stream connection";

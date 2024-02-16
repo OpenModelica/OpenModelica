@@ -47,9 +47,9 @@ end Condition6;
 //   Real c4.c2.f;
 // equation
 //   c2.c1.e = c3.c1.e;
-//   (-c2.c1.f) - c3.c1.f = 0.0;
+//   -(c2.c1.f + c3.c1.f) = 0.0;
 //   c2.c2.e = c4.c2.e;
-//   (-c2.c2.f) - c4.c2.f = 0.0;
+//   -(c2.c2.f + c4.c2.f) = 0.0;
 //   c2.c1.f = 0.0;
 //   c2.c2.f = 0.0;
 //   c3.c1.f = 0.0;

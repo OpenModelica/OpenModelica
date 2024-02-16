@@ -55,9 +55,9 @@ end Cardinality2;
 //   Integer R2.n_conn;
 // equation
 //   R1.p.v = R1.q.v;
-//   (-R1.p.i) - R1.q.i = 0.0;
+//   -(R1.p.i + R1.q.i) = 0.0;
 //   R2.p.v = R2.q.v;
-//   (-R2.p.i) - R2.q.i = 0.0;
+//   -(R2.p.i + R2.q.i) = 0.0;
 //   R1.p.v = p.v;
 //   p.i = 0.0;
 //   R1.p.i - p.i = 0.0;

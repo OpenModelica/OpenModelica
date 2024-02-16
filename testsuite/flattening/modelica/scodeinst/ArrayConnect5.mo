@@ -25,7 +25,7 @@ end ArrayConnect5;
 //   c1.e = c2.e;
 //   for $i1 in 1:2 loop
 //     for $i2 in 1:2 loop
-//       (-c1[$i1].f[$i2]) - c2[$i1].f[$i2] = 0.0;
+//       -(c1[$i1].f[$i2] + c2[$i1].f[$i2]) = 0.0;
 //     end for;
 //   end for;
 //   for $i1 in 1:2 loop

@@ -1306,7 +1306,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.43429448190325176 * ((-2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2)) + 5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//     dRe_ddp := 0.43429448190325176 * (5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - 2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2));
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Examples.BranchingDynamicPipes.pipe1.flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -1935,7 +1935,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.43429448190325176 * ((-2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2)) + 5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//     dRe_ddp := 0.43429448190325176 * (5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - 2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2));
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Examples.BranchingDynamicPipes.pipe2.flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -2812,7 +2812,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.43429448190325176 * ((-2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2)) + 5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//     dRe_ddp := 0.43429448190325176 * (5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - 2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2));
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Examples.BranchingDynamicPipes.pipe3.flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -3455,7 +3455,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.43429448190325176 * ((-2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2)) + 5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//     dRe_ddp := 0.43429448190325176 * (5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - 2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2));
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Examples.BranchingDynamicPipes.pipe4.flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -3694,7 +3694,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //     aux2 := t ^ 2.0;
 //     h00 := 2.0 * aux3 - 3.0 * aux2 + 1.0;
 //     h10 := aux3 - 2.0 * aux2 + t;
-//     h01 := (-2.0 * aux3) + 3.0 * aux2;
+//     h01 := 3.0 * aux2 - 2.0 * aux3;
 //     h11 := aux3 - aux2;
 //     h00d := 6.0 * (aux2 - t);
 //     h10d := 3.0 * aux2 - 4.0 * t + 1.0;
@@ -3885,7 +3885,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   input Real dT \"Temperature derivative\";
 //   output Real cp_der \"Derivative of specific heat capacity\";
 // algorithm
-//   cp_der := dT * data.R / (T * T * T) * ((-2.0 * data.alow[1]) + T * ((-data.alow[2]) + T * T * (data.alow[4] + T * (2.0 * data.alow[5] + T * (3.0 * data.alow[6] + 4.0 * data.alow[7] * T)))));
+//   cp_der := dT * data.R / (T * T * T) * (T * (T * T * (data.alow[4] + T * (2.0 * data.alow[5] + T * (3.0 * data.alow[6] + 4.0 * data.alow[7] * T))) - data.alow[2]) - 2.0 * data.alow[1]);
 // end Modelica.Media.IdealGases.Common.Functions.cp_Tlow_der;
 //
 // function Modelica.Media.IdealGases.Common.Functions.h_Tlow \"Compute specific enthalpy, low T region; reference is decided by the
@@ -3897,7 +3897,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   input Real h_off(quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0 \"User defined offset for reference enthalpy, if referenceChoice = UserDefined\";
 //   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\") \"Specific enthalpy at temperature T\";
 // algorithm
-//   h := data.R * ((-data.alow[1]) + T * (data.blow[1] + data.alow[2] * log(T) + T * (data.alow[3] + T * (0.5 * data.alow[4] + T * (0.3333333333333333 * data.alow[5] + T * (0.25 * data.alow[6] + 0.2 * data.alow[7] * T)))))) / T + (if exclEnthForm then -data.Hf else 0.0) + (if refChoice == Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt0K then data.H0 else 0.0) + (if refChoice == Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined then h_off else 0.0);
+//   h := data.R * (T * (data.blow[1] + data.alow[2] * log(T) + T * (data.alow[3] + T * (0.5 * data.alow[4] + T * (0.3333333333333333 * data.alow[5] + T * (0.25 * data.alow[6] + 0.2 * data.alow[7] * T))))) - data.alow[1]) / T + (if exclEnthForm then -data.Hf else 0.0) + (if refChoice == Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.ZeroAt0K then data.H0 else 0.0) + (if refChoice == Modelica.Media.Interfaces.Choices.ReferenceEnthalpy.UserDefined then h_off else 0.0);
 // end Modelica.Media.IdealGases.Common.Functions.h_Tlow;
 //
 // function Modelica.Media.IdealGases.Common.Functions.h_Tlow_der \"Compute specific enthalpy, low T region; reference is decided by the
