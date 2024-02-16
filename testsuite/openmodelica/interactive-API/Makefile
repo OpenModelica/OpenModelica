@@ -77,6 +77,7 @@ MoveClass.mos \
 Obfuscation1.mos \
 Obfuscation2.mos \
 Obfuscation3.mos \
+Obfuscation5.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
 refactorGraphAnn1.mos \

@@ -1,0 +1,46 @@
+// name: Obfuscation5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+setCommandLineOptions("--obfuscate=protected");
+loadString("
+   record R
+    Real x;
+    Real y;
+  end R;
+
+  model M
+    R r1;
+  protected
+    R r2;
+  equation
+    r1 = R(1, 2);
+    r2 = R(3, 4);
+  end M;
+");
+
+instantiateModel(M); getErrorString();
+
+// Result:
+// true
+// true
+// "function R \"Automatically generated record constructor for R\"
+//   input Real x;
+//   input Real y;
+//   output R res;
+// end R;
+//
+// class M
+//   Real r1.x;
+//   Real r1.y;
+//   protected Real n1.x;
+//   protected Real n1.y;
+// equation
+//   r1 = R(1.0, 2.0);
+//   n1 = R(3.0, 4.0);
+// end M;
+// "
+// ""
+// endResult
