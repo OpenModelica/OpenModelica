@@ -330,7 +330,11 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     mpUnitComboBox->setCurrentIndex(1);
   }
   connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
-  mpDisplayUnitFinalEachMenuButton = new FinalEachToolButton(mpModelInstanceElement->getDimensions().isArray());
+  /* Issue #11715.
+   * Do not add each menu item to displayUnit modifiers.
+   * We will automatically add the each prefix for arrays.
+   */
+  mpDisplayUnitFinalEachMenuButton = new FinalEachToolButton(false);
   // comment
   const QString comment = mpModelInstanceElement->getComment();
   mpCommentLabel = new Label(comment);
@@ -1844,7 +1848,10 @@ void ElementParameters::updateElementParameters()
       // if displayUnit is changed OR if we already have the displayUnit modifier then set it
       if (pParameter->getUnitComboBox()->isEnabled() && !unit.isEmpty() && (pParameter->hasDisplayUnit() || pParameter->getDisplayUnit().compare(unit) != 0)) {
         QString displayUnitModifier;
-        if (pParameter->getDisplayUnitFinalEachMenu()->isEach()) {
+        /* Issue #11715.
+         * Add each prefix if parameter is an array.
+         */
+        if (pParameter->getModelInstanceElement()->getDimensions().isArray()) {
           displayUnitModifier.append("each ");
         }
         if (pParameter->getDisplayUnitFinalEachMenu()->isFinal()) {
