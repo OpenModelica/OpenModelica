@@ -1843,12 +1843,12 @@ void MainWindow::animateMessagesTabWidgetForNewMessage(StringHandler::OpenModeli
   }
 
   if (pMessageTab) {
-    pMessageTab->startAnimation();
+    pMessageTab->markTabChanged();
   }
 
   MessageTab *pAllMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(0));
   if (pAllMessageTab) {
-    pAllMessageTab->startAnimation();
+    pAllMessageTab->markTabChanged();
   }
 }
 
@@ -3651,7 +3651,7 @@ void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
 void MainWindow::messagesTabBarClicked(int index)
 {
   showMessageBrowser();
-  emit stopMessagesTabWidgetAnimation();
+  emit resetMessagesTabWidgetNames();
   MessagesWidget::instance()->getMessagesTabWidget()->setCurrentIndex(index);
 }
 
@@ -5153,13 +5153,12 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
  */
 MessageTab *MainWindow::createMessageTab(const QString &name, bool fixedTab)
 {
-  MessageTab *pMessageTab = new MessageTab(fixedTab);
+  MessageTab *pMessageTab = new MessageTab(name, fixedTab);
   int index = mpMessagesTabWidget->addTab(pMessageTab, name);
   pMessageTab->setIndex(index);
-  pMessageTab->setColor(mpMessagesTabWidget->tabBar()->tabTextColor(index));
   mpMessagesTabWidget->setCurrentIndex(index);
   connect(pMessageTab, SIGNAL(clicked(int)), mpMessagesTabWidget, SIGNAL(tabBarClicked(int)));
-  connect(this, SIGNAL(stopMessagesTabWidgetAnimation()), pMessageTab, SLOT(stopAnimation()));
+  connect(this, SIGNAL(resetMessagesTabWidgetNames()), pMessageTab, SLOT(resetTabText()));
   return pMessageTab;
 }
 
@@ -5361,9 +5360,10 @@ void AboutOMEditDialog::crashTest()
  * \brief MessageTab::MessageTab
  * \param fixedTab
  */
-MessageTab::MessageTab(bool fixedTab)
+MessageTab::MessageTab(const QString &name, bool fixedTab)
  : QWidget()
 {
+  mName = name;
   mpProgressLabel = new Label;
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpProgressLabel->installEventFilter(this);
@@ -5373,26 +5373,23 @@ MessageTab::MessageTab(bool fixedTab)
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   mpProgressBar->installEventFilter(this);
-  // timer to change tab color
-  mTimer.setInterval(500); // 0.5 sec
-  connect(&mTimer, SIGNAL(timeout()), SLOT(updateTabTextColor()));
   // layout
-  QGridLayout *pMainLayout = new QGridLayout;
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
-  pMainLayout->addWidget(mpProgressLabel, 0, 0);
+  pMainLayout->addWidget(mpProgressLabel);
   if (!fixedTab) {
-    pMainLayout->addWidget(mpProgressBar, 0, 1);
+    pMainLayout->addWidget(mpProgressBar);
   }
   setLayout(pMainLayout);
 }
 
 /*!
- * \brief MessageTab::startAnimation
- * Starts the timer.
+ * \brief MessageTab::markTabChanged
+ * Mark the tab changed by adding an asterisk to its name.
  */
-void MessageTab::startAnimation()
+void MessageTab::markTabChanged()
 {
-  mTimer.start();
+  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabText(mIndex, QString(mName).append("*"));
 }
 
 /*!
@@ -5418,29 +5415,12 @@ void MessageTab::updateProgress(QProgressBar *pProgressBar)
 }
 
 /*!
- * \brief MessageTab::stopAnimation
- * Stops the timer.
- * Sets the animation counter to 0 and resets the tab text color.
+ * \brief MessageTab::resetTabText
+ * Resets the tab text to its original text.
  */
-void MessageTab::stopAnimation()
+void MessageTab::resetTabText()
 {
-  mTimer.stop();
-  mAnimationCounter = 0;
-  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabTextColor(mIndex, mColor);
-}
-
-/*!
- * \brief MessageTab::updateTabTextColor
- * Updates the tab text color.
- */
-void MessageTab::updateTabTextColor()
-{
-  mAnimationCounter++;
-  // We can stop the animation after certain number of times. But for now we use MainWindow::stopMessagesTabWidgetAnimation() signal.
-//  if (mCount > 10) {
-//    return;
-//  }
-  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabTextColor(mIndex, (mAnimationCounter % 2 == 0) ? mColor : Qt::transparent);
+  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabText(mIndex, mName);
 }
 
 /*!
