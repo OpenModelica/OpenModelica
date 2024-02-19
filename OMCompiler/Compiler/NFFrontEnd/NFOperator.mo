@@ -888,9 +888,22 @@ public
       case Op.SUB_ARRAY_SCALAR  then true;
       case Op.DIV_SCALAR_ARRAY  then true;
       case Op.DIV_ARRAY_SCALAR  then true;
-      else false;
+                                else false;
     end match;
   end isSoftCommutative;
+
+  function isRepetition
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.ADD_SCALAR_ARRAY  then true;
+      case Op.ADD_ARRAY_SCALAR  then true;
+      case Op.MUL_SCALAR_ARRAY  then true;
+      case Op.MUL_ARRAY_SCALAR  then true;
+                                else false;
+    end match;
+  end isRepetition;
 
   function isCombineable
     input Operator op1;
