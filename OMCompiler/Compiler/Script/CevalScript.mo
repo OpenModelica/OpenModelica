@@ -2972,7 +2972,8 @@ algorithm
   if (System.regularFileExists(filename)) then
     if (StringUtil.endsWith(filename, ".mol")) then
       workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
-      // use ripunzip on Windows as is twice as fast
+      // use ripunzip (https://github.com/google/ripunzip) on Windows as is twice as fast
+      // TODO on Linux we should check if it is in the path
       cmdPrefix := if isWindows then "ripunzip.exe -q unzip-file -d " else "unzip -q -o -d ";
       cmd := cmdPrefix + "\"" + workdir + "\" \"" + filename + "\"";
       if (skipUnzip or 0 == System.systemCall(cmd)) then
