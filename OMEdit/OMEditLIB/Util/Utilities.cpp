@@ -286,7 +286,13 @@ void Label::setText(const QString &text)
 {
   mText = text;
   setToolTip(text);
-  QLabel::setText(elidedText());
+  const QString text1 = elidedText();
+  // if text is empty OR if we get "..." i.e., QChar(0x2026) as text
+  if (text1.isEmpty() || text1.compare(QChar(0x2026)) == 0) {
+    QLabel::setText(mText);
+  } else {
+    QLabel::setText(text1);
+  }
 }
 
 QString Label::elidedText() const
