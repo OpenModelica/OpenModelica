@@ -2974,7 +2974,7 @@ algorithm
       workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
       // use ripunzip on Windows as is twice as fast
       cmdPrefix := if isWindows then "ripunzip.exe -q unzip-file -d " else "unzip -q -o -d ";
-      cmd := cmd + "\"" + workdir + "\" \"" +  filename + "\"";
+      cmd := cmdPrefix + "\"" + workdir + "\" \"" + filename + "\"";
       if (skipUnzip or 0 == System.systemCall(cmd)) then
         s1 := System.basename(filename);
         s2 := Util.removeLast4Char(s1);
