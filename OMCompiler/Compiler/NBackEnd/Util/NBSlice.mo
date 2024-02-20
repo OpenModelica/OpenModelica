@@ -1097,7 +1097,7 @@ protected
     list<Integer> values;
   algorithm
     replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
-    values := list(Expression.integerValue(SimplifyExp.simplify(rep, true)) for rep in replaced);
+    values := list(Expression.integerValue(SimplifyExp.simplifyDump(rep, true, getInstanceName())) for rep in replaced);
     ranges := List.zip(sizes, values);
   end resolveDimensionsSubscripts;
 

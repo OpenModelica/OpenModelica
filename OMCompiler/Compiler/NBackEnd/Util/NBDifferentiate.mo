@@ -858,7 +858,7 @@ public
         // d delta/dz
         (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
         // dt/dz - d delta/dz
-        ret2 := SimplifyExp.simplify(Expression.MULTARY({ret1}, {ret2}, addOp));
+        ret2 := SimplifyExp.simplifyDump(Expression.MULTARY({ret1}, {ret2}, addOp), true, getInstanceName());
         if Expression.isZero(ret2) then
           ret := Expression.makeZero(Expression.typeOf(arg1));
         else
@@ -1376,7 +1376,7 @@ public
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
-        diff_stmt.rhs := SimplifyExp.simplify(rhs, true);
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then {diff_stmt, stmt};
 
       // II. delegate differentiation to body and only return differentiated statement

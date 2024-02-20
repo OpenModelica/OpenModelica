@@ -124,7 +124,7 @@ public
           replace_exp := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           // add the new replacement rule
-          UnorderedMap.add(varName, SimplifyExp.simplify(replace_exp, true), replacements);
+          UnorderedMap.add(varName, SimplifyExp.simplifyDump(replace_exp, true, getInstanceName()), replacements);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
           fail();
