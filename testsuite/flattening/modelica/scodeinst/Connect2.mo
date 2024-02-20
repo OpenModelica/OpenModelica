@@ -23,7 +23,7 @@ end Connect2;
 //   Real c2.f;
 // equation
 //   c1.e = c2.e;
-//   (-c1.f) - c2.f = 0.0;
+//   -(c1.f + c2.f) = 0.0;
 //   c1.f = 0.0;
 //   c2.f = 0.0;
 // end Connect2;

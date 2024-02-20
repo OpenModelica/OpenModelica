@@ -47,7 +47,7 @@ end InStreamTwoInside;
 //   Real instream_a_s2;
 // equation
 //   a.s1.r = a.s2.r;
-//   (-a.s1.f) - a.s2.f = 0.0;
+//   -(a.s1.f + a.s2.f) = 0.0;
 //   a.s1.s = a.s2.s;
 //   a.s2.s = a.s1.s;
 //   a.s1.f = 0.0;

@@ -28,7 +28,7 @@ end ConnectorBalance9;
 // equation
 //   c1.e1 = c2.e1;
 //   c1.e2 = c2.e2;
-//   (-c1.f1) - c2.f1 = 0.0;
+//   -(c1.f1 + c2.f1) = 0.0;
 //   c1.f1 = 0.0;
 //   c2.f1 = 0.0;
 // end ConnectorBalance9;

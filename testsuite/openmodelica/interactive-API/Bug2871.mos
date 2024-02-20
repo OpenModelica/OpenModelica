@@ -135,7 +135,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 // {Line(true, {0.0, 0.0}, 0, {{0, 0}, {0, 20}}, {0, 127, 255}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}
 // {}
 // true
-// (0.0,200.0,0.0001,500,0.4)
+// (0.0,200.0,1e-4,500,0.4)
 // true
 // ""
 // "function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.ThermodynamicState \"Automatically generated record constructor for Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.ThermodynamicState\"
@@ -146,14 +146,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.setState_phX \"Return thermodynamic state from p, h, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 //   input Real[:] X(quantity = fill(\"MassFraction\", size(X, 1)), unit = fill(\"kg/kg\", size(X, 1)), min = fill(0.0, size(X, 1)), max = fill(1.0, size(X, 1)), nominal = fill(0.1, size(X, 1))) = {1.0} \"Mass fractions\";
 //   output Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.ThermodynamicState state \"Thermodynamic state record\";
 // algorithm
@@ -168,21 +168,21 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.dynamicViscosity \"Return dynamic viscosity\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001) \"Dynamic viscosity\";
+//   output Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001) \"Dynamic viscosity\";
 // algorithm
 //   eta := 0.001;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.dynamicViscosity;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.pressure \"Return pressure\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   output Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
 // algorithm
 //   p := state.p;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.Medium.pressure;
@@ -223,7 +223,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.4342944819032518 * ((-2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2)) + 5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//     dRe_ddp := 0.43429448190325176 * (5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - 2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2));
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -253,7 +253,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real x2 = log10(L2);
 //   protected Real aux5 = -2.0 * sqrt(L2) * log10(aux4);
 //   protected Real y2 = log10(aux5);
-//   protected Real y2d = 0.5 + 1.090079149577162 / (aux5 * aux4);
+//   protected Real y2d = 0.5 + 1.0900791495771618 / (aux5 * aux4);
 // algorithm
 //   (y, dy_dx) := Modelica.Fluid.Utilities.cubicHermite_withDerivative(x, x1, x2, y1, y2, y1d, y2d);
 //   Re := 10.0 ^ y;
@@ -270,8 +270,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
 //   input Real g_times_height_ab \"Gravity times (Height(port_b) - Height(port_a))\";
 //   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
-//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
-//   input Real dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = 1.0 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
+//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
+//   input Real dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = 1.0 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
 //   output Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") \"Mass flow rate from port_a to port_b\";
 //   protected Real Delta = roughness / diameter \"Relative roughness\";
@@ -317,7 +317,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real length(quantity = \"Length\", unit = \"m\") \"Length of pipe\";
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
 //   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
-//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
+//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //   input Real m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\") = 0.01 \"Regularization of zero flow if |m_flow| < m_flow_small (dummy if use_m_flow_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
 //   output Real dp(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pressure loss (dp = port_a.p - port_b.p)\";
@@ -345,7 +345,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real x1 = log10(Re1);
 //   protected Real y1 = log10(64.0 * Re1);
 //   protected Real yd1 = 1.0;
-//   protected Real aux1 = 1.121782646756099;
+//   protected Real aux1 = 1.1217826467560994;
 //   protected Real aux2 = Delta / 3.7 + 5.74 / Re2 ^ 0.9;
 //   protected Real x2 = log10(Re2);
 //   protected Real dx;
@@ -372,14 +372,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.setState_phX \"Return thermodynamic state from p, h, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 //   input Real[:] X(quantity = fill(\"MassFraction\", size(X, 1)), unit = fill(\"kg/kg\", size(X, 1)), min = fill(0.0, size(X, 1)), max = fill(1.0, size(X, 1)), nominal = fill(0.1, size(X, 1))) = {1.0} \"Mass fractions\";
 //   output Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.ThermodynamicState state \"Thermodynamic state record\";
 // algorithm
@@ -394,21 +394,21 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.dynamicViscosity \"Return dynamic viscosity\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001) \"Dynamic viscosity\";
+//   output Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001) \"Dynamic viscosity\";
 // algorithm
 //   eta := 0.001;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.dynamicViscosity;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.pressure \"Return pressure\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   output Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
 // algorithm
 //   p := state.p;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.Medium.pressure;
@@ -449,7 +449,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.4342944819032518 * ((-2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2)) + 5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//     dRe_ddp := 0.43429448190325176 * (5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - 2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2));
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -479,7 +479,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real x2 = log10(L2);
 //   protected Real aux5 = -2.0 * sqrt(L2) * log10(aux4);
 //   protected Real y2 = log10(aux5);
-//   protected Real y2d = 0.5 + 1.090079149577162 / (aux5 * aux4);
+//   protected Real y2d = 0.5 + 1.0900791495771618 / (aux5 * aux4);
 // algorithm
 //   (y, dy_dx) := Modelica.Fluid.Utilities.cubicHermite_withDerivative(x, x1, x2, y1, y2, y1d, y2d);
 //   Re := 10.0 ^ y;
@@ -496,8 +496,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
 //   input Real g_times_height_ab \"Gravity times (Height(port_b) - Height(port_a))\";
 //   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
-//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
-//   input Real dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = 1.0 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
+//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
+//   input Real dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = 1.0 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
 //   output Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") \"Mass flow rate from port_a to port_b\";
 //   protected Real Delta = roughness / diameter \"Relative roughness\";
@@ -543,7 +543,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real length(quantity = \"Length\", unit = \"m\") \"Length of pipe\";
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
 //   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
-//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
+//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //   input Real m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\") = 0.01 \"Regularization of zero flow if |m_flow| < m_flow_small (dummy if use_m_flow_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
 //   output Real dp(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pressure loss (dp = port_a.p - port_b.p)\";
@@ -571,7 +571,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real x1 = log10(Re1);
 //   protected Real y1 = log10(64.0 * Re1);
 //   protected Real yd1 = 1.0;
-//   protected Real aux1 = 1.121782646756099;
+//   protected Real aux1 = 1.1217826467560994;
 //   protected Real aux2 = Delta / 3.7 + 5.74 / Re2 ^ 0.9;
 //   protected Real x2 = log10(Re2);
 //   protected Real dx;
@@ -598,14 +598,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.setState_phX \"Return thermodynamic state from p, h, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 //   input Real[:] X(quantity = fill(\"MassFraction\", size(X, 1)), unit = fill(\"kg/kg\", size(X, 1)), min = fill(0.0, size(X, 1)), max = fill(1.0, size(X, 1)), nominal = fill(0.1, size(X, 1))) = {1.0} \"Mass fractions\";
 //   output Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.ThermodynamicState state \"Thermodynamic state record\";
 // algorithm
@@ -620,21 +620,21 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.dynamicViscosity \"Return dynamic viscosity\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001) \"Dynamic viscosity\";
+//   output Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001) \"Dynamic viscosity\";
 // algorithm
 //   eta := 0.001;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.dynamicViscosity;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.pressure \"Return pressure\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   output Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
 // algorithm
 //   p := state.p;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.Medium.pressure;
@@ -675,7 +675,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   if Re > Re1 then
 //     Re := -2.0 * sqrt(lambda2) * log10(2.51 / sqrt(lambda2) + 0.27 * Delta) \"Colebrook-White\";
 //     aux2 := sqrt(aux1 * abs(dp_fric));
-//     dRe_ddp := 0.4342944819032518 * ((-2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2)) + 5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)));
+//     dRe_ddp := 0.43429448190325176 * (5.02 / (2.0 * abs(dp_fric) * (2.51 / aux2 + 0.27 * Delta)) - 2.0 * log(2.51 / aux2 + 0.27 * Delta) * aux1 / (2.0 * aux2));
 //     if Re < Re2 then
 //       (Re, dRe_ddp) := Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.WallFriction.Internal.m_flow_of_dp_fric.interpolateInRegion2_withDerivative(lambda2, Re1, Re2, Delta, dp_fric);
 //     end if;
@@ -705,7 +705,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real x2 = log10(L2);
 //   protected Real aux5 = -2.0 * sqrt(L2) * log10(aux4);
 //   protected Real y2 = log10(aux5);
-//   protected Real y2d = 0.5 + 1.090079149577162 / (aux5 * aux4);
+//   protected Real y2d = 0.5 + 1.0900791495771618 / (aux5 * aux4);
 // algorithm
 //   (y, dy_dx) := Modelica.Fluid.Utilities.cubicHermite_withDerivative(x, x1, x2, y1, y2, y1d, y2d);
 //   Re := 10.0 ^ y;
@@ -722,8 +722,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
 //   input Real g_times_height_ab \"Gravity times (Height(port_b) - Height(port_a))\";
 //   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
-//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
-//   input Real dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = 1.0 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
+//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
+//   input Real dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = 1.0 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
 //   output Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") \"Mass flow rate from port_a to port_b\";
 //   protected Real Delta = roughness / diameter \"Relative roughness\";
@@ -769,7 +769,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real length(quantity = \"Length\", unit = \"m\") \"Length of pipe\";
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
 //   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
-//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
+//   input Real roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //   input Real m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\") = 0.01 \"Regularization of zero flow if |m_flow| < m_flow_small (dummy if use_m_flow_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
 //   output Real dp(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pressure loss (dp = port_a.p - port_b.p)\";
@@ -797,7 +797,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real x1 = log10(Re1);
 //   protected Real y1 = log10(64.0 * Re1);
 //   protected Real yd1 = 1.0;
-//   protected Real aux1 = 1.121782646756099;
+//   protected Real aux1 = 1.1217826467560994;
 //   protected Real aux2 = Delta / 3.7 + 5.74 / Re2 ^ 0.9;
 //   protected Real x2 = log10(Re2);
 //   protected Real dx;
@@ -824,14 +824,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.setState_phX \"Return thermodynamic state from p, h, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 //   input Real[:] X(quantity = fill(\"MassFraction\", size(X, 1)), unit = fill(\"kg/kg\", size(X, 1)), min = fill(0.0, size(X, 1)), max = fill(1.0, size(X, 1)), nominal = fill(0.1, size(X, 1))) = {1.0} \"Mass fractions\";
 //   output Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.ThermodynamicState state \"Thermodynamic state record\";
 // algorithm
@@ -839,10 +839,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.setState_phX;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.specificEnthalpy_pTX \"Return specific enthalpy from p, T, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature\";
 //   input Real[1] X(quantity = {\"MassFraction\"}, unit = {\"kg/kg\"}, min = {0.0}, max = {1.0}, nominal = {0.1}) \"Mass fractions\";
-//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 // algorithm
 //   h := 4184.0 * (T - 273.15);
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.specificEnthalpy_pTX;
@@ -855,7 +855,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.heatTransfer.Medium.temperature \"Return temperature\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.heatTransfer.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature\";
 // algorithm
 //   T := state.T;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.heatTransfer.Medium.temperature;
@@ -868,14 +868,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.setState_phX \"Return thermodynamic state from p, h, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 //   input Real[:] X(quantity = fill(\"MassFraction\", size(X, 1)), unit = fill(\"kg/kg\", size(X, 1)), min = fill(0.0, size(X, 1)), max = fill(1.0, size(X, 1)), nominal = fill(0.1, size(X, 1))) = {1.0} \"Mass fractions\";
 //   output Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.ThermodynamicState state \"Thermodynamic state record\";
 // algorithm
@@ -883,10 +883,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.setState_phX;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.specificEnthalpy_pTX \"Return specific enthalpy from p, T, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature\";
 //   input Real[1] X(quantity = {\"MassFraction\"}, unit = {\"kg/kg\"}, min = {0.0}, max = {1.0}, nominal = {0.1}) \"Mass fractions\";
-//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 // algorithm
 //   h := 4184.0 * (T - 273.15);
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.specificEnthalpy_pTX;
@@ -899,7 +899,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.heatTransfer.Medium.temperature \"Return temperature\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.heatTransfer.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature\";
 // algorithm
 //   T := state.T;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.heatTransfer.Medium.temperature;
@@ -912,14 +912,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.density \"Return density\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density\";
 // algorithm
 //   d := 995.586;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.density;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.setState_phX \"Return thermodynamic state from p, h, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 //   input Real[:] X(quantity = fill(\"MassFraction\", size(X, 1)), unit = fill(\"kg/kg\", size(X, 1)), min = fill(0.0, size(X, 1)), max = fill(1.0, size(X, 1)), nominal = fill(0.1, size(X, 1))) = {1.0} \"Mass fractions\";
 //   output Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.ThermodynamicState state \"Thermodynamic state record\";
 // algorithm
@@ -927,10 +927,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.setState_phX;
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.specificEnthalpy_pTX \"Return specific enthalpy from p, T, and X or Xi\"
-//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
-//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature\";
 //   input Real[1] X(quantity = {\"MassFraction\"}, unit = {\"kg/kg\"}, min = {0.0}, max = {1.0}, nominal = {0.1}) \"Mass fractions\";
-//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific enthalpy\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific enthalpy\";
 // algorithm
 //   h := 4184.0 * (T - 273.15);
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.specificEnthalpy_pTX;
@@ -943,7 +943,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //
 // function Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.heatTransfer.Medium.temperature \"Return temperature\"
 //   input Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.heatTransfer.Medium.ThermodynamicState state \"Thermodynamic state record\";
-//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature\";
 // algorithm
 //   T := state.T;
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.heatTransfer.Medium.temperature;
@@ -978,7 +978,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //     aux2 := t ^ 2.0;
 //     h00 := 2.0 * aux3 - 3.0 * aux2 + 1.0;
 //     h10 := aux3 - 2.0 * aux2 + t;
-//     h01 := (-2.0 * aux3) + 3.0 * aux2;
+//     h01 := 3.0 * aux2 - 2.0 * aux3;
 //     h11 := aux3 - aux2;
 //     h00d := 6.0 * (aux2 - t);
 //     h10d := 3.0 * aux2 - 4.0 * t + 1.0;
@@ -988,7 +988,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //     dy_dx := y1 * h00d / h + y1d * h10d + y2 * h01d / h + y2d * h11d;
 //   else
 //     y := (y1 + y2) / 2.0;
-//     dy_dx := /*Real*/(sign(y2 - y1)) * 9.999999999999999e+59;
+//     dy_dx := /*Real*/(sign(y2 - y1)) * 1e60;
 //   end if;
 // end Modelica.Fluid.Utilities.cubicHermite_withDerivative;
 //
@@ -1052,14 +1052,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //     y := y0 + Delta0 * (x - x0);
 //     c := 0.0;
 //   elseif abs(y1d + y0d - 2.0 * Delta0) < 1e-13 then
-//     y := y0 + (x - x0) * (y0d + (x - x0) / h0 * ((-2.0 * y0d) - y1d + 3.0 * Delta0 + (x - x0) * (y0d + y1d - 2.0 * Delta0) / h0));
+//     y := y0 + (x - x0) * (y0d + (x - x0) / h0 * (3.0 * Delta0 - (2.0 * y0d + y1d) + (x - x0) * (y0d + y1d - 2.0 * Delta0) / h0));
 //     aux01 := (x0 + x1) / 2.0;
-//     c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * ((-2.0 * y0d) - y1d + 3.0 * Delta0) * (aux01 - x0) / h0 + y0d;
+//     c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (aux01 - x0) / h0 + y0d;
 //   else
-//     xstar := 0.3333333333333333 * ((-3.0 * x0 * y0d) - 3.0 * x0 * y1d + 6.0 * x0 * Delta0 - 2.0 * h0 * y0d - h0 * y1d + 3.0 * h0 * Delta0) / ((-y0d) - y1d + 2.0 * Delta0);
+//     xstar := 0.3333333333333333 * (6.0 * x0 * Delta0 - (3.0 * x0 * y0d + 3.0 * x0 * y1d) - 2.0 * h0 * y0d - h0 * y1d + 3.0 * h0 * Delta0) / (2.0 * Delta0 - (y0d + y1d));
 //     mu := xstar - x0;
 //     eta := x1 - xstar;
-//     omega := 3.0 * (y0d + y1d - 2.0 * Delta0) * (xstar - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * ((-2.0 * y0d) - y1d + 3.0 * Delta0) * (xstar - x0) / h0 + y0d;
+//     omega := 3.0 * (y0d + y1d - 2.0 * Delta0) * (xstar - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (xstar - x0) / h0 + y0d;
 //     aux01 := 0.25 * /*Real*/(sign(Delta0)) * min(abs(omega), abs(Delta0)) \"Slope c if not using plain cubic S0\";
 //     if abs(y0d - y1d) <= 1e-13 then
 //       aux02 := y0d;
@@ -1067,7 +1067,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //         useSingleCubicPolynomial := true;
 //       end if;
 //     elseif abs(y1d + y0d - 2.0 * Delta0) < 1e-13 then
-//       aux02 := (6.0 * Delta0 * (y1d + y0d - 1.5 * Delta0) - y1d * y0d - y1d ^ 2.0 - y0d ^ 2.0) * (if y1d + y0d - 2.0 * Delta0 >= 0.0 then 1.0 else -1.0) * 9.999999999999999e+59;
+//       aux02 := (6.0 * Delta0 * (y1d + y0d - 1.5 * Delta0) - y1d * y0d - y1d ^ 2.0 - y0d ^ 2.0) * (if y1d + y0d - 2.0 * Delta0 >= 0.0 then 1.0 else -1.0) * 1e60;
 //     else
 //       aux02 := (6.0 * Delta0 * (y1d + y0d - 1.5 * Delta0) - y1d * y0d - y1d ^ 2.0 - y0d ^ 2.0) / (3.0 * (y1d + y0d - 2.0 * Delta0));
 //     end if;
@@ -1080,7 +1080,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //         c := 0.1 * Delta0;
 //       end if;
 //       theta0 := (y0d * mu + y1d * eta) / h0;
-//       if abs(theta0 - c) < 1e-06 then
+//       if abs(theta0 - c) < 1e-6 then
 //         c := 0.999999 * theta0;
 //       end if;
 //       rho := 3.0 * (Delta0 - c) / (theta0 - c);
@@ -1100,9 +1100,9 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //         y := a2 / 3.0 * (x - xi2) ^ 3.0 + c * x + const3;
 //       end if;
 //     else
-//       y := y0 + (x - x0) * (y0d + (x - x0) / h0 * ((-2.0 * y0d) - y1d + 3.0 * Delta0 + (x - x0) * (y0d + y1d - 2.0 * Delta0) / h0));
+//       y := y0 + (x - x0) * (y0d + (x - x0) / h0 * (3.0 * Delta0 - (2.0 * y0d + y1d) + (x - x0) * (y0d + y1d - 2.0 * Delta0) / h0));
 //       aux01 := (x0 + x1) / 2.0;
-//       c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * ((-2.0 * y0d) - y1d + 3.0 * Delta0) * (aux01 - x0) / h0 + y0d;
+//       c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (aux01 - x0) / h0 + y0d;
 //     end if;
 //   end if;
 // end Modelica.Fluid.Utilities.regFun3;
@@ -1166,7 +1166,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real x \"Abscissa value\";
 //   input Real y1 \"Ordinate value for x > 0\";
 //   input Real y2 \"Ordinate value for x < 0\";
-//   input Real x_small(min = 0.0) = 1e-05 \"Approximation of step for -x_small <= x <= x_small; x_small >= 0 required\";
+//   input Real x_small(min = 0.0) = 1e-5 \"Approximation of step for -x_small <= x <= x_small; x_small >= 0 required\";
 //   output Real y \"Ordinate value to approximate y = if x > 0 then y1 else y2\";
 // algorithm
 //   y := smooth(1, if x > x_small then y1 else if x < (-x_small) then y2 else if x_small > 0.0 then x / x_small * ((x / x_small) ^ 2.0 - 3.0) * (y2 - y1) / 4.0 + (y1 + y2) / 2.0 else (y1 + y2) / 2.0);
@@ -1176,7 +1176,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   input Real Pa(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pascal value\";
 //   output Real bar(quantity = \"Pressure\", unit = \"bar\") \"bar value\";
 // algorithm
-//   bar := Pa / 100000.0;
+//   bar := Pa / 1e5;
 // end Modelica.SIunits.Conversions.to_bar;
 //
 // function Modelica.SIunits.Conversions.to_degC \"Convert from Kelvin to degCelsius\"
@@ -1191,29 +1191,29 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank1.V(quantity = \"Volume\", unit = \"m3\", stateSelect = StateSelect.never) \"Actual tank volume\";
 //   parameter Real tank1.height(quantity = \"Length\", unit = \"m\", min = 0.0) = 12.0 \"Height of tank\";
 //   parameter Real tank1.crossArea(quantity = \"Area\", unit = \"m2\") = 1.0 \"Area of tank\";
-//   parameter Real tank1.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = system.p_ambient \"Tank surface pressure\";
-//   parameter Real tank1.T_ambient(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = system.T_ambient \"Tank surface Temperature\";
+//   parameter Real tank1.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = system.p_ambient \"Tank surface pressure\";
+//   parameter Real tank1.T_ambient(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = system.T_ambient \"Tank surface Temperature\";
 //   parameter Real tank1.level_start(quantity = \"Length\", unit = \"m\", min = 0.0) = 8.0 \"Start value of tank level\";
 //   final Real tank1.fluidVolume(quantity = \"Volume\", unit = \"m3\") = tank1.V \"Volume\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank1.energyDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of energy balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank1.massDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of mass balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank1.substanceDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of substance balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank1.traceDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of trace substance balance\";
-//   final parameter Real tank1.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = tank1.p_ambient \"Start value of pressure\";
+//   final parameter Real tank1.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = tank1.p_ambient \"Start value of pressure\";
 //   final parameter Boolean tank1.use_T_start = true \"= true, use T_start, otherwise h_start\";
-//   parameter Real tank1.T_start(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = system.T_start \"Start value of temperature\";
-//   parameter Real tank1.h_start(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.specificEnthalpy_pTX(tank1.p_start, tank1.T_start, tank1.X_start) \"Start value of specific enthalpy\";
+//   parameter Real tank1.T_start(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = system.T_start \"Start value of temperature\";
+//   parameter Real tank1.h_start(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.specificEnthalpy_pTX(tank1.p_start, tank1.T_start, tank1.X_start) \"Start value of specific enthalpy\";
 //   parameter Real tank1.X_start[1](quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, nominal = 0.1) = 1.0 \"Start value of mass fractions m_i/m\";
-//   Real tank1.medium.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = tank1.p_start, nominal = 100000.0, stateSelect = StateSelect.prefer) \"Absolute pressure of medium\";
+//   Real tank1.medium.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = tank1.p_start, nominal = 1e5, stateSelect = StateSelect.prefer) \"Absolute pressure of medium\";
 //   Real tank1.medium.h(quantity = \"SpecificEnergy\", unit = \"J/kg\", start = tank1.h_start) \"Specific enthalpy of medium\";
-//   Real tank1.medium.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density of medium\";
-//   Real tank1.medium.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = tank1.T_start, nominal = 300.0, stateSelect = StateSelect.prefer) \"Temperature of medium\";
+//   Real tank1.medium.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density of medium\";
+//   Real tank1.medium.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = tank1.T_start, nominal = 300.0, stateSelect = StateSelect.prefer) \"Temperature of medium\";
 //   Real tank1.medium.X[1](quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, start = 1.0, nominal = 0.1) \"Mass fractions (= (component mass)/total mass  m_i/m)\";
-//   Real tank1.medium.u(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, nominal = 1000000.0) \"Specific internal energy of medium\";
-//   Real tank1.medium.R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 10000000.0, start = 1000.0, nominal = 1000.0) \"Gas constant (of mixture if applicable)\";
+//   Real tank1.medium.u(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e8, max = 1e8, nominal = 1e6) \"Specific internal energy of medium\";
+//   Real tank1.medium.R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 1e7, start = 1000.0, nominal = 1000.0) \"Gas constant (of mixture if applicable)\";
 //   Real tank1.medium.MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032) \"Molar mass (of mixture or single fluid)\";
-//   Real tank1.medium.state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real tank1.medium.state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real tank1.medium.state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real tank1.medium.state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
 //   final parameter Boolean tank1.medium.preferredMediumStates = true \"= true if StateSelect.prefer shall be used for the independent property variables of the medium\";
 //   final parameter Boolean tank1.medium.standardOrderComponents = true \"If true, and reducedX = true, the last element of X will be computed from the other ones\";
 //   Real tank1.medium.T_degC(quantity = \"ThermodynamicTemperature\", unit = \"degC\") = Modelica.SIunits.Conversions.to_degC(tank1.medium.T) \"Temperature of medium in [degC]\";
@@ -1226,22 +1226,22 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank1.Wb_flow(quantity = \"Power\", unit = \"W\") \"Work flow across boundaries or source term\";
 //   protected final parameter Boolean tank1.initialize_p = false \"= true to set up initial equations for pressure\";
 //   final parameter Integer tank1.nPorts = 1 \"Number of ports\";
-//   Real tank1.ports[1].m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) \"Mass flow rate from the connection point into the component\";
-//   Real tank1.ports[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real tank1.ports[1].h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real tank1.ports[1].m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) \"Mass flow rate from the connection point into the component\";
+//   Real tank1.ports[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real tank1.ports[1].h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
 //   final parameter Boolean tank1.use_portsData = true \"= false to neglect pressure loss and kinetic energy\";
 //   parameter Real tank1.portsData[1].diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.1 \"Inner (hydraulic) diameter of inlet/outlet port\";
 //   parameter Real tank1.portsData[1].height(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.0 \"Height over the bottom of the vessel\";
 //   parameter Real tank1.portsData[1].zeta_out(min = 0.0) = 0.5 \"Hydraulic resistance out of vessel, default 0.5 for small diameter mounted flush with the wall\";
 //   parameter Real tank1.portsData[1].zeta_in(min = 0.0) = 1.04 \"Hydraulic resistance into vessel, default 1.04 for small diameter mounted flush with the wall\";
-//   parameter Real tank1.m_flow_nominal(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 100.0 * system.m_flow_small \"Nominal value for mass flow rates in ports\";
+//   parameter Real tank1.m_flow_nominal(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 100.0 * system.m_flow_small \"Nominal value for mass flow rates in ports\";
 //   parameter Real tank1.m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\", min = 0.0) = system.m_flow_small \"Regularization range at zero mass flow rate\";
 //   final parameter Boolean tank1.use_Re = false \"= true, if turbulent region is defined by Re, otherwise by m_flow_small\";
-//   Real tank1.ports_H_flow[1](quantity = \"EnthalpyFlowRate\", unit = \"W\", min = -100000000.0, max = 100000000.0, nominal = 1000.0);
+//   Real tank1.ports_H_flow[1](quantity = \"EnthalpyFlowRate\", unit = \"W\", min = -1e8, max = 1e8, nominal = 1000.0);
 //   final parameter Boolean tank1.use_HeatTransfer = false \"= true to use the HeatTransfer model\";
 //   final parameter Integer tank1.heatTransfer.n = 1 \"Number of heat transfer segments\";
-//   final Real tank1.heatTransfer.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = tank1.medium.state.p \"Absolute pressure of medium\";
-//   final Real tank1.heatTransfer.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = tank1.medium.state.T \"Temperature of medium\";
+//   final Real tank1.heatTransfer.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = tank1.medium.state.p \"Absolute pressure of medium\";
+//   final Real tank1.heatTransfer.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = tank1.medium.state.T \"Temperature of medium\";
 //   Real tank1.heatTransfer.surfaceAreas[1](quantity = \"Area\", unit = \"m2\") \"Heat transfer areas\";
 //   Real tank1.heatTransfer.Q_flows[1](quantity = \"Power\", unit = \"W\") \"Heat flow rates\";
 //   final parameter Boolean tank1.heatTransfer.use_k = false \"= true to use k value for thermal isolation\";
@@ -1250,13 +1250,13 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank1.heatTransfer.heatPorts[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Port temperature\";
 //   Real tank1.heatTransfer.heatPorts[1].Q_flow(quantity = \"Power\", unit = \"W\") \"Heat flow rate (positive if flowing from outside into the component)\";
 //   Real tank1.heatTransfer.Ts[1](quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperatures defined by fluid states\";
-//   Real tank1.portInDensities[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"densities of the fluid at the device boundary\";
+//   Real tank1.portInDensities[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"densities of the fluid at the device boundary\";
 //   Real tank1.portVelocities[1](quantity = \"Velocity\", unit = \"m/s\") \"velocities of fluid flow at device boundary\";
 //   Real tank1.ports_E_flow[1](quantity = \"Power\", unit = \"W\") \"flow of kinetic and potential energy at device boundary\";
 //   Real tank1.s[1](start = tank1.fluidLevel_max) \"curve parameters for port flows vs. port pressures; for further details see, Modelica Tutorial: Ideal switching devices\";
 //   Real tank1.ports_penetration[1] \"penetration of port with fluid, depending on fluid level and port diameter\";
 //   Real tank1.portAreas[1](quantity = \"Area\", unit = \"m2\");
-//   Real tank1.vessel_ps_static[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"static pressures inside the vessel at the height of the corresponding ports, zero flow velocity\";
+//   Real tank1.vessel_ps_static[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"static pressures inside the vessel at the height of the corresponding ports, zero flow velocity\";
 //   constant Real tank1.Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 100.0 \"cf. suddenExpansion\";
 //   Real tank1.m_flow_turbulent[1](quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   protected final Real tank1.fluidLevel(quantity = \"Length\", unit = \"m\", min = 0.0) = tank1.level \"level of fluid in the vessel for treating heights of ports\";
@@ -1277,29 +1277,29 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank2.V(quantity = \"Volume\", unit = \"m3\", stateSelect = StateSelect.never) \"Actual tank volume\";
 //   parameter Real tank2.height(quantity = \"Length\", unit = \"m\", min = 0.0) = 12.0 \"Height of tank\";
 //   parameter Real tank2.crossArea(quantity = \"Area\", unit = \"m2\") = 1.0 \"Area of tank\";
-//   parameter Real tank2.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = system.p_ambient \"Tank surface pressure\";
-//   parameter Real tank2.T_ambient(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = system.T_ambient \"Tank surface Temperature\";
+//   parameter Real tank2.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = system.p_ambient \"Tank surface pressure\";
+//   parameter Real tank2.T_ambient(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = system.T_ambient \"Tank surface Temperature\";
 //   parameter Real tank2.level_start(quantity = \"Length\", unit = \"m\", min = 0.0) = 3.0 \"Start value of tank level\";
 //   final Real tank2.fluidVolume(quantity = \"Volume\", unit = \"m3\") = tank2.V \"Volume\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank2.energyDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of energy balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank2.massDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of mass balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank2.substanceDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of substance balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank2.traceDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of trace substance balance\";
-//   final parameter Real tank2.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = tank2.p_ambient \"Start value of pressure\";
+//   final parameter Real tank2.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = tank2.p_ambient \"Start value of pressure\";
 //   final parameter Boolean tank2.use_T_start = true \"= true, use T_start, otherwise h_start\";
-//   parameter Real tank2.T_start(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = system.T_start \"Start value of temperature\";
-//   parameter Real tank2.h_start(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.specificEnthalpy_pTX(tank2.p_start, tank2.T_start, tank2.X_start) \"Start value of specific enthalpy\";
+//   parameter Real tank2.T_start(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = system.T_start \"Start value of temperature\";
+//   parameter Real tank2.h_start(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.specificEnthalpy_pTX(tank2.p_start, tank2.T_start, tank2.X_start) \"Start value of specific enthalpy\";
 //   parameter Real tank2.X_start[1](quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, nominal = 0.1) = 1.0 \"Start value of mass fractions m_i/m\";
-//   Real tank2.medium.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = tank2.p_start, nominal = 100000.0, stateSelect = StateSelect.prefer) \"Absolute pressure of medium\";
+//   Real tank2.medium.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = tank2.p_start, nominal = 1e5, stateSelect = StateSelect.prefer) \"Absolute pressure of medium\";
 //   Real tank2.medium.h(quantity = \"SpecificEnergy\", unit = \"J/kg\", start = tank2.h_start) \"Specific enthalpy of medium\";
-//   Real tank2.medium.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density of medium\";
-//   Real tank2.medium.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = tank2.T_start, nominal = 300.0, stateSelect = StateSelect.prefer) \"Temperature of medium\";
+//   Real tank2.medium.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density of medium\";
+//   Real tank2.medium.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = tank2.T_start, nominal = 300.0, stateSelect = StateSelect.prefer) \"Temperature of medium\";
 //   Real tank2.medium.X[1](quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, start = 1.0, nominal = 0.1) \"Mass fractions (= (component mass)/total mass  m_i/m)\";
-//   Real tank2.medium.u(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, nominal = 1000000.0) \"Specific internal energy of medium\";
-//   Real tank2.medium.R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 10000000.0, start = 1000.0, nominal = 1000.0) \"Gas constant (of mixture if applicable)\";
+//   Real tank2.medium.u(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e8, max = 1e8, nominal = 1e6) \"Specific internal energy of medium\";
+//   Real tank2.medium.R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 1e7, start = 1000.0, nominal = 1000.0) \"Gas constant (of mixture if applicable)\";
 //   Real tank2.medium.MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032) \"Molar mass (of mixture or single fluid)\";
-//   Real tank2.medium.state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real tank2.medium.state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real tank2.medium.state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real tank2.medium.state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
 //   final parameter Boolean tank2.medium.preferredMediumStates = true \"= true if StateSelect.prefer shall be used for the independent property variables of the medium\";
 //   final parameter Boolean tank2.medium.standardOrderComponents = true \"If true, and reducedX = true, the last element of X will be computed from the other ones\";
 //   Real tank2.medium.T_degC(quantity = \"ThermodynamicTemperature\", unit = \"degC\") = Modelica.SIunits.Conversions.to_degC(tank2.medium.T) \"Temperature of medium in [degC]\";
@@ -1312,22 +1312,22 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank2.Wb_flow(quantity = \"Power\", unit = \"W\") \"Work flow across boundaries or source term\";
 //   protected final parameter Boolean tank2.initialize_p = false \"= true to set up initial equations for pressure\";
 //   final parameter Integer tank2.nPorts = 1 \"Number of ports\";
-//   Real tank2.ports[1].m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) \"Mass flow rate from the connection point into the component\";
-//   Real tank2.ports[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real tank2.ports[1].h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real tank2.ports[1].m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) \"Mass flow rate from the connection point into the component\";
+//   Real tank2.ports[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real tank2.ports[1].h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
 //   final parameter Boolean tank2.use_portsData = true \"= false to neglect pressure loss and kinetic energy\";
 //   parameter Real tank2.portsData[1].diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.1 \"Inner (hydraulic) diameter of inlet/outlet port\";
 //   parameter Real tank2.portsData[1].height(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.0 \"Height over the bottom of the vessel\";
 //   parameter Real tank2.portsData[1].zeta_out(min = 0.0) = 0.5 \"Hydraulic resistance out of vessel, default 0.5 for small diameter mounted flush with the wall\";
 //   parameter Real tank2.portsData[1].zeta_in(min = 0.0) = 1.04 \"Hydraulic resistance into vessel, default 1.04 for small diameter mounted flush with the wall\";
-//   parameter Real tank2.m_flow_nominal(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 100.0 * system.m_flow_small \"Nominal value for mass flow rates in ports\";
+//   parameter Real tank2.m_flow_nominal(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 100.0 * system.m_flow_small \"Nominal value for mass flow rates in ports\";
 //   parameter Real tank2.m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\", min = 0.0) = system.m_flow_small \"Regularization range at zero mass flow rate\";
 //   final parameter Boolean tank2.use_Re = false \"= true, if turbulent region is defined by Re, otherwise by m_flow_small\";
-//   Real tank2.ports_H_flow[1](quantity = \"EnthalpyFlowRate\", unit = \"W\", min = -100000000.0, max = 100000000.0, nominal = 1000.0);
+//   Real tank2.ports_H_flow[1](quantity = \"EnthalpyFlowRate\", unit = \"W\", min = -1e8, max = 1e8, nominal = 1000.0);
 //   final parameter Boolean tank2.use_HeatTransfer = false \"= true to use the HeatTransfer model\";
 //   final parameter Integer tank2.heatTransfer.n = 1 \"Number of heat transfer segments\";
-//   final Real tank2.heatTransfer.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = tank2.medium.state.p \"Absolute pressure of medium\";
-//   final Real tank2.heatTransfer.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = tank2.medium.state.T \"Temperature of medium\";
+//   final Real tank2.heatTransfer.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = tank2.medium.state.p \"Absolute pressure of medium\";
+//   final Real tank2.heatTransfer.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = tank2.medium.state.T \"Temperature of medium\";
 //   Real tank2.heatTransfer.surfaceAreas[1](quantity = \"Area\", unit = \"m2\") \"Heat transfer areas\";
 //   Real tank2.heatTransfer.Q_flows[1](quantity = \"Power\", unit = \"W\") \"Heat flow rates\";
 //   final parameter Boolean tank2.heatTransfer.use_k = false \"= true to use k value for thermal isolation\";
@@ -1336,13 +1336,13 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank2.heatTransfer.heatPorts[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Port temperature\";
 //   Real tank2.heatTransfer.heatPorts[1].Q_flow(quantity = \"Power\", unit = \"W\") \"Heat flow rate (positive if flowing from outside into the component)\";
 //   Real tank2.heatTransfer.Ts[1](quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperatures defined by fluid states\";
-//   Real tank2.portInDensities[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"densities of the fluid at the device boundary\";
+//   Real tank2.portInDensities[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"densities of the fluid at the device boundary\";
 //   Real tank2.portVelocities[1](quantity = \"Velocity\", unit = \"m/s\") \"velocities of fluid flow at device boundary\";
 //   Real tank2.ports_E_flow[1](quantity = \"Power\", unit = \"W\") \"flow of kinetic and potential energy at device boundary\";
 //   Real tank2.s[1](start = tank2.fluidLevel_max) \"curve parameters for port flows vs. port pressures; for further details see, Modelica Tutorial: Ideal switching devices\";
 //   Real tank2.ports_penetration[1] \"penetration of port with fluid, depending on fluid level and port diameter\";
 //   Real tank2.portAreas[1](quantity = \"Area\", unit = \"m2\");
-//   Real tank2.vessel_ps_static[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"static pressures inside the vessel at the height of the corresponding ports, zero flow velocity\";
+//   Real tank2.vessel_ps_static[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"static pressures inside the vessel at the height of the corresponding ports, zero flow velocity\";
 //   constant Real tank2.Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 100.0 \"cf. suddenExpansion\";
 //   Real tank2.m_flow_turbulent[1](quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   protected final Real tank2.fluidLevel(quantity = \"Length\", unit = \"m\", min = 0.0) = tank2.level \"level of fluid in the vessel for treating heights of ports\";
@@ -1359,9 +1359,9 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Boolean tank2.regularFlow[1](start = true);
 //   protected Boolean tank2.inFlow[1](start = false);
 //   protected final parameter Real tank2.level_start_eps(quantity = \"Length\", unit = \"m\", min = 0.0) = max(tank2.level_start, 1e-15);
-//   parameter Real system.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = 101325.0 \"Default ambient pressure\";
+//   parameter Real system.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = 101325.0 \"Default ambient pressure\";
 //   parameter Real system.T_ambient(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 293.15 \"Default ambient temperature\";
-//   parameter Real system.g(quantity = \"Acceleration\", unit = \"m/s2\") = 9.806649999999999 \"Constant gravity acceleration\";
+//   parameter Real system.g(quantity = \"Acceleration\", unit = \"m/s2\") = 9.80665 \"Constant gravity acceleration\";
 //   final parameter Boolean system.allowFlowReversal = true \"= false to restrict to design flow direction (port_a -> port_b)\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) system.energyDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Default formulation of energy balances\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) system.massDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Default formulation of mass balances\";
@@ -1369,40 +1369,40 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) system.traceDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Default formulation of trace substance balances\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) system.momentumDynamics = Modelica.Fluid.Types.Dynamics.SteadyState \"Default formulation of momentum balances, if options available\";
 //   final parameter Real system.m_flow_start(quantity = \"MassFlowRate\", unit = \"kg/s\") = 0.0 \"Default start value for mass flow rates\";
-//   parameter Real system.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = system.p_ambient \"Default start value for pressures\";
+//   parameter Real system.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = system.p_ambient \"Default start value for pressures\";
 //   parameter Real system.T_start(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = system.T_ambient \"Default start value for temperatures\";
 //   final parameter Boolean system.use_eps_Re = false \"= true to determine turbulent region automatically using Reynolds number\";
 //   parameter Real system.m_flow_nominal(quantity = \"MassFlowRate\", unit = \"kg/s\") = 100.0 * system.m_flow_small \"Default nominal mass flow rate\";
-//   parameter Real system.eps_m_flow(min = 0.0) = 0.0001 \"Regularization of zero flow for |m_flow| < eps_m_flow*m_flow_nominal\";
-//   parameter Real system.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = 1.0 \"Default small pressure drop for regularization of laminar and zero flow\";
+//   parameter Real system.eps_m_flow(min = 0.0) = 1e-4 \"Regularization of zero flow for |m_flow| < eps_m_flow*m_flow_nominal\";
+//   parameter Real system.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = 1.0 \"Default small pressure drop for regularization of laminar and zero flow\";
 //   parameter Real system.m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\", min = 0.0) = 0.01 \"Default small mass flow rate for regularization of laminar and zero flow\";
 //   Real tank3.level(quantity = \"Length\", unit = \"m\", min = 0.0, start = tank3.level_start_eps, stateSelect = StateSelect.prefer) \"Level height of tank\";
 //   Real tank3.V(quantity = \"Volume\", unit = \"m3\", stateSelect = StateSelect.never) \"Actual tank volume\";
 //   parameter Real tank3.height(quantity = \"Length\", unit = \"m\", min = 0.0) = 12.0 \"Height of tank\";
 //   parameter Real tank3.crossArea(quantity = \"Area\", unit = \"m2\") = 1.0 \"Area of tank\";
-//   parameter Real tank3.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = system.p_ambient \"Tank surface pressure\";
-//   parameter Real tank3.T_ambient(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = system.T_ambient \"Tank surface Temperature\";
+//   parameter Real tank3.p_ambient(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = system.p_ambient \"Tank surface pressure\";
+//   parameter Real tank3.T_ambient(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = system.T_ambient \"Tank surface Temperature\";
 //   parameter Real tank3.level_start(quantity = \"Length\", unit = \"m\", min = 0.0) = 3.0 \"Start value of tank level\";
 //   final Real tank3.fluidVolume(quantity = \"Volume\", unit = \"m3\") = tank3.V \"Volume\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank3.energyDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of energy balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank3.massDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of mass balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank3.substanceDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of substance balance\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) tank3.traceDynamics = Modelica.Fluid.Types.Dynamics.FixedInitial \"Formulation of trace substance balance\";
-//   final parameter Real tank3.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = tank3.p_ambient \"Start value of pressure\";
+//   final parameter Real tank3.p_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = tank3.p_ambient \"Start value of pressure\";
 //   final parameter Boolean tank3.use_T_start = true \"= true, use T_start, otherwise h_start\";
-//   parameter Real tank3.T_start(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = system.T_start \"Start value of temperature\";
-//   parameter Real tank3.h_start(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.specificEnthalpy_pTX(tank3.p_start, tank3.T_start, tank3.X_start) \"Start value of specific enthalpy\";
+//   parameter Real tank3.T_start(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = system.T_start \"Start value of temperature\";
+//   parameter Real tank3.h_start(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.specificEnthalpy_pTX(tank3.p_start, tank3.T_start, tank3.X_start) \"Start value of specific enthalpy\";
 //   parameter Real tank3.X_start[1](quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, nominal = 0.1) = 1.0 \"Start value of mass fractions m_i/m\";
-//   Real tank3.medium.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = tank3.p_start, nominal = 100000.0, stateSelect = StateSelect.prefer) \"Absolute pressure of medium\";
+//   Real tank3.medium.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = tank3.p_start, nominal = 1e5, stateSelect = StateSelect.prefer) \"Absolute pressure of medium\";
 //   Real tank3.medium.h(quantity = \"SpecificEnergy\", unit = \"J/kg\", start = tank3.h_start) \"Specific enthalpy of medium\";
-//   Real tank3.medium.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Density of medium\";
-//   Real tank3.medium.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = tank3.T_start, nominal = 300.0, stateSelect = StateSelect.prefer) \"Temperature of medium\";
+//   Real tank3.medium.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Density of medium\";
+//   Real tank3.medium.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = tank3.T_start, nominal = 300.0, stateSelect = StateSelect.prefer) \"Temperature of medium\";
 //   Real tank3.medium.X[1](quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, start = 1.0, nominal = 0.1) \"Mass fractions (= (component mass)/total mass  m_i/m)\";
-//   Real tank3.medium.u(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, nominal = 1000000.0) \"Specific internal energy of medium\";
-//   Real tank3.medium.R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 10000000.0, start = 1000.0, nominal = 1000.0) \"Gas constant (of mixture if applicable)\";
+//   Real tank3.medium.u(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e8, max = 1e8, nominal = 1e6) \"Specific internal energy of medium\";
+//   Real tank3.medium.R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 1e7, start = 1000.0, nominal = 1000.0) \"Gas constant (of mixture if applicable)\";
 //   Real tank3.medium.MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032) \"Molar mass (of mixture or single fluid)\";
-//   Real tank3.medium.state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real tank3.medium.state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real tank3.medium.state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real tank3.medium.state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
 //   final parameter Boolean tank3.medium.preferredMediumStates = true \"= true if StateSelect.prefer shall be used for the independent property variables of the medium\";
 //   final parameter Boolean tank3.medium.standardOrderComponents = true \"If true, and reducedX = true, the last element of X will be computed from the other ones\";
 //   Real tank3.medium.T_degC(quantity = \"ThermodynamicTemperature\", unit = \"degC\") = Modelica.SIunits.Conversions.to_degC(tank3.medium.T) \"Temperature of medium in [degC]\";
@@ -1415,22 +1415,22 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank3.Wb_flow(quantity = \"Power\", unit = \"W\") \"Work flow across boundaries or source term\";
 //   protected final parameter Boolean tank3.initialize_p = false \"= true to set up initial equations for pressure\";
 //   final parameter Integer tank3.nPorts = 1 \"Number of ports\";
-//   Real tank3.ports[1].m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) \"Mass flow rate from the connection point into the component\";
-//   Real tank3.ports[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real tank3.ports[1].h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real tank3.ports[1].m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) \"Mass flow rate from the connection point into the component\";
+//   Real tank3.ports[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real tank3.ports[1].h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
 //   final parameter Boolean tank3.use_portsData = true \"= false to neglect pressure loss and kinetic energy\";
 //   parameter Real tank3.portsData[1].diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.1 \"Inner (hydraulic) diameter of inlet/outlet port\";
 //   parameter Real tank3.portsData[1].height(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.0 \"Height over the bottom of the vessel\";
 //   parameter Real tank3.portsData[1].zeta_out(min = 0.0) = 0.5 \"Hydraulic resistance out of vessel, default 0.5 for small diameter mounted flush with the wall\";
 //   parameter Real tank3.portsData[1].zeta_in(min = 0.0) = 1.04 \"Hydraulic resistance into vessel, default 1.04 for small diameter mounted flush with the wall\";
-//   parameter Real tank3.m_flow_nominal(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 100.0 * system.m_flow_small \"Nominal value for mass flow rates in ports\";
+//   parameter Real tank3.m_flow_nominal(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 100.0 * system.m_flow_small \"Nominal value for mass flow rates in ports\";
 //   parameter Real tank3.m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\", min = 0.0) = system.m_flow_small \"Regularization range at zero mass flow rate\";
 //   final parameter Boolean tank3.use_Re = false \"= true, if turbulent region is defined by Re, otherwise by m_flow_small\";
-//   Real tank3.ports_H_flow[1](quantity = \"EnthalpyFlowRate\", unit = \"W\", min = -100000000.0, max = 100000000.0, nominal = 1000.0);
+//   Real tank3.ports_H_flow[1](quantity = \"EnthalpyFlowRate\", unit = \"W\", min = -1e8, max = 1e8, nominal = 1000.0);
 //   final parameter Boolean tank3.use_HeatTransfer = false \"= true to use the HeatTransfer model\";
 //   final parameter Integer tank3.heatTransfer.n = 1 \"Number of heat transfer segments\";
-//   final Real tank3.heatTransfer.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = tank3.medium.state.p \"Absolute pressure of medium\";
-//   final Real tank3.heatTransfer.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) = tank3.medium.state.T \"Temperature of medium\";
+//   final Real tank3.heatTransfer.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = tank3.medium.state.p \"Absolute pressure of medium\";
+//   final Real tank3.heatTransfer.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) = tank3.medium.state.T \"Temperature of medium\";
 //   Real tank3.heatTransfer.surfaceAreas[1](quantity = \"Area\", unit = \"m2\") \"Heat transfer areas\";
 //   Real tank3.heatTransfer.Q_flows[1](quantity = \"Power\", unit = \"W\") \"Heat flow rates\";
 //   final parameter Boolean tank3.heatTransfer.use_k = false \"= true to use k value for thermal isolation\";
@@ -1439,13 +1439,13 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   Real tank3.heatTransfer.heatPorts[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Port temperature\";
 //   Real tank3.heatTransfer.heatPorts[1].Q_flow(quantity = \"Power\", unit = \"W\") \"Heat flow rate (positive if flowing from outside into the component)\";
 //   Real tank3.heatTransfer.Ts[1](quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperatures defined by fluid states\";
-//   Real tank3.portInDensities[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"densities of the fluid at the device boundary\";
+//   Real tank3.portInDensities[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"densities of the fluid at the device boundary\";
 //   Real tank3.portVelocities[1](quantity = \"Velocity\", unit = \"m/s\") \"velocities of fluid flow at device boundary\";
 //   Real tank3.ports_E_flow[1](quantity = \"Power\", unit = \"W\") \"flow of kinetic and potential energy at device boundary\";
 //   Real tank3.s[1](start = tank3.fluidLevel_max) \"curve parameters for port flows vs. port pressures; for further details see, Modelica Tutorial: Ideal switching devices\";
 //   Real tank3.ports_penetration[1] \"penetration of port with fluid, depending on fluid level and port diameter\";
 //   Real tank3.portAreas[1](quantity = \"Area\", unit = \"m2\");
-//   Real tank3.vessel_ps_static[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"static pressures inside the vessel at the height of the corresponding ports, zero flow velocity\";
+//   Real tank3.vessel_ps_static[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"static pressures inside the vessel at the height of the corresponding ports, zero flow velocity\";
 //   constant Real tank3.Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 100.0 \"cf. suddenExpansion\";
 //   Real tank3.m_flow_turbulent[1](quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   protected final Real tank3.fluidLevel(quantity = \"Length\", unit = \"m\", min = 0.0) = tank3.level \"level of fluid in the vessel for treating heights of ports\";
@@ -1463,12 +1463,12 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Boolean tank3.inFlow[1](start = false);
 //   protected final parameter Real tank3.level_start_eps(quantity = \"Length\", unit = \"m\", min = 0.0) = max(tank3.level_start, 1e-15);
 //   final parameter Boolean pipe1.allowFlowReversal = true \"= true to allow flow reversal, false restricts to design direction (port_a -> port_b)\";
-//   Real pipe1.port_a.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -9.999999999999999e+59, max = 100000.0) \"Mass flow rate from the connection point into the component\";
-//   Real pipe1.port_a.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real pipe1.port_a.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
-//   Real pipe1.port_b.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 9.999999999999999e+59) \"Mass flow rate from the connection point into the component\";
-//   Real pipe1.port_b.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real pipe1.port_b.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real pipe1.port_a.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e60, max = 1e5) \"Mass flow rate from the connection point into the component\";
+//   Real pipe1.port_a.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real pipe1.port_a.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real pipe1.port_b.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e60) \"Mass flow rate from the connection point into the component\";
+//   Real pipe1.port_b.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real pipe1.port_b.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
 //   protected parameter Boolean pipe1.port_a_exposesState = false \"= true if port_a exposes the state of a fluid volume\";
 //   protected parameter Boolean pipe1.port_b_exposesState = false \"= true if port_b.p exposes the state of a fluid volume\";
 //   protected parameter Boolean pipe1.showDesignFlowDirection = true \"= false to hide the arrow in the model icon\";
@@ -1478,18 +1478,18 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   parameter Real pipe1.diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.1 \"Diameter of circular pipe\";
 //   parameter Real pipe1.crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * pipe1.diameter * pipe1.diameter / 4.0 \"Inner cross section area\";
 //   parameter Real pipe1.perimeter(quantity = \"Length\", unit = \"m\") = 3.141592653589793 * pipe1.diameter \"Inner perimeter\";
-//   parameter Real pipe1.roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Average height of surface asperities (default: smooth steel pipe)\";
+//   parameter Real pipe1.roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Average height of surface asperities (default: smooth steel pipe)\";
 //   final parameter Real pipe1.V(quantity = \"Volume\", unit = \"m3\") = pipe1.crossArea * pipe1.length * pipe1.nParallel \"volume size\";
 //   parameter Real pipe1.height_ab(quantity = \"Length\", unit = \"m\") = 2.0 \"Height(port_b) - Height(port_a)\";
-//   parameter Real pipe1.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = system.p_start \"Start value of pressure at port a\";
-//   parameter Real pipe1.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe1.p_a_start \"Start value of pressure at port b\";
-//   final parameter Real pipe1.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 0.0 \"Start value for mass flow rate\";
+//   parameter Real pipe1.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = system.p_start \"Start value of pressure at port a\";
+//   parameter Real pipe1.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe1.p_a_start \"Start value of pressure at port b\";
+//   final parameter Real pipe1.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 0.0 \"Start value for mass flow rate\";
 //   final parameter Boolean pipe1.flowModel.from_dp = true \"= true, use m_flow = f(dp), otherwise dp = f(m_flow)\";
 //   final parameter Integer pipe1.flowModel.n = 2 \"Number of discrete flow volumes\";
-//   Real pipe1.flowModel.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real pipe1.flowModel.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
-//   Real pipe1.flowModel.states[2].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real pipe1.flowModel.states[2].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real pipe1.flowModel.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real pipe1.flowModel.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real pipe1.flowModel.states[2].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real pipe1.flowModel.states[2].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
 //   Real pipe1.flowModel.vs[1](quantity = \"Velocity\", unit = \"m/s\") \"Mean velocities of fluid flow\";
 //   Real pipe1.flowModel.vs[2](quantity = \"Velocity\", unit = \"m/s\") \"Mean velocities of fluid flow\";
 //   final parameter Real pipe1.flowModel.nParallel = pipe1.nParallel \"number of identical parallel flow devices\";
@@ -1503,24 +1503,24 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   final parameter Real pipe1.flowModel.g(quantity = \"Acceleration\", unit = \"m/s2\") = system.g \"Constant gravity acceleration\";
 //   final parameter Boolean pipe1.flowModel.allowFlowReversal = true \"= true to allow flow reversal, false restricts to design direction (states[1] -> states[n+1])\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) pipe1.flowModel.momentumDynamics = Modelica.Fluid.Types.Dynamics.SteadyState \"Formulation of momentum balance\";
-//   final parameter Real pipe1.flowModel.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 0.0 \"Start value of mass flow rates\";
-//   final parameter Real pipe1.flowModel.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe1.p_a_start \"Start value for p[1] at design inflow\";
-//   final parameter Real pipe1.flowModel.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe1.p_b_start \"Start value for p[n+1] at design outflow\";
+//   final parameter Real pipe1.flowModel.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 0.0 \"Start value of mass flow rates\";
+//   final parameter Real pipe1.flowModel.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe1.p_a_start \"Start value for p[1] at design inflow\";
+//   final parameter Real pipe1.flowModel.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe1.p_b_start \"Start value for p[n+1] at design outflow\";
 //   final parameter Integer pipe1.flowModel.m = 1 \"Number of flow segments\";
 //   final Real pipe1.flowModel.pathLengths[1](quantity = \"Length\", unit = \"m\") \"Lengths along flow path\";
-//   Real pipe1.flowModel.m_flows[1](quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -9.999999999999999e+59, max = 100000.0, start = 0.0, stateSelect = StateSelect.default) \"mass flow rates between states\";
+//   Real pipe1.flowModel.m_flows[1](quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e60, max = 1e5, start = 0.0, stateSelect = StateSelect.default) \"mass flow rates between states\";
 //   Real pipe1.flowModel.Is[1](quantity = \"Momentum\", unit = \"kg.m/s\") \"Momenta of flow segments\";
 //   Real pipe1.flowModel.Ib_flows[1](quantity = \"Force\", unit = \"N\") \"Flow of momentum across boundaries\";
 //   Real pipe1.flowModel.Fs_p[1](quantity = \"Force\", unit = \"N\") \"Pressure forces\";
 //   Real pipe1.flowModel.Fs_fg[1](quantity = \"Force\", unit = \"N\") \"Friction and gravity forces\";
 //   final parameter Boolean pipe1.flowModel.useUpstreamScheme = true \"= false to average upstream and downstream properties across flow segments\";
 //   final parameter Boolean pipe1.flowModel.use_Ib_flows = false \"= true to consider differences in flow of momentum through boundaries\";
-//   Real pipe1.flowModel.rhos[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0);
-//   Real pipe1.flowModel.rhos[2](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0);
-//   Real pipe1.flowModel.rhos_act[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Actual density per segment\";
-//   Real pipe1.flowModel.mus[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001);
-//   Real pipe1.flowModel.mus[2](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001);
-//   Real pipe1.flowModel.mus_act[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001) \"Actual viscosity per segment\";
+//   Real pipe1.flowModel.rhos[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0);
+//   Real pipe1.flowModel.rhos[2](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0);
+//   Real pipe1.flowModel.rhos_act[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Actual density per segment\";
+//   Real pipe1.flowModel.mus[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001);
+//   Real pipe1.flowModel.mus[2](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001);
+//   Real pipe1.flowModel.mus_act[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001) \"Actual viscosity per segment\";
 //   Real pipe1.flowModel.dps_fg[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", start = pipe1.flowModel.p_a_start - pipe1.flowModel.p_b_start) \"pressure drop between states\";
 //   final parameter Real pipe1.flowModel.Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Start of turbulent regime, depending on type of flow device\";
 //   final parameter Boolean pipe1.flowModel.show_Res = false \"= true, if Reynolds numbers are included for plotting\";
@@ -1530,21 +1530,21 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected parameter Real pipe1.flowModel.mu_nominal(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = 0.001 \"Nominal dynamic viscosity (e.g., mu_liquidWater = 1e-3, mu_air = 1.8e-5)\";
 //   Real pipe1.flowModel.pathLengths_internal[1](quantity = \"Length\", unit = \"m\") \"pathLengths used internally; to be defined by extending class\";
 //   Real pipe1.flowModel.Res_turbulent_internal[1](quantity = \"ReynoldsNumber\", unit = \"1\") \"Re_turbulent used internally; to be defined by extending class\";
-//   parameter Real pipe1.flowModel.dp_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 100000.0) \"Nominal pressure loss (only for nominal models)\";
+//   parameter Real pipe1.flowModel.dp_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 1e5) \"Nominal pressure loss (only for nominal models)\";
 //   parameter Real pipe1.flowModel.m_flow_nominal(quantity = \"MassFlowRate\", unit = \"kg/s\") = 100.0 * pipe1.flowModel.m_flow_small \"Nominal mass flow rate\";
 //   parameter Real pipe1.flowModel.m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\") = system.m_flow_small \"Within regularization if |m_flows| < m_flow_small (may be wider for large discontinuities in static head)\";
-//   protected parameter Real pipe1.flowModel.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 100000.0) \"Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)\";
+//   protected parameter Real pipe1.flowModel.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 1e5) \"Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)\";
 //   protected final parameter Boolean pipe1.flowModel.constantPressureLossCoefficient = false \"= true if the pressure loss does not depend on fluid states\";
 //   protected final parameter Boolean pipe1.flowModel.continuousFlowReversal = false \"= true if the pressure loss is continuous around zero flow\";
 //   protected Real pipe1.flowModel.diameters[1](quantity = \"Length\", unit = \"m\") \"mean diameters between segments\";
-//   protected Real pipe1.flowModel.dp_fric_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.WallFriction.pressureLoss_m_flow(pipe1.flowModel.m_flow_nominal / pipe1.flowModel.nParallel, pipe1.flowModel.rho_nominal, pipe1.flowModel.rho_nominal, pipe1.flowModel.mu_nominal, pipe1.flowModel.mu_nominal, pipe1.flowModel.pathLengths_internal[1], pipe1.flowModel.diameters[1], (pipe1.flowModel.crossAreas[1] + pipe1.flowModel.crossAreas[2]) / 2.0, (pipe1.flowModel.roughnesses[1] + pipe1.flowModel.roughnesses[2]) / 2.0, pipe1.flowModel.m_flow_small / pipe1.flowModel.nParallel, pipe1.flowModel.Res_turbulent_internal[1]) \"pressure loss for nominal conditions\";
+//   protected Real pipe1.flowModel.dp_fric_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.flowModel.WallFriction.pressureLoss_m_flow(pipe1.flowModel.m_flow_nominal / pipe1.flowModel.nParallel, pipe1.flowModel.rho_nominal, pipe1.flowModel.rho_nominal, pipe1.flowModel.mu_nominal, pipe1.flowModel.mu_nominal, pipe1.flowModel.pathLengths_internal[1], pipe1.flowModel.diameters[1], (pipe1.flowModel.crossAreas[1] + pipe1.flowModel.crossAreas[2]) / 2.0, (pipe1.flowModel.roughnesses[1] + pipe1.flowModel.roughnesses[2]) / 2.0, pipe1.flowModel.m_flow_small / pipe1.flowModel.nParallel, pipe1.flowModel.Res_turbulent_internal[1]) \"pressure loss for nominal conditions\";
 //   final parameter Boolean pipe2.allowFlowReversal = true \"= true to allow flow reversal, false restricts to design direction (port_a -> port_b)\";
-//   Real pipe2.port_a.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -9.999999999999999e+59, max = 100000.0) \"Mass flow rate from the connection point into the component\";
-//   Real pipe2.port_a.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real pipe2.port_a.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
-//   Real pipe2.port_b.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 9.999999999999999e+59) \"Mass flow rate from the connection point into the component\";
-//   Real pipe2.port_b.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real pipe2.port_b.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real pipe2.port_a.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e60, max = 1e5) \"Mass flow rate from the connection point into the component\";
+//   Real pipe2.port_a.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real pipe2.port_a.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real pipe2.port_b.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e60) \"Mass flow rate from the connection point into the component\";
+//   Real pipe2.port_b.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real pipe2.port_b.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
 //   protected parameter Boolean pipe2.port_a_exposesState = false \"= true if port_a exposes the state of a fluid volume\";
 //   protected parameter Boolean pipe2.port_b_exposesState = false \"= true if port_b.p exposes the state of a fluid volume\";
 //   protected parameter Boolean pipe2.showDesignFlowDirection = true \"= false to hide the arrow in the model icon\";
@@ -1554,18 +1554,18 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   parameter Real pipe2.diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.1 \"Diameter of circular pipe\";
 //   parameter Real pipe2.crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * pipe2.diameter * pipe2.diameter / 4.0 \"Inner cross section area\";
 //   parameter Real pipe2.perimeter(quantity = \"Length\", unit = \"m\") = 3.141592653589793 * pipe2.diameter \"Inner perimeter\";
-//   parameter Real pipe2.roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Average height of surface asperities (default: smooth steel pipe)\";
+//   parameter Real pipe2.roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Average height of surface asperities (default: smooth steel pipe)\";
 //   final parameter Real pipe2.V(quantity = \"Volume\", unit = \"m3\") = pipe2.crossArea * pipe2.length * pipe2.nParallel \"volume size\";
 //   parameter Real pipe2.height_ab(quantity = \"Length\", unit = \"m\") = 2.0 \"Height(port_b) - Height(port_a)\";
-//   parameter Real pipe2.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = system.p_start \"Start value of pressure at port a\";
-//   parameter Real pipe2.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe2.p_a_start \"Start value of pressure at port b\";
-//   final parameter Real pipe2.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 0.0 \"Start value for mass flow rate\";
+//   parameter Real pipe2.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = system.p_start \"Start value of pressure at port a\";
+//   parameter Real pipe2.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe2.p_a_start \"Start value of pressure at port b\";
+//   final parameter Real pipe2.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 0.0 \"Start value for mass flow rate\";
 //   final parameter Boolean pipe2.flowModel.from_dp = true \"= true, use m_flow = f(dp), otherwise dp = f(m_flow)\";
 //   final parameter Integer pipe2.flowModel.n = 2 \"Number of discrete flow volumes\";
-//   Real pipe2.flowModel.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real pipe2.flowModel.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
-//   Real pipe2.flowModel.states[2].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real pipe2.flowModel.states[2].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real pipe2.flowModel.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real pipe2.flowModel.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real pipe2.flowModel.states[2].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real pipe2.flowModel.states[2].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
 //   Real pipe2.flowModel.vs[1](quantity = \"Velocity\", unit = \"m/s\") \"Mean velocities of fluid flow\";
 //   Real pipe2.flowModel.vs[2](quantity = \"Velocity\", unit = \"m/s\") \"Mean velocities of fluid flow\";
 //   final parameter Real pipe2.flowModel.nParallel = pipe2.nParallel \"number of identical parallel flow devices\";
@@ -1579,24 +1579,24 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   final parameter Real pipe2.flowModel.g(quantity = \"Acceleration\", unit = \"m/s2\") = system.g \"Constant gravity acceleration\";
 //   final parameter Boolean pipe2.flowModel.allowFlowReversal = true \"= true to allow flow reversal, false restricts to design direction (states[1] -> states[n+1])\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) pipe2.flowModel.momentumDynamics = Modelica.Fluid.Types.Dynamics.SteadyState \"Formulation of momentum balance\";
-//   final parameter Real pipe2.flowModel.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 0.0 \"Start value of mass flow rates\";
-//   final parameter Real pipe2.flowModel.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe2.p_a_start \"Start value for p[1] at design inflow\";
-//   final parameter Real pipe2.flowModel.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe2.p_b_start \"Start value for p[n+1] at design outflow\";
+//   final parameter Real pipe2.flowModel.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 0.0 \"Start value of mass flow rates\";
+//   final parameter Real pipe2.flowModel.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe2.p_a_start \"Start value for p[1] at design inflow\";
+//   final parameter Real pipe2.flowModel.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe2.p_b_start \"Start value for p[n+1] at design outflow\";
 //   final parameter Integer pipe2.flowModel.m = 1 \"Number of flow segments\";
 //   final Real pipe2.flowModel.pathLengths[1](quantity = \"Length\", unit = \"m\") \"Lengths along flow path\";
-//   Real pipe2.flowModel.m_flows[1](quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -9.999999999999999e+59, max = 100000.0, start = 0.0, stateSelect = StateSelect.default) \"mass flow rates between states\";
+//   Real pipe2.flowModel.m_flows[1](quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e60, max = 1e5, start = 0.0, stateSelect = StateSelect.default) \"mass flow rates between states\";
 //   Real pipe2.flowModel.Is[1](quantity = \"Momentum\", unit = \"kg.m/s\") \"Momenta of flow segments\";
 //   Real pipe2.flowModel.Ib_flows[1](quantity = \"Force\", unit = \"N\") \"Flow of momentum across boundaries\";
 //   Real pipe2.flowModel.Fs_p[1](quantity = \"Force\", unit = \"N\") \"Pressure forces\";
 //   Real pipe2.flowModel.Fs_fg[1](quantity = \"Force\", unit = \"N\") \"Friction and gravity forces\";
 //   final parameter Boolean pipe2.flowModel.useUpstreamScheme = true \"= false to average upstream and downstream properties across flow segments\";
 //   final parameter Boolean pipe2.flowModel.use_Ib_flows = false \"= true to consider differences in flow of momentum through boundaries\";
-//   Real pipe2.flowModel.rhos[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0);
-//   Real pipe2.flowModel.rhos[2](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0);
-//   Real pipe2.flowModel.rhos_act[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Actual density per segment\";
-//   Real pipe2.flowModel.mus[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001);
-//   Real pipe2.flowModel.mus[2](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001);
-//   Real pipe2.flowModel.mus_act[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001) \"Actual viscosity per segment\";
+//   Real pipe2.flowModel.rhos[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0);
+//   Real pipe2.flowModel.rhos[2](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0);
+//   Real pipe2.flowModel.rhos_act[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Actual density per segment\";
+//   Real pipe2.flowModel.mus[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001);
+//   Real pipe2.flowModel.mus[2](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001);
+//   Real pipe2.flowModel.mus_act[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001) \"Actual viscosity per segment\";
 //   Real pipe2.flowModel.dps_fg[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", start = pipe2.flowModel.p_a_start - pipe2.flowModel.p_b_start) \"pressure drop between states\";
 //   final parameter Real pipe2.flowModel.Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Start of turbulent regime, depending on type of flow device\";
 //   final parameter Boolean pipe2.flowModel.show_Res = false \"= true, if Reynolds numbers are included for plotting\";
@@ -1606,21 +1606,21 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected parameter Real pipe2.flowModel.mu_nominal(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = 0.001 \"Nominal dynamic viscosity (e.g., mu_liquidWater = 1e-3, mu_air = 1.8e-5)\";
 //   Real pipe2.flowModel.pathLengths_internal[1](quantity = \"Length\", unit = \"m\") \"pathLengths used internally; to be defined by extending class\";
 //   Real pipe2.flowModel.Res_turbulent_internal[1](quantity = \"ReynoldsNumber\", unit = \"1\") \"Re_turbulent used internally; to be defined by extending class\";
-//   parameter Real pipe2.flowModel.dp_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 100000.0) \"Nominal pressure loss (only for nominal models)\";
+//   parameter Real pipe2.flowModel.dp_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 1e5) \"Nominal pressure loss (only for nominal models)\";
 //   parameter Real pipe2.flowModel.m_flow_nominal(quantity = \"MassFlowRate\", unit = \"kg/s\") = 100.0 * pipe2.flowModel.m_flow_small \"Nominal mass flow rate\";
 //   parameter Real pipe2.flowModel.m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\") = system.m_flow_small \"Within regularization if |m_flows| < m_flow_small (may be wider for large discontinuities in static head)\";
-//   protected parameter Real pipe2.flowModel.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 100000.0) \"Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)\";
+//   protected parameter Real pipe2.flowModel.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 1e5) \"Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)\";
 //   protected final parameter Boolean pipe2.flowModel.constantPressureLossCoefficient = false \"= true if the pressure loss does not depend on fluid states\";
 //   protected final parameter Boolean pipe2.flowModel.continuousFlowReversal = false \"= true if the pressure loss is continuous around zero flow\";
 //   protected Real pipe2.flowModel.diameters[1](quantity = \"Length\", unit = \"m\") \"mean diameters between segments\";
-//   protected Real pipe2.flowModel.dp_fric_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.WallFriction.pressureLoss_m_flow(pipe2.flowModel.m_flow_nominal / pipe2.flowModel.nParallel, pipe2.flowModel.rho_nominal, pipe2.flowModel.rho_nominal, pipe2.flowModel.mu_nominal, pipe2.flowModel.mu_nominal, pipe2.flowModel.pathLengths_internal[1], pipe2.flowModel.diameters[1], (pipe2.flowModel.crossAreas[1] + pipe2.flowModel.crossAreas[2]) / 2.0, (pipe2.flowModel.roughnesses[1] + pipe2.flowModel.roughnesses[2]) / 2.0, pipe2.flowModel.m_flow_small / pipe2.flowModel.nParallel, pipe2.flowModel.Res_turbulent_internal[1]) \"pressure loss for nominal conditions\";
+//   protected Real pipe2.flowModel.dp_fric_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.flowModel.WallFriction.pressureLoss_m_flow(pipe2.flowModel.m_flow_nominal / pipe2.flowModel.nParallel, pipe2.flowModel.rho_nominal, pipe2.flowModel.rho_nominal, pipe2.flowModel.mu_nominal, pipe2.flowModel.mu_nominal, pipe2.flowModel.pathLengths_internal[1], pipe2.flowModel.diameters[1], (pipe2.flowModel.crossAreas[1] + pipe2.flowModel.crossAreas[2]) / 2.0, (pipe2.flowModel.roughnesses[1] + pipe2.flowModel.roughnesses[2]) / 2.0, pipe2.flowModel.m_flow_small / pipe2.flowModel.nParallel, pipe2.flowModel.Res_turbulent_internal[1]) \"pressure loss for nominal conditions\";
 //   final parameter Boolean pipe3.allowFlowReversal = true \"= true to allow flow reversal, false restricts to design direction (port_a -> port_b)\";
-//   Real pipe3.port_a.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -9.999999999999999e+59, max = 100000.0) \"Mass flow rate from the connection point into the component\";
-//   Real pipe3.port_a.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real pipe3.port_a.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
-//   Real pipe3.port_b.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 9.999999999999999e+59) \"Mass flow rate from the connection point into the component\";
-//   Real pipe3.port_b.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Thermodynamic pressure in the connection point\";
-//   Real pipe3.port_b.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real pipe3.port_a.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e60, max = 1e5) \"Mass flow rate from the connection point into the component\";
+//   Real pipe3.port_a.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real pipe3.port_a.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
+//   Real pipe3.port_b.m_flow(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e60) \"Mass flow rate from the connection point into the component\";
+//   Real pipe3.port_b.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Thermodynamic pressure in the connection point\";
+//   Real pipe3.port_b.h_outflow(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -1e10, max = 1e10, nominal = 1e6) \"Specific thermodynamic enthalpy close to the connection point if m_flow < 0\";
 //   protected parameter Boolean pipe3.port_a_exposesState = false \"= true if port_a exposes the state of a fluid volume\";
 //   protected parameter Boolean pipe3.port_b_exposesState = false \"= true if port_b.p exposes the state of a fluid volume\";
 //   protected parameter Boolean pipe3.showDesignFlowDirection = true \"= false to hide the arrow in the model icon\";
@@ -1630,18 +1630,18 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   parameter Real pipe3.diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.1 \"Diameter of circular pipe\";
 //   parameter Real pipe3.crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * pipe3.diameter * pipe3.diameter / 4.0 \"Inner cross section area\";
 //   parameter Real pipe3.perimeter(quantity = \"Length\", unit = \"m\") = 3.141592653589793 * pipe3.diameter \"Inner perimeter\";
-//   parameter Real pipe3.roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-05 \"Average height of surface asperities (default: smooth steel pipe)\";
+//   parameter Real pipe3.roughness(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.5e-5 \"Average height of surface asperities (default: smooth steel pipe)\";
 //   final parameter Real pipe3.V(quantity = \"Volume\", unit = \"m3\") = pipe3.crossArea * pipe3.length * pipe3.nParallel \"volume size\";
 //   parameter Real pipe3.height_ab(quantity = \"Length\", unit = \"m\") = -1.0 \"Height(port_b) - Height(port_a)\";
-//   parameter Real pipe3.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = system.p_start \"Start value of pressure at port a\";
-//   parameter Real pipe3.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe3.p_a_start \"Start value of pressure at port b\";
-//   final parameter Real pipe3.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 0.0 \"Start value for mass flow rate\";
+//   parameter Real pipe3.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = system.p_start \"Start value of pressure at port a\";
+//   parameter Real pipe3.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe3.p_a_start \"Start value of pressure at port b\";
+//   final parameter Real pipe3.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 0.0 \"Start value for mass flow rate\";
 //   final parameter Boolean pipe3.flowModel.from_dp = true \"= true, use m_flow = f(dp), otherwise dp = f(m_flow)\";
 //   final parameter Integer pipe3.flowModel.n = 2 \"Number of discrete flow volumes\";
-//   Real pipe3.flowModel.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real pipe3.flowModel.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
-//   Real pipe3.flowModel.states[2].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Absolute pressure of medium\";
-//   Real pipe3.flowModel.states[2].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real pipe3.flowModel.states[1].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real pipe3.flowModel.states[1].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
+//   Real pipe3.flowModel.states[2].p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) \"Absolute pressure of medium\";
+//   Real pipe3.flowModel.states[2].T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 1e4, start = 300.0, nominal = 300.0) \"Temperature of medium\";
 //   Real pipe3.flowModel.vs[1](quantity = \"Velocity\", unit = \"m/s\") \"Mean velocities of fluid flow\";
 //   Real pipe3.flowModel.vs[2](quantity = \"Velocity\", unit = \"m/s\") \"Mean velocities of fluid flow\";
 //   final parameter Real pipe3.flowModel.nParallel = pipe3.nParallel \"number of identical parallel flow devices\";
@@ -1655,24 +1655,24 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   final parameter Real pipe3.flowModel.g(quantity = \"Acceleration\", unit = \"m/s2\") = system.g \"Constant gravity acceleration\";
 //   final parameter Boolean pipe3.flowModel.allowFlowReversal = true \"= true to allow flow reversal, false restricts to design direction (states[1] -> states[n+1])\";
 //   final parameter enumeration(DynamicFreeInitial, FixedInitial, SteadyStateInitial, SteadyState) pipe3.flowModel.momentumDynamics = Modelica.Fluid.Types.Dynamics.SteadyState \"Formulation of momentum balance\";
-//   final parameter Real pipe3.flowModel.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -100000.0, max = 100000.0) = 0.0 \"Start value of mass flow rates\";
-//   final parameter Real pipe3.flowModel.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe3.p_a_start \"Start value for p[1] at design inflow\";
-//   final parameter Real pipe3.flowModel.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) = pipe3.p_b_start \"Start value for p[n+1] at design outflow\";
+//   final parameter Real pipe3.flowModel.m_flow_start(quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e5, max = 1e5) = 0.0 \"Start value of mass flow rates\";
+//   final parameter Real pipe3.flowModel.p_a_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe3.p_a_start \"Start value for p[1] at design inflow\";
+//   final parameter Real pipe3.flowModel.p_b_start(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 1e8, start = 1e5, nominal = 1e5) = pipe3.p_b_start \"Start value for p[n+1] at design outflow\";
 //   final parameter Integer pipe3.flowModel.m = 1 \"Number of flow segments\";
 //   final Real pipe3.flowModel.pathLengths[1](quantity = \"Length\", unit = \"m\") \"Lengths along flow path\";
-//   Real pipe3.flowModel.m_flows[1](quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -9.999999999999999e+59, max = 100000.0, start = 0.0, stateSelect = StateSelect.default) \"mass flow rates between states\";
+//   Real pipe3.flowModel.m_flows[1](quantity = \"MassFlowRate.SimpleLiquidWater\", unit = \"kg/s\", min = -1e60, max = 1e5, start = 0.0, stateSelect = StateSelect.default) \"mass flow rates between states\";
 //   Real pipe3.flowModel.Is[1](quantity = \"Momentum\", unit = \"kg.m/s\") \"Momenta of flow segments\";
 //   Real pipe3.flowModel.Ib_flows[1](quantity = \"Force\", unit = \"N\") \"Flow of momentum across boundaries\";
 //   Real pipe3.flowModel.Fs_p[1](quantity = \"Force\", unit = \"N\") \"Pressure forces\";
 //   Real pipe3.flowModel.Fs_fg[1](quantity = \"Force\", unit = \"N\") \"Friction and gravity forces\";
 //   final parameter Boolean pipe3.flowModel.useUpstreamScheme = true \"= false to average upstream and downstream properties across flow segments\";
 //   final parameter Boolean pipe3.flowModel.use_Ib_flows = false \"= true to consider differences in flow of momentum through boundaries\";
-//   Real pipe3.flowModel.rhos[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0);
-//   Real pipe3.flowModel.rhos[2](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0);
-//   Real pipe3.flowModel.rhos_act[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"Actual density per segment\";
-//   Real pipe3.flowModel.mus[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001);
-//   Real pipe3.flowModel.mus[2](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001);
-//   Real pipe3.flowModel.mus_act[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001) \"Actual viscosity per segment\";
+//   Real pipe3.flowModel.rhos[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0);
+//   Real pipe3.flowModel.rhos[2](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0);
+//   Real pipe3.flowModel.rhos_act[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 1e5, start = 1.0, nominal = 1.0) \"Actual density per segment\";
+//   Real pipe3.flowModel.mus[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001);
+//   Real pipe3.flowModel.mus[2](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001);
+//   Real pipe3.flowModel.mus_act[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 1e8, start = 0.001, nominal = 0.001) \"Actual viscosity per segment\";
 //   Real pipe3.flowModel.dps_fg[1](quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", start = pipe3.flowModel.p_a_start - pipe3.flowModel.p_b_start) \"pressure drop between states\";
 //   final parameter Real pipe3.flowModel.Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Start of turbulent regime, depending on type of flow device\";
 //   final parameter Boolean pipe3.flowModel.show_Res = false \"= true, if Reynolds numbers are included for plotting\";
@@ -1682,14 +1682,14 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected parameter Real pipe3.flowModel.mu_nominal(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = 0.001 \"Nominal dynamic viscosity (e.g., mu_liquidWater = 1e-3, mu_air = 1.8e-5)\";
 //   Real pipe3.flowModel.pathLengths_internal[1](quantity = \"Length\", unit = \"m\") \"pathLengths used internally; to be defined by extending class\";
 //   Real pipe3.flowModel.Res_turbulent_internal[1](quantity = \"ReynoldsNumber\", unit = \"1\") \"Re_turbulent used internally; to be defined by extending class\";
-//   parameter Real pipe3.flowModel.dp_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 100000.0) \"Nominal pressure loss (only for nominal models)\";
+//   parameter Real pipe3.flowModel.dp_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 1e5) \"Nominal pressure loss (only for nominal models)\";
 //   parameter Real pipe3.flowModel.m_flow_nominal(quantity = \"MassFlowRate\", unit = \"kg/s\") = 100.0 * pipe3.flowModel.m_flow_small \"Nominal mass flow rate\";
 //   parameter Real pipe3.flowModel.m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\") = system.m_flow_small \"Within regularization if |m_flows| < m_flow_small (may be wider for large discontinuities in static head)\";
-//   protected parameter Real pipe3.flowModel.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 100000.0) \"Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)\";
+//   protected parameter Real pipe3.flowModel.dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, start = 1.0, fixed = false, nominal = 1e5) \"Within regularization if |dp| < dp_small (may be wider for large discontinuities in static head)\";
 //   protected final parameter Boolean pipe3.flowModel.constantPressureLossCoefficient = false \"= true if the pressure loss does not depend on fluid states\";
 //   protected final parameter Boolean pipe3.flowModel.continuousFlowReversal = false \"= true if the pressure loss is continuous around zero flow\";
 //   protected Real pipe3.flowModel.diameters[1](quantity = \"Length\", unit = \"m\") \"mean diameters between segments\";
-//   protected Real pipe3.flowModel.dp_fric_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 100000.0) = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.WallFriction.pressureLoss_m_flow(pipe3.flowModel.m_flow_nominal / pipe3.flowModel.nParallel, pipe3.flowModel.rho_nominal, pipe3.flowModel.rho_nominal, pipe3.flowModel.mu_nominal, pipe3.flowModel.mu_nominal, pipe3.flowModel.pathLengths_internal[1], pipe3.flowModel.diameters[1], (pipe3.flowModel.crossAreas[1] + pipe3.flowModel.crossAreas[2]) / 2.0, (pipe3.flowModel.roughnesses[1] + pipe3.flowModel.roughnesses[2]) / 2.0, pipe3.flowModel.m_flow_small / pipe3.flowModel.nParallel, pipe3.flowModel.Res_turbulent_internal[1]) \"pressure loss for nominal conditions\";
+//   protected Real pipe3.flowModel.dp_fric_nominal(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.flowModel.WallFriction.pressureLoss_m_flow(pipe3.flowModel.m_flow_nominal / pipe3.flowModel.nParallel, pipe3.flowModel.rho_nominal, pipe3.flowModel.rho_nominal, pipe3.flowModel.mu_nominal, pipe3.flowModel.mu_nominal, pipe3.flowModel.pathLengths_internal[1], pipe3.flowModel.diameters[1], (pipe3.flowModel.crossAreas[1] + pipe3.flowModel.crossAreas[2]) / 2.0, (pipe3.flowModel.roughnesses[1] + pipe3.flowModel.roughnesses[2]) / 2.0, pipe3.flowModel.m_flow_small / pipe3.flowModel.nParallel, pipe3.flowModel.Res_turbulent_internal[1]) \"pressure loss for nominal conditions\";
 // initial equation
 //   tank1.level = tank1.level_start_eps;
 //   tank1.medium.T = tank1.T_start;
@@ -1741,7 +1741,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank1.medium.state.T = tank1.medium.T;
 //   tank1.medium.state.p = tank1.medium.p;
 //   tank1.medium.X[1] = 1.0;
-//   assert(tank1.medium.X[1] >= -1e-05 and tank1.medium.X[1] <= 1.00001, \"Mass fraction X[\" + String(1, 0, true) + \"] = \" + String(tank1.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
+//   assert(tank1.medium.X[1] >= -1e-5 and tank1.medium.X[1] <= 1.00001, \"Mass fraction X[\" + String(1, 0, true) + \"] = \" + String(tank1.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
 //   of medium \" + \"SimpleLiquidWater\" + \" is not in the range 0..1\");
 //   assert(tank1.medium.p >= 0.0, \"Pressure (= \" + String(tank1.medium.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
 //   (Temperature = \" + String(tank1.medium.T, 6, 0, true) + \" K)\");
@@ -1762,7 +1762,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank1.Hb_flow = tank1.ports_H_flow[1] + tank1.ports_E_flow[1];
 //   tank1.Qb_flow = tank1.heatTransfer.Q_flows[1];
 //   assert(tank1.fluidLevel <= tank1.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank1.fluidLevel, 6, 0, true) + \")\");
-//   assert(tank1.fluidLevel > (-1e-06 * tank1.fluidLevel_max), \"Fluid level (= \" + String(tank1.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
+//   assert(tank1.fluidLevel > (-1e-6 * tank1.fluidLevel_max), \"Fluid level (= \" + String(tank1.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
 //   tank1.portInDensities[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.density(Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.setState_phX(tank1.vessel_ps_static[1], pipe1.port_b.h_outflow, {}));
 //   tank1.portVelocities[1] = smooth(0, tank1.ports[1].m_flow / tank1.portAreas[1] / Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.density(Modelica.Fluid.Examples.Tanks.ThreeTanks.tank1.Medium.setState_phX(tank1.vessel_ps_static[1], if tank1.ports[1].m_flow > 0.0 then pipe1.port_b.h_outflow else tank1.ports[1].h_outflow, {})));
 //   tank1.ports_penetration[1] = Modelica.Fluid.Utilities.regStep(tank1.fluidLevel - tank1.portsData_height[1] - 0.1 * tank1.portsData_diameter[1], 1.0, 0.001, 0.1 * tank1.portsData_diameter[1]);
@@ -1799,7 +1799,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank2.medium.state.T = tank2.medium.T;
 //   tank2.medium.state.p = tank2.medium.p;
 //   tank2.medium.X[1] = 1.0;
-//   assert(tank2.medium.X[1] >= -1e-05 and tank2.medium.X[1] <= 1.00001, \"Mass fraction X[\" + String(1, 0, true) + \"] = \" + String(tank2.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
+//   assert(tank2.medium.X[1] >= -1e-5 and tank2.medium.X[1] <= 1.00001, \"Mass fraction X[\" + String(1, 0, true) + \"] = \" + String(tank2.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
 //   of medium \" + \"SimpleLiquidWater\" + \" is not in the range 0..1\");
 //   assert(tank2.medium.p >= 0.0, \"Pressure (= \" + String(tank2.medium.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
 //   (Temperature = \" + String(tank2.medium.T, 6, 0, true) + \" K)\");
@@ -1820,7 +1820,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank2.Hb_flow = tank2.ports_H_flow[1] + tank2.ports_E_flow[1];
 //   tank2.Qb_flow = tank2.heatTransfer.Q_flows[1];
 //   assert(tank2.fluidLevel <= tank2.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank2.fluidLevel, 6, 0, true) + \")\");
-//   assert(tank2.fluidLevel > (-1e-06 * tank2.fluidLevel_max), \"Fluid level (= \" + String(tank2.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
+//   assert(tank2.fluidLevel > (-1e-6 * tank2.fluidLevel_max), \"Fluid level (= \" + String(tank2.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
 //   tank2.portInDensities[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.density(Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.setState_phX(tank2.vessel_ps_static[1], pipe2.port_b.h_outflow, {}));
 //   tank2.portVelocities[1] = smooth(0, tank2.ports[1].m_flow / tank2.portAreas[1] / Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.density(Modelica.Fluid.Examples.Tanks.ThreeTanks.tank2.Medium.setState_phX(tank2.vessel_ps_static[1], if tank2.ports[1].m_flow > 0.0 then pipe2.port_b.h_outflow else tank2.ports[1].h_outflow, {})));
 //   tank2.ports_penetration[1] = Modelica.Fluid.Utilities.regStep(tank2.fluidLevel - tank2.portsData_height[1] - 0.1 * tank2.portsData_diameter[1], 1.0, 0.001, 0.1 * tank2.portsData_diameter[1]);
@@ -1857,7 +1857,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank3.medium.state.T = tank3.medium.T;
 //   tank3.medium.state.p = tank3.medium.p;
 //   tank3.medium.X[1] = 1.0;
-//   assert(tank3.medium.X[1] >= -1e-05 and tank3.medium.X[1] <= 1.00001, \"Mass fraction X[\" + String(1, 0, true) + \"] = \" + String(tank3.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
+//   assert(tank3.medium.X[1] >= -1e-5 and tank3.medium.X[1] <= 1.00001, \"Mass fraction X[\" + String(1, 0, true) + \"] = \" + String(tank3.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
 //   of medium \" + \"SimpleLiquidWater\" + \" is not in the range 0..1\");
 //   assert(tank3.medium.p >= 0.0, \"Pressure (= \" + String(tank3.medium.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
 //   (Temperature = \" + String(tank3.medium.T, 6, 0, true) + \" K)\");
@@ -1878,7 +1878,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank3.Hb_flow = tank3.ports_H_flow[1] + tank3.ports_E_flow[1];
 //   tank3.Qb_flow = tank3.heatTransfer.Q_flows[1];
 //   assert(tank3.fluidLevel <= tank3.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank3.fluidLevel, 6, 0, true) + \")\");
-//   assert(tank3.fluidLevel > (-1e-06 * tank3.fluidLevel_max), \"Fluid level (= \" + String(tank3.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
+//   assert(tank3.fluidLevel > (-1e-6 * tank3.fluidLevel_max), \"Fluid level (= \" + String(tank3.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
 //   tank3.portInDensities[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.density(Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.setState_phX(tank3.vessel_ps_static[1], pipe3.port_b.h_outflow, {}));
 //   tank3.portVelocities[1] = smooth(0, tank3.ports[1].m_flow / tank3.portAreas[1] / Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.density(Modelica.Fluid.Examples.Tanks.ThreeTanks.tank3.Medium.setState_phX(tank3.vessel_ps_static[1], if tank3.ports[1].m_flow > 0.0 then pipe3.port_b.h_outflow else tank3.ports[1].h_outflow, {})));
 //   tank3.ports_penetration[1] = Modelica.Fluid.Utilities.regStep(tank3.fluidLevel - tank3.portsData_height[1] - 0.1 * tank3.portsData_diameter[1], 1.0, 0.001, 0.1 * tank3.portsData_diameter[1]);
@@ -1902,7 +1902,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank3.U = tank3.m * tank3.medium.u;
 //   der(tank3.U) = tank3.Hb_flow + tank3.Qb_flow + tank3.Wb_flow;
 //   der(tank3.m) = tank3.mb_flow;
-//   pipe1.flowModel.states[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.setState_phX(pipe1.port_a.p, ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07) * pipe3.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07)), {});
+//   pipe1.flowModel.states[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.setState_phX(pipe1.port_a.p, ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7) * pipe3.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7)), {});
 //   pipe1.flowModel.states[2] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.setState_phX(pipe1.port_b.p, tank1.ports[1].h_outflow, {});
 //   pipe1.flowModel.vs = {pipe1.port_a.m_flow / Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.density(pipe1.flowModel.states[1]) / pipe1.flowModel.crossAreas[1] / pipe1.nParallel, pipe1.port_b.m_flow / Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe1.Medium.density(pipe1.flowModel.states[2]) / pipe1.flowModel.crossAreas[2] / (-pipe1.nParallel)};
 //   pipe1.flowModel.crossAreas = {pipe1.crossArea, pipe1.crossArea};
@@ -1925,10 +1925,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   0.0 = pipe1.flowModel.Ib_flows[1] - pipe1.flowModel.Fs_p[1] - pipe1.flowModel.Fs_fg[1];
 //   pipe1.port_a.m_flow = pipe1.flowModel.m_flows[1];
 //   0.0 = pipe1.port_a.m_flow + pipe1.port_b.m_flow;
-//   pipe1.port_b.h_outflow = ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07) * pipe3.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07)) - system.g * pipe1.height_ab;
+//   pipe1.port_b.h_outflow = ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7) * pipe3.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7)) - system.g * pipe1.height_ab;
 //   pipe1.port_a.h_outflow = tank1.ports[1].h_outflow + system.g * pipe1.height_ab;
 //   assert(pipe1.length >= pipe1.height_ab, \"Parameter length must be greater or equal height_ab.\");
-//   pipe2.flowModel.states[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.setState_phX(pipe2.port_a.p, ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07) * pipe3.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07)), {});
+//   pipe2.flowModel.states[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.setState_phX(pipe2.port_a.p, ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7) * pipe3.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7)), {});
 //   pipe2.flowModel.states[2] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.setState_phX(pipe2.port_b.p, tank2.ports[1].h_outflow, {});
 //   pipe2.flowModel.vs = {pipe2.port_a.m_flow / Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.density(pipe2.flowModel.states[1]) / pipe2.flowModel.crossAreas[1] / pipe2.nParallel, pipe2.port_b.m_flow / Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe2.Medium.density(pipe2.flowModel.states[2]) / pipe2.flowModel.crossAreas[2] / (-pipe2.nParallel)};
 //   pipe2.flowModel.crossAreas = {pipe2.crossArea, pipe2.crossArea};
@@ -1951,10 +1951,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   0.0 = pipe2.flowModel.Ib_flows[1] - pipe2.flowModel.Fs_p[1] - pipe2.flowModel.Fs_fg[1];
 //   pipe2.port_a.m_flow = pipe2.flowModel.m_flows[1];
 //   0.0 = pipe2.port_a.m_flow + pipe2.port_b.m_flow;
-//   pipe2.port_b.h_outflow = ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07) * pipe3.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-07)) - system.g * pipe2.height_ab;
+//   pipe2.port_b.h_outflow = ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7) * pipe3.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) + $OMC$PositiveMax(-pipe3.port_a.m_flow, 1e-7)) - system.g * pipe2.height_ab;
 //   pipe2.port_a.h_outflow = tank2.ports[1].h_outflow + system.g * pipe2.height_ab;
 //   assert(pipe2.length >= pipe2.height_ab, \"Parameter length must be greater or equal height_ab.\");
-//   pipe3.flowModel.states[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.setState_phX(pipe3.port_a.p, ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07)), {});
+//   pipe3.flowModel.states[1] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.setState_phX(pipe3.port_a.p, ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7)), {});
 //   pipe3.flowModel.states[2] = Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.setState_phX(pipe3.port_b.p, tank3.ports[1].h_outflow, {});
 //   pipe3.flowModel.vs = {pipe3.port_a.m_flow / Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.density(pipe3.flowModel.states[1]) / pipe3.flowModel.crossAreas[1] / pipe3.nParallel, pipe3.port_b.m_flow / Modelica.Fluid.Examples.Tanks.ThreeTanks.pipe3.Medium.density(pipe3.flowModel.states[2]) / pipe3.flowModel.crossAreas[2] / (-pipe3.nParallel)};
 //   pipe3.flowModel.crossAreas = {pipe3.crossArea, pipe3.crossArea};
@@ -1977,7 +1977,7 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   0.0 = pipe3.flowModel.Ib_flows[1] - pipe3.flowModel.Fs_p[1] - pipe3.flowModel.Fs_fg[1];
 //   pipe3.port_a.m_flow = pipe3.flowModel.m_flows[1];
 //   0.0 = pipe3.port_a.m_flow + pipe3.port_b.m_flow;
-//   pipe3.port_b.h_outflow = ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-07) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-07)) - system.g * pipe3.height_ab;
+//   pipe3.port_b.h_outflow = ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) * pipe1.port_a.h_outflow + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7) * pipe2.port_a.h_outflow) / ($OMC$PositiveMax(-pipe1.port_a.m_flow, 1e-7) + $OMC$PositiveMax(-pipe2.port_a.m_flow, 1e-7)) - system.g * pipe3.height_ab;
 //   pipe3.port_a.h_outflow = tank3.ports[1].h_outflow + system.g * pipe3.height_ab;
 //   assert(pipe3.length >= pipe3.height_ab, \"Parameter length must be greater or equal height_ab.\");
 // end Modelica.Fluid.Examples.Tanks.ThreeTanks;
