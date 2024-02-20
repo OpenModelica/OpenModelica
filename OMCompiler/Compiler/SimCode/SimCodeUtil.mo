@@ -15812,15 +15812,29 @@ public function getCMakeVersion
 protected
   Integer retVal;
   String cmakeVersionLogFile = "systemCall_cmakeVersion.log";
+  list<String> regexOut;
+  Integer numMatches;
   String cmakeVersionString;
 algorithm
-  // Regex magic to read major.minor.patch version from cmake --version
-  retVal := System.systemCall(pathToCMake + " --version 2>&1 | grep \"^.*cmake version\" | sed -e 's/^.*cmake version *//' | sed -e 's/-.*//'", cmakeVersionLogFile);
+  retVal := System.systemCall(pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     System.removeFile(cmakeVersionLogFile);
     Error.addInternalError("Failed to get version from " + pathToCMake, sourceInfo());
+    fail();
   end if;
-  cmakeVersionString := System.trimWhitespace(System.readFile(cmakeVersionLogFile));
+  // Regex magic to read major.minor.patch version from cmake --version
+  (numMatches, regexOut) := System.regex(
+    System.trimWhitespace(System.readFile(cmakeVersionLogFile)),
+    "\\d+\\.\\d+\\.\\d+",
+    maxMatches=1,
+    extended=true
+  );
+  cmakeVersionString := List.first(regexOut);
+  if numMatches == 0 or stringLength(cmakeVersionString) <= 0 then
+    System.removeFile(cmakeVersionLogFile);
+    Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
+    fail();
+  end if;
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
