@@ -62,12 +62,12 @@ public
 function simplifyDump
   "wrapper function for simplification to allow dumping before and afterwards"
   input Expression exp;
-  input Boolean backend;
+  input Boolean includeScope;
   output Expression res;
   input String name = "";
   input String indent = "";
 algorithm
-  res := simplify(exp, backend);
+  res := simplify(exp, includeScope);
   if Flags.isSet(Flags.DUMP_SIMPLIFY) and not Expression.isEqual(exp, res) then
     print(indent + "### dumpSimplify | " + name + " ###\n");
     print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
@@ -77,20 +77,20 @@ end simplifyDump;
 
 function simplify
   input output Expression exp;
-  input Boolean backend = false;
+  input Boolean includeScope = false;
 algorithm
   exp := match exp
     case Expression.CREF()
       algorithm
         exp.cref := ComponentRef.simplifySubscripts(exp.cref);
-        exp.ty := ComponentRef.getSubscriptedType(exp.cref, backend);
+        exp.ty := ComponentRef.getSubscriptedType(exp.cref, includeScope);
       then
         exp;
 
     case Expression.ARRAY()
       guard not exp.literal
       algorithm
-        exp.elements := Array.map(exp.elements, function simplify(backend = false));
+        exp.elements := Array.map(exp.elements, function simplify(includeScope = false));
       then
         exp;
 
@@ -636,7 +636,7 @@ algorithm
   end for;
 
   outExp := Expression.foldReduction(simplify(exp), listReverseInPlace(iters),
-    default_exp, function simplify(backend = false), function simplifyBinaryOp(op = op));
+    default_exp, function simplify(includeScope = false), function simplifyBinaryOp(op = op));
 end simplifyReduction2;
 
 function simplifySize

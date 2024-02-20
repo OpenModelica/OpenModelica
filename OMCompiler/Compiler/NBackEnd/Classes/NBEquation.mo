@@ -548,7 +548,7 @@ public
               Expression.INTEGER(1)},
             inv_arguments = {},
             operator = Operator.makeAdd(ty));
-            sub_exp := SimplifyExp.simplify(sub_exp, true);
+            sub_exp := SimplifyExp.simplifyDump(sub_exp, true, getInstanceName());
             sub_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {sub_exp}, Variability.DISCRETE, Purity.PURE));
           end if;
         then Subscript.INDEX(sub_exp);
@@ -1518,7 +1518,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
         then fail();
       end match;
-      exp := SimplifyExp.simplify(exp, true);
+      exp := SimplifyExp.simplifyDump(exp, true, getInstanceName());
     end getResidualExp;
 
     function getType
@@ -2054,7 +2054,7 @@ public
       equality_exp  := Expression.RELATION(
         exp1      = Expression.fromCref(cref),
         operator  = Operator.OPERATOR(ComponentRef.nodeType(cref), NFOperator.Op.NEQUAL),
-        exp2      = SimplifyExp.simplify(exp, true)
+        exp2      = SimplifyExp.simplifyDump(exp, true, getInstanceName())
       );
     end makeInequality;
 
