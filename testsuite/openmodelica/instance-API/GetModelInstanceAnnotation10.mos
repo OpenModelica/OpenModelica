@@ -1,0 +1,43 @@
+// name: GetModelInstanceAnnotation3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    Real x annotation (__OpenModelica_tearingSelect=TearingSelect.default);
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"annotation\": {
+//         \"__OpenModelica_tearingSelect\": {
+//           \"$kind\": \"enum\",
+//           \"name\": \"TearingSelect.default\",
+//           \"index\": 3
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

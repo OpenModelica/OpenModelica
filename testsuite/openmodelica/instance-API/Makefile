@@ -11,6 +11,7 @@ GetModelInstanceAnnotation6.mos \
 GetModelInstanceAnnotation7.mos \
 GetModelInstanceAnnotation8.mos \
 GetModelInstanceAnnotation9.mos \
+GetModelInstanceAnnotation10.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \

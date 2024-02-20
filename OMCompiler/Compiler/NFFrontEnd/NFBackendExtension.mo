@@ -40,6 +40,7 @@ protected
   import Absyn;
   import AbsynUtil;
   import DAE;
+  import Dump;
   import SCode;
   import SCodeUtil;
 
@@ -1227,30 +1228,6 @@ public
       end match;
     end getStateSelectName;
 
-    function createTearingSelect
-      "__OpenModelica_tearingSelect is an annotation and has to be extracted from the comment."
-      input Option<SCode.Comment> optComment;
-      output Option<TearingSelect> tearingSelect;
-    protected
-      SCode.Annotation anno;
-      Absyn.Exp val;
-      String name;
-    algorithm
-      try
-        SOME(SCode.COMMENT(annotation_=SOME(anno))) := optComment;
-        try
-          SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "__OpenModelica_tearingSelect");
-        else
-          SOME(val) := SCodeUtil.lookupAnnotationBinding(anno, "tearingSelect");
-          Error.addCompilerWarning("Deprecated vendor annotation 'tearingSelect' found. Use '__OpenModelica_tearingSelect' instead.");
-        end try;
-        name := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
-        tearingSelect := SOME(lookupTearingSelectMember(name));
-      else
-        tearingSelect := NONE();
-      end try;
-    end createTearingSelect;
-
     function lookupStateSelectMember
       input String name;
       output StateSelect stateSelect;
@@ -1269,21 +1246,89 @@ public
       end match;
     end lookupStateSelectMember;
 
+    function createTearingSelect
+      "__OpenModelica_tearingSelect is an annotation and has to be extracted from the comment."
+      input Option<SCode.Comment> optComment;
+      output Option<TearingSelect> tearingSelect = NONE();
+    protected
+      Option<SCode.Annotation> opt_anno;
+      SCode.Annotation anno;
+      SCode.Mod mod;
+      Option<Absyn.Exp> opt_val;
+      Absyn.Exp val;
+      String name;
+      SourceInfo info;
+    algorithm
+      opt_anno := SCodeUtil.optCommentAnnotation(optComment);
+
+      if isNone(opt_anno) then
+        // No annotation.
+        return;
+      end if;
+
+      SOME(anno) := opt_anno;
+      mod := SCodeUtil.lookupAnnotation(anno, "__OpenModelica_tearingSelect");
+
+      if SCodeUtil.isEmptyMod(mod) then
+        mod := SCodeUtil.lookupAnnotation(anno, "tearingSelect");
+
+        if not SCodeUtil.isEmptyMod(mod) then
+          Error.addSourceMessage(Error.DEPRECATED_EXPRESSION,
+            {"tearingSelect", "__OpenModelica_tearingSelect"}, SCodeUtil.getModifierInfo(mod));
+        end if;
+      end if;
+
+      opt_val := SCodeUtil.getModifierBinding(mod);
+
+      if isNone(opt_val) then
+        // Annotation exists but has no value.
+        return;
+      end if;
+
+      SOME(val) := opt_val;
+      info := SCodeUtil.getModifierInfo(mod);
+      name := getTearingSelectName(val, info);
+      tearingSelect := lookupTearingSelectMember(name);
+
+      if isNone(tearingSelect) then
+        Error.addSourceMessage(Error.UNKNOWN_ANNOTATION_VALUE, {Dump.printExpStr(val)}, info);
+      end if;
+    end createTearingSelect;
+
+    function getTearingSelectName
+      input Absyn.Exp exp;
+      input SourceInfo info;
+      output String name;
+    algorithm
+      name := match exp
+        // TearingSelect.name
+        case Absyn.Exp.CREF(componentRef =
+               Absyn.ComponentRef.CREF_QUAL(name = "TearingSelect", subscripts = {}, componentRef =
+                 Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {})))
+          then name;
+
+        // Single name without the TearingSelect prefix is deprecated but still accepted.
+        case Absyn.Exp.CREF(componentRef = Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {}))
+          algorithm
+            Error.addSourceMessage(Error.DEPRECATED_EXPRESSION, {name, "TearingSelect." + name}, info);
+          then
+            name;
+
+        else "";
+      end match;
+    end getTearingSelectName;
+
     function lookupTearingSelectMember
       input String name;
-      output StateSelect stateSelect;
+      output Option<TearingSelect> tearingSelect;
     algorithm
-      stateSelect := match name
-        case "never"    then TearingSelect.NEVER;
-        case "avoid"    then TearingSelect.AVOID;
-        case "default"  then TearingSelect.DEFAULT;
-        case "prefer"   then TearingSelect.PREFER;
-        case "always"   then TearingSelect.ALWAYS;
-        else
-          algorithm
-            Error.assertion(false, getInstanceName() + " got unknown TearingSelect literal " + name, sourceInfo());
-          then
-            fail();
+      tearingSelect := match name
+        case "never"    then SOME(TearingSelect.NEVER);
+        case "avoid"    then SOME(TearingSelect.AVOID);
+        case "default"  then SOME(TearingSelect.DEFAULT);
+        case "prefer"   then SOME(TearingSelect.PREFER);
+        case "always"   then SOME(TearingSelect.ALWAYS);
+        else NONE();
       end match;
     end lookupTearingSelectMember;
   end VariableAttributes;
@@ -1310,7 +1355,7 @@ public
   uniontype Annotations
     record ANNOTATIONS
       "all annotations that are vendor specific
-      note: doesn't inculde __OpenModelica_tearingSelect, this is considered a first class attribute"
+      note: doesn't include __OpenModelica_tearingSelect, this is considered a first class attribute"
       Boolean hideResult;
     end ANNOTATIONS;
 

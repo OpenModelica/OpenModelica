@@ -36,138 +36,138 @@ getErrorString();
 // 3: singularPressureLoss3.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 4: singularPressureLoss3.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 5: singularPressureLoss3.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 6: singularPressureLoss3.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 7: singularPressureLoss3.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 8: singularPressureLoss3.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 9: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 10: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 6: singularPressureLoss3.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 7: singularPressureLoss3.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 8: singularPressureLoss3.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 9: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 10: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 11: singularPressureLoss3.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 12: singularPressureLoss3.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 13: singularPressureLoss3.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 14: singularPressureLoss3.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 15: singularPressureLoss3.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 16: singularPressureLoss3.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 17: singularPressureLoss3.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 18: singularPressureLoss3.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 19: singularPressureLoss3.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 16: singularPressureLoss3.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 17: singularPressureLoss3.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 18: singularPressureLoss3.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 19: singularPressureLoss3.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 20: singularPressureLoss3.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 21: singularPressureLoss3.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 22: singularPressureLoss3.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 23: singularPressureLoss3.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 23: singularPressureLoss3.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 24: singularPressureLoss3.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 25: singularPressureLoss3.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 26: singularPressureLoss3.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 25: singularPressureLoss3.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 26: singularPressureLoss3.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 27: singularPressureLoss3.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 28: singularPressureLoss3.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 29: singularPressureLoss3.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 29: singularPressureLoss3.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 30: singularPressureLoss3.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 31: singularPressureLoss3.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 32: singularPressureLoss3.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 33: singularPressureLoss3.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 34: singularPressureLoss3.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 31: singularPressureLoss3.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: singularPressureLoss3.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 33: singularPressureLoss3.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 34: singularPressureLoss3.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 35: singularPressureLoss3.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 36: singularPressureLoss3.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 37: singularPressureLoss3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 38: singularPressureLoss3.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 38: singularPressureLoss3.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 39: singularPressureLoss2.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 40: singularPressureLoss2.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 41: singularPressureLoss2.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 42: singularPressureLoss2.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 43: singularPressureLoss2.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 44: singularPressureLoss2.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 45: singularPressureLoss2.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 46: singularPressureLoss2.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 47: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 48: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 44: singularPressureLoss2.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 45: singularPressureLoss2.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 46: singularPressureLoss2.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 47: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 48: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 49: singularPressureLoss2.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 50: singularPressureLoss2.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 51: singularPressureLoss2.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 52: singularPressureLoss2.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 53: singularPressureLoss2.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 54: singularPressureLoss2.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 55: singularPressureLoss2.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 56: singularPressureLoss2.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 57: singularPressureLoss2.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 54: singularPressureLoss2.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 55: singularPressureLoss2.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 56: singularPressureLoss2.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 57: singularPressureLoss2.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 58: singularPressureLoss2.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 59: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 60: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 61: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 61: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 62: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 63: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 64: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 63: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 64: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 65: singularPressureLoss2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 66: singularPressureLoss2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 67: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 67: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 68: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 69: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 70: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 71: singularPressureLoss2.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 72: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 69: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 70: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 71: singularPressureLoss2.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 72: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 73: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 74: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 75: singularPressureLoss2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 76: singularPressureLoss2.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 76: singularPressureLoss2.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 77: singularPressureLoss1.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 78: singularPressureLoss1.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 79: singularPressureLoss1.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 80: singularPressureLoss1.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 81: singularPressureLoss1.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 82: singularPressureLoss1.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 83: singularPressureLoss1.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 84: singularPressureLoss1.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 85: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 86: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 82: singularPressureLoss1.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 83: singularPressureLoss1.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 84: singularPressureLoss1.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 85: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 86: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 87: singularPressureLoss1.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 88: singularPressureLoss1.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 89: singularPressureLoss1.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 90: singularPressureLoss1.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 91: singularPressureLoss1.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 92: singularPressureLoss1.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 93: singularPressureLoss1.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 94: singularPressureLoss1.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 95: singularPressureLoss1.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 92: singularPressureLoss1.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 93: singularPressureLoss1.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 94: singularPressureLoss1.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 95: singularPressureLoss1.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 96: singularPressureLoss1.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 97: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 98: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 99: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 99: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 100: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 101: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 102: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 101: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 102: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 103: singularPressureLoss1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 104: singularPressureLoss1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 105: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 105: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 106: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 107: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 108: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 109: singularPressureLoss1.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 110: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 107: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 108: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 109: singularPressureLoss1.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 110: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 111: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 112: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 113: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 114: singularPressureLoss1.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 114: singularPressureLoss1.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 115: sink1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 116: sink1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 117: sink1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 117: sink1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 118: sink1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 119: sink1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 120: sink1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 119: sink1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 120: sink1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 121: sink1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 122: sink1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 123: sink1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 124: sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
+// 124: sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 125: sourcePQ1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 126: sourcePQ1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 127: sourcePQ1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 127: sourcePQ1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 128: sourcePQ1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 129: sourcePQ1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 130: sourcePQ1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 129: sourcePQ1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 130: sourcePQ1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 131: sourcePQ1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 132: sourcePQ1.IPressure.signal:VARIABLE(flow=false )  type: Real
 // 133: sourcePQ1.IMassFlow.signal:VARIABLE(flow=false )  type: Real
 // 134: sourcePQ1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 135: sourcePQ1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 136: sourcePQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
-// 137: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
+// 136: sourcePQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 137: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
 // 138: sourcePQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 139: sourcePQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 140: sink1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -175,10 +175,10 @@ getErrorString();
 //
 // OrderedEquation (113, 140)
 // ========================================
-// 1/1 (1): sourcePQ1.P0 = 300000.0   [binding |0|0|0|0|]
+// 1/1 (1): sourcePQ1.P0 = 3e5   [binding |0|0|0|0|]
 // 2/2 (1): sourcePQ1.Q0 = 100.0   [binding |0|0|0|0|]
-// 3/3 (1): sourcePQ1.h0 = 100000.0   [binding |0|0|0|0|]
-// 4/4 (1): sink1.h0 = 100000.0   [binding |0|0|0|0|]
+// 3/3 (1): sourcePQ1.h0 = 1e5   [binding |0|0|0|0|]
+// 4/4 (1): sink1.h0 = 1e5   [binding |0|0|0|0|]
 // 5/5 (1): sourcePQ1.C.P = singularPressureLoss1.C1.P   [dynamic |0|0|0|0|]
 // 6/6 (1): sourcePQ1.C.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
 // 7/7 (1): sourcePQ1.C.a = singularPressureLoss1.C1.a   [dynamic |0|0|0|0|]
@@ -436,10 +436,10 @@ getErrorString();
 // Standard BLT of the original model:(140)
 // ============================================================
 //
-// 140: sink1.h0: (4/4): (1): sink1.h0 = 100000.0
-// 139: sourcePQ1.h0: (3/3): (1): sourcePQ1.h0 = 100000.0
+// 140: sink1.h0: (4/4): (1): sink1.h0 = 1e5
+// 139: sourcePQ1.h0: (3/3): (1): sourcePQ1.h0 = 1e5
 // 138: sourcePQ1.Q0: (2/2): (1): sourcePQ1.Q0 = 100.0
-// 137: sourcePQ1.P0: (1/1): (1): sourcePQ1.P0 = 300000.0
+// 137: sourcePQ1.P0: (1/1): (1): sourcePQ1.P0 = 3e5
 // 136: sourcePQ1.P: (35/35): (1): sourcePQ1.P = sourcePQ1.IPressure.signal
 // 135: sourcePQ1.Q: (33/33): (1): sourcePQ1.Q = sourcePQ1.IMassFlow.signal
 // 134: sourcePQ1.h: (37/37): (1): sourcePQ1.h = sourcePQ1.ISpecificEnthalpy.signal
@@ -590,7 +590,7 @@ getErrorString();
 //
 // Boundary conditions (4)
 // ========================================
-// 1: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
+// 1: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
 // 2: sourcePQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 3: sourcePQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 4: sink1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -607,10 +607,10 @@ getErrorString();
 // 104: singularPressureLoss1.C1.a: (108/135): (1): singularPressureLoss1.C1.a = true
 // 116: sink1.C.a: (107/134): (1): sink1.C.a = true
 // 125: sourcePQ1.C.b: (106/133): (1): sourcePQ1.C.b = true
-// 140: sink1.h0: (4/4): (1): sink1.h0 = 100000.0
-// 139: sourcePQ1.h0: (3/3): (1): sourcePQ1.h0 = 100000.0
+// 140: sink1.h0: (4/4): (1): sink1.h0 = 1e5
+// 139: sourcePQ1.h0: (3/3): (1): sourcePQ1.h0 = 1e5
 // 138: sourcePQ1.Q0: (2/2): (1): sourcePQ1.Q0 = 100.0
-// 137: sourcePQ1.P0: (1/1): (1): sourcePQ1.P0 = 300000.0
+// 137: sourcePQ1.P0: (1/1): (1): sourcePQ1.P0 = 3e5
 //
 //
 // E-BLT: equations that compute the variables of interest:(6)
@@ -703,138 +703,138 @@ getErrorString();
 // 3: singularPressureLoss3.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 4: singularPressureLoss3.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 5: singularPressureLoss3.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 6: singularPressureLoss3.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 7: singularPressureLoss3.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 8: singularPressureLoss3.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 9: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 10: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 6: singularPressureLoss3.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 7: singularPressureLoss3.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 8: singularPressureLoss3.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 9: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 10: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 11: singularPressureLoss3.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 12: singularPressureLoss3.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 13: singularPressureLoss3.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 14: singularPressureLoss3.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 15: singularPressureLoss3.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 16: singularPressureLoss3.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 17: singularPressureLoss3.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 18: singularPressureLoss3.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 19: singularPressureLoss3.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 16: singularPressureLoss3.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 17: singularPressureLoss3.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 18: singularPressureLoss3.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 19: singularPressureLoss3.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 20: singularPressureLoss3.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 21: singularPressureLoss3.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 22: singularPressureLoss3.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 23: singularPressureLoss3.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 23: singularPressureLoss3.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 24: singularPressureLoss3.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 25: singularPressureLoss3.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 26: singularPressureLoss3.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 25: singularPressureLoss3.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 26: singularPressureLoss3.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 27: singularPressureLoss3.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 28: singularPressureLoss3.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 29: singularPressureLoss3.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 29: singularPressureLoss3.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 30: singularPressureLoss3.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 31: singularPressureLoss3.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 32: singularPressureLoss3.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 33: singularPressureLoss3.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 34: singularPressureLoss3.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 31: singularPressureLoss3.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: singularPressureLoss3.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 33: singularPressureLoss3.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 34: singularPressureLoss3.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 35: singularPressureLoss3.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 36: singularPressureLoss3.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 37: singularPressureLoss3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 38: singularPressureLoss3.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 38: singularPressureLoss3.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 39: singularPressureLoss2.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 40: singularPressureLoss2.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 41: singularPressureLoss2.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 42: singularPressureLoss2.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 43: singularPressureLoss2.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 44: singularPressureLoss2.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 45: singularPressureLoss2.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 46: singularPressureLoss2.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 47: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 48: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 44: singularPressureLoss2.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 45: singularPressureLoss2.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 46: singularPressureLoss2.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 47: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 48: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 49: singularPressureLoss2.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 50: singularPressureLoss2.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 51: singularPressureLoss2.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 52: singularPressureLoss2.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 53: singularPressureLoss2.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 54: singularPressureLoss2.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 55: singularPressureLoss2.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 56: singularPressureLoss2.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 57: singularPressureLoss2.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 54: singularPressureLoss2.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 55: singularPressureLoss2.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 56: singularPressureLoss2.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 57: singularPressureLoss2.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 58: singularPressureLoss2.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 59: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 60: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 61: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 61: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 62: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 63: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 64: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 63: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 64: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 65: singularPressureLoss2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 66: singularPressureLoss2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 67: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 67: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 68: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 69: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 70: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 71: singularPressureLoss2.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 72: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 69: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 70: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 71: singularPressureLoss2.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 72: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 73: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 74: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 75: singularPressureLoss2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 76: singularPressureLoss2.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 76: singularPressureLoss2.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 77: singularPressureLoss1.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 78: singularPressureLoss1.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 79: singularPressureLoss1.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 80: singularPressureLoss1.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 81: singularPressureLoss1.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 82: singularPressureLoss1.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 83: singularPressureLoss1.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 84: singularPressureLoss1.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 85: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 86: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 82: singularPressureLoss1.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 83: singularPressureLoss1.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 84: singularPressureLoss1.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 85: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 86: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 87: singularPressureLoss1.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 88: singularPressureLoss1.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 89: singularPressureLoss1.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 90: singularPressureLoss1.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 91: singularPressureLoss1.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 92: singularPressureLoss1.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 93: singularPressureLoss1.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 94: singularPressureLoss1.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 95: singularPressureLoss1.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 92: singularPressureLoss1.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 93: singularPressureLoss1.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 94: singularPressureLoss1.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 95: singularPressureLoss1.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 96: singularPressureLoss1.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 97: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 98: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 99: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 99: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 100: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 101: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 102: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 101: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 102: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 103: singularPressureLoss1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 104: singularPressureLoss1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 105: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 105: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 106: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 107: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 108: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 109: singularPressureLoss1.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 110: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 107: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 108: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 109: singularPressureLoss1.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 110: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 111: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 112: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 113: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 114: singularPressureLoss1.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 114: singularPressureLoss1.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 115: sink1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 116: sink1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 117: sink1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 117: sink1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 118: sink1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 119: sink1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 120: sink1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 119: sink1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 120: sink1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 121: sink1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 122: sink1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 123: sink1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 124: sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
+// 124: sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 125: sourcePQ1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 126: sourcePQ1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 127: sourcePQ1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 127: sourcePQ1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 128: sourcePQ1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 129: sourcePQ1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 130: sourcePQ1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 129: sourcePQ1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 130: sourcePQ1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 131: sourcePQ1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 132: sourcePQ1.IPressure.signal:VARIABLE(flow=false )  type: Real
 // 133: sourcePQ1.IMassFlow.signal:VARIABLE(flow=false )  type: Real
 // 134: sourcePQ1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 135: sourcePQ1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 136: sourcePQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
-// 137: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
+// 136: sourcePQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 137: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
 // 138: sourcePQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 139: sourcePQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 140: sink1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -844,10 +844,10 @@ getErrorString();
 // ========================================
 // 1/1 (1): singularPressureLoss3.T = 0.0   [binding |0|0|0|0|]
 // 2/2 (1): singularPressureLoss3.Q = 0.0   [binding |0|0|0|0|]
-// 3/3 (1): sourcePQ1.P0 = 300000.0   [binding |0|0|0|0|]
+// 3/3 (1): sourcePQ1.P0 = 3e5   [binding |0|0|0|0|]
 // 4/4 (1): sourcePQ1.Q0 = 100.0   [binding |0|0|0|0|]
-// 5/5 (1): sourcePQ1.h0 = 100000.0   [binding |0|0|0|0|]
-// 6/6 (1): sink1.h0 = 100000.0   [binding |0|0|0|0|]
+// 5/5 (1): sourcePQ1.h0 = 1e5   [binding |0|0|0|0|]
+// 6/6 (1): sink1.h0 = 1e5   [binding |0|0|0|0|]
 // 7/7 (1): sourcePQ1.C.P = singularPressureLoss1.C1.P   [dynamic |0|0|0|0|]
 // 8/8 (1): sourcePQ1.C.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
 // 9/9 (1): sourcePQ1.C.a = singularPressureLoss1.C1.a   [dynamic |0|0|0|0|]
@@ -1103,10 +1103,10 @@ getErrorString();
 // Standard BLT of the original model:(140)
 // ============================================================
 //
-// 140: sink1.h0: (6/6): (1): sink1.h0 = 100000.0
-// 139: sourcePQ1.h0: (5/5): (1): sourcePQ1.h0 = 100000.0
+// 140: sink1.h0: (6/6): (1): sink1.h0 = 1e5
+// 139: sourcePQ1.h0: (5/5): (1): sourcePQ1.h0 = 1e5
 // 138: sourcePQ1.Q0: (4/4): (1): sourcePQ1.Q0 = 100.0
-// 137: sourcePQ1.P0: (3/3): (1): sourcePQ1.P0 = 300000.0
+// 137: sourcePQ1.P0: (3/3): (1): sourcePQ1.P0 = 3e5
 // 136: sourcePQ1.P: (31/31): (1): sourcePQ1.C.P = sourcePQ1.P
 // 135: sourcePQ1.Q: (32/32): (1): sourcePQ1.C.Q = sourcePQ1.Q
 // 134: sourcePQ1.h: (37/37): (1): sourcePQ1.h = sourcePQ1.ISpecificEnthalpy.signal
@@ -1257,7 +1257,7 @@ getErrorString();
 //
 // Boundary conditions (4)
 // ========================================
-// 1: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
+// 1: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
 // 2: sourcePQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 3: sourcePQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 4: sink1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -1274,10 +1274,10 @@ getErrorString();
 // 104: singularPressureLoss1.C1.a: (108/135): (1): singularPressureLoss1.C1.a = true
 // 116: sink1.C.a: (107/134): (1): sink1.C.a = true
 // 125: sourcePQ1.C.b: (106/133): (1): sourcePQ1.C.b = true
-// 140: sink1.h0: (6/6): (1): sink1.h0 = 100000.0
-// 139: sourcePQ1.h0: (5/5): (1): sourcePQ1.h0 = 100000.0
+// 140: sink1.h0: (6/6): (1): sink1.h0 = 1e5
+// 139: sourcePQ1.h0: (5/5): (1): sourcePQ1.h0 = 1e5
 // 138: sourcePQ1.Q0: (4/4): (1): sourcePQ1.Q0 = 100.0
-// 137: sourcePQ1.P0: (3/3): (1): sourcePQ1.P0 = 300000.0
+// 137: sourcePQ1.P0: (3/3): (1): sourcePQ1.P0 = 3e5
 // 37: singularPressureLoss3.Q: (2/2): (1): singularPressureLoss3.Q = 0.0
 // 35: singularPressureLoss3.T: (1/1): (1): singularPressureLoss3.T = 0.0
 //
@@ -1380,138 +1380,138 @@ getErrorString();
 // 3: singularPressureLoss3.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 4: singularPressureLoss3.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 5: singularPressureLoss3.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 6: singularPressureLoss3.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 7: singularPressureLoss3.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 8: singularPressureLoss3.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 9: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 10: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 6: singularPressureLoss3.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 7: singularPressureLoss3.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 8: singularPressureLoss3.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 9: singularPressureLoss3.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 10: singularPressureLoss3.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 11: singularPressureLoss3.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 12: singularPressureLoss3.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 13: singularPressureLoss3.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 14: singularPressureLoss3.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 15: singularPressureLoss3.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 16: singularPressureLoss3.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 17: singularPressureLoss3.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 18: singularPressureLoss3.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 19: singularPressureLoss3.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 16: singularPressureLoss3.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 17: singularPressureLoss3.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 18: singularPressureLoss3.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 19: singularPressureLoss3.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 20: singularPressureLoss3.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 21: singularPressureLoss3.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 22: singularPressureLoss3.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 23: singularPressureLoss3.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 23: singularPressureLoss3.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 24: singularPressureLoss3.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 25: singularPressureLoss3.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 26: singularPressureLoss3.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 25: singularPressureLoss3.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 26: singularPressureLoss3.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 27: singularPressureLoss3.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 28: singularPressureLoss3.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 29: singularPressureLoss3.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 29: singularPressureLoss3.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 30: singularPressureLoss3.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 31: singularPressureLoss3.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 32: singularPressureLoss3.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 33: singularPressureLoss3.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 34: singularPressureLoss3.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 31: singularPressureLoss3.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: singularPressureLoss3.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 33: singularPressureLoss3.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 34: singularPressureLoss3.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 35: singularPressureLoss3.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 36: singularPressureLoss3.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 37: singularPressureLoss3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 38: singularPressureLoss3.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 38: singularPressureLoss3.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 39: singularPressureLoss2.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 40: singularPressureLoss2.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 41: singularPressureLoss2.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 42: singularPressureLoss2.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 43: singularPressureLoss2.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 44: singularPressureLoss2.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 45: singularPressureLoss2.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 46: singularPressureLoss2.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 47: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 48: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 44: singularPressureLoss2.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 45: singularPressureLoss2.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 46: singularPressureLoss2.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 47: singularPressureLoss2.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 48: singularPressureLoss2.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 49: singularPressureLoss2.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 50: singularPressureLoss2.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 51: singularPressureLoss2.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 52: singularPressureLoss2.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 53: singularPressureLoss2.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 54: singularPressureLoss2.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 55: singularPressureLoss2.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 56: singularPressureLoss2.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 57: singularPressureLoss2.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 54: singularPressureLoss2.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 55: singularPressureLoss2.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 56: singularPressureLoss2.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 57: singularPressureLoss2.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 58: singularPressureLoss2.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 59: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 60: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 61: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 61: singularPressureLoss2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 62: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 63: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 64: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 63: singularPressureLoss2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 64: singularPressureLoss2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 65: singularPressureLoss2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 66: singularPressureLoss2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 67: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 67: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 68: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 69: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 70: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 71: singularPressureLoss2.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 72: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 69: singularPressureLoss2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 70: singularPressureLoss2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 71: singularPressureLoss2.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 72: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 73: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 74: singularPressureLoss2.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 75: singularPressureLoss2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 76: singularPressureLoss2.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 76: singularPressureLoss2.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 77: singularPressureLoss1.pro_pT.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 78: singularPressureLoss1.pro_pT.duTp:VARIABLE(unit = "J/(kg.K)" )  "Derivative of the inner energy wrt. temperature at constant pressure" type: Real
 // 79: singularPressureLoss1.pro_pT.dupT:VARIABLE(unit = "J.m.s2/kg" )  "Derivative of the inner energy wrt. pressure at constant temperature" type: Real
 // 80: singularPressureLoss1.pro_pT.ddpT:VARIABLE(unit = "s2/m2" )  "Derivative of the density wrt. presure at constant temperature" type: Real
 // 81: singularPressureLoss1.pro_pT.ddTp:VARIABLE(unit = "kg/(m3.K)" )  "Derivative of the density wrt. temperature at constant pressure" type: Real
-// 82: singularPressureLoss1.pro_pT.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 83: singularPressureLoss1.pro_pT.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 84: singularPressureLoss1.pro_pT.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 85: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific enthalpy" type: Real
-// 86: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 82: singularPressureLoss1.pro_pT.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 83: singularPressureLoss1.pro_pT.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 84: singularPressureLoss1.pro_pT.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 85: singularPressureLoss1.pro_pT.h:VARIABLE(min = -1e6 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific enthalpy" type: Real
+// 86: singularPressureLoss1.pro_pT.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 87: singularPressureLoss1.pro_ph.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 88: singularPressureLoss1.pro_ph.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 89: singularPressureLoss1.pro_ph.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 90: singularPressureLoss1.pro_ph.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 91: singularPressureLoss1.pro_ph.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 92: singularPressureLoss1.pro_ph.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 93: singularPressureLoss1.pro_ph.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 94: singularPressureLoss1.pro_ph.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 95: singularPressureLoss1.pro_ph.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 92: singularPressureLoss1.pro_ph.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 93: singularPressureLoss1.pro_ph.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 94: singularPressureLoss1.pro_ph.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 95: singularPressureLoss1.pro_ph.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 96: singularPressureLoss1.pro_ph.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 97: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 98: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 99: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 99: singularPressureLoss1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 100: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 101: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 102: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 101: singularPressureLoss1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 102: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 103: singularPressureLoss1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 104: singularPressureLoss1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 105: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 105: singularPressureLoss1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 106: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 107: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 108: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 109: singularPressureLoss1.h:VARIABLE(start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 110: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 107: singularPressureLoss1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 108: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 109: singularPressureLoss1.h:VARIABLE(start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy" type: Real
+// 110: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 // 111: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 // 112: singularPressureLoss1.rho:VARIABLE(min = 0.0 start = 998.0 unit = "kg/m3" )  "Fluid density" type: Real
 // 113: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 114: singularPressureLoss1.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Singular pressure loss" type: Real
+// 114: singularPressureLoss1.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Singular pressure loss" type: Real
 // 115: sink1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 116: sink1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 117: sink1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 117: sink1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 118: sink1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 119: sink1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 120: sink1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 119: sink1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 120: sink1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 121: sink1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 122: sink1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 123: sink1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 124: sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
+// 124: sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 125: sourcePQ1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 126: sourcePQ1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 127: sourcePQ1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 127: sourcePQ1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 128: sourcePQ1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 129: sourcePQ1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 130: sourcePQ1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 129: sourcePQ1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 130: sourcePQ1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 131: sourcePQ1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 132: sourcePQ1.IPressure.signal:VARIABLE(flow=false )  type: Real
 // 133: sourcePQ1.IMassFlow.signal:VARIABLE(flow=false )  type: Real
 // 134: sourcePQ1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 135: sourcePQ1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 136: sourcePQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
-// 137: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
+// 136: sourcePQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
+// 137: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
 // 138: sourcePQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 139: sourcePQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 140: sink1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -1522,10 +1522,10 @@ getErrorString();
 // 1/1 (1): singularPressureLoss2.T = 0.0   [binding |0|0|0|0|]
 // 2/2 (1): singularPressureLoss3.T = 0.0   [binding |0|0|0|0|]
 // 3/3 (1): singularPressureLoss3.Q = 0.0   [binding |0|0|0|0|]
-// 4/4 (1): sourcePQ1.P0 = 300000.0   [binding |0|0|0|0|]
+// 4/4 (1): sourcePQ1.P0 = 3e5   [binding |0|0|0|0|]
 // 5/5 (1): sourcePQ1.Q0 = 100.0   [binding |0|0|0|0|]
-// 6/6 (1): sourcePQ1.h0 = 100000.0   [binding |0|0|0|0|]
-// 7/7 (1): sink1.h0 = 100000.0   [binding |0|0|0|0|]
+// 6/6 (1): sourcePQ1.h0 = 1e5   [binding |0|0|0|0|]
+// 7/7 (1): sink1.h0 = 1e5   [binding |0|0|0|0|]
 // 8/8 (1): sourcePQ1.C.P = singularPressureLoss1.C1.P   [dynamic |0|0|0|0|]
 // 9/9 (1): sourcePQ1.C.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
 // 10/10 (1): sourcePQ1.C.a = singularPressureLoss1.C1.a   [dynamic |0|0|0|0|]
@@ -1780,10 +1780,10 @@ getErrorString();
 // Standard BLT of the original model:(140)
 // ============================================================
 //
-// 140: sink1.h0: (7/7): (1): sink1.h0 = 100000.0
-// 139: sourcePQ1.h0: (6/6): (1): sourcePQ1.h0 = 100000.0
+// 140: sink1.h0: (7/7): (1): sink1.h0 = 1e5
+// 139: sourcePQ1.h0: (6/6): (1): sourcePQ1.h0 = 1e5
 // 138: sourcePQ1.Q0: (5/5): (1): sourcePQ1.Q0 = 100.0
-// 137: sourcePQ1.P0: (4/4): (1): sourcePQ1.P0 = 300000.0
+// 137: sourcePQ1.P0: (4/4): (1): sourcePQ1.P0 = 3e5
 // 136: sourcePQ1.P: (32/32): (1): sourcePQ1.C.P = sourcePQ1.P
 // 135: sourcePQ1.Q: (33/33): (1): sourcePQ1.C.Q = sourcePQ1.Q
 // 134: sourcePQ1.h: (34/34): (1): sourcePQ1.C.h_vol = sourcePQ1.h
@@ -1934,7 +1934,7 @@ getErrorString();
 //
 // Boundary conditions (4)
 // ========================================
-// 1: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
+// 1: sourcePQ1.P0:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure (active if IPressure connector is not connected)" type: Real
 // 2: sourcePQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 3: sourcePQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
 // 4: sink1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -1951,10 +1951,10 @@ getErrorString();
 // 104: singularPressureLoss1.C1.a: (108/135): (1): singularPressureLoss1.C1.a = true
 // 116: sink1.C.a: (107/134): (1): sink1.C.a = true
 // 125: sourcePQ1.C.b: (106/133): (1): sourcePQ1.C.b = true
-// 140: sink1.h0: (7/7): (1): sink1.h0 = 100000.0
-// 139: sourcePQ1.h0: (6/6): (1): sourcePQ1.h0 = 100000.0
+// 140: sink1.h0: (7/7): (1): sink1.h0 = 1e5
+// 139: sourcePQ1.h0: (6/6): (1): sourcePQ1.h0 = 1e5
 // 138: sourcePQ1.Q0: (5/5): (1): sourcePQ1.Q0 = 100.0
-// 137: sourcePQ1.P0: (4/4): (1): sourcePQ1.P0 = 300000.0
+// 137: sourcePQ1.P0: (4/4): (1): sourcePQ1.P0 = 3e5
 // 37: singularPressureLoss3.Q: (3/3): (1): singularPressureLoss3.Q = 0.0
 // 35: singularPressureLoss3.T: (2/2): (1): singularPressureLoss3.T = 0.0
 // 73: singularPressureLoss2.T: (1/1): (1): singularPressureLoss2.T = 0.0
@@ -2169,13 +2169,13 @@ getErrorString();
 // ========================================
 // 1: singularPressureLoss3.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
 // 2: singularPressureLoss3.fluid:PARAM()  = 1  "1: water/steam - 2: C3H3F5" type: Integer
-// 3: singularPressureLoss3.K:PARAM()  = 0.0001  "Pressure loss coefficient" type: Real
+// 3: singularPressureLoss3.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
 // 4: singularPressureLoss2.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
 // 5: singularPressureLoss2.fluid:PARAM()  = 1  "1: water/steam - 2: C3H3F5" type: Integer
-// 6: singularPressureLoss2.K:PARAM()  = 0.0001  "Pressure loss coefficient" type: Real
+// 6: singularPressureLoss2.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
 // 7: singularPressureLoss1.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
 // 8: singularPressureLoss1.fluid:PARAM()  = 1  "1: water/steam - 2: C3H3F5" type: Integer
-// 9: singularPressureLoss1.K:PARAM()  = 0.0001  "Pressure loss coefficient" type: Real
+// 9: singularPressureLoss1.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
 //
 //
 //
@@ -2227,18 +2227,18 @@ getErrorString();
 // ========================================
 // 1: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
 // 2: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 3: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 4: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 5: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 3: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 4: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 5: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 //
 //
 // -SET_S has intermediate variables involved in SET_C:{106, 68, 102, 108, 110} (5)
 // ========================================
 // 1: singularPressureLoss1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
 // 2: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 3: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 4: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 5: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Average fluid pressure" type: Real
+// 3: singularPressureLoss1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 4: singularPressureLoss1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 5: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Average fluid pressure" type: Real
 //
 // -Passed
 //
@@ -2251,7 +2251,7 @@ getErrorString();
 // The selection of a new tearing variable failed.
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe3
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -2264,7 +2264,6 @@ getErrorString();
 // LOG_ASSERT        | debug   | Solving non-linear system 76 failed at time=1.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // getBestJumpBuffer got simulationJumpBuffer=(nil)
-// Aborted (core dumped)
 // "
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourcePQ.mo:29:3-30:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -2282,7 +2281,7 @@ getErrorString();
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Error: It is not possible to select a new tearing variable, because all remaining variables have the attribute '__OpenModelica_tearingSelect = never'.
+// Error: It is not possible to select a new tearing variable, because all remaining variables have the attribute '__OpenModelica_tearingSelect = TearingSelect.never'.
 // Warning: Function Tearing.selectTearingVar failed at least once. Use -d=tearingdump or -d=tearingdumpV for more information.
 // "
 // endResult

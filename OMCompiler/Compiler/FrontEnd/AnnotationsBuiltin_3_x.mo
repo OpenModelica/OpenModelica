@@ -370,3 +370,5 @@ record Documentation
   String revisions = "" "Revision history";
   // Spec 3.5 Figure[:] figures = {}; "Simulation result figures";
 end Documentation;
+
+type TearingSelect = enumeration(never, avoid, default, prefer, always);
