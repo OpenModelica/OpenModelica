@@ -809,7 +809,7 @@ template DefaultExperimentAttribute(SimulationSettings simulationSettings)
 match simulationSettings
   case SIMULATION_SETTINGS(__) then
     <<
-    startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
+    startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>" stepSize="<%stepSize%>"
     >>
 end DefaultExperimentAttribute;
 
