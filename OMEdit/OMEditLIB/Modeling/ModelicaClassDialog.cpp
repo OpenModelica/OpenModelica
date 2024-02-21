@@ -1088,7 +1088,7 @@ void DuplicateClassDialog::duplicateClass()
 {
   if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("class"), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("class")), Helper::ok);
     return;
   }
   /* if path class doesn't exist. */
