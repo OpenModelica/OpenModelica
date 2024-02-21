@@ -2310,7 +2310,9 @@ algorithm
     case (DAE.CREF(componentRef = cr),(globalKnownVars,_))
       equation
         (v,_) = BackendVariable.getVarSingle(cr,globalKnownVars);
-        true = BackendVariable.isFinalVar(v);
+        true = BackendVariable.hasVarEvaluateAnnotationTrue(v)
+          or (Flags.getConfigBool(Flags.EVALUATE_FINAL_PARAMS) and BackendVariable.isFinalVar(v))
+          or (Flags.getConfigBool(Flags.EVALUATE_PROTECTED_PARAMS) and BackendVariable.isProtectedVar(v));
         e = BackendVariable.varBindExpStartValue(v);
       then (e,(globalKnownVars,true));
     else (inExp,tpl1);

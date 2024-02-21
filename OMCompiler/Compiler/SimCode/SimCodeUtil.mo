@@ -9975,7 +9975,7 @@ algorithm
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
         // check if the variable has changeable value
         // parameter which has final = true or evaluate annotation are not changeable
-        isValueChangeable = ((not BackendVariable.hasVarEvaluateTrueAnnotationOrFinalOrProtected(dlowVar)
+        isValueChangeable = ((not BackendVariable.hasVarEvaluateAnnotationTrueOrFinalOrProtected(dlowVar)
                             and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar))))
                             and isFixed;
         caus = getCausality(dlowVar, vars, isValueChangeable);
