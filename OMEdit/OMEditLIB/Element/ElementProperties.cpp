@@ -1848,10 +1848,10 @@ void ElementParameters::updateElementParameters()
       // if displayUnit is changed OR if we already have the displayUnit modifier then set it
       if (pParameter->getUnitComboBox()->isEnabled() && !unit.isEmpty() && (pParameter->hasDisplayUnit() || pParameter->getDisplayUnit().compare(unit) != 0)) {
         QString displayUnitModifier;
-        /* Issue #11715.
-         * Add each prefix if parameter is an array.
+        /* Issue #11715 and #11839
+         * Add each prefix if element is an array OR parameter is an array.
          */
-        if (pParameter->getModelInstanceElement()->getDimensions().isArray()) {
+        if (mpElement->getDimensions().isArray() || pParameter->getModelInstanceElement()->getDimensions().isArray()) {
           displayUnitModifier.append("each ");
         }
         if (pParameter->getDisplayUnitFinalEachMenu()->isFinal()) {
