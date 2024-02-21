@@ -14,12 +14,12 @@ readFile("Pendulum_systemCall.log");
 // "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
 // ""
 // 0
-// "info:    maximum step size for 'model.root': 0.010000
+// "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: model_res.mat (bufferSize=10)
 // info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 523 NumRhsEvals  = 533 NumLinSolvSetups = 36
-//          NumNonlinSolvIters = 532 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+//          NumSteps = 2511 NumRhsEvals  = 2517 NumLinSolvSetups = 134
+//          NumNonlinSolvIters = 2516 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
 // "
 // endResult

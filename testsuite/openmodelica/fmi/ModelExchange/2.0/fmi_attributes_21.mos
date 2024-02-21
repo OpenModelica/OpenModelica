@@ -1,0 +1,39 @@
+// name: fmi_attributes_21.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_21.fmu fmi_attributes_21.log fmi_attributes_21.xml fmi_attributes_21_tmp.xml fmi_attributes_21_info.json
+
+loadString("
+model fmi_attributes_21
+  Real x = time;
+  parameter Real x0(fixed = false);
+initial equation
+  x0 = x;
+equation
+annotation(
+    experiment(StartTime = 0.2, StopTime = 1, Tolerance = 1e-06, Interval = 0.01));
+end fmi_attributes_21;
+"); getErrorString();
+
+buildModelFMU(fmi_attributes_21); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_21.fmu modelDescription.xml > fmi_attributes_21_tmp.xml"); getErrorString();
+
+system("sed -n \"/<DefaultExperiment/p\"  fmi_attributes_21_tmp.xml > fmi_attributes_21.xml"); getErrorString();
+readFile("fmi_attributes_21.xml"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// "fmi_attributes_21.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <DefaultExperiment startTime=\"0.2\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.01\"/>
+// "
+// ""
+// endResult

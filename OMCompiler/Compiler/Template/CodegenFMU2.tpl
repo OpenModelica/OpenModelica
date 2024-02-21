@@ -98,7 +98,7 @@ case SIMCODE(__) then
       <Category name="logFmi2Call" />
     </LogCategories>
     >> %>
-    <%DefaultExperiment(simulationSettingsOpt)%>
+    <%DefaultExperiment(simulationSettingsOpt, "2.0")%>
     <%fmiModelVariables(simCode, "2.0")%>
     <%ModelStructure(modelStructure)%>
   </fmiModelDescription>

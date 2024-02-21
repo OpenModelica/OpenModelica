@@ -793,21 +793,26 @@ match type_
   >>
 end TypeDefinitionType;
 
-template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
+template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt, String FMUVersion)
  "Generates code for DefaultExperiment file for FMU target."
 ::=
 match simulationSettingsOpt
   case SOME(v) then
     <<
-    <DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
+    <DefaultExperiment <%DefaultExperimentAttribute(v, FMUVersion)%>/>
     >>
 end DefaultExperiment;
 
-template DefaultExperimentAttribute(SimulationSettings simulationSettings)
+template DefaultExperimentAttribute(SimulationSettings simulationSettings, String FMUVersion)
  "Generates code for DefaultExperiment Attribute file for FMU target."
 ::=
 match simulationSettings
   case SIMULATION_SETTINGS(__) then
+    if isFMIVersion20(FMUVersion) then
+    <<
+    startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>" stepSize="<%stepSize%>"
+    >>
+    else
     <<
     startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
     >>
