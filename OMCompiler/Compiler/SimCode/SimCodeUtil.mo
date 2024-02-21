@@ -15823,18 +15823,19 @@ algorithm
     fail();
   end if;
   // Regex magic to read major.minor.patch version from cmake --version
+  // regex \d doesn't work on Linux, using [0-9] instead
   (numMatches, regexOut) := System.regex(
     System.trimWhitespace(System.readFile(cmakeVersionLogFile)),
-    "\\d+\\.\\d+\\.\\d+",
+    "[0-9]+\\.[0-9]+\\.[0-9]+]",
     maxMatches=1,
     extended=true
   );
-  cmakeVersionString := List.first(regexOut);
-  if numMatches == 0 or stringLength(cmakeVersionString) <= 0 then
+  if numMatches == 0 then
     System.removeFile(cmakeVersionLogFile);
     Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
     fail();
   end if;
+  cmakeVersionString := List.first(regexOut);
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
