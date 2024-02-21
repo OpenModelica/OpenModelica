@@ -15826,7 +15826,7 @@ algorithm
   // regex \d doesn't work on Linux, using [0-9] instead
   (numMatches, regexOut) := System.regex(
     System.trimWhitespace(System.readFile(cmakeVersionLogFile)),
-    "[0-9]+\\.[0-9]+\\.[0-9]+]",
+    "[0-9]+\\.[0-9]+\\.[0-9]+",
     maxMatches=1,
     extended=true
   );
