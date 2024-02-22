@@ -99,7 +99,7 @@ void CreateCRMLModelDialog::createNewModel()
     QString fileName = QString("%1.%2").arg(mpNameTextBox->text(),"crml");
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     LibraryTreeItem *pLibraryTreeItem =
-      pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::CRML, fileName, "",
+      pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileName, "",
                                                                  fileName, true,
                                                                  pLibraryTreeModel->getRootLibraryTreeItem());
     if (pLibraryTreeItem) {
