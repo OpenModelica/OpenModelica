@@ -1098,13 +1098,9 @@ public
         case ALGORITHM() algorithm
           // pass mapFunc because the function itself does not map
           alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp));
-          if isSome(funcCrefOpt) then
-            SOME(funcCref) := funcCrefOpt;
-            // ToDo referenceEq for lists?
-            //alg.inputs := List.map(alg.inputs, funcCref);
-            alg.outputs := List.map(alg.outputs, funcCref);
+          if not referenceEq(alg, eq.alg) then
+            eq.alg := Algorithm.setInputsOutputs(alg);
           end if;
-          eq.alg := alg;
         then eq;
 
         case IF_EQUATION() algorithm
