@@ -482,7 +482,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       signalsState = mpValueCheckBox->blockSignals(true);
       mpValueCheckBox->setChecked(value.compare("true") == 0);
       mpValueCheckBox->blockSignals(signalsState);
-      mValueCheckBoxModified = valueModified;
+      mValueCheckBoxModified = valueModified && !defaultValue;
       break;
     case Parameter::Normal:
     default:
@@ -1643,7 +1643,7 @@ void ElementParameters::fetchElementModifiers()
   if (mpElement->getModifier()) {
     foreach (auto *pModifier, mpElement->getModifier()->getModifiers()) {
       Parameter *pParameter = findParameter(pModifier->getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true, false);
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true, mNested);
       // set final and each checkboxes in the menu
       if (pParameter && !pParameter->isShowStartAndFixed()) {
         pParameter->getFinalEachMenu()->setFinal(pModifier->isFinal());
@@ -1901,6 +1901,7 @@ void ElementParameters::updateElementParameters()
     QStringList modifiersList;
     foreach (ElementModifier elementModifier, elementModifiersList) {
       int index = elementModifier.mValue.indexOf('(');
+      bool onlyName = false;
       QString modifierStartStr;
       if (index > -1) {
         modifierStartStr = elementModifier.mValue.left(index);
@@ -1909,6 +1910,7 @@ void ElementParameters::updateElementParameters()
       QString modifierValue;
       if (elementModifier.mValue.isEmpty()) {
         modifierValue = QString(elementModifier.mKey);
+        onlyName = true;
       } else if (elementModifier.mValue.startsWith(QStringLiteral("redeclare")) || ((index > -1) && (modifierStartStr.compare(elementModifier.mKey) == 0))) {
         modifierValue = QString(elementModifier.mValue);
       } else {
@@ -1931,6 +1933,10 @@ void ElementParameters::updateElementParameters()
         } else {
           modifierValue.prepend(modifier);
         }
+      }
+      // skip adding empty parameter names
+      if (onlyName && modifierValue.compare(elementModifier.mKey) == 0) {
+        continue;
       }
       modifiersList.append(modifierValue);
     }
