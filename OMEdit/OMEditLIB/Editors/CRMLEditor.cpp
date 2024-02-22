@@ -87,27 +87,9 @@ void CRMLEditor::popUpCompleter()
 QList<CompleterItem> CRMLEditor::getCodeSnippets()
 {
   QList<CompleterItem> codesnippetslist;
-<<<<<<< HEAD
-  codesnippetslist << CompleterItem("match" ,"match (control)\n  case (condition) then (value);\n  case (condition) then (value);\nend match;", "control")
-                   << CompleterItem("matchcontinue" ,"matchcontinue (control)\n  case (condition) then (value);\n  case (condition) then (value);\nend matchcontinue;", "control")
-                   << CompleterItem("function" ,"function name\n  \nend name;", "name")
-                   << CompleterItem("block" ,"block name\n  \nend name;", "name")
-                   << CompleterItem("model" ,"model name\n  \nend name;", "name")
-                   << CompleterItem("class" ,"class name\n  \nend name;", "name")
-                   << CompleterItem("connector" ,"connector name\n  \nend name;", "name")
-                   << CompleterItem("package" ,"package name\n  \nend name;", "name")
-                   << CompleterItem("record" ,"record name\n  \nend name;", "name")
-                   << CompleterItem("while" ,"while condition loop\n  \nend while;", "condition")
-                   << CompleterItem("if" ,"if condition then\n  \nend if;", "condition")
-                   << CompleterItem("if" ,"if condition then\n  \nelseif condition then\n  \nelse\n  \nend if;", "condition")
-                   << CompleterItem("for" ,"for condition loop\n  \nend for;", "condition")
-                   << CompleterItem("when", "when condition then\n  \nend when;", "condition")
-                   << CompleterItem("when", "when condition then\n  \nelsewhen condition then\n  \nend when;", "condition");
-=======
   codesnippetslist << CompleterItem("model" ,"model name is {\n  \n};", "name")
                    << CompleterItem("package" ,"package name is {\n  \n};", "name")
                    << CompleterItem("library" ,"library name is {\n  \n};", "name");
->>>>>>> 7d35bf4472 (preliminary CRML support)
   return codesnippetslist;
 }
 
