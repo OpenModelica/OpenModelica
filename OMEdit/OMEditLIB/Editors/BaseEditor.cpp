@@ -2754,11 +2754,9 @@ void FindReplaceWidget::replaceAll()
   // save the find text in settings
   saveFindTextToSettings(mpFindComboBox->currentText());
   // replace all
-  int i=0;
   mpBaseEditor->getPlainTextEdit()->textCursor().beginEditBlock();
   while (mpBaseEditor->getPlainTextEdit()->find(mpFindComboBox->currentText(), flags)) {
     mpBaseEditor->getPlainTextEdit()->textCursor().insertText(mpReplaceWithTextBox->text());
-    i++;
   }
   mpBaseEditor->getPlainTextEdit()->textCursor().endEditBlock();
 }

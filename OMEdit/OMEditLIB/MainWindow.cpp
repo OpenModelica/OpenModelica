@@ -443,7 +443,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
       if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
         showMessageBrowser();
       } else {
-        animateMessagesTabWidgetForNewMessage(StringHandler::NoOMError);
+        markMessagesTabWidgetChangedForNewMessage(StringHandler::NoOMError);
       }
     }
   }
@@ -1820,11 +1820,11 @@ void MainWindow::writeNewApiProfiling(const QString &str)
 }
 
 /*!
- * \brief MainWindow::animateMessagesTabWidgetForNewMessage
+ * \brief MainWindow::markMessagesTabWidgetChangedForNewMessage
  * Start the animation of MessageTab.
  * \param errorType
  */
-void MainWindow::animateMessagesTabWidgetForNewMessage(StringHandler::OpenModelicaErrors errorType)
+void MainWindow::markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenModelicaErrors errorType)
 {
   MessageTab *pMessageTab = 0;
   switch (errorType) {
@@ -3667,6 +3667,7 @@ void MainWindow::messagesDockWidgetVisibilityChanged(bool visible)
     mpMessagesTabWidget->setVisible(!visible);
     if (!visible) {
       mpMessagesTabWidget->setCurrentIndex(MessagesWidget::instance()->getMessagesTabWidget()->currentIndex());
+      emit resetMessagesTabWidgetNames();
     }
   }
 }
