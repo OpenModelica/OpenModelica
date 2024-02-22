@@ -3242,21 +3242,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpGenerateVerificationScenariosAction);
           }
           break;
-        case LibraryTreeItem::CRML:
-          if (fileInfo.isDir()) {
-            menu.addAction(mpNewFileAction);
-            menu.addAction(mpNewFolderAction);
-            menu.addSeparator();
-          }
-          menu.addAction(mpCopyPathAction);
-          menu.addSeparator();
-          menu.addAction(mpRenameAction);
-          menu.addAction(mpDeleteAction);
-          if (pLibraryTreeItem->isTopLevel()) {
-            menu.addSeparator();
-            menu.addAction(mpUnloadCRMLFileAction);
-          }
-          break;
         case LibraryTreeItem::Text:
           if (fileInfo.isDir()) {
             menu.addAction(mpNewFileAction);
@@ -3269,7 +3254,11 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpDeleteAction);
           if (pLibraryTreeItem->isTopLevel()) {
             menu.addSeparator();
-            menu.addAction(mpUnloadTextFileAction);
+            if (pLibraryTreeItem->isCRMLFile()) {
+              menu.addAction(mpUnloadCRMLFileAction);
+            } else {
+              menu.addAction(mpUnloadTextFileAction);
+            }
           }
           break;
         case LibraryTreeItem::OMS:
@@ -4282,7 +4271,7 @@ void LibraryWidget::openCRMLFile(QFileInfo fileInfo, QString encoding, bool show
   LibraryTreeItem *pLibraryTreeItem = 0;
   QString compositeModelName;
   if (fileInfo.suffix().compare("crml") == 0) {
-    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::CRML, fileInfo.fileName(), fileInfo.absoluteFilePath(),
+    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
                                                                  fileInfo.absoluteFilePath(), true,
                                                                  mpLibraryTreeModel->getRootLibraryTreeItem());
   }

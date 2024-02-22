@@ -57,9 +57,15 @@ class LibraryTreeItem : public QObject
 public:
   enum LibraryType {
     Modelica,         /* Used to represent Modelica models. */
+<<<<<<< HEAD
     Text,             /* Used to represent text based files. */
     OMS,              /* Used to represent OMSimulator models. */
     CRML              /* Used to represent CRML models. */
+=======
+    Text,             /* Used to represent Text based files. */
+    CompositeModel,   /* Used to represent CompositeModel files. */
+    OMS              /* Used to represent OMSimulator models. */
+>>>>>>> 47b733753a (do not use a special type for .crml files in the library browser, treat them as text files)
   };
   enum Access {
     hide,
@@ -106,6 +112,7 @@ public:
   const QString& getVersionBuild() const;
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
+  bool isCRMLFile() const {return mFileName.endsWith(".crml");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
