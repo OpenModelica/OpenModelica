@@ -623,7 +623,7 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
     if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
       emit messageAdded();
     } else {
-      MainWindow::instance()->animateMessagesTabWidgetForNewMessage(messageItem.getErrorType());
+      MainWindow::instance()->markMessagesTabWidgetChangedForNewMessage(messageItem.getErrorType());
     }
   } else { // this block is called when some message appear during the startup. See #11985.
     emit messageAdded();
