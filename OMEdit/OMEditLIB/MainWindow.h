@@ -270,7 +270,7 @@ public:
   void addSystemLibraries();
   QString getLibraryIndexFilePath() const;
   void writeNewApiProfiling(const QString &str);
-  void animateMessagesTabWidgetForNewMessage(StringHandler::OpenModelicaErrors errorType);
+  void markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenModelicaErrors errorType);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
