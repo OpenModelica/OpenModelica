@@ -3203,7 +3203,8 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   #include "simulation_data.h"
 
   OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
-  void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
+
+  void <%symbolName(modelNamePrefix(simCode),"read_simulation_info")%>(SIMULATION_INFO* simulationInfo)
   {
     simulationInfo->startTime = <%s.startTime%>;
     simulationInfo->stopTime = <%s.stopTime%>;
@@ -3213,6 +3214,10 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     simulationInfo->outputFormat = "<%s.outputFormat%>";
     simulationInfo->variableFilter = "<%s.variableFilter%>";
     simulationInfo->OPENMODELICAHOME = "<%makefileParams.omhome%>";
+  }
+
+  void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData)
+  {
     <%System.tmpTickReset(1000)%>
     <%System.tmpTickResetIndex(0,2)%>
     <%vars.stateVars       |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>

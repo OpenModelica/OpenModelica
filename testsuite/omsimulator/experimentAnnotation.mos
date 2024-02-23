@@ -1,0 +1,33 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf M.lua M.fmu M.log M_systemCall.log/
+
+loadString("model M
+  Real x = time;
+  parameter Real x0(fixed = false);
+initial equation
+  x0 = x;
+equation
+  annotation(experiment(StartTime = 0.2, StopTime = 1.0, Interval = 1e-2));
+end M;"); getErrorString();
+
+buildModelFMU(M, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator M.fmu -r=experiment_annotation.mat", "M_systemCall.log");
+readFile("M_systemCall.log");
+
+val(x, 1.0, "experiment_annotation.mat");
+val(x0, 1.0, "experiment_annotation.mat");
+
+// Result:
+// true
+// ""
+// "M.fmu"
+// ""
+// 0
+// "info:    model doesn't contain any continuous state
+// info:    Result file: experiment_annotation.mat (bufferSize=1)
+// "
+// 1.0
+// 0.2
+// endResult
