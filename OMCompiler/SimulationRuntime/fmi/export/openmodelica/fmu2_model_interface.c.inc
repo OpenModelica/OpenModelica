@@ -626,13 +626,19 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  /*
+   * load the simulation settings before initializing the DataStruct for fmus
+   * fix issue #11855, always take the startTime provided in modeldescription.xml
+   * to handle model that have startTime > 0 (e.g) startTime = 0.2
+   */
+  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   /* setup model data with default start data */
   setDefaultStartValues(comp);
   setAllParamsToStart(comp->fmuData);
   setAllVarsToStart(comp->fmuData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
+  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
@@ -986,13 +992,14 @@ fmi2Status fmi2Reset(fmi2Component c)
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   /* reset model data with default start data */
   setDefaultStartValues(comp);
   setAllParamsToStart(comp->fmuData);
   setAllVarsToStart(comp->fmuData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
+  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif
