@@ -1079,7 +1079,7 @@ template simulationFile_dae(SimCode simCode)
      extern "C" {
      #endif
 
-     <%evaluateDAEResiduals(daeEquations, modelNamePrefixStr)%>
+     <%evaluateDAEResiduals(daeEquations, fileNamePrefix, fullPathPrefix, modelNamePrefixStr)%>
 
      <%initDAEmode%>
 
@@ -4469,14 +4469,52 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     >>
 end functionXXX_systems;
 
-template createEquationsAndCalls(list<list<SimEqSystem>> systems, String name, Context context, String modelNamePrefixStr, Text eqCalls, Text eqFuncs)
+
+template functionDAEModeEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, Context context, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs, Boolean static, Boolean noOpt, Boolean init)
+::=
+  let &file = buffer ""
+  let multiFile = if intGt(numEqs, equationsPerFile) then "x"
+  let fncalls = (List.balancedPartition(inEqs, equationsPerFile) |> eqs hasindex i0 =>
+                  // To file
+                  let &file += ((if multiFile then
+                    (let fileName = addFunctionIndex('<%fileNamePrefix%>_<%partName%>_part', ".c")
+                    redirectToFile(fullPathPrefix + fileName) +
+                  <<
+                  <%simulationFileHeader(fileNamePrefix)%>
+                  #if defined(__cplusplus)
+                  extern "C" {
+                  #endif<%\n%>
+                  >>)) +
+                  (eqs |> eq => equation_impl_options(-1, -1, eq, context, modelNamePrefix, static, noOpt, init); separator="\n") +
+                  <<
+                  >>
+                  +
+                  (if multiFile then
+                  (<<
+
+                  #if defined(__cplusplus)
+                  }
+                  #endif
+                  >> +
+                  closeFile())))
+
+                  // fncalls
+                  '<%(eqs |> eq => equationNames_(eq, context, modelNamePrefix); separator="\n")%>'
+
+                  )
+
+  let &eqFuncs += file
+  fncalls
+end functionDAEModeEquationsMultiFiles;
+
+template createEquationsAndCalls(list<list<SimEqSystem>> systems, String name, Context context, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, Text eqCalls, Text eqFuncs)
 ::=
   let _ = (systems |> equations => (
-          equations |> eq => (
-            let &eqFuncs += equation_impl(-1, -1, eq, context, modelNamePrefixStr, false)
-            let &eqCalls += equationNames_(eq, context, modelNamePrefixStr)
-            <<>>
-          )
+          let fncalls = functionDAEModeEquationsMultiFiles(equations, listLength(equations),
+                Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), context, fileNamePrefix, fullPathPrefix, modelNamePrefix,
+                "evaluateDAEResiduals", "16dae", &eqFuncs, /* Static? */ false, true /* No optimization */, /* initial? */ false)
+          let &eqCalls += fncalls
+          <<>>
         )
       )
   <<>>
@@ -4627,13 +4665,14 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   >>
 end functionAlgebraic;
 
-template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String modelNamePrefix)
+template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+  let () = System.tmpTickReset(0)
   let &eqFuncs = buffer ""
   let &eqCalls = buffer ""
 
-  let systems = createEquationsAndCalls(resEquations, "DAERes", contextDAEmode, modelNamePrefix, &eqCalls, &eqFuncs)
+  let systems = createEquationsAndCalls(resEquations, "DAERes", contextDAEmode, fileNamePrefix, fullPathPrefix, modelNamePrefix, &eqCalls, &eqFuncs)
   <<
   /*residual equations*/
   <%eqFuncs%>
