@@ -1063,12 +1063,12 @@ algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after 'discriminateDiscrete':\n" + stringDelimitList(List.map(arrayList(points),intString),",") + "\n\n");
         end if;
-        // 4th: Prefer variables with annotation attribute // '__OpenModelica_tearingSelect = TearingSelect.prefer'
+        // 4th: Prefer variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.prefer'
         pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after preferring variables with attribute 'prefer':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
-        // 5th: Avoid variables with annotation attribute // '__OpenModelica_tearingSelect = TearingSelect.avoid'
+        // 5th: Avoid variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'
         pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after discrimination against variables with attribute 'avoid':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
