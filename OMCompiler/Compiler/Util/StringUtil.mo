@@ -49,6 +49,11 @@ constant Integer CHAR_SPACE = 32;
 constant Integer CHAR_DASH = 45;
 constant Integer CHAR_DOT = 46;
 
+public function id
+  "wrapper to use with List.toString if the list contains strings"
+  input output String str;
+end id;
+
 public function headline_1
   input String title;
   output String header;

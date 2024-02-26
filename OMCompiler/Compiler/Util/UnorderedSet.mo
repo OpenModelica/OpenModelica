@@ -557,6 +557,7 @@ public
   end unique_list;
 
   function union
+    "set1 U set2"
     input UnorderedSet<T> set1;
     input UnorderedSet<T> set2;
     output UnorderedSet<T> set;
@@ -576,7 +577,8 @@ public
   end union;
 
   function union_list
-    "pass the hash and equality function if the list is empty"
+    "set1 U set2 U set3 ... U setn
+    pass the hash and equality function if the list is empty"
     input list<UnorderedSet<T>> set_lst;
     input Hash hashFunc;
     input KeyEq keyEqFunc;
@@ -596,7 +598,7 @@ public
   end union_list;
 
   function intersection
-    "pass the hash and equality function to create an empty list"
+    "set1 n set2"
     input UnorderedSet<T> set1;
     input UnorderedSet<T> set2;
     output UnorderedSet<T> set;
@@ -620,7 +622,8 @@ public
   end intersection;
 
   function intersection_list
-    "pass the hash and equality function to create an empty list"
+    "set1 n set2 n set3 ... n setn
+    pass the hash and equality function to create an empty list"
     input list<UnorderedSet<T>> set_lst;
     input Hash hashFunc;
     input KeyEq keyEqFunc;
@@ -641,6 +644,32 @@ public
     end if;
     set := fromList(acc, hashFunc, keyEqFunc);
   end intersection_list;
+
+  function difference
+    "set1 / set2"
+    input UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+    output UnorderedSet<T> set = UnorderedSet.new<T>(set1.hashFn, set1.eqFn);
+  algorithm
+    for cref in UnorderedSet.toList(set1) loop
+      if not UnorderedSet.contains(cref, set2) then
+        UnorderedSet.add(cref, set);
+      end if;
+    end for;
+  end difference;
+
+  function sym_difference
+    "set1 / set2 U set2 / set1"
+    input UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+    output UnorderedSet<T> set = difference(set1, set2);
+  algorithm
+    for cref in UnorderedSet.toList(set2) loop
+      if not UnorderedSet.contains(cref, set1) then
+        UnorderedSet.add(cref, set);
+      end if;
+    end for;
+  end sym_difference;
 
 protected
   function find
