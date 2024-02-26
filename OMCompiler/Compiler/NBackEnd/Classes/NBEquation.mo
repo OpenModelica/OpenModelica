@@ -2184,7 +2184,7 @@ public
 
       if Util.isSome(ifBody.else_if) then
         old_else_if := Util.getOption(ifBody.else_if);
-        else_if := map(old_else_if, funcExp, funcCrefOpt, mapFunc);
+        else_if := mapEqnExpCref(old_else_if, func, funcExp, funcCrefOpt, mapFunc);
         if not referenceEq(else_if, old_else_if) then
           ifBody.else_if := SOME(else_if);
         end if;
@@ -2654,7 +2654,6 @@ public
         condition := Expression.LBINARY(acc_condition, Operator.makeAnd(Type.BOOLEAN()), condition);
       end if;
     end combineConditions;
-
   end WhenEquationBody;
 
   uniontype WhenStatement
