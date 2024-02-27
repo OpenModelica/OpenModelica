@@ -1640,7 +1640,7 @@ public
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
       then set;
 
-      // these don't really change anything, just pass on the the argument
+      // these don't really change anything, just pass on the argument
       case Expression.CAST()    then collectDependencies(exp.exp, map, dep_map, sol_map, rep_set);
       case Expression.BOX()     then collectDependencies(exp.exp, map, dep_map, sol_map, rep_set);
       case Expression.UNBOX()   then collectDependencies(exp.exp, map, dep_map, sol_map, rep_set);
