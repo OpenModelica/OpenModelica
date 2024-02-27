@@ -1,0 +1,68 @@
+// name: GetModelInstanceMod5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+  protected
+    Real x;
+  end A;
+
+  model M
+    A a(x = 1.0);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"public\": false
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"modifiers\": {
+//         \"x\": \"1.0\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 7,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 8
+//   }
+// }"
+// "[<interactive>:8:9-8:16:writable] Notification: From here:
+// [<interactive>:4:5-4:11:writable] Error: Protected element 'x' may not be modified, got 'x = 1.0'.
+// "
+// endResult

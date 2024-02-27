@@ -1493,14 +1493,24 @@ algorithm
             if InstNode.isProtected(node) and not (InstNode.isExtends(parent) or InstNode.isBaseClass(parent)) then
               Error.addMultiSourceMessage(Error.NF_MODIFY_PROTECTED,
                 {InstNode.name(node), Modifier.toString(mod)}, {Modifier.info(mod), InstNode.info(node)});
-              fail();
+
+              if InstContext.inInstanceAPI(context) then
+                continue;
+              else
+                fail();
+              end if;
             end if;
 
             if InstNode.isOnlyOuter(node) then
               Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
                 {Modifier.toString(mod, printName = false), Modifier.name(mod)},
                 Modifier.info(mod));
-              fail();
+
+              if InstContext.inInstanceAPI(context) then
+                continue;
+              else
+                fail();
+              end if;
             end if;
 
             if InstNode.isComponent(node) then

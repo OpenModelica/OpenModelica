@@ -64,6 +64,7 @@ GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceMod3.mos \
 GetModelInstanceMod4.mos \
+GetModelInstanceMod5.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
