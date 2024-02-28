@@ -855,7 +855,7 @@ Output
 -  *Variable Filter (Optional)* - only output variables with names fully matching the
    regular expression.
 
--  *Protected Variables* - adds the protected variables in result file.
+-  *Protected Variables if not encrypted* - adds the protected variables in result file.
 
 -  *Equidistant Time Grid -* output the internal steps given by dassl instead of
    interpolating results into an equidistant time grid as given by stepSize or
@@ -1446,7 +1446,7 @@ General Options
 
   -  *Show Protected Classes* - If enabled then Libraries Browser will also list the protected classes.
 
-  -  *Show Hidden Classes* - If enabled then Libraries Browser will also list the hidden classes.
+  -  *Show Hidden Classes if not encrypted* - If enabled then Libraries Browser will also list the hidden classes.
      Ignores the annotation(Protection(access = Access.hide))
 
   -  *Synchronize with Model Widget* - If enabled then Libraries Browser will scroll automatically

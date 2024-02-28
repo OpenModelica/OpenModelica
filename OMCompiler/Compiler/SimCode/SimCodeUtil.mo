@@ -201,6 +201,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input Option<BackendDAE.InlineData> inInlineData;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Path inClassName;
+  input String fileName;
   input String filenamePrefix;
   input String inFileDir;
   input list<SimCodeFunction.Function> functions;
@@ -501,7 +502,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, fileName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -7664,6 +7665,7 @@ end createVarAsserts;
 
 public function createModelInfo
   input Absyn.Path class_;
+  input String fileName;
   input Absyn.Program program;
   input BackendDAE.BackendDAE dlow "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
@@ -7721,7 +7723,7 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
-    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
+    modelInfo := SimCode.MODELINFO(class_, fileName, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
@@ -16044,6 +16046,17 @@ algorithm
     else DAE.RCONST(1.0);
   end match;
 end getExpNominal;
+
+public function isMocFile
+  input String fileName;
+  output Integer result;
+algorithm
+  if (StringUtil.endsWith(fileName, ".moc")) then
+    result := 1;
+  else
+    result := 0;
+  end if;
+end isMocFile;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
