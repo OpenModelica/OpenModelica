@@ -309,7 +309,6 @@ if true then /* Suppress output */
   // "NBackend Util"
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",
-    "../NBackEnd/Util/NBGraphUtil.mo",
     "../NBackEnd/Util/NBReplacements.mo",
     "../NBackEnd/Util/NBSlice.mo",
 

@@ -139,7 +139,6 @@ public
     input Adjacency.Matrix adj;
     input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
-    input Adjacency.MatrixType matrixType;
     output Boolean changed;
   end resolveSingularitiesInterface;
 

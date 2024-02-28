@@ -71,12 +71,9 @@ protected
   import SBMultiInterval;
   import SBPWLinearMap;
   import SBSet;
-  import NBGraphUtil.{SetVertex, SetEdge};
 
 public
-  type MatrixType        = enumeration(ARRAY, PSEUDO);
   type MatrixStrictness  = enumeration(LINEAR, SOLVABLE, FULL);
-  type BipartiteGraph    = BipartiteIncidenceList<SetVertex, SetEdge>;
 
   uniontype Mapping
     record MAPPING
@@ -421,15 +418,6 @@ public
       Mapping mapping;
     end FULL;
 
-    record ARRAY_ADJACENCY_MATRIX
-      "no transposed set matrix needed since the graph represents all vertices equally"
-      BipartiteGraph graph                        "set based graph";
-      UnorderedMap<SetVertex, Integer> vertexMap  "map to get the vertex index";
-      UnorderedMap<SetEdge, Integer> edgeMap      "map to get the edge index";
-      MatrixStrictness st           "strictness with which it was created";
-      /* Maybe add optional markings here */
-    end ARRAY_ADJACENCY_MATRIX;
-
     record PSEUDO_ARRAY_ADJACENCY_MATRIX // ToDo: add optional solvability map for tearing
       array<list<Integer>> m        "eqn -> list<var>";
       array<list<Integer>> mT       "var -> list<eqn>";
@@ -439,26 +427,18 @@ public
     end PSEUDO_ARRAY_ADJACENCY_MATRIX;
 
     record EMPTY_ADJACENCY_MATRIX
-      MatrixType ty;
       MatrixStrictness st;
     end EMPTY_ADJACENCY_MATRIX;
 
     function create
       input VariablePointers vars;
       input EquationPointers eqns;
-      input MatrixType ty;
       input MatrixStrictness st = MatrixStrictness.FULL;
       output Matrix adj;
       input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     algorithm
       try
-        (adj, funcTree) := match ty
-          case MatrixType.ARRAY  then createArray(vars, eqns, st, funcTree);
-          case MatrixType.PSEUDO then createPseudo(vars, eqns, st, funcTree);
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
-          then fail();
-        end match;
+        (adj, funcTree) := createPseudo(vars, eqns, st, funcTree);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to create adjacency matrix for system:\n"
           + VariablePointers.toString(vars, "System") + "\n"
@@ -486,17 +466,12 @@ public
           Mapping mapping;
           CausalizeModes modes;
 
-        case (ARRAY_ADJACENCY_MATRIX(), {-1})           then create(vars, eqns, MatrixType.ARRAY, adj.st);
-        case (PSEUDO_ARRAY_ADJACENCY_MATRIX(), {-1})    then create(vars, eqns, MatrixType.PSEUDO, adj.st);
+        case (PSEUDO_ARRAY_ADJACENCY_MATRIX(), {-1})    then create(vars, eqns, adj.st);
 
         case (PSEUDO_ARRAY_ADJACENCY_MATRIX(), _) algorithm
           (m, mT, _) := updatePseudo(adj.m, adj.st, adj.mapping, adj.modes, vars, eqns, idx_lst, funcTree);
           adj.m       := m;
           adj.mT      := mT;
-        then (adj, funcTree);
-
-        case (ARRAY_ADJACENCY_MATRIX(), _) algorithm
-          // ToDo
         then (adj, funcTree);
 
         else algorithm
@@ -530,14 +505,10 @@ public
           adj.modes   := modes;
         then (adj, vars, eqns, funcTree);
 
-        case ARRAY_ADJACENCY_MATRIX() algorithm
-          // ToDo
-        then (adj, vars, eqns, funcTree);
-
         case EMPTY_ADJACENCY_MATRIX() algorithm
           vars := VariablePointers.addList(new_vars, vars);
           eqns := EquationPointers.addList(new_eqns, eqns);
-          (adj, funcTree) := create(vars, eqns, adj.ty, adj.st, funcTree);
+          (adj, funcTree) := create(vars, eqns, adj.st, funcTree);
         then (adj, vars, eqns, funcTree);
 
         else algorithm
@@ -642,8 +613,6 @@ public
           end for;
           str := str + Mapping.toString(adj.mapping) + "\n";
         then str;
-
-        case ARRAY_ADJACENCY_MATRIX() then str + "\n ARRAY NOT YET SUPPORTED \n";
 
         case PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
           if arrayLength(adj.m) > 0 then
@@ -817,9 +786,6 @@ public
       count := match adj
         case PSEUDO_ARRAY_ADJACENCY_MATRIX()  then BackendUtil.countElem(adj.m);
         case EMPTY_ADJACENCY_MATRIX()         then 0;
-        case ARRAY_ADJACENCY_MATRIX() algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array adjacency matrix is not jet supported."});
-        then fail();
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown matrix type."});
         then fail();
@@ -914,7 +880,7 @@ public
         mapping := Mapping.create(eqns, vars);
         adj := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
       else
-        adj := EMPTY_ADJACENCY_MATRIX(MatrixType.PSEUDO, st);
+        adj := EMPTY_ADJACENCY_MATRIX(st);
       end if;
     end createFull;
 
@@ -976,7 +942,7 @@ public
 
         adj := PSEUDO_ARRAY_ADJACENCY_MATRIX(m, mT, mapping, modes, st);
       else
-        adj := EMPTY_ADJACENCY_MATRIX(MatrixType.PSEUDO, st);
+        adj := EMPTY_ADJACENCY_MATRIX(st);
       end if;
     end createPseudo;
 
@@ -1183,54 +1149,6 @@ public
         end for;
       end for;
     end cleanMatrix;
-
-    function createArray
-      input VariablePointers vars;
-      input EquationPointers eqns;
-      input MatrixStrictness st = MatrixStrictness.FULL;
-      output Matrix adj;
-      input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
-    protected
-      BipartiteIncidenceList<SetVertex, SetEdge> graph;
-      Pointer<Integer> max_dim = Pointer.create(1);
-      Vector<Integer> vCount, eCount;
-      UnorderedMap<SetVertex, Integer> vertexMap;
-      UnorderedMap<SetEdge, Integer> edgeMap;
-    algorithm
-      // reset unique tick index to 0
-      BuiltinSystem.tmpTickReset(0);
-
-      // create empty set based graph and map
-      graph := BipartiteIncidenceList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
-      vertexMap := UnorderedMap.new<Integer>(SetVertex.hash, SetVertex.isEqual, VariablePointers.size(vars) + EquationPointers.size(eqns));
-      edgeMap := UnorderedMap.new<Integer>(SetEdge.hash, SetEdge.isEqual, VariablePointers.size(vars) + EquationPointers.size(eqns)); // make better size approx here
-
-      // find maximum number of dimensions
-      VariablePointers.mapPtr(vars, function maxDimTraverse(max_dim = max_dim));
-      EquationPointers.mapRes(eqns, function maxDimTraverse(max_dim = max_dim)); // maybe unnecessary?
-      vCount := Vector.newFill(Pointer.access(max_dim), 1);
-      eCount := Vector.newFill(Pointer.access(max_dim), 1);
-
-      // create vertices for variables
-      VariablePointers.mapPtr(vars, function SetVertex.createTraverse(graph = graph, vCount = vCount, ST = SetType.U, vertexMap = vertexMap));
-
-      // create vertices for equations and create edges
-      EquationPointers.map(eqns, function SetEdge.fromEquation(
-        graph       = graph,
-        vCount      = vCount,
-        eCount      = eCount,
-        map         = vars.map,
-        vertexMap   = vertexMap,
-        edgeMap     = edgeMap,
-        eqn_tpl_opt = NONE()
-      ));
-
-      if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
-        print(BipartiteIncidenceList.toString(graph));
-      end if;
-
-      adj := ARRAY_ADJACENCY_MATRIX(graph, vertexMap, edgeMap, st);
-    end createArray;
 
     function maxDimTraverse
       input Pointer<Variable> var_ptr;

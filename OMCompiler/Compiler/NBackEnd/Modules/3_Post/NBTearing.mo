@@ -355,7 +355,7 @@ protected
           discreteVars    := VariablePointers.fromList(disc_vars);
           eqns            := EquationPointers.fromList(disc_eqns);
 
-          (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
+          (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
           matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, false);
           (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
           inner_comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
@@ -458,7 +458,7 @@ protected
       discreteVars    := VariablePointers.fromList(disc_lst);
       eqns            := EquationPointers.fromList(equations);
 
-      (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
+      (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
       matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, false);
       (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
       inner_comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
