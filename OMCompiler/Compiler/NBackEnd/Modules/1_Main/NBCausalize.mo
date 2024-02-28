@@ -45,7 +45,6 @@ protected
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
-  import SBGraphUtil = NFSBGraphUtil;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -70,17 +69,6 @@ protected
   import List;
   import StringUtil;
   import UnorderedSet;
-
-  // SetBased Graph imports
-  import SBGraph.BipartiteIncidenceList;
-  import SBGraph.VertexDescriptor;
-  import SBGraph.SetType;
-  import NBAdjacency.BipartiteGraph;
-  import SBInterval;
-  import SBMultiInterval;
-  import SBPWLinearMap;
-  import SBSet;
-  import NBGraphUtil.{SetVertex, SetEdge};
 
   // ############################################################
   //                      Main Functions
@@ -197,14 +185,13 @@ public
   function simple
     input VariablePointers vars;
     input EquationPointers eqs;
-    input Adjacency.MatrixType matrixType = NBAdjacency.MatrixType.PSEUDO;
     output list<StrongComponent> comps;
   protected
     Adjacency.Matrix adj;
     Matching matching;
   algorithm
     // create scalar adjacency matrix for now
-    adj := Adjacency.Matrix.create(vars, eqs, matrixType);
+    adj := Adjacency.Matrix.create(vars, eqs);
     matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
     comps := Sorting.tarjan(adj, matching, vars, eqs);
   end simple;
@@ -217,7 +204,6 @@ public
   algorithm
     (func) := match flag
       case "PFPlusExt"  then causalizePseudoArray;
-      case "SBGraph"    then causalizeArray;
       case "pseudo"     then causalizePseudoArray;
       /* ... New causalize modules have to be added here */
       else algorithm
@@ -254,7 +240,7 @@ protected
         // #################################################
         variables := VariablePointers.fromList(unfixable);
         equations := EquationPointers.fromList(initials);
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.SOLVABLE);
+        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.SOLVABLE);
         // do not resolve potential singular systems in Phase I or II! -> regular matching
         matching := Matching.regular(matching, adj, true, true);
 
@@ -271,7 +257,7 @@ protected
         (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, fixable, {});
         (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true, false);
 
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.FULL);
+        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.FULL);
         comps := Sorting.tarjan(adj, matching, variables, equations);
       then (variables, equations, adj, matching, comps);
 
@@ -281,9 +267,9 @@ protected
         equations := EquationPointers.compress(system.equations);
 
         // create solvable adjacency matrix for matching and full for sorting
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.SOLVABLE);
+        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.SOLVABLE);
         (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true);
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.FULL);
+        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.FULL);
         comps := Sorting.tarjan(adj, matching, variables, equations);
       then (variables, equations, adj, matching, comps);
     end match;
@@ -294,23 +280,6 @@ protected
     system.matching := SOME(matching);
     system.strongComponents := SOME(listArray(comps));
   end causalizePseudoArray;
-
-  function causalizeArray extends Module.causalizeInterface;
-  protected
-    VariablePointers variables;
-    EquationPointers equations;
-    Adjacency.Matrix adj;
-    Matching matching;
-    list<StrongComponent> comps;
-  algorithm
-    // compress the arrays to remove gaps
-    variables := VariablePointers.compress(system.unknowns);
-    equations := EquationPointers.compress(system.equations);
-
-    // create scalar adjacency matrix for now
-    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.ARRAY, NBAdjacency.MatrixStrictness.SOLVABLE);
-    matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
-  end causalizeArray;
 
   function causalizeDAEMode extends Module.causalizeInterface;
   protected

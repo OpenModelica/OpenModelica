@@ -304,7 +304,6 @@ set(OMC_MM_BACKEND_SOURCES
     # "NBackend Util";
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBBackendUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBDifferentiate.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBGraphUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBReplacements.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBSlice.mo
 

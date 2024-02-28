@@ -326,7 +326,7 @@ public
   end getUnsolvableExpCrefs;
 
   function getDependentCrefIndicesPseudoScalar
-    "[Adjacency.MatrixType.PSEUDO] Scalar equations.
+    "Scalar equations.
     Turns cref dependencies into index lists, used for adjacency."
     input list<ComponentRef> dependencies         "dependent var crefs";
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
@@ -354,7 +354,7 @@ public
   end getDependentCrefIndicesPseudoScalar;
 
   function getDependentCrefIndicesPseudoFull
-    "[Adjacency.MatrixType.PSEUDO] equations that will get full dependency.
+    "equations that will get full dependency.
     Turns cref dependencies into index lists, used for adjacency."
     extends getDependentCrefIndices;
   protected
@@ -413,7 +413,7 @@ public
   end getDependentCrefIndicesPseudoFull;
 
   function getDependentCrefIndicesPseudoFor
-    "[Adjacency.MatrixType.PSEUDO] For-Loop equations.
+    "For-Loop equations.
     Turns cref dependencies into index lists, used for adjacency."
     extends getDependentCrefIndices;
     input Iterator iter                                     "iterator frames";
@@ -463,7 +463,7 @@ public
   end getDependentCrefIndicesPseudoFor;
 
   function getDependentCrefsPseudoForCausalized
-    "(Jacobian) [Adjacency.MatrixType.PSEUDO] For-Loop equations.
+    "(Jacobian) For-Loop equations.
     Turns cref dependencies into index lists, used for adjacency."
     input ComponentRef row_cref                                   "cref representing the current row";
     input list<ComponentRef> dependencies                         "dependent var crefs";
@@ -634,7 +634,7 @@ public
   end updateDependenciesInteger;
 
   function getDependentCrefsPseudoArrayCausalized
-    "[Adjacency.MatrixType.PSEUDO] Array equations.
+    "Array equations.
     Turns cref dependencies into index lists, used for adjacency."
     input ComponentRef row_cref                                   "cref representing the current row";
     input list<ComponentRef> dependencies                         "dependent var crefs";
