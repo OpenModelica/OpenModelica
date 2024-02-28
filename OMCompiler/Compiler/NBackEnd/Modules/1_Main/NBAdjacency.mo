@@ -701,38 +701,42 @@ public
     algorithm
       str := match adj
         local
-          list<ComponentRef> F, R, E, A, S;
-          list<String> f = {}, r = {}, e = {}, a = {}, s = {};
-          array<String> names, types, F_, R_, E_, A_, S_;
-          Integer length1, length2, lengthf, lengthr, lengthe, lengtha, lengths;
+          list<ComponentRef> F, R, E, A, S, K;
+          list<String> f = {}, r = {}, e = {}, a = {}, s = {}, k = {};
+          array<String> names, types, F_, R_, E_, A_, S_, K_;
+          Integer length1, length2, lengthf, lengthr, lengthe, lengtha, lengths, lengthk;
 
         case FULL() algorithm
           str := StringUtil.headline_2(str + " Dependency Adjacency Matrix") + "\n";
           types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
-            (F, R, E, A, S) := Dependency.categorize(adj.occurences[i], adj.dependencies[i], adj.repetitions[i]);
+            (F, R, E, A, S, K) := Dependency.categorize(adj.occurences[i], adj.dependencies[i], adj.repetitions[i]);
             f := List.toString(F, ComponentRef.toString, "[!]", "{", ",", "}", false) :: f;
             r := List.toString(R, ComponentRef.toString, "[-]", "{", ",", "}", false) :: r;
             e := List.toString(E, ComponentRef.toString, "[+]", "{", ",", "}", false) :: e;
             a := List.toString(A, ComponentRef.toString, "[:]", "{", ",", "}", false) :: a;
             s := List.toString(S, ComponentRef.toString, "[.]", "{", ",", "}", false) :: s;
+            k := List.toString(K, ComponentRef.toString, "[o]", "{", ",", "}", false) :: k;
           end for;
           F_ := listArray(f);
           R_ := listArray(r);
           E_ := listArray(e);
           A_ := listArray(a);
           S_ := listArray(s);
+          K_ := listArray(k);
           length1 := max(stringLength(ty) for ty in types) + 1;
           length2 := max(stringLength(name) for name in names) + 3;
-          lengthf := max(stringLength(s) for s in F_);
-          lengthr := max(stringLength(s) for s in R_);
-          lengthe := max(stringLength(s) for s in E_);
-          lengtha := max(stringLength(s) for s in A_);
-          lengths := max(stringLength(s) for s in S_);
+          lengthf := max(stringLength(st) for st in F_);
+          lengthr := max(stringLength(st) for st in R_);
+          lengthe := max(stringLength(st) for st in E_);
+          lengtha := max(stringLength(st) for st in A_);
+          lengths := max(stringLength(st) for st in S_);
+          lengthk := max(stringLength(st) for st in K_);
           for i in 1:arrayLength(names) loop
             str := str + arrayGet(types, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types, i))) + " "
               + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
+              + arrayGet(K_, i) + " " + StringUtil.repeat(".", lengthk - stringLength(arrayGet(K_, i)))
               + arrayGet(S_, i) + " " + StringUtil.repeat(".", lengths - stringLength(arrayGet(S_, i)))
               + arrayGet(A_, i) + " " + StringUtil.repeat(".", lengtha - stringLength(arrayGet(A_, i)))
               + arrayGet(E_, i) + " " + StringUtil.repeat(".", lengthe - stringLength(arrayGet(E_, i)))
@@ -901,6 +905,7 @@ public
       CausalizeModes modes;
     algorithm
       adj := createFull(vars, eqns, st, funcTree);
+      //print(EquationPointers.toString(eqns) + "\n");
       //print(solvabilityString(adj, "Full") + "\n");
       //print(dependencyString(adj, "Full") + "\n");
       //print(toString(adj, "Full") + "\n");
@@ -1188,6 +1193,7 @@ public
     "the dependency kind to show how a component reference occurs in an equation.
     for each dimension there has to be one dependency kind."
     record DEPENDENCY
+      list<Integer> skip_pos;
       Integer regular;
       Integer reduction;
     end DEPENDENCY;
@@ -1195,8 +1201,13 @@ public
     function toString
       input Dependency dep;
       output String str;
+    protected
+      String str1, str2;
     algorithm
-      str := List.toString(listAppend(List.fill(":", dep.regular), List.fill("-", dep.reduction)), StringUtil.id);
+      str1 := List.toString(dep.skip_pos, intString, "", "", ", ", "");
+      str2 := List.toString(listAppend(List.fill(":", dep.regular), List.fill("-", dep.reduction)), StringUtil.id, "", "", ", ", "");
+      str := if str1 == "" or str2 == "" then str1 + str2 else str1 + ", " + str2;
+      str := "{" + str + "}";
     end toString;
 
     function create
@@ -1204,9 +1215,9 @@ public
       output Dependency dep;
     algorithm
       if Type.isArray(sub_ty) then
-        dep := DEPENDENCY(listLength(list(dim for dim guard(not Dimension.isOne(dim)) in Type.arrayDims(sub_ty))), 0);
+        dep := DEPENDENCY({}, listLength(list(dim for dim guard(not Dimension.isOne(dim)) in Type.arrayDims(sub_ty))), 0);
       else
-        dep := DEPENDENCY(0, 0);
+        dep := DEPENDENCY({}, 0, 0);
       end if;
     end create;
 
@@ -1234,6 +1245,45 @@ public
       end if;
     end update;
 
+    function skip
+      input ComponentRef cref;
+      input Integer skip_pos;
+      input UnorderedMap<ComponentRef, Dependency> map;
+    protected
+      Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
+      Dependency dep;
+    algorithm
+      if Util.isSome(opt_dep) then
+        SOME(dep) := opt_dep;
+        dep.skip_pos := skip_pos :: dep.skip_pos;
+        UnorderedMap.add(cref, dep, map);
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
+         + ComponentRef.toString(cref) + " was not found in the map."});
+        fail();
+      end if;
+    end skip;
+
+    function updateList
+      input list<ComponentRef> lst;
+      input Integer num;
+      input UnorderedMap<ComponentRef, Dependency> map;
+    algorithm
+      for cref in lst loop
+        update(cref, num, map);
+      end for;
+    end updateList;
+
+    function skipList
+      input list<ComponentRef> lst;
+      input Integer skip_pos;
+      input UnorderedMap<ComponentRef, Dependency> map;
+    algorithm
+      for cref in lst loop
+        skip(cref, skip_pos, map);
+      end for;
+    end skipList;
+
     function addList
       input list<ComponentRef> lst;
       input UnorderedMap<ComponentRef, Dependency> map;
@@ -1254,6 +1304,7 @@ public
       output list<ComponentRef> E = {};
       output list<ComponentRef> A = {};
       output list<ComponentRef> S = {};
+      output list<ComponentRef> K = {};
     protected
       Boolean repeats;
     algorithm
@@ -1262,6 +1313,8 @@ public
         _ := match UnorderedMap.getSafe(cref, map, sourceInfo())
           local
             Integer red;
+          case DEPENDENCY(skip_pos = {_})
+            algorithm K := cref :: K; then ();
           case DEPENDENCY(regular = 0, reduction = 0) guard(repeats)
             algorithm E := cref :: E; then ();
           case DEPENDENCY(regular = 0, reduction = 0)
@@ -1471,6 +1524,7 @@ public
         Expression call_exp;
         Call call;
         Boolean isRep;
+        Integer ind;
 
       case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
         if not UnorderedMap.contains(exp.cref, dep_map) then
@@ -1479,31 +1533,43 @@ public
         Solvability.update(exp.cref, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
       then UnorderedSet.fromList({exp.cref}, ComponentRef.hash, ComponentRef.isEqual);
 
-      // ToDo: need to update dependencies here
+      // Add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
-        for elem in exp.elements loop
-          sets := collectDependencies(elem, map, dep_map, sol_map, rep_set) :: sets;
+        for i in 1:arrayLength(exp.elements) loop
+          set1 := collectDependencies(exp.elements[i], map, dep_map, sol_map, rep_set);
+          Dependency.skipList(UnorderedSet.toList(set1), i, dep_map);
+          sets := set1 :: sets;
         end for;
       then UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
 
+      // add skips for tuples
       case Expression.TUPLE() algorithm
+        ind := 1;
         for elem in exp.elements loop
-          sets := collectDependencies(elem, map, dep_map, sol_map, rep_set) :: sets;
+          set1 := collectDependencies(elem, map, dep_map, sol_map, rep_set);
+          Dependency.skipList(UnorderedSet.toList(set1), ind, dep_map);
+          sets := set1 :: sets;
+          ind := ind + 1;
         end for;
-      then UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
+        set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
+      then set;
 
+      // this ultimately should not occur, but handle just as arrays and tuples
       case Expression.RECORD() algorithm
+        ind := 1;
         for elem in exp.elements loop
-          sets := collectDependencies(elem, map, dep_map, sol_map, rep_set) :: sets;
+          set1 := collectDependencies(elem, map, dep_map, sol_map, rep_set);
+          Dependency.skipList(UnorderedSet.toList(set1), ind, dep_map);
+          sets := set1 :: sets;
+          ind := ind + 1;
         end for;
-      then UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
+        set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
+      then set;
 
       // reduce the dependency for these
       case Expression.SUBSCRIPTED_EXP() algorithm
         set := collectDependencies(exp.exp, map, dep_map, sol_map, rep_set);
-        for cref in UnorderedSet.toList(set) loop
-          Dependency.update(cref, listLength(exp.subscripts), dep_map);
-        end for;
+        Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), dep_map);
       then set;
 
       // should not change anything
@@ -1517,8 +1583,8 @@ public
         set2  := collectDependencies(exp.exp2, map, dep_map, sol_map, rep_set);
         set   := UnorderedSet.union(set1, set2);
         // add repetitions if needed
-        addRepetition(set1, exp.exp1, isRep, rep_set);
-        addRepetition(set2, exp.exp2, isRep, rep_set);
+        addRepetitionsCond(set1, exp.exp1, isRep, rep_set);
+        addRepetitionsCond(set2, exp.exp2, isRep, rep_set);
       then set;
 
       // mostly equal to binary
@@ -1529,14 +1595,14 @@ public
         for arg in exp.arguments loop
           set1 := collectDependencies(arg, map, dep_map, sol_map, rep_set);
           // add repetitions if needed
-          addRepetition(set1, arg, isRep, rep_set);
+          addRepetitionsCond(set1, arg, isRep, rep_set);
           sets := set1 :: sets;
         end for;
         // traverse inverse arguments
         for arg in exp.inv_arguments loop
           set2 := collectDependencies(arg, map, dep_map, sol_map, rep_set);
           // add repetitions if needed
-          addRepetition(set2, arg, isRep, rep_set);
+          addRepetitionsCond(set2, arg, isRep, rep_set);
           sets := set2 :: sets;
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
@@ -1588,36 +1654,34 @@ public
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
       then UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
 
-/* this does not really work in some cases. is this needed?
       // for array constructors replace all iterators (temporarily)
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR(exp = call_exp)) algorithm
-        print("got array const: " + Expression.toString(exp) + "\n");
         for iter in call.iters loop
           call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
         end for;
-      then collectDependencies(call_exp, dep_map, sol_map, rep_set);
-*/
+        // if these are not simplified before this step, they can only be solved implicitely
+        set := collectDependencies(call_exp, map, dep_map, sol_map, rep_set);
+        Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
+      then set;
 
-      // for reductions set the dependency to reduction
+      // for reductions set the dependency to full reduction
       case Expression.CALL(call = call as Call.TYPED_REDUCTION(exp = call_exp)) algorithm
         for iter in call.iters loop
           call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
         end for;
         set := collectDependencies(call_exp, map, dep_map, sol_map, rep_set);
-        for cref in UnorderedSet.toList(set) loop
-          Dependency.update(cref, -1, dep_map);
-        end for;
+        Dependency.updateList(UnorderedSet.toList(set), -1, dep_map);
       then set;
 
-      // for functions set the dependency to reduction
+      // for functions set the dependency to full reduction (+ repetition) and solvability to implicit
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         for arg in call.arguments loop
           sets := collectDependencies(arg, map, dep_map, sol_map, rep_set) :: sets;
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
-        for cref in UnorderedSet.toList(set) loop
-          Dependency.update(cref, -1, dep_map);
-        end for;
+        Dependency.updateList(UnorderedSet.toList(set), -1, dep_map);
+        Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
+        addRepetitions(set, rep_set);
       then set;
 
       // nothing is solvable from ranges
@@ -1635,8 +1699,8 @@ public
     end match;
   end collectDependencies;
 
-  function addRepetition
-    "adds component references to the repetition set,
+  function addRepetitionsCond
+    "adds component references from a set to the repetition set,
     only if the expression they appear in is of size 1"
     input UnorderedSet<ComponentRef> occ;
     input Expression exp;
@@ -1644,11 +1708,19 @@ public
     input UnorderedSet<ComponentRef> rep_set;
   algorithm
     if isRep and Type.sizeOf(Expression.typeOf(exp)) == 1 then
-      for cref in UnorderedSet.toList(occ) loop
-        UnorderedSet.add(cref, rep_set);
-      end for;
+      addRepetitions(occ, rep_set);
     end if;
-  end addRepetition;
+  end addRepetitionsCond;
+
+  function addRepetitions
+    "adds component references to the repetition set"
+    input UnorderedSet<ComponentRef> occ;
+    input UnorderedSet<ComponentRef> rep_set;
+  algorithm
+    for cref in UnorderedSet.toList(occ) loop
+      UnorderedSet.add(cref, rep_set);
+    end for;
+  end addRepetitions;
 
   function collectDependenciesIf
     "collects all relevant component references from an if equation body
