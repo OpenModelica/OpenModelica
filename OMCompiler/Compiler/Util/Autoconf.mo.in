@@ -9,7 +9,7 @@ encapsulated package Autoconf
   constant String platform = if isWindows and is64Bit then "WIN64" elseif isWindows then "WIN32" else "Unix";
 
   constant String make = "@OMC_MAKE_EXE@";
-  constant String cmake = "\"@OMC_CMAKE_EXE@\"";
+  constant String cmake = "cmake";
 
   constant String exeExt = if isWindows then ".exe" else "";
   constant String dllExt = "@SHREXT@";
