@@ -2199,7 +2199,7 @@ algorithm
       list<Boolean> blst;
       list<DAE.Type> tlst;
       list<tuple<DAE.Exp,Boolean>> expBoolLst;
-      String typstring, dastring, funstring, str;
+      String typstring, dastring, funstring;
       list<String> typlststring;
       DAE.TailCall tc;
       DAE.CallAttributes attr;
@@ -2309,8 +2309,7 @@ algorithm
       else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        str = "Differentiate.differentiateFunctionCall failed for " + ExpressionDump.printExpStr(inExp) + "\n";
-        Debug.trace(str);
+        Debug.trace(getInstanceName() + " failed for " + ExpressionDump.printExpStr(inExp) + "\n");
       then fail();
   end matchcontinue;
 end differentiateFunctionCall;
@@ -2372,7 +2371,7 @@ algorithm
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path,mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
         SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
-        // check if derivativ function has all expected inputs
+        // check if derivative function has all expected inputs
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -3223,14 +3222,8 @@ algorithm
 end getFunctionMapper1;
 
 protected function diffableTypes
-    input DAE.Type inType;
-  output Boolean out;
-protected
-  Boolean b[2];
-algorithm
-  b[1] := Types.isRealOrSubTypeReal(inType);
-  b[2] := Types.isRecord(inType);
-  out := boolOr(b[1],b[2]);
+  input DAE.Type inType;
+  output Boolean out = Types.isRealOrSubTypeReal(inType) or Types.isRecord(inType);
 end diffableTypes;
 
 

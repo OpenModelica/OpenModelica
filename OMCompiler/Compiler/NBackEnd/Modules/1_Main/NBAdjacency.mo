@@ -290,10 +290,10 @@ public
       input Integer eqn_scalar_size;
       input Integer eqn_array_size;
       output CausalizeModes modes = CAUSALIZE_MODES(
-                                mode_to_var  = arrayCreate(eqn_scalar_size, arrayCreate(0,0)),
-                                mode_to_cref = arrayCreate(eqn_array_size, arrayCreate(0,ComponentRef.EMPTY())),
-                                mode_eqns    = Pointer.create({})
-                              );
+          mode_to_var  = arrayCreate(eqn_scalar_size, arrayCreate(0,0)),
+          mode_to_cref = arrayCreate(eqn_array_size, arrayCreate(0,ComponentRef.EMPTY())),
+          mode_eqns    = Pointer.create({})
+        );
     end empty;
 
     function contains
@@ -1205,7 +1205,7 @@ public
       String str1, str2;
     algorithm
       str1 := List.toString(dep.skip_pos, intString, "", "", ", ", "");
-      str2 := List.toString(listAppend(List.fill(":", dep.regular), List.fill("-", dep.reduction)), StringUtil.id, "", "", ", ", "");
+      str2 := List.toString(listAppend(List.fill(":", dep.regular), List.fill("-", dep.reduction)), Util.id, "", "", ", ", "");
       str := if str1 == "" or str2 == "" then str1 + str2 else str1 + ", " + str2;
       str := "{" + str + "}";
     end toString;
@@ -1346,29 +1346,19 @@ public
     end EXPLICIT_NONLINEAR;
 
     record EXPLICIT_LINEAR
-      Boolean param                           "true if we need to devide by a parameter to solve";
-      Option<UnorderedSet<ComponentRef>> vars "variables we need to devide by to solve";
+      Boolean param                           "true if we need to divide by a parameter to solve";
+      Option<UnorderedSet<ComponentRef>> vars "variables we need to divide by to solve";
     end EXPLICIT_LINEAR;
 
     function toString
       input Solvability sol;
       output String str;
-    protected
-      function sgnN
-        input Boolean b;
-        output String str = if b then "+" else "-";
-      end sgnN;
-      function sgnL
-        input Boolean b1;
-        input Boolean b2;
-        output String str = if b2 then "V" elseif b1 then "P" else "C";
-      end sgnL;
     algorithm
       str := match sol
         case UNSOLVABLE()         then "XX";
         case IMPLICIT()           then "II";
-        case EXPLICIT_NONLINEAR() then "N" + sgnN(sol.unique);
-        case EXPLICIT_LINEAR()    then "L" + sgnL(sol.param, Util.isSome(sol.vars));
+        case EXPLICIT_NONLINEAR() then "N" + (if sol.unique then "+" else "-");
+        case EXPLICIT_LINEAR()    then "L" + (if Util.isSome(sol.vars) then "V" elseif sol.param then "P" else "C");
         case UNKNOWN()            then "||";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown solvability kind."});
@@ -1811,7 +1801,7 @@ public
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     input UnorderedSet<ComponentRef> rep_set;
     output tuple<UnorderedSet<ComponentRef>, UnorderedSet<ComponentRef>> set_tpl;
- protected
+  protected
     UnorderedSet<ComponentRef> set1 "solvable";
     UnorderedSet<ComponentRef> set2 "potentially unsolvable";
   algorithm
@@ -1840,4 +1830,3 @@ public
 
   annotation(__OpenModelica_Interface="backend");
 end NBAdjacency;
-

@@ -649,11 +649,11 @@ public
     "set1 / set2"
     input UnorderedSet<T> set1;
     input UnorderedSet<T> set2;
-    output UnorderedSet<T> set = UnorderedSet.new<T>(set1.hashFn, set1.eqFn);
+    output UnorderedSet<T> set = new<T>(set1.hashFn, set1.eqFn);
   algorithm
-    for cref in UnorderedSet.toList(set1) loop
-      if not UnorderedSet.contains(cref, set2) then
-        UnorderedSet.add(cref, set);
+    for cref in toList(set1) loop
+      if not contains(cref, set2) then
+        add(cref, set);
       end if;
     end for;
   end difference;
@@ -664,9 +664,9 @@ public
     input UnorderedSet<T> set2;
     output UnorderedSet<T> set = difference(set1, set2);
   algorithm
-    for cref in UnorderedSet.toList(set2) loop
-      if not UnorderedSet.contains(cref, set1) then
-        UnorderedSet.add(cref, set);
+    for cref in toList(set2) loop
+      if not contains(cref, set1) then
+        add(cref, set);
       end if;
     end for;
   end sym_difference;
