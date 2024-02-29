@@ -3467,8 +3467,6 @@ protected function callTranslateModel
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
-protected
-  String fileName;
 algorithm
   (success, outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
@@ -3970,7 +3968,7 @@ protected function callBuildModelFMU
   output Values.Value outValue;
 protected
   Boolean staticSourceCodeFMU, success;
-  String fileName, filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
   GlobalScript.SimulationOptions defaultSimOpt;
   SimCode.SimulationSettings simSettings;
@@ -4187,7 +4185,6 @@ protected function translateModelXML " author: Alachew
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
 protected
   Boolean success;
-  String fileName;
 algorithm
   (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
   outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
