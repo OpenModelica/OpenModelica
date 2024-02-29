@@ -396,8 +396,11 @@ public
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
             generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
-
-            Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(name, program);
+            try
+              Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(name, program);
+            else
+              fileName := "";
+            end try;
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
 
             simCode := SIM_CODE(
