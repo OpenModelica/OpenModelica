@@ -145,8 +145,10 @@ endif()
 @FMU_ADDITIONAL_LIBS@
 
 if(${NEED_CVODE})
+  # Force static compilation on Windows because DLLs suck
   if(WIN32)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
+    target_compile_definitions(${FMU_NAME} PRIVATE LINK_SUNDIALS_STATIC)
   endif()
 
   message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
@@ -160,36 +162,6 @@ if(${NEED_CVODE})
   endif()
   message(STATUS "SUNDIALS_CVODE_LIBRARY: ${SUNDIALS_CVODE_LIBRARY}")
 
-  find_library(SUNDIALS_SUNMATRIXDENSE_LIBRARY sundials_sunmatrixdense
-               PATHS ${CVODE_DIRECTORY}
-               NO_DEFAULT_PATH
-               NO_SYSTEM_ENVIRONMENT_PATH
-               REQUIRED)
-  if(NOT SUNDIALS_SUNMATRIXDENSE_LIBRARY)
-    message(FATAL_ERROR "Couldn't find library sundials_sunmatrixdense in ${CVODE_DIRECTORY}")
-  endif()
-  message(STATUS "SUNDIALS_SUNMATRIXDENSE_LIBRARY: ${SUNDIALS_SUNMATRIXDENSE_LIBRARY}")
-
-  find_library(SUNDIALS_SUNLINSOLLAPACKDENSE_LIBRARY sundials_sunlinsollapackdense
-               PATHS ${CVODE_DIRECTORY}
-               NO_DEFAULT_PATH
-               NO_SYSTEM_ENVIRONMENT_PATH
-               REQUIRED)
-  if(NOT SUNDIALS_SUNLINSOLLAPACKDENSE_LIBRARY)
-    message(FATAL_ERROR "Couldn't find library sundials_sunlinsollapackdense in ${CVODE_DIRECTORY}")
-  endif()
-  message(STATUS "SUNDIALS_SUNLINSOLLAPACKDENSE_LIBRARY: ${SUNDIALS_SUNLINSOLLAPACKDENSE_LIBRARY}")
-
-  find_library(SUNDIALS_SUNNONLINSOLLAPACK_LIBRARY sundials_sunnonlinsolnewton
-               PATHS ${CVODE_DIRECTORY}
-               NO_DEFAULT_PATH
-               NO_SYSTEM_ENVIRONMENT_PATH
-               REQUIRED)
-  if(NOT SUNDIALS_SUNNONLINSOLLAPACK_LIBRARY)
-    message(FATAL_ERROR "Couldn't find library sundials_sunnonlinsolnewton in ${CVODE_DIRECTORY}")
-  endif()
-  message(STATUS "SUNDIALS_SUNNONLINSOLLAPACK_LIBRARY: ${SUNDIALS_SUNNONLINSOLLAPACK_LIBRARY}")
-
   find_library(SUNDIALS_NVECSERIAL_LIBRARY sundials_nvecserial
                PATHS ${CVODE_DIRECTORY}
                NO_DEFAULT_PATH
@@ -200,25 +172,11 @@ if(${NEED_CVODE})
   endif()
   message(STATUS "SUNDIALS_NVECSERIAL_LIBRARY: ${SUNDIALS_NVECSERIAL_LIBRARY}")
 
-  find_library(SUNDIALS_KINSOL_LIBRARY sundials_kinsol
-               PATHS ${CVODE_DIRECTORY}
-               NO_DEFAULT_PATH
-               NO_SYSTEM_ENVIRONMENT_PATH
-               REQUIRED)
-  if(NOT SUNDIALS_KINSOL_LIBRARY)
-    message(FATAL_ERROR "Couldn't find library sundials_kinsol in ${CVODE_DIRECTORY}")
-  endif()
-  message(STATUS "SUNDIALS_KINSOL_LIBRARY: ${SUNDIALS_KINSOL_LIBRARY}")
-
-  target_link_libraries(${FMU_NAME} PUBLIC ${SUNDIALS_NVECSERIAL_LIBRARY})
-  target_link_libraries(${FMU_NAME} PUBLIC ${SUNDIALS_SUNMATRIXDENSE_LIBRARY})
-  target_link_libraries(${FMU_NAME} PUBLIC ${SUNDIALS_SUNLINSOLLAPACKDENSE_LIBRARY})
-  target_link_libraries(${FMU_NAME} PUBLIC ${SUNDIALS_SUNNONLINSOLLAPACK_LIBRARY})
-  target_link_libraries(${FMU_NAME} PUBLIC ${SUNDIALS_CVODE_LIBRARY})
-  target_link_libraries(${FMU_NAME} PUBLIC ${SUNDIALS_KINSOL_LIBRARY})
+  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_NVECSERIAL_LIBRARY})
+  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_CVODE_LIBRARY})
   target_include_directories(${FMU_NAME} PRIVATE sundials)
   set(WITH_SUNDIALS ";WITH_SUNDIALS")
-  message(STATUS "CVODE: ${SUNDIALS_NVECSERIAL_LIBRARY} ${SUNDIALS_SUNMATRIXDENSE_LIBRARY} ${SUNDIALS_SUNLINSOLLAPACKDENSE_LIBRARY} ${SUNDIALS_SUNNONLINSOLLAPACK_LIBRARY} ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_KINSOL_LIBRARY}")
+  message(STATUS "CVODE: ${SUNDIALS_NVECSERIAL_LIBRARY} ${SUNDIALS_CVODE_LIBRARY}")
 else()
   message(STATUS "CVODE: Not linked")
 endif()
