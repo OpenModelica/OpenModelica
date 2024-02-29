@@ -341,7 +341,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 
   /* Check if any custom command updates the program.
    * saveToHistory is true for custom commands.
-   * Fixes issuse #8052
+   * Fixes issue #8052
    */
   if (saveToHistory) {
     try {
@@ -1124,6 +1124,10 @@ bool OMCProxy::setElementModifierValueOld(QString className, QString modifierNam
  */
 bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
 {
+  /* Issue #11790 and #11891.
+   * Remove extra parentheses if there are any.
+   */
+  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue);
   const QString expression = "setElementModifierValue(" % className % ", " % modifierName % ", $Code((" % modifierValue % ")))";
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
@@ -1230,6 +1234,10 @@ bool OMCProxy::setExtendsModifierValueOld(QString className, QString extendsClas
  */
 bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
 {
+  /* Issue #11790 and #11891.
+   * Remove extra parentheses if there are any.
+   */
+  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue);
   const QString expression = "setExtendsModifierValue(" % className % ", " % extendsClassName % ", " % modifierName % ", $Code((" % modifierValue % ")))";
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
