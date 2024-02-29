@@ -121,6 +121,7 @@ import ZeroCrossings;
 import ReduceDAE;
 import Settings;
 import UnorderedSet;
+import InteractiveUtil;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -201,7 +202,6 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input Option<BackendDAE.InlineData> inInlineData;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Path inClassName;
-  input String fileName;
   input String filenamePrefix;
   input String inFileDir;
   input list<SimCodeFunction.Function> functions;
@@ -502,7 +502,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, fileName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -7665,7 +7665,6 @@ end createVarAsserts;
 
 public function createModelInfo
   input Absyn.Path class_;
-  input String fileName;
   input Absyn.Program program;
   input BackendDAE.BackendDAE dlow "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
@@ -7678,7 +7677,7 @@ public function createModelInfo
   input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description, directory;
+  String fileName, description, directory;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
@@ -7723,6 +7722,7 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
+    Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(class_, program);
     modelInfo := SimCode.MODELINFO(class_, fileName, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},

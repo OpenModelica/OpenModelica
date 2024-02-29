@@ -152,7 +152,6 @@ protected function generateModelCodeFMU "
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Program p;
   input Absyn.Path className;
-  input String fileName;
   input String FMUVersion;
   input String FMUType;
   input String filenamePrefix;
@@ -184,7 +183,7 @@ algorithm
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
-    inRemovedInitialEquationLst, className, fileName, filenamePrefix, fileDir, functions,
+    inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions,
     includes, includeDirs, libs, libPaths, p, simSettings, recordDecls,
     literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion,
     fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
@@ -211,7 +210,6 @@ protected function generateModelCodeXML "
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Program p;
   input Absyn.Path className;
-  input String fileName;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   output list<String> libs;
@@ -236,7 +234,7 @@ algorithm
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst,
-    className, fileName, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -255,7 +253,6 @@ public function generateModelCode "
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Program p;
   input Absyn.Path className;
-  input String fileName;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input Absyn.FunctionArgs args;
@@ -294,7 +291,7 @@ algorithm
      simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,isFMU=true, FMUVersion=fmuVersion,
     fmuTargetName=listHead(AbsynUtil.pathToStringList(className)), inFMIDer=inFMIDer);
    else*/
-    simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, fileName, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
+    simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
    /*end if;*/
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
@@ -327,7 +324,6 @@ protected function createSimCode "
   input Option<BackendDAE.InlineData> inInlineData;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Path inClassName;
-  input String fileName;
   input String filenamePrefix;
   input String inString11;
   input list<SimCodeFunction.Function> functions;
@@ -355,7 +351,7 @@ algorithm
     case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) equation
       // MULTI_RATE PARTITIONINIG
       true = Flags.isSet(Flags.MULTIRATE_PARTITION);
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, fileName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, program, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, program, simSettingsOpt, recordDecls, literals, args);
 
     case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
@@ -368,7 +364,7 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, fileName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args);
 
     case(_, _, _, _, _, _, _, _, _,_, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
@@ -380,10 +376,10 @@ algorithm
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, fileName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, fileName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
@@ -391,7 +387,6 @@ end createSimCode;
 function generateModelCodeNewBackend
   input NBackendDAE.BackendDAE bdae;
   input Absyn.Path className;
-  input String fileName;
   input String fileNamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   output list<String> libs;
@@ -407,7 +402,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    simCode := NSimCode.SimCode.create(bdae, className, fileName, fileNamePrefix, simSettingsOpt);
+    simCode := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
     end if;
@@ -1046,7 +1041,6 @@ public function translateModel "
   input output FCore.Cache cache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input String fileName;
   input String inFileNamePrefix;
   input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
   input Boolean useDAEMode "if true, run the backend in DAEMode.";
@@ -1090,7 +1084,7 @@ algorithm
     ExecStat.execStat("FrontEnd");
 
     if runBackend then
-      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, fileName, inFileNamePrefix, inSimSettingsOpt);
+      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
     end if;
 
     // This must be done after calling the backend since it uses the FlatModel,
@@ -1138,9 +1132,9 @@ algorithm
 
     if runBackend then
       if useDAEMode then
-        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, fileName, inFileNamePrefix, inSimSettingsOpt, args);
+        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
       else
-        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(kind, cache, env, dae, className, fileName, inFileNamePrefix, inSimSettingsOpt, args);
+        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(kind, cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
       end if;
     end if;
 
@@ -1167,7 +1161,6 @@ protected function translateModelCallBackendOB
   input FCore.Graph inEnv;
   input DAE.DAElist inDae;
   input Absyn.Path className "path for the model";
-  input String fileName;
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args = Absyn.emptyFunctionArgs "labels for remove terms";
@@ -1263,16 +1256,16 @@ algorithm
       (libs, file_dir, timeSimCode, timeTemplates) := match kind
         case TranslateModelKind.NORMAL()
           algorithm
-            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, SymbolTable.getAbsyn(), className, fileName, inFileNamePrefix, inSimSettingsOpt, args,fmiDer);
+            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, SymbolTable.getAbsyn(), className, inFileNamePrefix, inSimSettingsOpt, args,fmiDer);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.FMU()
           algorithm
 
-            (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, fileName, FMI.getFMIVersionString(), kind.kind, inFileNamePrefix, kind.targetName, inSimSettingsOpt);
+            (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, FMI.getFMIVersionString(), kind.kind, inFileNamePrefix, kind.targetName, inSimSettingsOpt);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.XML()
           algorithm
-            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeXML(dlow, initDAE, initDAE_lambda0, removedInitialEquationLst, SymbolTable.getAbsyn(), className, fileName, inFileNamePrefix, inSimSettingsOpt);
+            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeXML(dlow, initDAE, initDAE_lambda0, removedInitialEquationLst, SymbolTable.getAbsyn(), className, inFileNamePrefix, inSimSettingsOpt);
           then (libs, file_dir, timeSimCode, timeTemplates);
         else
           algorithm
@@ -1299,7 +1292,6 @@ public function translateModelCallBackendOBDAEMode
   input FCore.Graph inEnv;
   input DAE.DAElist inDae;
   input Absyn.Path className "path for the model";
-  input String fileName;
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args "labels for remove terms";
@@ -1363,7 +1355,7 @@ algorithm
         ExecStat.execStat("Serialize solved system");
       end if;
 
-      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst, SymbolTable.getAbsyn(), className, fileName, inFileNamePrefix, inSimSettingsOpt, args);
+      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst, SymbolTable.getAbsyn(), className, inFileNamePrefix, inSimSettingsOpt, args);
       timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
       timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 
@@ -1391,7 +1383,6 @@ protected function translateModelCallBackendNB
   input FlatModel inFlatModel;
   input FunctionTree inFuncTree;
   input Absyn.Path inClassName "path for the model";
-  input String fileName;
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output list<String> outLibs;
@@ -1414,7 +1405,7 @@ algorithm
   timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
   ExecStat.execStat("backend");
 
-  (outLibs, outFileDir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, inClassName, fileName, inFileNamePrefix, inSimSettingsOpt);
+  (outLibs, outFileDir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
 
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),
@@ -1430,7 +1421,6 @@ protected function generateModelCodeDAE
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Program p;
   input Absyn.Path className;
-  input String fileName;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input Absyn.FunctionArgs args;
@@ -1609,7 +1599,7 @@ algorithm
         iuniqueEqIndex  = uniqueEqIndex,
         itempvars       = tempVars);
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
-      modelInfo := SimCodeUtil.createModelInfo(className, fileName, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
+      modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
       FlagsUtil.set(Flags.NO_START_CALC, tmpB);
       //create hash table
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
@@ -1617,7 +1607,7 @@ algorithm
       symJacs := listReverse(Util.getOption(daeModeSP) :: symJacs);
     else
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
-      modelInfo := SimCodeUtil.createModelInfo(className, fileName, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
+      modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
       FlagsUtil.set(Flags.NO_START_CALC, tmpB);
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 

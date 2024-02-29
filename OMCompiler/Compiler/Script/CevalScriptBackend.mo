@@ -3470,10 +3470,9 @@ protected function callTranslateModel
 protected
   String fileName;
 algorithm
-  Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
   (success, outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
-      className, fileName, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
+      className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
 end callTranslateModel;
 
 protected function getProcsStr
@@ -4014,9 +4013,8 @@ algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
   try
-    Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
     (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
-                                            cache, inEnv, className, fileName, filenameprefix, true, false, true, SOME(simSettings));
+                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
@@ -4191,12 +4189,9 @@ protected
   Boolean success;
   String fileName;
 algorithm
-  Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
-  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className,
-                    fileName, fileNamePrefix, true, false, true, inSimSettingsOpt);
+  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
   outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
-
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
   input Absyn.Path className;

@@ -255,7 +255,6 @@ public
     function create
       input BackendDAE bdae;
       input Absyn.Path name;
-      input String fileName;
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
       output SimCode simCode;
@@ -271,7 +270,7 @@ public
           // old SimCode strcutures
           Absyn.Program program;
           list<String> libs, includes, includeDirs, libPaths;
-          String directory;
+          String fileName, directory;
           OldSimCodeFunction.MakefileParams makefileParams;
           list<OldSimCodeFunction.Function> functions;
           list<OldSimCodeFunction.RecordDeclaration> recordDecls;
@@ -398,6 +397,7 @@ public
 
             generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
 
+            Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(name, program);
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
 
             simCode := SIM_CODE(
