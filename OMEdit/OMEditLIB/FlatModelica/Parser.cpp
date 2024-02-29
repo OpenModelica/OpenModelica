@@ -77,7 +77,7 @@ QString FlatModelica::Parser::getModelicaComment(QString element)
  * \param comment
  * Parses the code like,
  * redeclare ClassA classA "A"
- * and returns ClassA, the type of the component and modifier if any and comment.
+ * and returns ClassA, the type of the component and modifier (if any) and comment.
  */
 void FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elmentRedeclaration, QString &type, QString &modifier, QString &comment)
 {
@@ -106,7 +106,8 @@ void FlatModelica::Parser::getTypeFromElementRedeclaration(const QString &elment
  * \param comment
  * Parses the code like,
  * redeclare model M = C
- * and returns M, the type of the short class specifier and modification if any and comment.
+ * redeclare replaceable model M = C
+ * and returns the type of the short class specifier and modification (if any) and comment.
  */
 void FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QString &elmentRedeclaration, QString &type, QString &modifier, QString &comment)
 {
@@ -115,15 +116,24 @@ void FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QStri
   antlr4::CommonTokenStream tokens(&lexer);
   openmodelica::modelicaParser parser(&tokens);
   openmodelica::modelicaParser::Element_redeclarationContext *pElement_redeclarationContext = parser.element_redeclaration();
-  if (pElement_redeclarationContext && pElement_redeclarationContext->short_class_definition()) {
-    type = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->type_specifier()->getText());
-    if (pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()) {
-      modifier = getModificationFromStartAndStopInterval(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->start,
-                                                         pElement_redeclarationContext->short_class_definition()->short_class_specifier()->class_modification()->stop);
-    } else {
-      modifier = "";
+  openmodelica::modelicaParser::Short_class_definitionContext *pShort_class_definitionContext = 0;
+  if (pElement_redeclarationContext) {
+    if (pElement_redeclarationContext->short_class_definition()) {
+      pShort_class_definitionContext = pElement_redeclarationContext->short_class_definition();
+    } else if (pElement_redeclarationContext->element_replaceable()) {
+      pShort_class_definitionContext = pElement_redeclarationContext->element_replaceable()->short_class_definition();
     }
-    comment = QString::fromStdString(pElement_redeclarationContext->short_class_definition()->short_class_specifier()->comment()->getText());
+
+    if (pShort_class_definitionContext) {
+      type = QString::fromStdString(pShort_class_definitionContext->short_class_specifier()->type_specifier()->getText());
+      if (pShort_class_definitionContext->short_class_specifier()->class_modification()) {
+        modifier = getModificationFromStartAndStopInterval(pShort_class_definitionContext->short_class_specifier()->class_modification()->start,
+                                                           pShort_class_definitionContext->short_class_specifier()->class_modification()->stop);
+      } else {
+        modifier = "";
+      }
+      comment = QString::fromStdString(pShort_class_definitionContext->short_class_specifier()->comment()->getText());
+    }
   }
 }
 
