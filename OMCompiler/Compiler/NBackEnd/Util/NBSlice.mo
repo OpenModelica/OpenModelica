@@ -440,7 +440,7 @@ public
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
-        + " could not be devided by the iterator size " + intString(iter_size) + " without rest."});
+        + " could not be divided by the iterator size " + intString(iter_size) + " without rest."});
     end if;
 
     // create unique array for each equation
@@ -503,7 +503,7 @@ public
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
-        + " could not be devided by the iterator size " + intString(iter_size) + " without rest."});
+        + " could not be divided by the iterator size " + intString(iter_size) + " without rest."});
     end if;
 
     // get row cref lst
@@ -569,7 +569,7 @@ public
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because number of flattened indices " + intString(scal_length)
         + " for dependency " + ComponentRef.toString(dep)
-        + " could not be devided by the body size " + intString(body_size) + " without rest."});
+        + " could not be divided by the body size " + intString(body_size) + " without rest."});
       fail();
     end if;
 

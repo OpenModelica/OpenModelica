@@ -1330,7 +1330,7 @@ algorithm
         tmp := getConstantValue(exp);
         result := result * tmp;
       end for;
-      // devide all inverse constants
+      // divide all inverse constants
       for exp in inv_const loop
         tmp := getConstantValue(exp);
         result := result / tmp;
@@ -1396,7 +1396,7 @@ algorithm
           args      := exp.arguments;
           new_exp   := Expression.negate(new_exp);
         else
-          // create an artificial 1 to devide by the inverse arguments
+          // create an artificial 1 to divide by the inverse arguments
           new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
           args      := exp.arguments;
           inv_args  := exp.inv_arguments;
