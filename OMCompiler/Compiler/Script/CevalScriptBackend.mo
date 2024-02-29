@@ -3509,8 +3509,8 @@ algorithm
   fmuSourceDir := fmutmp+"/sources/";
   quote := "'";
   dquote := if isWindows then "\"" else "'";
-  CC := "-DCMAKE_C_COMPILER=" + dquote + makefileParams.ccompiler + dquote;
-  CXX := "-DCMAKE_CXX_COMPILER=" + dquote + makefileParams.cxxcompiler + dquote;
+  CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+  CXX := "-DCMAKE_CXX_COMPILER=" + dquote + System.basename(makefileParams.cxxcompiler) + dquote;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
