@@ -4473,6 +4473,7 @@ end functionXXX_systems;
 template functionDAEModeEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, Context context, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs, Boolean static, Boolean noOpt, Boolean init)
 ::=
   let &file = buffer ""
+  let &forwardEqs = buffer ""
   let multiFile = if intGt(numEqs, equationsPerFile) then "x"
   let fncalls = (List.balancedPartition(inEqs, equationsPerFile) |> eqs hasindex i0 =>
                   // To file
@@ -4485,7 +4486,8 @@ template functionDAEModeEquationsMultiFiles(list<SimEqSystem> inEqs, Integer num
                   extern "C" {
                   #endif<%\n%>
                   >>)) +
-                  (eqs |> eq => equation_impl_options(-1, -1, eq, context, modelNamePrefix, static, noOpt, init); separator="\n") +
+                  (eqs |> eq => (equation_impl_options(-1, -1, eq, context, modelNamePrefix, static, noOpt, init); separator="\n")
+                  ) +
                   <<
                   >>
                   +
@@ -4498,12 +4500,19 @@ template functionDAEModeEquationsMultiFiles(list<SimEqSystem> inEqs, Integer num
                   >> +
                   closeFile())))
 
+                  let &forwardEqs +=
+                      if multiFile then
+                       ("\n/* --- forward equations --- */\n" +
+                        (eqs |> eq => equationForward_(eq, context, modelNamePrefix); separator="\n") +
+                        "\n\n")
+
                   // fncalls
                   '<%(eqs |> eq => equationNames_(eq, context, modelNamePrefix); separator="\n")%>'
 
                   )
 
-  let &eqFuncs += file
+
+  let &eqFuncs += forwardEqs + file
   fncalls
 end functionDAEModeEquationsMultiFiles;
 
