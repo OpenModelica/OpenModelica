@@ -8,7 +8,7 @@ getErrorString();
 
 setCommandLineOptions("--daeMode");
 buildModel(PowerGrids.Examples.IEEE14bus.IEEE14busGen2Disconnection); getErrorString();
-system("ls *16dae_part*"); getErrorString();
+system("ls *16dae_part*.c"); getErrorString();
 
 // Result:
 // true
