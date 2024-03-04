@@ -28,20 +28,11 @@
  #
  #/
 
-TEMPLATE = subdirs
+include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
-SUBDIRS = Util \
-  BrowseMSL \
-  Diagram \
-  Transformation \
-  Homotopy \
-  Expression \
-  ModelInstance \
-  Utilities
+TARGET = Utilities
 
-BrowseMSL.depends = Util
-Diagram.depends = Util
-Transformation.depends = Util
-Homotopy.depends = Util
-Expression.depends = Util
-ModelInstance.depends = Util
+SOURCES += UtilitiesTest.cpp
+
+HEADERS += UtilitiesTest.h
