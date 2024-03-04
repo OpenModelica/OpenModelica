@@ -236,7 +236,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   mConnectorSizing = dialogAnnotation.isConnectorSizing();
 
   // If mShowStartAttribute is not set then check for start modifier
-  if (!mShowStartAndFixed && !isParameter() && mpModelInstanceElement->getModifier()) {
+  if (!mShowStartAndFixed && !isParameter() && !isInput() && mpModelInstanceElement->getModifier()) {
     mShowStartAndFixed = mpModelInstanceElement->getModifier()->hasModifier("start");
   }
   /* if mShowStartAndFixed and group name is empty then set group name to Initialization.
@@ -374,6 +374,20 @@ bool Parameter::isParameter() const
     return mpModelInstanceElement->getVariability().compare(QStringLiteral("parameter")) == 0;
   } else {
     return mpElement->getElementInfo()->getVariablity().compare("parameter") == 0;
+  }
+}
+
+/*!
+ * \brief Parameter::isInput
+ * Returns true if input
+ * \return
+ */
+bool Parameter::isInput() const
+{
+  if (mpModelInstanceElement) {
+    return mpModelInstanceElement->getDirectionPrefix().compare(QStringLiteral("input")) == 0;
+  } else {
+    return mpElement->getElementInfo()->getCausality().compare("input") == 0;
   }
 }
 
@@ -1309,11 +1323,11 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
       if (MainWindow::instance()->getOMCProxy()->isBuiltinType(pParameter->getModelInstanceElement()->getRootType())) {
         const QString value = pModifier->getValue();
         // if value is not empty then use it otherwise try to read start and fixed modifiers
-        if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter())) {
+        if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter() && !pParameter->isInput())) {
           bool hasStart = pModifier->hasModifier("start");
           bool hasFixed = pModifier->hasModifier("fixed");
           if (hasStart || hasFixed) {
-            if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
+            if (!pParameter->isGroupDefined() && !pParameter->isParameter() && !pParameter->isInput()) {
               pParameter->setGroup("Initialization");
             }
             pParameter->setShowStartAndFixed(true);
