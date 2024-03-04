@@ -32,58 +32,45 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "ModelInstanceTest.h"
+#include "UtilitiesTest.h"
 #include "Util.h"
 #include "OMEditApplication.h"
 #include "MainWindow.h"
-#include "Modeling/LibraryTreeWidget.h"
+#include "Util/Utilities.h"
 
 #define GC_THREADS
 extern "C" {
 #include "meta/meta_modelica.h"
 }
 
-OMEDITTEST_MAIN(ModelInstanceTest)
+OMEDITTEST_MAIN(UtilitiesTest)
 
-void ModelInstanceTest::initTestCase()
+void UtilitiesTest::literalConstant()
 {
-  MainWindow::instance()->getLibraryWidget()->openFile(QFINDTESTDATA(mFileName));
-  if (!MainWindow::instance()->getOMCProxy()->existClass(mPackageName)) {
-    QFAIL(QString("Failed to load file %1").arg(mFileName).toStdString().c_str());
-  }
+  QFETCH(QString, string);
 
-  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mModelName));
-}
-
-void ModelInstanceTest::classAnnotations()
-{
-  if (mpModelInstance->getAnnotation()->getIconAnnotation()->getGraphics().isEmpty()) {
-    QFAIL("Failed to read the class icon annotation.");
-  }
-
-  if (mpModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics().isEmpty()) {
-    QFAIL("Failed to read the class diagram annotation.");
+  if (!Utilities::isValueLiteralConstant(string)) {
+    QFAIL(QString("The value %1 is not a literal constant.").arg(string).toStdString().c_str());
   }
 }
 
-void ModelInstanceTest::classElements()
+void UtilitiesTest::literalConstant_data()
 {
-  if (mpModelInstance->getElements().isEmpty()) {
-    QFAIL("Failed to read the class elements.");
-  }
+  QTest::addColumn<QString>("string");
+
+  QTest::newRow("Integer") << "123";
+  QTest::newRow("Negative integer value") << "-23";
+  QTest::newRow("Integer array") << "{1,2,3}";
+  QTest::newRow("Integer array with whitespace") << "{11, 981 ,34}";
+  QTest::newRow("Decimal") << "56.7";
+  QTest::newRow("Negative decimal value") << "-10.00";
+  QTest::newRow("Decimal array") << "{3.11,5.289,3.4798}";
+  QTest::newRow("Decimal array with whitespace") << "{7.89 , 2.2 , 567.8}";
+  QTest::newRow("Exponential form") << "1e-09";
+  QTest::newRow("Exponential form array with whitespace") << "{1e-09 , 2e-3 , 0.456e7}";
 }
 
-void ModelInstanceTest::classConnections()
+void UtilitiesTest::cleanupTestCase()
 {
-  if (mpModelInstance->getConnections().isEmpty()) {
-    QFAIL("Failed to read the class connections.");
-  }
-}
-
-void ModelInstanceTest::cleanupTestCase()
-{
-  if (mpModelInstance) {
-    delete mpModelInstance;
-  }
   MainWindow::instance()->close();
 }
