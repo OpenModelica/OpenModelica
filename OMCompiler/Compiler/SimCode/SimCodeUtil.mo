@@ -16029,7 +16029,7 @@ public function isMocFile
   input String fileName;
   output Integer result;
 algorithm
-  if (StringUtil.endsWith(fileName, ".moc")) then
+  if (Util.endsWith(fileName, ".moc")) then
     result := 1;
   else
     result := 0;
