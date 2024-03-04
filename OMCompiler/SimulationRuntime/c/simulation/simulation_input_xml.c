@@ -617,10 +617,10 @@ void read_input_xml(MODEL_DATA* modelData,
  * the check is like this:
  * - we filter if isProtected (protected variables)
  * - we filter if annotation(HideResult=true)
- * - we emit (remove filtering) if emitProtected && isProtected
+ * - we emit (remove filtering) if !encrypted && emitProtected && isProtected
  * - we emit (remove filtering) if ignoreHideResult && annotation(HideResult=true)
  */
-#define setFilterOuput(v, s, n) \
+#define setFilterOuput(v, s, n, e) \
 { \
   int ep = omc_flag[FLAG_EMIT_PROTECTED]; \
   int ihr = omc_flag[FLAG_IGNORE_HIDERESULT]; \
@@ -638,7 +638,7 @@ void read_input_xml(MODEL_DATA* modelData,
     infoStreamPrint(LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", (n)); \
     (s).filterOutput = 1; \
   } \
-  if (ep && ipcmptrue) \
+  if (!e && ep && ipcmptrue) \
   { \
     infoStreamPrint(LOG_DEBUG, 0, "emitting protected variable %s due to flag %s", (n), omc_flagValue[FLAG_EMIT_PROTECTED]); \
     (s).filterOutput = 0; \
@@ -651,7 +651,7 @@ void read_input_xml(MODEL_DATA* modelData,
 }
 
 /* read all static data from File for every variable */
-#define READ_VARIABLES(out, in, attributeKind, read_var_attribute, debugName, start, nStates, mapAlias) \
+#define READ_VARIABLES(out, in, attributeKind, read_var_attribute, debugName, start, nStates, mapAlias, e) \
   infoStreamPrint(LOG_DEBUG, 1, "read xml file for %s", debugName); \
   for(i = 0; i < nStates; i++) \
   { \
@@ -661,7 +661,7 @@ void read_input_xml(MODEL_DATA* modelData,
     omc_ScalarVariable *v = *findHashLongVar(in, i); \
     read_var_info(v, info); \
     read_var_attribute(v, attribute); \
-    setFilterOuput(v, out[j], info->name); \
+    setFilterOuput(v, out[j], info->name, e); \
     addHashStringLong(&mapAlias, info->name, j); /* create a mapping for Alias variable to get the correct index */ \
     debugStreamPrint(LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j); \
     if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) \
@@ -677,22 +677,22 @@ void read_input_xml(MODEL_DATA* modelData,
   } \
   messageClose(LOG_DEBUG);
 
-  READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias);
-  READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,read_var_attribute_real,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias);
-  READ_VARIABLES(modelData->realVarsData,mi.rAlg,REAL_ATTRIBUTE,read_var_attribute_real,"real algebraics",2*modelData->nStates,modelData->nVariablesReal - 2*modelData->nStates,mapAlias);
+  READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias,modelData->encrypted);
+  READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,read_var_attribute_real,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias,modelData->encrypted);
+  READ_VARIABLES(modelData->realVarsData,mi.rAlg,REAL_ATTRIBUTE,read_var_attribute_real,"real algebraics",2*modelData->nStates,modelData->nVariablesReal - 2*modelData->nStates,mapAlias,modelData->encrypted);
 
-  READ_VARIABLES(modelData->integerVarsData,mi.iAlg,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer variables",0,modelData->nVariablesInteger,mapAlias);
-  READ_VARIABLES(modelData->booleanVarsData,mi.bAlg,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean variables",0,modelData->nVariablesBoolean,mapAlias);
-  READ_VARIABLES(modelData->stringVarsData,mi.sAlg,STRING_ATTRIBUTE,read_var_attribute_string,"string variables",0,modelData->nVariablesString,mapAlias);
+  READ_VARIABLES(modelData->integerVarsData,mi.iAlg,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer variables",0,modelData->nVariablesInteger,mapAlias,modelData->encrypted);
+  READ_VARIABLES(modelData->booleanVarsData,mi.bAlg,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean variables",0,modelData->nVariablesBoolean,mapAlias,modelData->encrypted);
+  READ_VARIABLES(modelData->stringVarsData,mi.sAlg,STRING_ATTRIBUTE,read_var_attribute_string,"string variables",0,modelData->nVariablesString,mapAlias,modelData->encrypted);
 
-  READ_VARIABLES(modelData->realParameterData,mi.rPar,REAL_ATTRIBUTE,read_var_attribute_real,"real parameters",0,modelData->nParametersReal,mapAliasParam);
-  READ_VARIABLES(modelData->integerParameterData,mi.iPar,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer parameters",0,modelData->nParametersInteger,mapAliasParam);
-  READ_VARIABLES(modelData->booleanParameterData,mi.bPar,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean parameters",0,modelData->nParametersBoolean,mapAliasParam);
-  READ_VARIABLES(modelData->stringParameterData,mi.sPar,STRING_ATTRIBUTE,read_var_attribute_string,"string parameters",0,modelData->nParametersString,mapAliasParam);
+  READ_VARIABLES(modelData->realParameterData,mi.rPar,REAL_ATTRIBUTE,read_var_attribute_real,"real parameters",0,modelData->nParametersReal,mapAliasParam,modelData->encrypted);
+  READ_VARIABLES(modelData->integerParameterData,mi.iPar,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer parameters",0,modelData->nParametersInteger,mapAliasParam,modelData->encrypted);
+  READ_VARIABLES(modelData->booleanParameterData,mi.bPar,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean parameters",0,modelData->nParametersBoolean,mapAliasParam,modelData->encrypted);
+  READ_VARIABLES(modelData->stringParameterData,mi.sPar,STRING_ATTRIBUTE,read_var_attribute_string,"string parameters",0,modelData->nParametersString,mapAliasParam,modelData->encrypted);
 
   if (omc_flag[FLAG_IDAS])
   {
-    READ_VARIABLES(modelData->realSensitivityData,mi.rSen,REAL_ATTRIBUTE,read_var_attribute_real,"real sensitivities",0, modelData->nSensitivityVars,mapAliasSen);
+    READ_VARIABLES(modelData->realSensitivityData,mi.rSen,REAL_ATTRIBUTE,read_var_attribute_real,"real sensitivities",0, modelData->nSensitivityVars,mapAliasSen,modelData->encrypted);
   }
 
   /*
@@ -712,7 +712,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i], modelData->realAlias[i].info.name);
+    setFilterOuput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i], modelData->realAlias[i].info.name, modelData->encrypted);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -758,7 +758,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i], modelData->integerAlias[i].info.name);
+    setFilterOuput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i], modelData->integerAlias[i].info.name, modelData->encrypted);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -802,7 +802,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i], modelData->booleanAlias[i].info.name);
+    setFilterOuput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i], modelData->booleanAlias[i].info.name, modelData->encrypted);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -845,7 +845,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i], modelData->stringAlias[i].info.name);
+    setFilterOuput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i], modelData->stringAlias[i].info.name, modelData->encrypted);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;

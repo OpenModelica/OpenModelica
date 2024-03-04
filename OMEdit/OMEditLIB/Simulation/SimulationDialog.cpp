@@ -530,7 +530,7 @@ void SimulationDialog::setUpForm()
   mpVariableFilterHelpButton->setToolTip(tr("Variable Filter help"));
   connect(mpVariableFilterHelpButton, SIGNAL(clicked()), SLOT(showVariableFilterHelp()));
   // Protected Variabels
-  mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
+  mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables if not encrypted"));
   // ignore hide result
   mpIgnoreHideResultCheckBox = new QCheckBox(tr("Ignore HideResult"));
   // Equidistant time grid
