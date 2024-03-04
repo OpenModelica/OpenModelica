@@ -609,11 +609,13 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
         bool hideResultIsFalse = scalarVariable.value("hideResult").compare(QStringLiteral("false")) == 0;
         bool isProtected = scalarVariable.value("isProtected").compare(QStringLiteral("true")) == 0;
         /* Skip variables,
-         *   1. If ignoreHideResult is not set and hideResult is true.
-         *   2. If emit protected flag is false and variable is protected.
+         *   1. If encrytped model.
+         *   2. If ignoreHideResult is not set and hideResult is true.
+         *   3. If emit protected flag is false and variable is protected.
          *      If hideResult is false for protected variable then we show it.
          */
-        if ((ignoreHideResult || !hideResultIsTrue)
+        if (!simulationOptions.getFileName().endsWith(".moc")
+            && (ignoreHideResult || !hideResultIsTrue)
             && (protectedVariables || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
           mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
           if (addVariablesToList) {

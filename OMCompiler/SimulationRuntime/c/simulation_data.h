@@ -563,6 +563,7 @@ typedef struct MODEL_DATA
   char* resultFileName;                /* default is <modelFilePrefix>_res.mat, but it can be overriden using -r=<resultFilename> */
   const char* modelDir;
   const char* modelGUID;
+  modelica_boolean encrypted;
   const char* initXMLData;
   char* resourcesDir;                   /* Resources directory, only set for FMUs */
   modelica_boolean runTestsuite;       /* true if this model was generated during testing */

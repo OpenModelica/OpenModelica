@@ -3468,7 +3468,6 @@ protected function callTranslateModel
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-
   (success, outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
       className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
@@ -4187,11 +4186,9 @@ protected function translateModelXML " author: Alachew
 protected
   Boolean success;
 algorithm
-  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className,
-                    fileNamePrefix, true, false, true, inSimSettingsOpt);
+  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
   outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
-
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
   input Absyn.Path className;
