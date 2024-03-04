@@ -649,7 +649,7 @@ bool Utilities::isValueLiteralConstant(QString value)
    * Issue #11840. Allow setting array of values.
    * The following regular expression allows decimal values and array of decimal values. The values can be negative.
    */
-  QRegExp rx("\\{?\\s*-?\\d+(\\.\\d+)?(?:\\s*,\\s*-?\\d+(\\.\\d+)?)*\\s*\\}?");
+  QRegExp rx("\\{?\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?(?:\\s*,\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?)*\\s*\\}?");
   return rx.exactMatch(value);
 }
 
