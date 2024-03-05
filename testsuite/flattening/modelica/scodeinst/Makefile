@@ -879,6 +879,7 @@ NoEvent2.mo \
 NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
+NonFixedConstant1.mo \
 NoScalarize1.mo \
 NoScalarize2.mo \
 NoScalarizeConnect1.mo \
@@ -1142,6 +1143,8 @@ TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
 TypenameInvalid3.mo \
+UnboundParameter1.mo \
+UnboundParameter2.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \

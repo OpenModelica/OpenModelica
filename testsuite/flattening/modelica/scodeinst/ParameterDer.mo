@@ -7,7 +7,7 @@
 //
 
 model ParameterDer
-  parameter Real p;
+  parameter Real p = 0;
   Real x;
 equation
   der(p) = x;
@@ -15,7 +15,7 @@ end ParameterDer;
 
 // Result:
 // class ParameterDer
-//   parameter Real p;
+//   parameter Real p = 0.0;
 //   Real x;
 // equation
 //   0.0 = x;
