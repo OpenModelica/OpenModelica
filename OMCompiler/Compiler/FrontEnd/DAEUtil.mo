@@ -1378,8 +1378,6 @@ public function hasStartAttr "
   output Boolean hasStart;
 algorithm
   hasStart:= match(inVariableAttributesOption)
-    local
-      DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(_)))) then true;
     case (SOME(DAE.VAR_ATTR_INT(start = SOME(_)))) then true;
     case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(_)))) then true;
