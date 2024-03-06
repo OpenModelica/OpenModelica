@@ -1,0 +1,38 @@
+// name: fmi_attributes_22.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_22.fmu fmi_attributes_22.log fmi_attributes_22.xml fmi_attributes_22_tmp.xml fmi_attributes_22_info.json
+
+loadString("
+model fmi_attributes_22
+  Real x(start = 0, fixed = true);
+  constant Real pi = 3.1415927;
+equation
+  der(x) = sin(time*2*pi/86400*10);
+  annotation(
+    experiment(StartTime = 1.5552e+07, Tolerance = 1e-06, StopTime = 1.56384e+07));
+end fmi_attributes_22;
+"); getErrorString();
+
+buildModelFMU(fmi_attributes_22); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_22.fmu modelDescription.xml > fmi_attributes_22_tmp.xml"); getErrorString();
+
+system("sed -n \"/<DefaultExperiment/p\"  fmi_attributes_22_tmp.xml > fmi_attributes_22.xml"); getErrorString();
+readFile("fmi_attributes_22.xml"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// "fmi_attributes_22.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <DefaultExperiment startTime=\"1.5552e7\" stopTime=\"1.56384e7\" tolerance=\"1e-6\" stepSize=\"172.8\"/>
+// "
+// ""
+// endResult
