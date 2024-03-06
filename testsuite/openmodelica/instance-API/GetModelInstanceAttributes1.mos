@@ -37,7 +37,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"$kind\": \"component\",
 //       \"name\": \"deg\",
 //       \"type\": {
-//         \"name\": \"Angle\",
+//         \"name\": \"M.Angle\",
 //         \"restriction\": \"type\",
 //         \"elements\": [
 //           {

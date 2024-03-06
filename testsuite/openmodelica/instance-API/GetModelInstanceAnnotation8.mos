@@ -81,7 +81,7 @@ getErrorString();
 //             \"$kind\": \"component\",
 //             \"name\": \"c\",
 //             \"type\": {
-//               \"name\": \"C\",
+//               \"name\": \"M.C\",
 //               \"restriction\": \"model\",
 //               \"prefixes\": {
 //                 \"replaceable\": {

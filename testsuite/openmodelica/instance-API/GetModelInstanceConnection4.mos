@@ -45,7 +45,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"$kind\": \"component\",
 //       \"name\": \"c1\",
 //       \"type\": {
-//         \"name\": \"C\",
+//         \"name\": \"M.C\",
 //         \"restriction\": \"connector\",
 //         \"elements\": [
 //           {
@@ -75,7 +75,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"$kind\": \"component\",
 //       \"name\": \"c2\",
 //       \"type\": {
-//         \"name\": \"C\",
+//         \"name\": \"M.C\",
 //         \"restriction\": \"connector\",
 //         \"elements\": [
 //           {

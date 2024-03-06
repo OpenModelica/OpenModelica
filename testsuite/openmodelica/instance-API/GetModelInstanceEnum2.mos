@@ -25,13 +25,13 @@ getModelInstance(M, prettyPrint=true);
 //       \"$kind\": \"component\",
 //       \"name\": \"e\",
 //       \"type\": {
-//         \"name\": \"E2\",
+//         \"name\": \"M.E2\",
 //         \"restriction\": \"type\",
 //         \"elements\": [
 //           {
 //             \"$kind\": \"extends\",
 //             \"baseClass\": {
-//               \"name\": \"E1\",
+//               \"name\": \"M.E1\",
 //               \"restriction\": \"type\",
 //               \"elements\": [
 //                 {
