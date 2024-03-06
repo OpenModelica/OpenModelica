@@ -4753,6 +4753,10 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
   LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem) {
     mpLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+  } else {
+    // show error message
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to find the class <b>%1</b>.").arg(nameStructure),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
