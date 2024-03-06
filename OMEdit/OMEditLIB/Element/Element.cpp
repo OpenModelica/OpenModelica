@@ -2276,12 +2276,14 @@ void Element::reDrawConnector(QPainter *painter)
 {
   if (mpDefaultElementRectangle && mpDefaultElementRectangle->isVisible()) {
     painter->save();
+    painter->setTransform(mpDefaultElementRectangle->sceneTransform(), true);
     mpDefaultElementRectangle->drawAnnotation(painter);
     painter->restore();
   }
 
   if (mpDefaultElementText && mpDefaultElementText->isVisible()) {
     painter->save();
+    painter->setTransform(mpDefaultElementText->sceneTransform(), true);
     mpDefaultElementText->drawAnnotation(painter);
     painter->restore();
   }
