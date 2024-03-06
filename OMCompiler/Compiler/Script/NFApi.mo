@@ -1202,7 +1202,7 @@ end dumpJSONInstanceAnnotationExtends;
 
 function dumpJSONNodePath
   input InstNode node;
-  output JSON json = dumpJSONPath(InstNode.scopePath(node, ignoreBaseClass = true));
+  output JSON json = dumpJSONPath(InstNode.fullPath(node, ignoreBaseClass = true));
 end dumpJSONNodePath;
 
 function dumpJSONNodeEnclosingPath

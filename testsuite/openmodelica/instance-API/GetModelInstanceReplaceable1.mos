@@ -56,7 +56,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"$kind\": \"component\",
 //       \"name\": \"m\",
 //       \"type\": {
-//         \"name\": \"M\",
+//         \"name\": \"M.M\",
 //         \"restriction\": \"model\",
 //         \"prefixes\": {
 //           \"replaceable\": true

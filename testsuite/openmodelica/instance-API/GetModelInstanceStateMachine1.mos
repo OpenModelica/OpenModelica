@@ -53,7 +53,7 @@ getModelInstance(M, prettyPrint=true);
 //       \"$kind\": \"component\",
 //       \"name\": \"state1\",
 //       \"type\": {
-//         \"name\": \"State1\",
+//         \"name\": \"M.State1\",
 //         \"restriction\": \"model\",
 //         \"elements\": [
 //           {
@@ -81,7 +81,7 @@ getModelInstance(M, prettyPrint=true);
 //       \"$kind\": \"component\",
 //       \"name\": \"state2\",
 //       \"type\": {
-//         \"name\": \"State2\",
+//         \"name\": \"M.State2\",
 //         \"restriction\": \"model\",
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
