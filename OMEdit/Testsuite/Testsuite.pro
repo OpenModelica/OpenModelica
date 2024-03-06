@@ -45,3 +45,4 @@ Transformation.depends = Util
 Homotopy.depends = Util
 Expression.depends = Util
 ModelInstance.depends = Util
+Utilities.depends = Util
