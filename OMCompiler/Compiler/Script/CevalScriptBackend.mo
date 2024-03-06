@@ -530,6 +530,11 @@ algorithm
   // Interval needs to be handled last since it depends on the start and stop time.
   if isSome(interval) then
     options := setSimulationOptionsInterval(options, Expression.toReal(Util.getOption(interval)));
+  else
+    /*fix issue 12070, set proper default value of stepSize when Interval annotation is not provided
+      stepSize = (StopTime-StartTime)/500
+    */
+    options.stepSize := DAE.RCONST((Expression.toReal(options.stopTime) - Expression.toReal(options.startTime)) / 500);
   end if;
 end populateSimulationOptions;
 
