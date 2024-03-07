@@ -2771,12 +2771,13 @@ end dumpStreamStr;
 protected function dumpStrMathMLNumber "
 This function prints a new MathML element
 containing a number, like:
-<cn> inNumber </cn>
+<cn>inNumber
+</cn>
 "
   input String inNumber;
 algorithm
   dumpStrOpenTag(MathMLNumber);
-  Print.printBuf(" ");Print.printBuf(inNumber);Print.printBuf(" ");
+  Print.printBuf(inNumber);
   dumpStrCloseTag(MathMLNumber);
 end dumpStrMathMLNumber;
 
@@ -2785,7 +2786,7 @@ protected function dumpStrMathMLNumberAttr "
 This function prints a new MathML element
 containing a number and one of its attributes,
 like:
-<cn inAttribute=\"inAttributeValue\"> inNumber
+<cn inAttribute=\"inAttributeValue\">inNumber
 </cn>
 "
   input String inNumber;
@@ -2793,7 +2794,7 @@ like:
   input String inAttributeContent;
 algorithm
   dumpStrOpenTagAttr(MathMLNumber, inAttribute, inAttributeContent);
-  Print.printBuf(" ");Print.printBuf(inNumber);Print.printBuf(" ");
+  Print.printBuf(inNumber);
   dumpStrCloseTag(MathMLNumber);
 end dumpStrMathMLNumberAttr;
 
@@ -2801,12 +2802,13 @@ end dumpStrMathMLNumberAttr;
 protected function dumpStrMathMLVariable"
 This function prints a new MathML element
 containing a variable (identifier), like:
-<ci> inVariable </ci>
+<ci>inVariable
+</ci>
 "
   input String inVariable;
 algorithm
   dumpStrOpenTag(MathMLVariable);
-  Print.printBuf(" ");Print.printBuf(inVariable);Print.printBuf(" ");
+  Print.printBuf(inVariable);
   dumpStrCloseTag(MathMLVariable);
 end dumpStrMathMLVariable;
 
