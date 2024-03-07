@@ -58,7 +58,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> Time 
+// <cn type=\"constant\">Time
 // </cn>
 // </math>
 // </MathML>
@@ -66,7 +66,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <unit string=\"&quot;s&quot;\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> s 
+// <cn type=\"constant\">s
 // </cn>
 // </math>
 // </MathML>
@@ -113,7 +113,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <bindExpression string=\"1.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 1.0 
+// <cn type=\"real\">1.0
 // </cn>
 // </math>
 // </MathML>
@@ -123,7 +123,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <bindExpression string=\"0.5\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 0.5 
+// <cn type=\"real\">0.5
 // </cn>
 // </math>
 // </MathML>
@@ -132,7 +132,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> Time 
+// <cn type=\"constant\">Time
 // </cn>
 // </math>
 // </MathML>
@@ -140,7 +140,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <unit string=\"&quot;s&quot;\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> s 
+// <cn type=\"constant\">s
 // </cn>
 // </math>
 // </MathML>
@@ -148,7 +148,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <minValue string=\"0.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </math>
 // </MathML>
@@ -159,7 +159,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <bindExpression string=\"0.5\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 0.5 
+// <cn type=\"real\">0.5
 // </cn>
 // </math>
 // </MathML>
@@ -168,7 +168,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> Time 
+// <cn type=\"constant\">Time
 // </cn>
 // </math>
 // </MathML>
@@ -176,7 +176,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <unit string=\"&quot;s&quot;\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> s 
+// <cn type=\"constant\">s
 // </cn>
 // </math>
 // </MathML>
@@ -184,7 +184,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <minValue string=\"0.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </math>
 // </MathML>
@@ -195,7 +195,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <bindExpression string=\"1.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 1.0 
+// <cn type=\"real\">1.0
 // </cn>
 // </math>
 // </MathML>
@@ -209,7 +209,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <bindExpression string=\"b\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <ci> b 
+// <ci>b
 // </ci>
 // </math>
 // </MathML>
@@ -227,12 +227,12 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <equivalent/>
-// <ci> tt.T 
+// <ci>tt.T
 // </ci>
 // <apply>
 // <piecewise>
 // <piece>
-// <ci> time 
+// <ci>time
 // </ci>
 // <apply>
 // <or/>
@@ -242,15 +242,15 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <or/>
 // <apply>
 // <and/>
-// <ci> b 
+// <ci>b
 // </ci>
 // <apply>
 // <not/>
 // <apply>
 // <gt/>
-// <ci> tt.rising 
+// <ci>tt.rising
 // </ci>
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </apply>
 // </apply>
@@ -259,16 +259,16 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <and/>
 // <apply>
 // <not/>
-// <ci> b 
+// <ci>b
 // </ci>
 // </apply>
 // <apply>
 // <not/>
 // <apply>
 // <gt/>
-// <ci> tt.falling 
+// <ci>tt.falling
 // </ci>
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </apply>
 // </apply>
@@ -280,10 +280,10 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <gt/>
 // <apply>
 // <abs/>
-// <ci> tt.amplitude 
+// <ci>tt.amplitude
 // </ci>
 // </apply>
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </apply>
 // </apply>
@@ -296,21 +296,21 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <otherwise>
 // <apply>
 // <plus/>
-// <ci> time 
+// <ci>time
 // </ci>
 // <apply>
 // <divide/>
 // <apply>
 // <minus/>
-// <ci> tt.endValue 
+// <ci>tt.endValue
 // </ci>
 // <apply>
 // <pre/>
-// <ci> tt.y 
+// <ci>tt.y
 // </ci>
 // </apply>
 // </apply>
-// <ci> tt.rate 
+// <ci>tt.rate
 // </ci>
 // </apply>
 // </apply>
@@ -330,9 +330,9 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <apply>
 // <initial/>
 // </apply>
-// <ci> $whenCondition1 
+// <ci>$whenCondition1
 // </ci>
-// <ci> $whenCondition2 
+// <ci>$whenCondition2
 // </ci>
 // </vector>
 // </apply>
@@ -348,27 +348,27 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <equivalent/>
-// <ci> tt.rate 
+// <ci>tt.rate
 // </ci>
 // <apply>
 // <piecewise>
 // <piece>
 // <apply>
 // <divide/>
-// <ci> tt.amplitude 
+// <ci>tt.amplitude
 // </ci>
-// <ci> tt.rising 
+// <ci>tt.rising
 // </ci>
 // </apply>
 // <apply>
 // <and/>
-// <ci> b 
+// <ci>b
 // </ci>
 // <apply>
 // <gt/>
-// <ci> tt.rising 
+// <ci>tt.rising
 // </ci>
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </apply>
 // </apply>
@@ -381,30 +381,30 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <divide/>
 // <apply>
 // <minus/>
-// <ci> tt.amplitude 
+// <ci>tt.amplitude
 // </ci>
 // </apply>
-// <ci> tt.falling 
+// <ci>tt.falling
 // </ci>
 // </apply>
 // <apply>
 // <and/>
 // <apply>
 // <not/>
-// <ci> b 
+// <ci>b
 // </ci>
 // </apply>
 // <apply>
 // <gt/>
-// <ci> tt.falling 
+// <ci>tt.falling
 // </ci>
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </apply>
 // </apply>
 // </piece>
 // <otherwise>
-// <cn type=\"real\"> 0.0 
+// <cn type=\"real\">0.0
 // </cn>
 // </otherwise>
 // </piecewise>
@@ -425,9 +425,9 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <apply>
 // <initial/>
 // </apply>
-// <ci> $whenCondition1 
+// <ci>$whenCondition1
 // </ci>
-// <ci> $whenCondition2 
+// <ci>$whenCondition2
 // </ci>
 // </vector>
 // </apply>
@@ -443,23 +443,23 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <equivalent/>
-// <ci> tt.endValue 
+// <ci>tt.endValue
 // </ci>
 // <apply>
 // <piecewise>
 // <piece>
 // <apply>
 // <plus/>
-// <ci> tt.offset 
+// <ci>tt.offset
 // </ci>
-// <ci> tt.amplitude 
+// <ci>tt.amplitude
 // </ci>
 // </apply>
-// <ci> b 
+// <ci>b
 // </ci>
 // </piece>
 // <otherwise>
-// <ci> tt.offset 
+// <ci>tt.offset
 // </ci>
 // </otherwise>
 // </piecewise>
@@ -477,9 +477,9 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <apply>
 // <initial/>
 // </apply>
-// <ci> $whenCondition1 
+// <ci>$whenCondition1
 // </ci>
-// <ci> $whenCondition2 
+// <ci>$whenCondition2
 // </ci>
 // </vector>
 // </apply>
@@ -492,23 +492,23 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <equivalent/>
-// <ci> b 
+// <ci>b
 // </ci>
 // <apply>
 // <piecewise>
 // <piece>
 // <apply>
 // <lt/>
-// <ci> time 
+// <ci>time
 // </ci>
-// <cn type=\"real\"> 9.0 
+// <cn type=\"real\">9.0
 // </cn>
 // </apply>
 // <apply>
 // <gt/>
-// <ci> time 
+// <ci>time
 // </ci>
-// <cn type=\"real\"> 5.0 
+// <cn type=\"real\">5.0
 // </cn>
 // </apply>
 // </piece>
@@ -528,38 +528,38 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <equivalent/>
-// <ci> tt.y 
+// <ci>tt.y
 // </ci>
 // <apply>
 // <piecewise>
 // <piece>
 // <apply>
 // <minus/>
-// <ci> tt.endValue 
+// <ci>tt.endValue
 // </ci>
 // <apply>
 // <times/>
 // <apply>
 // <minus/>
-// <ci> tt.T 
+// <ci>tt.T
 // </ci>
-// <ci> time
+// <ci>time
 // </ci>
 // </apply>
-// <ci> tt.rate 
+// <ci>tt.rate
 // </ci>
 // </apply>
 // </apply>
 // <apply>
 // <lt/>
-// <ci> time 
+// <ci>time
 // </ci>
-// <ci> tt.T 
+// <ci>tt.T
 // </ci>
 // </apply>
 // </piece>
 // <otherwise>
-// <ci> tt.endValue 
+// <ci>tt.endValue
 // </ci>
 // </otherwise>
 // </piecewise>
@@ -573,9 +573,9 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <equivalent/>
-// <ci> $whenCondition1 
+// <ci>$whenCondition1
 // </ci>
-// <ci> b 
+// <ci>b
 // </ci>
 // </apply>
 // </math>
@@ -586,11 +586,11 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <equivalent/>
-// <ci> $whenCondition2 
+// <ci>$whenCondition2
 // </ci>
 // <apply>
 // <not/>
-// <ci> b 
+// <ci>b
 // </ci>
 // </apply>
 // </apply>
@@ -604,9 +604,9 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <gt/>
-// <ci> time 
+// <ci>time
 // </ci>
-// <cn type=\"real\"> 5.0 
+// <cn type=\"real\">5.0
 // </cn>
 // </apply>
 // </math>
@@ -622,9 +622,9 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <lt/>
-// <ci> time 
+// <ci>time
 // </ci>
-// <cn type=\"real\"> 9.0 
+// <cn type=\"real\">9.0
 // </cn>
 // </apply>
 // </math>
@@ -640,9 +640,9 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
 // <lt/>
-// <ci> time 
+// <ci>time
 // </ci>
-// <ci> tt.T 
+// <ci>tt.T
 // </ci>
 // </apply>
 // </math>
