@@ -439,6 +439,15 @@ protected
   Boolean require_builtin = false;
   Boolean loaded = false;
 algorithm
+  if InstContext.inAnnotation(context) then
+    // If in an annotation context, check the annotation environment first.
+    try
+      node := lookupLocalSimpleName(name, InstNode.annotationScope(scope));
+      return;
+    else
+    end try;
+  end if;
+
   // Look for the name in each enclosing scope, until it's either found or we
   // run out of scopes.
   for i in 1:Global.recursionDepthLimit loop
@@ -462,22 +471,11 @@ algorithm
         node := cur_scope;
         return;
       else
-        if InstNode.isTopScope(cur_scope) then
-          // If the name couldn't be found in any scope...
-          if InstContext.inAnnotation(context) then
-            // If we're in an annotation, check in the special scope where
-            // annotation classes are defined.
-            cur_scope := InstNode.annotationScope(cur_scope);
-          elseif not loaded and not require_builtin then
-            // If we haven't already tried and we're not trying to find a
-            // builtin name, try to load a library with that name and then try
-            // to look it up in the top scope again.
-            loaded := true;
-            loadLibrary(name, cur_scope);
-          else
-            // Nothing more to try, just fail.
-            fail();
-          end if;
+        if InstNode.isTopScope(cur_scope) and not loaded and not require_builtin then
+          // If the name couldn't be found in any scope, try to load a library
+          // with that name and then try to look it up in the top scope again.
+          loaded := true;
+          loadLibrary(name, cur_scope);
         else
           // Otherwise, continue in the enclosing scope.
           cur_scope := InstNode.parentScope(cur_scope);
@@ -779,7 +777,7 @@ function lookupSimpleCref
   output Boolean inEnclosingScope = false;
   output LookupState state;
 protected
-  Boolean is_import, require_builtin = false;
+  Boolean require_builtin = false;
   Boolean loaded = false;
   Boolean is_enclosing = false;
 algorithm
@@ -787,32 +785,26 @@ algorithm
     (node, cref, state) := lookupSimpleBuiltinCref(name, subs);
     foundScope := InstNode.topScope(foundScope);
   else
+    if InstContext.inAnnotation(context) then
+      // If in an annotation context, check the annotation environment first.
+      try
+        (node, foundScope) := lookupLocalSimpleCref(name, InstNode.annotationScope(foundScope));
+        state := LookupState.nodeState(node);
+        cref := ComponentRef.fromAbsyn(node, subs);
+        return;
+      else
+      end try;
+    end if;
+
     // Look for the name in the given scope, and if not found there continue
     // through the enclosing scopes of that scope until we either run out of
     // scopes or for some reason exceed the recursion depth limit.
     for i in 1:Global.recursionDepthLimit loop
       try
-        (node, is_import) := match foundScope
-          case InstNode.IMPLICIT_SCOPE()
-            then (lookupIterator(name, foundScope.locals), false);
-          case InstNode.CLASS_NODE()
-            then Class.lookupElement(name, InstNode.getClass(foundScope));
-          case InstNode.COMPONENT_NODE()
-            then Class.lookupElement(name, InstNode.getClass(foundScope));
-          case InstNode.INNER_OUTER_NODE()
-            then Class.lookupElement(name, InstNode.getClass(foundScope.innerNode));
-        end match;
+        (node, foundScope) := lookupLocalSimpleCref(name, foundScope);
 
         if require_builtin then
           true := InstNode.isBuiltin(node);
-        end if;
-
-        if is_import then
-          foundScope := InstNode.parent(node);
-        elseif InstNode.isInnerOuterNode(node) then
-          // If the node is an outer node, return the inner instead.
-          node := InstNode.resolveInner(node);
-          foundScope := InstNode.parent(node);
         end if;
 
         // We found a node, return it.
@@ -825,22 +817,11 @@ algorithm
           foundScope := InstNode.topScope(InstNode.parentScope(foundScope));
           require_builtin := true;
         else
-          if InstNode.isTopScope(foundScope) then
-            // If the name couldn't be found in any scope...
-            if InstContext.inAnnotation(context) then
-              // If we're in an annotation, check in the special scope where
-              // annotation classes are defined.
-              foundScope := InstNode.annotationScope(foundScope);
-            elseif not loaded and not require_builtin then
-              // If we haven't already tried and we're not trying to find a
-              // builtin name, try to load a library with that name and then try
-              // to look it up in the top scope again.
-              loaded := true;
-              loadLibrary(name, foundScope);
-            else
-              // Nothing more to try, just fail.
-              fail();
-            end if;
+          if InstNode.isTopScope(foundScope) and not loaded and not require_builtin then
+            // If the name couldn't be found in any scope, try to load a library
+            // with that name and then try to look it up in the top scope again.
+            loaded := true;
+            loadLibrary(name, foundScope);
           else
             // Look in the next enclosing scope.
             inEnclosingScope := not InstNode.isImplicit(foundScope);

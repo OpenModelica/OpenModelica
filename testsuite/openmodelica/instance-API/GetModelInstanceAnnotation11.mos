@@ -1,0 +1,87 @@
+// name: GetModelInstanceAnnotation11
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    type Smooth = enumeration(one, two, fish);
+    annotation(Icon(graphics={Line(origin = {-60, 0}, points = {{-20, -1}, {-20, 5}}, smooth = Smooth.Bezier)}));
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"graphics\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Line\",
+//           \"elements\": [
+//             true,
+//             [
+//               -60,
+//               0
+//             ],
+//             0,
+//             [
+//               [
+//                 -20,
+//                 -1
+//               ],
+//               [
+//                 -20,
+//                 5
+//               ]
+//             ],
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"LinePattern.Solid\",
+//               \"index\": 2
+//             },
+//             0.25,
+//             [
+//               {
+//                 \"$kind\": \"enum\",
+//                 \"name\": \"Arrow.None\",
+//                 \"index\": 1
+//               },
+//               {
+//                 \"$kind\": \"enum\",
+//                 \"name\": \"Arrow.None\",
+//                 \"index\": 1
+//               }
+//             ],
+//             3,
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"Smooth.Bezier\",
+//               \"index\": 2
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//   },
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult
