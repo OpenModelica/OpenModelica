@@ -9,7 +9,7 @@ record NominalValues
 end NominalValues;
 
 record Stage
-  parameter NominalValues nomVal;
+  parameter NominalValues nomVal(x = 0);
 end Stage;
 
 record NominalCondition
@@ -32,10 +32,10 @@ end RedeclareMod9;
 
 // Result:
 // class RedeclareMod9
-//   parameter Real datCoi.sta[1].nomVal.x;
-//   parameter Real datCoi.sta[2].nomVal.x;
-//   parameter Real datCoi.sta[3].nomVal.x;
-//   parameter Real datCoi.sta[4].nomVal.x;
+//   parameter Real datCoi.sta[1].nomVal.x = 0.0;
+//   parameter Real datCoi.sta[2].nomVal.x = 0.0;
+//   parameter Real datCoi.sta[3].nomVal.x = 0.0;
+//   parameter Real datCoi.sta[4].nomVal.x = 0.0;
 //   parameter Real eva.datCoi.sta[1].nomVal.x = datCoi.sta[1].nomVal.x;
 //   parameter Real eva.datCoi.sta[2].nomVal.x = datCoi.sta[2].nomVal.x;
 //   parameter Real eva.datCoi.sta[3].nomVal.x = datCoi.sta[3].nomVal.x;

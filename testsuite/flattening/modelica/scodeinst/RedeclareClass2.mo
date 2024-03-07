@@ -24,7 +24,7 @@ end Connection2PipeLossless;
 
 partial model PartialDistribution2Pipe
   parameter Integer nCon = 1;
-  parameter Real[nCon] mCon_flow_nominal;
+  parameter Real[nCon] mCon_flow_nominal = ones(nCon);
   replaceable PartialConnection2Pipe[nCon] con(final mCon_flow_nominal = mCon_flow_nominal);
 end PartialDistribution2Pipe;
 
@@ -36,7 +36,7 @@ end RedeclareClass2;
 // Result:
 // class RedeclareClass2
 //   final parameter Integer nCon = 1;
-//   parameter Real mCon_flow_nominal[1];
+//   parameter Real mCon_flow_nominal[1] = 1.0;
 //   final parameter Real con[1].mCon_flow_nominal = mCon_flow_nominal[1];
 //   final parameter Real con[1].pipCon.m_flow_nominal = con[1].mCon_flow_nominal;
 // end RedeclareClass2;

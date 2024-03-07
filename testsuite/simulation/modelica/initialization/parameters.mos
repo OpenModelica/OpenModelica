@@ -9,11 +9,11 @@ within ;
 package initializationTests
   type E = enumeration(E1, E2, E3, En);
   model parameters
-    parameter Real r1;
-    parameter Integer i1;
-    parameter Boolean b1;
-    parameter String s1;
-    parameter E e1;
+    parameter Real r1(fixed = false);
+    parameter Integer i1(fixed = false);
+    parameter Boolean b1(fixed = false);
+    parameter String s1(fixed = false);
+    parameter E e1(fixed = false);
 
     parameter Real r2(fixed=false) = 2.0;
     parameter Integer i2(fixed=false) = 2;
@@ -38,7 +38,7 @@ simulate(initializationTests.parameters, simflags="-lv=LOG_INIT_V"); getErrorStr
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.parameters_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.parameters', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.parameters', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
 //     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
@@ -72,16 +72,15 @@ simulate(initializationTests.parameters, simflags="-lv=LOG_INIT_V"); getErrorStr
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:22:5-22:32:writable] Warning: Parameter e3 has no value, and is fixed during initialization (fixed=true), using available start value (start=initializationTests.E.E3) as default value.
+// "[<interactive>:18:5-18:33:writable] Warning: Parameter r3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3.0) as default value.
+// [<interactive>:19:5-19:34:writable] Warning: Parameter i3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3) as default value.
+// [<interactive>:20:5-20:37:writable] Warning: Parameter b3 has no value, and is fixed during initialization (fixed=true), using available start value (start=true) as default value.
+// [<interactive>:21:5-21:39:writable] Warning: Parameter s3 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"three\") as default value.
+// [<interactive>:22:5-22:32:writable] Warning: Parameter e3 has no value, and is fixed during initialization (fixed=true), using available start value (start=initializationTests.E.E3) as default value.
 // [<interactive>:21:5-21:39:writable] Warning: Parameter s3 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"three\") as default value.
 // [<interactive>:20:5-20:37:writable] Warning: Parameter b3 has no value, and is fixed during initialization (fixed=true), using available start value (start=true) as default value.
 // [<interactive>:19:5-19:34:writable] Warning: Parameter i3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3) as default value.
 // [<interactive>:18:5-18:33:writable] Warning: Parameter r3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3.0) as default value.
-// [<interactive>:10:5-10:19:writable] Warning: Parameter e1 has no value, and is fixed during initialization (fixed=true), using available start value (start=initializationTests.E.E1) as default value.
-// [<interactive>:9:5-9:24:writable] Warning: Parameter s1 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"\") as default value.
-// [<interactive>:8:5-8:25:writable] Warning: Parameter b1 has no value, and is fixed during initialization (fixed=true), using available start value (start=false) as default value.
-// [<interactive>:7:5-7:25:writable] Warning: Parameter i1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
-// [<interactive>:6:5-6:22:writable] Warning: Parameter r1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [<interactive>:16:5-16:39:writable] Warning: The parameter e2 has fixed = false and a binding equation e2 = initializationTests.E.E2, which is probably redundant.
 // Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
 // [<interactive>:15:5-15:45:writable] Warning: The parameter s2 has fixed = false and a binding equation s2 = \"two\", which is probably redundant.
@@ -92,5 +91,6 @@ simulate(initializationTests.parameters, simflags="-lv=LOG_INIT_V"); getErrorStr
 // Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
 // [<interactive>:12:5-12:41:writable] Warning: The parameter r2 has fixed = false and a binding equation r2 = 2.0, which is probably redundant.
 // Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

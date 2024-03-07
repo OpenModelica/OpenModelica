@@ -1,6 +1,6 @@
 model XmlDumpComment
-  parameter Real A "test & in xml";
-  parameter Real B;
+  parameter Real A = 0 "test & in xml";
+  parameter Real B = 1;
   Real x(start=0) "evaluated to 0 if A < B";
   Real y(start=0);
   Real z;

@@ -8,7 +8,7 @@
 
 loadString("
   connector C
-    parameter Integer n;
+    parameter Integer n(fixed = false);
     Real e;
     flow Real f;
     stream Real s[n];
