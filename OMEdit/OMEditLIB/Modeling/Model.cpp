@@ -2172,6 +2172,12 @@ namespace ModelInstance
       if (!dir.isEmpty()) value.append(dir);
 
       value.append(mBaseClass);
+      if (mpModifier) {
+        value.append(mpModifier->toString());
+      }
+      if (!mComment.isEmpty()) {
+        value.append("\"" % mComment % "\"");
+      }
     }
 
     value.removeAll(QString(""));
