@@ -377,7 +377,6 @@ void TextAnnotation::drawAnnotation(QPainter *painter)
   const qreal m21 = painterTransform.m21();
   qreal xScale = qSqrt(m11*m11 + m12*m12);
   qreal yScale = qSqrt(m22*m22 + m21*m21);
-  qreal curScale = qMin(xScale, yScale);
   // set new transformation for the text based on rotation or scale.
   qreal invx = (m11 >= 0) ? 1.0 : -1.0;
   qreal invy = (m22 >= 0) ? 1.0 : -1.0;
@@ -401,7 +400,7 @@ void TextAnnotation::drawAnnotation(QPainter *painter)
   QRectF boundingRectangle = boundingRect();
   qreal xtl = (invx >= 0) ? boundingRectangle.left() : -boundingRectangle.right();
   qreal ytl = (invy >= 0) ? boundingRectangle.top() : -boundingRectangle.bottom();
-  QRectF mappedBoundingRect = QRectF(xtl * curScale, ytl * curScale, boundingRectangle.width() * curScale, boundingRectangle.height() * curScale);
+  QRectF mappedBoundingRect = QRectF(xtl * xScale, ytl * yScale, boundingRectangle.width() * xScale, boundingRectangle.height() * yScale);
   // normalize the text for drawing
   QString textString = StringHandler::removeFirstLastQuotes(mTextString);
   textString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
