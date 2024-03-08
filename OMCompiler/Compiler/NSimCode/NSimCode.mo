@@ -115,7 +115,6 @@ public
       Integer jacobianIndex;
       Integer residualIndex;
       Integer implicitIndex; // this can be removed i think -> moved to solve
-      Integer genericCallIndex;
       Integer extObjIndex;
 
       UnorderedMap<AliasInfo, Integer> alias_map;
@@ -153,7 +152,7 @@ public
       0,0,0,0,
       0,0,0,0,
       1,0,0,
-      0,0,0,0,0,
+      0,0,0,0,
       UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
       UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual)
     );

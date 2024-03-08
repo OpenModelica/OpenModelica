@@ -417,7 +417,7 @@ public
             // only create rows for derivatives
             if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative) then
               if UnorderedMap.contains(cref, map) then
-                tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
+                tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
                 row_vars := cref :: row_vars;
                 for dep in tmp loop

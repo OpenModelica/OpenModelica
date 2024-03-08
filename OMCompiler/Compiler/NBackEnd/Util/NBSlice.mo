@@ -141,11 +141,7 @@ public
     input Integer i;
     input UnorderedMap<T, IntLst> map;
   algorithm
-    if UnorderedMap.contains(t, map) then
-      UnorderedMap.add(t, i :: UnorderedMap.getSafe(t, map, sourceInfo()), map);
-    else
-      UnorderedMap.addNew(t, {i}, map);
-    end if;
+    UnorderedMap.add(t, i :: UnorderedMap.getOrDefault(t, map, {}), map);
   end addToSliceMap;
 
   function fromTpl
