@@ -2710,7 +2710,7 @@ void Element::createClassShapes()
      */
     QList<ModelInstance::Shape*> shapes;
     // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
-    if (!(pExtendModel && !pExtendModel->getAnnotation()->getIconMap().getprimitivesVisible())) {
+    if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
       /* issue #12074
        * Use mpModelComponent->getModel()->isConnector() here instead of mpModel->isConnector()
        * So when called for extends we use the top level element restriction.

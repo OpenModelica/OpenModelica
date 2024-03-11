@@ -346,11 +346,11 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
     pExtendModel = pModelInstance->getParentExtend();
   }
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    if (!(pExtendModel && !pExtendModel->getAnnotation()->getIconMap().getprimitivesVisible())) {
+    if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
       shapes = pModelInstance->getAnnotation()->getIconAnnotation()->getGraphics();
     }
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    if (!(pExtendModel && !pExtendModel->getAnnotation()->getDiagramMap().getprimitivesVisible())) {
+    if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(false))) {
       shapes = pModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics();
     }
   }
@@ -5758,8 +5758,10 @@ bool ModelWidget::isNewApi()
 
 void ModelWidget::addDependsOnModel(const QString &dependsOnModel)
 {
-  mDependsOnModelsList.append(dependsOnModel);
-  connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), SLOT(updateModelIfDependsOn(QString)), Qt::UniqueConnection);
+  if (!mDependsOnModelsList.contains(dependsOnModel)) {
+    mDependsOnModelsList.append(dependsOnModel);
+    connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), SLOT(updateModelIfDependsOn(QString)), Qt::UniqueConnection);
+  }
 }
 
 /*!
