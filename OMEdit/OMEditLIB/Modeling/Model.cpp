@@ -608,6 +608,21 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Annotation::getMap
+   * Returns either the IconMap or DiagramMap annotation.
+   * \param icon
+   * \return
+   */
+  const IconDiagramMap &Annotation::getMap(bool icon) const
+  {
+    if (icon) {
+      return mIconMap;
+    } else {
+      return mDiagramMap;
+    }
+  }
+
   IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
     mpParentModel = pParentModel;
@@ -1882,6 +1897,75 @@ namespace ModelInstance
       return mpAnnotation.get();
     } else {
       return &Annotation::defaultAnnotation;
+    }
+  }
+
+  /*!
+   * \brief Element::getIconDiagramMapPrimitivesVisible
+   * Recursively look for primitivesVisible annotation.
+   * \param icon
+   * \return
+   */
+  bool Element::getIconDiagramMapPrimitivesVisible(bool icon) const
+  {
+    /* Issue #12097
+     * The IconMap/DiagramMap annotation can be defined with extends clause or with short class definition.
+     */
+    if (!getAnnotation()->getMap(icon).getprimitivesVisible()) {
+      return false;
+    }
+    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).getprimitivesVisible()) {
+      return false;
+    }
+
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getIconDiagramMapPrimitivesVisible(icon);
+    } else {
+      return true;
+    }
+  }
+
+  /*!
+   * \brief Element::getIconDiagramMapHasExtent
+   * Recursively look if IconDiagramMap contains the extent.
+   * \param icon
+   * \return
+   */
+  bool Element::getIconDiagramMapHasExtent(bool icon) const
+  {
+    if (getAnnotation()->getMap(icon).hasExtent()) {
+      return getAnnotation()->getMap(icon).hasExtent();
+    }
+    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
+      return mpParentModel->getAnnotation()->getMap(icon).hasExtent();
+    }
+
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getIconDiagramMapHasExtent(icon);
+    } else {
+      return false;
+    }
+  }
+
+  /*!
+   * \brief Element::getIconDiagramMapExtent
+   * Recursively look for IconDiagramMap extent.
+   * \param icon
+   * \return
+   */
+  const ExtentAnnotation &Element::getIconDiagramMapExtent(bool icon) const
+  {
+    if (getAnnotation()->getMap(icon).hasExtent()) {
+      return getAnnotation()->getMap(icon).getExtent();
+    }
+    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
+      return mpParentModel->getAnnotation()->getMap(icon).getExtent();
+    }
+
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getIconDiagramMapExtent(icon);
+    } else {
+      return getAnnotation()->getMap(icon).getExtent();
     }
   }
 
