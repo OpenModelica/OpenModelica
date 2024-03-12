@@ -194,14 +194,14 @@ public
 
       case Expression.CREF() algorithm
         if UnorderedMap.contains(exp.cref, replacements) then
-          // the cref is (with subscripts) found in replacements
-          res := UnorderedMap.getSafe(exp.cref, replacements, sourceInfo());
+          // the cref (with subscripts) is found in replacements
+          res := UnorderedMap.getOrFail(exp.cref, replacements);
         else
           // try to strip the subscripts and see if that cref occurs
           stripped := ComponentRef.stripSubscriptsAll(exp.cref);
           if UnorderedMap.contains(stripped, replacements) then
             subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
-            res   := UnorderedMap.getSafe(stripped, replacements, sourceInfo());
+            res   := UnorderedMap.getOrFail(stripped, replacements);
             res   := Expression.applySubscripts(subs, res);
           else
             // do nothing
@@ -289,7 +289,7 @@ public
 
       case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) guard(UnorderedMap.contains(fn.path, replacements)) algorithm
         // use the function from the tree, in case it was changed
-        fn := UnorderedMap.getSafe(fn.path, replacements, sourceInfo());
+        fn := UnorderedMap.getOrFail(fn.path, replacements);
 
         // map all the inputs to the arguments and add to local replacement map
         local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);

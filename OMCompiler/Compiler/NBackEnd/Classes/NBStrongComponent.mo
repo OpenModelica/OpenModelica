@@ -861,9 +861,9 @@ protected
       eqn_arr_idx       := mapping.eqn_StA[eqn_idx];
 
       // collect variable and equation slices
-      idx_lst := if UnorderedMap.contains(var_arr_idx, var_map) then UnorderedMap.getSafe(var_arr_idx, var_map, sourceInfo()) else {};
+      idx_lst := UnorderedMap.getOrDefault(var_arr_idx, var_map, {});
       UnorderedMap.add(var_arr_idx, var_idx :: idx_lst, var_map);
-      idx_lst := if UnorderedMap.contains(eqn_arr_idx, eqn_map) then UnorderedMap.getSafe(eqn_arr_idx, eqn_map, sourceInfo()) else {};
+      idx_lst := UnorderedMap.getOrDefault(eqn_arr_idx, eqn_map, {});
       UnorderedMap.add(eqn_arr_idx, eqn_idx :: idx_lst, eqn_map);
     end for;
 

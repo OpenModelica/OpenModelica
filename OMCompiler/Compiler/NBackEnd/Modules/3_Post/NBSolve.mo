@@ -64,8 +64,6 @@ public
   import Tearing = NBTearing;
 
   type Status = enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE);
-  type StrongComponentLst = list<StrongComponent>;
-  type EquationPointerList = list<Pointer<Equation>>;
 
   function statusString
     input Status status;
@@ -85,7 +83,8 @@ public
   protected
     Pointer<FunctionTree> funcTree_ptr;
     Pointer<Integer> implicit_index_ptr = Pointer.create(1);
-    UnorderedMap<StrongComponent, StrongComponentLst> duplicate_map = UnorderedMap.new<StrongComponentLst>(StrongComponent.hash, StrongComponent.isEqual);
+    type StrongComponentLst = list<StrongComponent>;
+    UnorderedMap<StrongComponent, list<StrongComponent>> duplicate_map = UnorderedMap.new<StrongComponentLst>(StrongComponent.hash, StrongComponent.isEqual);
   protected
     StrongComponent unsolved;
     list<StrongComponent> solved;
@@ -131,10 +130,11 @@ public
     input output System system;
     input Pointer<FunctionTree> funcTree_ptr;
     input Pointer<Integer> implicit_index_ptr;
-    input UnorderedMap<StrongComponent, StrongComponentLst> duplicate_map;
+    input UnorderedMap<StrongComponent, list<StrongComponent>> duplicate_map;
   protected
-    UnorderedMap<ComponentRef, EquationPointerList> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
-    list<StrongComponent> tmp, solved_comps = {};
+    type EquationPointerList = list<Pointer<Equation>>;
+    UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
+    list<StrongComponent> solved_comps = {};
     FunctionTree funcTree = Pointer.access(funcTree_ptr);
     Integer implicit_index = Pointer.access(implicit_index_ptr);
     array<StrongComponent> new_comps;
@@ -144,15 +144,15 @@ public
   algorithm
     if Util.isSome(system.strongComponents) then
       for comp in Util.getOption(system.strongComponents) loop
-        if UnorderedMap.contains(comp, duplicate_map) then
-          // strong component already solved -> get alias comps
-          solved_comps := listAppend(UnorderedMap.getSafe(comp, duplicate_map, sourceInfo()), solved_comps);
-        else
-          // solve strong component -> create alias comps
-          (tmp, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, system.systemType, implicit_index, slicing_map);
-          UnorderedMap.add(comp, list(StrongComponent.createAlias(system.systemType, system.partitionIndex, comp_idx, tmp_c) for tmp_c in tmp), duplicate_map);
-          solved_comps := listAppend(tmp, solved_comps);
-        end if;
+        solved_comps := match UnorderedMap.get(comp, duplicate_map)
+          local list<StrongComponent> alias_comps;
+          case SOME(alias_comps) then listAppend(alias_comps, solved_comps); // strong component already solved -> get alias comps
+          else algorithm
+            // solve strong component -> create alias comps
+            (alias_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, system.systemType, implicit_index, slicing_map);
+            UnorderedMap.add(comp, list(StrongComponent.createAlias(system.systemType, system.partitionIndex, comp_idx, c) for c in alias_comps), duplicate_map);
+          then listAppend(alias_comps, solved_comps);
+        end match;
       end for;
       system.strongComponents := SOME(listArray(listReverse(solved_comps)));
       // update sliced eqn names
@@ -179,7 +179,7 @@ public
     input output FunctionTree funcTree;
     input SystemType systemType;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   protected
     Status solve_status;
     StrongComponent implicit_comp;
@@ -241,9 +241,7 @@ public
 
           // safe the slicing replacement in the map
           eqn_cref := Equation.getEqnName(eqn_ptr);
-          if UnorderedMap.contains(eqn_cref, slicing_map) then
-            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map, sourceInfo()), sliced_eqns);
-          end if;
+          sliced_eqns := listAppend(UnorderedMap.getOrDefault(eqn_cref, slicing_map, {}), sliced_eqns);
           UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
 
         then (solved_comps, solve_status);
@@ -320,18 +318,14 @@ public
           // -> just use the first name as replacement for all of them and all other with empty lists
           eqn_ptr :: rest := sliced_eqns;
           eqn_cref := Equation.getEqnName(eqn_ptr);
-          if UnorderedMap.contains(eqn_cref, slicing_map) then
-            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map, sourceInfo()), sliced_eqns);
-          end if;
+          sliced_eqns := listAppend(UnorderedMap.getOrDefault(eqn_cref, slicing_map, {}), sliced_eqns);
           UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
 
           // empty for all others (do not overwrite if it exists)
           if not listEmpty(rest) then
             for eqn_ptr in rest loop
               eqn_cref := Equation.getEqnName(eqn_ptr);
-              if not UnorderedMap.contains(eqn_cref, slicing_map) then
-                UnorderedMap.add(eqn_cref, {}, slicing_map);
-              end if;
+              UnorderedMap.tryAdd(eqn_cref, {}, slicing_map);
             end for;
           end if;
         then (solved_comps, solve_status);
@@ -361,7 +355,7 @@ public
     input SystemType systemType;
     output Status solve_status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   algorithm
     (comp, solve_status) := match comp
       local
@@ -386,7 +380,7 @@ public
     input SystemType systemType;
     output Status status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   algorithm
     if ComponentRef.isEmpty(var.name) then
       // empty variable name implies equation without return value
@@ -403,7 +397,7 @@ public
     input SystemType systemType;
     output Status status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
    algorithm
     (eqn, funcTree, status) := match eqn
       local
@@ -462,7 +456,7 @@ public
     input SystemType systemType;
     output Status status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
     output Boolean invertRelation     "If the equation represents a relation, this tells if the sign should be inverted";
   algorithm
     (eqn, funcTree, status, invertRelation) := match eqn
@@ -558,7 +552,7 @@ public
     output Status status;
     input SystemType systemType;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   protected
     IfEquationBody else_if;
     list<StrongComponent> comps, solved_comps;

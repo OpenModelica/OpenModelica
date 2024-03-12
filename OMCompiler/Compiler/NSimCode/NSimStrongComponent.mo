@@ -590,15 +590,7 @@ public
           eqn_ptr := Slice.getT(comp.eqn);
           eqn := Pointer.access(eqn_ptr);
           ident := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref);
-          if UnorderedMap.contains(ident, simCodeIndices.generic_call_map) then
-            // the generic call body was already generated
-            generic_call_index := UnorderedMap.getSafe(ident, simCodeIndices.generic_call_map, sourceInfo());
-          else
-            // the generic call body was not already generated
-            generic_call_index := simCodeIndices.genericCallIndex;
-            UnorderedMap.add(ident, generic_call_index, simCodeIndices.generic_call_map);
-            simCodeIndices.genericCallIndex := simCodeIndices.genericCallIndex + 1;
-          end if;
+          generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
           tmp := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));
           UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -664,11 +656,7 @@ public
         then (NONLINEAR(system, NONE()), system.index);
 
         case StrongComponent.ALIAS() algorithm
-          if UnorderedMap.contains(comp.aliasInfo, simCodeIndices.alias_map) then
-            aliasOf := UnorderedMap.getSafe(comp.aliasInfo, simCodeIndices.alias_map, sourceInfo());
-          else
-            aliasOf := -1;
-          end if;
+          aliasOf := UnorderedMap.getOrDefault(comp.aliasInfo, simCodeIndices.alias_map, -1);
           tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));

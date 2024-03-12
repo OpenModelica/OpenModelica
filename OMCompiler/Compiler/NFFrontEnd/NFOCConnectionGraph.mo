@@ -934,8 +934,7 @@ algorithm
         ();
     case(cr::rest,_)
       equation
-        false = UnorderedMap.contains(cr, rooted);
-        UnorderedMap.add(cr,distance,rooted);
+        UnorderedMap.addUnique(cr,distance,rooted);
         next = UnorderedMap.getOrFail(cr, table);
         //print("- NFOCConnectionGraph.setRootDistance: Set Distance " +
         //   ComponentRef.toString(cr) + " , " + intString(distance) + "\n");
@@ -947,8 +946,7 @@ algorithm
         ();
     case(cr::rest,_)
       equation
-        false = UnorderedMap.contains(cr, rooted);
-        UnorderedMap.add(cr,distance,rooted);
+        UnorderedMap.addUnique(cr,distance,rooted);
         //print("- NFOCConnectionGraph.setRootDistance: Set Distance " +
         //   ComponentRef.toString(cr) + " , " + intString(distance) + "\n");
         setRootDistance(rest,table,distance,nextLevel,rooted);

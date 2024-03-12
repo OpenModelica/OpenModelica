@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -115,7 +115,7 @@ public
       Integer jacobianIndex;
       Integer residualIndex;
       Integer implicitIndex; // this can be removed i think -> moved to solve
-      Integer genericCallIndex;
+      //Integer genericCallIndex;  this is replaced by UnorderedMap.size(generic_call_map)
       Integer extObjIndex;
 
       UnorderedMap<AliasInfo, Integer> alias_map;
@@ -153,7 +153,7 @@ public
       0,0,0,0,
       0,0,0,0,
       1,0,0,
-      0,0,0,0,0,
+      0,0,0,0,
       UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
       UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual)
     );
