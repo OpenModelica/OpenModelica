@@ -26,7 +26,7 @@ system("unzip -cqq stiffProblem.fmu resources/stiffProblem_flags.json > stiffPro
 readFile("stiffProblem_flags_dynamic.json"); getErrorString();
 
 // Simulate with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator stiffProblem.fmu --mode=cs --tolerance=1e-6 --stopTime=250.0 --resultFile=\"stiffProblem_Dynamic_res.mat\" --suppressPath=true --tempDir=\"stiffProblem-dynamic-tmp\"", "stiffProblem_cs_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator stiffProblem.fmu --mode=cs --tolerance=1e-6 --stopTime=250.0 --stepSize=0.01 --resultFile=\"stiffProblem_Dynamic_res.mat\" --suppressPath=true --tempDir=\"stiffProblem-dynamic-tmp\"", "stiffProblem_cs_systemCall.log"); getErrorString();
 readFile("stiffProblem_cs_systemCall.log"); getErrorString();
 
 // Check results

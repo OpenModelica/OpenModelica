@@ -8,7 +8,7 @@ resourcedir=./Resources/nls/
 
 CONFIG_DEFAULT_OPENMODELICAHOME = "$(OMBUILDDIR)/"
 GIT_SHA = $(shell git describe --match "v*.*" --always)
-LSB_RELEASE = $(shell cmd /c "ver")
+LSB_RELEASE = $(shell cmd "/c ver")
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 PLATFORM_ARCH = (32-bit)

@@ -48,6 +48,7 @@ public
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
   import NFBinding.Binding;
+  import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -145,16 +146,34 @@ public
     input Binding binding = NFBinding.EMPTY_BINDING;
     output Variable variable;
   protected
-    InstNode node;
+    InstNode node, class_node, child_node;
+    ComponentRef child_cref;
     Type ty;
     Prefixes.Visibility vis;
     SourceInfo info;
+    Integer complexSize;
+    list<Variable> children = {};
   algorithm
     node := ComponentRef.node(cref);
     ty   := ComponentRef.getSubscriptedType(cref, true);
     vis  := InstNode.visibility(node);
     info := InstNode.info(node);
-    variable := Variable.VARIABLE(cref, ty, binding, vis, attr, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
+
+    // get the record children if the variable is a record (and not an external object)
+    if not Type.isExternalObject(ty) then
+      children := match (Type.arrayElementType(ty), Type.complexSize(ty))
+        case (Type.COMPLEX(cls = class_node), SOME(complexSize)) algorithm
+          for i in complexSize:-1:1 loop
+            child_node  := Class.nthComponent(i, InstNode.getClass(class_node));
+            child_cref  := ComponentRef.prefixCref(child_node, InstNode.getType(child_node), {}, cref);
+            children    := fromCref(child_cref) :: children;
+          end for;
+        then children;
+        else {};
+      end match;
+    end if;
+
+    variable := Variable.VARIABLE(cref, ty, binding, vis, attr, {}, children, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
   function makeVarPtrCyclic
@@ -200,6 +219,7 @@ public
       local
         Pointer<Variable> varPointer;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
+      case ComponentRef.CREF(node = InstNode.NAME_NODE())                       then Pointer.create(DUMMY_VARIABLE);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) +
         ", because of wrong InstNode (not VAR_NODE). Show lowering errors with -d=failtrace."});
@@ -635,9 +655,11 @@ public
       case InstNode.VAR_NODE()
         algorithm
           state := getVarPointer(cref);
+          // append the $DER to the name
           derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
           der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(cref)));
-          var := fromCref(der_cref, Variable.attributes(Pointer.access(state)));
+          // make the actual derivative variable and make cref and the variable cyclic
+          var := fromCref(ComponentRef.stripSubscriptsAll(der_cref), Variable.attributes(Pointer.access(state)));
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
       then ();
@@ -1026,14 +1048,22 @@ public
     InstNode node;
     Variable var;
     list<Dimension> dims = Type.arrayDims(ty);
+    function updateBackendInfo
+      input output Variable var;
+      input Boolean makeParam;
+    algorithm
+      // update the variable kind and set hideResult = true
+      var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, VariableKind.fromType(Variable.typeOf(var), makeParam));
+      var.backendinfo := BackendExtension.BackendInfo.setHideResult(var.backendinfo, true);
+    end updateBackendInfo;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node  := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     cref  := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     var   := fromCref(cref);
-    // update the variable kind and set hideResult = true
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, VariableKind.fromType(ty, makeParam));
-    var.backendinfo := BackendExtension.BackendInfo.setHideResult(var.backendinfo, true);
+
+    var := updateBackendInfo(var, makeParam);
+    var.children := list(updateBackendInfo(child, makeParam) for child in var.children);
 
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
@@ -1267,16 +1297,30 @@ public
     function toString
       input VariablePointers variables;
       input output String str = "";
+      input Option<array<tuple<Integer,Integer>>> mapping_opt = NONE();
       input Boolean printEmpty = true;
     protected
       Integer numberOfElements = VariablePointers.size(variables);
-      Integer length = 10;
+      Integer length, scal_start;
       String index;
+      Boolean useMapping = Util.isSome(mapping_opt);
+      array<tuple<Integer,Integer>> mapping;
     algorithm
+      if useMapping then
+        length := 15;
+        mapping := Util.getOption(mapping_opt);
+      else
+        length := 10;
+      end if;
       if printEmpty or numberOfElements > 0 then
         str := StringUtil.headline_4(str + " Variables (" + intString(numberOfElements) + "/" + intString(scalarSize(variables)) + ")");
         for i in 1:numberOfElements loop
-          index := "(" + intString(i) + ")";
+          if useMapping then
+            (scal_start, _) := mapping[i];
+            index := "(" + intString(i) + "|" + intString(scal_start) + ")";
+          else
+            index := "(" + intString(i) + ")";
+          end if;
           index := index + StringUtil.repeat(" ", length - stringLength(index));
           str := str + BVariable.toString(Pointer.access(ExpandableArray.get(i, variables.varArr)), index) + "\n";
         end for;
@@ -1704,7 +1748,7 @@ public
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal with 1 or -1 coefficient";
-      VariablePointers nonTrivialAlias    "Variables removed due to alias removal";
+      VariablePointers nonTrivialAlias    "Variables removed due to alias removal with gain * alias + offset function";
 
       /* subset of unknowns */
       VariablePointers derivatives        "State derivatives (der(x) -> $DER.x)";
@@ -1720,6 +1764,7 @@ public
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
       VariablePointers records            "Records";
+      VariablePointers external_objects   "External Objects";
       VariablePointers artificials        "artificial variables to have pointers on crefs";
     end VAR_DATA_SIM;
 
@@ -1834,58 +1879,60 @@ public
           VariablePointers lambdaVars;
 
         case VAR_DATA_SIM() algorithm
-          tmp := StringUtil.headline_2("Variable Data Simulation") + "\n";
+          tmp := "Variable Data Simulation (scalar unknowns: " + intString(VariablePointers.scalarSize(varData.unknowns)) + ")";
+          tmp := StringUtil.headline_2(tmp) + "\n";
           if not full then
-            tmp := tmp + VariablePointers.toString(varData.unknowns, "Unknown", false) +
-              VariablePointers.toString(varData.states, "Local Known", false) +
-              VariablePointers.toString(varData.knowns, "Global Known", false);
+            tmp := tmp + VariablePointers.toString(varData.unknowns, "Unknown", NONE(), false) +
+              VariablePointers.toString(varData.states, "Local Known", NONE(), false) +
+              VariablePointers.toString(varData.knowns, "Global Known", NONE(), false);
           else
-            tmp := tmp + VariablePointers.toString(varData.states, "State", false) +
-              VariablePointers.toString(varData.derivatives, "Derivative", false) +
-              VariablePointers.toString(varData.algebraics, "Algebraic", false) +
-              VariablePointers.toString(varData.discretes, "Discrete", false) +
-              VariablePointers.toString(varData.discrete_states, "Discrete States", false) +
-              VariablePointers.toString(varData.previous, "Previous", false) +
-              VariablePointers.toString(varData.top_level_inputs, "Top Level Inputs", false) +
-              VariablePointers.toString(varData.parameters, "Parameter", false) +
-              VariablePointers.toString(varData.constants, "Constant", false) +
-              VariablePointers.toString(varData.records, "Record", false) +
-              VariablePointers.toString(varData.artificials, "Artificial", false);
+            tmp := tmp + VariablePointers.toString(varData.states, "State", NONE(), false) +
+              VariablePointers.toString(varData.derivatives, "Derivative", NONE(), false) +
+              VariablePointers.toString(varData.algebraics, "Algebraic", NONE(), false) +
+              VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
+              VariablePointers.toString(varData.discrete_states, "Discrete State", NONE(), false) +
+              VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
+              VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
+              VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
+              VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
+              VariablePointers.toString(varData.records, "Record", NONE(), false) +
+              VariablePointers.toString(varData.external_objects, "External Object", NONE(), false) +
+              VariablePointers.toString(varData.artificials, "Artificial", NONE(), false);
           end if;
-          tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-            VariablePointers.toString(varData.aliasVars, "Alias", false);
+          tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
+            VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
         then tmp;
 
         case VAR_DATA_JAC() algorithm
-          tmp := VariablePointers.toString(varData.unknowns, "Partial Derivative", false) +
-            VariablePointers.toString(varData.seedVars, "Seed", false);
+          tmp := VariablePointers.toString(varData.unknowns, "Partial Derivative", NONE(), false) +
+            VariablePointers.toString(varData.seedVars, "Seed", NONE(), false);
           if full then
-            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", false) +
-              VariablePointers.toString(varData.resultVars, "Residual", false) +
-              VariablePointers.toString(varData.tmpVars, "Inner", false) +
-              VariablePointers.toString(varData.dependencies, "Dependencies", false) +
-              VariablePointers.toString(varData.knowns, "Known", false) +
-              VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-              VariablePointers.toString(varData.aliasVars, "Alias", false);
+            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", NONE(), false) +
+              VariablePointers.toString(varData.resultVars, "Residual", NONE(), false) +
+              VariablePointers.toString(varData.tmpVars, "Inner", NONE(), false) +
+              VariablePointers.toString(varData.dependencies, "Dependencies", NONE(), false) +
+              VariablePointers.toString(varData.knowns, "Known", NONE(), false) +
+              VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
+              VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
           end if;
         then tmp;
 
         case VAR_DATA_HES() algorithm
           tmp := StringUtil.headline_2("Variable Data Hessian") + "\n" +
-            VariablePointers.toString(varData.unknowns, "Unknown", false) +
-            VariablePointers.toString(varData.knowns, "Known", false) +
-            VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-            VariablePointers.toString(varData.aliasVars, "Alias", false);
+            VariablePointers.toString(varData.unknowns, "Unknown", NONE(), false) +
+            VariablePointers.toString(varData.knowns, "Known", NONE(), false) +
+            VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
+            VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
           if full then
-            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", false) +
-              VariablePointers.toString(varData.dependencies, "Dependencies", false) +
-              VariablePointers.toString(varData.resultVars, "Result", false) +
-              VariablePointers.toString(varData.tmpVars, "Temporary", false) +
-              VariablePointers.toString(varData.seedVars, "First Seed", false) +
-              VariablePointers.toString(varData.seedVars2, "Second Seed", false);
+            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", NONE(), false) +
+              VariablePointers.toString(varData.dependencies, "Dependencies", NONE(), false) +
+              VariablePointers.toString(varData.resultVars, "Result", NONE(), false) +
+              VariablePointers.toString(varData.tmpVars, "Temporary", NONE(), false) +
+              VariablePointers.toString(varData.seedVars, "First Seed", NONE(), false) +
+              VariablePointers.toString(varData.seedVars2, "Second Seed", NONE(), false);
               if isSome(varData.lambdaVars) then
                 SOME(lambdaVars) := varData.lambdaVars;
-                tmp := tmp + VariablePointers.toString(lambdaVars, "Lagrangian Lambda", false);
+                tmp := tmp + VariablePointers.toString(lambdaVars, "Lagrangian Lambda", NONE(), false);
               end if;
           end if;
         then tmp;
@@ -1919,9 +1966,10 @@ public
     end setVariables;
 
     // used to add specific types. Fill up with Jacobian/Hessian types
-    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR);
+    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR, RECORD);
 
     function addTypedList
+      "can also be used to add single variables"
       input output VarData varData;
       input list<Pointer<Variable>> var_lst;
       input VarType varType;
@@ -1929,50 +1977,58 @@ public
       varData := match (varData, varType)
 
         case (VAR_DATA_SIM(), VarType.STATE) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
-          varData.states := VariablePointers.addList(var_lst, varData.states);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
+          varData.states      := VariablePointers.addList(var_lst, varData.states);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
           // also remove from algebraics in the case it was moved
-          varData.unknowns := VariablePointers.removeList(var_lst, varData.unknowns);
-          varData.algebraics := VariablePointers.removeList(var_lst, varData.algebraics);
+          varData.unknowns    := VariablePointers.removeList(var_lst, varData.unknowns);
+          varData.algebraics  := VariablePointers.removeList(var_lst, varData.algebraics);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.STATE_DER) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns    := VariablePointers.addList(var_lst, varData.unknowns);
           varData.derivatives := VariablePointers.addList(var_lst, varData.derivatives);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         // algebraic variables, dummy states and dummy derivatives are mathematically equal
         case (VAR_DATA_SIM(), VarType.ALGEBRAIC) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
-          varData.algebraics := VariablePointers.addList(var_lst, varData.algebraics);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns    := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.algebraics  := VariablePointers.addList(var_lst, varData.algebraics);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.DISCRETE) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
-          varData.discretes := VariablePointers.addList(var_lst, varData.discretes);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns    := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.discretes   := VariablePointers.addList(var_lst, varData.discretes);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.START) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.initials := VariablePointers.addList(var_lst, varData.initials);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.initials    := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
-          varData.parameters := VariablePointers.addList(var_lst, varData.parameters);
-          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
+          varData.parameters  := VariablePointers.addList(var_lst, varData.parameters);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm
-          varData.variables := VariablePointers.addList(var_lst, varData.variables);
-          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
+        then varData;
+
+        // IMPORTANT: requires the record elements to be added as children beforehand!
+        case (VAR_DATA_SIM(), VarType.RECORD) algorithm
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
+          varData.records     := VariablePointers.addList(var_lst, varData.records);
+          varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
+          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerRecordChildren(variables = varData.variables));
         then varData;
 
         // ToDo: other cases

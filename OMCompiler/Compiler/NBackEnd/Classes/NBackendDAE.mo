@@ -54,6 +54,8 @@ protected
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
   import Call = NFCall;
+  import Class = NFClass;
+  import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
@@ -384,10 +386,10 @@ protected
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, previous_lst = {};
-    list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
+    list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous;
-    VariablePointers inputs, parameters, constants, records, artificials;
+    VariablePointers inputs, parameters, constants, records, external_objects, artificials;
     UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Variable>> binding_iter_lst;
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
@@ -411,6 +413,11 @@ protected
       lowVar := Pointer.access(lowVar_ptr);
       variables := VariablePointers.add(lowVar_ptr, variables);
       () := match lowVar.backendinfo.varKind
+
+        // do nothing for size 0 variables, they get removed
+        // Note: record elements need to exist in the full
+        //   variable array even if they are of size 0
+        case _ guard(Variable.size(var) == 0) then ();
 
         case _ guard(Variable.isTopLevelInput(var)) algorithm
           inputs_lst := lowVar_ptr :: inputs_lst;
@@ -463,6 +470,12 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
+        case BackendExtension.EXTOBJ() algorithm
+          lowVar_ptr := BVariable.setFixed(lowVar_ptr);
+          external_objects_lst := lowVar_ptr :: external_objects_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
         /* other cases should not occur up until now */
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
@@ -490,6 +503,7 @@ protected
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
     records         := VariablePointers.fromList(records_lst, scalarized);
+    external_objects:= VariablePointers.fromList(external_objects_lst, scalarized);
     artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
@@ -505,7 +519,8 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, discrete_states, previous, states, inputs, parameters, constants, records, artificials);
+                      derivatives, algebraics, discretes, discrete_states, previous,
+                      states, inputs, parameters, constants, records, external_objects, artificials);
   end lowerVariableData;
 
   function lowerVariable
@@ -550,6 +565,7 @@ protected
   algorithm
     varKind := match(variability, attributes, ty)
       local
+        Type elemTy;
         list<Pointer<Variable>> children = {};
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
@@ -557,9 +573,15 @@ protected
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then BackendExtension.STATE(1, NONE(), false);
 
+      // get external object class
+      case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
+      then BackendExtension.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
+      then BackendExtension.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
+
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
       case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
-      case (_, _, _) guard(Type.isComplexArray(ty))                   then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
+      case (_, _, Type.ARRAY(elementType = Type.COMPLEX()))           then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
 
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();
@@ -600,7 +622,7 @@ protected
     end if;
   end collectVariableBindingIterators;
 
-  function lowerRecordChildren
+  public function lowerRecordChildren
     input Pointer<Variable> var_ptr;
     input VariablePointers variables;
   protected
@@ -623,7 +645,7 @@ protected
     Pointer.update(var_ptr, var);
   end lowerRecordChildren;
 
-  function lowerEquationData
+  protected function lowerEquationData
     "Lowers all equations to backend structure.
     kabdelhak: Splitting up the creation of the equation array and the equation
     pointer arrays in two steps is slightly less effective, but way more readable
@@ -643,7 +665,10 @@ protected
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
+      // uniquely name the equation
       Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
+      // make all iterators the same and lower them
+      Equation.renameIterators(eqn_ptr, "$i");
       lowerEquationIterators(Pointer.access(eqn_ptr), VarData.getVariables(varData), set);
     end for;
     varData   := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
@@ -1091,7 +1116,9 @@ protected
     size := sum(ComponentRef.size(out) for out in alg.outputs);
 
     // can an algorithm output even be discrete?
-    if ComponentRef.listHasDiscrete(alg.outputs) then
+    if listEmpty(alg.outputs) then
+      attr := EquationAttributes.default(EquationKind.EMPTY, init);
+    elseif ComponentRef.listHasDiscrete(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.DISCRETE, init);
     else
       attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
@@ -1248,7 +1275,7 @@ public
   function lowerEquationIterators
     "lowers all iterators that occur in this equation and
     add the generated variables to a set"
-    input Equation eqn;
+    input output Equation eqn;
     input VariablePointers variables;
     input UnorderedSet<VariablePointer> set;
   protected

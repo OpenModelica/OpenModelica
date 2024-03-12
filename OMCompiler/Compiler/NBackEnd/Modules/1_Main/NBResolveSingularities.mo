@@ -99,7 +99,6 @@ public
         - add new variables in correct arrays
       "
   extends Module.resolveSingularitiesInterface;
-    input list<list<Integer>> marked_eqns_lst;
   protected
     UnorderedSet<Integer> marked_eqns_set;
     list<Integer> marked_eqns;
@@ -115,6 +114,7 @@ public
     EquationPointers constraint_ptrs;
     Adjacency.Matrix set_adj;
     Matching set_matching;
+    list<list<Integer>> marked_eqns_lst = {}; // todo: fill!
 
     Boolean debug = false;
   algorithm
@@ -177,7 +177,7 @@ public
       constraint_ptrs := EquationPointers.fromList(sliced_constraints);
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
-      set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, matrixType, NBAdjacency.MatrixStrictness.LINEAR);
+      set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, NBAdjacency.MatrixStrictness.LINEAR);
       set_matching := Matching.regular(NBMatching.EMPTY_MATCHING, set_adj, true, true);
 
       if debug then
@@ -260,25 +260,36 @@ public
   function noIndexReduction
     "fails if the system has unmatched variables"
     extends Module.resolveSingularitiesInterface;
-    input Matching matching;
   protected
     list<Slice<VariablePointer>> unmatched_vars, matched_vars;
     list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
     String err_str;
+    Adjacency.Mapping mapping;
+    Option<array<tuple<Integer, Integer>>> var_opt, eqn_opt;
   algorithm
     (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if not listEmpty(unmatched_vars) then
       err_str := getInstanceName()
-        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched Variables")
+        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + "|"
+        + intString(sum(Slice.size(v, BVariable.size) for v in unmatched_vars)) + ") Unmatched Variables")
         + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched Equations")
+        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
+        + intString(sum(Slice.size(e, Equation.size) for e in unmatched_eqns)) + ") Unmatched Equations")
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
       if Flags.isSet(Flags.BLT_DUMP) then
+        if Util.isSome(mapping_opt) then
+          mapping := Util.getOption(mapping_opt);
+          var_opt := SOME(mapping.var_AtS);
+          eqn_opt := SOME(mapping.eqn_AtS);
+        else
+          var_opt := NONE();
+          eqn_opt := NONE();
+        end if;
         err_str := err_str + " \n" + StringUtil.headline_4("(" + intString(listLength(matched_vars)) + ") Matched Variables")
           + List.toString(matched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
           + StringUtil.headline_4("(" + intString(listLength(matched_eqns)) + ") Matched Equations")
           + List.toString(matched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-          + VariablePointers.toString(variables, "All ") + "\n" + EquationPointers.toString(equations, "All ") + "\n"
+          + VariablePointers.toString(variables, "All ", var_opt) + "\n" + EquationPointers.toString(equations, "All ", eqn_opt) + "\n"
           + Matching.toString(matching);
       end if;
       Error.addMessage(Error.INTERNAL_ERROR,{err_str});
@@ -289,7 +300,6 @@ public
 
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
-    input Matching matching;
   protected
     list<Slice<VariablePointer>> unmatched_vars;
     list<Slice<EquationPointer>> unmatched_eqns;
@@ -299,6 +309,7 @@ public
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
     Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqns = Pointer.create({});
     Pointer<Integer> idx;
+    String error_msg;
   algorithm
     (_, unmatched_vars, _, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if Flags.isSet(Flags.INITIALIZATION) then
@@ -330,16 +341,9 @@ public
       for var in unmatched_vars loop
         var_ptr := Slice.getT(var);
         if BVariable.isFixable(var_ptr) then
-          if BVariable.hasPre(var_ptr) then
-            // create previous equations
-            // d = $PRE.d
-            Initialization.createPreEquationSlice(var, ptr_start_eqns, idx);
-          else
-            // create start equations for everything else
-            // var = $START.var ($PRE.d = $START.d for previous vars)
-            var_ptr := BVariable.setFixed(var_ptr);
-            Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
-          end if;
+          // var = $START.var ($PRE.d = $START.d for previous vars)
+          // DO NOT SET VARIABLE TO FIXED! we might have to fix it again for Lambda=0 system
+          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
         else
           failed_vars := var_ptr :: failed_vars;
         end if;
@@ -355,10 +359,29 @@ public
 
         // add new equations to system pointer arrays
         equations := EquationPointers.addList(start_eqns, equations);
+
+        if Flags.isSet(Flags.INITIALIZATION) then
+          print(List.toString(start_eqns, function Equation.pointerToString(str = ""),
+            StringUtil.headline_4("Created Start Equations for balancing the Initialization (" + intString(listLength(start_eqns)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+        end if;
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        error_msg := getInstanceName()
           + " failed because following non-fixable variables could not be solved:\n"
-          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true)});
+          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true);
+        if Flags.isSet(Flags.INITIALIZATION) then
+          error_msg := error_msg + "\nFollowing equations were created by fixing variables:\n"
+            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), "", "", "\n", "\n", true);
+        else
+          error_msg := error_msg + "\nUse -d=initialization for more debug output.";
+        end if;
+        if Flags.isSet(Flags.BLT_DUMP) then
+          error_msg := error_msg + "\n" + VariablePointers.toString(variables, "All") + EquationPointers.toString(equations, "All")
+            + Adjacency.Mapping.toString(Util.getOptionOrDefault(mapping_opt, Adjacency.Mapping.empty()))
+            + Adjacency.Matrix.toString(adj) + "\n" + Matching.toString(matching);
+        else
+          error_msg := error_msg + "\nUse -d=bltdump for more verbose debug output.";
+        end if;
+        Error.addMessage(Error.INTERNAL_ERROR,{error_msg});
         fail();
       end if;
     else
@@ -499,4 +522,3 @@ protected
 
   annotation(__OpenModelica_Interface="backend");
 end NBResolveSingularities;
-

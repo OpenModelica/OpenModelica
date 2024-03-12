@@ -136,8 +136,9 @@ public
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
+    input Adjacency.Matrix adj;
+    input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
-    input Adjacency.MatrixType matrixType;
     output Boolean changed;
   end resolveSingularitiesInterface;
 
@@ -245,7 +246,7 @@ public
      This module is allowed to read, change and add equations. It uses the
      function tree to evaluate and inline functions."
     input output EqData eqData                "Data containing equation pointers";
-    input VarData varData                     "Data containing equation pointers, for lowering purposes";
+    input output VarData varData              "Data containing variable pointers, for lowering purposes";
     input FunctionTree funcTree               "function tree for differentiation (solve)";
     input list<DAE.InlineType> inline_types   "Inline types for which to inline at the current state";
   end inlineInterface;
@@ -287,6 +288,8 @@ public
     input output StrongComponent comp     "the suspected algebraic loop.";
     input output FunctionTree funcTree    "Function call bodies";
     input output Integer index            "current unique loop index";
+    input VariablePointers variables      "all variables";
+    input Pointer<Integer> eq_index       "equation index";
     input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   end tearingInterface;
 

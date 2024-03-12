@@ -12,19 +12,19 @@ model M
 end M;
 
 model M2
-  parameter Real A[2, 3];
+  parameter Real A[2, 3] = ones(2, 3);
   parameter Integer j = size(A, i);
   parameter Integer i = size(A, 1);
 end M2;
 
 // Result:
 // class M2
-//   parameter Real A[1,1];
-//   parameter Real A[1,2];
-//   parameter Real A[1,3];
-//   parameter Real A[2,1];
-//   parameter Real A[2,2];
-//   parameter Real A[2,3];
+//   parameter Real A[1,1] = 1.0;
+//   parameter Real A[1,2] = 1.0;
+//   parameter Real A[1,3] = 1.0;
+//   parameter Real A[2,1] = 1.0;
+//   parameter Real A[2,2] = 1.0;
+//   parameter Real A[2,3] = 1.0;
 //   parameter Integer j = size(A, i);
 //   parameter Integer i = 2;
 // end M2;

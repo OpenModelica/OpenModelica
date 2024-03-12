@@ -236,7 +236,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   mConnectorSizing = dialogAnnotation.isConnectorSizing();
 
   // If mShowStartAttribute is not set then check for start modifier
-  if (!mShowStartAndFixed && !isParameter() && mpModelInstanceElement->getModifier()) {
+  if (!mShowStartAndFixed && !isParameter() && !isInput() && mpModelInstanceElement->getModifier()) {
     mShowStartAndFixed = mpModelInstanceElement->getModifier()->hasModifier("start");
   }
   /* if mShowStartAndFixed and group name is empty then set group name to Initialization.
@@ -330,7 +330,11 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     mpUnitComboBox->setCurrentIndex(1);
   }
   connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
-  mpDisplayUnitFinalEachMenuButton = new FinalEachToolButton(mpModelInstanceElement->getDimensions().isArray());
+  /* Issue #11715.
+   * Do not add each menu item to displayUnit modifiers.
+   * We will automatically add the each prefix for arrays.
+   */
+  mpDisplayUnitFinalEachMenuButton = new FinalEachToolButton(false);
   // comment
   const QString comment = mpModelInstanceElement->getComment();
   mpCommentLabel = new Label(comment);
@@ -370,6 +374,20 @@ bool Parameter::isParameter() const
     return mpModelInstanceElement->getVariability().compare(QStringLiteral("parameter")) == 0;
   } else {
     return mpElement->getElementInfo()->getVariablity().compare("parameter") == 0;
+  }
+}
+
+/*!
+ * \brief Parameter::isInput
+ * Returns true if input
+ * \return
+ */
+bool Parameter::isInput() const
+{
+  if (mpModelInstanceElement) {
+    return mpModelInstanceElement->getDirectionPrefix().compare(QStringLiteral("input")) == 0;
+  } else {
+    return mpElement->getElementInfo()->getCausality().compare("input") == 0;
   }
 }
 
@@ -478,7 +496,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       signalsState = mpValueCheckBox->blockSignals(true);
       mpValueCheckBox->setChecked(value.compare("true") == 0);
       mpValueCheckBox->blockSignals(signalsState);
-      mValueCheckBoxModified = valueModified;
+      mValueCheckBoxModified = valueModified && !defaultValue;
       break;
     case Parameter::Normal:
     default:
@@ -772,7 +790,7 @@ void Parameter::createValueWidget()
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
-      connect(mpValueTextBox, SIGNAL(textEdited(QString)), SLOT(valueTextBoxEdited(QString)));
+      mpValueTextBox->installEventFilter(this);
       break;
   }
 }
@@ -901,7 +919,7 @@ void Parameter::editRedeclareClassButtonClicked()
       const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
       ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
       pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
-      ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON);
+      ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
       mpModelInstanceElement->setModel(pNewModel);
       MainWindow::instance()->getProgressBar()->setRange(0, 0);
       MainWindow::instance()->showProgressBar();
@@ -1049,16 +1067,6 @@ void Parameter::valueCheckBoxChanged(bool toggle)
   updateValueBinding(FlatModelica::Expression(toggle));
 }
 
-/*!
- * \brief Parameter::valueTextBoxEdited
- * This slot is only called when user manually edits the text.\n
- * \param text
- */
-void Parameter::valueTextBoxEdited(const QString &text)
-{
-  enableDisableUnitComboBox(text);
-}
-
 void Parameter::showFixedMenu()
 {
   // create a menu
@@ -1113,6 +1121,22 @@ void Parameter::falseFixedClicked()
 void Parameter::inheritedFixedClicked()
 {
   mpFixedCheckBox->setTickState(true, mpFixedCheckBox->getInheritedValue());
+}
+
+/*!
+ * \brief Parameter::eventFilter
+ * Handles the FocusOut event of value textbox.
+ * \param pWatched
+ * \param pEvent
+ * \return
+ */
+bool Parameter::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+  if (mpValueTextBox == pWatched && pEvent->type() == QEvent::FocusOut) {
+    enableDisableUnitComboBox(mpValueTextBox->text());
+  }
+
+  return QObject::eventFilter(pWatched, pEvent);
 }
 
 /*!
@@ -1299,11 +1323,11 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
       if (MainWindow::instance()->getOMCProxy()->isBuiltinType(pParameter->getModelInstanceElement()->getRootType())) {
         const QString value = pModifier->getValue();
         // if value is not empty then use it otherwise try to read start and fixed modifiers
-        if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter())) {
+        if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter() && !pParameter->isInput())) {
           bool hasStart = pModifier->hasModifier("start");
           bool hasFixed = pModifier->hasModifier("fixed");
           if (hasStart || hasFixed) {
-            if (!pParameter->isGroupDefined() && !pParameter->isParameter()) {
+            if (!pParameter->isGroupDefined() && !pParameter->isParameter() && !pParameter->isInput()) {
               pParameter->setGroup("Initialization");
             }
             pParameter->setShowStartAndFixed(true);
@@ -1344,18 +1368,17 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
         int index = pParameter->getUnitComboBox()->findData(displayUnit);
         if (index < 0) {
           // add modifier as additional display unit if compatible
-          index = pParameter->getUnitComboBox()->count() - 1;
           OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-          if (index > -1 &&
-              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
+          if (pParameter->getUnitComboBox()->count() > 0 && pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit).unitsCompatible) {
             pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
-            index++;
+            index = pParameter->getUnitComboBox()->count() - 1;
           }
         }
         if (index > -1) {
-          bool signalsState = pParameter->getUnitComboBox()->blockSignals(true);
+          /* Issue #11782.
+           * Setting the display unit trigger SIGNAL currentIndexChanged and calls SLOT unitComboBoxChanged which will set the correct value.
+           */
           pParameter->getUnitComboBox()->setCurrentIndex(index);
-          pParameter->getUnitComboBox()->blockSignals(signalsState);
           pParameter->setDisplayUnit(displayUnit);
           if (!defaultValue) {
             pParameter->setHasDisplayUnit(true);
@@ -1634,7 +1657,7 @@ void ElementParameters::fetchElementModifiers()
   if (mpElement->getModifier()) {
     foreach (auto *pModifier, mpElement->getModifier()->getModifiers()) {
       Parameter *pParameter = findParameter(pModifier->getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true, false);
+      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true, mNested);
       // set final and each checkboxes in the menu
       if (pParameter && !pParameter->isShowStartAndFixed()) {
         pParameter->getFinalEachMenu()->setFinal(pModifier->isFinal());
@@ -1839,7 +1862,10 @@ void ElementParameters::updateElementParameters()
       // if displayUnit is changed OR if we already have the displayUnit modifier then set it
       if (pParameter->getUnitComboBox()->isEnabled() && !unit.isEmpty() && (pParameter->hasDisplayUnit() || pParameter->getDisplayUnit().compare(unit) != 0)) {
         QString displayUnitModifier;
-        if (pParameter->getDisplayUnitFinalEachMenu()->isEach()) {
+        /* Issue #11715 and #11839
+         * Add each prefix if element is an array OR parameter is an array.
+         */
+        if (mpElement->getDimensions().isArray() || pParameter->getModelInstanceElement()->getDimensions().isArray()) {
           displayUnitModifier.append("each ");
         }
         if (pParameter->getDisplayUnitFinalEachMenu()->isFinal()) {

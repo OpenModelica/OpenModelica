@@ -12,7 +12,7 @@ mkdir("@");
 echo(false);
 cd("@");
 echo(true);
-buildModelFMU(FMUResourceTest.TestResource, version="2.0"); getErrorString();
+buildModelFMU(FMUResourceTest.TestResource, version="2.0", fileNamePrefix="FMUResourceTest.TestResource"); getErrorString();
 importFMU("FMUResourceTest.TestResource.fmu"); getErrorString();
 loadFile("FMUResourceTest_TestResource_me_FMU.mo"); getErrorString();
 echo(false);

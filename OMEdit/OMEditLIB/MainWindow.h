@@ -41,6 +41,8 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 
+#include "Util/StringHandler.h"
+
 #include <QtGlobal>
 #if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
 #error "OMEdit requires Qt 5.0.0 or newer"
@@ -58,6 +60,7 @@ extern "C" {
 #include <QMdiArea>
 #include <QShortcut>
 #include <QRadioButton>
+#include <QTimer>
 
 class OMCProxy;
 class TransformationsWidget;
@@ -132,7 +135,6 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
-
 #if !defined(WITHOUT_OSG)
   bool isThreeDViewerInitialized();
   ThreeDViewer* getThreeDViewer();
@@ -146,6 +148,7 @@ public:
   GitCommands* getGitCommands() {return mpGitCommands;}
   CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
   TraceabilityInformationURI* getTraceabilityInformationURI() {return mpTraceabilityInformationURI;}
+  QTabWidget* getMessagesTabWidget() {return mpMessagesTabWidget;}
   StatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -267,6 +270,7 @@ public:
   void addSystemLibraries();
   QString getLibraryIndexFilePath() const;
   void writeNewApiProfiling(const QString &str);
+  void markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenModelicaErrors errorType);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -487,6 +491,8 @@ private:
   QToolBar *mpTLMSimulationToolbar;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+signals:
+  void resetMessagesTabWidgetNames();
 public slots:
   void showMessageBrowser();
   void switchToWelcomePerspectiveSlot();
@@ -637,6 +643,7 @@ private:
   Label *mpOMContributorsLabel;
 public slots:
   void showReportIssue();
+  void crashTest();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
 };
@@ -645,15 +652,18 @@ class MessageTab : public QWidget
 {
   Q_OBJECT
 public:
-  MessageTab(bool fixedTab);
+  MessageTab(const QString &name, bool fixedTab);
   void setIndex(int index) {mIndex = index;}
+  void markTabChanged();
 private:
   int mIndex = -1;
+  QString mName;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
 public slots:
   void updateText(const QString &text);
   void updateProgress(QProgressBar *pProgressBar);
+  void resetTabText();
 signals:
   void clicked(int index);
   // QObject interface

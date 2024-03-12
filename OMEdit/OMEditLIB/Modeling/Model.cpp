@@ -608,6 +608,21 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Annotation::getMap
+   * Returns either the IconMap or DiagramMap annotation.
+   * \param icon
+   * \return
+   */
+  const IconDiagramMap &Annotation::getMap(bool icon) const
+  {
+    if (icon) {
+      return mIconMap;
+    } else {
+      return mDiagramMap;
+    }
+  }
+
   IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
     mpParentModel = pParentModel;
@@ -1475,14 +1490,37 @@ namespace ModelInstance
 
   FlatModelica::Expression* Model::getVariableBinding(const QString &variableName)
   {
+    QString curName;
+    bool last;
+
+    if (variableName.contains("."))
+    {
+      curName = StringHandler::getFirstWordBeforeDot(variableName);
+      last = false;
+    }
+    else
+    {
+      curName = variableName;
+      last = true;
+    }
+
     foreach (auto pElement, mElements) {
       if (pElement->isComponent()) {
-        if (pElement->getName().compare(variableName) == 0) {
-          return &pElement->getBinding();
+        if (pElement->getName().compare(curName) == 0) {
+          if (last) {
+            return &pElement->getBinding();
+          } else {
+            if (!pElement->getModel()) {
+              return nullptr;
+            }
+            return pElement->getModel()->getVariableBinding(StringHandler::removeFirstWordAfterDot(variableName));
+          }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
         auto expression = pElement->getModel()->getVariableBinding(variableName);
-        if (expression) return expression;
+        if (expression) {
+          return expression;
+        }
       }
     }
 
@@ -1862,6 +1900,75 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Element::getIconDiagramMapPrimitivesVisible
+   * Recursively look for primitivesVisible annotation.
+   * \param icon
+   * \return
+   */
+  bool Element::getIconDiagramMapPrimitivesVisible(bool icon) const
+  {
+    /* Issue #12097
+     * The IconMap/DiagramMap annotation can be defined with extends clause or with short class definition.
+     */
+    if (!getAnnotation()->getMap(icon).getprimitivesVisible()) {
+      return false;
+    }
+    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).getprimitivesVisible()) {
+      return false;
+    }
+
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getIconDiagramMapPrimitivesVisible(icon);
+    } else {
+      return true;
+    }
+  }
+
+  /*!
+   * \brief Element::getIconDiagramMapHasExtent
+   * Recursively look if IconDiagramMap contains the extent.
+   * \param icon
+   * \return
+   */
+  bool Element::getIconDiagramMapHasExtent(bool icon) const
+  {
+    if (getAnnotation()->getMap(icon).hasExtent()) {
+      return getAnnotation()->getMap(icon).hasExtent();
+    }
+    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
+      return mpParentModel->getAnnotation()->getMap(icon).hasExtent();
+    }
+
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getIconDiagramMapHasExtent(icon);
+    } else {
+      return false;
+    }
+  }
+
+  /*!
+   * \brief Element::getIconDiagramMapExtent
+   * Recursively look for IconDiagramMap extent.
+   * \param icon
+   * \return
+   */
+  const ExtentAnnotation &Element::getIconDiagramMapExtent(bool icon) const
+  {
+    if (getAnnotation()->getMap(icon).hasExtent()) {
+      return getAnnotation()->getMap(icon).getExtent();
+    }
+    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
+      return mpParentModel->getAnnotation()->getMap(icon).getExtent();
+    }
+
+    if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->getIconDiagramMapExtent(icon);
+    } else {
+      return getAnnotation()->getMap(icon).getExtent();
+    }
+  }
+
   QString Element::toString(bool skipTopLevel) const
   {
     if (mpPrefixes) {
@@ -2037,7 +2144,12 @@ namespace ModelInstance
   QString Component::getQualifiedName() const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      if (name.isEmpty()) {
+        return mName;
+      } else {
+        return name % "." % mName;
+      }
     } else {
       return mName;
     }
@@ -2119,7 +2231,12 @@ namespace ModelInstance
   QString ReplaceableClass::getQualifiedName() const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName() % "." % mName;
+      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      if (name.isEmpty()) {
+        return mName;
+      } else {
+        return name % "." % mName;
+      }
     } else {
       return mName;
     }
@@ -2141,6 +2258,12 @@ namespace ModelInstance
       }
 
       value.append(mBaseClass);
+      if (mpModifier) {
+        value.append(mpModifier->toString());
+      }
+      if (!mComment.isEmpty()) {
+        value.append("\"" % mComment % "\"");
+      }
     }
 
     value.removeAll(QString(""));

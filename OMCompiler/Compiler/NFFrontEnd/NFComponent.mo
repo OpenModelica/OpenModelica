@@ -719,6 +719,7 @@ public
   function toFlatStream
     input String name;
     input Component component;
+    input String indent;
     input output IOStream.IOStream s;
   protected
     list<tuple<String, Binding>> ty_attrs;
@@ -726,6 +727,7 @@ public
     () := match component
       case COMPONENT()
         algorithm
+          s := IOStream.append(s, indent);
           s := Attributes.toFlatStream(component.attributes, component.ty, s);
           s := IOStream.append(s, Type.toFlatString(component.ty));
           s := IOStream.append(s, " '");
@@ -794,12 +796,13 @@ public
   function toFlatString
     input String name;
     input Component component;
+    input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(name, IOStream.IOStreamType.LIST());
-    s := toFlatStream(name, component, s);
+    s := toFlatStream(name, component, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;

@@ -81,6 +81,7 @@ public:
   Element* getElement() {return mpElement;}
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   bool isParameter() const;
+  bool isInput() const;
   void setTab(QString tab) {mTab = tab;}
   const StringAnnotation &getTab() {return mTab;}
   void setGroup(QString group) {mGroup = group;}
@@ -178,11 +179,13 @@ public slots:
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
-  void valueTextBoxEdited(const QString &text);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();
   void inheritedFixedClicked();
+  // QObject interface
+public:
+  virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) override;
 };
 
 class GroupBox : public QGroupBox

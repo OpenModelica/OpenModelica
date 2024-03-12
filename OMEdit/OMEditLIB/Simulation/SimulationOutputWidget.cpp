@@ -56,6 +56,10 @@
 #include <QClipboard>
 #include <QDesktopServices>
 
+extern "C" {
+extern const char* System_openModelicaPlatform();
+}
+
 /*!
  * \class SimulationOutputTree
  * \brief A tree based structure for simulation output messages.
@@ -572,15 +576,10 @@ void SimulationOutputWidget::compileModel()
   if (OptionsDialog::instance()->getSimulationPage()->getUseStaticLinkingCheckBox()->isChecked()) {
     linkType = "static";
   }
-#if defined(__MINGW32__) && defined(__MINGW64__) /* on 64 bit */
-  const char* omPlatform = "mingw64";
-#else
-  const char* omPlatform = "mingw32";
-#endif
   SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
   args << mSimulationOptions.getOutputFileName()
        << pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString()
-       << omPlatform << "parallel" << linkType << numProcs << "0";
+       << System_openModelicaPlatform() << "parallel" << linkType << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
   writeCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start(compilationProcessPath, args);
@@ -603,8 +602,7 @@ void SimulationOutputWidget::compileModel()
 void SimulationOutputWidget::runPostCompilation()
 {
   const QString postCompilationCommand = OptionsDialog::instance()->getSimulationPage()->getPostCompilationCommand();
-  if (postCompilationCommand.size())
-  {
+  if (postCompilationCommand.size()) {
     mpPostCompilationProcess = new QProcess;
     mpPostCompilationProcess->setWorkingDirectory(mSimulationOptions.getWorkingDirectory());
     connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
@@ -624,9 +622,7 @@ void SimulationOutputWidget::runPostCompilation()
   #else
     mpPostCompilationProcess->start(postCompilationCommand);
   #endif
-  }
-  else
-  {
+  } else {
     // no post-compilation step, run directly the simulation
     if (!mSimulationOptions.getBuildOnly() && !mSimulationOptions.getLaunchAlgorithmicDebugger()) {
       runSimulationExecutable();
@@ -714,15 +710,17 @@ void SimulationOutputWidget::postCompilationProcessFinished(int exitCode, QProce
 
 void SimulationOutputWidget::postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  const QString progressStr = tr("Post compilation of %1 is finished.").arg(mSimulationOptions.getClassName());
-  mpProgressLabel->setText(progressStr);
+  QString progressStr;
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(1);
+    progressStr = tr("Post compilation of %1 finished.").arg(mSimulationOptions.getClassName());
   } else {
     mpProgressBar->setValue(0);
+    progressStr = tr("Post compilation of %1 failed.").arg(mSimulationOptions.getClassName());
   }
+  mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
 }
 
@@ -836,8 +834,7 @@ void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color
 
 void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  const QString progressStr = tr("Compilation of %1 is finished.").arg(mSimulationOptions.getClassName());
-  mpProgressLabel->setText(progressStr);
+  QString progressStr;
   mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
@@ -849,9 +846,12 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
       MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling);
     }
     MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
+    progressStr = tr("Compilation of %1 finished.").arg(mSimulationOptions.getClassName());
   } else {
     mpProgressBar->setValue(0);
+    progressStr = tr("Compilation of %1 failed.").arg(mSimulationOptions.getClassName());
   }
+  mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files

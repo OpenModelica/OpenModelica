@@ -34,12 +34,12 @@ val(der(x), {0.0,1.0}, "helloWorldOMSU_res.mat");
 // "
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.001000
+// "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: helloWorldOMSU_res.mat (bufferSize=1)
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
-//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+//          NumSteps = 505 NumRhsEvals  = 510 NumLinSolvSetups = 30
+//          NumNonlinSolvIters = 509 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
 // "
-// {1.0,7.403868772384289}
-// {2.0,14.80773754476858}
+// {1.0,7.389140833856468}
+// {2.0,14.778281667712935}
 // endResult

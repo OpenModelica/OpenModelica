@@ -190,7 +190,8 @@ end translateModel;
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx);
     extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx, long sub_idx);
-    extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
+    extern void <%symbolName(modelNamePrefixStr,"read_simulation_info")%>(SIMULATION_INFO* simulationData);
+    extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>(DATA* data, char ** names);
@@ -1078,7 +1079,7 @@ template simulationFile_dae(SimCode simCode)
      extern "C" {
      #endif
 
-     <%evaluateDAEResiduals(daeEquations, modelNamePrefixStr)%>
+     <%evaluateDAEResiduals(daeEquations, fileNamePrefix, fullPathPrefix, modelNamePrefixStr)%>
 
      <%initDAEmode%>
 
@@ -1333,6 +1334,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"inputNames")%>,
        <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>,
        <%symbolName(modelNamePrefixStr,"dataReconciliationUnmeasuredVariables")%>,
+       <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_simulation_info") else "NULL" %>,
        <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL" else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL" else "NULL" %>,
@@ -1468,6 +1470,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->resultFileName = NULL;
     data->modelData->modelDir = "<%directory%>";
     data->modelData->modelGUID = "{<%guid%>}";
+    data->modelData->encrypted = <%SimCodeUtil.isMocFile(fileName)%>;
     <% match isModelExchangeFMU
     case "1.0" then
       <<
@@ -4467,14 +4470,61 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     >>
 end functionXXX_systems;
 
-template createEquationsAndCalls(list<list<SimEqSystem>> systems, String name, Context context, String modelNamePrefixStr, Text eqCalls, Text eqFuncs)
+
+template functionDAEModeEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, Context context, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs, Boolean static, Boolean noOpt, Boolean init)
+::=
+  let &file = buffer ""
+  let &forwardEqs = buffer ""
+  let multiFile = if intGt(numEqs, equationsPerFile) then "x"
+  let fncalls = (List.balancedPartition(inEqs, equationsPerFile) |> eqs hasindex i0 =>
+                  // To file
+                  let &file += ((if multiFile then
+                    (let fileName = addFunctionIndex('<%fileNamePrefix%>_<%partName%>_part', ".c")
+                    redirectToFile(fullPathPrefix + fileName) +
+                  <<
+                  <%simulationFileHeader(fileNamePrefix)%>
+                  #if defined(__cplusplus)
+                  extern "C" {
+                  #endif<%\n%>
+                  >>)) +
+                  (eqs |> eq => (equation_impl_options(-1, -1, eq, context, modelNamePrefix, static, noOpt, init); separator="\n")
+                  ) +
+                  <<
+                  >>
+                  +
+                  (if multiFile then
+                  (<<
+
+                  #if defined(__cplusplus)
+                  }
+                  #endif
+                  >> +
+                  closeFile())))
+
+                  let &forwardEqs +=
+                      if multiFile then
+                       ("\n/* --- forward equations --- */\n" +
+                        (eqs |> eq => equationForward_(eq, context, modelNamePrefix); separator="\n") +
+                        "\n\n")
+
+                  // fncalls
+                  '<%(eqs |> eq => equationNames_(eq, context, modelNamePrefix); separator="\n")%>'
+
+                  )
+
+
+  let &eqFuncs += forwardEqs + file
+  fncalls
+end functionDAEModeEquationsMultiFiles;
+
+template createEquationsAndCalls(list<list<SimEqSystem>> systems, String name, Context context, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, Text eqCalls, Text eqFuncs)
 ::=
   let _ = (systems |> equations => (
-          equations |> eq => (
-            let &eqFuncs += equation_impl(-1, -1, eq, context, modelNamePrefixStr, false)
-            let &eqCalls += equationNames_(eq, context, modelNamePrefixStr)
-            <<>>
-          )
+          let fncalls = functionDAEModeEquationsMultiFiles(equations, listLength(equations),
+                Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), context, fileNamePrefix, fullPathPrefix, modelNamePrefix,
+                "evaluateDAEResiduals", "16dae", &eqFuncs, /* Static? */ false, true /* No optimization */, /* initial? */ false)
+          let &eqCalls += fncalls
+          <<>>
         )
       )
   <<>>
@@ -4625,13 +4675,14 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   >>
 end functionAlgebraic;
 
-template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String modelNamePrefix)
+template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+  let () = System.tmpTickReset(0)
   let &eqFuncs = buffer ""
   let &eqCalls = buffer ""
 
-  let systems = createEquationsAndCalls(resEquations, "DAERes", contextDAEmode, modelNamePrefix, &eqCalls, &eqFuncs)
+  let systems = createEquationsAndCalls(resEquations, "DAERes", contextDAEmode, fileNamePrefix, fullPathPrefix, modelNamePrefix, &eqCalls, &eqFuncs)
   <<
   /*residual equations*/
   <%eqFuncs%>
@@ -6171,29 +6222,36 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction, false)
-  match expTypeFromExpShort(eqn.exp)
-  case "boolean" then
+  if crefSubIsScalar(lhs.componentRef) then
+    let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction, false)
+    match expTypeFromExpShort(eqn.exp)
+      case "boolean" then
+      <<
+      <%preExp%>
+      boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    case "integer" then
+      <<
+      <%preExp%>
+      integer_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    case "real" then
+      <<
+      <%preExp%>
+      real_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    case "string" then
+      <<
+      <%preExp%>
+      string_array_copy_data(<%expPart%>, <%lhsstr%>);
+      >>
+    else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
+  else
+    let assign = algStmtAssignArrWithRhsExpStr(lhs, expPart, context, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
+    <%assign%>
     >>
-  case "integer" then
-    <<
-    <%preExp%>
-    integer_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  case "real" then
-    <<
-    <%preExp%>
-    real_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  case "string" then
-    <<
-    <%preExp%>
-    string_array_copy_data(<%expPart%>, <%lhsstr%>);
-    >>
-  else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
 %>
 <%endModelicaLine()%>
 >>

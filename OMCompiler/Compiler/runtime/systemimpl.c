@@ -2970,12 +2970,18 @@ int SystemImpl__rename(const char *source, const char *dest)
    return (0 == omc_rename(source, dest));
 }
 
+/**
+ * @brief Convert unix time to string
+ *
+ * @param time    Calendar time value (integer)
+ * @return char*  Time string in format Www Mmm dd hh:mm:ss yyyy
+ */
 char* SystemImpl__ctime(double time)
 {
   char buf[64] = {0}; /* needs to be >=26 char */
   time_t t = (time_t) time;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  errno_t e = ctime_s(buf, 64, t);
+  errno_t e = ctime_s(buf, 64, &t);
   assert(e == 0 && "ctime_s returned an error");
   return omc_alloc_interface.malloc_strdup(buf);
 #else

@@ -50,6 +50,7 @@ import NFInstNode.InstNodeType;
 import Type = NFType;
 import Subscript = NFSubscript;
 import InstContext = NFInstContext;
+import IOStream;
 
 protected
 import Inst = NFInst;
@@ -100,6 +101,35 @@ encapsulated uniontype Field
   end name;
 end Field;
 
+function instRecord
+  input InstNode node;
+  input InstContext.Type context = NFInstContext.NO_CONTEXT;
+  output InstNode recordNode;
+protected
+  InstContext.Type next_context;
+algorithm
+  // The node we get is usually a record instance, with applied modifiers and so on.
+  // So the first thing we do is to create a "pure" instance of the record.
+
+  // TODO: The lookup will fail for records declared in redeclare modifiers,
+  //       since the parent will be the class scope of the modifier instead of
+  //       the element being modified. In that case we just reinstantiate the
+  //       record completely, but this probably isn't entirely correct. We
+  //       should make the expanded but not fully instantiated class available
+  //       here somehow.
+  try
+    recordNode := Lookup.lookupLocalSimpleName(InstNode.name(node), InstNode.classScope(InstNode.parent(node)));
+    true := referenceEq(InstNode.definition(node), InstNode.definition(recordNode));
+  else
+    recordNode := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
+  end try;
+
+  next_context := InstContext.set(context, NFInstContext.RELAXED);
+  recordNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), recordNode);
+  recordNode := Inst.instantiate(recordNode, context = next_context);
+  Inst.instExpressions(recordNode, context = next_context);
+end instRecord;
+
 function instDefaultConstructor
   input Absyn.Path path;
   input output InstNode node;
@@ -112,28 +142,8 @@ protected
   InstNode ctor_node, out_rec;
   Component out_comp;
   Class ctor_cls;
-  InstContext.Type ctor_context;
 algorithm
-  // The node we get is usually a record instance, with applied modifiers and so on.
-  // So the first thing we do is to create a "pure" instance of the record.
-
-  // TODO: The lookup will fail for records declared in redeclare modifiers,
-  //       since the parent will be the class scope of the modifier instead of
-  //       the element being modified. In that case we just reinstantiate the
-  //       record completely, but this probably isn't entirely correct. We
-  //       should make the expanded but not fully instantiated class available
-  //       here somehow.
-  try
-    ctor_node := Lookup.lookupLocalSimpleName(InstNode.name(node), InstNode.classScope(InstNode.parent(node)));
-    true := referenceEq(InstNode.definition(node), InstNode.definition(ctor_node));
-  else
-    ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
-  end try;
-
-  ctor_context := InstContext.set(context, NFInstContext.RELAXED);
-  ctor_node := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), ctor_node);
-  ctor_node := Inst.instantiate(ctor_node, context = ctor_context);
-  Inst.instExpressions(ctor_node, context = ctor_context);
+  ctor_node := instRecord(node, context);
 
   // Collect the record fields.
   (inputs, locals, all_params) := collectRecordParams(ctor_node);
@@ -346,6 +356,18 @@ algorithm
     end if;
   end for;
 end foldInputFields;
+
+function toFlatDeclarationStream
+  input InstNode recordNode;
+  input String indent;
+  input output IOStream.IOStream s;
+protected
+  InstNode node;
+algorithm
+  node := instRecord(recordNode);
+  Typing.typeClass(node, NFInstContext.RELAXED);
+  s := IOStream.append(s, InstNode.toFlatString(node, indent));
+end toFlatDeclarationStream;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

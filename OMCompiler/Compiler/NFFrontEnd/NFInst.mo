@@ -143,7 +143,6 @@ function instClassInProgram
   output String flatString "The flat model as a string if dumpFlat = true.";
 protected
   InstNode top, cls, inst_cls;
-  String name;
   InstContext.Type context;
   Integer var_count, eq_count, expose_local_ios;
   SCode.Program prog = program;
@@ -156,7 +155,6 @@ algorithm
 
   // Create a top scope from the given top-level classes.
   top := makeTopNode(prog, annotationProgram);
-  name := AbsynUtil.pathString(classPath);
 
   // Look up the class to instantiate.
   cls := lookupRootClass(classPath, top, context);
@@ -171,7 +169,7 @@ algorithm
 
   // Instantiate the class.
   inst_cls := instantiateRootClass(cls, context);
-  execStat("NFInst.instantiate(" + name + ")");
+  execStat("NFInst.instantiate(" + AbsynUtil.pathString(classPath) + ")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
@@ -180,14 +178,14 @@ algorithm
   execStat("NFInst.instExpressions");
 
   // Mark structural parameters.
-  updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
+  updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM), context);
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
   Typing.typeClass(inst_cls, context);
 
   // Flatten the model and evaluate constants in it.
-  flatModel := Flatten.flatten(inst_cls, name);
+  flatModel := Flatten.flatten(inst_cls, classPath);
   flatModel := EvalConstants.evaluate(flatModel, context);
 
   InstUtil.dumpFlatModelDebug("eval", flatModel);
@@ -271,7 +269,6 @@ function instClassForConnection
 protected
   Connections conns;
   InstNode top, cls, inst_cls;
-  String name;
   InstContext.Type context;
 algorithm
   resetGlobalFlags();
@@ -280,7 +277,6 @@ algorithm
 
   // Create a top scope from the given top-level classes.
   top := makeTopNode(program, annotationProgram);
-  name := AbsynUtil.pathString(classPath);
 
   // Look up the class to instantiate.
   cls := lookupRootClass(classPath, top, context);
@@ -297,7 +293,7 @@ algorithm
   Typing.typeClass(inst_cls, context);
 
   // Flatten the model and get connections
-  conns := Flatten.flattenConnection(inst_cls, name);
+  conns := Flatten.flattenConnection(inst_cls, classPath);
   connList := Connections.toStringList(conns);
 
   clearCaches();
@@ -399,7 +395,7 @@ algorithm
     functions := Flatten.flattenFunction(fn, functions);
   end for;
 
-  flatModel := FlatModel.FLAT_MODEL(InstNode.name(funcNode), {}, {}, {}, {}, {},
+  flatModel := FlatModel.FLAT_MODEL(Absyn.Path.IDENT(InstNode.name(funcNode)), {}, {}, {}, {}, {},
     ElementSource.createElementSource(InstNode.info(funcNode)));
 end instantiateRootFunction;
 
@@ -1497,14 +1493,24 @@ algorithm
             if InstNode.isProtected(node) and not (InstNode.isExtends(parent) or InstNode.isBaseClass(parent)) then
               Error.addMultiSourceMessage(Error.NF_MODIFY_PROTECTED,
                 {InstNode.name(node), Modifier.toString(mod)}, {Modifier.info(mod), InstNode.info(node)});
-              fail();
+
+              if InstContext.inInstanceAPI(context) then
+                continue;
+              else
+                fail();
+              end if;
             end if;
 
             if InstNode.isOnlyOuter(node) then
               Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
                 {Modifier.toString(mod, printName = false), Modifier.name(mod)},
                 Modifier.info(mod));
-              fail();
+
+              if InstContext.inInstanceAPI(context) then
+                continue;
+              else
+                fail();
+              end if;
             end if;
 
             if InstNode.isComponent(node) then
@@ -3659,6 +3665,7 @@ end checkTopLevelOuter;
 function updateImplicitVariability
   input InstNode node;
   input Boolean parentEval;
+  input InstContext.Type context;
 protected
   Class cls = InstNode.getClass(node);
   ClassTree cls_tree;
@@ -3667,7 +3674,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          updateImplicitVariabilityComp(c, parentEval);
+          updateImplicitVariabilityComp(c, parentEval, context);
         end for;
 
         Sections.apply(cls.sections,
@@ -3682,14 +3689,14 @@ algorithm
           Structural.markDimension(dim);
         end for;
 
-        updateImplicitVariability(cls.baseClass, parentEval);
+        updateImplicitVariability(cls.baseClass, parentEval, context);
       then
         ();
 
     case Class.INSTANCED_BUILTIN(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          updateImplicitVariabilityComp(c, parentEval);
+          updateImplicitVariabilityComp(c, parentEval, context);
         end for;
       then
         ();
@@ -3701,6 +3708,7 @@ end updateImplicitVariability;
 function updateImplicitVariabilityComp
   input InstNode component;
   input Boolean parentEval;
+  input InstContext.Type context;
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c = InstNode.component(node);
@@ -3722,7 +3730,7 @@ algorithm
           InstNode.updateComponent(Component.setVariability(Variability.NON_STRUCTURAL_PARAMETER, c), node);
         else
           // Otherwise check if we should mark it as structural.
-          if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval) then
+          if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval, context) then
             Structural.markComponent(c, node);
           end if;
         end if;
@@ -3743,7 +3751,7 @@ algorithm
         end if;
 
         if not InstNode.isEmpty(c.classInst) then
-          updateImplicitVariability(c.classInst, eval or parentEval);
+          updateImplicitVariability(c.classInst, eval or parentEval, context);
         end if;
       then
         ();

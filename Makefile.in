@@ -17,6 +17,8 @@ ifeq ($(CMAKE),)
 	CMAKE=cmake
 endif
 
+$(info "Selected CMAKE from configure (OpenModelica): $(CMAKE)")
+
 all: @ALL_TARGETS@
 
 .PRECIOUS: Makefile

@@ -83,7 +83,13 @@ $pager="cat";
 $diffcmd="diff -U 5 -w";
 $dwdiffcmd="dwdiff '-d()' -l -C 3 -c -L";
 $log="";
-$tmpdir = "/tmp/omc-rtest-".(getpwuid($<)||getlogin()||"unknown")."/$dirname";
+my $username = ( $^O ne 'MSWin32' ? getpwuid($<) : undef )
+          || getlogin()
+          || $ENV{'USER'}
+          || 'omtmpuser';
+$tmpvar=( $^O ne 'MSWin32' ? '/tmp' : $ENV{'TEMP'} );
+$tmpdir = $tmpvar . "/omc-rtest-".$username."/$dirname";
+# print("Directory: ", $tmpdir, "\n");
 $tmpdir =~ s/\s/_/g;
 system "mkdir -p $tmpdir";
 $got = "$tmpdir/equations-got";
@@ -334,8 +340,10 @@ sub dofile
     $log = "$tmpdir/log-$concrete_f";
     $tc_err = 1;
     # Find the expected result
-    open(OUT,">$expected");
-    open(IN,"<$f");
+	# print("Expected: ", $expected, "\n");
+	# print("In: ", $f, "\n");
+    open(OUT,">$expected") or die "$0: open $expected: $!";
+    open(IN,"<$f") or die "$0: open $f: $!";
     while(<IN>) {
     # @adrpo - uncomment for debugging
     # print ($_);

@@ -82,7 +82,7 @@ end LocalIOs;
 ");
 getErrorString();
 
-buildModelFMU(LocalIOs.System, version="2.0"); getErrorString();
+buildModelFMU(LocalIOs.System, version="2.0", fileNamePrefix="LocalIOs.System"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq LocalIOs.System.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
@@ -120,7 +120,7 @@ readFile("modelDescription.tmp.xml");
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable

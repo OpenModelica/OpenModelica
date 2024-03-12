@@ -134,6 +134,10 @@ public
           add(mapping.eqn_StA[eqn_scal_idx], eqn_scal_idx, mode, modes, bucket);
         end if;
       end for;
+
+      if Flags.isSet(Flags.DUMP_SORTING) then
+        print(PseudoBucket.toString(bucket) + "\n");
+      end if;
     end create;
 
     function add
@@ -220,7 +224,11 @@ public
           array<SuperNode> super_nodes;
 
         case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+          if Flags.isSet(Flags.DUMP_SORTING) then
+            print(StringUtil.headline_1("Sorting"));
+          end if;
           bucket := PseudoBucket.create(matching.eqn_to_var, adj.mapping, adj.modes);
+
           comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
           // phase 2 tarjan

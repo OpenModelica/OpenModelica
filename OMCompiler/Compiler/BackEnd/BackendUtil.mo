@@ -36,7 +36,6 @@ encapsulated package BackendUtil
 
 protected
 
-import Flags;
 import List;
 import System;
 import DAE;
@@ -77,11 +76,6 @@ function modelicaStringToCStr " this replaces symbols that are illegal in C to l
 algorithm
   res_str := matchcontinue(str,changeDerCall)
     local String s;
-    case(s,false) // BoschRexroth specifics
-      equation
-        false = Flags.getConfigBool(Flags.TRANSLATE_DAE_STRING);
-        then
-          s;
     case(_,false)
       equation
         res_str = "$"+ modelicaStringToCStr1(str, replaceStringPatterns);

@@ -21,11 +21,15 @@ OneDHeatTransferTT_FD.mos \
 OneDHeatTransferTT_Modelica.mos \
 CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
+PowerSystemStepLoad.mos \
+SimpleAdvection.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+CombiTimeTable.mos \
 TransmissionLineEquations.mos \
+CombiTimeTable.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

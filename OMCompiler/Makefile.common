@@ -7,8 +7,11 @@ unexport PREFIX
 top_builddir = $(OMBUILDDIR)
 builddir_app=$(OMBUILDDIR)/Applications/
 builddir_bin=$(OMBUILDDIR)/bin
+builddir_bin_semla=$(OMBUILDDIR)/bin/omc-semla
 builddir_lib=$(OMBUILDDIR)/lib
+builddir_lib_semla=$(OMBUILDDIR)/lib/omc-semla
 builddir_lib_omc=$(OMBUILDDIR)/$(LIB_OMC)
+builddir_inc_semla=$(OMBUILDDIR)/include/omc-semla
 builddir_inc=$(OMBUILDDIR)/include/omc
 builddir_doc=$(OMBUILDDIR)/share/doc
 builddir_share=$(OMBUILDDIR)/share/
@@ -51,7 +54,7 @@ $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
 # Silence unnecessary verbose install messages from CMAKE
-CMAKE := $(CMAKE) -DCMAKE_INSTALL_MESSAGE=LAZY
+CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
 OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
 OMC_TBB_ROOT = 3rdParty/tbb
@@ -81,11 +84,13 @@ semla:
 	   -DLICENSE_MANAGER:String=testingdummy \
 	   -DDECRYPTOR:String=default \
 	   -DOBFUSCATOR:String=dummy \
-	   -DCMAKE_INSTALL_PREFIX="$(top_builddir)" \
-	   -DCMAKE_INSTALL_BINDIR="$(builddir_bin)" \
+	   -DCMAKE_INSTALL_BINDIR="$(builddir_bin_semla)" \
+	   -DCMAKE_INSTALL_LIBDIR="$(builddir_lib_semla)" \
+	   -DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc_semla)" \
 	   ../src -G $(CMAKE_TARGET))
 
-	$(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
+	# Put the msys perl before ucrt perl to compile openssl
+	env PATH=/usr/bin:"$(PATH)" $(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
 
 semla-clean:
 	rm -rf ../OMEncryption/3rdParty/SEMLA/build
@@ -182,8 +187,8 @@ ipopt-clean:
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
-	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G \
-		$(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
 		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/" \

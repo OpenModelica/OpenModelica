@@ -134,6 +134,7 @@ uniontype FlattenSettings
     Boolean scalarize;
     Boolean arrayConnect;
     Boolean nfAPI;
+    Boolean relaxedErrorChecking;
     Boolean newBackend;
     Boolean vectorizeBindings;
   end SETTINGS;
@@ -311,7 +312,7 @@ constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(InstNode.EMPTY_NODE
 
 function flatten
   input InstNode classInst;
-  input String name;
+  input Absyn.Path classPath;
   input Boolean getConnectionResolved = true;
   output FlatModel flatModel;
 protected
@@ -329,6 +330,7 @@ algorithm
     Flags.isSet(Flags.NF_SCALARIZE),
     Flags.isSet(Flags.ARRAY_CONNECT),
     Flags.isSet(Flags.NF_API),
+    Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
     Flags.isSet(Flags.VECTORIZE_BINDINGS)
   );
@@ -354,9 +356,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src);
+        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, src);
 
-      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, src);
   end match;
 
   // get inputs and outputs for algorithms now that types are computed
@@ -378,13 +380,13 @@ end flatten;
 
 function flattenConnection
   input InstNode classInst;
-  input String name;
+  input Absyn.Path classPath;
   output Connections conns;
 protected
   FlatModel flatModel;
   UnorderedSet<ComponentRef> deleted_vars;
 algorithm
-  flatModel := flatten(classInst, name, false);
+  flatModel := flatten(classInst, classPath, false);
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
   // get the connections from the model
@@ -649,6 +651,7 @@ protected
   Variability var;
   Boolean unfix;
   Prefix pre;
+  Variable v;
 algorithm
   Component.COMPONENT(ty = ty, binding = binding, attributes = comp_attr, comment = cmt, info = info) := comp;
   checkUnspecifiedEnumType(ty, node, info);
@@ -662,9 +665,10 @@ algorithm
     unfix := false;
   end if;
 
-  // If the component is an array component with a binding and at least discrete variability,
-  // move the binding into an equation. This avoids having to scalarize the binding.
-  if not settings.nfAPI then
+  // If the component is an array component with a binding and at least discrete
+  // variability, and scalarization is enabled, move the binding into an equation.
+  // This avoids having to scalarize the binding.
+  if not settings.nfAPI and settings.scalarize then
     if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
@@ -699,7 +703,14 @@ algorithm
   // kabdelhak: add dummy backend info, will be changed to actual value in
   // conversion to backend process. NBackendDAE.lower
   name := Prefix.prefix(pre);
-  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
+  v := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
+
+  if var < Variability.DISCRETE and not unfix then
+    // Check that the component has a binding if it's required to have one.
+    verifyBinding(v, var, binding, settings);
+  end if;
+
+  vars := v :: vars;
 end flattenSimpleComponent;
 
 function checkUnspecifiedEnumType
@@ -739,6 +750,71 @@ algorithm
   (attr_name, _) := attr;
   isNamed := name == attr_name;
 end isTypeAttributeNamed;
+
+function verifyBinding
+  input Variable var;
+  input Variability variability;
+  input Binding binding;
+  input FlattenSettings settings;
+protected
+  Binding fixed_binding, start_binding;
+  Expression fixed_exp;
+  Boolean fixed;
+algorithm
+  if variability > Variability.CONSTANT and Binding.isBound(binding) then
+    // Parameter with a binding is ok.
+    return;
+  end if;
+
+  // Check if the variable is fixed or not.
+  fixed_binding := Variable.lookupTypeAttribute("fixed", var);
+
+  if Binding.isBound(fixed_binding) then
+    fixed_exp := Binding.getExp(fixed_binding);
+    fixed_exp := Ceval.tryEvalExp(fixed_exp);
+
+    if not Expression.isBoolean(fixed_exp) then
+      return;
+    end if;
+
+    fixed := Expression.isTrue(fixed_exp);
+  else
+    fixed := true;
+  end if;
+
+  if variability == Variability.CONSTANT then
+    if not fixed then
+      // Constants are not allowed to be non-fixed.
+      Error.addSourceMessage(Error.NON_FIXED_CONSTANT,
+        {ComponentRef.toString(var.name)}, var.info);
+
+      if not settings.relaxedErrorChecking then
+        fail();
+      end if;
+    end if;
+
+    // Constants also must have binding equations if they are used, but this is
+    // checked when evaluating them.
+
+  else
+    if fixed and Binding.isUnbound(binding) then
+      start_binding := Variable.lookupTypeAttribute("start", var);
+
+      if Binding.isUnbound(start_binding) then
+        // Fixed parameters must have a binding equation or a start attribute.
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_ERROR,
+          {ComponentRef.toString(var.name)}, var.info);
+
+        if not settings.relaxedErrorChecking then
+          fail();
+        end if;
+      else
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING,
+          {ComponentRef.toString(var.name), Binding.toString(start_binding)}, var.info);
+      end if;
+    end if;
+  end if;
+end verifyBinding;
 
 function getRecordBindings
   input Binding binding;
@@ -1179,7 +1255,13 @@ algorithm
         DAE.ElementSource src;
 
       // convert simple equality of crefs to array equality
+      // kabdelhak: only do it if all subscripts are simple enough
+      //            will lead to complicated code if not index or whole dim
+      //            and we are better of just using for loops for these
       case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
+        guard(not Flags.getConfigBool(Flags.NEW_BACKEND)
+          or (List.all(ComponentRef.subscriptsAllWithWholeFlat(lhs.cref), Subscript.isSimple)
+          and List.all(ComponentRef.subscriptsAllWithWholeFlat(rhs.cref), Subscript.isSimple)))
         algorithm
           ty := Type.liftArrayLeftList(eq.ty, dimensions);
           lhs := Expression.CREF(ty, lhs.cref);

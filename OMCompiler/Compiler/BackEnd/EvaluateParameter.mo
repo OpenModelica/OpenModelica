@@ -128,25 +128,25 @@ algorithm
           if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
             print("\nStructural parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
           end if;
-         then BackendVariable.hasVarEvaluateAnnotation;
+         then BackendVariable.hasVarEvaluateAnnotationTrue;
       case(true, false)
         equation
           if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
             print("\nStructural parameters, final parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
           end if;
-         then BackendVariable.hasVarEvaluateAnnotationOrFinal;
+         then BackendVariable.hasVarEvaluateAnnotationTrueOrFinal;
       case(false, true)
         equation
           if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
             print("\nStructural parameters, protected parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
           end if;
-         then BackendVariable.hasVarEvaluateAnnotationOrProtected;
+         then BackendVariable.hasVarEvaluateAnnotationTrueOrProtected;
       case(true, true)
         equation
           if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
             print("\nStructural parameters, final parameters, protected parameters and parameters with annotation(Evaluate=true) will be evaluated.\n");
           end if;
-         then BackendVariable.hasVarEvaluateAnnotationOrFinalOrProtected;
+         then BackendVariable.hasVarEvaluateAnnotationTrueOrFinalOrProtected;
     end match;
 
     BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, aliasVars=aliasVars, initialEqs=initialEqs, cache=cache, graph=graph)) := DAE;

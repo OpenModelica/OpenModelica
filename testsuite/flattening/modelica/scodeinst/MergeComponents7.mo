@@ -74,25 +74,25 @@ end MergeComponents7;
 //   Real[2] $B1.u;
 //   parameter Real[2] $B1.q = {3.0, 4.0};
 // equation
-//   der(b2.aa.x) = (-b2.aa.p * b2.aa.x) + b2.aa.u;
+//   der(b2.aa.x) = b2.aa.u - b2.aa.p * b2.aa.x;
 //   b2.aa.y = 2.0 * b2.aa.p * b2.aa.x;
-//   der(b2.ab.x) = (-b2.ab.p * b2.ab.x) + b2.ab.u;
+//   der(b2.ab.x) = b2.ab.u - b2.ab.p * b2.ab.x;
 //   b2.ab.y = 2.0 * b2.ab.p * b2.ab.x;
 //   b2.aa.u = b2.u;
 //   b2.ab.u = b2.aa.y;
 //   b2.y = b2.ab.y;
-//   der(a1.x) = (-a1.p * a1.x) + a1.u;
+//   der(a1.x) = a1.u - a1.p * a1.x;
 //   a1.y = 2.0 * a1.p * a1.x;
-//   der(a2.x) = (-a2.p * a2.x) + a2.u;
+//   der(a2.x) = a2.u - a2.p * a2.x;
 //   a2.y = 2.0 * a2.p * a2.x;
 //   for $i1 in 1:2 loop
-//     der($B1[$i1].aa.x) = (-$B1[$i1].aa.p * $B1[$i1].aa.x) + $B1[$i1].aa.u;
+//     der($B1[$i1].aa.x) = $B1[$i1].aa.u - $B1[$i1].aa.p * $B1[$i1].aa.x;
 //   end for;
 //   for $i1 in 1:2 loop
 //     $B1[$i1].aa.y = 2.0 * $B1[$i1].aa.p * $B1[$i1].aa.x;
 //   end for;
 //   for $i1 in 1:2 loop
-//     der($B1[$i1].ab.x) = (-$B1[$i1].ab.p * $B1[$i1].ab.x) + $B1[$i1].ab.u;
+//     der($B1[$i1].ab.x) = $B1[$i1].ab.u - $B1[$i1].ab.p * $B1[$i1].ab.x;
 //   end for;
 //   for $i1 in 1:2 loop
 //     $B1[$i1].ab.y = 2.0 * $B1[$i1].ab.p * $B1[$i1].ab.x;

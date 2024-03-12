@@ -345,7 +345,7 @@ public
     end createSparsity;
 
     function createSparsityPattern
-      input list<Jacobian.SparsityPatternCol> cols    "columns that need to be generated (can be used for rows too)";
+      input list<Jacobian.SparsityPatternCol> cols       "columns that need to be generated (can be used for rows too)";
       input UnorderedMap<ComponentRef, SimVar> sim_map   "hash table cr --> simVar";
       input Boolean transposed;
       output SparsityPattern simPattern = {};
@@ -356,21 +356,16 @@ public
     algorithm
       for col in cols loop
         (cref, dependencies) := col;
-        try
-          // this state derivative -> state transformation is for conversion to the old simcode
-          if transposed then
-            // get state for cref
-            cref := derivativeToStateCref(cref);
-          else
-            // get states for dependencies
-            dependencies := list(derivativeToStateCref(dep) for dep in dependencies);
-          end if;
-          dep_indices := list(SimVar.getIndex(UnorderedMap.getSafe(dep, sim_map, sourceInfo())) for dep in dependencies);
-          simPattern := (SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map, sourceInfo())), List.sort(dep_indices, intGt)) :: simPattern;
+        // this state derivative -> state transformation is for conversion to the old simcode
+        if transposed then
+          // get state for cref
+          cref := derivativeToStateCref(cref);
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
-          fail();
-        end try;
+          // get states for dependencies
+          dependencies := list(derivativeToStateCref(dep) for dep in dependencies);
+        end if;
+        dep_indices := list(SimVar.getIndex(dep, sim_map) for dep in dependencies);
+        simPattern := (SimVar.getIndex(cref, sim_map), List.sort(dep_indices, intGt)) :: simPattern;
       end for;
       simPattern := List.sort(simPattern, sparsityTplSortGt);
     end createSparsityPattern;
@@ -385,17 +380,9 @@ public
       input Jacobian.SparsityColoring coloring;
       input UnorderedMap<ComponentRef, SimVar> sim_map;
       output SparsityColoring simColoring = {};
-    protected
-      list<Integer> tmp;
     algorithm
       for group in listReverse(arrayList(coloring.cols)) loop
-        try
-          tmp := list(SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map, sourceInfo())) for cref in group);
-        else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get indices for crefs:\n"
-            + List.toString(group, ComponentRef.toString)});
-        end try;
-        simColoring := tmp :: simColoring;
+        simColoring := list(SimVar.getIndex(cref, sim_map) for cref in group) :: simColoring;
       end for;
     end createSparsityColoring;
 
@@ -512,7 +499,8 @@ protected
     list<Subscript> subscripts;
   algorithm
     if BVariable.checkCref(cref, BVariable.isStateDerivative) then
-      subscripts := ComponentRef.subscriptsAllFlat(cref);
+      // for whatever reason the function returns the subscripts in wrong order
+      subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
       cref := BVariable.getStateCref(ComponentRef.stripSubscriptsAll(cref));
       cref := ComponentRef.mergeSubscripts(subscripts, cref);
     end if;

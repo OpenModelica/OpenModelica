@@ -5,7 +5,7 @@
 //
 
 record A
-  Real x;
+  Real x = 0;
 end A;
 
 model PB
@@ -27,7 +27,7 @@ end RedeclareMod8;
 
 // Result:
 // class RedeclareMod8
-//   parameter Real c.na[1].x;
+//   parameter Real c.na[1].x = 0.0;
 //   parameter Real c.nb[1].a.x = c.na[1].x;
 // end RedeclareMod8;
 // endResult

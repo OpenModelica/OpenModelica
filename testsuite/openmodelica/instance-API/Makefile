@@ -11,6 +11,8 @@ GetModelInstanceAnnotation6.mos \
 GetModelInstanceAnnotation7.mos \
 GetModelInstanceAnnotation8.mos \
 GetModelInstanceAnnotation9.mos \
+GetModelInstanceAnnotation10.mos \
+GetModelInstanceAnnotation11.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \
@@ -21,6 +23,7 @@ GetModelInstanceBinding5.mos \
 GetModelInstanceBinding6.mos \
 GetModelInstanceBinding7.mos \
 GetModelInstanceBinding8.mos \
+GetModelInstanceBinding9.mos \
 GetModelInstanceBreak1.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
@@ -62,6 +65,7 @@ GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceMod3.mos \
 GetModelInstanceMod4.mos \
+GetModelInstanceMod5.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \

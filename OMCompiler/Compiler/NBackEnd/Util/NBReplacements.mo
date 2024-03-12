@@ -58,6 +58,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
+  import Type = NFType;
   import Variable = NFVariable;
 
   // Backend imports
@@ -123,7 +124,7 @@ public
           replace_exp := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           // add the new replacement rule
-          UnorderedMap.add(varName, SimplifyExp.simplify(replace_exp, true), replacements);
+          UnorderedMap.add(varName, SimplifyExp.simplifyDump(replace_exp, true, getInstanceName()), replacements);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
           fail();
@@ -282,7 +283,6 @@ public
         Function fn;
         UnorderedMap<ComponentRef, Expression> local_replacements;
         list<ComponentRef> input_crefs;
-        list<InstNode> failed_locals = {};
         ComponentRef local_cref;
         Option<Expression> binding_exp_opt;
         Expression binding_exp, body_exp;
@@ -306,27 +306,19 @@ public
           if Util.isSome(binding_exp_opt) then
             // replace binding expression with already gathered input replacements
             binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
-            addInputArgTpl((local_cref, binding_exp), local_replacements);
           else
-            failed_locals := local_node :: failed_locals;
+            // add a "wild" binding. This will result in unused outputs being ignored.
+            binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
           end if;
+          addInputArgTpl((local_cref, binding_exp), local_replacements);
         end for;
-
-        // report and fail for locals that don't have bindings
-        // (protected variables should always have bindings in 1-line functions)
-        if not listEmpty(failed_locals) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed for function\n " + Function.toFlatString(fn) + "\n because there were local variables without binding:\n"
-            + List.toString(failed_locals, InstNode.toString, "", "\t", "\n\t", "")});
-          fail();
-        end if;
-
 
         // get the expression from function body (fails if its not a single replacable assignment)
         body_exp := getFunctionBody(fn);
 
         // replace input withs arguments in expression
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+        body_exp := SimplifyExp.combineBinaries(body_exp);
         body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then

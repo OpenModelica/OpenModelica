@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Author: Per Östlund
+# Author: Per Östlund, Adrian Pop
 #
 # This script parses the makefiles in the testsuite and extracts (almost) all
 # testcases. It then runs each test with the runtest.pl script, which creates a
@@ -31,7 +31,7 @@ use Term::ANSIColor;
 use List::Util 'shuffle';
 use Cwd;
 use File::Path qw(rmtree);
-use Time::HiRes qw( usleep ualarm gettimeofday tv_interval clock stat );
+use Time::HiRes qw( usleep gettimeofday tv_interval stat );
 
 use Fcntl;
 
@@ -65,6 +65,7 @@ my $withxmlcmd = 0;
 my $withtxt = 0;
 my $have_dwdiff = "";
 my $rebase_test = "";
+my $osname = $^O;
 
 {
   eval { require File::Which; 1; };
@@ -190,6 +191,9 @@ my $test_queue = Thread::Queue->new();
 my $tests_failed :shared = 0;
 my @failed_tests :shared;
 my $testscript = cwd() . "/runtest.pl";
+if ( $osname eq 'MSWin32' ) {
+  $testscript = "perl " . $testscript;
+}
 my $testsuite_root = cwd() . "/../";
 my %test_map :shared;
 
@@ -277,6 +281,7 @@ sub run_tests {
 
     my $t0 = [gettimeofday];
     my $cmd = "$testscript $test_full $have_dwdiff $nocolour $withxmlcmd $with_omc $rebase_test";
+    # print ("CMD: ", $cmd, "\n");
     my $x = system("$cmd") >> 8;
     my $elapsed = tv_interval ( $t0, [gettimeofday]);
 
@@ -378,17 +383,22 @@ if ($check_proc_cpu) {
     while(<$in>) {
       $thread_count++ if /processor/;
     }
-  } else { # On OSX, try syscyl
-    my @contents = `sysctl -n hw.ncpu`;
-    if (int($contents[0]) > 0) {
-      $thread_count = int($contents[0]);
+  } else {
+    if ( $osname eq 'MSWin32' ) { # Windows
+      $thread_count = int($ENV{"NUMBER_OF_PROCESSORS"});
+    } else { # On OSX, try syscyl
+      my @contents = `sysctl -n hw.ncpu`;
+      if (int($contents[0]) > 0) {
+        $thread_count = int($contents[0]);
+      }
     }
   }
 }
 # Make sure that omc-diff is generated before trying to run any tests.
 system("make --quiet -j$thread_count omc-diff ReferenceFiles > /dev/null 2>&1");
 
-symlink('../Compiler', 'Compiler');
+# I really don't think this is needed anymore!
+# symlink('../Compiler', 'Compiler');
 
 print "$thread_count threads\n";
 
@@ -480,10 +490,15 @@ if($withxml) {
   print $XMLOUT "</testsuite>\n";
 }
 
-unlink("Compiler");
+# should not be needed anymore!
+# unlink("Compiler");
 # Clean up the temporary rtest directory, so it doesn't get overrun.
-my $username = getpwuid($<);
-my @dirs = glob "/tmp/omc-rtest-$username*";
+my $username = ( $^O ne 'MSWin32' ? getpwuid($<) : undef )
+          || getlogin()
+          || $ENV{'USER'}
+          || 'omtmpuser';
+my $tmpvar=( $^O ne 'MSWin32' ? '/tmp' : $ENV{'TEMP'} );
+my @dirs = glob "$tmpvar/omc-rtest-$username*";
 if (@dirs) {
   rmtree(@dirs);
 }

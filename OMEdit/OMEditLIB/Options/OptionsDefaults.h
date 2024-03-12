@@ -175,6 +175,7 @@ namespace OptionsDefaults
     int outputSize = 0;
     bool resetMessagesNumberBeforeSimulation = true;
     bool clearMessagesBrowserBeforeSimulation = false;
+    bool enlargeMessageBrowserCheckBox = false;
     QColor notificationColor = Qt::black;
     QColor warningColor = QColor(255, 170, 0);
     QColor errorColor = Qt::red;

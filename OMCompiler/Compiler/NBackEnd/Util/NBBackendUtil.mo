@@ -257,31 +257,5 @@ public
     end if;
   end isContinuousFold;
 
-  function removeSizeOneArraySubscriptsExp
-    input output Expression exp;
-  algorithm
-    exp := match exp
-      case Expression.CREF() algorithm
-        exp.cref := removeSizeOneArraySubscriptsCref(exp.cref);
-      then exp;
-      else exp;
-    end match;
-  end removeSizeOneArraySubscriptsExp;
-
-  function removeSizeOneArraySubscriptsCref
-    input output ComponentRef cref;
-  algorithm
-    cref := match cref
-      case ComponentRef.CREF() algorithm
-        if Type.isArray(cref.ty) and Type.sizeOf(cref.ty) == 1 then
-          cref.subscripts := {};
-        end if;
-        cref.restCref := removeSizeOneArraySubscriptsCref(cref.restCref);
-      then cref;
-
-      else cref;
-    end match;
-  end removeSizeOneArraySubscriptsCref;
-
   annotation(__OpenModelica_Interface="backend");
 end NBBackendUtil;

@@ -32,8 +32,10 @@
 encapsulated uniontype NFVariable
   import Attributes = NFAttributes;
   import Binding = NFBinding;
+  import Class = NFClass;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
@@ -69,11 +71,13 @@ public
   end VARIABLE;
 
   function fromCref
+    "creates a variable from a component reference.
+    Note: does not flatten, do not use for instantiated elements!"
     input ComponentRef cref;
     output Variable variable;
   protected
     list<ComponentRef> crefs;
-    InstNode node;
+    InstNode node, child_node;
     Component comp;
     Type ty;
     Binding binding;
@@ -82,6 +86,8 @@ public
     Option<SCode.Comment> cmt;
     SourceInfo info;
     BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    list<Variable> children = {};
+    Option<Integer> complexSize;
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
@@ -90,6 +96,7 @@ public
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
+
     // kabdelhak: add dummy backend info, will be changed to actual value in
     // conversion to backend process (except for iterators). NBackendDAE.lower
     if ComponentRef.isIterator(cref) then
@@ -98,7 +105,17 @@ public
     else
       binding := Component.getImplicitBinding(comp);
     end if;
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, binfo);
+
+    // get the record children if the variable is a record
+    complexSize := Type.complexSize(ty);
+    if Util.isSome(complexSize) then
+      for i in Util.getOption(complexSize):-1:1 loop
+        child_node := Class.nthComponent(i, InstNode.getClass(node));
+        children := fromCref(ComponentRef.fromNode(child_node, InstNode.getType(child_node))) :: children;
+      end for;
+    end if;
+
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, children, cmt, info, binfo);
   end fromCref;
 
   function size
@@ -188,10 +205,23 @@ public
     "Expands a variable into itself and its children if its complex."
     input Variable var;
     output list<Variable> children;
+  protected
+    function expandChildType
+      "helper function to inherit the array type dimensions"
+      input output Variable child;
+      input list<Dimension> dimensions;
+    algorithm
+      child.ty := Type.liftArrayLeftList(child.ty, dimensions);
+    end expandChildType;
   algorithm
-    children := if (isComplex(var) or isComplexArray(var))
-      then var :: List.flatten(list(expandChildren(v) for v in var.children))
-      else {var};
+    // for non-complex variables the children are empty therefore it will be returned itself
+    var.children := List.flatten(list(expandChildren(v) for v in var.children));
+    if isComplexArray(var) then
+      // if the variable is an array, inherit the array dimensions
+      var.children := list(expandChildType(v, Type.arrayDims(var.ty)) for v in var.children);
+    end if;
+    // return all children and the variable itself
+    children := var :: var.children;
   end expandChildren;
 
   function typeOf

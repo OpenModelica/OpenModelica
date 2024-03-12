@@ -62,12 +62,12 @@ public
 function simplifyDump
   "wrapper function for simplification to allow dumping before and afterwards"
   input Expression exp;
-  input Boolean backend;
+  input Boolean includeScope;
   output Expression res;
   input String name = "";
   input String indent = "";
 algorithm
-  res := simplify(exp, backend);
+  res := simplify(exp, includeScope);
   if Flags.isSet(Flags.DUMP_SIMPLIFY) and not Expression.isEqual(exp, res) then
     print(indent + "### dumpSimplify | " + name + " ###\n");
     print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
@@ -77,20 +77,20 @@ end simplifyDump;
 
 function simplify
   input output Expression exp;
-  input Boolean backend = false;
+  input Boolean includeScope = false;
 algorithm
   exp := match exp
     case Expression.CREF()
       algorithm
         exp.cref := ComponentRef.simplifySubscripts(exp.cref);
-        exp.ty := ComponentRef.getSubscriptedType(exp.cref, backend);
+        exp.ty := ComponentRef.getSubscriptedType(exp.cref, includeScope);
       then
         exp;
 
     case Expression.ARRAY()
       guard not exp.literal
       algorithm
-        exp.elements := Array.map(exp.elements, function simplify(backend = false));
+        exp.elements := Array.map(exp.elements, function simplify(includeScope = false));
       then
         exp;
 
@@ -636,7 +636,7 @@ algorithm
   end for;
 
   outExp := Expression.foldReduction(simplify(exp), listReverseInPlace(iters),
-    default_exp, function simplify(backend = false), function simplifyBinaryOp(op = op));
+    default_exp, function simplify(includeScope = false), function simplifyBinaryOp(op = op));
 end simplifyReduction2;
 
 function simplifySize
@@ -891,9 +891,17 @@ algorithm
   elseif Expression.isZero(exp2) then
     // e + 0 = e
     outExp := exp1;
+  elseif Expression.isNegated(exp1) then
+    if Expression.isNegated(exp2) then
+      // (-e1) + (-e2) = -(e1 + e2)
+      outExp := Expression.negate(Expression.BINARY(Expression.negate(exp1), op, Expression.negate(exp2)));
+    else
+      // (-e1) + e2 = e2 - e1
+      outExp := simplifyBinarySub(exp2, Operator.invert(op), Expression.negate(exp1));
+    end if;
   elseif Expression.isNegated(exp2) then
-    // e1 + -(e2) = e1 - e2
-    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
+    // e1 + (-e2) = e1 - e2
+    outExp := simplifyBinarySub(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -907,13 +915,24 @@ function simplifyBinarySub
 algorithm
   if Expression.isZero(exp1) then
     // 0 - e = -e
-    outExp := Expression.UNARY(Operator.makeUMinus(Operator.typeOf(op)), exp2);
+    outExp := Expression.negate(exp2);
   elseif Expression.isZero(exp2) then
     // e - 0 = e
     outExp := exp1;
+  elseif Expression.isEqual(exp1, exp2) then
+    // e - e = 0
+    outExp := Expression.makeZero(Operator.typeOf(op));
+  elseif Expression.isNegated(exp1) then
+    if Expression.isNegated(exp2) then
+      // (-e1) - (-e2) = e2 - e1
+      outExp := Expression.BINARY(Expression.negate(exp2), op, Expression.negate(exp1));
+    else
+      // (-e1) - e2 = -(e1 + e2)
+      outExp := Expression.negate(simplifyBinaryAdd(Expression.negate(exp1), Operator.invert(op), exp2));
+    end if;
   elseif Expression.isNegated(exp2) then
-    // e1 - -(e2) = e1 + e2
-    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
+    // e1 - (-e2) = e1 + e2
+    outExp := simplifyBinaryAdd(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -1311,7 +1330,7 @@ algorithm
         tmp := getConstantValue(exp);
         result := result * tmp;
       end for;
-      // devide all inverse constants
+      // divide all inverse constants
       for exp in inv_const loop
         tmp := getConstantValue(exp);
         result := result / tmp;
@@ -1362,7 +1381,7 @@ algorithm
     local
       Expression new_exp;
       list<Expression> args, inv_args;
-      Operator inv_op;
+      Operator inv_op, fixed_op;
 
     case Expression.MULTARY() algorithm
       if listLength(exp.arguments) > 0 then
@@ -1377,7 +1396,7 @@ algorithm
           args      := exp.arguments;
           new_exp   := Expression.negate(new_exp);
         else
-          // create an artificial 1 to devide by the inverse arguments
+          // create an artificial 1 to divide by the inverse arguments
           new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
           args      := exp.arguments;
           inv_args  := exp.inv_arguments;
@@ -1396,11 +1415,13 @@ algorithm
       inv_op := Operator.invert(exp.operator);
       // chain all arguments
       for arg in args loop
-        new_exp := Expression.BINARY(new_exp, exp.operator, arg);
+        fixed_op := Operator.repairBinary(exp.operator, Expression.typeOf(new_exp), Expression.typeOf(arg));
+        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
       end for;
       // chain all inverse arguments
       for arg in inv_args loop
-        new_exp := Expression.BINARY(new_exp, inv_op, arg);
+        fixed_op := Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(arg));
+        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
       end for;
     then new_exp;
 

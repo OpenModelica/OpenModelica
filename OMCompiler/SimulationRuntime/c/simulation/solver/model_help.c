@@ -1008,7 +1008,11 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   for(i=0; i<SIZERINGBUFFER; i++)
   {
     /* set time value */
-    tmpSimData.timeValue = 0;
+    /*
+    * fix issue #11855, always take the startTime provided in modeldescription.xml
+    * to handle models that have startTime > 0 (e.g) startTime = 0.2
+    */
+    tmpSimData.timeValue = data->simulationInfo->startTime;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*) calloc(data->modelData->nVariablesReal, sizeof(modelica_real));
     assertStreamPrint(threadData, 0 == data->modelData->nVariablesReal || 0 != tmpSimData.realVars, "out of memory");
@@ -1218,6 +1222,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nDelayExpressions; i++)
   {
     // TODO: Calculate how big ringbuffer should be for each delay expression
+    // can be estimated by lower bound delayMax/stepSize
     data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
   }
 #endif

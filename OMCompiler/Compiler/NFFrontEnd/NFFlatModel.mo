@@ -68,7 +68,7 @@ protected
 
 public
   record FLAT_MODEL
-    String name;
+    Absyn.Path name;
     list<Variable> variables;
     list<Equation> equations;
     list<Equation> initialEquations;
@@ -116,6 +116,16 @@ public
     flatModel.initialAlgorithms := list(fn(alg) for alg in flatModel.initialAlgorithms);
   end mapAlgorithms;
 
+  function fullName
+    input FlatModel flatModel;
+    output String name = AbsynUtil.pathString(flatModel.name);
+  end fullName;
+
+  function className
+    input FlatModel flatModel;
+    output String name = AbsynUtil.pathLastIdent(flatModel.name);
+  end className;
+
   function toString
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
@@ -145,8 +155,10 @@ public
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
+  protected
+    String name = className(flatModel);
   algorithm
-    s := IOStream.append(s, "class " + flatModel.name + "\n");
+    s := IOStream.append(s, "class " + name + "\n");
 
     for v in flatModel.variables loop
       s := Variable.toStream(v, "  ", printBindingTypes, s);
@@ -177,7 +189,7 @@ public
       end if;
     end for;
 
-    s := IOStream.append(s, "end " + flatModel.name + ";\n");
+    s := IOStream.append(s, "end " + name + ";\n");
   end appendStream;
 
   function toFlatString
@@ -207,7 +219,7 @@ public
     input Boolean printBindingTypes = false;
     output IOStream.IOStream s;
   algorithm
-    s := IOStream.create(flatModel.name, IOStream.IOStreamType.LIST());
+    s := IOStream.create(className(flatModel), IOStream.IOStreamType.LIST());
     s := appendFlatStream(flatModel, functions, printBindingTypes, s);
   end toFlatStream;
 
@@ -219,63 +231,59 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
-    Visibility visibility = Visibility.PUBLIC;
+    String name = className(flatModel);
   algorithm
-    s := IOStream.append(s, "model '" + flat_model.name + "'");
-    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
-    s := IOStream.append(s, "\n");
-
+    s := IOStream.append(s, "package '" + name + "'\n");
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
-        s := Function.toFlatStream(fn, s);
+        s := Function.toFlatStream(fn, "  ", s);
         s := IOStream.append(s, ";\n\n");
       end if;
     end for;
 
     for ty in collectFlatTypes(flat_model, functions) loop
-      s := Type.toFlatDeclarationStream(ty, s);
+      s := Type.toFlatDeclarationStream(ty, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
 
-    for v in flat_model.variables loop
-      if visibility <> Variable.visibility(v) then
-        visibility := Variable.visibility(v);
-        s := IOStream.append(s, Prefixes.visibilityString(visibility));
-        s := IOStream.append(s, "\n");
-      end if;
+    s := IOStream.append(s, "  model '" + name + "'");
+    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
+    s := IOStream.append(s, "\n");
 
-      s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
+    for v in flat_model.variables loop
+      s := Variable.toFlatStream(v, "    ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 
     if not listEmpty(flat_model.initialEquations) then
-      s := IOStream.append(s, "initial equation\n");
-      s := Equation.toFlatStreamList(flat_model.initialEquations, "  ", s);
+      s := IOStream.append(s, "  initial equation\n");
+      s := Equation.toFlatStreamList(flat_model.initialEquations, "    ", s);
     end if;
 
     if not listEmpty(flat_model.equations) then
-      s := IOStream.append(s, "equation\n");
-      s := Equation.toFlatStreamList(flat_model.equations, "  ", s);
+      s := IOStream.append(s, "  equation\n");
+      s := Equation.toFlatStreamList(flat_model.equations, "    ", s);
     end if;
 
     for alg in flat_model.initialAlgorithms loop
       if not listEmpty(alg.statements) then
-        s := IOStream.append(s, "initial algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+        s := IOStream.append(s, "  initial algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "    ", s);
       end if;
     end for;
 
     for alg in flat_model.algorithms loop
       if not listEmpty(alg.statements) then
-        s := IOStream.append(s, "algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+        s := IOStream.append(s, "  algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "    ", s);
       end if;
     end for;
 
-    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "  ", ";\n", s);
-    s := IOStream.append(s, "end '" + flat_model.name + "';\n");
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "    ", ";\n", s);
+    s := IOStream.append(s, "  end '" + name + "';\n");
+    s := IOStream.append(s, "end '" + name + "';\n");
   end appendFlatStream;
 
   function collectFlatTypes
@@ -745,17 +753,29 @@ public
   function obfuscateCref
     input output ComponentRef cref;
     input ObfuscationMap obfuscationMap;
+    output Boolean insideRecord = false;
   protected
     Option<String> name;
+    ComponentRef rest_cref;
   algorithm
     () := match cref
       case ComponentRef.CREF()
         algorithm
-          name := UnorderedMap.get(cref.node, obfuscationMap);
+          (rest_cref, insideRecord) := obfuscateCref(cref.restCref, obfuscationMap);
+          cref.restCref := rest_cref;
 
-          if isSome(name) then
-            cref.node := InstNode.rename(Util.getOption(name), cref.node);
+          // Only obfuscate variables that do not belong to a record instance,
+          // record field names need to be kept to keep them consistent with the
+          // record constructors.
+          if not insideRecord then
+            name := UnorderedMap.get(cref.node, obfuscationMap);
+
+            if isSome(name) then
+              cref.node := InstNode.rename(Util.getOption(name), cref.node);
+            end if;
           end if;
+
+          insideRecord := InstNode.isRecord(cref.node);
 
           cref.subscripts := list(Subscript.mapShallowExp(s,
             function obfuscateExp(obfuscationMap = obfuscationMap)) for s in cref.subscripts);

@@ -105,9 +105,9 @@ const char * const Helper::fmuPlatformNamePropertyId = "fmu-platform-name";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
 #ifdef Q_OS_MAC
-QString Helper::toolsOptionsPath = "OMEdit->Preferences";
+QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
 #else
-QString Helper::toolsOptionsPath = "Tools->Options";
+QString Helper::toolsOptionsPath = tr("Tools->Options");
 #endif
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
 /* Meta Modelica Types */
@@ -354,6 +354,7 @@ QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
 QString Helper::attachToRunningProcessTip;
 QString Helper::reportIssue;
+QString Helper::crashTest;
 QString Helper::parsingFailedJson;
 QString Helper::expandAll;
 QString Helper::collapseAll;
@@ -662,6 +663,7 @@ void Helper::initHelperVariables()
   Helper::attachToRunningProcess = tr("Attach to Running Process");
   Helper::attachToRunningProcessTip = tr("Attach the debugger to running process");
   Helper::reportIssue = tr("Report Issue");
+  Helper::crashTest = tr("Crash Test");
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");

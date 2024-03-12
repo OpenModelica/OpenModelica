@@ -855,7 +855,7 @@ Output
 -  *Variable Filter (Optional)* - only output variables with names fully matching the
    regular expression.
 
--  *Protected Variables* - adds the protected variables in result file.
+-  *Protected Variables if not encrypted* - adds the protected variables in result file.
 
 -  *Equidistant Time Grid -* output the internal steps given by dassl instead of
    interpolating results into an equidistant time grid as given by stepSize or
@@ -1446,7 +1446,7 @@ General Options
 
   -  *Show Protected Classes* - If enabled then Libraries Browser will also list the protected classes.
 
-  -  *Show Hidden Classes* - If enabled then Libraries Browser will also list the hidden classes.
+  -  *Show Hidden Classes if not encrypted* - If enabled then Libraries Browser will also list the hidden classes.
      Ignores the annotation(Protection(access = Access.hide))
 
   -  *Synchronize with Model Widget* - If enabled then Libraries Browser will scroll automatically
@@ -1737,7 +1737,7 @@ Messages Options
 
 -  General
 
-  -  *Output Size* - Specifies the maximum number of rows the Messages
+  -  *Output Size* - Specifies the maximum number of rows the Message
      Browser may have. If there are more rows then the rows are removed
      from the beginning.
 
@@ -1745,7 +1745,10 @@ Messages Options
      counter before starting the simulation.
 
   -  *Clear messages browser before checking, instantiation & simulation* - If enabled then the
-     messages browser is cleared before checking, instantiation & simulation of model.
+     message browser is cleared before checking, instantiation & simulation of model.
+
+  -  *Do not automatically enlarge message browser when a new message is available* - If enabled then the
+     message browser will not be enlarged instead the tabbar shown will start blinking indicating that a new message is available.
 
 -  Font and Colors
 

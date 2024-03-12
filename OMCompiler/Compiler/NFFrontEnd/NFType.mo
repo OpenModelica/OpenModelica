@@ -350,6 +350,18 @@ public
     outType := CONDITIONAL_ARRAY(trueType, falseType, matched_branch);
   end setConditionalArrayTypes;
 
+  function removeSizeOneArrays
+    "only to be used for backend. removes size one arrays from type"
+    input output Type ty;
+  algorithm
+    ty := match ty
+      case ARRAY() algorithm
+        ty.dimensions := list(dim for dim guard(not Dimension.isOne(dim)) in ty.dimensions);
+      then if listEmpty(ty.dimensions) then ty.elementType else ty;
+      else ty;
+    end match;
+  end removeSizeOneArrays;
+
   function isMatchedBranch
     input Boolean condition;
     input Type condType;
@@ -966,6 +978,7 @@ public
 
   function toFlatDeclarationStream
     input Type ty;
+    input String indent;
     input output IOStream.IOStream s;
   algorithm
     s := match ty
@@ -979,6 +992,7 @@ public
 
       case ENUMERATION()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "type ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath)));
           s := IOStream.append(s, " = enumeration(");
@@ -997,36 +1011,40 @@ public
           s;
 
       case COMPLEX(complexTy = ComplexType.RECORD())
-        then InstNode.toFlatStream(ty.cls, s);
+        then Record.toFlatDeclarationStream(ty.cls, indent, s);
 
       case COMPLEX(complexTy = complexTy as ComplexType.EXTERNAL_OBJECT())
         algorithm
           path := InstNode.scopePath(ty.cls);
           name := Util.makeQuotedIdentifier(AbsynUtil.pathString(path));
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "class ");
           s := IOStream.append(s, name);
           s := IOStream.append(s, "\n  extends ExternalObject;\n\n");
           {f} := Function.typeNodeCache(complexTy.constructor);
-          s := Function.toFlatStream(f, s, overrideName="constructor");
+          s := Function.toFlatStream(f, indent + "  ", s, overrideName="constructor");
           s := IOStream.append(s, ";\n\n");
           {f} := Function.typeNodeCache(complexTy.destructor);
-          s := Function.toFlatStream(f, s, overrideName="destructor");
+          s := Function.toFlatStream(f, indent + "  ", s, overrideName="destructor");
           s := IOStream.append(s, ";\n\nend ");
           s := IOStream.append(s, name);
         then s;
 
       case SUBSCRIPTED()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "function ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
           s := IOStream.append(s, "\n");
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "  input ");
           s := IOStream.append(s, toString(ty.ty));
           s := IOStream.append(s, " exp;\n");
 
           index := 1;
           for sub in ty.subs loop
+            s := IOStream.append(s, indent);
             s := IOStream.append(s, "  input ");
             s := IOStream.append(s, toString(sub));
             s := IOStream.append(s, " s");
@@ -1035,6 +1053,7 @@ public
             index := index + 1;
           end for;
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "  output ");
           s := IOStream.append(s, toString(ty.subscriptedTy));
           s := IOStream.append(s, " result = exp[");
@@ -1042,6 +1061,7 @@ public
             stringDelimitList(list("s" + String(i) for i in 1:listLength(ty.subs)), ","));
           s := IOStream.append(s, "];\n");
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "end ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
         then
@@ -1391,6 +1411,7 @@ public
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions);
       case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
+      case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
       case COMPLEX()
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
       else 0;

@@ -1630,33 +1630,26 @@ algorithm
   end match;
 end isProtected;
 
-public function hasVarEvaluateAnnotationOrFinal
+public function hasVarEvaluateAnnotationTrueOrFinal
   input BackendDAE.Var inVar;
   output Boolean select;
 algorithm
-  select := isFinalVar(inVar) or hasVarEvaluateAnnotation(inVar);
-end hasVarEvaluateAnnotationOrFinal;
+  select := isFinalVar(inVar) or hasVarEvaluateAnnotationTrue(inVar);
+end hasVarEvaluateAnnotationTrueOrFinal;
 
-public function hasVarEvaluateAnnotationOrProtected
+public function hasVarEvaluateAnnotationTrueOrProtected
   input BackendDAE.Var inVar;
   output Boolean select;
 algorithm
-  select := isProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
-end hasVarEvaluateAnnotationOrProtected;
+  select := isProtectedVar(inVar) or hasVarEvaluateAnnotationTrue(inVar);
+end hasVarEvaluateAnnotationTrueOrProtected;
 
-public function hasVarEvaluateAnnotationOrFinalOrProtected
-  input BackendDAE.Var inVar;
-  output Boolean select;
-algorithm
-  select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
-end hasVarEvaluateAnnotationOrFinalOrProtected;
-
-public function hasVarEvaluateTrueAnnotationOrFinalOrProtected
+public function hasVarEvaluateAnnotationTrueOrFinalOrProtected
   input BackendDAE.Var inVar;
   output Boolean select;
 algorithm
   select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotationTrue(inVar);
-end hasVarEvaluateTrueAnnotationOrFinalOrProtected;
+end hasVarEvaluateAnnotationTrueOrFinalOrProtected;
 
 public function hasVarEvaluateAnnotation
   input BackendDAE.Var inVar;

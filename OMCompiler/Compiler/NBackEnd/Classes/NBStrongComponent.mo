@@ -297,10 +297,10 @@ public
     output Boolean b;
   algorithm
     b := match(comp1, comp2)
-      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
-      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.equalName(comp1.eqn, comp2.eqn);
-      case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
-      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
+      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
+      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
       case (ENTWINED_COMPONENT(), ENTWINED_COMPONENT()) then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
       case (ALGEBRAIC_LOOP(), ALGEBRAIC_LOOP())         then Tearing.isEqual(comp1.strict, comp2.strict);
       case (ALIAS(), ALIAS())                           then AliasInfo.isEqual(comp1.aliasInfo, comp2.aliasInfo);
@@ -548,7 +548,9 @@ public
         else
           cref := comp.var_cref;
         end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices, false);
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
@@ -557,7 +559,7 @@ public
 
       // sliced array equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
-        eqn as Equation.FOR_EQUATION(iter = iter) := Pointer.access(Slice.getT(comp.eqn));
+        eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(comp.var_cref, dependencies, comp.eqn.indices);
         for tpl in scalarized_dependencies loop
@@ -583,7 +585,9 @@ public
         else
           cref := comp.var_cref;
         end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices, false);
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
@@ -607,7 +611,9 @@ public
             // we do not really care for order and assume full dependency anyway
             eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(eqn_ptr);
             cref := Equation.getEqnName(eqn_ptr);
-            scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, tmp, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, slice.indices, true);
+            scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+              cref, tmp, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+              iter, Equation.size(eqn_ptr), slice.indices, true);
             tmp := List.flatten(list(Util.tuple22(tpl) for tpl in scalarized_dependencies));
           end if;
           dependencies := listAppend(tmp, dependencies);
@@ -711,6 +717,16 @@ public
     end match;
   end isDiscrete;
 
+  function isAlias
+    input StrongComponent comp;
+    output Boolean b;
+  algorithm
+    b := match comp
+      case ALIAS() then true;
+      else false;
+    end match;
+  end isAlias;
+
   function createPseudoScalar
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
@@ -765,7 +781,10 @@ public
       case _ algorithm
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
-          case ({var_slice}, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+          case ({var_slice}, {eqn_slice}) guard(
+            not Equation.isForEquation(Slice.getT(eqn_slice))
+            and not Equation.isAlgorithm(Slice.getT(eqn_slice)))
+            algorithm
             if Slice.isFull(var_slice) then
               comp := SINGLE_COMPONENT(
                 var       = Slice.getT(var_slice),
@@ -872,20 +891,27 @@ protected
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
     input JacobianType jacType                                "gives context";
   protected
-    list<ComponentRef> tmp_dependencies, fixed_dependencies = {};
+    list<ComponentRef> fixed_dependencies;
+    UnorderedSet<ComponentRef> set;
   algorithm
     try
       // replace non derivative dependencies with their previous dependencies (also remove self dependency)
       // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
       if jacType == NBJacobian.JacobianType.ODE then
+        set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for dep in listReverse(dependencies) loop
+          // if the dependency is a state add itself, otherwise add the dependencies already saved
+          // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
           if BVariable.checkCref(dep, BVariable.isState) then
-            fixed_dependencies := dep :: fixed_dependencies;
+            UnorderedSet.add(dep, set);
           else
-            tmp_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in UnorderedMap.getSafe(dep, map, sourceInfo()));
-            fixed_dependencies := listAppend(tmp_dependencies, fixed_dependencies);
+            for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop
+              UnorderedSet.add(tmp, set);
+            end for;
+            UnorderedSet.remove(cref, set);
           end if;
         end for;
+        fixed_dependencies := UnorderedSet.toList(set);
       else
         // only remove self dependency
         fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in dependencies);

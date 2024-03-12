@@ -51,7 +51,6 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers};
-  import Initialization = NBInitialization;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import BVariable = NBVariable;
@@ -90,9 +89,6 @@ public
 
       case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(initials = equations)))
         algorithm
-          // ToDo: check if when equation is active during initialization
-          equations := EquationPointers.map(equations, Initialization.removeWhenEquation);
-          equations := EquationPointers.compress(equations);
           bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in partitioningNone(systemType, variables, equations));
         then bdae;
 
@@ -385,6 +381,9 @@ protected
     end for;
 
     systems := list(Cluster.toSystem(cl, variables, equations, systemType, index) for cl in UnorderedMap.valueList(cluster_map));
+    if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(systems, function System.System.toString(level = 0), "", "", "\n", "\n"));
+    end if;
   end partitioningClocked;
 
   function collectPartitioningCrefs

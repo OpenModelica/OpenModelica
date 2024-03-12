@@ -2,7 +2,7 @@
 REM Arguments
 REM 1 fileprefix
 REM 2 target (gcc|msvc)
-REM 3 platform (mingw64|mingw32)
+REM 3 platform (ucrt64|mingw64)
 REM 4 serial/parallel
 REM 5 linkType (dynamic|static)
 REM 6 number of processors
@@ -20,7 +20,7 @@ set OLD_PATH=%PATH%
 call :CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME "%OPENMODELICAHOME%"
 set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
-REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
+REM If OMDEV is set, use msys2-ucrt64 from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
 REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1

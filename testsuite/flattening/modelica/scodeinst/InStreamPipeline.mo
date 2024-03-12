@@ -75,11 +75,11 @@ end InStreamPipeline;
 //   Real c.s.s;
 // equation
 //   a1.s1.e = a1.s2.e;
-//   (-a1.s1.f) - a1.s2.f = 0.0;
+//   -(a1.s1.f + a1.s2.f) = 0.0;
 //   a1.s1.s = a2.s1.s;
 //   a1.s2.s = b.s.s;
 //   a2.s1.e = a2.s2.e;
-//   (-a2.s1.f) - a2.s2.f = 0.0;
+//   -(a2.s1.f + a2.s2.f) = 0.0;
 //   a2.s1.s = c.s.s;
 //   a2.s2.s = a1.s2.s;
 //   b.s.e = a1.s1.e;

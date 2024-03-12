@@ -168,8 +168,8 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
   mRotateAngleDiagram = transformation.getRotation();
   mRotateAngleDiagram.evaluate(placementAnnotation.getParentModel());
   // map values from element coordinate system to DiagramMap extent
-  if (pExtend && pExtend->getAnnotation()->getDiagramMap().hasExtent()) {
-    ExtentAnnotation extendsCoOrdinateExtents = pExtend->getAnnotation()->getDiagramMap().getExtent();
+  if (pExtend && pExtend->getIconDiagramMapHasExtent(false)) {
+    ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(false);
     if (elementCoordinateSystemExtent.size() > 1 && extendsCoOrdinateExtents.size() > 1) {
       const qreal x1 = elementCoordinateSystemExtent.at(0).x();
       const qreal y1 = elementCoordinateSystemExtent.at(0).y();
@@ -185,7 +185,6 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
       origin.setX(Utilities::mapToCoOrdinateSystem(mOriginDiagram.x(), x1, x2, x3, x4));
       origin.setY(Utilities::mapToCoOrdinateSystem(mOriginDiagram.y(), y1, y2, y3, y4));
       mOriginDiagram = origin;
-
 
       QVector<QPointF> extent;
       QPointF point;
@@ -212,8 +211,8 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
   mRotateAngleIcon = iconTransformation.getRotation();
   mRotateAngleIcon.evaluate(placementAnnotation.getParentModel());
   // map values from element coordinate system to IconMap extent.
-  if (pExtend && pExtend->getAnnotation()->getIconMap().hasExtent()) {
-    ExtentAnnotation extendsCoOrdinateExtents = pExtend->getAnnotation()->getIconMap().getExtent();
+  if (pExtend && pExtend->getIconDiagramMapHasExtent(true)) {
+    ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(true);
     if (elementCoordinateSystemExtent.size() > 1 && extendsCoOrdinateExtents.size() > 1) {
       const qreal x1 = elementCoordinateSystemExtent.at(0).x();
       const qreal y1 = elementCoordinateSystemExtent.at(0).y();

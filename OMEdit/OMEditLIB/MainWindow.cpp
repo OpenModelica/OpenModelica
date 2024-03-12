@@ -411,6 +411,20 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   }
   OptionsDialog::instance()->saveSimulationSettings();
   OptionsDialog::instance()->saveNFAPISettings();
+  // create tabs from MessagesWidget
+  QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
+  MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
+  for (int i = 0; i < pMessagesTabWidget->count(); ++i) {
+    createMessageTab(pMessagesTabWidget->tabText(i), true);
+    QWidget *pTabButtonWidget = mpMessagesTabWidget->tabBar()->tabButton(i, closeSide);
+    if (pTabButtonWidget) {
+      pTabButtonWidget->deleteLater();
+    }
+    mpMessagesTabWidget->tabBar()->setTabButton(i, closeSide, 0);
+  }
+  // since createMessageTab() changes the index so switch it back to 0.
+  mpMessagesTabWidget->setCurrentIndex(0);
+  mpMessagesTabWidget->setVisible(!mpMessagesDockWidget->isVisible());
   // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
@@ -426,7 +440,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
     pSettings->endGroup();
     if (restoreMessagesWidget) {
-      showMessageBrowser();
+      if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
+        showMessageBrowser();
+      } else {
+        markMessagesTabWidgetChangedForNewMessage(StringHandler::NoOMError);
+      }
     }
   }
   switchToWelcomePerspective();
@@ -447,20 +465,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start();
   }
-  // create tabs from MessagesWidget
-  QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
-  MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
-  for (int i = 0; i < pMessagesTabWidget->count(); ++i) {
-    createMessageTab(pMessagesTabWidget->tabText(i), true);
-    QWidget *pTabButtonWidget = mpMessagesTabWidget->tabBar()->tabButton(i, closeSide);
-    if (pTabButtonWidget) {
-      pTabButtonWidget->deleteLater();
-    }
-    mpMessagesTabWidget->tabBar()->setTabButton(i, closeSide, 0);
-  }
-  // since createMessageTab() changes the index so switch it back to 0.
-  mpMessagesTabWidget->setCurrentIndex(0);
-  mpMessagesTabWidget->setVisible(!mpMessagesDockWidget->isVisible());
 }
 
 /*!
@@ -1812,6 +1816,39 @@ void MainWindow::writeNewApiProfiling(const QString &str)
   if (mpNewApiProfilingFile) {
     fputs(QString("%1\n").arg(str).toUtf8().constData(), mpNewApiProfilingFile);
     fflush(mpNewApiProfilingFile);
+  }
+}
+
+/*!
+ * \brief MainWindow::markMessagesTabWidgetChangedForNewMessage
+ * Start the animation of MessageTab.
+ * \param errorType
+ */
+void MainWindow::markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenModelicaErrors errorType)
+{
+  MessageTab *pMessageTab = 0;
+  switch (errorType) {
+    case StringHandler::Notification:
+      pMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(1));
+      break;
+    case StringHandler::Warning:
+      pMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(2));
+      break;
+    case StringHandler::Internal:
+    case StringHandler::OMError:
+      pMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(3));
+      break;
+    default:
+      break;
+  }
+
+  if (pMessageTab) {
+    pMessageTab->markTabChanged();
+  }
+
+  MessageTab *pAllMessageTab = qobject_cast<MessageTab*>(mpMessagesTabWidget->widget(0));
+  if (pAllMessageTab) {
+    pAllMessageTab->markTabChanged();
   }
 }
 
@@ -3614,6 +3651,7 @@ void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
 void MainWindow::messagesTabBarClicked(int index)
 {
   showMessageBrowser();
+  emit resetMessagesTabWidgetNames();
   MessagesWidget::instance()->getMessagesTabWidget()->setCurrentIndex(index);
 }
 
@@ -3629,6 +3667,7 @@ void MainWindow::messagesDockWidgetVisibilityChanged(bool visible)
     mpMessagesTabWidget->setVisible(!visible);
     if (!visible) {
       mpMessagesTabWidget->setCurrentIndex(MessagesWidget::instance()->getMessagesTabWidget()->currentIndex());
+      emit resetMessagesTabWidgetNames();
     }
   }
 }
@@ -4741,9 +4780,8 @@ void MainWindow::switchToPlottingPerspective()
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow(true);
   }
-  QMdiSubWindow *pDiagramSubWindow = mpPlotWindowContainer->getDiagramSubWindowFromMdi();
-  if (pModelWidget && pDiagramSubWindow) {
-    mpPlotWindowContainer->getDiagramWindow()->showVisualizationDiagram(pModelWidget);
+  if (pModelWidget) {
+    mpPlotWindowContainer->showDiagramWindow(pModelWidget);
   }
   mpVariablesDockWidget->show();
   // show/hide toolbars
@@ -5116,11 +5154,12 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
  */
 MessageTab *MainWindow::createMessageTab(const QString &name, bool fixedTab)
 {
-  MessageTab *pMessageTab = new MessageTab(fixedTab);
+  MessageTab *pMessageTab = new MessageTab(name, fixedTab);
   int index = mpMessagesTabWidget->addTab(pMessageTab, name);
   pMessageTab->setIndex(index);
   mpMessagesTabWidget->setCurrentIndex(index);
   connect(pMessageTab, SIGNAL(clicked(int)), mpMessagesTabWidget, SIGNAL(tabBarClicked(int)));
+  connect(this, SIGNAL(resetMessagesTabWidgetNames()), pMessageTab, SLOT(resetTabText()));
   return pMessageTab;
 }
 
@@ -5222,6 +5261,11 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   pOMContributorsScrollArea->setFrameShape(QFrame::NoFrame);
   pOMContributorsScrollArea->setWidgetResizable(true);
   pOMContributorsScrollArea->setWidget(mpOMContributorsLabel);
+  // crash test button
+  QPushButton *pCrashTestButton = new QPushButton(Helper::crashTest);
+  pCrashTestButton->setAutoDefault(false);
+  pCrashTestButton->setToolTip("Tests if the crash report functionality works properly");
+  connect(pCrashTestButton, SIGNAL(clicked()), SLOT(crashTest()));
   // report button
   QPushButton *pReportButton = new QPushButton(Helper::reportIssue);
   pReportButton->setAutoDefault(false);
@@ -5232,6 +5276,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
   // create buttons box
   QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  pButtonBox->addButton(pCrashTestButton, QDialogButtonBox::ActionRole);
   pButtonBox->addButton(pReportButton, QDialogButtonBox::ActionRole);
   pButtonBox->addButton(pCloseButton, QDialogButtonBox::ActionRole);
   // logo label
@@ -5294,6 +5339,21 @@ void AboutOMEditDialog::showReportIssue()
 }
 
 /*!
+ * \brief AboutOMEditDialog::crashTest
+ * Attempts to crash OMEdit to test the crash test reporting feature.
+ */
+void AboutOMEditDialog::crashTest()
+{
+  struct crash {
+    int a;
+    void *b;
+  };
+  struct crash *x = NULL;
+  fprintf(stderr, "%d %p\n", x->a, x->b);
+}
+
+
+/*!
  * \class MessageTab
  * \brief Creates a tab that mimicks the tab of Message Browser.
  */
@@ -5301,9 +5361,10 @@ void AboutOMEditDialog::showReportIssue()
  * \brief MessageTab::MessageTab
  * \param fixedTab
  */
-MessageTab::MessageTab(bool fixedTab)
+MessageTab::MessageTab(const QString &name, bool fixedTab)
  : QWidget()
 {
+  mName = name;
   mpProgressLabel = new Label;
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpProgressLabel->installEventFilter(this);
@@ -5314,13 +5375,22 @@ MessageTab::MessageTab(bool fixedTab)
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   mpProgressBar->installEventFilter(this);
   // layout
-  QGridLayout *pMainLayout = new QGridLayout;
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
-  pMainLayout->addWidget(mpProgressLabel, 0, 0);
+  pMainLayout->addWidget(mpProgressLabel);
   if (!fixedTab) {
-    pMainLayout->addWidget(mpProgressBar, 0, 1);
+    pMainLayout->addWidget(mpProgressBar);
   }
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MessageTab::markTabChanged
+ * Mark the tab changed by adding an asterisk to its name.
+ */
+void MessageTab::markTabChanged()
+{
+  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabText(mIndex, QString(mName).append("*"));
 }
 
 /*!
@@ -5343,6 +5413,15 @@ void MessageTab::updateProgress(QProgressBar *pProgressBar)
   mpProgressBar->setRange(pProgressBar->minimum(), pProgressBar->maximum());
   mpProgressBar->setValue(pProgressBar->value());
   mpProgressBar->setTextVisible(pProgressBar->isTextVisible());
+}
+
+/*!
+ * \brief MessageTab::resetTabText
+ * Resets the tab text to its original text.
+ */
+void MessageTab::resetTabText()
+{
+  MainWindow::instance()->getMessagesTabWidget()->tabBar()->setTabText(mIndex, mName);
 }
 
 /*!

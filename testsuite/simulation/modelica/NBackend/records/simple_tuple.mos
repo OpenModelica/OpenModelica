@@ -36,10 +36,10 @@ simulate(simple_tuple); getErrorString();
 // ""
 // Simulation Function Alias
 // ---------------------------
-//   sin(time) ......... $FUN_1
-//   cos(time) ......... $FUN_2
-//   some_func(a, b) ... ($FUN_3, $FUN_4)
-//   some_func(x, y) ... ($FUN_5, $FUN_6)
+//   $FUN_1 ............. sin(time)
+//   $FUN_2 ............. cos(time)
+//   ($FUN_3, $FUN_4) ... some_func(a, b)
+//   ($FUN_5, $FUN_6) ... some_func(x, y)
 //
 // Initial Function Alias
 // ------------------------

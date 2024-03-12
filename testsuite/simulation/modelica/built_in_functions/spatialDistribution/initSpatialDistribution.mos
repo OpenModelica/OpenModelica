@@ -1,0 +1,100 @@
+// name:                initSpatialDistribution.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f SingleBeltInitialize1* SingleBeltInitialize2*
+//
+// Modle with spatialDistribution with events in input.
+
+loadModel(Modelica); getErrorString();
+loadString("model SingleBeltInitialize1
+  \"Single conveyor belt with constant positive velocity
+  and pulse input from the left side.\"
+  extends Modelica.Icons.Example;
+  Real leftInput = 0;
+  Real rightInput = 0;
+  Real leftOutput;
+  Real rightOutput;
+  parameter Real[:] initialPoints(each min = 0, each max = 1) = {0.0 , 0.1 , 0.1, 0.234567, 0.234567, 0.443, 0.443, 1.0, 1.0};
+  parameter Real[:] initialValues =                             {-1.0, -1.0, 1.0, 1.0     , -1.0    , -1.0 , 1.0  , 1.0, 5};
+  Real v = 10;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  v = der(x);
+  posV = v >= 0;
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+end SingleBeltInitialize1;"); getErrorString();
+
+loadString("model SingleBeltInitialize2
+  \"Single conveyor belt with constant negative velocity
+  and pulse input from the right side.\"
+  extends Modelica.Icons.Example;
+  Real leftInput = 0;
+  Real rightInput = 0;
+  Real leftOutput;
+  Real rightOutput;
+  parameter Real[:] initialPoints(each min = 0, each max = 1) = {0.0 , 0.1 , 0.1, 0.234567, 0.234567, 0.443, 0.443, 1.0};
+  parameter Real[:] initialValues =                             {-1.0, -1.0, 1.0, 1.0     , -1.0    , -1.0 , 1.0  , 1.0};
+  Real v = -10;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  v = der(x);
+  posV = v >= 0;
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+end SingleBeltInitialize2;"); getErrorString();
+
+// Simulate
+simulate(SingleBeltInitialize1, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErrorString();
+
+simulate(SingleBeltInitialize2, stopTime=0.1, simflags="-lv=LOG_EVENTS"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SingleBeltInitialize1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SingleBeltInitialize1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = spatialDistributionZeroCrossing(0, 0, x, true)
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0)  1 = spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=3.33076252011e-17
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_EVENTS        | info    | state event at time=0.0557
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_EVENTS        | info    | state event at time=0.0765433
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_EVENTS        | info    | state event at time=0.09
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "SingleBeltInitialize2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SingleBeltInitialize2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = spatialDistributionZeroCrossing(0, 0, x, false)
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0)  1 = spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=0.01
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// LOG_EVENTS        | info    | state event at time=0.0234567
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// LOG_EVENTS        | info    | state event at time=0.0443
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// LOG_EVENTS        | info    | state event at time=0.1
+// |                 | |       | | [1] spatialDistributionZeroCrossing(0, 0, x, false) > 0.0
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

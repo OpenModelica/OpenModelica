@@ -82,11 +82,8 @@ void ModelInstanceTest::classConnections()
 
 void ModelInstanceTest::cleanupTestCase()
 {
-  qDebug() << "cleanupTestCase 1";
   if (mpModelInstance) {
     delete mpModelInstance;
   }
-  qDebug() << "cleanupTestCase 2";
   MainWindow::instance()->close();
-  qDebug() << "cleanupTestCase 3";
 }

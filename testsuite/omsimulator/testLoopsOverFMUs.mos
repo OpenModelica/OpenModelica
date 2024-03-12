@@ -55,10 +55,10 @@ package loopsOverFMUs
 end loopsOverFMUs;
 "); getErrorString();
 
-buildModelFMU(loopsOverFMUs.A, fmuType="me");
-buildModelFMU(loopsOverFMUs.B, fmuType="me");
-buildModelFMU(loopsOverFMUs.C, fmuType="me");
-buildModelFMU(loopsOverFMUs.D, fmuType="me");
+buildModelFMU(loopsOverFMUs.A, fmuType="me", fileNamePrefix="loopsOverFMUs.A");
+buildModelFMU(loopsOverFMUs.B, fmuType="me", fileNamePrefix="loopsOverFMUs.B");
+buildModelFMU(loopsOverFMUs.C, fmuType="me", fileNamePrefix="loopsOverFMUs.C");
+buildModelFMU(loopsOverFMUs.D, fmuType="me", fileNamePrefix="loopsOverFMUs.D");
 
 
 writeFile("loopsOverFMUs.lua","

@@ -563,6 +563,7 @@ typedef struct MODEL_DATA
   char* resultFileName;                /* default is <modelFilePrefix>_res.mat, but it can be overriden using -r=<resultFilename> */
   const char* modelDir;
   const char* modelGUID;
+  modelica_boolean encrypted;
   const char* initXMLData;
   char* resourcesDir;                   /* Resources directory, only set for FMUs */
   modelica_boolean runTestsuite;       /* true if this model was generated during testing */
@@ -697,7 +698,7 @@ typedef struct SIMULATION_INFO
   modelica_real stopTime;              /* Stop time of the simulation */
   int useStopTime;
   modelica_integer numSteps;
-  modelica_real stepSize;
+  modelica_real stepSize;              /* FIXME what is this? The integrator's current step size */
   modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;

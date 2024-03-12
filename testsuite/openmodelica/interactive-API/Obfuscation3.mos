@@ -38,6 +38,7 @@ loadString("
   model M
     P1.A a1;
     P2.A a2;
+  protected
     P2.B b1;
     P2.C c1;
   end M;
@@ -51,12 +52,12 @@ instantiateModel(M); getErrorString();
 // "class M
 //   Real a1.x;
 //   Real a2.x \"x2\";
-//   Real b1.y \"y\";
-//   protected Real b1.n1;
-//   Real c1.y \"y\";
-//   protected Real c1.n2;
-//   Real c1.w \"w\";
-//   protected Real c1.n3 \"u\";
+//   protected Real n1.n2;
+//   protected Real n1.n3;
+//   protected Real n4.n5;
+//   protected Real n4.n6;
+//   protected Real n4.n7 \"w\";
+//   protected Real n4.n8 \"u\";
 // end M;
 // "
 // ""

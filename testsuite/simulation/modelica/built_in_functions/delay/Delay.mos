@@ -1,0 +1,51 @@
+// name:     Delay
+// keywords: builtin delay
+// status: correct
+// teardown_command: rm -rf Delay_* Delay Delay.exe Delay.cpp Delay.makefile Delay.libs Delay.log output.log
+// cflags: -d=-newInst
+//
+// Test builtin function delay
+// Expected values are sin(2.5)-1, cos(5), sin(4.99) and sin(3)
+// There must be events at time 5.0 and time 7.5
+//
+
+loadFile("Delay.mo");
+simulate(Delay, startTime=0, stopTime=10, simflags="-lv=LOG_EVENTS");
+val(x, 5);      // sin(2.5) + 1.0
+val(y, 5.0001); // cos(5.0001)
+val(z, 5);      // sin(4.99)
+val(w, 5);      // sin(3)
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Delay_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Delay', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = delayZeroCrossing(0, 0, 2.5)
+// |                 | |       | | [2] (pre:  true)  true = time < 5.0
+// |                 | |       | | [3] (pre: false) false = delayZeroCrossing(1, 2, 0.01)
+// |                 | |       | | [4] (pre: false) false = delayZeroCrossing(2, 3, 0.5)
+// |                 | |       | | [5] (pre: false) false = delayZeroCrossing(3, 4, 1.5)
+// |                 | |       | | [6] (pre: false) false = delayZeroCrossing(2, 5, 0.5)
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0) -1 = delayZeroCrossing(0, 0, 2.5) > 0.0
+// |                 | |       | | [2] (pre:  0)  1 = time < 5.0
+// |                 | |       | | [3] (pre:  0) -1 = delayZeroCrossing(1, 2, 0.01) > 0.0
+// |                 | |       | | [4] (pre:  0) -1 = delayZeroCrossing(3, 4, 1.5) > 0.0
+// |                 | |       | | [5] (pre:  0) -1 = delayZeroCrossing(2, 5, 0.5) > 0.0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=5.0
+// |                 | |       | | [2] time < 5.0
+// LOG_EVENTS        | info    | state event at time=5.01
+// |                 | |       | | [3] delayZeroCrossing(1, 2, 0.01) > 0.0
+// LOG_EVENTS        | info    | state event at time=7.5
+// |                 | |       | | [1] delayZeroCrossing(0, 0, 2.5) > 0.0
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.5984721441039564
+// 0.2837580764722216
+// -0.9693068057771698
+// 0.1411200080598672
+// endResult

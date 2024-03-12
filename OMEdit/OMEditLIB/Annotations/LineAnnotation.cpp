@@ -661,7 +661,7 @@ void LineAnnotation::parseShapeAnnotation()
 
 QPainterPath LineAnnotation::getShape() const
 {
-  PointArrayAnnotation points = adjustPointsForDrawing();
+  PointArrayAnnotation points = mPoints;
   QPainterPath path;
   if (points.size() > 0) {
     // mPoints.size() is at least 1

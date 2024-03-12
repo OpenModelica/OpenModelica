@@ -917,7 +917,7 @@ algorithm
     case (tvar::rest,{})
       equation
         if listMember(tvar,tSel_never) then
-          Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
+          Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variable:\n" + UNDERLINE + "\n");
@@ -1017,7 +1017,7 @@ algorithm
         false = listEmpty(unsolvables);
         tvar = listHead(unsolvables);
         if listMember(tvar,tSel_never) then
-          Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
+          Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variable:\n" + UNDERLINE + "\n");
@@ -1063,12 +1063,12 @@ algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after 'discriminateDiscrete':\n" + stringDelimitList(List.map(arrayList(points),intString),",") + "\n\n");
         end if;
-        // 4th: Prefer variables with annotation attribute '__OpenModelica_tearingSelect = prefer'
+        // 4th: Prefer variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.prefer'
         pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after preferring variables with attribute 'prefer':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
-        // 5th: Avoid variables with annotation attribute '__OpenModelica_tearingSelect = avoid'
+        // 5th: Avoid variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'
         pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after discrimination against variables with attribute 'avoid':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
@@ -1079,7 +1079,7 @@ algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("tVar: " + intString(tvar) + " (" + intString(listGet(pointsLst,tvar)) + " points)\n\n");
         elseif listMember(tvar,tSel_avoid) then
-          Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.");
+          Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
       then
         tvar;
@@ -1728,7 +1728,7 @@ try
   unsolvedDiscreteVars := findDiscreteWarnTearingSelect(var_lst);
   // print("All discrete Vars: " + stringDelimitList(List.map(unsolvedDiscreteVars,intString),",") + "\n");
 
-  // also find $cse vars and try to make them inner vars since they have implicit '__OpenModelica_tearingSelect = never'
+  // also find $cse vars and try to make them inner vars since they have implicit '__OpenModelica_tearingSelect = TearingSelect.never'
   unsolvedCSEVars := findCSE(var_lst);
   // print("All CSE Vars: " + stringDelimitList(List.map(unsolvedCSEVars,intString),",") + "\n");
 
@@ -2375,11 +2375,11 @@ algorithm
 
       _ := match(var.tearingSelectOption)
         case SOME(BackendDAE.ALWAYS()) algorithm
-          Error.addSourceMessage(Error.COMPILER_WARNING,{"Minimal Tearing is ignoring '__OpenModelica_tearingSelect = always' annotation for discrete variable: "
+          Error.addSourceMessage(Error.COMPILER_WARNING,{"Minimal Tearing is ignoring '__OpenModelica_tearingSelect = TearingSelect.always' annotation for discrete variable: "
             + BackendDump.varString(var)},ElementSource.getInfo(var.source));
         then ();
         case SOME(BackendDAE.PREFER()) algorithm
-          Error.addSourceMessage(Error.COMPILER_WARNING,{"Minimal Tearing is ignoring '__OpenModelica_tearingSelect = prefer' annotation for discrete variable: "
+          Error.addSourceMessage(Error.COMPILER_WARNING,{"Minimal Tearing is ignoring '__OpenModelica_tearingSelect = TearingSelect.prefer' annotation for discrete variable: "
             + BackendDump.varString(var)},ElementSource.getInfo(var.source));
         then ();
         else ();
@@ -2476,7 +2476,7 @@ algorithm
     list<Integer> tvars,unsolvables,tVar_never,tVar_discrete,order;
     Boolean causal;
 
-  // case: There are no unsolvables and no variables with annotation '__OpenModelica_tearingSelect = always'
+  // case: There are no unsolvables and no variables with annotation '__OpenModelica_tearingSelect = TearingSelect.always'
   case ({},{})
     equation
       // select tearing Var
@@ -2538,7 +2538,7 @@ algorithm
    then
      (tvars,order);
 
-  // case: There are unsolvables and/or variables with annotation '__OpenModelica_tearingSelect = always'
+  // case: There are unsolvables and/or variables with annotation '__OpenModelica_tearingSelect = TearingSelect.always'
   else
     equation
       // First choose unsolvables and 'always'-vars as tVars
@@ -2546,7 +2546,7 @@ algorithm
       tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
       tVar_discrete = List.intersectionOnTrue(discreteVars,tvars,intEq);
       if not listEmpty(tVar_never) then
-        Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
+        Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
       end if;
       if not listEmpty(tVar_discrete) then
         Error.addCompilerWarning("There are discrete tearing variables because otherwise the system could not have been torn (unsolvables). This may lead to problems during simulation.");
@@ -2653,7 +2653,7 @@ algorithm
   end try;
 
   if listMember(OutTVar,tSel_avoid) then
-    Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.");
+    Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.");
   end if;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of TearingHeuristic\n" + BORDER + "\n\n");
@@ -3154,10 +3154,10 @@ algorithm
 
   // 3. Remove variables we don't want as tearing variables
   // ******************************************************
-  // Remove variables with attribute '__OpenModelica_tearingSelect = never'
+  // Remove variables with attribute '__OpenModelica_tearingSelect = TearingSelect.never'
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
   if listEmpty(potentialTVars) then
-    Error.addCompilerError("It is not possible to select a new tearing variable, because all remaining variables have the attribute '__OpenModelica_tearingSelect = never'.");
+    Error.addCompilerError("It is not possible to select a new tearing variable, because all remaining variables have the attribute '__OpenModelica_tearingSelect = TearingSelect.never'.");
     return;
   end if;
 
@@ -3201,7 +3201,7 @@ algorithm
   end if;
   if debug then execStat("TEARINGHEURISTIC4_3"); end if;
 
-  // 4.4 Prefer variables with annotation attribute '__OpenModelica_tearingSelect = prefer'
+  // 4.4 Prefer variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.prefer'
   if not listEmpty(tSel_prefer) then
     points := preferAvoidVariables(potentialTVars, points, tSel_prefer, 3.0);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -3210,7 +3210,7 @@ algorithm
   end if;
   if debug then execStat("TEARINGHEURISTIC4_4"); end if;
 
-  // 4.5 Avoid variables with annotation attribute '__OpenModelica_tearingSelect = avoid'
+  // 4.5 Avoid variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'
   if not listEmpty(tSel_avoid) then
     points := preferAvoidVariables(potentialTVars, points, tSel_avoid, 0.334);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then

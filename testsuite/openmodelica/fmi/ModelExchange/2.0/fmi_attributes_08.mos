@@ -8,7 +8,7 @@ getErrorString();
 
 loadString("
 model fmi_attributes_08
-  parameter Real p;
+  parameter Real p = 0;
   Real x;
 initial equation
   tan(x) = 0.1;
@@ -33,8 +33,7 @@ readFile("fmi_attributes_08.xml"); getErrorString();
 // true
 // ""
 // "fmi_attributes_08.fmu"
-// "[<interactive>:3:3-3:19:writable] Warning: Parameter p has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// "
+// ""
 // 0
 // ""
 // 0

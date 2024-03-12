@@ -120,6 +120,8 @@ import VisualXML;
 import ZeroCrossings;
 import ReduceDAE;
 import Settings;
+import UnorderedSet;
+import InteractiveUtil;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -7675,7 +7677,7 @@ public function createModelInfo
   input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description, directory;
+  String fileName, description, directory;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
@@ -7720,7 +7722,8 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
-    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
+    Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(class_, program);
+    modelInfo := SimCode.MODELINFO(class_, fileName, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
@@ -9974,7 +9977,7 @@ algorithm
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
         // check if the variable has changeable value
         // parameter which has final = true or evaluate annotation are not changeable
-        isValueChangeable = ((not BackendVariable.hasVarEvaluateTrueAnnotationOrFinalOrProtected(dlowVar)
+        isValueChangeable = ((not BackendVariable.hasVarEvaluateAnnotationTrueOrFinalOrProtected(dlowVar)
                             and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar))))
                             and isFixed;
         caus = getCausality(dlowVar, vars, isValueChangeable);
@@ -14189,8 +14192,12 @@ protected
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   array<Integer> match1,match2;
   Boolean debug = false;
+  UnorderedSet<DAE.ComponentRef> initialUnknowns;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
+  initialUnknowns := UnorderedSet.fromList(initialUnknownCrefs,
+    ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+
   if debug then
     print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
   end if;
@@ -14246,9 +14253,9 @@ algorithm
   indepVars := {}; // vars with causality = input and initial = approx or calculated, causality = calculatedParameter, states and derivative vars with initial = approx or calculated
   depVars := {}; // vars with causality = input and initial = exact
 
-  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknowns, crefSimVarHT);
   // search in globalKnownVars as they contains inputs and parameters with inital = exact
-  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknowns, crefSimVarHT);
 
   if debug then
     BackendDump.dumpVarList(depVars, "depVars");
@@ -14349,7 +14356,7 @@ protected function getDepAndIndepVarsForInitialUnknowns
   input list<BackendDAE.Var> inVar;
   input list<BackendDAE.Var> depVars;
   input list<BackendDAE.Var> indepVars;
-  input list<DAE.ComponentRef> initialUnknownCrefs;
+  input UnorderedSet<DAE.ComponentRef> initialUnknowns;
   input SimCode.HashTableCrefToSimVar crefSimVarHT;
   output list<BackendDAE.Var> outdepVars = depVars;
   output list<BackendDAE.Var> outindepVars = indepVars;
@@ -14362,7 +14369,7 @@ algorithm
   for var in inVar loop
     cref := BackendVariable.varCref(var);
     // get depVars, which is basically list of InitialUnknowns extracted according to FMI-2.0 specification from SimVar,
-    if listMember(cref, initialUnknownCrefs) then
+    if UnorderedSet.contains(cref, initialUnknowns) then
       outdepVars := var::outdepVars;
     end if;
     // get indepVars, which is bascially list of vars with causality = input or initial = exact
@@ -15807,15 +15814,30 @@ public function getCMakeVersion
 protected
   Integer retVal;
   String cmakeVersionLogFile = "systemCall_cmakeVersion.log";
+  list<String> regexOut;
+  Integer numMatches;
   String cmakeVersionString;
 algorithm
-  // Regex magic to read major.minor.patch version from cmake --version
-  retVal := System.systemCall(pathToCMake + " --version 2>&1 | grep \"^.*cmake version\" | sed -e 's/^.*cmake version *//' | sed -e 's/-.*//'", cmakeVersionLogFile);
+  retVal := System.systemCall(pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     System.removeFile(cmakeVersionLogFile);
     Error.addInternalError("Failed to get version from " + pathToCMake, sourceInfo());
+    fail();
   end if;
-  cmakeVersionString := System.trimWhitespace(System.readFile(cmakeVersionLogFile));
+  // Regex magic to read major.minor.patch version from cmake --version
+  // regex \d doesn't work on Linux, using [0-9] instead
+  (numMatches, regexOut) := System.regex(
+    System.trimWhitespace(System.readFile(cmakeVersionLogFile)),
+    "[0-9]+\\.[0-9]+\\.[0-9]+",
+    maxMatches=1,
+    extended=true
+  );
+  if numMatches == 0 then
+    System.removeFile(cmakeVersionLogFile);
+    Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
+    fail();
+  end if;
+  cmakeVersionString := List.first(regexOut);
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
@@ -16024,6 +16046,17 @@ algorithm
     else DAE.RCONST(1.0);
   end match;
 end getExpNominal;
+
+public function isMocFile
+  input String fileName;
+  output Integer result;
+algorithm
+  if (StringUtil.endsWith(fileName, ".moc")) then
+    result := 1;
+  else
+    result := 0;
+  end if;
+end isMocFile;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

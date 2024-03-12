@@ -11,11 +11,11 @@ echo(false);
 mkdir("tempSynchronous02/"); cd("tempSynchronous02/");
 echo(true);
 
-// Refernce results without FMU
+// Reference results without FMU
 simulate(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, stopTime=4, outputFormat="csv"); getErrorString();
 
 // Build FMU with Synchronous features
-buildModelFMU(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, version="2.0", fmuType="me"); getErrorString();
+buildModelFMU(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, version="2.0", fmuType="me", fileNamePrefix="Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks"); getErrorString();
 
 // Simulate FMU with OMSimulator
 system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.fmu"

@@ -893,6 +893,12 @@ public constant ErrorTypes.Message ELEMENT_REPLACEABLE_NOT_ALLOWED = ErrorTypes.
   Gettext.gettext("'%s' may not be replaceable."));
 public constant ErrorTypes.Message INVALID_NEGATIVE_POW = ErrorTypes.MESSAGE(409, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid operation %s ^ %s, exponent must be an Integer when the base is negative."));
+public constant ErrorTypes.Message DEPRECATED_EXPRESSION = ErrorTypes.MESSAGE(411, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("'%s' is deprecated, use '%s' instead."));
+public constant ErrorTypes.Message UNKNOWN_ANNOTATION_VALUE = ErrorTypes.MESSAGE(412, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("Unknown value '%s' for annotation '%s'"));
+public constant ErrorTypes.Message NON_FIXED_CONSTANT = ErrorTypes.MESSAGE(413, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Constant '%s' must be fixed but has 'fixed = false'"));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
@@ -902,7 +908,7 @@ public constant ErrorTypes.Message INITIALIZATION_ITERATION_VARIABLES = ErrorTyp
   Gettext.gettext("There are nonlinear iteration variables with default zero start attribute found in %s. %s."));
 public constant ErrorTypes.Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = ErrorTypes.MESSAGE(499, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
-public constant ErrorTypes.Message UNBOUND_PARAMETER_WARNING = ErrorTypes.MESSAGE(500, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+public constant ErrorTypes.Message UNBOUND_PARAMETER_ERROR = ErrorTypes.MESSAGE(500, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)."));
 public constant ErrorTypes.Message BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER = ErrorTypes.MESSAGE(502, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Function \"product\" has scalar as argument in %s in component %s."));

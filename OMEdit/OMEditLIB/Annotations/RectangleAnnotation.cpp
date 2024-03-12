@@ -181,10 +181,11 @@ QPainterPath RectangleAnnotation::shape() const
 {
   QPainterPath path;
   path.addRoundedRect(getBoundingRect(), mRadius, mRadius);
-  if (mFillPattern == StringHandler::FillNone)
+  if (mFillPattern == StringHandler::FillNone) {
     return addPathStroker(path);
-  else
+  } else {
     return path;
+  }
 }
 
 void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

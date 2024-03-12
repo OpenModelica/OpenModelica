@@ -9,6 +9,11 @@
 #include "meta/meta_modelica.h"
 #include "util/omc_file.h"
 #include "errorext.h"
+#include "omc_config.h"
+
+#define MAX_BUFFER_SIZE 2048
+
+char* findCurlCABundleMsys();
 
 typedef struct {
   const char *url;
@@ -37,7 +42,7 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result, int n)
   FILE *fout = omc_fopen(file, "wb");
 
   if (fout == NULL) {
-    c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Failed to open file for writing: %s", &file, 1);
+    c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, "Failed to open file for writing: %s", &file, 1);
     *result = 0;
     return rest;
   }
@@ -49,29 +54,13 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result, int n)
   p->filename = MMC_CDR(first);
   p->tmpFilename = tmpFilename;
 #if defined(__MINGW32__)
-  {
-    /* mingw/windows horror, let's find the curl CA bundle! */
-    char* ca_bundle_file = NULL;
-    const char* omhome = SettingsImpl__getInstallationDirectoryPath();
-#if defined(__MINGW64__)
-#define CURL_CA_BUNDLE_SUFFIX "/tools/msys/mingw64/ssl/certs/ca-bundle.crt"
-#else
-#define CURL_CA_BUNDLE_SUFFIX "/tools/msys/mingw32/ssl/certs/ca-bundle.crt"
-#endif
-    ca_bundle_file = (char*)malloc(sizeof(char*)*strlen(omhome) + strlen(CURL_CA_BUNDLE_SUFFIX) + 1);
-    sprintf(ca_bundle_file, "%s/%s", omhome, CURL_CA_BUNDLE_SUFFIX);
-    /* check if file exists */
-    if (!SystemImpl__regularFileExists(ca_bundle_file))
-    {
-      /* oh nooo, this is not an installation, is just a repo, try with OMDEV */
-      free(ca_bundle_file);
-      omhome = getenv("OMDEV");
-      ca_bundle_file = (char*)malloc(sizeof(char*)*strlen(omhome) + strlen(CURL_CA_BUNDLE_SUFFIX) + 1);
-      sprintf(ca_bundle_file, "%s/%s", omhome, CURL_CA_BUNDLE_SUFFIX);
-    }
-    curl_easy_setopt(eh, CURLOPT_CAINFO, ca_bundle_file);
-    free(ca_bundle_file);
+  char* ca_bundle_file = findCurlCABundleMsys();
+  if (!ca_bundle_file) {
+    *result = 0;
+    return rest;
   }
+  curl_easy_setopt(eh, CURLOPT_CAINFO, ca_bundle_file);
+  free(ca_bundle_file);
 #endif
   curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
   curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writeDataCallback);
@@ -159,3 +148,66 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
 
   return result;
 }
+
+#if defined(__MINGW32__)
+/**
+ * @brief Try to find curl CA bundle file on msys
+ *
+ * Searching for ca-bundle.crt in:
+ *   - $OPENMODELICAHOME/tools/msys/usr/ssl/certs/
+ *   - $OPENMODELICAHOME/tools/msys/<environment>/ssl/certs/
+ *   - $OMDEV/tools/msys[64]/usr/ssl/certs/
+ *   - $OMDEV/tools/msys[64]/<environment>/ssl/certs/
+ *
+ * @return const char* Path to ca-bundle.crt file on success, NULL on failure.
+ */
+char* findCurlCABundleMsys() {
+  char* ca_bundle_file = NULL;
+  const char* omhome = SettingsImpl__getInstallationDirectoryPath();
+  const char* omdev = getenv("OMDEV");
+  const char* msys = "tools/msys";
+  const char* environment = CONFIG_OPENMODELICA_SPEC_PLATFORM;
+  const char* curl_ca_bundle_suffix = "ssl/certs/ca-bundle.crt";
+  char buffer[MAX_BUFFER_SIZE] = "";
+  unsigned int length = 0;
+  ca_bundle_file = (char*) calloc(sizeof(char), strlen(omhome) + 1 + strlen(msys) + 1 + strlen(environment) + 1 + strlen(curl_ca_bundle_suffix) + 1 );
+
+  // Test $OPENMODELICAHOME/tools/msys/usr/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/usr/%s", omhome, msys, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
+  if (SystemImpl__regularFileExists(ca_bundle_file)) {
+    return ca_bundle_file;
+  }
+
+  // Test $OPENMODELICAHOME/tools/msys/<environment>/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/%s/%s", omhome, msys, environment, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
+  if (SystemImpl__regularFileExists(ca_bundle_file)) {
+    return ca_bundle_file;
+  }
+
+  // Test $OMDEV/tools/msys/usr/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/usr/%s", omdev, msys, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
+  if (SystemImpl__regularFileExists(ca_bundle_file)) {
+    return ca_bundle_file;
+  }
+
+  // Test $OMDEV/tools/msys/<environment>/ssl/certs/ca-bundle.crt
+  sprintf(ca_bundle_file, "%s/%s/%s/%s", omdev, msys, environment, curl_ca_bundle_suffix);
+  length += snprintf(buffer+length, MAX_BUFFER_SIZE-length, "\t- %s\n", ca_bundle_file);
+  if (SystemImpl__regularFileExists(ca_bundle_file)) {
+    return ca_bundle_file;
+  }
+
+  const char* tokens[1] = {buffer};
+  c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, "Couldn't find ca-bundle.crt. Searched in:\n%s", tokens, 1);
+
+  free(ca_bundle_file);
+  return NULL;
+}
+#else
+char* findCurlCABundleMsys() {
+  return NULL;
+}
+#endif // defined(__MINGW32__)

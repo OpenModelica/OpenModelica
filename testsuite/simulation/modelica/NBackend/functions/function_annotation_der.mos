@@ -83,7 +83,6 @@ simulate(function_annotation_der); getErrorString();
 //   input Real '$fDER_k';
 //   input Real '$fDER_m';
 //   output Real '$fDER_y';
-// protected
 //   Real 'y';
 // algorithm
 //   '$fDER_y' := (k * (2.0 * x * $fDER_x) + $fDER_k * x ^ 2.0) + $fDER_m;
@@ -103,7 +102,7 @@ simulate(function_annotation_der); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "function_annotation_der_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'function_annotation_der', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'function_annotation_der', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

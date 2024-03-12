@@ -119,6 +119,12 @@ protected
     record CALL_ID
       Expression call;
       Iterator iter;
+      // ToDo: instead of skipping when and if, one could collect these conditions
+      //    and create the function call equations with them.
+      // Note: update hashing, isEqual and take into account that there can be
+      //    elseif/elsewhen which need to be chained
+      // Option<Expression> when_condition
+      // Option<Expression> if_condition
     end CALL_ID;
 
     function toString
@@ -213,7 +219,7 @@ protected
   protected
     UnorderedMap<Call_Id, Call_Aux> map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
     Pointer<Integer> index = Pointer.create(1);
-    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {};
+    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {};
     list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {};
     list<tuple<Call_Id, Call_Aux>> debug_lst_sim, debug_lst_ini;
     list<tuple<String, String>> debug_str;
@@ -223,7 +229,7 @@ protected
       local
         Call_Id id;
         Call_Aux aux;
-        Boolean disc = true;
+        Boolean disc;
         Pointer<Equation> new_eqn;
         list<Pointer<Variable>> new_vars;
 
@@ -235,13 +241,11 @@ protected
         for tpl in listReverse(UnorderedMap.toList(map)) loop
           (id, aux) := tpl;
           new_vars  := Call_Aux.getVars(aux);
+          disc := true;
+
+          // categorize all aux variables
           for new_var in new_vars loop
-            if BVariable.isContinuous(new_var) then
-              disc := false;
-              new_vars_cont := new_var :: new_vars_cont;
-            else
-              new_vars_disc := new_var :: new_vars_disc;
-            end if;
+            (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, false);
           end for;
 
           // if any of the created variables is continuous, so is the equation
@@ -271,9 +275,9 @@ protected
           if not aux.parsed then
             // unfix parameters in initial system because we also add an equation
             new_vars := Call_Aux.getVars(aux);
+
             for new_var in new_vars loop
-              new_var := BVariable.setFixed(new_var, false);
-              new_vars_init := new_var :: new_vars_init;
+              (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, true);
             end for;
 
             new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
@@ -287,6 +291,7 @@ protected
     varData := VarData.addTypedList(varData, new_vars_cont, VarData.VarType.ALGEBRAIC);
     varData := VarData.addTypedList(varData, new_vars_disc, VarData.VarType.DISCRETE);
     varData := VarData.addTypedList(varData, new_vars_init, VarData.VarType.PARAMETER);
+    varData := VarData.addTypedList(varData, new_vars_recd, VarData.VarType.RECORD);
     eqData  := EqData.addTypedList(eqData, new_eqns_cont, EqData.EqType.CONTINUOUS, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_disc, EqData.EqType.DISCRETE, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_init, EqData.EqType.INITIAL, false);
@@ -299,11 +304,11 @@ protected
       end for;
       debug_lst_ini := UnorderedMap.toList(map);
       print(StringUtil.headline_3("Simulation Function Alias"));
-      debug_str := list((Call_Id.toString(Util.tuple21(tpl)), Call_Aux.toString(Util.tuple22(tpl))) for tpl in debug_lst_sim);
+      debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_sim);
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
       print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
       print(StringUtil.headline_3("Initial Function Alias"));
-      debug_str := list((Call_Id.toString(Util.tuple21(tpl)), Call_Aux.toString(Util.tuple22(tpl))) for tpl in debug_lst_ini);
+      debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_ini);
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
       print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
     end if;
@@ -317,12 +322,21 @@ protected
     input Boolean init;
   protected
     Iterator iter;
+    Boolean stop;
   algorithm
-    iter := match eq
-      case Equation.FOR_EQUATION() then eq.iter;
-      else Iterator.EMPTY();
+    (iter, stop) := match eq
+      local
+        Equation body;
+      case Equation.FOR_EQUATION(body = {body}) then (eq.iter, Equation.isWhenEquation(Pointer.create(body))
+                                                            or Equation.isIfEquation(Pointer.create(body)));
+      case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), true);
+      case Equation.IF_EQUATION()               then (Iterator.EMPTY(), true);
+      case Equation.ALGORITHM()                 then (Iterator.EMPTY(), false);
+                                                else (Iterator.EMPTY(), false);
     end match;
-    eq := Equation.map(eq, function introduceFunctionAlias(map = map, index = index, iter = iter, init = init));
+    if not stop then
+      eq := Equation.map(eq, function introduceFunctionAlias(map = map, index = index, iter = iter, init = init));
+    end if;
   end introduceFunctionAliasEquation;
 
   function introduceFunctionAlias
@@ -352,8 +366,7 @@ protected
         // strip nested iterator for the iterators that actually occure in the function call
         if not Iterator.isEmpty(iter) then
           (names, ranges) := Iterator.getFrames(iter);
-          (names, ranges) := filterFrames(exp, names, ranges);
-          new_iter := Iterator.fromFrames(List.zip(names, ranges));
+          new_iter := Iterator.fromFrames(filterFrames(exp, names, ranges));
         else
           new_iter := iter;
         end if;
@@ -417,7 +430,13 @@ protected
   protected
     Absyn.Path path;
   algorithm
-    if Function.isDefaultRecordConstructor(fn) or Function.isNonDefaultRecordConstructor(fn) then
+    // do not replace record constructors
+    if Function.isDefaultRecordConstructor(fn)
+    or Function.isNonDefaultRecordConstructor(fn)
+    // do not replace impure functions
+    or Function.isImpure(fn)
+    // do not replace functions with no output
+    or listEmpty(fn.outputs) then
       b := true;
       return;
     end if;
@@ -440,17 +459,19 @@ protected
   function filterFrames
     "filters the list of frames for all iterators that occure in exp"
     input Expression exp;
-    input output list<ComponentRef> names;
-    input output list<Expression> ranges;
+    input list<ComponentRef> names;
+    input list<Expression> ranges;
+    output list<tuple<ComponentRef, Expression>> frames;
   protected
     UnorderedMap<ComponentRef, Expression> frame_map = UnorderedMap.fromLists<Expression>(names, ranges, ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, Expression> new_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+
     Pointer<list<ComponentRef>> names_acc = Pointer.create({});
     Pointer<list<Expression>> ranges_acc = Pointer.create({});
     function collectFrames
       input output Expression exp;
       input UnorderedMap<ComponentRef, Expression> frame_map;
-      input Pointer<list<ComponentRef>> names_acc;
-      input Pointer<list<Expression>> ranges_acc;
+      input UnorderedMap<ComponentRef, Expression> new_map;
     algorithm
       _ := match exp
         local
@@ -458,18 +479,44 @@ protected
         case Expression.CREF() algorithm
           range := UnorderedMap.get(exp.cref, frame_map);
           if isSome(range) then
-            Pointer.update(names_acc, exp.cref  :: Pointer.access(names_acc));
-            Pointer.update(ranges_acc, Util.getOption(range) :: Pointer.access(ranges_acc));
+            UnorderedMap.add(exp.cref, Util.getOption(range), new_map);
           end if;
         then ();
         else ();
       end match;
     end collectFrames;
   algorithm
-    _ := Expression.map(exp, function collectFrames(frame_map = frame_map, names_acc = names_acc, ranges_acc = ranges_acc));
-  names := Pointer.access(names_acc);
-  ranges := Pointer.access(ranges_acc);
+    _ := Expression.map(exp, function collectFrames(frame_map = frame_map, new_map = new_map));
+    frames := UnorderedMap.toList(new_map);
   end filterFrames;
+
+  function addAuxVar
+    input Pointer<Variable> new_var;
+    input output Boolean disc;
+    input output list<Pointer<Variable>> new_vars_disc;
+    input output list<Pointer<Variable>> new_vars_cont;
+    input output list<Pointer<Variable>> new_vars_init;
+    input output list<Pointer<Variable>> new_vars_recd;
+    input Boolean init;
+  protected
+    list<Variable> children;
+  algorithm
+    if BVariable.isRecord(new_var) then
+      new_vars_recd := new_var :: new_vars_recd;
+      // create record element variables (ignore first output since its the variable itself)
+      _ :: children := Variable.expandChildren(Pointer.access(new_var));
+      for elem_var in children loop
+        (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(Pointer.create(elem_var), disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
+      end for;
+    elseif init then
+      new_vars_init := BVariable.setFixed(new_var, false) :: new_vars_init;
+    elseif BVariable.isContinuous(new_var) then
+      disc := false;
+      new_vars_cont := new_var :: new_vars_cont;
+    else
+      new_vars_disc := new_var :: new_vars_disc;
+    end if;
+  end addAuxVar;
 
   annotation(__OpenModelica_Interface="backend");
 end NBFunctionAlias;

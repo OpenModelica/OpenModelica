@@ -1,0 +1,23 @@
+// status: correct
+// cflags: -d=-newInst
+
+loadModel(Modelica, {"3.2.3"});getErrorString();
+setCommandLineOptions("-d=newInst -f -m");
+writeFile("DoublePendulum.mo", OpenModelica.Scripting.instantiateModel(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum));getErrorString();
+clear();
+loadFile("DoublePendulum.mo");getErrorString();
+setCommandLineOptions("--std=experimental");
+translateModel('DoublePendulum'.'DoublePendulum', fileNamePrefix="DP");getErrorString();
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// true
+// true
+// ""
+// true
+// true
+// ""
+// endResult

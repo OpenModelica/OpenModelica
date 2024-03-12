@@ -211,7 +211,7 @@ public
       for tpl in cev_lst loop
         (cond, cev) := tpl;
         if not BVariable.isDummyVariable(cev.auxiliary) then
-          aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(cev.auxiliary)), cond.exp, idx, context, EquationAttributes.default(EquationKind.DISCRETE, false));
+          aux_eqn := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(cev.auxiliary)), cond.exp, idx, context, Iterator.EMPTY(), EquationAttributes.default(EquationKind.DISCRETE, false));
           auxiliary_vars := cev.auxiliary :: auxiliary_vars;
           auxiliary_eqns := aux_eqn :: auxiliary_eqns;
         end if;
@@ -413,7 +413,7 @@ public
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.RELATION)
           algorithm
             // create auxiliary equation and solve for TIME
-            tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
+            tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
             _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
               (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
@@ -470,7 +470,7 @@ public
       input output Bucket bucket;
       output Boolean failed;
     algorithm
-      failed := match Call.getNameAndArgs(call)
+      failed := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
         local
           Integer value;
           Expression start, interval;
@@ -676,13 +676,17 @@ public
       Condition cond;
       StateEvent sev; // don't even need state event? only condition relevant
       Option<list<OldSimIterator>> iter;
+      list<ComponentRef> eqn_names;
+      list<Integer> eqn_indices;
     algorithm
       (cond, sev) := sev_tpl;
-      iter := if Iterator.isEmpty(cond.iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(cond.iter)));
+      iter        := if Iterator.isEmpty(cond.iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(cond.iter)));
+      eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in sev.eqns);
+      eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name in eqn_names);
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
         relation_   = Expression.toDAE(cond.exp),
-        occurEquLst = list(Block.getIndex(UnorderedMap.getSafe(Equation.getEqnName(eqn), equation_map, sourceInfo())) for eqn in sev.eqns), //ToDo: low priority - only for debugging
+        occurEquLst = eqn_indices,
         iter        = iter
       );
     end convert;
@@ -942,10 +946,20 @@ protected
     input Pointer<Bucket> bucket_ptr;
     input FunctionTree funcTree;
   protected
-    Equation eqn = Pointer.access(eqn_ptr);
+    Equation eqn = Pointer.access(eqn_ptr), body_eqn;
     Iterator iter;
     Boolean createAux = not Equation.isAlgorithm(eqn_ptr);
+    BEquation.MapFuncExp collector;
   algorithm
+    // create the traverser function
+    iter := Equation.getForIterator(eqn);
+    collector := function collectEventsTraverse(
+          bucket_ptr  = bucket_ptr,
+          iter        = iter,
+          eqn         = eqn_ptr,
+          funcTree    = funcTree,
+          createAux   = createAux);
+
     eqn := match eqn
       case Equation.ALGORITHM() algorithm
         for stmt in eqn.alg.statements loop
@@ -953,15 +967,27 @@ protected
         end for;
       then eqn;
 
-      else algorithm
-        iter := Equation.getForIterator(eqn);
-      then Equation.map(eqn, function collectEventsTraverse(
-          bucket_ptr  = bucket_ptr,
-          iter        = iter,
-          eqn         = eqn_ptr,
-          funcTree    = funcTree,
-          createAux   = createAux),
-        NONE(), Expression.mapReverse);
+      // For when equations only map the condition and not the body
+      case Equation.WHEN_EQUATION() algorithm
+        eqn.body := WhenEquationBody.mapCondition(eqn.body, collector, NONE(), Expression.mapReverse);
+      then eqn;
+
+      // Also don't do it for when equations in for-equations
+      case Equation.FOR_EQUATION(body = {body_eqn as Equation.WHEN_EQUATION()}) algorithm
+        body_eqn.body := WhenEquationBody.mapCondition(body_eqn.body, collector, NONE(), Expression.mapReverse);
+        eqn.body := {body_eqn};
+      then eqn;
+
+      // Map if equation body with this function to ensure that when equation bodies are not traversed
+      case Equation.IF_EQUATION() algorithm
+        eqn.body := IfEquationBody.mapEqnExpCref(eqn.body,
+          func        = function collectEvents(bucket_ptr = bucket_ptr, funcTree = funcTree),
+          funcExp     = collector,
+          funcCrefOpt = NONE(),
+          mapFunc     = Expression.mapReverse);
+      then eqn;
+
+      else Equation.map(eqn, collector, NONE(), Expression.mapReverse);
     end match;
 
     if not referenceEq(eqn, Pointer.access(eqn_ptr)) then
@@ -1000,6 +1026,13 @@ protected
       // sample functions
       case Expression.CALL() guard(Call.isNamed(exp.call, "sample")) algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcTree, createAux);
+        Pointer.update(bucket_ptr, bucket);
+      then exp;
+
+      // replace $PRE variables with auxiliaries
+      // necessary if the $PRE variable is a when condition (cannot check the pre of a pre variable)
+      case Expression.CALL(call = Call.TYPED_CALL(arguments = {Expression.CREF()})) guard(Call.isNamed(exp.call, "pre")) algorithm
+        (exp, bucket) := CompositeEvent.add(Condition.CONDITION(exp, iter), Pointer.access(bucket_ptr), true);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 

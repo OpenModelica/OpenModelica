@@ -66,8 +66,8 @@ end EqualityConstraint2;
 // equation
 //   c3.e = c4.e;
 //   c3.e = c2.e;
-//   (-c3.f) - c4.f - c2.f = 0.0;
-//   (-c3.g) - c4.g - c2.g = 0.0;
+//   -(c3.f + c4.f + c2.f) = 0.0;
+//   -(c3.g + c4.g + c2.g) = 0.0;
 //   c3.o[1] = c4.o[1];
 //   c3.o[2] = c4.o[2];
 //   c1.f = 0.0;

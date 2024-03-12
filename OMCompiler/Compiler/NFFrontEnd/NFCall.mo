@@ -2014,27 +2014,6 @@ public
     outIters := listReverseInPlace(outIters);
   end mapFoldIteratorsExpShallow;
 
-  function getNameAndArgs
-    input Call call;
-    output tuple<String, list<Expression>> tpl;
-  algorithm
-    tpl := match call
-      local
-        Function fn;
-        list<Expression> args;
-
-      case Call.UNTYPED_CALL(arguments = args)
-        then (ComponentRef.firstName(call.ref), args);
-
-      case Call.TYPED_CALL(fn = fn, arguments = args)
-        then (AbsynUtil.pathLastIdent(fn.path), args);
-
-      else algorithm
-        Error.assertion(false, getInstanceName() + ": unhandled case for " + toString(call), sourceInfo());
-      then fail();
-    end match;
-  end getNameAndArgs;
-
   function updateExternalRecordArgs
     input list<Expression> args;
   algorithm

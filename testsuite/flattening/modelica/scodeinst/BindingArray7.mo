@@ -5,8 +5,8 @@
 //
 
 operator record Complex
-  replaceable Real re;
-  replaceable Real im;
+  replaceable Real re = 1;
+  replaceable Real im = 2;
 end Complex;
 
 type Resistance = Real(final quantity = "Resistance");
@@ -26,11 +26,11 @@ end BindingArray7;
 
 // Result:
 // class BindingArray7
-//   parameter Real i[1].Z.re(quantity = "Resistance");
-//   parameter Real i[1].Z.im(quantity = "Resistance");
-//   parameter Real i[2].Z.re(quantity = "Resistance");
-//   parameter Real i[2].Z.im(quantity = "Resistance");
-//   parameter Real i[3].Z.re(quantity = "Resistance");
-//   parameter Real i[3].Z.im(quantity = "Resistance");
+//   parameter Real i[1].Z.re(quantity = "Resistance") = 1.0;
+//   parameter Real i[1].Z.im(quantity = "Resistance") = 2.0;
+//   parameter Real i[2].Z.re(quantity = "Resistance") = 1.0;
+//   parameter Real i[2].Z.im(quantity = "Resistance") = 2.0;
+//   parameter Real i[3].Z.re(quantity = "Resistance") = 1.0;
+//   parameter Real i[3].Z.im(quantity = "Resistance") = 2.0;
 // end BindingArray7;
 // endResult

@@ -30,12 +30,16 @@
 
 #ifndef SETTINGSIMPL__H_
 #define SETTINGSIMPL__H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 extern const char* SettingsImpl__getInstallationDirectoryPath();
 extern const char* SettingsImpl__getTempDirectoryPath();
+
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SETTINGSIMPL__H_

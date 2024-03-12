@@ -168,9 +168,9 @@ AC_PROG_FC
 AC_ARG_WITH(msys, [  --with-msys[=no]              Point to an msys installation, to setup CPPFLAGS, etc automatically.],
   [
     if echo $host_cpu | grep -q x86_64; then
-      MINGWNUM=mingw64
+      MINGWNUM=ucrt64
     else
-      MINGWNUM=mingw32
+      error "No 32-bit support"
     fi
     CPPFLAGS="$CPPFLAGS -I$withval/$MINGWNUM/include -I$withval/$MINGWNUM/include/tre"
     LDFLAGS="$LDFLAGS -L$withval/$MINGWNUM/lib"
@@ -904,6 +904,8 @@ fi
 AC_MSG_RESULT([$EXTRA_MACOS_FLAGS_SUNDIALS])
 
 CFLAGS="$CFLAGS"
+
+AC_MSG_NOTICE(["Given CMAKE: $OMC_CMAKE_EXE])
 
 OLD_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="$CFLAGS $CXXFLAGS -Werror"

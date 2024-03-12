@@ -409,8 +409,7 @@ private:
     Line *getLine() const {return mpLine.get();}
     Text *getText() const {return mpText.get();}
     // Extend annotation
-    const IconDiagramMap &getIconMap() const {return mIconMap;}
-    const IconDiagramMap &getDiagramMap() const {return mDiagramMap;}
+    const IconDiagramMap &getMap(bool icon) const;
 
     static Annotation defaultAnnotation;
 
@@ -582,6 +581,7 @@ private:
     const QString &getName() const {return mName;}
     const QString &getRootType() const;
     bool isMissing() const {return mMissing;}
+    void setRestriction(const QString &restriction) {mRestriction = restriction;}
     const QString &getRestriction() const {return mRestriction;}
     bool isConnector() const;
     bool isExpandableConnector() const;
@@ -662,6 +662,9 @@ private:
     FlatModelica::Expression &getBinding() {return mBinding;}
     void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
     void resetBinding() {mBinding = mBindingForReset;}
+    bool getIconDiagramMapPrimitivesVisible(bool icon) const;
+    bool getIconDiagramMapHasExtent(bool icon) const;
+    const ExtentAnnotation &getIconDiagramMapExtent(bool icon) const;
 
     virtual QString getName() const = 0;
     virtual QString getQualifiedName() const = 0;

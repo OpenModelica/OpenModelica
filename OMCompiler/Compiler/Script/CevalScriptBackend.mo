@@ -121,6 +121,7 @@ import SCodeUtil;
 import SemanticVersion;
 import Settings;
 import SimCodeMain;
+import SimCodeFunctionUtil;
 import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
@@ -529,6 +530,11 @@ algorithm
   // Interval needs to be handled last since it depends on the start and stop time.
   if isSome(interval) then
     options := setSimulationOptionsInterval(options, Expression.toReal(Util.getOption(interval)));
+  else
+    /*fix issue 12070, set proper default value of stepSize when Interval annotation is not provided
+      stepSize = (StopTime-StartTime)/500
+    */
+    options.stepSize := DAE.RCONST((Expression.toReal(options.stopTime) - Expression.toReal(options.startTime)) / 500);
   end if;
 end populateSimulationOptions;
 
@@ -2713,7 +2719,7 @@ algorithm
         absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
         absynClass := InteractiveUtil.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(annlst));
         p := InteractiveUtil.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
-        SymbolTable.setAbsyn(p);
+        SymbolTable.setAbsynClass(p, absynClass, classpath);
       then
         Values.BOOL(true);
 
@@ -3084,7 +3090,6 @@ algorithm
            Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
       algorithm
         (p, b) := InteractiveUtil.setElementAnnotation(path, mod, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
 
@@ -3468,11 +3473,26 @@ protected function callTranslateModel
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-
   (success, outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
       className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
 end callTranslateModel;
+
+protected function getProcsStr
+  input Boolean isMake = false;
+  output String s;
+protected
+  Integer n;
+  String sn;
+algorithm
+  n := Flags.getConfigInt(Flags.NUM_PROC);
+  sn := intString(n);
+  s := if (n == 0)
+       then ""
+       else (if isMake
+             then sn
+             else stringAppend("-j", sn));
+end getProcsStr;
 
 protected function configureFMU_cmake
 "Configure and build binaries with CMake for target platform"
@@ -3486,10 +3506,15 @@ protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
   String quote, dquote, defaultFmiIncludeDirectoy;
+  String CC, CXX;
+  SimCodeFunction.MakefileParams makefileParams;
 algorithm
+  makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
   quote := "'";
   dquote := if isWindows then "\"" else "'";
+  CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+  CXX := "-DCMAKE_CXX_COMPILER=" + dquote + System.basename(makefileParams.cxxcompiler) + dquote;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
@@ -3523,15 +3548,15 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
-               Autoconf.cmake + " --build . --target install && " +
+               Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
         then();
@@ -3542,15 +3567,15 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
-               Autoconf.cmake + " --build . --target install && " +
+               Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
         then();
@@ -3622,7 +3647,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "cmake --build . &&  make  install && " +
+                  "cmake --build . &&  make " + getProcsStr(true) + " install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
@@ -3980,8 +4005,8 @@ algorithm
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
-  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix, ".", "_");
-  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix);
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
+  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix);
   if isSome(inSimSettings)  then
     SOME(simSettings) := inSimSettings;
   else
@@ -4166,11 +4191,9 @@ protected function translateModelXML " author: Alachew
 protected
   Boolean success;
 algorithm
-  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className,
-                    fileNamePrefix, true, false, true, inSimSettingsOpt);
+  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
   outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
-
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
   input Absyn.Path className;

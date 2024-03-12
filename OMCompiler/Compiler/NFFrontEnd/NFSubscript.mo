@@ -220,6 +220,13 @@ public
     end match;
   end isWhole;
 
+  function isSimple
+    "used for determining if its simple enough to use for an array equation
+    in the case of non scalarization (new backend)"
+    input Subscript sub;
+    output Boolean isSimple = isIndex(sub) or isWhole(sub);
+  end isSimple;
+
   function isSliced
     input Subscript sub;
     output Boolean sliced;

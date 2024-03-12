@@ -8,6 +8,7 @@ DualMassOscillator.mos \
 enumeration.mos \
 enumeration2.mos \
 enumeration3.mos \
+experimentAnnotation.mos \
 fmi_interpolate_cs.mos \
 fmiBlackBox.mos \
 fmiProtected.mos \

@@ -92,6 +92,12 @@ endif()
 # Corba support
 if(OM_OMC_USE_CORBA)
   if(MINGW)
+    if(DEFINED ENV{MSYSTEM_PREFIX})
+      string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
+      if(IS_UCRT64)
+        message(FATAL_ERROR "No corba support on UCRT64")
+      endif()
+    endif()
     # setup omniORB for MinGW OMDev
     include(.cmake/omdev_omniorb_setup.cmake)
     # Include the macro for compiling corba targets.

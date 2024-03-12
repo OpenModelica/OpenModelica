@@ -288,13 +288,13 @@ annotation(__OpenModelica_builtin=true, Documentation(info="<html>
 </html>"));
 end log10;
 
-impure function homotopy
+impure function homotopy "Homotopy operator actual*lambda + simplified*(1-lambda)"
   input Real actual;
   input Real simplified;
   output Real outValue;
 external "builtin";
 annotation(__OpenModelica_builtin=true, version="Modelica 3.2",Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'homotopy()'\">homotopy()</a> (experimental implementation)
+  See <a href=\"https://specification.modelica.org/maint/3.6/operators-and-expressions.html#homotopy\">homotopy()</a>
 </html>"));
 end homotopy;
 
@@ -854,7 +854,7 @@ If no class was being simulated, the last simulated class or a default will be u
 "),version="Modelica 3.3");
 end getInstanceName;
 
-function spatialDistribution "Not yet implemented"
+function spatialDistribution "Approximation of variable-speed transport of properties"
   input Real in0;
   input Real in1;
   input Real x;
@@ -864,7 +864,9 @@ function spatialDistribution "Not yet implemented"
   output Real out0;
   output Real out1;
 external "builtin";
-annotation(__OpenModelica_builtin=true, version="Modelica 3.3");
+annotation(Documentation(info="<html>
+spatialDistribution allows approximation of variable-speed transport of properties. For further details, see the Modelica Language Specification <a href=\"https://specification.modelica.org/maint/3.6/operators-and-expressions.html#spatialdistribution\">spatialdistribution()</a>.
+</html>"), version="Modelica 3.3");
 end spatialDistribution;
 
 function previous<__ComponentExpression> "Access previous value of a clocked variable"
@@ -2849,12 +2851,31 @@ external "builtin";
 annotation(preferredView="text");
 end simulate;
 
+function translateModel
+  "Translates a modelica model into C code without building it."
+  input TypeName className "the class that should be built";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end translateModel;
+
 function buildModel "builds a modelica model by generating c code and build it.
  It does not run the code!
  The only required argument is the className, while all others have some default values.
  simulate(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])
  Example command:
-  simulate(A);
+  buildModel(A);
 "
   input TypeName className "the class that should be built";
   input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";

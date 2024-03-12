@@ -1783,7 +1783,6 @@ algorithm
                 e1,
                 DAE.BINARY(res1, DAE.DIV(tp), DAE.BINARY(DAE.RCONST(1.0), DAE.ADD(tp), DAE.BINARY(e2, DAE.MUL(tp),e2)))
                ));
-
       then
         (res2,  funcs);
 
@@ -1849,25 +1848,22 @@ algorithm
 
     case ("delay", {_, e2, e3, e4}, DAE.CALL_ATTR(ty=tp))
       algorithm
-        // 1. differentiate delayed expression
-        (e, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-        // 2. filter all seeds from e
-        seeds := list(cref for cref guard(isSeedCref(cref)) in Expression.extractUniqueCrefsFromExp(e, false));
-        // 3. create empty replacement rules
-        repl := BackendVarTransform.emptyReplacements();
-        repl := BackendVarTransform.addReplacements(repl, seeds, List.fill(DAE.ICONST(0), listLength(seeds)), NONE());
-        res := DAE.RCONST(0);
-        // 4. create delayed expression for each seed and multiply each delayed with corresponding seed and create sum
-        for seed in seeds loop
-          repl := BackendVarTransform.addReplacement(repl, seed, DAE.ICONST(1), NONE());
-          // create call with seed replaced by 1 and all other seeds replaced by 0
-          (res1, _) := BackendVarTransform.replaceExp(e, repl, NONE());
-          res1 := DAE.CALL(Absyn.IDENT(name), {DAE.ICONST(-1), res1, e3, e4}, inAttr);
-          // multiply call with correspondings seed and add to rest
-          res := DAE.BINARY(DAE.BINARY(DAE.CREF(seed, tp), DAE.MUL(tp), res1), DAE.ADD(tp), res);
-          repl := BackendVarTransform.addReplacement(repl, seed, DAE.ICONST(0), NONE());
-        end for;
-        (res, _) := ExpressionSimplify.simplify(res);
+        res1 := match inDiffType
+          case BackendDAE.DIFFERENTIATION_TIME()  then DAE.RCONST(1.0);
+                                                  else DAE.RCONST(0.0);
+        end match;
+        (res2, funcs) := differentiateExp(e3, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+        res2 := DAE.BINARY(res1, DAE.SUB(tp), res2);
+        (res2, _) := ExpressionSimplify.simplify(res2);
+        if Expression.isZero(res2) then
+          res := Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        else
+          // differentiate delayed expression w.r.t. time
+          (e, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, BackendDAE.DIFFERENTIATION_TIME(), funcs, maxIter);
+          e := DAE.CALL(Absyn.IDENT(name), {DAE.ICONST(-1), e, e3, e4}, inAttr);
+          res := DAE.BINARY(res2, DAE.MUL(tp), e);
+          (res, _) := ExpressionSimplify.simplify(res);
+        end if;
       then
         (res, funcs);
 
@@ -2203,7 +2199,7 @@ algorithm
       list<Boolean> blst;
       list<DAE.Type> tlst;
       list<tuple<DAE.Exp,Boolean>> expBoolLst;
-      String typstring, dastring, funstring, str;
+      String typstring, dastring, funstring;
       list<String> typlststring;
       DAE.TailCall tc;
       DAE.CallAttributes attr;
@@ -2313,8 +2309,7 @@ algorithm
       else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        str = "Differentiate.differentiateFunctionCall failed for " + ExpressionDump.printExpStr(inExp) + "\n";
-        Debug.trace(str);
+        Debug.trace(getInstanceName() + " failed for " + ExpressionDump.printExpStr(inExp) + "\n");
       then fail();
   end matchcontinue;
 end differentiateFunctionCall;
@@ -2376,7 +2371,7 @@ algorithm
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path,mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
         SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
-        // check if derivativ function has all expected inputs
+        // check if derivative function has all expected inputs
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -3227,14 +3222,8 @@ algorithm
 end getFunctionMapper1;
 
 protected function diffableTypes
-    input DAE.Type inType;
-  output Boolean out;
-protected
-  Boolean b[2];
-algorithm
-  b[1] := Types.isRealOrSubTypeReal(inType);
-  b[2] := Types.isRecord(inType);
-  out := boolOr(b[1],b[2]);
+  input DAE.Type inType;
+  output Boolean out = Types.isRealOrSubTypeReal(inType) or Types.isRecord(inType);
 end diffableTypes;
 
 

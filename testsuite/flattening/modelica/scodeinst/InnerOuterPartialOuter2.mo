@@ -10,7 +10,7 @@ partial record BaseR
 end BaseR;
 
 record R
-  extends BaseR(n = 1);
+  extends BaseR(n = 1, x = ones(n));
 end R;
 
 model A
@@ -25,6 +25,6 @@ end InnerOuterPartialOuter2;
 // Result:
 // class InnerOuterPartialOuter2
 //   constant Integer r.n = 1;
-//   parameter Real r.x[1];
+//   parameter Real r.x[1] = 1.0;
 // end InnerOuterPartialOuter2;
 // endResult

@@ -247,7 +247,7 @@ public:
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix);
-  static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className);
+  static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className, bool isConnector);
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
@@ -579,6 +579,8 @@ public:
   bool isNewApi();
   void addDependsOnModel(const QString &dependsOnModel);
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
+  void setHandleCollidingConnectionsNeeded(bool needed) {mHandleCollidingConnectionsNeeded = needed;}
+  bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
 
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
@@ -614,6 +616,7 @@ public:
   void clearSelection();
   void updateClassAnnotationIfNeeded();
   void updateModelText();
+  void callHandleCollidingConnectionsIfNeeded();
   void updateUndoRedoActions();
   bool writeCoSimulationResultFile(QString fileName);
   bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
@@ -671,6 +674,7 @@ private:
   QTimer mUpdateModelTimer;
   QStringList mDependsOnModelsList;
   bool mHasMissingType = false;
+  bool mHandleCollidingConnectionsNeeded = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();

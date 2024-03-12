@@ -30,15 +30,23 @@ simulate(hybridSys); getErrorString();
 // ******************************************************************
 // 	<no discrete states>
 //
+// Created When Replacement Equations (5):
+// *****************************************
+// 	[SCAL] (1) x_Start = $PRE.x_Start ($RES_SRT_30)
+// 	[SCAL] (1) x_Loop1 = $PRE.x_Loop1 ($RES_SRT_29)
+// 	[SCAL] (1) x_Loop2 = $PRE.x_Loop2 ($RES_SRT_28)
+// 	[SCAL] (1) x_Loop3 = $PRE.x_Loop3 ($RES_SRT_27)
+// 	[SCAL] (1) x_End = $PRE.x_End ($RES_SRT_26)
+//
 // ##############################
 //
 // 	Balance Initialization
 //
 // ##############################
 //
-// Stage 15 underdetermined.
+// Stage 10 underdetermined.
 // Not overdetermined.
-// (15) Unmatched variables:
+// (10) Unmatched variables:
 // ***************************
 // 	[DISS] (1) Real x_Start (start = 0.0)
 // 	 slice: {};
@@ -60,19 +68,22 @@ simulate(hybridSys); getErrorString();
 // 	 slice: {};
 // 	[PRE-] (1) Boolean $PRE.phase_Start
 // 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_End
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Loop3
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Loop2
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Loop1
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Start
-// 	 slice: {};
 //
 // (0) Unmatched equations:
 // **************************
+//
+// Created Start Equations for balancing the Initialization (10):
+// ****************************************************************
+// 	[SCAL] (1) $PRE.phase_Start = $START.phase_Start ($RES_SIM_41)
+// 	[SCAL] (1) $PRE.phase_Loop3 = $START.phase_Loop3 ($RES_SIM_42)
+// 	[SCAL] (1) $PRE.phase_Loop1 = $START.phase_Loop1 ($RES_SIM_43)
+// 	[SCAL] (1) $PRE.phase_Loop2 = $START.phase_Loop2 ($RES_SIM_44)
+// 	[SCAL] (1) x1 = $START.x1 ($RES_SIM_45)
+// 	[SCAL] (1) $PRE.x_End = $START.x_End ($RES_SIM_46)
+// 	[SCAL] (1) $PRE.x_Loop3 = $START.x_Loop3 ($RES_SIM_47)
+// 	[SCAL] (1) $PRE.x_Loop2 = $START.x_Loop2 ($RES_SIM_48)
+// 	[SCAL] (1) $PRE.x_Loop1 = $START.x_Loop1 ($RES_SIM_49)
+// 	[SCAL] (1) $PRE.x_Start = $START.x_Start ($RES_SIM_50)
 //
 // Not underdetermined.
 // Not overdetermined.

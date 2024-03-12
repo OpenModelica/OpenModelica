@@ -58,7 +58,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointers, EqData, WhenEquationBody, WhenStatement};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
   import NBVariable.{VariablePointers, VarData};
 
   // Util
@@ -131,35 +131,39 @@ protected
     VariablePointers discretes      "Discrete variables";
     VariablePointers discrete_states"Discrete state variables";
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
-    VariablePointers auxiliaries, aliasVars, nonTrivialAlias, top_level_inputs, parameters, constants, records, artificials   "(only to reconstruct VAR_DATA_SIM)";
     list<Pointer<Equation>> aux_eqns;
   algorithm
-    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, nonTrivialAlias = nonTrivialAlias, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, discrete_states = discrete_states, previous = previous, top_level_inputs = top_level_inputs, parameters = parameters, constants = constants, records = records, artificials = artificials) := varData;
-    BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns, initials = init_eqns) := eqData;
-    (variables, unknowns, knowns, initials, states, derivatives, algebraics, aux_eqns) := continuousFunc(variables, unknowns, knowns, initials, states, derivatives, algebraics, equations);
-    (variables, disc_eqns, knowns, initials, discretes, discrete_states, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, discrete_states, previous, "discrete equations");
-    (variables, init_eqns, knowns, initials, discretes, discrete_states, previous) := discreteFunc(variables, init_eqns, knowns, initials, discretes, discrete_states, previous, "initial equations");
-    varData := BVariable.VAR_DATA_SIM(
-      variables         = variables,
-      unknowns          = unknowns,
-      knowns            = knowns,
-      initials          = initials,
-      auxiliaries       = auxiliaries,
-      aliasVars         = aliasVars,
-      nonTrivialAlias   = nonTrivialAlias,
-      derivatives       = derivatives,
-      algebraics        = algebraics,
-      discretes         = discretes,
-      discrete_states   = discrete_states,
-      previous          = previous,
-      states            = states,
-      top_level_inputs  = top_level_inputs,
-      parameters        = parameters,
-      constants         = constants,
-      records           = records,
-      artificials       = artificials
-    );
-    eqData := EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false);
+    (varData, eqData) := match (varData, eqData)
+      case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
+
+        // collect continuous states from all equations
+        (variables, unknowns, knowns, initials, states, derivatives, algebraics, aux_eqns)
+          := continuousFunc(varData.variables, varData.unknowns, varData.knowns, varData.initials, varData.states, varData.derivatives, varData.algebraics, eqData.equations);
+
+        // collect discrete states from discrete equations
+        (variables, disc_eqns, knowns, initials, discretes, discrete_states, previous)
+          := discreteFunc(varData.variables, eqData.discretes, varData.knowns, varData.initials, varData.discretes, varData.discrete_states, varData.previous, "discrete equations");
+
+        // collect discrete states from initial equations
+        (variables, init_eqns, knowns, initials, discretes, discrete_states, previous)
+          := discreteFunc(varData.variables, eqData.initials, varData.knowns, varData.initials, varData.discretes, varData.discrete_states, varData.previous, "initial equations");
+
+        // update variable arrays
+        varData.variables         := variables;
+        varData.unknowns          := unknowns;
+        varData.knowns            := knowns;
+        varData.initials          := initials;
+        varData.derivatives       := derivatives;
+        varData.algebraics        := algebraics;
+        varData.discretes         := discretes;
+        varData.discrete_states   := discrete_states;
+        varData.previous          := previous;
+        varData.states            := states;
+
+        // update equation arrays
+      then (varData, EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false));
+      else (varData, eqData);
+    end match;
   end detectStatesDefault;
 
   function detectContinuousStatesDefault extends Module.detectContinuousStatesInterface;
@@ -190,7 +194,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
   algorithm
     // collect all states on the lhs of a when
-    EquationPointers.map(equations, function collectDiscreteStatesFromWhen(acc_discrete_states = acc_discrete_states, scalarized = variables.scalarized));
+    EquationPointers.map(equations, function collectDiscreteStatesFromWhen(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous, scalarized = variables.scalarized));
     // collect all pre(d)
     EquationPointers.mapExp(equations, function collectPreAndPrevious(acc_previous = acc_previous, scalarized = variables.scalarized));
     // move stuff to their correct arrays
@@ -261,7 +265,7 @@ protected
           if Expression.fold(arg, checkAlgebraic, 0) > 1 then
             // more than one algebraic variable > create auxiliary state
             (state_var, state_cref, der_var, der_cref) := BVariable.makeAuxStateVar(Pointer.access(uniqueIndex), SOME(arg));
-            aux_equation := Equation.fromLHSandRHS(Expression.fromCref(state_cref), arg, uniqueIndex, NBVariable.AUXILIARY_STR);
+            aux_equation := Equation.makeAssignment(Expression.fromCref(state_cref), arg, uniqueIndex, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false));
             returnExp := Expression.fromCref(der_cref);
 
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
@@ -270,7 +274,7 @@ protected
           else
             // one or less algebraic variables > differentiate the expression
             (returnExp, oDiffArgs) := Differentiate.differentiateExpression(arg, diffArgs);
-            returnExp := SimplifyExp.simplify(returnExp, true);
+            returnExp := SimplifyExp.simplifyDump(returnExp, true, getInstanceName());
             if listLength(oDiffArgs.new_vars) == 1 then
               der_var := List.first(oDiffArgs.new_vars);
               Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
@@ -393,11 +397,20 @@ protected
     "All variables on the LHS in a when equation are considered discrete."
     input output Equation eqn "outputs equation just to fit the map() interface. does not change.";
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     () := match eqn
       case Equation.WHEN_EQUATION() algorithm
-        collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, scalarized);
+        collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, acc_previous, scalarized);
+      then ();
+      case Equation.FOR_EQUATION() algorithm
+        for b_eqn in eqn.body loop
+          collectDiscreteStatesFromWhen(b_eqn, acc_discrete_states, acc_previous, scalarized);
+        end for;
+      then ();
+      case Equation.IF_EQUATION() algorithm
+        collectDiscreteStatesFromWhenInIf(eqn.body, acc_discrete_states, acc_previous, scalarized);
       then ();
       else ();
     end match;
@@ -407,6 +420,7 @@ protected
     "All variables on the LHS in a when equation are considered discrete."
     input WhenEquationBody body;
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     for body_stmt in body.when_stmts loop
@@ -420,17 +434,28 @@ protected
           // but we don't need the actual pre cref it returns
           state_var := BVariable.getVarPointer(state_cref);
           BVariable.makeDiscreteStateVar(state_var);
+          getPreVar(state_cref, state_var, acc_previous, scalarized);
           Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
         then ();
 
         else ();
       end match;
     end for;
-
-    if Util.isSome(body.else_when) then
-      collectDiscreteStatesFromWhenBody(Util.getOption(body.else_when), acc_discrete_states, scalarized);
-    end if;
   end collectDiscreteStatesFromWhenBody;
+
+  function collectDiscreteStatesFromWhenInIf
+    input IfEquationBody body;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input Boolean scalarized;
+  algorithm
+    for eqn in body.then_eqns loop
+      collectDiscreteStatesFromWhen(Pointer.access(eqn), acc_discrete_states, acc_previous, scalarized);
+    end for;
+    if Util.isSome(body.else_if) then
+      collectDiscreteStatesFromWhenInIf(Util.getOption(body.else_if),  acc_discrete_states, acc_previous, scalarized);
+    end if;
+  end collectDiscreteStatesFromWhenInIf;
 
   function getPreVar
     input ComponentRef var_cref;

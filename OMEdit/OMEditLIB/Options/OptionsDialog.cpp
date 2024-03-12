@@ -1019,6 +1019,12 @@ void OptionsDialog::readMessagesSettings()
   } else {
     mpMessagesPage->getClearMessagesBrowserBeforeSimulationCheckBox()->setChecked(OptionsDefaults::Messages::clearMessagesBrowserBeforeSimulation);
   }
+  // read enlarge message browser
+  if (mpSettings->contains("messages/enlargeMessagesBrowser")) {
+    mpMessagesPage->getEnlargeMessageBrowserCheckBox()->setChecked(mpSettings->value("messages/enlargeMessagesBrowser").toBool());
+  } else {
+    mpMessagesPage->getEnlargeMessageBrowserCheckBox()->setChecked(OptionsDefaults::Messages::enlargeMessageBrowserCheckBox);
+  }
   // read font family
   QTextBrowser textBrowser;
   if (mpSettings->contains("messages/fontFamily")) {
@@ -2564,6 +2570,13 @@ void OptionsDialog::saveMessagesSettings()
     mpSettings->remove("messages/clearMessagesBrowser");
   } else {
     mpSettings->setValue("messages/clearMessagesBrowser", clearMessagesBrowserBeforeSimulation);
+  }
+  // save enlarge message browser
+  bool enlargeMessagesBrowserBeforeSimulation = mpMessagesPage->getEnlargeMessageBrowserCheckBox()->isChecked();
+  if (enlargeMessagesBrowserBeforeSimulation == OptionsDefaults::Messages::enlargeMessageBrowserCheckBox) {
+    mpSettings->remove("messages/enlargeMessagesBrowser");
+  } else {
+    mpSettings->setValue("messages/enlargeMessagesBrowser", enlargeMessagesBrowserBeforeSimulation);
   }
   // save font
   QTextBrowser textBrowser;
@@ -4116,12 +4129,12 @@ void AddSystemLibraryDialog::addSystemLibrary()
 {
   // if name text box is empty show error and return
   if (mpNameComboBox->currentText().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("a")), Helper::ok);
     return;
   }
   // if value text box is empty show error and return
   if (mpVersionsComboBox->lineEdit()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("the value for a")), Helper::ok);
     return;
   }
   // if user is adding a new library
@@ -5738,6 +5751,8 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(OptionsDefaults::Messages::resetMessagesNumberBeforeSimulation);
   // clear message browser before simulation
   mpClearMessagesBrowserBeforeSimulationCheckBox = new QCheckBox(tr("Clear message browser before checking, instantiation, and simulation"));
+  // enlarge message browser on a new message
+  mpEnlargeMessageBrowserCheckBox = new QCheckBox(tr("Do not automatically enlarge message browser when a new message is available"));
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setColumnStretch(1, 1);
@@ -5745,6 +5760,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   pGeneralGroupBoxLayout->addWidget(mpOutputSizeSpinBox, 0, 1);
   pGeneralGroupBoxLayout->addWidget(mpResetMessagesNumberBeforeSimulationCheckBox, 1, 0, 1, 2);
   pGeneralGroupBoxLayout->addWidget(mpClearMessagesBrowserBeforeSimulationCheckBox, 2, 0, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpEnlargeMessageBrowserCheckBox, 3, 0, 1, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // Font and Colors
   mpFontColorsGroupBox = new QGroupBox(Helper::Colors);

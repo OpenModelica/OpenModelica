@@ -36,11 +36,11 @@ end ForConnect2;
 //   final parameter Integer n(start = 3);
 // equation
 //   c1[1].e = c2[1].e;
-//   (-c1[1].f) - c2[1].f = 0.0;
+//   -(c1[1].f + c2[1].f) = 0.0;
 //   c1[2].e = c2[2].e;
-//   (-c1[2].f) - c2[2].f = 0.0;
+//   -(c1[2].f + c2[2].f) = 0.0;
 //   c1[3].e = c2[3].e;
-//   (-c1[3].f) - c2[3].f = 0.0;
+//   -(c1[3].f + c2[3].f) = 0.0;
 //   c1[1].f = 0.0;
 //   c1[2].f = 0.0;
 //   c1[3].f = 0.0;
@@ -48,4 +48,6 @@ end ForConnect2;
 //   c2[2].f = 0.0;
 //   c2[3].f = 0.0;
 // end ForConnect2;
+// [flattening/modelica/scodeinst/ForConnect2.mo:15:3-15:33:writable] Warning: Parameter n has no value, and is fixed during initialization (fixed=true), using available start value (start=3) as default value.
+//
 // endResult

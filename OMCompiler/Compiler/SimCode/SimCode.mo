@@ -262,6 +262,7 @@ end BaseUnit;
 uniontype ModelInfo "Container for metadata about a Modelica model."
   record MODELINFO
     Absyn.Path name;
+    String fileName;
     String description;
     String directory;
     VarInfo varInfo;

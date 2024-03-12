@@ -549,7 +549,13 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         infoStreamPrint(LOG_SOLVER, 0, "finished solver step %g", solverInfo->currentTime);
         messageClose(LOG_SOLVER);
 
-        if (S_OPTIMIZATION == solverInfo->solverMethod) break;
+        if (S_OPTIMIZATION == solverInfo->solverMethod){
+          if(retValIntegrator != 0){
+            retValue = -1;
+            infoStreamPrint(LOG_STDOUT, 0, "model terminate | optimization failed.");
+          }
+          break;
+        }
         syncStep = simulationUpdate(data, threadData, solverInfo);
         retry = 0; /* reset retry */
 

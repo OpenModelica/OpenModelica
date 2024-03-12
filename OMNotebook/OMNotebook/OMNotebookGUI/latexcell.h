@@ -107,6 +107,7 @@ namespace IAEX
     void clear();
 
   private slots:
+    void addToHighlighter();
     void charFormatChanged(const QTextCharFormat &);
 
   private:
