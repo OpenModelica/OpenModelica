@@ -562,6 +562,7 @@ public:
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
   UndoStack* getUndoStack() {return mpUndoStack;}
   BaseEditor* getEditor() {return mpEditor;}
+  bool isDiagramViewLoaded() const {return mDiagramViewLoaded;}
   void setModelClassPathLabel(QString path) {mpModelClassPathLabel->setText(path);}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   QVBoxLayout* getMainLayout() {return mpMainLayout;}

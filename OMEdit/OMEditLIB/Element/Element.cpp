@@ -288,8 +288,6 @@ void ElementInfo::parseElementInfoString(QString value)
   }
 }
 
-
-
 /*!
  * \brief ElementInfo::fetchParameterValue
  * Fetches the Element parameter value if any.

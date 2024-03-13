@@ -681,6 +681,50 @@ void LibraryTreeItem::removeInheritedClasses()
   mInheritedClasses.clear();
 }
 
+const QList<LibraryTreeItem*> &LibraryTreeItem::getInheritedClasses()
+{
+  // This section is used by autocompletion when instance API is enabled.
+  /*! @todo We should use the Language Server Protocol. */
+  if (MainWindow::instance()->isNewApi()) {
+    if (mpModelWidget && mpModelWidget->isDiagramViewLoaded()) {
+      QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+      // reuse the mInheritedClasses list
+      mInheritedClasses.clear();
+      foreach (auto pElement, elements) {
+        if (pElement->isExtend()) {
+          LibraryTreeItem *pInheritedLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pElement->getType());
+          if (pInheritedLibraryTreeItem) {
+            mInheritedClasses.append(pInheritedLibraryTreeItem);
+          }
+        }
+      }
+      return mInheritedClasses;
+    } else {
+      if (!mInheritedClassesLoaded) {
+        mInheritedClasses.clear();
+        // get the inherited classes of the class
+        QList<QString> inheritedClasses = MainWindow::instance()->getOMCProxy()->getInheritedClasses(getNameStructure());
+        foreach (QString inheritedClass, inheritedClasses) {
+          /* If the inherited class is one of the builtin type such as Real we can
+           * stop here, because the class cannot contain any classes, etc.
+           * Also check for cyclic loops.
+           */
+          if (!(MainWindow::instance()->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(getNameStructure()) == 0)) {
+            LibraryTreeItem *pInheritedLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(inheritedClass);
+            if (pInheritedLibraryTreeItem) {
+              mInheritedClasses.append(pInheritedLibraryTreeItem);
+            }
+          }
+        }
+        mInheritedClassesLoaded = true;
+      }
+      return mInheritedClasses;
+    }
+  } else {
+    return mInheritedClasses;
+  }
+}
+
 QList<LibraryTreeItem*> LibraryTreeItem::getInheritedClassesDeepList()
 {
   QList<LibraryTreeItem*> result;
@@ -698,15 +742,43 @@ void LibraryTreeItem::setModelWidget(ModelWidget *pModelWidget)
   mComponentsLoaded = false;
 }
 
+#define FETCH_COMPONENTS() \
+  if (!mComponentsLoaded) { \
+    mComponents = MainWindow::instance()->getOMCProxy()->getElements(getNameStructure()); \
+    mComponentsLoaded = true; \
+  }
+
 const QList<ElementInfo*> &LibraryTreeItem::getComponentsList()
 {
   if (mpModelWidget) {
-    return mpModelWidget->getComponentsList();
-  } else {
-    if (!mComponentsLoaded) {
-      mComponents = MainWindow::instance()->getOMCProxy()->getElements(getNameStructure());
-      mComponentsLoaded = true;
+    if (mpModelWidget->isNewApi()) {
+      if (mpModelWidget->isDiagramViewLoaded()) {
+        QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+        // reuse the mComponents list
+        mComponents.clear();
+        foreach (auto pElement, elements) {
+          if (pElement->isComponent()) {
+            /* construct the ElementInfo from the new instance API Element
+             * We only need the name, type and comment.
+             */
+            ElementInfo *pElementInfo = new ElementInfo();
+            pElementInfo->setParentClassName(getNameStructure());
+            pElementInfo->setName(pElement->getName());
+            pElementInfo->setClassName(pElement->getType());
+            pElementInfo->setComment(pElement->getComment());
+            mComponents.append(pElementInfo);
+          }
+        }
+        return mComponents;
+      } else {
+        FETCH_COMPONENTS();
+        return mComponents;
+      }
+    } else {
+      return mpModelWidget->getComponentsList();
     }
+  } else {
+    FETCH_COMPONENTS();
     return mComponents;
   }
 }
