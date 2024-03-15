@@ -145,8 +145,8 @@ endif()
 @FMU_ADDITIONAL_LIBS@
 
 if(${NEED_CVODE})
-  # Force static compilation on Windows because DLLs suck
-  if(WIN32)
+  # Force static compilation on Windows or if CMake is too old
+  if(WIN32 OR (${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none"))
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
     target_compile_definitions(${FMU_NAME} PRIVATE LINK_SUNDIALS_STATIC)
   endif()
