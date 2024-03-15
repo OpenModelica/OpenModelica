@@ -15745,7 +15745,8 @@ algorithm
                  "             NAMES " + lib + "\n" +
                  "             PATHS ${EXTERNAL_LIBDIRECTORIES})\n" +
                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n";
+                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n" +
+                 "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
   end for;
 end getCmakeLinkLibrariesCode;
 
