@@ -213,7 +213,6 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
-  setSharpLibraryPixmap(false);
   mElementsList.clear();
   mOutOfSceneElementsList.clear();
   mConnectionsList.clear();

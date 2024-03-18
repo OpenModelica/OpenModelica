@@ -1075,23 +1075,6 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
 }
 
 /*!
- * \brief Utilities::convertMMToPixel
- * Converts the value from mm to pixels
- * pixel = (dpi * mm / 1 inch)
- * 1 inch is 25.4
- * \param value
- * \return
- */
-qreal Utilities::convertMMToPixel(qreal value)
-{
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-  return (QApplication::primaryScreen()->logicalDotsPerInchX() * value) / 25.4;
-#else // QT_VERSION_CHECK
-  return (QApplication::desktop()->screen()->logicalDpiX() * value) / 25.4;
-#endif // QT_VERSION_CHECK
-}
-
-/*!
  * \brief Utilities::maxi
  * This function gives the maximum
  * \param arr

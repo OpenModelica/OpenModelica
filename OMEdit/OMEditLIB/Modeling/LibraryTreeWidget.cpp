@@ -1805,26 +1805,24 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     libraryPainter.scale(1.0, -1.0);
     libraryPainter.translate(0, ((-source.top()) - source.bottom()));
     libraryPainter.setWindow(source.toRect());
+    // render library pixmap
+    pGraphicsView->setRenderingLibraryPixmap(true);
+    pGraphicsView->scene()->render(&libraryPainter, source, source);
+    libraryPainter.end();
+    pLibraryTreeItem->setPixmap(libraryPixmap);
     // drag pixmap
-    QPixmap dragPixmap(QSize(50, 50));
+    QPixmap dragPixmap(source.size().toSize());
     dragPixmap.fill(QColor(Qt::transparent));
     QPainter dragPainter(&dragPixmap);
     dragPainter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     dragPainter.scale(1.0, -1.0);
     dragPainter.translate(0, ((-source.top()) - source.bottom()));
     dragPainter.setWindow(source.toRect());
-    pGraphicsView->setRenderingLibraryPixmap(true);
-    pGraphicsView->setSharpLibraryPixmap(true);
-    // render library pixmap
-    pGraphicsView->scene()->render(&libraryPainter, source, source);
-    libraryPainter.end();
-    pGraphicsView->setSharpLibraryPixmap(false);
     // render drag pixmap
     pGraphicsView->scene()->render(&dragPainter, source, source);
     dragPainter.end();
+    pLibraryTreeItem->setDragPixmap(dragPixmap.scaled(QSize(50, 50), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     pGraphicsView->setRenderingLibraryPixmap(false);
-    pLibraryTreeItem->setPixmap(libraryPixmap);
-    pLibraryTreeItem->setDragPixmap(dragPixmap);
   } else {
     pLibraryTreeItem->setPixmap(QPixmap());
     pLibraryTreeItem->setDragPixmap(pLibraryTreeItem->getLibraryTreeItemIcon().pixmap(QSize(50, 50)));
