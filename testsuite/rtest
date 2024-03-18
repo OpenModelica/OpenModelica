@@ -107,6 +107,24 @@ $eps_mos = 5e-3;
 $set_modelica_lib = 1;
 $nodelete = 0;
 
+sub isMinGW_UCRT {
+  my $temp = $ENV{'MSYSTEM'};
+  if (defined $temp) {
+    return ($^O eq 'MSWin32') && ($temp eq 'UCRT64');
+  } else {
+    return 0;
+  }
+}
+
+sub isMinGW_MSYS {
+  my $temp = $ENV{'MSYSTEM'};
+  if (defined $temp) {
+    return ($^O eq 'msys') && ($temp eq 'MSYS');
+  } else {
+    return 0;
+  }
+}
+
 sub ulimit_cmd
 {
   my $stack_size = shift;
@@ -282,7 +300,7 @@ sub runone
       s/[ \t]+/ /;
       $str = $_;
       # fix generated files on windows
-      if ($^O =~ /^msys/) {
+      if (isMinGW_UCRT() || isMinGW_UCRT()) {
         # replace /X.mo?_tempNNNN/: -> /
         $str =~ s/\/[^\/]+\.mos?_temp[\d]+\//\//g;
       }
