@@ -223,7 +223,7 @@ public
           Matching phase2_matching;
           array<SuperNode> super_nodes;
 
-        case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+        case Adjacency.Matrix.FINAL() algorithm
           if Flags.isSet(Flags.DUMP_SORTING) then
             print(StringUtil.headline_1("Sorting"));
           end if;
@@ -237,7 +237,7 @@ public
           // kabdelhak: this match-statement is superfluous, SuperNode.create always returns these types.
           // it is just safer if something is changed in the future
           () := match phase2_adj
-            case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+            case Adjacency.Matrix.FINAL() algorithm
               phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
               comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
             then ();
@@ -383,7 +383,7 @@ public
       UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
     algorithm
       phase2_adj := match phase2_adj
-        case Adjacency.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+        case Adjacency.FINAL() algorithm
           //### 1. store all loop indices ###
           for scc in algebraic_loops loop
             for idx in scc loop

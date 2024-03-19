@@ -73,7 +73,21 @@ protected
   import SBSet;
 
 public
-  type MatrixStrictness  = enumeration(LINEAR, SOLVABLE, FULL);
+  type MatrixStrictness  = enumeration(LINEAR, SOLVABLE, MATCHING, SORTING, FULL);
+
+  function strictnessString
+    input MatrixStrictness s;
+    output String str;
+  algorithm
+    str := match s
+      case MatrixStrictness.LINEAR    then "linear";
+      case MatrixStrictness.SOLVABLE  then "solvable";
+      case MatrixStrictness.MATCHING  then "matching";
+      case MatrixStrictness.SORTING   then "sorting";
+      case MatrixStrictness.FULL      then "full";
+      else                                 "unknown";
+    end match;
+  end strictnessString;
 
   uniontype Mapping
     record MAPPING
@@ -409,7 +423,15 @@ public
   end CausalizeModes;
 
   uniontype Matrix
-    record FULL
+    "used to store adjacency information for the bipartite graph representing the system of equations and variables
+    you have to create it in this specific order: EMPTY->FULL->FINAL(LINEAR)->FINAL->(MATCHING)->FINAL(SORTING)
+    and store the FULL for further use."
+
+    record EMPTY "placeholder for empty matrices, just stores intended strictness"
+      MatrixStrictness st;
+    end EMPTY;
+
+    record FULL "contains all information needed. create specific final matrices from this"
       array<ComponentRef> equation_names;
       array<list<ComponentRef>> occurences;
       array<UnorderedMap<ComponentRef, Dependency>> dependencies;
@@ -418,17 +440,16 @@ public
       Mapping mapping;
     end FULL;
 
-    record PSEUDO_ARRAY_ADJACENCY_MATRIX // ToDo: add optional solvability map for tearing
+    record FINAL "specific final matrix, defined by its strictness"
       array<list<Integer>> m        "eqn -> list<var>";
       array<list<Integer>> mT       "var -> list<eqn>";
       Mapping mapping               "index mapping scalar <-> array";
       CausalizeModes modes          "for-loop reconstruction information";
       MatrixStrictness st           "strictness with which it was created";
-    end PSEUDO_ARRAY_ADJACENCY_MATRIX;
+    end FINAL;
 
-    record EMPTY_ADJACENCY_MATRIX
-      MatrixStrictness st;
-    end EMPTY_ADJACENCY_MATRIX;
+    // do a different one for LINEAR MATCHING and SORTING so we can "upgrade" them
+    // EMPTY -> FULL -> LINEAR -> MATCHING -> SORTING (least work to do)
 
     function create
       input VariablePointers vars;
@@ -466,9 +487,9 @@ public
           Mapping mapping;
           CausalizeModes modes;
 
-        case (PSEUDO_ARRAY_ADJACENCY_MATRIX(), {-1})    then create(vars, eqns, adj.st);
+        case (FINAL(), {-1})    then create(vars, eqns, adj.st);
 
-        case (PSEUDO_ARRAY_ADJACENCY_MATRIX(), _) algorithm
+        case (FINAL(), _) algorithm
           (m, mT, _) := updatePseudo(adj.m, adj.st, adj.mapping, adj.modes, vars, eqns, idx_lst, funcTree);
           adj.m       := m;
           adj.mT      := mT;
@@ -497,7 +518,7 @@ public
         // if nothing is added, do nothing
         case _ guard(listEmpty(new_vars) and listEmpty(new_eqns)) then (adj, vars, eqns, funcTree);
 
-        case PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+        case FINAL() algorithm
           (m, mT, mapping, modes, vars, eqns, _) := expandPseudo(adj.m, adj.st, adj.mapping, adj.modes, vars, eqns, new_vars, new_eqns, funcTree);
           adj.m       := m;
           adj.mT      := mT;
@@ -505,7 +526,7 @@ public
           adj.modes   := modes;
         then (adj, vars, eqns, funcTree);
 
-        case EMPTY_ADJACENCY_MATRIX() algorithm
+        case EMPTY() algorithm
           vars := VariablePointers.addList(new_vars, vars);
           eqns := EquationPointers.addList(new_eqns, eqns);
           (adj, funcTree) := create(vars, eqns, adj.st, funcTree);
@@ -614,7 +635,7 @@ public
           str := str + Mapping.toString(adj.mapping) + "\n";
         then str;
 
-        case PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+        case FINAL() algorithm
           if arrayLength(adj.m) > 0 then
             str := str + StringUtil.headline_4("Normal Adjacency Matrix (row = equation)");
             str := str + toStringSingle(adj.m);
@@ -627,7 +648,7 @@ public
           str := str + "\n" + Mapping.toString(adj.mapping);
         then str;
 
-        case EMPTY_ADJACENCY_MATRIX() then str + StringUtil.headline_4("Empty Adjacency Matrix") + "\n";
+        case EMPTY() then str + StringUtil.headline_4("Empty Adjacency Matrix") + "\n";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
@@ -748,6 +769,28 @@ public
       end match;
     end dependencyString;
 
+    function getStrictness
+      input Matrix adj;
+      output MatrixStrictness st;
+    algorithm
+      st := match adj
+        case FULL() then MatrixStrictness.FULL;
+        case FINAL() then adj.st;
+        case EMPTY() then adj.st;
+        else fail();
+      end match;
+    end getStrictness;
+
+    function isEmpty
+      input Matrix adj;
+      output Boolean b;
+    algorithm
+      b := match adj
+        case EMPTY() then true;
+        else              false;
+      end match;
+    end isEmpty;
+
   protected
     function fullString
       input ComponentRef cref;
@@ -778,7 +821,7 @@ public
       output Option<Mapping> mapping;
     algorithm
       mapping := match adj
-        case PSEUDO_ARRAY_ADJACENCY_MATRIX() then SOME(adj.mapping);
+        case FINAL() then SOME(adj.mapping);
                                              else NONE();
       end match;
     end getMappingOpt;
@@ -788,8 +831,8 @@ public
       output Integer count;
     algorithm
       count := match adj
-        case PSEUDO_ARRAY_ADJACENCY_MATRIX()  then BackendUtil.countElem(adj.m);
-        case EMPTY_ADJACENCY_MATRIX()         then 0;
+        case FINAL()  then BackendUtil.countElem(adj.m);
+        case EMPTY()         then 0;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown matrix type."});
         then fail();
@@ -835,18 +878,20 @@ public
     function toStringSingle
       input array<list<Integer>> m;
       output String str = "";
+    protected
+      Integer skip = stringLength(intString(arrayLength(m))) + 1;
+      String tmp;
     algorithm
       for row in 1:arrayLength(m) loop
-        str := str + "\t(" + intString(row) + ")\t" + List.toString(m[row], intString) + "\n";
+        tmp := intString(row);
+        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
       end for;
     end toStringSingle;
 
     function createFull
       input VariablePointers vars;
       input EquationPointers eqns;
-      input MatrixStrictness st = MatrixStrictness.FULL;
       output Matrix adj;
-      input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     protected
       Integer index, size = EquationPointers.size(eqns);
       array<ComponentRef> equation_names;
@@ -868,7 +913,7 @@ public
         solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
         repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
         // loop over each equation and create the corresponding maps and sets
-        for eqn_ptr in listReverse(EquationPointers.toList(eqns)) loop
+        for eqn_ptr in EquationPointers.toList(eqns) loop
           index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
           dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
           sol_map := UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual);
@@ -884,9 +929,141 @@ public
         mapping := Mapping.create(eqns, vars);
         adj := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
       else
-        adj := EMPTY_ADJACENCY_MATRIX(st);
+        adj := EMPTY(MatrixStrictness.FULL);
       end if;
     end createFull;
+
+    function upgrade
+      "upgrades a matrix using the information provided by the full matrix"
+      input output Matrix adj;
+      input Matrix full;
+      input VariablePointers vars;
+      input EquationPointers eqns;
+      input MatrixStrictness st;
+    protected
+      array<list<ComponentRef>> occ;
+      array<UnorderedMap<ComponentRef, Dependency>> dep;
+      array<UnorderedMap<ComponentRef, Solvability>> sol;
+      array<UnorderedSet<ComponentRef>> rep;
+      Mapping mapping;
+      Integer index, min, max;
+      list<ComponentRef> filtered;
+    algorithm
+       adj := match full
+        case EMPTY() then EMPTY(st);
+
+        case FULL() algorithm
+          (mapping, occ, dep, sol, rep) := (full.mapping, full.occurences, full.dependencies, full.solvabilities, full.repetitions);
+          // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
+          if isEmpty(adj) then
+            min := 0;
+            adj := initialize(vars, eqns, mapping, st);
+          else
+            min := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
+          end if;
+          max := Solvability.rank(Solvability.fromStrictness(st));
+
+          adj := match adj
+            local
+              Matrix result;
+            // usual case
+            case FINAL() algorithm
+              // only do if valid upgrade otherwise create from scratch and issue warning if failtrace is activated
+              if max > min then
+                for eqn_ptr in EquationPointers.toList(eqns) loop
+                  index := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
+                  filtered := Solvability.filter(occ[index], sol[index], min, max);
+                  // now run the normal createPseudo pipeline but use dependencies
+                  upgradeRow(eqn_ptr, index, filtered, dep[index], rep[index], vars.map, adj.m, adj.mapping, adj.modes);
+                end for;
+                adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars));
+                result := adj;
+              else
+                if Flags.isSet(Flags.FAILTRACE) then
+                  Error.addCompilerWarning("Invalid matrix upgrade request. Cannot upgrade matrix of type "
+                    + Solvability.toString(Solvability.fromStrictness(getStrictness(adj))) + " to type "
+                    + Solvability.toString(Solvability.fromStrictness(st)) + ". The new matrix will be
+                    created from using only the full adjacency matrix.");
+                end if;
+                result := upgrade(EMPTY(st), full, vars, eqns, st);
+              end if;
+            then result;
+
+            // if its still empty even after initializing it, there are no variables or equations
+            case EMPTY() then adj;
+
+            // cannot upgrade a full matrix
+            case FULL() algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 1st input.
+                Expected: final or empty, Got :" + strictnessString(getStrictness(adj)) + "."});
+            then fail();
+          end match;
+        then adj;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 2nd input.
+            Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});
+        then fail();
+      end match;
+    end upgrade;
+
+    function initialize
+      input VariablePointers vars;
+      input EquationPointers eqns;
+      input Mapping mapping;
+      input MatrixStrictness st;
+      output Matrix adj;
+    protected
+      array<list<Integer>> m, mT;
+      Integer eqn_scalar_size, var_scalar_size;
+      CausalizeModes modes;
+    algorithm
+      if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqns.eqArr) > 0 then
+        eqn_scalar_size := arrayLength(mapping.eqn_StA);
+        var_scalar_size := arrayLength(mapping.var_StA);
+        // create empty for-loop reconstruction information
+        modes           := CausalizeModes.empty(eqn_scalar_size, EquationPointers.size(eqns));
+        // create empty matrix and transposed matrix
+        m := arrayCreate(eqn_scalar_size, {});
+        mT := transposeScalar(m, var_scalar_size);
+        // create record
+        adj := FINAL(m, mT, mapping, modes, st);
+      else
+        adj := EMPTY(st);
+      end if;
+    end initialize;
+
+    function upgradeRow
+      input Pointer<Equation> eqn_ptr;
+      input Integer eqn_arr_idx;
+      input list<ComponentRef> dependencies             "dependent var crefs";
+      input UnorderedMap<ComponentRef, Dependency> dep  "dependency map";
+      input UnorderedSet<ComponentRef> rep              "repetition set";
+      input UnorderedMap<ComponentRef, Integer> map     "unordered map to check for relevance";
+      input array<list<Integer>> m;
+      input Mapping mapping;
+      input CausalizeModes modes                        "mutable";
+    protected
+      Integer eqn_scal_idx, eqn_size;
+      list<Integer> row;
+      Equation eqn = Pointer.access(eqn_ptr);
+      Iterator iter = Equation.getForIterator(eqn);
+      Type ty = Equation.getType(eqn, true);
+    algorithm
+      print("ty: " + Type.toString(ty) + " equation: " + Equation.pointerToString(eqn_ptr) + "\n");
+      // don't do this for if equations as soon as we properly split them
+      if Equation.isAlgorithm(eqn_ptr) or Equation.isIfEquation(eqn_ptr) then
+        // algorithm full dependency
+        (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+        row := Slice.upgradeRowFull(dependencies, map, mapping);
+        for i in 0:eqn_size-1 loop
+          updateIntegerRow(m, eqn_scal_idx+i, row);
+        end for;
+      else
+        // todo: if, when single equation (needs to be updated for if)
+        Slice.upgradeRow(eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
+      end if;
+    end upgradeRow;
 
     function createPseudo
       input VariablePointers vars;
@@ -904,11 +1081,15 @@ public
       Mapping mapping                                                                 "scalar <-> array index mapping";
       CausalizeModes modes;
     algorithm
-      adj := createFull(vars, eqns, st, funcTree);
-      //print(EquationPointers.toString(eqns) + "\n");
+      adj := createFull(vars, eqns);
       //print(solvabilityString(adj, "Full") + "\n");
-      //print(dependencyString(adj, "Full") + "\n");
-      //print(toString(adj, "Full") + "\n");
+      print(dependencyString(adj, "Full") + "\n");
+      print(toString(adj, "Full") + "\n");
+      adj := upgrade(EMPTY(st), adj, vars, eqns, MatrixStrictness.SORTING);
+      print(toString(adj, "final") + "\n");
+      print(EquationPointers.toString(eqns) + "\n");
+      print(VariablePointers.toString(vars) + "\n");
+
       if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqns.eqArr) > 0 then
         if Util.isSome(funcTree) then
           diffArgs_ptr := Pointer.create(Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, Util.getOption(funcTree)));
@@ -945,9 +1126,9 @@ public
           funcTree := SOME(diffArgs.funcTree);
         end if;
 
-        adj := PSEUDO_ARRAY_ADJACENCY_MATRIX(m, mT, mapping, modes, st);
+        adj := FINAL(m, mT, mapping, modes, st);
       else
-        adj := EMPTY_ADJACENCY_MATRIX(st);
+        adj := EMPTY(st);
       end if;
     end createPseudo;
 
@@ -1189,54 +1370,81 @@ public
     end updateIntegerRow;
   end Matrix;
 
+
   uniontype Dependency
     "the dependency kind to show how a component reference occurs in an equation.
     for each dimension there has to be one dependency kind."
+    type Kind = enumeration(REGULAR, REDUCTION);
+
     record DEPENDENCY
-      list<Integer> skip_pos;
-      Integer regular;
-      Integer reduction;
+      list<Integer> skips;
+      list<Dependency.Kind> kinds;
     end DEPENDENCY;
 
     function toString
       input Dependency dep;
       output String str;
     protected
+      function kindString
+        input Kind kind;
+        output String str;
+      algorithm
+        str := match kind
+          case Kind.REGULAR then ":";
+                            else "-";
+        end match;
+      end kindString;
       String str1, str2;
     algorithm
-      str1 := List.toString(dep.skip_pos, intString, "", "", ", ", "");
-      str2 := List.toString(listAppend(List.fill(":", dep.regular), List.fill("-", dep.reduction)), Util.id, "", "", ", ", "");
+      str1 := List.toString(dep.skips, intString, "", "", ", ", "");
+      str2 := List.toString(dep.kinds, kindString, "", "", ", ", "");
       str := if str1 == "" or str2 == "" then str1 + str2 else str1 + ", " + str2;
       str := "{" + str + "}";
     end toString;
+
+    function toBoolean
+      "converts the regular/reduction part of the dependency to a boolean list for scalarization"
+      input Dependency dep;
+      output list<Boolean> b = list(not isReductionKind(k) for k in dep.kinds);
+    end toBoolean;
 
     function create
       input Type sub_ty;
       output Dependency dep;
     algorithm
-      if Type.isArray(sub_ty) then
-        dep := DEPENDENCY({}, listLength(list(dim for dim guard(not Dimension.isOne(dim)) in Type.arrayDims(sub_ty))), 0);
-      else
-        dep := DEPENDENCY({}, 0, 0);
-      end if;
+      dep := DEPENDENCY({}, list(Kind.REGULAR for dim guard(not Dimension.isOne(dim)) in Type.arrayDims(sub_ty)));
     end create;
 
     function update
       "sets the dependency of num dimensions
       REGULAR -> REDUCTION"
       input ComponentRef cref;
-      input Integer num "number of dependencies to turn to reductions. negative means all";
+      input Integer num     "number of dependencies to turn to reductions. negative means all";
+      input Boolean reverse "true = from right, false = from left";
       input UnorderedMap<ComponentRef, Dependency> map;
     protected
       Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
       Dependency dep;
-      Integer fixed_num;
+      function makeNewKinds
+        input output list<Kind> kinds;
+        input Integer num;
+      algorithm
+        kinds := match (kinds, num)
+          local
+            list<Kind> rest;
+          case (_, 0) then kinds;
+          case (_::rest, _) then Kind.REDUCTION :: makeNewKinds(rest, num-1);
+          else kinds;
+        end match;
+      end makeNewKinds;
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
-        fixed_num := if num > 0 then intMin(num, dep.regular) else dep.regular;
-        dep.regular := dep.regular - fixed_num;
-        dep.reduction := dep.reduction + fixed_num;
+        if reverse then
+          dep.kinds := listReverse(makeNewKinds(listReverse(dep.kinds), num));
+        else
+          dep.kinds := makeNewKinds(dep.kinds, num);
+        end if;
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
@@ -1247,7 +1455,7 @@ public
 
     function skip
       input ComponentRef cref;
-      input Integer skip_pos;
+      input Integer skips;
       input UnorderedMap<ComponentRef, Dependency> map;
     protected
       Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
@@ -1255,7 +1463,7 @@ public
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
-        dep.skip_pos := skip_pos :: dep.skip_pos;
+        dep.skips := skips :: dep.skips;
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
@@ -1267,33 +1475,43 @@ public
     function updateList
       input list<ComponentRef> lst;
       input Integer num;
+      input Boolean reverse;
       input UnorderedMap<ComponentRef, Dependency> map;
     algorithm
       for cref in lst loop
-        update(cref, num, map);
+        update(cref, num, reverse, map);
       end for;
     end updateList;
 
     function skipList
       input list<ComponentRef> lst;
-      input Integer skip_pos;
+      input Integer skips;
       input UnorderedMap<ComponentRef, Dependency> map;
     algorithm
       for cref in lst loop
-        skip(cref, skip_pos, map);
+        skip(cref, skips, map);
       end for;
     end skipList;
 
-    function addList
+    function addListFull
+      "adds a list and applies full dependency"
       input list<ComponentRef> lst;
       input UnorderedMap<ComponentRef, Dependency> map;
+      input UnorderedSet<ComponentRef> rep;
+    protected
+      Dependency dep;
     algorithm
       for cref in lst loop
-        if not UnorderedMap.contains(cref, map) then
-          UnorderedMap.add(cref, create(ComponentRef.getSubscriptedType(cref)), map);
-        end if;
+        UnorderedMap.add(cref, create(ComponentRef.getSubscriptedType(cref)), map);
+        UnorderedSet.add(cref, rep);
       end for;
-    end addList;
+      updateList(lst, -1, false, map);
+    end addListFull;
+
+    function isReductionKind
+      input Dependency.Kind kind;
+      output Boolean b = kind == Kind.REDUCTION;
+    end isReductionKind;
 
     function categorize
       input list<ComponentRef> crefs;
@@ -1312,15 +1530,15 @@ public
         repeats := UnorderedSet.contains(cref, rep_set);
         _ := match UnorderedMap.getSafe(cref, map, sourceInfo())
           local
-            Integer red;
-          case DEPENDENCY(skip_pos = {_})
+            list<Kind> kinds;
+          case DEPENDENCY(skips = {_})
             algorithm K := cref :: K; then ();
-          case DEPENDENCY(regular = 0, reduction = 0) guard(repeats)
+          case DEPENDENCY(kinds = {}) guard(repeats)
             algorithm E := cref :: E; then ();
-          case DEPENDENCY(regular = 0, reduction = 0)
+          case DEPENDENCY(kinds = {})
             algorithm S := cref :: S; then ();
-          case DEPENDENCY(reduction = red) algorithm
-            if red > 0 then
+          case DEPENDENCY(kinds = kinds) algorithm
+            if List.any(kinds, isReductionKind) then
               if repeats then
                 F := cref :: F;
               else
@@ -1337,7 +1555,7 @@ public
   end Dependency;
 
   uniontype Solvability
-    record UNKNOWN end UNKNOWN;
+    record UNKNOWN end UNKNOWN; // do not set, only used as default if unset
     record UNSOLVABLE end UNSOLVABLE;
     record IMPLICIT end IMPLICIT;
 
@@ -1366,7 +1584,7 @@ public
       end match;
     end toString;
 
-    function strictness
+    function rank
       input Solvability sol;
       output Integer r;
     algorithm
@@ -1383,16 +1601,16 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown solvability kind."});
         then fail();
       end match;
-    end strictness;
+    end rank;
 
     function update
       "sets the solvability of a component reference if it is of
-      higher strictness than previously determined"
+      higher rank than previously determined"
       input ComponentRef cref;
       input Solvability sol;
       input UnorderedMap<ComponentRef, Solvability> map;
     algorithm
-      if strictness(sol) > strictness(Util.getOptionOrDefault(UnorderedMap.get(cref, map), UNKNOWN())) then
+      if rank(sol) > rank(Util.getOptionOrDefault(UnorderedMap.get(cref, map), UNKNOWN())) then
         UnorderedMap.add(cref, sol, map);
       end if;
     end update;
@@ -1432,6 +1650,36 @@ public
         end match;
       end for;
     end categorize;
+
+    function filter
+      "filters the cref list for all crefs with solvability ranking between (and including) min and max"
+      input list<ComponentRef> all_occ;
+      input UnorderedMap<ComponentRef, Solvability> map;
+      input Integer min;
+      input Integer max;
+      output list<ComponentRef> occ = {};
+    protected
+      Integer r;
+    algorithm
+      for cref in all_occ loop
+        r := rank(UnorderedMap.getSafe(cref, map, sourceInfo()));
+        if r >= min and r <= max then
+          occ := cref :: occ;
+        end if;
+      end for;
+    end filter;
+
+    function fromStrictness
+      input MatrixStrictness st;
+      output Solvability sol;
+    algorithm
+      sol := match st
+        case MatrixStrictness.LINEAR    then EXPLICIT_LINEAR(false, SOME(UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)));
+        case MatrixStrictness.MATCHING  then IMPLICIT();
+        case MatrixStrictness.SORTING   then UNSOLVABLE();
+        else                                 UNKNOWN();
+      end match;
+    end fromStrictness;
   end Solvability;
 
   function collectDependenciesEquation
@@ -1467,8 +1715,8 @@ public
 
       case Equation.ALGORITHM() algorithm
         // create dependencies for inputs and outputs
-        Dependency.addList(eqn.alg.inputs, dep_map);
-        Dependency.addList(eqn.alg.outputs, dep_map);
+        Dependency.addListFull(eqn.alg.inputs, dep_map, rep_set);
+        Dependency.addListFull(eqn.alg.outputs, dep_map, rep_set);
         // make inputs unsolvable and outputs solvable
         Solvability.updateList(eqn.alg.inputs, Solvability.UNSOLVABLE(), sol_map);
         Solvability.updateList(eqn.alg.outputs, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
@@ -1513,9 +1761,10 @@ public
         list<UnorderedSet<ComponentRef>> sets = {};
         Expression call_exp;
         Call call;
-        Boolean isRep;
+        Boolean repeatLeft, repeatRight, reduce;
         Integer ind;
 
+      // add a cref dependency
       case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
         if not UnorderedMap.contains(exp.cref, dep_map) then
           UnorderedMap.add(exp.cref, Dependency.create(ComponentRef.getSubscriptedType(exp.cref)), dep_map);
@@ -1523,7 +1772,7 @@ public
         Solvability.update(exp.cref, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
       then UnorderedSet.fromList({exp.cref}, ComponentRef.hash, ComponentRef.isEqual);
 
-      // Add skips for arrays
+      // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
         for i in 1:arrayLength(exp.elements) loop
           set1 := collectDependencies(exp.elements[i], map, dep_map, sol_map, rep_set);
@@ -1544,7 +1793,7 @@ public
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
       then set;
 
-      // this ultimately should not occur, but handle just as arrays and tuples
+      // add skips for records
       case Expression.RECORD() algorithm
         ind := 1;
         for elem in exp.elements loop
@@ -1559,7 +1808,7 @@ public
       // reduce the dependency for these
       case Expression.SUBSCRIPTED_EXP() algorithm
         set := collectDependencies(exp.exp, map, dep_map, sol_map, rep_set);
-        Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), dep_map);
+        Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
       then set;
 
       // should not change anything
@@ -1567,32 +1816,37 @@ public
       case Expression.RECORD_ELEMENT()  then collectDependencies(exp.recordExp, map, dep_map, sol_map, rep_set);
 
       case Expression.BINARY() algorithm
-        // check if the operator needs a repetition for an argument (.+, .*)
-        isRep := Operator.isRepetition(exp.operator);
         set1  := collectDependencies(exp.exp1, map, dep_map, sol_map, rep_set);
         set2  := collectDependencies(exp.exp2, map, dep_map, sol_map, rep_set);
-        set   := UnorderedSet.union(set1, set2);
-        // add repetitions if needed
-        addRepetitionsCond(set1, exp.exp1, isRep, rep_set);
-        addRepetitionsCond(set2, exp.exp2, isRep, rep_set);
-      then set;
+        // add repetitions if needed (.+, .*)
+        (repeatLeft, repeatRight) := Operator.repetition(exp.operator);
+        if repeatLeft then addRepetitions(set1, rep_set); end if;
+        if repeatRight then addRepetitions(set2, rep_set); end if;
+        // add reductions if needed
+        reduce := Operator.reduction(exp.operator);
+        if reduce then
+          Dependency.updateList(UnorderedSet.toList(set1), 1, true, dep_map);
+          Dependency.updateList(UnorderedSet.toList(set2), 1, false, dep_map);
+        end if;
+      then UnorderedSet.union(set1, set2);
 
       // mostly equal to binary
       case Expression.MULTARY() algorithm
-        // check if the operator needs a repetition for an argument (.+, .*)
-        isRep := Operator.isRepetition(exp.operator);
+        // add repetitions if needed (.+, .*)
+        (repeatLeft, repeatRight) := Operator.repetition(exp.operator);
+        repeatLeft := repeatLeft or repeatRight;
         // traverse arguments
         for arg in exp.arguments loop
           set1 := collectDependencies(arg, map, dep_map, sol_map, rep_set);
           // add repetitions if needed
-          addRepetitionsCond(set1, arg, isRep, rep_set);
+          addRepetitionsCond(set1, arg, repeatLeft, rep_set);
           sets := set1 :: sets;
         end for;
         // traverse inverse arguments
         for arg in exp.inv_arguments loop
           set2 := collectDependencies(arg, map, dep_map, sol_map, rep_set);
           // add repetitions if needed
-          addRepetitionsCond(set2, arg, isRep, rep_set);
+          addRepetitionsCond(set2, arg, repeatLeft, rep_set);
           sets := set2 :: sets;
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
@@ -1660,7 +1914,7 @@ public
           call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
         end for;
         set := collectDependencies(call_exp, map, dep_map, sol_map, rep_set);
-        Dependency.updateList(UnorderedSet.toList(set), -1, dep_map);
+        Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
       then set;
 
       // for functions set the dependency to full reduction (+ repetition) and solvability to implicit
@@ -1669,9 +1923,13 @@ public
           sets := collectDependencies(arg, map, dep_map, sol_map, rep_set) :: sets;
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
-        Dependency.updateList(UnorderedSet.toList(set), -1, dep_map);
+        Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
         Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
         addRepetitions(set, rep_set);
+        // if the return type has to be skipped - add empty skip
+        if Type.isTuple(call.ty) then
+          Dependency.skipList(UnorderedSet.toList(set), 0, dep_map);
+        end if;
       then set;
 
       // nothing is solvable from ranges
@@ -1768,6 +2026,11 @@ public
     // variables in conditions are unsolvable
     set := collectDependencies(body.condition, map, dep_map, sol_map, rep_set);
     Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
+
+    // make condition repeat if the body is larger than 1
+    if sum(WhenStatement.size(stmt) for stmt in body.when_stmts) > 1 then
+      addRepetitions(set, rep_set);
+    end if;
 
     // collect all dependencies from the statments
     for stmt in body.when_stmts loop
