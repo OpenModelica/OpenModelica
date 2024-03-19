@@ -1,0 +1,34 @@
+// name:     CopyClass5
+// keywords:
+// status:   correct
+// cflags:   -d=newInst
+//
+// Checks that copyClass doesn't load libraries if they're referenced,
+// since such references are already fully qualified anyway.
+//
+
+loadString("
+  package P
+    model A
+      Modelica.Units.SI.Voltage v;
+    end A;
+  end P;
+
+  package P2
+  end P2;
+");
+
+copyClass(P.A, "A", P2);
+getErrorString();
+list(P2);
+
+// Result:
+// true
+// true
+// ""
+// "package P2
+//   model A
+//     Modelica.Units.SI.Voltage v;
+//   end A;
+// end P2;"
+// endResult

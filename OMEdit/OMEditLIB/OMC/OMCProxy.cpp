@@ -3214,7 +3214,7 @@ bool OMCProxy::exportToFigaro(QString className, QString directory, QString data
  */
 bool OMCProxy::copyClass(QString className, QString newClassName, QString withIn)
 {
-  bool result = mpOMCInterface->copyClass(className, newClassName, withIn.isEmpty() ? "TopLevel" : withIn);
+  bool result = mpOMCInterface->copyClass(className, newClassName, withIn.isEmpty() ? "__OpenModelica_TopLevel" : withIn);
   if (!result) printMessagesStringInternal();
   return result;
 }

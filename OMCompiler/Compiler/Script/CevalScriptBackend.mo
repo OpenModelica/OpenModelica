@@ -1502,7 +1502,7 @@ algorithm
 
     case ("moveClassToBottom", _) then Values.BOOL(false);
 
-    case ("copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("TopLevel")))})
+    case ("copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("__OpenModelica_TopLevel")))})
       equation
         p = SymbolTable.getAbsyn();
         absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
@@ -5083,8 +5083,12 @@ algorithm
 
   end match;
 
+  // Update the paths in the class to reflect the new location.
+  cls := NFApi.updateMovedClassPaths(inClass, inClassPath, inWithin);
+
   // Replace the filename of each element with the new path.
-  cls := moveClassInfo(inClass, dst_path);
+  cls := moveClassInfo(cls, dst_path);
+
   // Change the name of the class and put it in as a copy in the program.
   cls := AbsynUtil.setClassName(cls, inName);
   outProg := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, inWithin), inProg);

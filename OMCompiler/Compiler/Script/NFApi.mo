@@ -101,6 +101,7 @@ import Testsuite;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 constant InstContext.Type ANNOTATION_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
+constant InstContext.Type FAST_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP);
 
 public
 function evaluateAnnotation
@@ -2304,6 +2305,510 @@ algorithm
   json := dumpJSONSCodeMod_impl(smod, InstNode.EMPTY_NODE());
   jsonString := Values.STRING(JSON.toString(json, prettyPrint));
 end modifierToJSON;
+
+uniontype MoveEnv
+  record MOVE_ENV
+    InstNode scope;
+    Absyn.Path destinationPath;
+  end MOVE_ENV;
+end MoveEnv;
+
+function updateMovedClassPaths
+  "Updates all the paths inside of a class that is being moved such that the
+   paths are still valid in the new location."
+  input output Absyn.Class cls "The class definition";
+  input Absyn.Path clsPath "The fully qualified path of the class";
+  input Absyn.Within destination "The destination package (or top scope)";
+protected
+  InstContext.Type context;
+  InstNode top, cls_node;
+  MoveEnv env;
+  Absyn.Path dest_path;
+algorithm
+  // Make a top node and look up the class in it.
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(clsPath));
+  cls_node := Inst.lookupRootClass(clsPath, top, FAST_CONTEXT);
+  Inst.expand(cls_node);
+
+  // Get the destination path including the class name.
+  dest_path := match destination
+    case Absyn.Within.WITHIN() then AbsynUtil.suffixPath(destination.path, InstNode.name(cls_node));
+    else Absyn.Path.IDENT(InstNode.name(cls_node));
+  end match;
+
+  env := MOVE_ENV(cls_node, dest_path);
+  cls.body := updateMovedClassDef(cls.body, env);
+end updateMovedClassPaths;
+
+function updateMovedClass
+  input output Absyn.Class cls;
+  input MoveEnv env;
+protected
+  InstNode cls_node;
+  MoveEnv cls_env;
+algorithm
+  if classHasScope(cls) then
+    // Change the scope in the environment to this class, if the class has its
+    // own scope (i.e. is a long class definition).
+    cls_node := Lookup.lookupLocalSimpleName(cls.name, env.scope);
+    Inst.expand(cls_node);
+    cls_env := MoveEnv.MOVE_ENV(cls_node, AbsynUtil.suffixPath(env.destinationPath, cls.name));
+  else
+    cls_env := env;
+  end if;
+
+  cls.body := updateMovedClassDef(cls.body, cls_env);
+end updateMovedClass;
+
+function classHasScope
+  input Absyn.Class cls;
+  output Boolean hasScope;
+algorithm
+  hasScope := match cls.body
+    case Absyn.ClassDef.PARTS() then true;
+    case Absyn.ClassDef.CLASS_EXTENDS() then true;
+    else false;
+  end match;
+end classHasScope;
+
+function updateMovedClassDef
+  input output Absyn.ClassDef cdef;
+  input MoveEnv env;
+algorithm
+  () := match cdef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        cdef.classParts := list(updateMovedClassPart(p, env) for p in cdef.classParts);
+        cdef.ann := list(updateMovedAnnotation(a, env) for a in cdef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        cdef.typeSpec := updateMovedTypeSpec(cdef.typeSpec, env);
+        cdef.attributes := updateMovedElementAttributes(cdef.attributes, env);
+        cdef.arguments := list(updateMovedElementArg(a, env) for a in cdef.arguments);
+        cdef.comment := updateMovedCommentOpt(cdef.comment, env);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        cdef.modifications := list(updateMovedElementArg(a, env) for a in cdef.modifications);
+        cdef.parts := list(updateMovedClassPart(p, env) for p in cdef.parts);
+        cdef.ann := list(updateMovedAnnotation(a, env) for a in cdef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.PDER()
+      algorithm
+        cdef.functionName := updateMovedPath(cdef.functionName, env);
+        cdef.comment := updateMovedCommentOpt(cdef.comment, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedClassDef;
+
+function updateMovedClassPart
+  input output Absyn.ClassPart part;
+  input MoveEnv env;
+algorithm
+  () := match part
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        part.contents := list(updateMovedElementItem(i, env) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        part.contents := list(updateMovedElementItem(i, env) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.EQUATIONS()
+      algorithm
+        part.contents := updateMovedEquationItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALEQUATIONS()
+      algorithm
+        part.contents := updateMovedEquationItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.ALGORITHMS()
+      algorithm
+        part.contents := updateMovedAlgorithmItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALALGORITHMS()
+      algorithm
+        part.contents := updateMovedAlgorithmItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.EXTERNAL()
+      algorithm
+        part.annotation_ := updateMovedAnnotationOpt(part.annotation_, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedClassPart;
+
+function updateMovedElementItem
+  input output Absyn.ElementItem item;
+  input MoveEnv env;
+algorithm
+  () := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        item.element := updateMovedElement(item.element, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElementItem;
+
+function updateMovedElement
+  input output Absyn.Element element;
+  input MoveEnv env;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := updateMovedElementSpec(element.specification, env);
+
+        if isSome(element.constrainClass) then
+          element.constrainClass :=
+            SOME(updateMovedConstrainClass(Util.getOption(element.constrainClass), env));
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElement;
+
+function updateMovedConstrainClass
+  input output Absyn.ConstrainClass cc;
+  input MoveEnv env;
+algorithm
+  cc.elementSpec := updateMovedElementSpec(cc.elementSpec, env);
+  cc.comment := updateMovedCommentOpt(cc.comment, env);
+end updateMovedConstrainClass;
+
+function updateMovedElementSpec
+  input output Absyn.ElementSpec spec;
+  input MoveEnv env;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        spec.class_ := updateMovedClass(spec.class_, env);
+      then
+        ();
+
+    case Absyn.ElementSpec.EXTENDS()
+      algorithm
+        spec.path := updateMovedPath(spec.path, env);
+        spec.elementArg := list(updateMovedElementArg(a, env) for a in spec.elementArg);
+        spec.annotationOpt := updateMovedAnnotationOpt(spec.annotationOpt, env);
+      then
+        ();
+
+    case Absyn.ElementSpec.COMPONENTS()
+      algorithm
+        spec.attributes := updateMovedElementAttributes(spec.attributes, env);
+        spec.typeSpec := updateMovedTypeSpec(spec.typeSpec, env);
+        spec.components := list(updateMovedComponentItem(c, env) for c in spec.components);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElementSpec;
+
+function updateMovedElementAttributes
+  input output Absyn.ElementAttributes attr;
+  input MoveEnv env;
+algorithm
+  if not listEmpty(attr.arrayDim) then
+    attr.arrayDim := list(updateMovedSubscript(s, env) for s in attr.arrayDim);
+  end if;
+end updateMovedElementAttributes;
+
+function updateMovedElementArg
+  input output Absyn.ElementArg arg;
+  input MoveEnv env;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION()
+      algorithm
+        if isSome(arg.modification) then
+          arg.modification := SOME(updateMovedModification(Util.getOption(arg.modification), env));
+        end if;
+      then
+        ();
+
+    case Absyn.ElementArg.REDECLARATION()
+      algorithm
+        arg.elementSpec := updateMovedElementSpec(arg.elementSpec, env);
+
+        if isSome(arg.constrainClass) then
+          arg.constrainClass := SOME(updateMovedConstrainClass(Util.getOption(arg.constrainClass), env));
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElementArg;
+
+function updateMovedModification
+  input output Absyn.Modification mod;
+  input MoveEnv env;
+protected
+  Absyn.EqMod eq_mod;
+algorithm
+  mod.elementArgLst := list(updateMovedElementArg(a, env) for a in mod.elementArgLst);
+
+  eq_mod := mod.eqMod;
+  () := match eq_mod
+    case Absyn.EqMod.EQMOD()
+      algorithm
+        eq_mod.exp := updateMovedExp(eq_mod.exp, env);
+        mod.eqMod := eq_mod;
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedModification;
+
+function updateMovedComponentItem
+  input output Absyn.ComponentItem item;
+  input MoveEnv env;
+algorithm
+  item.component := updateMovedComponent(item.component, env);
+
+  if isSome(item.condition) then
+    item.condition := SOME(updateMovedExp(Util.getOption(item.condition), env));
+  end if;
+end updateMovedComponentItem;
+
+function updateMovedComponent
+  input output Absyn.Component component;
+  input MoveEnv env;
+algorithm
+  if not listEmpty(component.arrayDim) then
+    component.arrayDim := list(updateMovedSubscript(d, env) for d in component.arrayDim);
+  end if;
+
+  if isSome(component.modification) then
+    component.modification := SOME(updateMovedModification(Util.getOption(component.modification), env));
+  end if;
+end updateMovedComponent;
+
+function updateMovedEquationItems
+  input output list<Absyn.EquationItem> items;
+  input MoveEnv env;
+algorithm
+  items := AbsynUtil.traverseEquationItemListBidir(items,
+    updateMovedExp_traverser, AbsynUtil.dummyTraverseExp, env);
+end updateMovedEquationItems;
+
+function updateMovedAlgorithmItems
+  input output list<Absyn.AlgorithmItem> items;
+  input MoveEnv env;
+algorithm
+  items := AbsynUtil.traverseAlgorithmItemListBidir(items,
+    updateMovedExp_traverser, AbsynUtil.dummyTraverseExp, env);
+end updateMovedAlgorithmItems;
+
+function updateMovedTypeSpec
+  input output Absyn.TypeSpec ty;
+  input MoveEnv env;
+algorithm
+  () := match ty
+    case Absyn.TypeSpec.TPATH()
+      algorithm
+        ty.path := updateMovedPath(ty.path, env);
+
+        if isSome(ty.arrayDim) then
+          ty.arrayDim := SOME(list(updateMovedSubscript(s, env) for s in Util.getOption(ty.arrayDim)));
+        end if;
+      then
+        ();
+
+    case Absyn.TypeSpec.TCOMPLEX()
+      algorithm
+        ty.path := updateMovedPath(ty.path, env);
+
+        if isSome(ty.arrayDim) then
+          ty.arrayDim := SOME(list(updateMovedSubscript(s, env) for s in Util.getOption(ty.arrayDim)));
+        end if;
+      then
+        ();
+
+  end match;
+end updateMovedTypeSpec;
+
+function updateMovedPath
+  input output Absyn.Path path;
+  input MoveEnv env;
+protected
+  Absyn.Path qualified_path;
+algorithm
+  // Try to look up the qualified path needed to be able to find the name in
+  // this scope even if the root class that contains the scope is moved elsewhere.
+  try
+    qualified_path :=
+      Lookup.lookupSimpleNameRootPath(AbsynUtil.pathFirstIdent(path), env.scope, FAST_CONTEXT);
+  else
+    // Lookup failed, leave the path unchanged.
+    return;
+  end try;
+
+  // If the path we found is fully qualified it means we need to update the original path.
+  if AbsynUtil.pathIsFullyQualified(qualified_path) then
+    qualified_path := AbsynUtil.makeNotFullyQualified(qualified_path);
+
+    if AbsynUtil.pathIsQual(qualified_path) then
+      // If the path is qualified it needs to be joined with the original path,
+      // but we remove any part of the path that's the same as the destination.
+      qualified_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
+
+      if AbsynUtil.pathIsQual(qualified_path) then
+        path := AbsynUtil.joinPaths(AbsynUtil.pathPrefix(qualified_path), path);
+      end if;
+    elseif AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
+      // Special case, the path refers to the destination package, e.g. moving path A.B.C into A.
+      path := AbsynUtil.pathRest(path);
+    end if;
+  end if;
+end updateMovedPath;
+
+function updateMovedCommentOpt
+  input output Option<Absyn.Comment> cmt;
+  input MoveEnv env;
+algorithm
+  if isSome(cmt) then
+    cmt := SOME(updateMovedComment(Util.getOption(cmt), env));
+  end if;
+end updateMovedCommentOpt;
+
+function updateMovedComment
+  input output Absyn.Comment cmt;
+  input MoveEnv env;
+algorithm
+  cmt.annotation_ := updateMovedAnnotationOpt(cmt.annotation_, env);
+end updateMovedComment;
+
+function updateMovedAnnotationOpt
+  input output Option<Absyn.Annotation> ann;
+  input MoveEnv env;
+algorithm
+  if isSome(ann) then
+    ann := SOME(updateMovedAnnotation(Util.getOption(ann), env));
+  end if;
+end updateMovedAnnotationOpt;
+
+function updateMovedAnnotation
+  input output Absyn.Annotation ann;
+  input MoveEnv env;
+algorithm
+  ann.elementArgs := list(updateMovedElementArg(a, env) for a in ann.elementArgs);
+end updateMovedAnnotation;
+
+function updateMovedSubscript
+  input output Absyn.Subscript sub;
+  input MoveEnv env;
+algorithm
+  () := match sub
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        sub.subscript := updateMovedExp(sub.subscript, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedSubscript;
+
+function updateMovedExp
+  input output Absyn.Exp exp;
+  input MoveEnv env;
+algorithm
+  exp := AbsynUtil.traverseExp(exp, updateMovedExp_traverser, env);
+end updateMovedExp;
+
+function updateMovedExp_traverser
+  input output Absyn.Exp exp;
+  input output MoveEnv env;
+algorithm
+  () := match exp
+    case Absyn.Exp.CREF()
+      algorithm
+        exp.componentRef := updateMovedCref(exp.componentRef, env);
+      then
+        ();
+
+    case Absyn.Exp.CALL()
+      algorithm
+        exp.function_ := updateMovedCref(exp.function_, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedExp_traverser;
+
+function updateMovedCref
+  input output Absyn.ComponentRef cref;
+  input MoveEnv env;
+protected
+  Absyn.Path qualified_path;
+algorithm
+  if AbsynUtil.crefIsFullyQualified(cref) or AbsynUtil.crefIsWild(cref) then
+    return;
+  end if;
+
+  // Try to look up the qualified path needed to be able to find the name in
+  // this scope even if the root class that contains the scope is moved elsewhere.
+  try
+    qualified_path :=
+      Lookup.lookupSimpleNameRootPath(AbsynUtil.crefFirstIdent(cref), env.scope, FAST_CONTEXT);
+  else
+    // Lookup failed, leave the path unchanged.
+    return;
+  end try;
+
+  // If the path we found is fully qualified it means we need to update the original cref.
+  if AbsynUtil.pathIsFullyQualified(qualified_path) then
+    qualified_path := AbsynUtil.makeNotFullyQualified(qualified_path);
+
+    if AbsynUtil.pathIsQual(qualified_path) then
+      // If the path is qualified it needs to be joined with the original cref,
+      // but we remove any part of the path that's the same as the destination.
+      qualified_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
+
+      if AbsynUtil.pathIsQual(qualified_path) then
+        cref := AbsynUtil.joinCrefs(AbsynUtil.pathToCref(AbsynUtil.pathPrefix(qualified_path)), cref);
+      end if;
+    elseif AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
+      // Special case, the cref refers to the destination package, e.g. moving path A.B.C into A.
+      cref := AbsynUtil.crefStripFirst(cref);
+    end if;
+  end if;
+end updateMovedCref;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

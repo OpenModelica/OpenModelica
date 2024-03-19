@@ -489,6 +489,74 @@ algorithm
   fail();
 end lookupSimpleName;
 
+function lookupSimpleNameRootPath
+  "Returns the qualified path needed to find the given name in the given scope
+  that's either a root class or a class somewhere inside a root class. If the
+  name is found outside the root class it's fully qualified, otherwise it's
+  returned as it is."
+  input String name;
+  input InstNode scope;
+  input InstContext.Type context;
+  output Absyn.Path path;
+protected
+  InstNode node, cur_scope = scope;
+  Boolean in_root_class = true;
+algorithm
+  if InstContext.inAnnotation(context) then
+    try
+      _ := lookupLocalSimpleName(name, InstNode.annotationScope(scope));
+      // Name refers to builtin annotation that shouldn't be qualified.
+      path := Absyn.Path.IDENT(name);
+      return;
+    else
+    end try;
+  end if;
+
+  for i in 1:Global.recursionDepthLimit loop
+    try
+      node := Class.lookupElement(name, InstNode.getClass(cur_scope));
+
+      if in_root_class then
+        // If we're still inside the root class, then the name doesn't need to be qualified.
+        path := Absyn.Path.IDENT(name);
+      else
+        // Otherwise, fully qualify the path.
+        path := AbsynUtil.makeFullyQualified(InstNode.fullPath(node));
+      end if;
+
+      return;
+    else
+      if InstNode.isEncapsulated(cur_scope) then
+        // If the scope is encapsulated then the name can only refer to builtin
+        // classes, which are already fully qualified.
+        path := Absyn.Path.IDENT(name);
+        return;
+      elseif name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) then
+        // The current scope is the class we're looking for.
+        path := if in_root_class then Absyn.Path.IDENT(name) else
+                                      AbsynUtil.makeFullyQualified(InstNode.fullPath(cur_scope));
+        return;
+      elseif InstNode.isTopScope(cur_scope) then
+        // If we reach the top scope then the name is either already fully
+        // qualified or couldn't be found, in either case return name as it is.
+        path := Absyn.Path.IDENT(name);
+        return;
+      else
+        if in_root_class and InstNode.isRootClass(cur_scope) then
+          // The scope was the root class, now we're start to look in the
+          // enclosing scopes of the root class.
+          in_root_class := false;
+        end if;
+
+        // Continue in the enclosing scope.
+        cur_scope := InstNode.parentScope(cur_scope);
+      end if;
+    end try;
+  end for;
+
+  fail();
+end lookupSimpleNameRootPath;
+
 function lookupNameWithError
   input Absyn.Path name;
   input InstNode scope;

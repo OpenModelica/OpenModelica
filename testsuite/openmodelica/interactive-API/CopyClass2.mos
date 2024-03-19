@@ -1,0 +1,73 @@
+// name:     CopyClass2
+// keywords:
+// status:   correct
+// cflags:   -d=newInst
+//
+
+loadString("
+  package P
+    model A
+      Real x;
+    end A;
+
+    function f
+      input Real x;
+      output Real y = x;
+    end f;
+
+    model B
+      A a;
+      Real x = f(time);
+      A2 a2;
+    equation
+      a2.y = P2.P3.f(time);
+    algorithm
+      a.x := f(time);
+    end B;
+  end P;
+
+  package P2
+    model A2
+      Real y;
+    end A2;
+
+    package P3
+      function f
+        input Real x;
+        output Real y = x;
+      end f;
+    end P3;
+  end P2;
+");
+
+copyClass(P.B, "B", P2);
+getErrorString();
+list(P2);
+
+// Result:
+// true
+// true
+// ""
+// "package P2
+//   model A2
+//     Real y;
+//   end A2;
+//
+//   package P3
+//     function f
+//       input Real x;
+//       output Real y = x;
+//     end f;
+//   end P3;
+//
+//   model B
+//     P.A a;
+//     Real x = P.f(time);
+//     A2 a2;
+//   equation
+//     a2.y = P3.f(time);
+//   algorithm
+//     a.x := P.f(time);
+//   end B;
+// end P2;"
+// endResult
