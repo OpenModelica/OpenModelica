@@ -1687,7 +1687,7 @@ void ElementParameters::fetchClassExtendsModifiers(ModelInstance::Element *pMode
           if (pModifier->getName().compare(mpElement->getName()) == 0) {
             foreach (auto *pSubModifier, pModifier->getModifiers()) {
               Parameter *pParameter = findParameter(pSubModifier->getName());
-              applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, hasParentElement, false, true);
+              applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, hasParentElement, true, true);
             }
             break;
           }
