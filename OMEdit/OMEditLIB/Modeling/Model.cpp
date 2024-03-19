@@ -800,13 +800,13 @@ namespace ModelInstance
     return 0;
   }
 
-  QString Modifier::getModifierValue(const QString &modifier) const
+  QPair<QString, bool> Modifier::getModifierValue(const QString &modifier) const
   {
     Modifier *pModifier = getModifier(modifier);
     if (pModifier) {
-      return pModifier->getValue();
+      return qMakePair(pModifier->getValue(), true);
     } else {
-      return "";
+      return qMakePair(QString(""), false);
     }
   }
 
@@ -826,10 +826,10 @@ namespace ModelInstance
     return mpElement && mpElement->getReplaceable();
   }
 
-  QString Modifier::getModifierValue(QStringList qualifiedModifierName) const
+  QPair<QString, bool> Modifier::getModifierValue(QStringList qualifiedModifierName) const
   {
     if (qualifiedModifierName.isEmpty()) {
-      return "";
+      return qMakePair(QString(""), false);
     }
 
     /* Fixes issues #10819 and #10846.
@@ -850,12 +850,12 @@ namespace ModelInstance
     return isFinal() ? "final " : "";
   }
 
-  QString Modifier::getModifierValue(const Modifier *pModifier, const QString &modifierName, QStringList qualifiedModifierName)
+  QPair<QString, bool> Modifier::getModifierValue(const Modifier *pModifier, const QString &modifierName, QStringList qualifiedModifierName)
   {
     foreach (auto *pSubModifier, pModifier->getModifiers()) {
       if (pSubModifier->getName().compare(modifierName) == 0) {
         if (qualifiedModifierName.isEmpty()) {
-          return pSubModifier->getValueWithoutQuotes();
+          return qMakePair(pSubModifier->getValueWithoutQuotes(), true);
         } else {
           const QString name = qualifiedModifierName.takeFirst();
           return Modifier::getModifierValue(pSubModifier, name, qualifiedModifierName);
@@ -863,7 +863,7 @@ namespace ModelInstance
       }
     }
 
-    return "";
+    return qMakePair(QString(""), false);
   }
 
   Replaceable::Replaceable(Model *pParentModel)
@@ -1441,18 +1441,18 @@ namespace ModelInstance
     return true;
   }
 
-  QString Model::getParameterValue(const QString &parameter, QString &typeName)
+  QPair<QString, bool> Model::getParameterValue(const QString &parameter, QString &typeName)
   {
-    QString value = "";
+    QPair<QString, bool> value("", false);
     foreach (auto pElement, mElements) {
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<Component*>(pElement);
         if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
           if (pComponent->getModifier()) {
-            value = pComponent->getModifier()->getValueWithoutQuotes();
+            value = qMakePair(pComponent->getModifier()->getValueWithoutQuotes(), true);
           }
           // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
-          if (value.isEmpty() && pComponent->getModel()) {
+          if (!value.second && pComponent->getModel()) {
             value = pComponent->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
           }
           typeName = pComponent->getType();
@@ -1463,21 +1463,21 @@ namespace ModelInstance
     return value;
   }
 
-  QString Model::getParameterValueFromExtendsModifiers(const QString &parameter)
+  QPair<QString, bool> Model::getParameterValueFromExtendsModifiers(const QString &parameter)
   {
-    QString value = "";
+    QPair<QString, bool> value("", false);
     foreach (auto pElement, mElements) {
       if (pElement->isExtend()) {
         auto pExtend = dynamic_cast<Extend*>(pElement);
         if (pExtend->getModifier()) {
           value = pExtend->getModifier()->getModifierValue(QStringList() << parameter);
         }
-        if (!value.isEmpty()) {
+        if (value.second) {
           return value;
         } else {
           if (pExtend->getModel()) {
             value = pExtend->getModel()->getParameterValueFromExtendsModifiers(parameter);
-            if (!value.isEmpty()) {
+            if (value.second) {
               return value;
             }
           }
@@ -1804,21 +1804,19 @@ namespace ModelInstance
     }
   }
 
-  QString Element::getModifierValueFromType(QStringList modifierNames)
+  QPair<QString, bool> Element::getModifierValueFromType(QStringList modifierNames)
   {
     /* 1. First check if unit is defined with in the component modifier.
      * 2. If no unit is found then check it in the derived class modifier value recursively.
      */
     // Case 1
-    QString modifierValue;
+    QPair<QString, bool> modifierValue("", false);
     if (mpModifier) {
       modifierValue = mpModifier->getModifierValue(modifierNames);
     }
-    if (modifierValue.isEmpty() && mpModel) {
+    if (!modifierValue.second && mpModel) {
       // Case 2
-      if (modifierValue.isEmpty()) {
-        modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierNames);
-      }
+      modifierValue = Element::getModifierValueFromInheritedType(mpModel, modifierNames);
     }
     return modifierValue;
   }
@@ -1998,19 +1996,23 @@ namespace ModelInstance
     return dir;
   }
 
-  QString Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
+  QPair<QString, bool> Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
   {
-    QString modifierValue = "";
+    QPair<QString, bool> modifierValue("", false);
     foreach (auto pElement, pModel->getElements()) {
       if (pElement->isExtend()) {
         auto pExtend = dynamic_cast<Extend*>(pElement);
         if (pExtend->getModifier()) {
           modifierValue = pExtend->getModifier()->getModifierValue(modifierNames);
+          if (modifierValue.second) {
+            return modifierValue;
+          }
         }
-        if (modifierValue.isEmpty() && pExtend->getModel()) {
+        if (!modifierValue.second && pExtend->getModel()) {
           modifierValue = Element::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
-        } else {
-          return modifierValue;
+          if (modifierValue.second) {
+            return modifierValue;
+          }
         }
       }
     }

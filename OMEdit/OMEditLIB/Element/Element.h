@@ -292,8 +292,8 @@ public:
   void emitChanged();
   void emitDeleted();
   void componentParameterHasChanged();
-  QString getParameterDisplayString(QString parameterName);
-  QString getParameterModifierValue(const QString &parameterName, const QString &modifier);
+  QPair<QString, bool> getParameterDisplayString(QString parameterName);
+  QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
   QString getDerivedClassModifierValue(QString modifierName);
   QString getInheritedDerivedClassModifierValue(Element *pElement, QString modifierName);
   void shapeAdded();
@@ -382,9 +382,9 @@ private:
   void hideResizerItems();
   void getScale(qreal *sx, qreal *sy);
   void updateConnections();
-  QString getParameterDisplayStringFromExtendsModifiers(QString parameterName);
-  QString getParameterDisplayStringFromExtendsParameters(QString parameterName, QString modifierString);
-  static QString getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QString modifierString);
+  QPair<QString, bool> getParameterDisplayStringFromExtendsModifiers(QString parameterName);
+  QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(QString parameterName, QPair<QString, bool> modifierString);
+  static QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QPair<QString, bool> modifierString);
   static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
   bool canUseDiagramAnnotation() const;

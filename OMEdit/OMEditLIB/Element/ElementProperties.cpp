@@ -294,13 +294,14 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
   connect(mpFileSelectorButton, SIGNAL(clicked()), SLOT(fileSelectorButtonClicked()));
   createValueWidget();
   // Get unit value
-  mUnit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "unit");
+  QPair<QString, bool> unit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "unit");
+  mUnit = unit.first;
   // Get displayUnit value
-  QString displayUnit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "displayUnit");
-  if (displayUnit.isEmpty()) {
-    displayUnit = mUnit;
+  QPair<QString, bool> displayUnit = mpModelInstanceElement->getModifierValueFromType(QStringList() << "displayUnit");
+  if (displayUnit.first.isEmpty()) {
+    displayUnit.first = mUnit;
   }
-  mDisplayUnit = displayUnit;
+  mDisplayUnit = displayUnit.first;
   mPreviousUnit = mDisplayUnit;
   QStringList units;
   if (!mUnit.isEmpty()) {
