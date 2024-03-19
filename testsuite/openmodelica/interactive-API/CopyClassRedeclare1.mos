@@ -1,0 +1,40 @@
+// name:     CopyClassRedeclare1
+// keywords:
+// status:   correct
+// cflags:   -d=newInst
+//
+
+loadString("
+  package P
+    model A
+      replaceable package Medium_1 end Medium_1;
+    end A;
+
+    model M
+      package Medium end Medium;
+      A a(redeclare package Medium_1 = Medium_1);
+    end M;
+  end P;
+
+  package P2
+
+  end P2;
+");
+
+copyClass(P.M, "M", P2);
+getErrorString();
+list(P2);
+
+// Result:
+// true
+// true
+// ""
+// "package P2
+//   model M
+//     package Medium
+//     end Medium;
+//
+//     P.A a(redeclare package Medium_1 = Medium_1);
+//   end M;
+// end P2;"
+// endResult

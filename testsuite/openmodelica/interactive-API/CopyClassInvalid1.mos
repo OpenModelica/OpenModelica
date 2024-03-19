@@ -1,0 +1,34 @@
+// name:     CopyClassInvalid1
+// keywords:
+// status:   correct
+// cflags:   -d=newInst
+//
+// Checks that copyClass can handle references to non-existent elements.
+//
+
+loadString("
+  package P
+    model B
+      A a;
+    end B;
+  end P;
+");
+
+copyClass(P.B, "C", P);
+getErrorString();
+list(P);
+
+// Result:
+// true
+// true
+// ""
+// "package P
+//   model B
+//     A a;
+//   end B;
+//
+//   model C
+//     A a;
+//   end C;
+// end P;"
+// endResult

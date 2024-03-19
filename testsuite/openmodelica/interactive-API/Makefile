@@ -23,6 +23,13 @@ ConnectionList.mos \
 ConversionVersions.mos \
 ConvertUnits.mos \
 CopyClass.mos \
+CopyClass1.mos \
+CopyClass2.mos \
+CopyClass3.mos \
+CopyClass4.mos \
+CopyClass5.mos \
+CopyClassInvalid1.mos \
+CopyClassRedeclare1.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 DialogAnnotation.mos \
