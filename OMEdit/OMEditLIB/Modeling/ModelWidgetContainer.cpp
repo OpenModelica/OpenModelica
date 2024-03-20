@@ -821,32 +821,33 @@ void GraphicsView::updateUndoRedoActions(bool enable)
 /*!
  * \brief GraphicsView::performElementCreationChecks
  * Performs the checks like partial model, default name, inner component etc.
- * \param pLibraryTreeItem
+ * \param nameStructure
+ * \param partial
+ * \param name
  * \param defaultPrefix
  * \return
  */
-bool GraphicsView::performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix)
+bool GraphicsView::performElementCreationChecks(const QString &nameStructure, bool partial, QString *name, QString *defaultPrefix)
 {
   MainWindow *pMainWindow = MainWindow::instance();
   OptionsDialog *pOptionsDialog = OptionsDialog::instance();
   // check if the model is partial
-  if (pLibraryTreeItem->isPartial()) {
+  if (partial) {
     if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
       NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial, NotificationsDialog::InformationIcon, MainWindow::instance());
-      pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
-                                                       .arg(StringHandler::getModelicaClassType(pLibraryTreeItem->getRestriction()).toLower()).arg(pLibraryTreeItem->getName()));
+      pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL).arg(nameStructure));
       if (!pNotificationsDialog->exec()) {
         return false;
       }
     }
   }
   // get the model defaultComponentPrefixes
-  *defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(pLibraryTreeItem->getNameStructure());
+  *defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(nameStructure);
   QString defaultName;
-  *name = getUniqueElementName(pLibraryTreeItem->getNameStructure(), *name, &defaultName);
+  *name = getUniqueElementName(nameStructure, *name, &defaultName);
   // Allow user to change the component name if always ask for component name settings is true.
   if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
-    ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(pLibraryTreeItem->getNameStructure(), *name, this, pMainWindow);
+    ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(nameStructure, *name, this, pMainWindow);
     if (pComponentNameDialog->exec()) {
       *name = pComponentNameDialog->getComponentName();
       pComponentNameDialog->deleteLater();
@@ -949,7 +950,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     } else {
       QString name = pLibraryTreeItem->getName();
       QString defaultPrefix = "";
-      if (!performElementCreationChecks(pLibraryTreeItem, &name, &defaultPrefix)) {
+      if (!performElementCreationChecks(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->isPartial(), &name, &defaultPrefix)) {
         return false;
       }
       ElementInfo *pElementInfo;

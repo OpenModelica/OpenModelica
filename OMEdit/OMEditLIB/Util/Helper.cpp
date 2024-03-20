@@ -823,7 +823,7 @@ QString GUIMessages::getMessage(int type)
     case ITEM_DROPPED_ON_ITSELF:
       return tr("You cannot drop an item on itself.");
     case MAKE_REPLACEABLE_IF_PARTIAL:
-      return tr("The <b>%1</b> <i>%2</i> is defined as <b>partial</b>.<br />The component will be added as a <b>replaceable</b> component.");
+      return tr("<b>%1</b> is defined as <b>partial</b>.<br />The component will be added as a <b>replaceable</b> component.");
     case INNER_MODEL_NAME_CHANGED:
       return tr("A component with the name <b>%1</b> already exists. The name is changed from <b>%1</b> to <b>%2</b>.<br /><br />This is probably wrong because the component is declared as <b>inner</b>.");
     case FMU_GENERATED:
