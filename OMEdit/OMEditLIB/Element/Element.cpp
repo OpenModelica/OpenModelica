@@ -3632,11 +3632,13 @@ void Element::duplicate()
   QString name = getName();
   QString defaultPrefix = "";
   if (mpLibraryTreeItem) {
-    if (!mpGraphicsView->performElementCreationChecks(mpLibraryTreeItem, &name, &defaultPrefix)) {
+    if (!mpGraphicsView->performElementCreationChecks(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->isPartial(), &name, &defaultPrefix)) {
       return;
     }
   } else {
-    name = mpGraphicsView->getUniqueElementName(getClassName(), StringHandler::toCamelCase(getName()));
+    if (!mpGraphicsView->performElementCreationChecks(getClassName(), mpModel->isPartial(), &name, &defaultPrefix)) {
+      return;
+    }
   }
   QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   // add component

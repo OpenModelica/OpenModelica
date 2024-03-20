@@ -1227,6 +1227,11 @@ namespace ModelInstance
     return false;
   }
 
+  bool Model::isPartial() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->isPartial() : false;
+  }
+
   /*!
    * \brief Model::getDirection
    * Returns the direction of the model, either from the declaration or in the

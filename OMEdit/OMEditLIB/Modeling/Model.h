@@ -524,6 +524,7 @@ private:
     bool isOuter() const {return mOuter;}
     Replaceable *getReplaceable() const {return mpReplaceable.get();}
     bool isRedeclare() const {return mRedeclare;}
+    bool isPartial() const {return mPartial;}
     const QString &getConnector() const {return mConnector;}
     const QString &getVariability() const {return mVariability;}
     const QString &getDirection() const {return mDirection;}
@@ -588,6 +589,7 @@ private:
     bool isEnumeration() const;
     bool isType() const;
     bool isDerivedType() const;
+    bool isPartial() const;
     QString getDirection() const;
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const;
