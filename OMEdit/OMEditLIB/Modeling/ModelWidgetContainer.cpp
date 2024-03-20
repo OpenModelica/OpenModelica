@@ -1314,6 +1314,14 @@ QString GraphicsView::getUniqueElementName(const QString &nameStructure, QString
 {
   QString name = elementName;
   if (number > 0) {
+    if (!name.isEmpty()) {
+      bool ok;
+      int endNumber = name.right(1).toInt(&ok);
+      if (ok) {
+        number = endNumber + 1;
+        elementName.chop(1);
+      }
+    }
     name = QString("%1%2").arg(elementName).arg(number);
   }
 
