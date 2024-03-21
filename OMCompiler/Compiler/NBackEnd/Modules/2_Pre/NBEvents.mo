@@ -38,15 +38,12 @@ public
   import Module = NBModule;
 
 protected
-  // OF
-  import DAE;
-
   // NF
   import Builtin = NFBuiltin;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import NFFlatten.{FuncTreeImpl, FunctionTree};
+  import NFFlatten.FunctionTree;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import Statement = NFStatement;
@@ -56,19 +53,14 @@ protected
 
   // OB
   import OldBackendDAE = BackendDAE;
-  import OldTree = ZeroCrossings.Tree;
-  import OldZeroCrossings = ZeroCrossings;
 
   // New Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, Frame, Iterator, EqData, EquationAttributes, EquationKind, EquationPointers, IfEquationBody};
+  import NBEquation.{Equation, Frame, Iterator, EqData, EquationAttributes, EquationKind, EquationPointers, IfEquationBody, WhenEquationBody};
   import Solve = NBSolve;
-  import System = NBSystem;
   import BVariable = NBVariable;
-  import NBVariable.VarData;
-  import NBVariable.VariablePointers;
-  import NBEquation.WhenEquationBody;
+  import NBVariable.{VarData, VariablePointers};
 
   // SimCode
   import NSimGenericCall.SimIterator;
@@ -77,9 +69,7 @@ protected
 
   // Util
   import BackendUtil = NBBackendUtil;
-  import DoubleEnded;
   import StringUtil;
-  import BuiltinSystem = System;
 
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -413,7 +403,7 @@ public
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.RELATION)
           algorithm
             // create auxiliary equation and solve for TIME
-            tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
+            tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
             _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
               (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
@@ -431,7 +421,7 @@ public
                   // if it can trigger replace it by the sample call, otherwise just make the trigger false
                   new_exp := if can_trigger then Expression.CALL(Call.makeTypedCall(
                       fn          = NFBuiltinFuncs.SAMPLE,
-                      args        = {Expression.INTEGER(bucket.timeEventIndex + 1), trigger, Expression.REAL(BuiltinSystem.realMaxLit())},
+                      args        = {Expression.INTEGER(bucket.timeEventIndex + 1), trigger, Expression.makeMaxValue(Type.REAL())},
                       variability = NFPrefixes.Variability.DISCRETE,
                       purity      = NFPrefixes.Purity.PURE
                     )) else Expression.BOOLEAN(false);
@@ -542,7 +532,7 @@ public
         case SINGLE() then OldBackendDAE.TimeEvent.SAMPLE_TIME_EVENT(
           index       = timeEvent.index,
           startExp    = Expression.toDAE(timeEvent.trigger),
-          intervalExp = DAE.RCONST(BuiltinSystem.intMaxLit()));
+          intervalExp = Expression.toDAE(Expression.makeMaxValue(Type.REAL())));
         case SAMPLE() then OldBackendDAE.TimeEvent.SAMPLE_TIME_EVENT(
           index       = timeEvent.index,
           startExp    = Expression.toDAE(timeEvent.start),
