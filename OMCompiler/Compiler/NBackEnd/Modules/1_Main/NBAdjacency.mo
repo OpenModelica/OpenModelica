@@ -292,6 +292,69 @@ public
     end fill_;
   end Mapping;
 
+  /*
+  Modes
+    map (EQN_SCAL_IDX, VAR_IDX) -> MODE
+    //map (EQN_ARR_IDX, MODE) -> CREF
+    //set (EQN_ARR_IDX, MODE) -> SCALARIZE (BOOL)
+
+  */
+  uniontype Mode
+    record MODE
+      "most of the time this will only have one cref. if there are multiple crefs
+      representing the same variable its a multi mode and the equation needs to
+      be split when solved for it"
+      list<ComponentRef> crefs  "the cref(s) to solve for";
+      Boolean scalarize         "true if the equation needs to be scalarized to find the cref to solve for";
+    end MODE;
+
+    function merge
+      input output Mode mode1;
+      input Mode mode2;
+    algorithm
+      mode1.crefs := listAppend(mode1.crefs, mode2.crefs);
+      mode1.scalarize := mode1.scalarize or mode2.scalarize;
+    end merge;
+
+    function mergeCreate
+      input Option<Mode> omode;
+      input output Mode mode;
+    algorithm
+      if Util.isSome(omode) then
+        mode := merge(mode, Util.getOption(omode));
+      end if;
+    end mergeCreate;
+
+    type Key = tuple<Integer, Integer>;
+
+    function keyString
+      input Key key;
+      output String str;
+    protected
+      Integer e,v;
+    algorithm
+      (e,v) := key;
+      str := intString(e) + "," + intString(v);
+    end keyString;
+
+    function keyHash
+      input Key key;
+      output Integer hash = stringHashDjb2(keyString(key));
+    end keyHash;
+
+    function keyEqual
+      input Key key1;
+      input Key key2;
+      output Boolean b;
+    protected
+      Integer e1,e2,v1,v2;
+    algorithm
+      (e1,v1) := key1;
+      (e2,v2) := key2;
+      b := e1 == e2 and v1 == v2;
+    end keyEqual;
+  end Mode;
+
   uniontype CausalizeModes
     record CAUSALIZE_MODES
       "for-loop reconstruction information"
@@ -954,6 +1017,7 @@ public
 
         case FULL() algorithm
           (mapping, occ, dep, sol, rep) := (full.mapping, full.occurences, full.dependencies, full.solvabilities, full.repetitions);
+
           // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
           if isEmpty(adj) then
             min := 0;
@@ -966,7 +1030,8 @@ public
           adj := match adj
             local
               Matrix result;
-            // usual case
+
+            // default case
             case FINAL() algorithm
               // only do if valid upgrade otherwise create from scratch and issue warning if failtrace is activated
               if max > min then
@@ -974,7 +1039,7 @@ public
                   index := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
                   filtered := Solvability.filter(occ[index], sol[index], min, max);
                   // now run the normal createPseudo pipeline but use dependencies
-                  upgradeRow(eqn_ptr, index, filtered, dep[index], rep[index], vars.map, adj.m, adj.mapping, adj.modes);
+                  upgradeRow(eqn_ptr, index, filtered, dep[index], rep[index], vars.map, adj.m, adj.mapping);
                 end for;
                 adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars));
                 result := adj;
@@ -1042,7 +1107,6 @@ public
       input UnorderedMap<ComponentRef, Integer> map     "unordered map to check for relevance";
       input array<list<Integer>> m;
       input Mapping mapping;
-      input CausalizeModes modes                        "mutable";
     protected
       Integer eqn_scal_idx, eqn_size;
       list<Integer> row;
@@ -1061,7 +1125,7 @@ public
         end for;
       else
         // todo: if, when single equation (needs to be updated for if)
-        Slice.upgradeRow(eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
+        Slice.upgradeRow(eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping);
       end if;
     end upgradeRow;
 

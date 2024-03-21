@@ -48,7 +48,7 @@ protected
   import Variable = NFVariable;
 
   // NB imports
-  import NBAdjacency.{Mapping, CausalizeModes, Dependency};
+  import NBAdjacency.{Mapping, Mode, CausalizeModes, Dependency};
   import BackendUtil = NBBackendUtil;
   import NBEquation.{Equation, Iterator, Frame, FrameLocation, RecollectStatus, FrameOrderingStatus};
   import Replacements = NBReplacements;
@@ -1052,7 +1052,6 @@ public
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input array<list<Integer>> m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input CausalizeModes modes                              "mutable";
   protected
     Type skip_ty;
     Dependency d;
@@ -1061,23 +1060,10 @@ public
     list<Dimension> dims;
     Dimension dim;
     Boolean b;
-    Integer dbg;
+    UnorderedMap<Mode.Key, Mode> modes = UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual);
   algorithm
-    // types:
-    // Scalar
-    // ARRAY
-    // Tuple
-    // (record?) full?
     for cref in dependencies loop
-      resolveDependency(cref, eqn_arr_idx, iter, ty, dep, rep, map, m, mapping);
-
-      // (dims) -> cref list -> int list
-      //
-
-      //for scal in ComponentRef.scalarizeAll(cref) loop
-        // find a way to split the scalar list in a way that reflects the dependency
-        //print(ComponentRef.toString(scal) + " with deps: " + List.toString(scal_lst, intString) + "\n");
-      //end for;
+      resolveDependency(cref, eqn_arr_idx, iter, ty, dep, rep, map, m, mapping, modes);
     end for;
     /*
 
@@ -1215,10 +1201,11 @@ protected
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input array<list<Integer>> m;
     input Mapping mapping                                   "array <-> scalar index mapping";
+    input UnorderedMap<Mode.Key, Mode> modes;
   protected
     Dependency d;
     Type skip_ty;
-    Integer skip_idx, start, size, scal_size, shift = 0;
+    Integer skip_idx, start, size, body_size, iter_size, scal_size, shift = 0;
     list<ComponentRef> names;
     list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
@@ -1229,8 +1216,11 @@ protected
     array<Integer> key;
     UnorderedMap<Key, Val1> map1;
     UnorderedMap<Key, Val2> map2;
+    UnorderedMap<ComponentRef, Val2> map3;
     list<ComponentRef> scalarized;
     list<Integer> scal_lst;
+    Boolean repeated;
+    Mode mode;
   algorithm
     // I. resolve the skips
     d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
@@ -1238,7 +1228,9 @@ protected
     (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips);
 
     // get equation and iterator sizes and frames
-    size            := Type.sizeOf(skip_ty) * Iterator.size(iter);
+    body_size       := Type.sizeOf(skip_ty);
+    iter_size       := Iterator.size(iter);
+    size            := body_size * iter_size;
     (names, ranges) := Iterator.getFrames(iter);
     frames          := List.zip(names, ranges);
 
@@ -1247,14 +1239,20 @@ protected
     if List.all(regulars, Util.id) then
       // all regular - single dependency per row.
       scalarized  := ComponentRef.scalarizeAll(cref);
-      scal_lst    := List.flatten(list(listReverse(getCrefInFrameIndices(scal, frames, mapping, map)) for scal in listReverse(scalarized)));
-      scal_size   := listLength(scal_lst);
+      map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+      for scal in scalarized loop
+        UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+      end for;
+      scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
       // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
       if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
         for i in 1:size/scal_size loop
-          for scal_idx in scal_lst loop
-            arrayUpdate(m, skip_idx + shift, scal_idx :: m[skip_idx + shift]);
-            shift := shift + 1;
+          for scal in scalarized loop
+            mode := Mode.MODE({scal}, false);
+            for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+              addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
+              shift := shift + 1;
+            end for;
           end for;
         end for;
       else
@@ -1287,7 +1285,7 @@ protected
 
         // 4. iterate over all equation dimensions and use the map to get the correct dependencies
         key := arrayCreate(listLength(subs), 0);
-        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, Pointer.create(skip_idx));
+        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.MODE({cref}, false), Pointer.create(skip_idx));
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
           + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1299,10 +1297,28 @@ protected
 
     else
       // all reduced - full dependency per row. scalarize and add to all rows of the equation
-      scalarized := ComponentRef.scalarizeAll(cref);
-      scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map) for scal in scalarized));
-      for i in start:start+size-1 loop
-        arrayUpdate(m, i, listAppend(scal_lst, m[i]));
+      repeated    := UnorderedSet.contains(cref, rep);
+      scalarized  := ComponentRef.scalarizeAll(cref);
+      map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+      for scal in scalarized loop
+        UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+      end for;
+
+      if repeated then
+        mode := Mode.MODE({cref}, false);
+      end if;
+
+      for i in skip_idx:iter_size:skip_idx+size-iter_size loop
+        shift := 0;
+        for scal in scalarized loop
+          if not repeated then
+            mode := Mode.MODE({scal}, true);
+          end if;
+          for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+            addMatrixEntry(m, modes, i + shift, scal_idx, mode);
+            shift := shift + 1;
+          end for;
+        end for;
       end for;
     end if;
   end resolveDependency;
@@ -1315,6 +1331,8 @@ protected
     input UnorderedMap<Key, Val2> map           "map to look up occurence";
     input Array<Integer> key                    "mutable key";
     input array<list<Integer>> m                "adjacency matrix";
+    input UnorderedMap<Mode.Key, Mode> modes;
+    input Mode mode;
     input Pointer<Integer> eqn_idx_ptr          "mutable equation index";
     input Integer index = 1                     "dimension index for the key";
   algorithm
@@ -1329,14 +1347,16 @@ protected
         // no further dimensions. resolve with current key config and bump equation index
         eqn_idx := Pointer.access(eqn_idx_ptr);
         scal_lst := UnorderedMap.getSafe(arrayList(key), map, sourceInfo());
-        arrayUpdate(m, eqn_idx, listAppend(scal_lst, m[eqn_idx]));
+        for scal_idx in scal_lst loop
+          addMatrixEntry(m, modes, eqn_idx, scal_idx, mode);
+        end for;
         Pointer.update(eqn_idx_ptr, eqn_idx + 1);
       then ();
 
       case (dim, false)::rest algorithm
         // reduced dimension, keep key index at 0 and go deeper with next dimension
         for i in 1:Dimension.size(dim) loop
-          resolveEquationDimensions(rest, map, key, m, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
 
@@ -1345,11 +1365,22 @@ protected
         // and go deeper with next dimension
         for i in 1:Dimension.size(dim) loop
           arrayUpdate(key, index, i);
-          resolveEquationDimensions(rest, map, key, m, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
     end match;
   end resolveEquationDimensions;
+
+  function addMatrixEntry
+    input array<list<Integer>> m                "adjacency matrix";
+    input UnorderedMap<Mode.Key, Mode> modes;
+    input Integer eqn_idx;
+    input Integer var_idx;
+    input Mode mode;
+  algorithm
+    arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
+    UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
+  end addMatrixEntry;
 
   function resolveReductions
     input list<tuple<Subscript, Dimension, Boolean>> lst;
