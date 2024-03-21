@@ -1052,51 +1052,11 @@ public
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input array<list<Integer>> m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-  protected
-    Type skip_ty;
-    Dependency d;
-    Integer skip_start;
-    list<Boolean> regulars;
-    list<Dimension> dims;
-    Dimension dim;
-    Boolean b;
-    UnorderedMap<Mode.Key, Mode> modes = UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual);
+    input UnorderedMap<Mode.Key, Mode> modes;
   algorithm
     for cref in dependencies loop
       resolveDependency(cref, eqn_arr_idx, iter, ty, dep, rep, map, m, mapping, modes);
     end for;
-    /*
-
-    // get eqn size and create the adjacency matrix and causalization mode arrays
-    indices := arrayCreate(eqn_size, {});
-    mode_to_var := arrayCreate(eqn_size, arrayCreate(0,0));
-
-    // sanity check for eqn size and get size of body equation
-    if mod(eqn_size, iter_size) == 0 then
-      body_size := realInt(eqn_size/iter_size);
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-        + " failed because the equation size " + intString(eqn_size)
-        + " could not be devided by the iterator size " + intString(iter_size) + " without rest."});
-    end if;
-
-    // create unique array for each equation
-    for i in 1:eqn_size loop
-      mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
-    end for;
-
-    // create rows
-    for dep in dependencies loop
-      func := function updateDependenciesInteger(mode = mode, mode_to_var = mode_to_var, indices = indices);
-      fillDependencyArray(dep, body_size, frames, mapping, map, func);
-      // increase mode index
-      mode := mode + 1;
-    end for;
-
-    // sort (kabdelhak: is this needed? try to FixMe)
-    for i in 1:arrayLength(indices) loop
-      indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
-    end for;*/
   end upgradeRow;
 
   // ############################################################
@@ -1304,6 +1264,7 @@ protected
         UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
       end for;
 
+      // if its repeated, use the same cref always
       if repeated then
         mode := Mode.MODE({cref}, false);
       end if;
@@ -1311,6 +1272,7 @@ protected
       for i in skip_idx:iter_size:skip_idx+size-iter_size loop
         shift := 0;
         for scal in scalarized loop
+          // if its not repeated use local cref
           if not repeated then
             mode := Mode.MODE({scal}, true);
           end if;

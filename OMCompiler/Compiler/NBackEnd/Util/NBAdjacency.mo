@@ -507,6 +507,7 @@ public
       array<list<Integer>> m        "eqn -> list<var>";
       array<list<Integer>> mT       "var -> list<eqn>";
       Mapping mapping               "index mapping scalar <-> array";
+      UnorderedMap<Mode.Key, Mode> modes2;
       CausalizeModes modes          "for-loop reconstruction information";
       MatrixStrictness st           "strictness with which it was created";
     end FINAL;
@@ -1039,7 +1040,7 @@ public
                   index := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
                   filtered := Solvability.filter(occ[index], sol[index], min, max);
                   // now run the normal createPseudo pipeline but use dependencies
-                  upgradeRow(eqn_ptr, index, filtered, dep[index], rep[index], vars.map, adj.m, adj.mapping);
+                  upgradeRow(eqn_ptr, index, filtered, dep[index], rep[index], vars.map, adj.m, adj.mapping, adj.modes2);
                 end for;
                 adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars));
                 result := adj;
@@ -1092,7 +1093,7 @@ public
         m := arrayCreate(eqn_scalar_size, {});
         mT := transposeScalar(m, var_scalar_size);
         // create record
-        adj := FINAL(m, mT, mapping, modes, st);
+        adj := FINAL(m, mT, mapping, UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual), modes, st);
       else
         adj := EMPTY(st);
       end if;
@@ -1107,6 +1108,7 @@ public
       input UnorderedMap<ComponentRef, Integer> map     "unordered map to check for relevance";
       input array<list<Integer>> m;
       input Mapping mapping;
+      input UnorderedMap<Mode.Key, Mode> modes;
     protected
       Integer eqn_scal_idx, eqn_size;
       list<Integer> row;
@@ -1125,7 +1127,7 @@ public
         end for;
       else
         // todo: if, when single equation (needs to be updated for if)
-        Slice.upgradeRow(eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping);
+        Slice.upgradeRow(eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
       end if;
     end upgradeRow;
 
@@ -1190,7 +1192,7 @@ public
           funcTree := SOME(diffArgs.funcTree);
         end if;
 
-        adj := FINAL(m, mT, mapping, modes, st);
+        adj := FINAL(m, mT, mapping, UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual), modes, st);
       else
         adj := EMPTY(st);
       end if;
