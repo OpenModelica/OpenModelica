@@ -104,8 +104,7 @@ void Legend::toggleSign(bool checked)
 {
   if (mpPlotCurve) {
     mpPlot->getParentPlotWindow()->toggleSign(mpPlotCurve, checked);
-    mpPlot->replot();
-    mpPlot->getParentPlotWindow()->fitInView();
+    mpPlot->getParentPlotWindow()->updatePlot();
     mpPlotCurve = 0;
   }
 }

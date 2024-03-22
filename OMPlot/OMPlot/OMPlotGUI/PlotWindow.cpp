@@ -1402,15 +1402,19 @@ void PlotWindow::setTitle(QString title)
 
 /*!
  * \brief PlotWindow::updatePlot
- * This function is called by OMEdit when auto scale is false.
- * Updates the plot manually.
+ * Updates the plot.
+ * If auto scale is enabled then calls PlotWindow::fitInView()
  */
 void PlotWindow::updatePlot()
 {
-  mpPlot->updateLayout();
-  mpPlot->replot();
-  if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
-    mpPlot->getPlotZoomer()->setZoomBase(false);
+  if (mpAutoScaleButton->isChecked()) {
+    fitInView();
+  } else {
+    mpPlot->updateLayout();
+    mpPlot->replot();
+    if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
+      mpPlot->getPlotZoomer()->setZoomBase(false);
+    }
   }
 }
 
@@ -1662,6 +1666,15 @@ void PlotWindow::closeEvent(QCloseEvent *event)
   event->accept();
 }
 
+void PlotWindow::fitInView()
+{
+  mpPlot->getPlotZoomer()->zoom(0);
+  mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+  mpPlot->setAxisAutoScale(QwtPlot::xBottom);
+  mpPlot->replot();
+  mpPlot->getPlotZoomer()->setZoomBase(false);
+}
+
 void PlotWindow::updateCurves()
 {
   for (auto & p : mpPlot->getPlotCurvesList()) {
@@ -1803,15 +1816,6 @@ void PlotWindow::setGrid(int index)
       break;
   }
   mpPlot->replot();
-}
-
-void PlotWindow::fitInView()
-{
-  mpPlot->getPlotZoomer()->zoom(0);
-  mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-  mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-  mpPlot->replot();
-  mpPlot->getPlotZoomer()->setZoomBase(false);
 }
 
 void PlotWindow::setLogX(bool on)
@@ -2215,40 +2219,36 @@ void SetupDialog::selectVariable(QString variable)
   }
 }
 
-bool SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
+void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
 {
-  if (!pVariablePageWidget) {
-    return false;
+  if (pVariablePageWidget) {
+    PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
+    /* set the legend title */
+    if (pPlotCurve->getCustomTitle().isEmpty() && pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
+      pPlotCurve->setCustomTitle("");
+    } else {
+      pPlotCurve->setCustomTitle(pVariablePageWidget->getLegendTextBox()->text());
+    }
+    /* set the curve color title */
+    pPlotCurve->setCustomColor(!pVariablePageWidget->getAutomaticColorCheckBox()->isChecked());
+    if (pVariablePageWidget->getAutomaticColorCheckBox()->isChecked()) {
+      pVariablePageWidget->setCurveColor(pPlotCurve->pen().color());
+      pVariablePageWidget->setCurvePickColorButtonIcon();
+    } else {
+      QPen pen = pPlotCurve->pen();
+      pen.setColor(pVariablePageWidget->getCurveColor());
+      pPlotCurve->setPen(pen);
+    }
+    /* set the curve style */
+    QComboBox *pPatternComboBox = pVariablePageWidget->getPatternComboBox();
+    pPlotCurve->setCurveStyle(pPatternComboBox->itemData(pPatternComboBox->currentIndex()).toInt());
+    /* set the curve width */
+    pPlotCurve->setCurveWidth(pVariablePageWidget->getThicknessSpinBox()->value());
+    /* set the curve visibility */
+    pPlotCurve->toggleVisibility(!pVariablePageWidget->getHideCheckBox()->isChecked());
+    /* set the curve toggle sign */
+    mpPlotWindow->toggleSign(pPlotCurve, pVariablePageWidget->getToggleSignCheckBox()->isChecked());
   }
-
-  PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
-
-  /* set the legend title */
-  if (pPlotCurve->getCustomTitle().isEmpty() && pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
-    pPlotCurve->setCustomTitle("");
-  } else {
-    pPlotCurve->setCustomTitle(pVariablePageWidget->getLegendTextBox()->text());
-  }
-  /* set the curve color title */
-  pPlotCurve->setCustomColor(!pVariablePageWidget->getAutomaticColorCheckBox()->isChecked());
-  if (pVariablePageWidget->getAutomaticColorCheckBox()->isChecked()) {
-    pVariablePageWidget->setCurveColor(pPlotCurve->pen().color());
-    pVariablePageWidget->setCurvePickColorButtonIcon();
-  } else {
-    QPen pen = pPlotCurve->pen();
-    pen.setColor(pVariablePageWidget->getCurveColor());
-    pPlotCurve->setPen(pen);
-  }
-  /* set the curve style */
-  QComboBox *pPatternComboBox = pVariablePageWidget->getPatternComboBox();
-  pPlotCurve->setCurveStyle(pPatternComboBox->itemData(pPatternComboBox->currentIndex()).toInt());
-  /* set the curve width */
-  pPlotCurve->setCurveWidth(pVariablePageWidget->getThicknessSpinBox()->value());
-  /* set the curve visibility */
-  pPlotCurve->toggleVisibility(!pVariablePageWidget->getHideCheckBox()->isChecked());
-  /* set the curve toggle sign */
-  bool toggleSign = mpPlotWindow->toggleSign(pPlotCurve, pVariablePageWidget->getToggleSignCheckBox()->isChecked());
-  return toggleSign;
 }
 
 void SetupDialog::variableSelected(QListWidgetItem *current, QListWidgetItem *previous)
@@ -2281,12 +2281,9 @@ void SetupDialog::saveSetup()
 void SetupDialog::applySetup()
 {
   // set the variables attributes
-  bool requiresFitInView = false;
   for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++) {
     // if any of the variable requires call to fitinview because of toggle sign.
-    if (setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)))) {
-      requiresFitInView = true;
-    }
+    setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)));
   }
   // set the font sizes. Don't move this line. We should set the font sizes before calling setLegendPosition
   mpPlotWindow->getPlot()->setFontSizes(mpTitleFontSizeSpinBox->value(), mpVerticalAxisTitleFontSizeSpinBox->value(), mpVerticalAxisNumbersFontSizeSpinBox->value(),
@@ -2311,9 +2308,6 @@ void SetupDialog::applySetup()
     mpPlotWindow->setXRange(mpXMinimumTextBox->text().toDouble(), mpXMaximumTextBox->text().toDouble());
     mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
   }
-  // replot
-  mpPlotWindow->getPlot()->replot();
-  if (requiresFitInView) {
-    mpPlotWindow->fitInView();
-  }
+  // update plot
+  mpPlotWindow->updatePlot();
 }
