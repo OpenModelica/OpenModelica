@@ -234,8 +234,10 @@ QString OMEquation::toString()
   } else if (tag == "assign" || tag == "torn" || tag == "jacobian") {
     if (text.size()==1) {
      return QString("(%1) %2 := %3").arg(tag).arg(defines[0]).arg(text[0]);
-    } else {
+    } else if (text.size()==2) {
      return QString("(%1) %2 := %3").arg(tag).arg(text[0]).arg(text[1]);
+    } else {
+      return QString("(%1) text.size() is %2 (Unhandled case)").arg(tag).arg(text.size());
     }
   } else if (tag == "statement" || tag == "algorithm") {
     return text.join("\n");
