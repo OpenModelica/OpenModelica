@@ -559,7 +559,7 @@ void PlotWindowContainer::clearPlotWindow()
     return;
   }
   removePlotCurves(pPlotWindow);
-  pPlotWindow->fitInView();
+  pPlotWindow->updatePlot();
   MainWindow::instance()->getVariablesWidget()->updateVariablesTreeHelper(subWindowList(QMdiArea::ActivationHistoryOrder).last());
 }
 
@@ -657,11 +657,7 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
         if (variable.compare(pPlotCurve->getFileName()) == 0) {
           pPlotWindow->getPlot()->removeCurve(pPlotCurve);
           pPlotCurve->detach();
-          if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-            pPlotWindow->fitInView();
-          } else {
-            pPlotWindow->updatePlot();
-          }
+          pPlotWindow->updatePlot();
         }
       }
     } // is plotWidget

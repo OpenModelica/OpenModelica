@@ -213,6 +213,8 @@ private:
   void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
+private slots:
+  void fitInView();
 public slots:
   void updateCurves();
   void updateYAxis(QPair<double, double> minMaxValues);
@@ -221,7 +223,6 @@ public slots:
   void exportDocument();
   void printPlot();
   void setGrid(int index);
-  void fitInView();
   void setLogX(bool on);
   void setLogY(bool on);
   void setAutoScale(bool on);
@@ -353,7 +354,7 @@ private:
 public:
   SetupDialog(PlotWindow *pPlotWindow);
   void selectVariable(QString variable);
-  bool setupPlotCurve(VariablePageWidget *pVariablePageWidget);
+  void setupPlotCurve(VariablePageWidget *pVariablePageWidget);
 public slots:
   void variableSelected(QListWidgetItem *current, QListWidgetItem *previous);
   void autoScaleChecked(bool checked);
