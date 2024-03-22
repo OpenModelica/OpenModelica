@@ -1120,13 +1120,17 @@ public
     end match;
   end getBindingVariability;
 
-  function hasConstBinding extends checkVar;
+  function hasLiteralBinding extends checkVar;
   protected
     Variable var;
   algorithm
-    var := Pointer.access(var_ptr);
-    b := Expression.isConstNumber(Binding.getExp(var.binding));
-  end hasConstBinding;
+    if isBound(var_ptr) then
+      var := Pointer.access(var_ptr);
+      b := Expression.isLiteral(Binding.getExp(var.binding));
+    else
+      b := false;
+    end if;
+  end hasLiteralBinding;
 
   function setFixed
     input output Pointer<Variable> var_ptr;
@@ -1138,7 +1142,6 @@ public
     var:= match var
       local
         BackendExtension.BackendInfo binfo;
-        Expression start;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b);

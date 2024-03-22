@@ -181,10 +181,9 @@ public
     () := match Pointer.access(state)
       local
         ComponentRef name, start_name;
-        Pointer<Variable> var_ptr, start_var;
+        Pointer<Variable> start_var;
         Pointer<Equation> start_eq;
         EquationKind kind;
-        Option<Expression> start_exp_opt;
         Expression start_exp;
 
       // if it is an array create for equation
@@ -195,16 +194,17 @@ public
       // create scalar equation
       case Variable.VARIABLE() guard BVariable.isFixed(state) algorithm
         name := BVariable.getVarName(state);
-        start_exp_opt := BVariable.getStartAttribute(state);
-        if Util.isSome(start_exp_opt) and Expression.variability(Util.getOption(start_exp_opt)) > NFPrefixes.Variability.STRUCTURAL_PARAMETER then
-          // use the start attribute itself if it is not constant
-          SOME(start_exp) := start_exp_opt;
-        else
-          // create a start variable if it is constant
-          (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
-          start_exp := Expression.fromCref(start_name);
-          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
-        end if;
+        start_exp := match BVariable.getStartAttribute(state)
+          local
+            Expression e;
+          // use the start attribute itself if it is not a literal
+          case SOME(e) guard not Expression.isLiteral(e) then e;
+          else algorithm
+            // create a start variable if it is a literal
+            (_, name, start_var, start_name) := createStartVar(state, name, {});
+            Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+          then Expression.fromCref(start_name);
+        end match;
 
         // make the new start equation
         kind := if BVariable.isContinuous(state) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
@@ -331,8 +331,8 @@ public
 
       // parse records slightly different
       if BVariable.isKnownRecord(var) then
-        // only consider non constant parameter bindings
-        if BVariable.isBound(var) and (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
+        // only consider non literal parameter bindings
+        if not BVariable.hasLiteralBinding(var) then
           initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
           parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
         else
@@ -343,8 +343,8 @@ public
 
       // all other variables that are not records and not record elements to be skipped
       elseif not (BVariable.isRecord(var) or skip_record_element) then
-        // only consider non constant parameter bindings
-        if (BVariable.getBindingVariability(var) > NFPrefixes.Variability.STRUCTURAL_PARAMETER) then
+        // only consider non literal parameter bindings
+        if not BVariable.hasLiteralBinding(var) then
           // add variable to initial unknowns
           initial_param_vars := var :: initial_param_vars;
           // generate equation only if variable is fixed
@@ -373,65 +373,63 @@ public
     input Pointer<list<Pointer<Equation>>> ptr_start_eqs;
     input Pointer<Integer> idx;
   protected
-    Option<Expression> start_exp_opt;
-    Expression start_exp, new_start_exp;
+    Expression start_exp;
     Pointer<Variable> var_ptr, start_var;
     ComponentRef name, start_name;
-    list<Dimension> dims;
-    list<InstNode> iterators;
-    list<ComponentRef> iter_crefs;
-    list<Expression> ranges;
-    list<Subscript> subscripts;
-    list<tuple<ComponentRef, Expression>> frames;
     Pointer<Equation> start_eq;
     EquationKind kind;
-    Call array_constructor;
-    UnorderedMap<ComponentRef, Expression> replacements;
-    InstNode old_iter;
-    ComponentRef new_iter;
     Iterator iterator;
   algorithm
     var_ptr := Slice.getT(state);
     name    := BVariable.getVarName(var_ptr);
-    start_exp_opt := BVariable.getStartAttribute(var_ptr);
-    if Util.isSome(start_exp_opt) and Expression.variability(Util.getOption(start_exp_opt)) > NFPrefixes.Variability.STRUCTURAL_PARAMETER then
-      // use the start attribute itself if it is not constant
-      SOME(start_exp) := start_exp_opt;
-      // if it is some kind of array repeating structure, extract the repeated element e.g. fill()
-      start_exp := match start_exp
-        case Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+    start_exp := match BVariable.getStartAttribute(var_ptr)
+      local
+        Expression e;
+        list<InstNode> iterators;
+        UnorderedMap<ComponentRef, Expression> replacements;
+        list<Dimension> dims;
+        list<ComponentRef> iter_crefs;
+        list<Expression> ranges;
+        list<Subscript> subscripts;
+        list<tuple<ComponentRef, Expression>> frames;
+        Call array_constructor;
+        InstNode old_iter;
+        ComponentRef new_iter;
 
-          // make unique iterators for the new for-loop
-          dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
-          (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-          iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
-          iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
-          subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
-          frames      := List.zip(iter_crefs, ranges);
-          iterator    := Iterator.fromFrames(frames);
+      // convert array constructor to for-equation if elements are not a literal
+      case SOME(e as Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR())) guard not Expression.isLiteral(e) algorithm
 
-          // create start variable name with subscripts and create start expression
-          (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
-          replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-          for tpl in List.zip(array_constructor.iters, frames) loop
-            ((old_iter, _), (new_iter, _)) := tpl;
-            UnorderedMap.add(ComponentRef.fromNode(old_iter, InstNode.getType(old_iter)), Expression.fromCref(new_iter), replacements);
-          end for;
-          new_start_exp := Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
-        then new_start_exp;
+        // make unique iterators for the new for-loop
+        dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
+        (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
+        iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
+        iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
+        subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
+        frames      := List.zip(iter_crefs, ranges);
+        iterator    := Iterator.fromFrames(frames);
 
-        else algorithm
-          (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
-          iterator := Iterator.EMPTY();
-        then start_exp;
-      end match;
-    else
-      // create a start variable if it is constant
-      (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
-      start_exp := Expression.fromCref(start_name);
-      Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
-      iterator := Iterator.EMPTY();
-    end if;
+        // create start variable name with subscripts and create start expression
+        (var_ptr, name, _ , _) := createStartVar(var_ptr, name, subscripts);
+        replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+        for tpl in List.zip(array_constructor.iters, frames) loop
+          ((old_iter, _), (new_iter, _)) := tpl;
+          UnorderedMap.add(ComponentRef.fromNode(old_iter, InstNode.getType(old_iter)), Expression.fromCref(new_iter), replacements);
+        end for;
+      then Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
+
+      // use the start attribute itself if it is not a literal
+      case SOME(e) guard not Expression.isLiteral(e) algorithm
+        (var_ptr, name, _, _) := createStartVar(var_ptr, name, {});
+        iterator := Iterator.EMPTY();
+      then e;
+
+      else algorithm
+        // create a start variable if it is a literal
+        (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
+        Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+        iterator := Iterator.EMPTY();
+      then Expression.fromCref(start_name);
+    end match;
 
     // make the new start equation
     kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;

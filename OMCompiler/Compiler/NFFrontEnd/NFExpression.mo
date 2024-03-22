@@ -4421,6 +4421,9 @@ public
     output Boolean literal;
   algorithm
     literal := match exp
+      local
+        Expression e;
+
       case INTEGER() then true;
       case REAL() then true;
       case STRING() then true;
@@ -4431,6 +4434,7 @@ public
       case RANGE() then isLiteral(exp.start) and
                         isLiteral(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteral, true);
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then isLiteral(e);
       case FILENAME() then true;
       else false;
     end match;
