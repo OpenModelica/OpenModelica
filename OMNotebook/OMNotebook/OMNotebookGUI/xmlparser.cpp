@@ -664,8 +664,7 @@ namespace IAEX
             }
           }
           gCell->mpPlotWindow->show();
-          gCell->mpPlotWindow->fitInView();
-          gCell->mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+          gCell->mpPlotWindow->updatePlot();
         }
         else
         {
