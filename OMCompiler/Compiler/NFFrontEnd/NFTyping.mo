@@ -634,8 +634,12 @@ algorithm
       then
         dim;
 
-    // If the dimension is unknown in a function, keep it unknown.
-    case Dimension.UNKNOWN() guard InstContext.inFunction(context)
+    // Dimensions in a function can be flexible (non-input component with no
+    // binding) or determined by the call arguments (input component), keep the
+    // dimension unknown for these cases.
+    case Dimension.UNKNOWN() guard InstContext.inFunction(context) and
+                                   ((Binding.isUnbound(binding) and InstNode.isOutput(component)) or
+                                    not InstNode.isOutput(component))
       then dimension;
 
     // If the dimension is unknown in a class, try to infer it from the components binding.
