@@ -82,6 +82,7 @@
 #include "CrashReport/CrashReportDialog.h"
 
 #include <QtSvg/QSvgGenerator>
+#include <QNetworkProxyFactory>
 
 namespace ToolBars {
   QString welcomePerspective = "welcomePerspective";

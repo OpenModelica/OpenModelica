@@ -49,9 +49,16 @@
 #include <QStylePainter>
 #include <QPainter>
 #include <QColorDialog>
+#include <QDir>
+#include <QRegExp>
+#ifdef OM_OMEDIT_ENABLE_LIBXML2
+#include <libxml/parser.h>
+#include <libxml/valid.h>
+#else
 #include <QXmlSchema>
 #include <QXmlSchemaValidator>
-#include <QDir>
+#endif
+
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -616,6 +623,38 @@ void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString
   schemaFile.close();
   const QByteArray schemaData = schemaText.toUtf8();
 
+#ifdef OM_OMEDIT_ENABLE_LIBXML2
+  xmlDocPtr doc;
+  QByteArray contentsArray(contents.toLocal8Bit());
+  doc = xmlParseDoc((const xmlChar *)contentsArray.data());
+  if (doc)
+  {
+    xmlParserInputBufferPtr buf = xmlParserInputBufferCreateMem(schemaData.data(), schemaData.size(), XML_CHAR_ENCODING_UTF8);
+    xmlDtdPtr dtd = xmlIOParseDTD(NULL, buf, XML_CHAR_ENCODING_UTF8);
+    xmlFreeParserInputBuffer(buf);
+    if (dtd)
+    {
+      xmlValidCtxtPtr vctxt;
+      vctxt = xmlNewValidCtxt();
+      if (vctxt)
+      {
+        int ok = xmlValidateDtd(vctxt, doc, dtd);
+        if (!ok)
+          pMessageHandler->setFailed(true);
+        xmlFreeValidCtxt(vctxt);
+      }
+      else
+        pMessageHandler->setFailed(true);
+      xmlFreeDtd(dtd);
+    }
+    else
+      pMessageHandler->setFailed(true);
+    xmlFreeDoc(doc);
+  }
+  else
+      pMessageHandler->setFailed(true);
+
+#else
   QXmlSchema schema;
   schema.setMessageHandler(pMessageHandler);
   schema.load(schemaData);
@@ -627,6 +666,7 @@ void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString
       pMessageHandler->setFailed(true);
     }
   }
+#endif
 }
 
 /*!

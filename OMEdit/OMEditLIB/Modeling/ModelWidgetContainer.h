@@ -59,7 +59,6 @@
 #ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QtWebKit>
 #endif
-#include <QtXmlPatterns>
 #include <QSplitter>
 #include <QUndoStack>
 #include <QUndoView>

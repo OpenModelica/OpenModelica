@@ -46,7 +46,6 @@
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QVariant>
-#include <QAbstractMessageHandler>
 #include <QDebug>
 #include <QPlainTextEdit>
 #include <QTextEdit>
@@ -59,6 +58,10 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QGenericMatrix>
+
+#ifndef OM_OMEDIT_ENABLE_LIBXML2
+#include <QAbstractMessageHandler>
+#endif
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -334,10 +337,28 @@ inline QDataStream& operator>>(QDataStream& in, DebuggerConfiguration& configura
  * \brief Defines the appropriate error message of the parsed XML validated againast the XML Schema.\n
  * The class implementation and logic is inspired from Qt Creator sources.
  */
+#ifdef OM_OMEDIT_ENABLE_LIBXML2
+class MessageHandler
+{
+public:
+  MessageHandler() {}
+  QString statusMessage() const { return mDescription;}
+  int line() const { return mLine;}
+  int column() const { return mColumn;}
+  void setFailed(bool failed) {mFailed = failed;}
+  bool isFailed() {return mFailed;}
+private:
+  QString mDescription;
+  int mLine = 0;
+  int mColumn = 0;
+  bool mFailed = false;
+};
+#else
 class MessageHandler : public QAbstractMessageHandler
 {
 public:
-  MessageHandler() : QAbstractMessageHandler(0) {mFailed = false;}
+  MessageHandler()
+  : QAbstractMessageHandler(0) {mFailed = false;}
   QString statusMessage() const { return mDescription;}
   int line() const { return mSourceLocation.line();}
   int column() const { return mSourceLocation.column();}
@@ -356,6 +377,7 @@ private:
   QSourceLocation mSourceLocation;
   bool mFailed;
 };
+#endif
 
 typedef struct {
   QString mDelay;
