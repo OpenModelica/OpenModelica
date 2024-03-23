@@ -1,0 +1,36 @@
+// name: convertUnits.mos
+// status: correct
+// teardown_command: rm -rf convertUnitsNoSystem.diff.txt convertUnitsNoSystem.txt
+
+convertUnits("m", "mm"); getErrorString();
+(_, r, _) := convertUnits("m", "mm"); getErrorString();
+r;
+s := String(r);
+s;
+system("rm -rf convertUnitsNoSystem.txt convertUnitsNoSystem.diff.txt"); getErrorString();
+echo(false); getErrorString();
+path := getInstallationDirectoryPath(); getErrorString();
+echo(true); getErrorString();
+system(path + "/bin/omc convertUnitsNoSystem.mos", outputFile="./convertUnitsNoSystem.txt"); getErrorString();
+system("diff -wZ ./convertUnitsNoSystem.txt ./convertUnitsNoSystem.expected.txt > ./convertUnitsNoSystem.diff.txt 2>&1"); getErrorString();
+readFile("convertUnitsNoSystem.diff.txt"); getErrorString();
+
+
+// Result:
+// (true,0.001,0.0)
+// ""
+//
+// ""
+// 0.001
+// "0.001"
+// "0.001"
+// ""
+// true
+// ""
+// 0
+// ""
+// 0
+// ""
+// ""
+// ""
+// endResult
