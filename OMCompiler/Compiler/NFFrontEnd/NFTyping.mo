@@ -642,6 +642,17 @@ algorithm
                                     not InstNode.isOutput(component))
       then dimension;
 
+    // A dimension of a function output parameter that depends on e.g. an input
+    // can't be determined here, leave it unknown and let the call typing handle it.
+    // TODO: This assumes any binding that contains crefs can't be evaluated to
+    //       avoid e.g. using the default value of an input parameter, but some
+    //       cases such as an output dimension depending on another output
+    //       dimension could be fine.
+    case Dimension.UNKNOWN() guard InstContext.inFunction(context) and
+                                   Binding.hasExp(binding) and
+                                   Expression.contains(Binding.getExp(binding), Expression.isCref)
+      then dimension;
+
     // If the dimension is unknown in a class, try to infer it from the components binding.
     case Dimension.UNKNOWN()
       algorithm
