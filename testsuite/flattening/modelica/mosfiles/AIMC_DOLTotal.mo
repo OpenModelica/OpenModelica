@@ -2931,34 +2931,6 @@ still kept in Modelica.SIunits.</p>
     type Inductance= Real(final quantity="Inductance", final unit="H") annotation(Icon(coordinateSystem(extent={{-100,100},{100,-100}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Diagram(coordinateSystem(extent={{-100,100},{100,-100}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})));
     type Resistance= Real(final quantity="Resistance", final unit="Ohm") annotation(Icon(coordinateSystem(extent={{-100,100},{100,-100}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Diagram(coordinateSystem(extent={{-100,100},{100,-100}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})));
     type Conductance= Real(final quantity="Conductance", final unit="S") annotation(Icon(coordinateSystem(extent={{-100,100},{100,-100}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})), Diagram(coordinateSystem(extent={{-100,100},{100,-100}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})));
-    defineunit A;
-    defineunit Bq (exp="s-1");
-    defineunit C (exp="s.A");
-    defineunit F (exp="C/V");
-    defineunit Gy (exp="J/kg");
-    defineunit H (exp="Wb/A");
-    defineunit Hz (exp="s-1", weight=0.8);
-    defineunit J (exp="N.m");
-    defineunit K;
-    defineunit N (exp="m.kg.s-2");
-    defineunit Ohm (exp="V/A");
-    defineunit Pa (exp="N/m2");
-    defineunit S (exp="A/V");
-    defineunit Sv (exp="J/kg");
-    defineunit T (exp="Wb/m2");
-    defineunit V (exp="W/A");
-    defineunit W (exp="J/s");
-    defineunit Wb (exp="V.s");
-    defineunit cd;
-    defineunit kat (exp="s-1.mol");
-    defineunit kg;
-    defineunit lm (exp="cd.sr");
-    defineunit lx (exp="lm/m2");
-    defineunit m;
-    defineunit mol;
-    defineunit rad (exp="m/m");
-    defineunit s;
-    defineunit sr (exp="m2/m2");
   end SIunits;
 
   package Icons "Icon definitions"
