@@ -85,7 +85,7 @@ simulate(function_annotation_der); getErrorString();
 //   output Real '$fDER_y';
 //   Real 'y';
 // algorithm
-//   '$fDER_y' := (k * (2.0 * x * $fDER_x) + $fDER_k * x ^ 2.0) + $fDER_m;
+//   '$fDER_y' := ('k' * (2.0 * 'x' * '$fDER_x') + '$fDER_k' * 'x' ^ 2.0) + '$fDER_m';
 //   'y' := 'k' * 'x' ^ 2.0 + 'm';
 //   annotation(Inline = false);
 // end '$fDER1.f'

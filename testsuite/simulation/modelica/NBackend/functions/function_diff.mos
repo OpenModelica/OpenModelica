@@ -60,7 +60,7 @@ simulate(function_diff); getErrorString();
 //   Real 'b';
 // algorithm
 //   if 'a' >= 0.0 then
-//     '$fDER_b' := 2.0 * a * $fDER_a;
+//     '$fDER_b' := 2.0 * 'a' * '$fDER_a';
 //     'b' := 'a' ^ 2.0;
 //   elseif true then
 //     '$fDER_b' := '$fDER0.f'(-'a', -'$fDER_a');
