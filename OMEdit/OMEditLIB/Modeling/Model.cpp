@@ -1453,7 +1453,7 @@ namespace ModelInstance
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<Component*>(pElement);
         if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-          if (pComponent->getModifier()) {
+          if (pComponent->getModifier() && pComponent->getModifier()->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
             value = qMakePair(pComponent->getModifier()->getValueWithoutQuotes(), true);
           }
           // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
@@ -1772,15 +1772,21 @@ namespace ModelInstance
 
   void Element::deserialize(const QJsonObject &jsonObject)
   {
+    deserialize_impl(jsonObject);
+
+    // Modifier uses the Element name so call deserialize_impl before the following so getName() returns the correct value.
     if (jsonObject.contains("modifiers")) {
-      mpModifier = new Modifier("", jsonObject.value("modifiers"), mpParentModel);
+      const QJsonValue modifiers = jsonObject.value("modifiers");
+      if (modifiers.isObject()) {
+        mpModifier = new Modifier("", jsonObject.value("modifiers"), mpParentModel);
+      } else {
+        mpModifier = new Modifier(getName(), jsonObject.value("modifiers"), mpParentModel);
+      }
     }
 
     if (jsonObject.contains("comment")) {
       mComment = jsonObject.value("comment").toString();
     }
-
-    deserialize_impl(jsonObject);
   }
 
   Element *Element::getTopLevelExtendElement() const
