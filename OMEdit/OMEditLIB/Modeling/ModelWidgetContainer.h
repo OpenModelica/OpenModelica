@@ -152,6 +152,7 @@ private:
   RectangleAnnotation *mpRectangleShapeAnnotation;
   EllipseAnnotation *mpEllipseShapeAnnotation;
   TextAnnotation *mpTextShapeAnnotation;
+  TextAnnotation *mpErrorTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
   QAction *mpRenameAction;
@@ -194,7 +195,6 @@ public:
   void drawTransitions(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawInitialStates(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void handleCollidingConnections();
-
 
   void setExtentRectangle(const QRectF rectangle, bool moveToCenter);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
@@ -355,6 +355,8 @@ public:
   void fitInViewInternal();
   void emitResetDynamicSelect();
   void showReplaceSubModelDialog(QString name);
+  void addErrorTextShape();
+  void removeErrorTextShape();
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);

@@ -83,7 +83,6 @@ class OMSSimulationDialog;
 class ModelWidgetContainer;
 class ModelWidget;
 class WelcomePageWidget;
-class InfoBar;
 class AboutOMEditDialog;
 class Label;
 class FileDataNotifier;

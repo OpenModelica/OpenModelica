@@ -577,7 +577,7 @@ private:
     Element *getParentElement() const {return mpParentElement;}
     Extend *getParentExtend() const;
     Component *getParentComponent() const;
-    const QJsonObject &getModelJson() const {return mModelJson;}
+    bool isModelJsonEmpty() const {return mModelJson.isEmpty();}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     const QString &getName() const {return mName;}
     const QString &getRootType() const;
