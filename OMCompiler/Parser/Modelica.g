@@ -564,11 +564,10 @@ element_list [ void **ann] returns [void* ast]
 
 element returns [void* ast]
 @declarations { void *final = 0, *innerouter = 0; }
-@init { f = 0; i = 0; o = 0; r = 0; void *redecl; OM_PUSHZ10(cc, $ast, cdef.ast, constr, final, innerouter, ic, ec, du, redecl); }
+@init { f = 0; i = 0; o = 0; r = 0; void *redecl; OM_PUSHZ9(cc, $ast, cdef.ast, constr, final, innerouter, ic, ec, redecl); }
   :
     ic=import_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ic, PARSER_INFO($start), mmc_mk_none()); }
   | ec=extends_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ec, PARSER_INFO($start),mmc_mk_none()); }
-  | du=defineunit_clause { $ast = du; }
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mmc_mk_bcon(f); innerouter = make_inner_outer(i,o); }
     ( ( cdef=class_definition[f != NULL] | cc=component_clause )
         {
@@ -614,15 +613,6 @@ import_clause returns [void* ast]
     }
   ;
   finally{ OM_POP(2); }
-
-defineunit_clause returns [void* ast]
-@init { id = 0; OM_PUSHZ1(na); } :
-  DEFINEUNIT id=IDENT (LPAR na=named_arguments RPAR)?
-    {
-      ast = Absyn__DEFINEUNIT(token_to_scon(id),or_nil(na), PARSER_INFO($id));
-    }
-  ;
-  finally{ OM_POP(1); }
 
 explicit_import_name returns [void* ast]
 @init { id = 0; OM_PUSHZ1(p); } :
