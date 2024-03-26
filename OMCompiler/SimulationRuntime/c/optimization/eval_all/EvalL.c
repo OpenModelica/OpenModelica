@@ -35,9 +35,9 @@
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/solver/model_help.h"
 
-static inline void calculate_hessian_matrix_numericle(double * v, const double * const lambda, const double objFactor , OptData *optData, const int i, const int j);
+static inline void calculate_hessian_matrix_numerical(double * v, const double * const lambda, const double objFactor , OptData *optData, const int i, const int j);
 static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor(const int i, const int j, double * res,  const modelica_boolean upC, OptData *optData);
-static inline void calculate_hessian_matrix_numericle_last_time_intervall(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
+static inline void calculate_hessian_matrix_numerical_last_time_intervall(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
 static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor_last_time_intervall(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, OptData *optData);
 
 
@@ -105,7 +105,7 @@ static void fill_hessian_values(double *vopt, double *lambda, double obj_factor,
 
     for(ii = 0, k = 0, v = vopt, la = lambda; ii + 1 < nsi; ++ii){
       for(p = 1; p < np1; ++p, v += nv, la += nJ){
-        calculate_hessian_matrix_numericle(v, la, obj_factor, optData, ii, p-1);
+        calculate_hessian_matrix_numerical(v, la, obj_factor, optData, ii, p-1);
         /*******************/
         for(i = 0; i < nv; ++i){
           for(j = 0; j < i + 1; ++j){
@@ -120,7 +120,7 @@ static void fill_hessian_values(double *vopt, double *lambda, double obj_factor,
 
     /* fill_hessian_values last time intervall */
     for(p = 1; p < np1; ++p, v += nv, la += nJ){
-      calculate_hessian_matrix_numericle_last_time_intervall(v, la, obj_factor, optData, ii, p-1);
+      calculate_hessian_matrix_numerical_last_time_intervall(v, la, obj_factor, optData, ii, p-1);
       for(i = 0; i < nv; ++i){
         for(j = 0; j < i + 1; ++j){
           if(optData->s.H1[i][j] && np == p){
@@ -135,7 +135,6 @@ static void fill_hessian_values(double *vopt, double *lambda, double obj_factor,
 }
 
 /* eval hessian
- * author: Vitalij Ruge
  */
 Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
                     int nele_hess, int *iRow, int *iCol, double *values, void* useData){
@@ -161,9 +160,8 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
 
 /* numerical approximation
  *  hessian
- * author: Vitalij Ruge
  */
-static inline void calculate_hessian_matrix_numericle(double * v, const double * const lambda,
+static inline void calculate_hessian_matrix_numerical(double * v, const double * const lambda,
     const double objFactor , OptData *optData, const int i, const int j){
 
   const modelica_boolean la = optData->s.lagrange;
@@ -242,9 +240,8 @@ static inline void calculate_hessian_matrix_numericle(double * v, const double *
 
 /* numerical approximation
  *  hessian
- * author: Vitalij Ruge
  */
-static inline void calculate_hessian_matrix_numericle_last_time_intervall(double * v, const double * const lambda,
+static inline void calculate_hessian_matrix_numerical_last_time_intervall(double * v, const double * const lambda,
     const double objFactor, OptData *optData, const int i, const int j){
 
   const modelica_boolean la = optData->s.lagrange;
@@ -352,7 +349,6 @@ static inline void calculate_hessian_matrix_numericle_last_time_intervall(double
 
 
 /* eval hessian for lagrange
- * author: Vitalij Ruge
  */
 static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor(const int i, const int j, double * res,
     const modelica_boolean upC, OptData *optData){
@@ -374,7 +370,6 @@ static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tenso
 }
 
 /* eval hessian for lagrange
- * author: Vitalij Ruge
  */
 static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor_last_time_intervall(const int i, const int j, double * res,
     const modelica_boolean upC, const modelica_boolean upC2, OptData *optData){

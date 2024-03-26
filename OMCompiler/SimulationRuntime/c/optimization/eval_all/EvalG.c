@@ -68,7 +68,6 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
 
 
 /* eval constraints
- * author: Vitalij Ruge
  */
 Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData){
   OptData *optData = (OptData*)useData;
