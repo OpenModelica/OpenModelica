@@ -899,6 +899,8 @@ public constant ErrorTypes.Message UNKNOWN_ANNOTATION_VALUE = ErrorTypes.MESSAGE
   Gettext.gettext("Unknown value '%s' for annotation '%s'"));
 public constant ErrorTypes.Message NON_FIXED_CONSTANT = ErrorTypes.MESSAGE(413, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Constant '%s' must be fixed but has 'fixed = false'"));
+public constant ErrorTypes.Message CONFLICTING_INHERITED_ANNOTATIONS = ErrorTypes.MESSAGE(414, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Conflicting '%s' annotations inherited by class '%s':\n  %s from 'extends %s'\n  %s from 'extends %s'"));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

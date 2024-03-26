@@ -815,6 +815,11 @@ protected
   InstNode cls_node;
   Class cls;
 algorithm
+  if not Flags.isSet(Flags.SCODE_INST) then
+    extendsPaths := {};
+    return;
+  end if;
+
   (_, _, cls_node) := frontEndLookup(program, classPath);
 
   if not InstNode.isClass(cls_node) then

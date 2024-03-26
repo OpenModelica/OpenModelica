@@ -1,0 +1,33 @@
+// name: getSimulationOptions2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  model A
+    annotation(experiment(StopTime = 1.0));
+  end A;
+
+  model B
+    annotation(experiment(StopTime = 2.0));
+  end B;
+
+  model M
+    extends A;
+    extends B;
+  end M;
+");
+getErrorString();
+
+getSimulationOptions(M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// (0.0,1.0,1e-6,500,0.002)
+// "Warning: Conflicting 'experiment' annotations inherited by class 'M':
+//   (StopTime = 1.0) from 'extends A'
+//   (StopTime = 2.0) from 'extends B'
+// "
+// endResult

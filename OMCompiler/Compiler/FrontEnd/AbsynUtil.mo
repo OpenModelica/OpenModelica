@@ -4029,6 +4029,29 @@ algorithm
   end match;
 end mergeCommentAnnotation;
 
+public function mergeModifiers
+  "Merges two modifiers, with the outer modifiers overwriting the inner one."
+  input Absyn.Modification outerMod;
+  input Absyn.Modification innerMod;
+  output Absyn.Modification outMod;
+algorithm
+  outMod := Absyn.Modification.CLASSMOD(
+    mergeAnnotations2(innerMod.elementArgLst, outerMod.elementArgLst),
+    mergeEqMods(outerMod.eqMod, innerMod.eqMod)
+  );
+end mergeModifiers;
+
+public function mergeEqMods
+  input Absyn.EqMod outerEqMod;
+  input Absyn.EqMod innerEqMod;
+  output Absyn.EqMod outEqMod;
+algorithm
+  outEqMod := match outerEqMod
+    case Absyn.EqMod.EQMOD() then outerEqMod;
+    else innerEqMod;
+  end match;
+end mergeEqMods;
+
 function isModificationOfPath
 "returns true or false if the given path is in the list of modifications"
   input Absyn.ElementArg mod;
@@ -4227,6 +4250,69 @@ algorithm
         (cr1 :: rest);
   end matchcontinue;
 end removeCrefFromCrefs;
+
+public function lookupClassAnnotation
+  "Looks up the modifier for a specific annotation in the given class."
+  input Absyn.Class cls;
+  input String name;
+  output Option<Absyn.Modification> outMod;
+algorithm
+  outMod := lookupClassDefAnnotation(cls.body, name);
+end lookupClassAnnotation;
+
+public function lookupClassDefAnnotation
+  "Looks up the modifier for a specific annotation in the given class definition."
+  input Absyn.ClassDef cdef;
+  input String name;
+  output Option<Absyn.Modification> outMod = NONE();
+protected
+  Absyn.Annotation ann;
+algorithm
+  outMod := match cdef
+    case Absyn.PARTS() then List.findSome(cdef.ann, function lookupAnnotation(name = name));
+    case Absyn.CLASS_EXTENDS() then List.findSome(cdef.ann, function lookupAnnotation(name = name));
+    case Absyn.DERIVED() then lookupCommentOptAnnotation(cdef.comment, name);
+    case Absyn.ENUMERATION() then lookupCommentOptAnnotation(cdef.comment, name);
+    case Absyn.OVERLOAD() then lookupCommentOptAnnotation(cdef.comment, name);
+    case Absyn.PDER() then lookupCommentOptAnnotation(cdef.comment, name);
+    else NONE();
+  end match;
+end lookupClassDefAnnotation;
+
+function lookupCommentOptAnnotation
+  "Looks up the modifier for a specific annotation in the given optional comment."
+  input Option<Absyn.Comment> cmt;
+  input String name;
+  output Option<Absyn.Modification> outMod;
+protected
+  Absyn.Annotation ann;
+algorithm
+  outMod := match cmt
+    case SOME(Absyn.COMMENT(annotation_ = SOME(ann))) then lookupAnnotation(ann, name);
+    else NONE();
+  end match;
+end lookupCommentOptAnnotation;
+
+function lookupAnnotation
+  "Looks up the modifier for a specific annotation."
+  input Absyn.Annotation ann;
+  input String name;
+  output Option<Absyn.Modification> outMod = NONE();
+algorithm
+  for m in ann.elementArgs loop
+    outMod := match m
+      case Absyn.MODIFICATION()
+        guard pathFirstIdent(m.path) == name
+        then m.modification;
+
+      else outMod;
+    end match;
+
+    if isSome(outMod) then
+      break;
+    end if;
+  end for;
+end lookupAnnotation;
 
 public function getNamedAnnotationInClass<T>
   "Retrieve e.g. the documentation annotation as a string from the class passed as argument."

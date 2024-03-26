@@ -634,17 +634,15 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
      * by the user.
      */
     if (!mpLibraryTreeItem->mSimulationOptions.isValid()) {
-      // if the class has experiment annotation then read it.
-      if (MainWindow::instance()->getOMCProxy()->isExperiment(mClassName)) {
-        // get the simulation options....
-        OMCInterface::getSimulationOptions_res simulationOptions_res = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
-        // since we always get simulationOptions so just get the values from array
-        mpStartTimeTextBox->setText(QString::number(simulationOptions_res.startTime));
-        mpStopTimeTextBox->setText(QString::number(simulationOptions_res.stopTime));
-        mpToleranceTextBox->setText(QString::number(simulationOptions_res.tolerance));
-        mpNumberofIntervalsSpinBox->setValue(simulationOptions_res.numberOfIntervals);
-        mpIntervalTextBox->setText(QString::number(simulationOptions_res.interval));
-      }
+      // get the simulation options....
+      OMCInterface::getSimulationOptions_res simulationOptions_res = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
+      // since we always get simulationOptions so just get the values from array
+      mpStartTimeTextBox->setText(QString::number(simulationOptions_res.startTime));
+      mpStopTimeTextBox->setText(QString::number(simulationOptions_res.stopTime));
+      mpToleranceTextBox->setText(QString::number(simulationOptions_res.tolerance));
+      mpNumberofIntervalsSpinBox->setValue(simulationOptions_res.numberOfIntervals);
+      mpIntervalTextBox->setText(QString::number(simulationOptions_res.interval));
+
       // apply the global translation flags
       TranslationFlagsWidget *pGlobalTranslationFlagsWidget = OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget();
       mpTranslationFlagsWidget->getMatchingAlgorithmComboBox()->setCurrentIndex(pGlobalTranslationFlagsWidget->getMatchingAlgorithmComboBox()->currentIndex());
