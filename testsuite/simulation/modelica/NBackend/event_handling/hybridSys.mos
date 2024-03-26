@@ -46,6 +46,8 @@ simulate(hybridSys); getErrorString();
 //
 // Stage 10 underdetermined.
 // Not overdetermined.
+// *********************
+//
 // (10) Unmatched variables:
 // ***************************
 // 	[DISS] (1) Real x_Start (start = 0.0)
@@ -68,10 +70,6 @@ simulate(hybridSys); getErrorString();
 // 	 slice: {};
 // 	[PRE-] (1) Boolean $PRE.phase_Start
 // 	 slice: {};
-//
-// (0) Unmatched equations:
-// **************************
-//
 // Created Start Equations for balancing the Initialization (10):
 // ****************************************************************
 // 	[SCAL] (1) $PRE.phase_Start = $START.phase_Start ($RES_SIM_41)
@@ -86,14 +84,9 @@ simulate(hybridSys); getErrorString();
 // 	[SCAL] (1) $PRE.x_Start = $START.x_Start ($RES_SIM_50)
 //
 // Not underdetermined.
+// **********************
 // Not overdetermined.
-// (0) Unmatched variables:
-// **************************
-//
-//
-// (0) Unmatched equations:
-// **************************
-//
+// *********************
 // record SimulationResult
 //     resultFile = "hybridSys_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'hybridSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
