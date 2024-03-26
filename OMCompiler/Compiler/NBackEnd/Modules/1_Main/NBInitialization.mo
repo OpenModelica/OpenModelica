@@ -397,7 +397,7 @@ public
         ComponentRef new_iter;
 
       // convert array constructor to for-equation if elements are not a literal
-      case SOME(e as Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR())) guard not Expression.isLiteral(e) algorithm
+      case SOME(Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR(exp = e))) guard not Expression.isLiteral(e) algorithm
 
         // make unique iterators for the new for-loop
         dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
