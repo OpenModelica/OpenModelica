@@ -1907,16 +1907,16 @@ public
                         ) + ")";
       case END() then "end";
 
-      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryFlatString(exp.arguments, exp, exp.operator, false);
 
       case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
-                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+                     then "-" + multaryFlatString(exp.inv_arguments, exp, exp.operator);
 
-      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator);
 
-      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+      case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator) +
                           Operator.symbol(Operator.invert(exp.operator)) +
-                          multaryString(exp.inv_arguments, exp, exp.operator);
+                          multaryFlatString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -2049,8 +2049,8 @@ public
       if operand_prio > operator_prio then
         parenthesize := true;
       elseif operand_prio == operator_prio then
-        parenthesize := if lhs then isNonAssociativeExp(operand) else not
-                                    isAssociativeExp(operand);
+        parenthesize := if lhs then isNonAssociativeExp(operand)
+                               else not isAssociativeExp(operand);
       end if;
     end if;
 
@@ -2063,14 +2063,27 @@ public
     input list<Expression> arguments;
     input Expression exp;
     input Operator operator;
-    input Boolean useParanthesis = true;
+    input Boolean parenthesize = true;
     output String str;
   algorithm
     str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbol(operator));
-    if useParanthesis and listLength(arguments) > 1 then
+    if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
   end multaryString;
+
+  function multaryFlatString
+    input list<Expression> arguments;
+    input Expression exp;
+    input Operator operator;
+    input Boolean parenthesize = true;
+    output String str;
+  algorithm
+    str := stringDelimitList(list(operandFlatString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    if parenthesize and listLength(arguments) > 1 then
+      str := "(" + str + ")";
+    end if;
+  end multaryFlatString;
 
   function priority
     input Expression exp;
@@ -2088,6 +2101,9 @@ public
       case RELATION() then 6;
       case RANGE() then 10;
       case IF() then 11;
+      case CAST() then priority(exp.exp, lhs);
+      case BOX() then priority(exp.exp, lhs);
+      case UNBOX() then priority(exp.exp, lhs);
       else 0;
     end match;
   end priority;
@@ -6073,6 +6089,18 @@ public
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
           json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
+        then
+          json;
+
+      case MULTARY()
+        algorithm
+          json := JSON.emptyObject();
+          json := JSON.addPair("$kind", JSON.makeString("multary_op"), json);
+          json := JSON.addPair("args",
+            JSON.makeArray(list(toJSON(a) for a in exp.arguments)), json);
+          json := JSON.addPair("inv_args",
+            JSON.makeArray(list(toJSON(a) for a in exp.inv_arguments)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
         then
           json;
 

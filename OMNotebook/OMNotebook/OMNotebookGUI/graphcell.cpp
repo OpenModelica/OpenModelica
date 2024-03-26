@@ -1494,7 +1494,7 @@ namespace IAEX {
           Fix for bug #2047.
       */
 //      mpPlotWindow->fitInView();
-      mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+      mpPlotWindow->updatePlot();
     }
     catch (PlotException &e)
     {

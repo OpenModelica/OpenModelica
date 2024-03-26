@@ -235,6 +235,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpRectangleShapeAnnotation = 0;
   mpEllipseShapeAnnotation = 0;
   mpTextShapeAnnotation = 0;
+  mpErrorTextShapeAnnotation = 0;
   mpBitmapShapeAnnotation = 0;
   createActions();
   mAllItems.clear();
@@ -2115,6 +2116,7 @@ void GraphicsView::clearGraphicsView()
   removeInheritedClassTransitions();
   removeInheritedClassInitialStates();
   removeInheritedClassElements();
+  mpErrorTextShapeAnnotation = 0;
   scene()->clear();
   mAllItems.clear();
 }
@@ -4338,6 +4340,39 @@ void GraphicsView::showReplaceSubModelDialog(QString name)
 }
 
 /*!
+ * \brief GraphicsView::addErrorTextShape
+ * Creates and adds the error text shape to view when getModelInstance fails.
+ */
+void GraphicsView::addErrorTextShape()
+{
+  if (!mpErrorTextShapeAnnotation) {
+    mpErrorTextShapeAnnotation = new TextAnnotation("", this);
+    mpErrorTextShapeAnnotation->setOrigin(QPointF(0, 50));
+    mpErrorTextShapeAnnotation->replaceExtent(0, QPointF(-100, 30));
+    mpErrorTextShapeAnnotation->replaceExtent(1, QPointF(100, -30));
+    mpErrorTextShapeAnnotation->setLineColor(Qt::red);
+    mpErrorTextShapeAnnotation->setTextString(tr("The Modelica code of this model is invalid, so the graphics cannot be displayed."
+                                                 "\nPlease check the Messages browser for error messages and possibly undo the latest changes with ctrl-z."));
+    mpErrorTextShapeAnnotation->setShapeFlags(false);
+    mpErrorTextShapeAnnotation->applyTransformation();
+    addItem(mpErrorTextShapeAnnotation);
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeErrorTextShape
+ * Removes the error text shape from the view.
+ */
+void GraphicsView::removeErrorTextShape()
+{
+  if (mpErrorTextShapeAnnotation) {
+    removeItem(mpErrorTextShapeAnnotation);
+    delete mpErrorTextShapeAnnotation;
+    mpErrorTextShapeAnnotation = 0;
+  }
+}
+
+/*!
  * \brief GraphicsView::createConnector
  * Creates a connector while making a connection.\n
  * Ends the connection on the newly created connector.
@@ -4593,7 +4628,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   } else if (dynamic_cast<ResizerItem*>(itemAt(event->pos()))) {
     // do nothing if resizer item is clicked. It will be handled in its class mousePressEvent();
   } else if (dynamic_cast<CornerItem*>(itemAt(event->pos()))) {
-    // do nothing if cornet item is clicked. It will be handled in its class mousePressEvent();
+    // do nothing if corner item is clicked. It will be handled in its class mousePressEvent();
   } else {
     // this flag is just used to have separate identity for if statement in mouse release event of graphicsview
     setIsMovingComponentsAndShapes(true);
@@ -4809,10 +4844,17 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
   return shouldEnactQTDoubleClick;
 }
 
-
+/*!
+ * \brief GraphicsView::mouseDoubleClickEvent
+ * Defines what happens when double clicking in a GraphicsView.
+ * \param event
+ */
 void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-  if (isVisualizationView()) {
+  /* If is visualization view.
+   * Issue #12049. Stop double click event when the getModelInstance API fails.
+   */
+  if (isVisualizationView() || (mpModelWidget->isNewApi() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
   const bool removeLastAddedPoint = true;
@@ -5070,8 +5112,10 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
  */
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
-  /* If we are creating the connection OR creating any shape OR is visualization view then don't show context menu */
-  if (isCreatingShape() || isVisualizationView()) {
+  /* If we are creating the connection OR creating any shape OR is visualization view then don't show context menu
+   * Issue #12049. Stop context menu event when the getModelInstance API fails.
+   */
+  if (isCreatingShape() || isVisualizationView() || (mpModelWidget->isNewApi() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
   // if creating a connection
@@ -6001,6 +6045,16 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
   disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
   drawModelIconDiagram(mpModelInstance, false, modelInfo);
   mpDiagramGraphicsView->handleCollidingConnections();
+  /* Issue #12049
+   * Show the error message when the getModelInstance returns empty JSON.
+   */
+  if (mpModelInstance->isModelJsonEmpty()) {
+    mpIconGraphicsView->addErrorTextShape();
+    mpDiagramGraphicsView->addErrorTextShape();
+  } else {
+    mpIconGraphicsView->removeErrorTextShape();
+    mpDiagramGraphicsView->removeErrorTextShape();
+  }
 }
 
 void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)

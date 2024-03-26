@@ -1620,11 +1620,7 @@ void VariablesWidget::variablesUpdated()
           }
         }
       }
-      if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-        pPlotWindow->fitInView();
-      } else {
-        pPlotWindow->updatePlot();
-      }
+      pPlotWindow->updatePlot();
     }
   }
   updateVariablesTreeHelper(MainWindow::instance()->getPlotWindowContainer()->currentSubWindow());
@@ -1682,11 +1678,7 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
         }
         // if a simulation was left running, make a replot
-        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-          pPlotWindow->fitInView();
-        } else {
-          pPlotWindow->updatePlot();
-        }
+        pPlotWindow->updatePlot();
       }
     }
     mpVariablesTreeModel->blockSignals(state);
@@ -2024,22 +2016,14 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           }
         }
-        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-          pPlotWindow->fitInView();
-        } else {
-          pPlotWindow->updatePlot();
-        }
+        pPlotWindow->updatePlot();
       } else if (!pVariablesTreeItem->isChecked()) {  // if user unchecks the variable then remove it from the plot
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
           QString curveTitle = pPlotCurve->getNameStructure();
           if (curveTitle.compare(pVariablesTreeItem->getVariableName()) == 0) {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
             pPlotCurve->detach();
-            if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-              pPlotWindow->fitInView();
-            } else {
-              pPlotWindow->updatePlot();
-            }
+            pPlotWindow->updatePlot();
             break;
           }
         }
@@ -2142,11 +2126,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               }
             }
 
-            if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-              pPlotWindow->fitInView();
-            } else {
-              pPlotWindow->updatePlot();
-            }
+            pPlotWindow->updatePlot();
           }
         }
       } else if (!pVariablesTreeItem->isChecked()) {  // if user unchecks the variable then remove it from the plot
@@ -2206,11 +2186,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           i++;
         }
         if (curveRemoved) {
-          if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-            pPlotWindow->fitInView();
-          } else {
-            pPlotWindow->updatePlot();
-          }
+          pPlotWindow->updatePlot();
         }
       }
     } else { // if plottype is INTERACTIVE then
@@ -2262,11 +2238,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           if (pVariablesTreeItem->getVariableName().endsWith("." + pPlotCurve->getYVariable())) {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
             pPlotCurve->detach();
-            if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-              pPlotWindow->fitInView();
-            } else {
-              pPlotWindow->updatePlot();
-            }
+            pPlotWindow->updatePlot();
             break;
           }
         }
@@ -2332,11 +2304,7 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
           }
         }
       }
-      if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-        pPlotWindow->fitInView();
-      } else {
-        pPlotWindow->updatePlot();
-      }
+      pPlotWindow->updatePlot();
     }
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
@@ -2679,11 +2647,7 @@ void VariablesWidget::timeUnitChanged(QString unit)
           }
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         }
-        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-          pPlotWindow->fitInView();
-        } else {
-          pPlotWindow->updatePlot();
-        }
+        pPlotWindow->updatePlot();
       }
     }
   } catch (PlotException &e) {
