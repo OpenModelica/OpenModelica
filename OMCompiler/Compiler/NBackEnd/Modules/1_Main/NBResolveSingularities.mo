@@ -511,12 +511,22 @@ protected
   protected
     String s1, s2, s3, s4;
   algorithm
-    s1 := if listEmpty(unmatched_vars) then "Not underdetermined.\n" else "Stage " + intString(listLength(unmatched_vars)) + " underdetermined.\n";
-    s2 := if listEmpty(unmatched_eqns) then "Not overdetermined.\n" else "Stage " + intString(listLength(unmatched_eqns)) + " overdetermined.\n";
-    s3 := StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched variables:")
-          + Slice.lstToString(unmatched_vars, BVariable.pointerToString) + "\n";
-    s4 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
+    if listEmpty(unmatched_vars) then
+      s1 := StringUtil.headline_4("Not underdetermined.");
+      s3 := "";
+    else
+      s1 := "Stage " + intString(listLength(unmatched_vars)) + " underdetermined.\n";
+      s3 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched variables:")
+            + Slice.lstToString(unmatched_vars, BVariable.pointerToString) + "\n";
+    end if;
+    if listEmpty(unmatched_eqns) then
+      s2 := StringUtil.headline_4("Not overdetermined.");
+      s4 := "";
+    else
+      s2 := "Stage " + intString(listLength(unmatched_eqns)) + " overdetermined.\n";
+      s4 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
           + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = "")) + "\n";
+    end if;
     str := s1 + s2 + s3 + s4;
   end toStringUnmatched;
 
