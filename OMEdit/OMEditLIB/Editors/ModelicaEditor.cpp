@@ -155,9 +155,7 @@ QList<LibraryTreeItem*> ModelicaEditor::getCandidateContexts(QStringList nameCom
   QList<LibraryTreeItem*> roots;
   LibraryTreeItem *pItem = getModelWidget()->getLibraryTreeItem();
   while (pItem) {
-    if (!pItem->isRootItem()) {
-      roots.append(pItem->getInheritedClassesDeepList());
-    }
+    roots.append(pItem->getInheritedClassesDeepList());
     pItem = pItem->parent();
   }
 
