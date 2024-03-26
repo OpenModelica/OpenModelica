@@ -702,17 +702,19 @@ const QList<LibraryTreeItem*> &LibraryTreeItem::getInheritedClasses()
     } else {
       if (!mInheritedClassesLoaded) {
         mInheritedClasses.clear();
-        // get the inherited classes of the class
-        QList<QString> inheritedClasses = MainWindow::instance()->getOMCProxy()->getInheritedClasses(getNameStructure());
-        foreach (QString inheritedClass, inheritedClasses) {
-          /* If the inherited class is one of the builtin type such as Real we can
-           * stop here, because the class cannot contain any classes, etc.
-           * Also check for cyclic loops.
-           */
-          if (!(MainWindow::instance()->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(getNameStructure()) == 0)) {
-            LibraryTreeItem *pInheritedLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(inheritedClass);
-            if (pInheritedLibraryTreeItem) {
-              mInheritedClasses.append(pInheritedLibraryTreeItem);
+        if (!isRootItem()) {
+          // get the inherited classes of the class
+          QList<QString> inheritedClasses = MainWindow::instance()->getOMCProxy()->getInheritedClasses(getNameStructure());
+          foreach (QString inheritedClass, inheritedClasses) {
+            /* If the inherited class is one of the builtin type such as Real we can
+             * stop here, because the class cannot contain any classes, etc.
+             * Also check for cyclic loops.
+             */
+            if (!(MainWindow::instance()->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(getNameStructure()) == 0)) {
+              LibraryTreeItem *pInheritedLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(inheritedClass);
+              if (pInheritedLibraryTreeItem) {
+                mInheritedClasses.append(pInheritedLibraryTreeItem);
+              }
             }
           }
         }
