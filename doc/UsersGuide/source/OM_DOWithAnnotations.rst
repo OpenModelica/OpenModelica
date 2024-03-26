@@ -272,6 +272,7 @@ with `SIM`` initialisation:
       __OpenModelica_simulationFlags(s = "optimization", optimizerNP = "1", ipopt_init= "SIM")
 
 The three options operate as follows:
+
 * `SIM` (the default). With this option, OM first makes an ordinary simulation; the simulation result is
 the initial “point” for the optimization. During this simulation the input is constantly kept at its
 value “start”.
