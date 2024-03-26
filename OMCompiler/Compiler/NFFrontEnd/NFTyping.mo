@@ -356,7 +356,7 @@ protected
 algorithm
   comp := InstNode.component(component);
 
-  if not Component.isConnector(comp) or Component.isExpandableConnector(comp) then
+  if not ConnectorType.isConnector(Component.connectorType(comp)) then
     return;
   end if;
 
