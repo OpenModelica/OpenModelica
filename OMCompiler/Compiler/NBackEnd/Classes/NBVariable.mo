@@ -55,6 +55,7 @@ public
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Scalarize = NFScalarize;
+  import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -1120,13 +1121,25 @@ public
     end match;
   end getBindingVariability;
 
-  function hasConstBinding extends checkVar;
+  function hasLiteralBinding extends checkVar;
   protected
     Variable var;
+    Expression binding;
   algorithm
-    var := Pointer.access(var_ptr);
-    b := Expression.isConstNumber(Binding.getExp(var.binding));
-  end hasConstBinding;
+    b := false;
+    if isBound(var_ptr) then
+      var := Pointer.access(var_ptr);
+      binding := Binding.getExp(var.binding);
+      if Expression.isLiteral(binding) then
+        b := true;
+      else
+        // try to extract literal from array constructor
+        (_, binding) := Iterator.extract(binding);
+        binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
+        b := Expression.isLiteral(binding);
+      end if;
+    end if;
+  end hasLiteralBinding;
 
   function setFixed
     input output Pointer<Variable> var_ptr;
@@ -1138,7 +1151,6 @@ public
     var:= match var
       local
         BackendExtension.BackendInfo binfo;
-        Expression start;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b);
@@ -1160,7 +1172,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
-    var:= match var
+    var := match var
       local
         BackendExtension.BackendInfo binfo;
         Expression start;

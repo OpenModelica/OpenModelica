@@ -28,15 +28,26 @@ simulate(binding_array); getErrorString();
 // true
 // ""
 // true
+// Created Parameter Binding Equations (1):
+// ******************************************
+// 	[FOR-] (5) ($RES_BND_0)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) Cu[$i1] = 1e7 * (1.0 + 0.337 * ((-1) + $i1)) ($RES_BND_1)
+// [----] end for;
+//
 // ##############################
 //
 // 	Balance Initialization
 //
 // ##############################
 //
+// Not underdetermined.
+// **********************
+// Not overdetermined.
+// *********************
 // record SimulationResult
 //     resultFile = "binding_array_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'binding_array', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'binding_array', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
