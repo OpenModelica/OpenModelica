@@ -467,6 +467,7 @@ private:
     const QString &getName() const {return mName;}
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
+    bool isValueDefined() const {return mValueDefined;}
     QString toString(bool skipTopLevel = false) const;
     Modifier *getModifier(const QString &modifier) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
@@ -485,6 +486,7 @@ private:
     bool mFinal = false;
     bool mEach = false;
     QString mValue;
+    bool mValueDefined = false;
     Element *mpElement = 0;
     QList<Modifier*> mModifiers;
 

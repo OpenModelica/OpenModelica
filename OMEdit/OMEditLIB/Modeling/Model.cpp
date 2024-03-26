@@ -750,6 +750,7 @@ namespace ModelInstance
             }
           } else {
             mValue = modifierValue.toString();
+            mValueDefined = true;
           }
         } else {
           mModifiers.append(new Modifier(modifierKey, modifierValue, mpParentModel));
@@ -757,6 +758,7 @@ namespace ModelInstance
       }
     } else {
       mValue = jsonValue.toString();
+      mValueDefined = true;
     }
   }
 
@@ -1453,7 +1455,7 @@ namespace ModelInstance
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<Component*>(pElement);
         if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-          if (pComponent->getModifier() && pComponent->getModifier()->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
+          if (pComponent->getModifier() && pComponent->getModifier()->isValueDefined()) {
             value = qMakePair(pComponent->getModifier()->getValueWithoutQuotes(), true);
           }
           // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
@@ -1772,21 +1774,15 @@ namespace ModelInstance
 
   void Element::deserialize(const QJsonObject &jsonObject)
   {
-    deserialize_impl(jsonObject);
-
-    // Modifier uses the Element name so call deserialize_impl before the following so getName() returns the correct value.
     if (jsonObject.contains("modifiers")) {
-      const QJsonValue modifiers = jsonObject.value("modifiers");
-      if (modifiers.isObject()) {
-        mpModifier = new Modifier("", jsonObject.value("modifiers"), mpParentModel);
-      } else {
-        mpModifier = new Modifier(getName(), jsonObject.value("modifiers"), mpParentModel);
-      }
+      mpModifier = new Modifier("", jsonObject.value("modifiers"), mpParentModel);
     }
 
     if (jsonObject.contains("comment")) {
       mComment = jsonObject.value("comment").toString();
     }
+
+    deserialize_impl(jsonObject);
   }
 
   Element *Element::getTopLevelExtendElement() const
