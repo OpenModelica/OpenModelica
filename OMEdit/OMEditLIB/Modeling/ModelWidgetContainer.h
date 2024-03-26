@@ -283,6 +283,7 @@ public:
   void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   int numberOfElementConnections(Element *pElement, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
+  QString getConnectorName(Element *pConnector);
   QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
   void addTransitionToView(LineAnnotation *pTransitionLineAnnotation, bool inherited);
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
@@ -369,7 +370,6 @@ private:
   Element* stateElementAtPosition(QPoint position);
   static bool updateElementConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Element *pElement);
   Element* getConnectorElement(ModelInstance::Connector *pConnector);
-  QString getConnectorName(Element *pConnector);
   bool handleDoubleClickOnComponent(QMouseEvent *event);
   void uncheckAllShapeDrawingActions();
   void setOriginAdjustAndInitialize(ShapeAnnotation* shapeAnnotation);

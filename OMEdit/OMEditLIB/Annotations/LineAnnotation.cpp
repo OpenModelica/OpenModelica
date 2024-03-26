@@ -2494,13 +2494,17 @@ void CreateConnectionDialog::startConnectorChanged(const QModelIndex &current, c
   QModelIndex currentIndex = mpStartExpandableConnectorTreeProxyModel->mapToSource(current);
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(currentIndex.internalPointer());
   if (!pExpandableConnectorTreeItem) {
-    return;
-  }
-
-  mStartConnectorsList.append(pExpandableConnectorTreeItem);
-  while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
-    pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
-    mStartConnectorsList.prepend(pExpandableConnectorTreeItem);
+    /* Issue #12150. When nothing inside expandable connector is enabled so we end up here because of invalid QModelIndex.
+     * In that case just use the connector name.
+     * The same is done in CreateConnectionDialog::endConnectorChanged for end connector.
+     */
+    mpConnectionStartHorizontalLayout->addWidget(new Label(mpGraphicsView->getConnectorName(mpStartElement)));
+  } else {
+    mStartConnectorsList.append(pExpandableConnectorTreeItem);
+    while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
+      pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
+      mStartConnectorsList.prepend(pExpandableConnectorTreeItem);
+    }
   }
 
   for (int i = 0 ; i < mStartConnectorsList.size() ; i++) {
@@ -2521,6 +2525,7 @@ void CreateConnectionDialog::startConnectorChanged(const QModelIndex &current, c
       mpConnectionStartHorizontalLayout->addWidget(new Label("."));
     }
   }
+
   mpConnectionStartHorizontalLayout->addWidget(new Label(","));
 }
 
@@ -2544,13 +2549,14 @@ void CreateConnectionDialog::endConnectorChanged(const QModelIndex &current, con
   QModelIndex currentIndex = mpEndExpandableConnectorTreeProxyModel->mapToSource(current);
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(currentIndex.internalPointer());
   if (!pExpandableConnectorTreeItem) {
-    return;
-  }
-
-  mEndConnectorsList.append(pExpandableConnectorTreeItem);
-  while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
-    pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
-    mEndConnectorsList.prepend(pExpandableConnectorTreeItem);
+    // Issue #12150. See the comment in CreateConnectionDialog::startConnectorChanged.
+    mpConnectionEndHorizontalLayout->addWidget(new Label(mpGraphicsView->getConnectorName(mpEndElement)));
+  } else {
+    mEndConnectorsList.append(pExpandableConnectorTreeItem);
+    while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
+      pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
+      mEndConnectorsList.prepend(pExpandableConnectorTreeItem);
+    }
   }
 
   for (int i = 0 ; i < mEndConnectorsList.size() ; i++) {
@@ -2571,6 +2577,7 @@ void CreateConnectionDialog::endConnectorChanged(const QModelIndex &current, con
       mpConnectionEndHorizontalLayout->addWidget(new Label("."));
     }
   }
+
   mpConnectionEndHorizontalLayout->addWidget(new Label(");"));
 }
 

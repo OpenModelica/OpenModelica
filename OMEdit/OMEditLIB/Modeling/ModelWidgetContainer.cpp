@@ -1786,6 +1786,28 @@ int GraphicsView::numberOfElementConnections(Element *pElement, LineAnnotation *
   return connections;
 }
 
+/*!  * \brief GraphicsView::getConnectorName
+ * Returns the name of the connector element as a string.
+ * \param pConnector
+ */
+QString GraphicsView::getConnectorName(Element *pConnector)
+{
+  QString name;
+  if (!pConnector) return name;
+
+  if (pConnector->getParentElement()) {
+    name = QString("%1.%2").arg(pConnector->getRootParentElement()->getName()).arg(pConnector->getName());
+  } else {
+    name = pConnector->getName();
+  }
+
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::OMS && pConnector->isConnectorSizing()) {
+    name = QString("%1[%2]").arg(name).arg(numberOfElementConnections(pConnector) + 1);
+  }
+
+  return name;
+}
+
 /*!
  * \brief GraphicsView::addTransitionToView
  * Adds the transition to the view.
@@ -3132,28 +3154,6 @@ Element* GraphicsView::getConnectorElement(ModelInstance::Connector *pConnector)
   }
 
   return connectorElement;
-}
-
-/*!  * \brief GraphicsView::getConnectorName
- * Returns the name of the connector element as a string.
- * \param pConnector
- */
-QString GraphicsView::getConnectorName(Element *pConnector)
-{
-  QString name;
-  if (!pConnector) return name;
-
-  if (pConnector->getParentElement()) {
-    name = QString("%1.%2").arg(pConnector->getRootParentElement()->getName()).arg(pConnector->getName());
-  } else {
-    name = pConnector->getName();
-  }
-
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::OMS && pConnector->isConnectorSizing()) {
-    name = QString("%1[%2]").arg(name).arg(numberOfElementConnections(pConnector) + 1);
-  }
-
-  return name;
 }
 
 /*!
