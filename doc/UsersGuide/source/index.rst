@@ -24,6 +24,7 @@ Generated on |date| at |time|
   compiler
   solving
   debugger
+  basemodelica
   porting
   graphs
   fmitlm
