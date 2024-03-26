@@ -205,6 +205,9 @@ public:
   Element(Element *pElement, GraphicsView *pGraphicsView);
   // used for interface point
   Element(ElementInfo *pElementInfo, Element *pParentElement);
+  bool isRoot() const {return mElementType == Element::Root;}
+  bool isExtend() const {return mElementType == Element::Extend;}
+  bool isPort() const {return mElementType == Element::Port;}
   bool isInheritedElement() {return mIsInheritedElement;}
   bool hasShapeAnnotation(Element *pElement);
   bool hasNonExistingClass();
@@ -224,7 +227,6 @@ public:
   Element *getReferenceElement() {return mpReferenceElement;}
   Element* getParentElement() const {return mpParentElement;}
   Element* getRootParentElement();
-  ElementType getElementType() const {return mElementType;}
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
