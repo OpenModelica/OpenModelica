@@ -4437,6 +4437,8 @@ public
     output Boolean literal;
   algorithm
     literal := match exp
+      local
+        Expression e;
       case INTEGER() then true;
       case REAL() then true;
       case STRING() then true;
@@ -4444,9 +4446,12 @@ public
       case ENUM_LITERAL() then true;
       case ARRAY() then exp.literal or Array.all(exp.elements, isLiteral);
       case RECORD() then List.all(exp.elements, isLiteral);
-      case RANGE() then isLiteral(exp.start) and
-                        isLiteral(exp.stop) and
+      case RANGE() then isLiteral(exp.start) and isLiteral(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteral, true);
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then isLiteral(e);
+      case CAST() then isLiteral(exp.exp);
+      case BOX() then isLiteral(exp.exp);
+      case UNBOX() then isLiteral(exp.exp);
       case FILENAME() then true;
       else false;
     end match;

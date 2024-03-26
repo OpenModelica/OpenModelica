@@ -55,6 +55,7 @@ public
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Scalarize = NFScalarize;
+  import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -1123,10 +1124,21 @@ public
   function hasLiteralBinding extends checkVar;
   protected
     Variable var;
+    Expression binding;
   algorithm
     if isBound(var_ptr) then
       var := Pointer.access(var_ptr);
-      b := Expression.isLiteral(Binding.getExp(var.binding));
+      binding := Binding.getExp(var.binding);
+      if Expression.isLiteral(binding) then
+        b := true;
+      else
+        // try to extract literal from array constructor
+        (_, binding) := Iterator.extract(binding);
+        binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
+        if Expression.isLiteral(binding) then
+          b := true;
+        end if;
+      end if;
     else
       b := false;
     end if;
@@ -1163,7 +1175,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
-    var:= match var
+    var := match var
       local
         BackendExtension.BackendInfo binfo;
         Expression start;
