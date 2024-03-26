@@ -2434,7 +2434,7 @@ QString CreateConnectionDialog::getElementConnectionName(GraphicsView *pGraphics
      * Parent element can't be connectorSizing.
      */
     if (pElement1->getParentElement()) {
-      elementName = pElement1->getParentElement()->getName();
+      elementName = pElement1->getRootParentElement()->getName();
       if (pRootElement1->isArray()) {
         QStringList rootElementIndexes = getElementIndexes(rootElementSpinBoxList1);
         if (!rootElementIndexes.isEmpty()) {
