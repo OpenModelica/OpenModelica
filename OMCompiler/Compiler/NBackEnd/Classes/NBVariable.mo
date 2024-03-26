@@ -1126,6 +1126,7 @@ public
     Variable var;
     Expression binding;
   algorithm
+    b := false;
     if isBound(var_ptr) then
       var := Pointer.access(var_ptr);
       binding := Binding.getExp(var.binding);
@@ -1135,12 +1136,8 @@ public
         // try to extract literal from array constructor
         (_, binding) := Iterator.extract(binding);
         binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
-        if Expression.isLiteral(binding) then
-          b := true;
-        end if;
+        b := Expression.isLiteral(binding);
       end if;
-    else
-      b := false;
     end if;
   end hasLiteralBinding;
 
