@@ -251,7 +251,11 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.VECTORIZE_BINDINGS,
   Flags.DUMP_EVENTS,
   Flags.DUMP_BINDINGS,
-  Flags.DUMP_SORTING
+  Flags.DUMP_SORTING,
+  Flags.JIT_EVAL_FUNC,
+  Flags.JIT_DUMP_IR,
+  Flags.JIT_NO_OPT,
+  Flags.DUMP_MIDCODE
 };
 
 protected
