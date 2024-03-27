@@ -3047,10 +3047,10 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
             ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) ||
              (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
-              pElement->getElementType() == Element::Port) ||
+              pElement->isPort()) ||
              (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
               (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
-               || pElement->getLibraryTreeItem()->getOMSTLMBusConnector() || pElement->getElementType() == Element::Port)))) {
+               || pElement->getLibraryTreeItem()->getOMSTLMBusConnector() || pElement->isPort())))) {
           return pElement;
         }
       }

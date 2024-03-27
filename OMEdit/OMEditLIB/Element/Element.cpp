@@ -1033,7 +1033,7 @@ bool Element::hasNonExistingClass()
  */
 QRectF Element::boundingRect() const
 {
-  if (mElementType == Element::Root) {
+  if (isRoot()) {
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
       ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
       return coordinateSystem.getExtentRectangle();
@@ -1046,6 +1046,8 @@ QRectF Element::boundingRect() const
       qreal top = extent.at(1).y();
       return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
     }
+  } else if (isPort()) {
+    return childrenBoundingRect();
   } else {
     return QRectF();
   }
@@ -1082,12 +1084,12 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
   Q_UNUSED(widget);
   if (mTransformation.isValid()) {
     const bool condition = isCondition();
-    if (mElementType == Element::Root) {
+    if (isRoot()) {
       setVisible(mTransformation.getVisible());
       if (!condition) {
         setOpacity(0.3);
       }
-    } else if (mElementType == Element::Port) {
+    } else if (isPort()) {
       setVisible(mTransformation.getVisible() && condition);
     } else {
       /* Element::Extend type ends up in this block
@@ -2036,7 +2038,7 @@ QString Element::getInheritedDerivedClassModifierValue(Element *pElement, QStrin
 void Element::shapeAdded()
 {
   deleteNonExistingElement();
-  if (mElementType == Element::Root) {
+  if (isRoot()) {
     deleteDefaultElement();
   }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -2062,7 +2064,7 @@ void Element::shapeUpdated()
 void Element::shapeDeleted()
 {
   deleteNonExistingElement();
-  if (mElementType == Element::Root) {
+  if (isRoot()) {
     deleteDefaultElement();
   }
   showNonExistingOrDefaultElementIfNeeded();
@@ -2483,7 +2485,7 @@ void Element::drawModelicaElement()
     showNonExistingOrDefaultElementIfNeeded();
   } else {
     if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
-      if (mElementType == Element::Root) {
+      if (isRoot()) {
         createDefaultElement();
       }
     } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
@@ -2632,7 +2634,7 @@ void Element::drawInheritedElementsAndShapes()
   } else {
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
-        if (mElementType == Element::Root) {
+        if (isRoot()) {
           createDefaultElement();
         }
       } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
@@ -2667,7 +2669,7 @@ void Element::showNonExistingOrDefaultElementIfNeeded()
   if (!hasShapeAnnotation(this)) {
     if (hasNonExistingClass()) {
       createNonExistingElement();
-    } else if (mElementType == Element::Root) {
+    } else if (isRoot()) {
       createDefaultElement();
     }
   }
@@ -2709,7 +2711,7 @@ void Element::createClassShapes()
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
     mpGraphicsView->getModelWidget()->addDependsOnModel(mpModel->getName());
     ModelInstance::Extend *pExtendModel = 0;
-    if (mElementType == Element::Extend) {
+    if (isExtend()) {
       pExtendModel = mpModel->getParentExtend();
     }
     /* issue #9557
@@ -3137,7 +3139,7 @@ void Element::updateToolTip()
     comment.replace("src=\"file://", "src=\"");
   #endif
 
-    if ((mIsInheritedElement || mElementType == Element::Port) && mpParentElement && !mpGraphicsView->isVisualizationView()) {
+    if ((mIsInheritedElement || isPort()) && mpParentElement && !mpGraphicsView->isVisualizationView()) {
       setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Element declared in %4").arg(mpModel->getName())
                  .arg(mpModelComponent->getName()).arg(comment)
                  .arg(mpParentElement->getModel()->getName()));
@@ -3158,7 +3160,7 @@ void Element::updateToolTip()
       comment.replace("src=\"file://", "src=\"");
     #endif
 
-      if ((mIsInheritedElement || mElementType == Element::Port) && mpReferenceElement && !mpGraphicsView->isVisualizationView()) {
+      if ((mIsInheritedElement || isPort()) && mpReferenceElement && !mpGraphicsView->isVisualizationView()) {
         setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Element declared in %4").arg(mpElementInfo->getClassName())
                    .arg(mpElementInfo->getName()).arg(comment)
                    .arg(mpReferenceElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
@@ -3177,12 +3179,12 @@ void Element::updateToolTip()
  */
 bool Element::canUseDiagramAnnotation() const
 {
-  if (getElementType() == Element::Port)
+  if (isPort())
     return false;
 
   Element *pElement = getParentElement();
   while (pElement) {
-    if (pElement->getElementType() == Element::Port) {
+    if (pElement->isPort()) {
       return false;
     }
     pElement = pElement->getParentElement();
@@ -3358,7 +3360,7 @@ void Element::handleNameChanged()
  */
 void Element::referenceElementAdded()
 {
-  if (mElementType == Element::Port) {
+  if (isPort()) {
     setVisible(true);
     if (mpReferenceElement && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
       mpBusComponent = mpReferenceElement->getBusComponent();
@@ -3421,7 +3423,7 @@ void Element::referenceElementChanged()
  */
 void Element::referenceElementDeleted()
 {
-  if (mElementType == Element::Port) {
+  if (isPort()) {
     setVisible(false);
     if (mpReferenceElement && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
       mpBusComponent = mpReferenceElement->getBusComponent();
