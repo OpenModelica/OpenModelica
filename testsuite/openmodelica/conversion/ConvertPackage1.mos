@@ -12,7 +12,7 @@ loadString("
     testlib.Integer2 i;
     annotation(uses(testlib(version = \"1.0.2\")));
   end ConvertPackage1;
-");
+", uses=false);
 
 setModelicaPath("libs/");
 convertPackageToLibrary(ConvertPackage1, testlib, "2.0.0");
