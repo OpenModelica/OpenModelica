@@ -1182,6 +1182,7 @@ protected
     Boolean repeated;
     Mode mode;
   algorithm
+    //print("resolving " + ComponentRef.toString(cref) + "\n");
     // I. resolve the skips
     d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
     (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
@@ -1198,7 +1199,8 @@ protected
     regulars := Dependency.toBoolean(d);
     if List.all(regulars, Util.id) then
       // all regular - single dependency per row.
-      scalarized  := ComponentRef.scalarizeAll(cref);
+      scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
+      print("all regular for " + ComponentRef.toString(cref) + ". scalar: " + List.toString(scalarized, ComponentRef.toString) + "\n");
       map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
       for scal in scalarized loop
         UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
@@ -1258,7 +1260,7 @@ protected
     else
       // all reduced - full dependency per row. scalarize and add to all rows of the equation
       repeated    := UnorderedSet.contains(cref, rep);
-      scalarized  := ComponentRef.scalarizeAll(cref);
+      scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
       map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
       for scal in scalarized loop
         UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
@@ -1277,6 +1279,7 @@ protected
             mode := Mode.MODE({scal}, true);
           end if;
           for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+            if intMod(shift, iter_size) == 0 then shift := 0; end if;
             addMatrixEntry(m, modes, i + shift, scal_idx, mode);
             shift := shift + 1;
           end for;
@@ -1340,6 +1343,7 @@ protected
     input Integer var_idx;
     input Mode mode;
   algorithm
+    print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
     arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
     UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
   end addMatrixEntry;
@@ -1453,7 +1457,7 @@ protected
     (var_start, _)  := mapping.var_AtS[var_arr_idx];
     sizes           := ComponentRef.sizes(stripped);
     subs            := ComponentRef.subscriptsToExpression(cref, true);
-    scal_lst        := combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+    scal_lst        := listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
   end getCrefInFrameIndices;
 
   function resolveDimensionsSubscripts

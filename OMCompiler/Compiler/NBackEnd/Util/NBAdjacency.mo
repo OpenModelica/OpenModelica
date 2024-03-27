@@ -292,13 +292,6 @@ public
     end fill_;
   end Mapping;
 
-  /*
-  Modes
-    map (EQN_SCAL_IDX, VAR_IDX) -> MODE
-    //map (EQN_ARR_IDX, MODE) -> CREF
-    //set (EQN_ARR_IDX, MODE) -> SCALARIZE (BOOL)
-
-  */
   uniontype Mode
     record MODE
       "most of the time this will only have one cref. if there are multiple crefs
@@ -307,6 +300,11 @@ public
       list<ComponentRef> crefs  "the cref(s) to solve for";
       Boolean scalarize         "true if the equation needs to be scalarized to find the cref to solve for";
     end MODE;
+
+    function toString
+      input Mode mode;
+      output String str = "[scal: " + boolString(mode.scalarize) + ", crefs: " + List.toString(mode.crefs, ComponentRef.toString) + "]";
+    end toString;
 
     function merge
       input output Mode mode1;
@@ -564,6 +562,88 @@ public
         then fail();
       end match;
     end update;
+
+    function expand2
+      input output Matrix adj                             "adjancency matrix to be expanded";
+      input Matrix full                                   "full matrix having all information";
+      input UnorderedMap<ComponentRef, Integer> vo, vn    "old and new variable index map";
+      input UnorderedMap<ComponentRef, Integer> eo, en    "old and new equation index map";
+      input VariablePointers vars;
+      input EquationPointers eqns;
+    algorithm
+      adj := match (adj, full)
+        local
+          Matrix new;
+          Integer rank, max_index_eq, max_index_var;
+          list<ComponentRef> filtered;
+          UnorderedMap<ComponentRef, Integer> v = vo;
+
+        // if the matrix is empty, initialize it first
+        case (EMPTY(), FULL()) algorithm
+          new := initialize(full.mapping, adj.st);
+          if not isEmpty(new) then
+            new := expand2(new, full, vo, vn, eo, en, vars, eqns);
+          end if;
+        then new;
+
+        case (FINAL(), FULL()) algorithm
+          // expand the integer matrix
+          adj.m := expandMatrix(adj.m, EquationPointers.scalarSize(eqns) - arrayLength(adj.m));
+
+          // get the strictness ranking
+          rank := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
+          // only merge if there is a second phase
+          if not UnorderedMap.isEmpty(vn) and not UnorderedMap.isEmpty(en) then
+            v := UnorderedMap.merge(v, vn, sourceInfo());
+          end if;
+
+          // I. update all old equations with the new variables
+          if not UnorderedMap.isEmpty(vn) then
+            for e in UnorderedMap.valueList(eo) loop
+              filtered := Solvability.filter(full.occurences[e], full.solvabilities[e], vn, 0, rank);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, adj.m, adj.mapping, adj.modes2);
+            end for;
+          end if;
+
+          // II. update new equations with both old and new variables
+          if not UnorderedMap.isEmpty(en) then
+            for e in UnorderedMap.valueList(en) loop
+              filtered := Solvability.filter(full.occurences[e], full.solvabilities[e], v, 0, rank);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, adj.m, adj.mapping, adj.modes2);
+            end for;
+          end if;
+
+          // transpose the matrix
+          if UnorderedMap.isEmpty(vo) and UnorderedMap.isEmpty(vn) then
+            max_index_var := 0;
+          else
+            max_index_var := intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
+          end if;
+          adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars));
+        then adj;
+
+        case (FINAL(), _) algorithm
+          print(Adjacency.Matrix.toString(adj) + "\n");
+          print(Adjacency.Matrix.toString(full) + "\n");
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the full matrix expected to contain all information is instead of type "
+            + strictnessString(getStrictness(full)) + "."});
+        then fail();
+
+        case (_, FULL()) algorithm
+          print(Adjacency.Matrix.toString(adj) + "\n");
+          print(Adjacency.Matrix.toString(full) + "\n");
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the matrix to be expanded of type "
+            + strictnessString(getStrictness(adj)) + " should be of type final."});
+        then fail();
+
+        else algorithm
+          print(Adjacency.Matrix.toString(adj) + "\n");
+          print(Adjacency.Matrix.toString(full) + "\n");
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the matrix to be expanded of type " + strictnessString(getStrictness(adj))
+            + " should be of type final and the full matrix expected to contain all information is instead of type " + strictnessString(getStrictness(full)) + "."});
+        then fail();
+      end match;
+    end expand2;
 
     function expand
       input output Matrix adj                             "adjancency matrix to be expanded";
@@ -907,7 +987,9 @@ public
       input output array<list<Integer>> m;
       input Integer shift;
     algorithm
-      m := Array.expandToSize(arrayLength(m) + shift, m, {});
+      if shift > 0 then
+        m := Array.expandToSize(arrayLength(m) + shift, m, {});
+      end if;
     end expandMatrix;
 
     function transposeScalar
@@ -937,20 +1019,6 @@ public
         mT[row] := List.sort(mT[row], intLt);
       end for;
     end transposeScalar;
-
-  protected
-    function toStringSingle
-      input array<list<Integer>> m;
-      output String str = "";
-    protected
-      Integer skip = stringLength(intString(arrayLength(m))) + 1;
-      String tmp;
-    algorithm
-      for row in 1:arrayLength(m) loop
-        tmp := intString(row);
-        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
-      end for;
-    end toStringSingle;
 
     function createFull
       input VariablePointers vars;
@@ -995,13 +1063,31 @@ public
       else
         adj := EMPTY(MatrixStrictness.FULL);
       end if;
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(StringUtil.headline_1("Creating Adjacency Matrices") + "\n");
+        print(EquationPointers.toString(eqns) + "\n");
+        print(VariablePointers.toString(vars) + "\n");
+        print(toString(adj, "Full") + "\n");
+        print(solvabilityString(adj, "Full") + "\n");
+        print(dependencyString(adj, "Full") + "\n");
+      end if;
     end createFull;
+
+    function fromFull
+      input Matrix full;
+      input UnorderedMap<ComponentRef, Integer> vars_map;
+      input UnorderedMap<ComponentRef, Integer> eqns_map;
+      input EquationPointers eqns;
+      input MatrixStrictness st;
+      output Matrix adj = upgrade(EMPTY(MatrixStrictness.FULL), full, vars_map, eqns_map, eqns, st);
+    end fromFull;
 
     function upgrade
       "upgrades a matrix using the information provided by the full matrix"
       input output Matrix adj;
       input Matrix full;
-      input VariablePointers vars;
+      input UnorderedMap<ComponentRef, Integer> vars_map;
+      input UnorderedMap<ComponentRef, Integer> eqns_map;
       input EquationPointers eqns;
       input MatrixStrictness st;
     protected
@@ -1013,6 +1099,10 @@ public
       Integer index, min, max;
       list<ComponentRef> filtered;
     algorithm
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(StringUtil.headline_1("Upgrading from [" + strictnessString(getStrictness(adj)) + "] to [" + strictnessString(st) +"]") + "\n");
+      end if;
+
        adj := match full
         case EMPTY() then EMPTY(st);
 
@@ -1022,7 +1112,7 @@ public
           // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
           if isEmpty(adj) then
             min := 0;
-            adj := initialize(vars, eqns, mapping, st);
+            adj := initialize(mapping, st);
           else
             min := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
           end if;
@@ -1036,13 +1126,13 @@ public
             case FINAL() algorithm
               // only do if valid upgrade otherwise create from scratch and issue warning if failtrace is activated
               if max > min then
-                for eqn_ptr in EquationPointers.toList(eqns) loop
-                  index := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
-                  filtered := Solvability.filter(occ[index], sol[index], min, max);
+                for name in UnorderedMap.keyList(eqns_map) loop
+                  index := UnorderedMap.getSafe(name, eqns_map, sourceInfo());
+                  filtered := Solvability.filter(occ[index], sol[index], vars_map, min, max);
                   // now run the normal createPseudo pipeline but use dependencies
-                  upgradeRow(eqn_ptr, index, filtered, dep[index], rep[index], vars.map, adj.m, adj.mapping, adj.modes2);
+                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, adj.m, adj.mapping, adj.modes2);
                 end for;
-                adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars));
+                adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
                 result := adj;
               else
                 if Flags.isSet(Flags.FAILTRACE) then
@@ -1051,7 +1141,7 @@ public
                     + Solvability.toString(Solvability.fromStrictness(st)) + ". The new matrix will be
                     created from using only the full adjacency matrix.");
                 end if;
-                result := upgrade(EMPTY(st), full, vars, eqns, st);
+                result := fromFull(full, vars_map, eqns_map, eqns, st);
               end if;
             then result;
 
@@ -1071,11 +1161,27 @@ public
             Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});
         then fail();
       end match;
+
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(toString(adj, "Final") + "\n");
+      end if;
     end upgrade;
 
+  protected
+    function toStringSingle
+      input array<list<Integer>> m;
+      output String str = "";
+    protected
+      Integer skip = stringLength(intString(arrayLength(m))) + 1;
+      String tmp;
+    algorithm
+      for row in 1:arrayLength(m) loop
+        tmp := intString(row);
+        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
+      end for;
+    end toStringSingle;
+
     function initialize
-      input VariablePointers vars;
-      input EquationPointers eqns;
       input Mapping mapping;
       input MatrixStrictness st;
       output Matrix adj;
@@ -1084,11 +1190,11 @@ public
       Integer eqn_scalar_size, var_scalar_size;
       CausalizeModes modes;
     algorithm
-      if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqns.eqArr) > 0 then
-        eqn_scalar_size := arrayLength(mapping.eqn_StA);
-        var_scalar_size := arrayLength(mapping.var_StA);
+      eqn_scalar_size := arrayLength(mapping.eqn_StA);
+      var_scalar_size := arrayLength(mapping.var_StA);
+      if eqn_scalar_size > 0 or var_scalar_size > 0 then
         // create empty for-loop reconstruction information
-        modes           := CausalizeModes.empty(eqn_scalar_size, EquationPointers.size(eqns));
+        modes           := CausalizeModes.empty(eqn_scalar_size, 0);
         // create empty matrix and transposed matrix
         m := arrayCreate(eqn_scalar_size, {});
         mT := transposeScalar(m, var_scalar_size);
@@ -1116,7 +1222,7 @@ public
       Iterator iter = Equation.getForIterator(eqn);
       Type ty = Equation.getType(eqn, true);
     algorithm
-      print("ty: " + Type.toString(ty) + " equation: " + Equation.pointerToString(eqn_ptr) + "\n");
+      //print("ty: " + Type.toString(ty) + " equation: " + Equation.pointerToString(eqn_ptr) + "\n");
       // don't do this for if equations as soon as we properly split them
       if Equation.isAlgorithm(eqn_ptr) or Equation.isIfEquation(eqn_ptr) then
         // algorithm full dependency
@@ -1147,15 +1253,6 @@ public
       Mapping mapping                                                                 "scalar <-> array index mapping";
       CausalizeModes modes;
     algorithm
-      adj := createFull(vars, eqns);
-      //print(solvabilityString(adj, "Full") + "\n");
-      print(dependencyString(adj, "Full") + "\n");
-      print(toString(adj, "Full") + "\n");
-      adj := upgrade(EMPTY(st), adj, vars, eqns, MatrixStrictness.SORTING);
-      print(toString(adj, "final") + "\n");
-      print(EquationPointers.toString(eqns) + "\n");
-      print(VariablePointers.toString(vars) + "\n");
-
       if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqns.eqArr) > 0 then
         if Util.isSome(funcTree) then
           diffArgs_ptr := Pointer.create(Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, Util.getOption(funcTree)));
@@ -1430,9 +1527,9 @@ public
       input list<Integer> row;
     algorithm
       arrayUpdate(m, idx, listAppend(row, m[idx]));
-      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+      /*if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
         print("Adding to row " + intString(idx) + " " + List.toString(row, intString) + "\n");
-      end if;
+      end if;*/
     end updateIntegerRow;
   end Matrix;
 
@@ -1718,9 +1815,11 @@ public
     end categorize;
 
     function filter
-      "filters the cref list for all crefs with solvability ranking between (and including) min and max"
+      "filters the cref list for all relevant crefs (checked with the rel map)
+      and with solvability ranking between (and including) min and max"
       input list<ComponentRef> all_occ;
       input UnorderedMap<ComponentRef, Solvability> map;
+      input UnorderedMap<ComponentRef, Integer> rel       "check for relevance";
       input Integer min;
       input Integer max;
       output list<ComponentRef> occ = {};
@@ -1728,9 +1827,11 @@ public
       Integer r;
     algorithm
       for cref in all_occ loop
-        r := rank(UnorderedMap.getSafe(cref, map, sourceInfo()));
-        if r >= min and r <= max then
-          occ := cref :: occ;
+        if UnorderedMap.contains(cref, rel) then
+          r := rank(UnorderedMap.getSafe(cref, map, sourceInfo()));
+          if r >= min and r <= max then
+            occ := cref :: occ;
+          end if;
         end if;
       end for;
     end filter;

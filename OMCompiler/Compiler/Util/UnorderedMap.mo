@@ -529,6 +529,50 @@ public
     Vector.apply(map.values, fn);
   end apply;
 
+  function merge
+    input UnorderedMap<K, V> map1;
+    input UnorderedMap<K, V> map2;
+    input SourceInfo info;
+    output UnorderedMap<K, V> result;
+  protected
+    UnorderedMap<K, V> tmp;
+    K k;
+    V v;
+  algorithm
+    if Vector.size(map1.keys) > Vector.size(map2.keys) then
+      result  := copy(map1);
+      tmp     := map2;
+    else
+      result  := copy(map2);
+      tmp     := map1;
+    end if;
+    for tpl in toList(tmp) loop
+      (k, v) := tpl;
+      try
+        addUnique(k, v, result);
+      else
+        Error.addInternalError(getInstanceName() + " failed because both maps contain the same key.", info);
+      end try;
+    end for;
+  end merge;
+
+  function subSet
+    input UnorderedMap<K, V> map;
+    input list<K> lst;
+    output UnorderedMap<K, V> sub_set;
+  algorithm
+    sub_set := UNORDERED_MAP(
+      Vector.newFill(listLength(lst), {}),
+      Vector.new<K>(listLength(lst)),
+      Vector.new<V>(listLength(lst)),
+      map.hashFn,
+      map.eqFn
+    );
+    for k in lst loop
+      add(k, getSafe(k, map, sourceInfo()), sub_set);
+    end for;
+  end subSet;
+
   function all
     "Returns true if the given function returns true for all values in the map,
      otherwise false."
@@ -577,7 +621,7 @@ public
   function size
     "Returns the number of elements the map contains."
     input UnorderedMap<K, V> map;
-    output Integer size = Vector.size(map.keys);
+    output Integer s = Vector.size(map.keys);
   end size;
 
   function isEmpty
