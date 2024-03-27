@@ -52,12 +52,12 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 // true
 // ""
 // true
-// ""
-// "fmi_attributes_17.fmu"
 // "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from fmi_attributes_17.
 // Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
 // Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// "fmi_attributes_17.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // ""

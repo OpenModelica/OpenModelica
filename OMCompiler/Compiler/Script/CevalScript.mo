@@ -401,11 +401,12 @@ protected function checkUsesAndUpdateProgram
   input String modelicaPath;
   input Boolean notifyLoad;
   input Boolean requireExactVersion;
+  input Boolean mergeAST = false;
 protected
   list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
 algorithm
   modelsToLoad := if checkUses then Interactive.getUsesAnnotationOrDefault(newp, requireExactVersion) else {};
-  p := InteractiveUtil.updateProgram(newp, p);
+  p := InteractiveUtil.updateProgram(newp, p, mergeAST);
   (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
 end checkUsesAndUpdateProgram;
 
@@ -1325,7 +1326,7 @@ algorithm
       algorithm
         strs := List.mapMap(vals,ValuesUtil.extractValueString,Testsuite.friendlyPath);
         newps := Parser.parallelParseFilesToProgramList(strs,encoding,numThreads=i);
-        newp := List.fold(newps, function checkUsesAndUpdateProgram(checkUses=b, modelicaPath=Settings.getModelicaPath(Testsuite.isRunning()), notifyLoad=b1, requireExactVersion=requireExactVersion), SymbolTable.getAbsyn());
+        newp := List.fold(newps, function checkUsesAndUpdateProgram(checkUses=b, modelicaPath=Settings.getModelicaPath(Testsuite.isRunning()), notifyLoad=b1, requireExactVersion=requireExactVersion, mergeAST=false), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
       then
@@ -1417,11 +1418,13 @@ algorithm
     case ("reloadClass",_)
       then Values.BOOL(false);
 
-    case ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::_)
+    case
+    ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
         str := if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
         newp := Parser.parsestring(str,name);
-        newp := InteractiveUtil.updateProgram(newp, SymbolTable.getAbsyn(), mergeAST);
+        newp := checkUsesAndUpdateProgram(newp, SymbolTable.getAbsyn(), b,
+          Settings.getModelicaPath(Testsuite.isRunning()), b1, requireExactVersion, mergeAST);
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
       then

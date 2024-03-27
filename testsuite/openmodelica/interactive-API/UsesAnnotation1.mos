@@ -30,7 +30,10 @@ instantiateModel(A.B); getErrorString();
 
 // Result:
 // true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from A.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
+// "
 // "function A.B.f
 //   input Real x;
 //   output Real y;
@@ -44,8 +47,5 @@ instantiateModel(A.B); getErrorString();
 //   x = A.B.f(time);
 // end A.B;
 // "
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from A.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
-// "
+// ""
 // endResult

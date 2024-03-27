@@ -1448,6 +1448,9 @@ was read in binary format from a file with the same name.
   input String filename = "<interactive>";
   input String encoding = "UTF-8" "Deprecated as *ALL* strings are now UTF-8 encoded";
   input Boolean merge = false "if merge is true the parsed AST is merged with the existing AST, default to false which means that is replaced, not merged";
+  input Boolean uses = true;
+  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
+  input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

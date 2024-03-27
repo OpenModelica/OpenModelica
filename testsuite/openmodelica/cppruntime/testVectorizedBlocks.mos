@@ -45,7 +45,13 @@ val(y[10], 1.0);
 // true
 // ""
 // true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from VectorizedBlocksTest.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica_Synchronous 0.93.0-dev due to uses annotation from VectorizedBlocksTest.
+// Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// "
 //
 // ########################################
 // dumpDAE
@@ -190,13 +196,10 @@ val(y[10], 1.0);
 //
 // record SimulationResult
 //     resultFile = "VectorizedBlocksTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VectorizedBlocksTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'VectorizedBlocksTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from VectorizedBlocksTest.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package Modelica_Synchronous 0.93.0-dev due to uses annotation from VectorizedBlocksTest.
+// "Warning: Requested package Modelica_Synchronous of version 0.92.1, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.1 is older than 0.93.0-dev, so the libraries are probably incompatible.
 // Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
