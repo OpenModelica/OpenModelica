@@ -7013,56 +7013,25 @@ algorithm
 end findAndMap;
 
 public function findSome<T1,T2>
-  "Applies the given function over the list and returns first returned value that is not NONE()."
+  "Applies the given function over the list and returns either the first SOME()
+   value the function returns or NONE() if no SOME() is returned."
   input list<T1> inList;
   input FuncType inFunc;
-  output T2 outVal;
+  output Option<T2> outVal = NONE();
 
   partial function FuncType
     input T1 inElement;
     output Option<T2> outValOpt;
   end FuncType;
-protected
-  Option<T2> retOpt = NONE();
-  T1 e;
-  list<T1> rest = inList;
 algorithm
-  while isNone(retOpt)/*not listEmpty(rest) and not outFound*/ loop
-    e :: rest := rest;
-    retOpt := inFunc(e);
-  end while;
-  outVal := match retOpt
-    case SOME(outVal)
-      then outVal;
-    end match;
+  for e in inList loop
+    outVal := inFunc(e);
+
+    if isSome(outVal) then
+      return;
+    end if;
+  end for;
 end findSome;
-
-public function findSome1<T1,T2,Arg>
-  "Applies the given function with one extra argument over the list and returns first returned value that is not NONE()."
-  input list<T1> inList;
-  input FuncType inFunc;
-  input Arg inArg;
-  output T2 outVal;
-
-  partial function FuncType
-    input T1 inElement;
-    input Arg inArg;
-    output Option<T2> outValOpt;
-  end FuncType;
-protected
-  Option<T2> retOpt = NONE();
-  T1 e;
-  list<T1> rest = inList;
-algorithm
-  while isNone(retOpt)/*not listEmpty(rest) and not outFound*/ loop
-    e :: rest := rest;
-    retOpt := inFunc(e,inArg);
-  end while;
-  outVal := match retOpt
-    case SOME(outVal)
-      then outVal;
-    end match;
-end findSome1;
 
 public function splitEqualPrefix<T1, T2>
   input list<T1> inFullList;

@@ -1,7 +1,7 @@
 // name: Ticket5565.mos
 // keywords: test fix for but 5565
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 //
 
 setCommandLineOptions("-d=nfAPI,showStatement");

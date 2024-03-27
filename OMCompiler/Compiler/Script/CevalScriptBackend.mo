@@ -402,21 +402,19 @@ algorithm
       GlobalScript.SimulationOptions defaults, simOpt;
       String experimentAnnotationStr;
       list<Absyn.NamedArg> named;
+      Option<Absyn.Modification> experiment_ann;
 
     // search inside annotation(experiment(...))
     case (_, _, _)
       equation
         defaults = Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
 
-        experimentAnnotationStr =
-          Interactive.getNamedAnnotation(
-            inModelPath,
-            SymbolTable.getAbsyn(),
-            Absyn.IDENT("experiment"),
-            SOME("{}"),
-            Interactive.getExperimentAnnotationString);
-                // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
+        experiment_ann = InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
 
+        // TODO: Get the values from the modifier directly instead of this mess.
+        experimentAnnotationStr = Interactive.getExperimentAnnotationString(experiment_ann);
+
+        // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
         // jump to next case if the annotation is empty
         false = stringEq(experimentAnnotationStr, "{}");
 

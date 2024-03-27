@@ -6004,5 +6004,81 @@ algorithm
   component.modification := renameElementsInModificationOpt(component.modification, nameMap);
 end renameElementsInComponent;
 
+public function getInheritedAnnotation
+  "Returns the modification for a specific annotation in a class, while also
+   recursively looking up and merging annotations inherited from extends.
+   If there are multiple non-identical inherited annotation only the first one
+   is used, and a warning message is optionally emitted."
+  input Absyn.Path modelPath;
+  input String annotationName;
+  input Absyn.Program program;
+  input Boolean printConflictWarning = true "Prints a warning if inherited annotations conflict.";
+  output Option<Absyn.Modification> outAnnotation = NONE();
+protected
+  Absyn.Class cls;
+  list<Absyn.Path> extends_paths;
+  list<Option<Absyn.Modification>> extends_oannl;
+  Absyn.Modification cls_ann, extends_ann, extends_ann2;
+  Absyn.Path extends_path;
+algorithm
+  // Look up the annotation in the given model.
+  cls := getPathedClassInProgram(modelPath, program);
+  outAnnotation := AbsynUtil.lookupClassAnnotation(cls, annotationName);
+
+  // Fetch the named annotation from all inherited classes.
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    extends_paths := NFApi.getInheritedClasses(modelPath, program);
+  else
+    extends_paths := {};
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+
+  if listEmpty(extends_paths) then
+    // No extends.
+    return;
+  end if;
+
+  extends_oannl := list(getInheritedAnnotation(ep, annotationName, program) for ep in extends_paths);
+
+  while not listEmpty(extends_oannl) loop
+    if isSome(listHead(extends_oannl)) then
+      // Found an inherited annotation, merge it with the class' annotation if
+      // it has one or just return it as it is.
+      extends_ann := Util.getOption(listHead(extends_oannl));
+
+      if isSome(outAnnotation) then
+        outAnnotation := SOME(AbsynUtil.mergeModifiers(Util.getOption(outAnnotation), extends_ann));
+      else
+        outAnnotation := SOME(extends_ann);
+      end if;
+
+      if printConflictWarning then
+        // Check if we have any more inherited annotations.
+        extends_path :: extends_paths := extends_paths;
+        for a in listRest(extends_oannl) loop
+          SOME(extends_ann2) := a;
+          if not valueEq(extends_ann, extends_ann2) then
+            // Found an inherited annotation that's not equal to the first one, print a warning.
+            Error.addMessage(Error.CONFLICTING_INHERITED_ANNOTATIONS,
+              {annotationName, AbsynUtil.pathString(modelPath),
+               Dump.unparseModificationStr(extends_ann), AbsynUtil.pathString(extends_path),
+               Dump.unparseModificationStr(extends_ann2), AbsynUtil.pathString(listHead(extends_paths))});
+            break;
+          end if;
+
+          extends_paths := listRest(extends_paths);
+        end for;
+      end if;
+
+      // Return the merged annotation.
+      return;
+    end if;
+
+    extends_oannl := listRest(extends_oannl);
+    extends_paths := listRest(extends_paths);
+  end while;
+end getInheritedAnnotation;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
