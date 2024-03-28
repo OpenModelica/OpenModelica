@@ -54,6 +54,7 @@ class TextEditorPage;
 class ModelicaEditorPage;
 class MetaModelicaEditorPage;
 class CRMLEditorPage;
+class MOSEditorPage;
 class OMSimulatorEditorPage;
 class CEditorPage;
 class HTMLEditorPage;
@@ -66,6 +67,7 @@ class FillStylePage;
 class PlottingPage;
 class FigaroPage;
 class CRMLPage;
+class MOSPage;
 class DebuggerPage;
 class FMIPage;
 class OMSimulatorPage;
@@ -100,6 +102,7 @@ public:
   void readModelicaEditorSettings();
   void readMetaModelicaEditorSettings();
   void readCRMLEditorSettings();
+  void readMOSEditorSettings();
   void readOMSimulatorEditorSettings();
   void readCEditorSettings();
   void readHTMLEditorSettings();
@@ -112,6 +115,7 @@ public:
   void readPlottingSettings();
   void readFigaroSettings();
   void readCRMLSettings();
+  void readMOSSettings();
   void readDebuggerSettings();
   void readFMISettings();
   void readOMSimulatorSettings();
@@ -123,6 +127,7 @@ public:
   void saveModelicaEditorSettings();
   void saveMetaModelicaEditorSettings();
   void saveCRMLEditorSettings();
+  void saveMOSEditorSettings();
   void saveOMSimulatorEditorSettings();
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
@@ -138,6 +143,7 @@ public:
   void savePlottingSettings();
   void saveFigaroSettings();
   void saveCRMLSettings();
+  void saveMOSSettings();
   void saveDebuggerSettings();
   void saveFMISettings();
   void setUpDialog();
@@ -150,6 +156,7 @@ public:
   ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
   MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
   CRMLEditorPage* getCRMLEditorPage() {return mpCRMLEditorPage;}
+  MOSEditorPage* getMOSEditorPage() {return mpMOSEditorPage;}
   OMSimulatorEditorPage* getOMSimulatorEditorPage() {return mpOMSimulatorEditorPage;}
   CEditorPage* getCEditorPage() {return mpCEditorPage;}
   HTMLEditorPage* getHTMLEditorPage() {return mpHTMLEditorPage;}
@@ -162,6 +169,7 @@ public:
   PlottingPage* getPlottingPage() {return mpPlottingPage;}
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
   CRMLPage* getCRMLPage() {return mpCRMLPage;}
+  MOSPage* getMOSPage() {return mpMOSPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
@@ -176,6 +184,7 @@ signals:
   void modelicaEditorSettingsChanged();
   void metaModelicaEditorSettingsChanged();
   void crmlEditorSettingsChanged();
+  void mosEditorSettingsChanged();
   void omsimulatorEditorSettingsChanged();
   void cEditorSettingsChanged();
   void HTMLEditorSettingsChanged();
@@ -192,6 +201,7 @@ private:
   ModelicaEditorPage *mpModelicaEditorPage;
   MetaModelicaEditorPage *mpMetaModelicaEditorPage;
   CRMLEditorPage *mpCRMLEditorPage;
+  MOSEditorPage *mpMOSEditorPage;
   OMSimulatorEditorPage *mpOMSimulatorEditorPage;
   CEditorPage *mpCEditorPage;
   HTMLEditorPage *mpHTMLEditorPage;
@@ -213,6 +223,7 @@ private:
   PlottingPage *mpPlottingPage;
   FigaroPage *mpFigaroPage;
   CRMLPage *mpCRMLPage;
+  MOSPage *mpMOSPage;
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   OMSimulatorPage *mpOMSimulatorPage;
@@ -511,6 +522,24 @@ class CRMLEditorPage : public QWidget
   Q_OBJECT
 public:
   CRMLEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
+private:
+  OptionsDialog *mpOptionsDialog;
+  CodeColorsWidget *mpCodeColorsWidget;
+signals:
+  void updatePreview();
+public slots:
+  void setLineWrapping(bool enabled);
+};
+
+class MOSEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  MOSEditorPage(OptionsDialog *pOptionsDialog);
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   void setColor(QString item, QColor color);
   QColor getColor(QString item);
@@ -1107,5 +1136,33 @@ private slots:
   void resetCRMLCompilerProcessPath();
 };
 
+class MOSPage : public QWidget
+{
+  Q_OBJECT
+public:
+  MOSPage(OptionsDialog *pOptionsDialog);
+  QLineEdit* getMOSCompilerJarTextBox() {return mpMOSCompilerJarTextBox;}
+  QLineEdit* getMOSCompilerCommandLineOptionsTextBox() {return mpMOSCompilerCommandLineOptionsTextBox;}
+  QLineEdit* getMOSCompilerProcessTextBox() {return mpMOSCompilerProcessTextBox;}
+  PathSelector* getMOSLibraryPaths() {return mpMOSLibraryPaths;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpMOSGroupBox;
+  Label *mpMOSCompilerJarFileLabel;
+  QLineEdit *mpMOSCompilerJarTextBox;
+  QPushButton *mpBrowseMOSCompilerJarFileButton;
+  Label *mpMOSCompilerCommandLineOptionsLabel;
+  QLineEdit *mpMOSCompilerCommandLineOptionsTextBox;
+  Label *mpMOSCompilerProcessLabel;
+  QLineEdit *mpMOSCompilerProcessTextBox;
+  QPushButton *mpBrowseMOSCompilerProcessButton;
+  QPushButton *mpResetMOSCompilerProcessButton;
+  PathSelector *mpMOSLibraryPaths;
+
+private slots:
+  void browseMOSCompilerJarFile();
+  void browseMOSCompilerProcessFile();
+  void resetMOSCompilerProcessPath();
+};
 
 #endif // OPTIONSDIALOG_H

@@ -543,8 +543,11 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       default:
         return ResourceCache::getIcon(":/Resources/icons/type-icon.svg");
     }
-  } else if (isCRML()) {
-     return ResourceCache::getIcon(":/Resources/icons/crml-icon.svg");
+  } else if (mLibraryType == LibraryTreeItem::Text) {
+    if (isCRMLFile())
+      return ResourceCache::getIcon(":/Resources/icons/crml-icon.svg");
+    if (isMOSFile())
+      return ResourceCache::getIcon(":/Resources/icons/mos-icon.svg");
   }
   return QIcon();
 }
@@ -4013,6 +4016,8 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
     openOMSModelFile(fileInfo, showProgress);
   } else if (fileInfo.suffix().compare("crml") == 0 && !loadExternalModel) {
     openCRMLFile(fileInfo, encoding, showProgress);
+  } else if (fileInfo.suffix().compare("mos") == 0 && !loadExternalModel) {
+    openMOSFile(fileInfo, encoding, showProgress);
   } else if (fileInfo.isDir()) {
     openDirectory(fileInfo, showProgress);
   } else {
@@ -4284,6 +4289,54 @@ void LibraryWidget::openCRMLFile(QFileInfo fileInfo, QString encoding, bool show
   }
 }
 
+/*!
+ * \brief LibraryWidget::openMOSFile
+ * Opens a .mos file and creates a LibraryTreeItem for it.
+ * \param fileInfo
+ * \param encoding
+ * \param showProgress
+ */
+void LibraryWidget::openMOSFile(QFileInfo fileInfo, QString encoding, bool showProgress)
+{
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+  }
+  // check if the file is already loaded.
+  for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
+    if (pLibraryTreeItem && pLibraryTreeItem->getFileName().compare(fileInfo.absoluteFilePath()) == 0) {
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+      pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                      .arg(fileInfo.fileName()).append("\n")
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+      if (showProgress) {
+        MainWindow::instance()->getStatusBar()->clearMessage();
+      }
+      return;
+    }
+  }
+  // create a LibraryTreeItem for new loaded file.
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  QString compositeModelName;
+  if (fileInfo.suffix().compare("mos") == 0) {
+    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
+                                                                 fileInfo.absoluteFilePath(), true,
+                                                                 mpLibraryTreeModel->getRootLibraryTreeItem());
+  }
+  if (pLibraryTreeItem) {
+    mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  }
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->clearMessage();
+  }
+}
 
 /*!
  * \brief LibraryWidget::openOMSModelFile
@@ -4931,7 +4984,14 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, b
   QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
     QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::txtFileTypes, NULL, "txt", &name);
+    QString fileTypes = pLibraryTreeItem->isCRMLFile() ? Helper::crmlFileTypes : pLibraryTreeItem->isMOSFile() ? Helper::omScriptFileTypes : Helper::txtFileTypes;
+    QString extension = pLibraryTreeItem->isCRMLFile() ? "crml" : pLibraryTreeItem->isMOSFile() ? "mos" : "txt";
+    // if the name contains the extension already, remove it
+    QString dotext = "." + extension;
+    if (name.endsWith(dotext)) {
+      name =  name.remove(name.lastIndexOf(dotext), dotext.length());
+    }
+    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, fileTypes, NULL, extension, &name);
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }

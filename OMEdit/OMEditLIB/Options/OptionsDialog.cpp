@@ -101,6 +101,9 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpCRMLEditorPage = new CRMLEditorPage(this);
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCRMLEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCRMLEditorPage, SIGNAL(updatePreview()));
+  mpMOSEditorPage = new MOSEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpMOSEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpMOSEditorPage, SIGNAL(updatePreview()));
   mpOMSimulatorEditorPage = new OMSimulatorEditorPage(this);
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
@@ -119,6 +122,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpPlottingPage = new PlottingPage(this);
   mpFigaroPage = new FigaroPage(this);
   mpCRMLPage = new CRMLPage(this);
+  mpMOSPage = new MOSPage(this);
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
   mpOMSimulatorPage = new OMSimulatorPage(this);
@@ -148,6 +152,9 @@ void OptionsDialog::readSettings()
   readCRMLEditorSettings();
   emit crmlEditorSettingsChanged();
   mpCRMLEditorPage->emitUpdatePreview();
+  readMOSEditorSettings();
+  emit mosEditorSettingsChanged();
+  mpMOSEditorPage->emitUpdatePreview();
   readOMSimulatorEditorSettings();
   emit omsimulatorEditorSettingsChanged();
   mpOMSimulatorEditorPage->emitUpdatePreview();
@@ -166,6 +173,7 @@ void OptionsDialog::readSettings()
   readPlottingSettings();
   readFigaroSettings();
   readCRMLSettings();
+  readMOSSettings();
   readDebuggerSettings();
   readFMISettings();
   readOMSimulatorSettings();
@@ -591,6 +599,49 @@ void OptionsDialog::readCRMLEditorSettings()
     mpCRMLEditorPage->setColor("Comment", QColor(mpSettings->value("crmlEditor/commentRuleColor").toUInt()));
   } else {
     mpCRMLEditorPage->setColor("Comment", OptionsDefaults::CRMLEditor::commentRuleColor);
+  }
+}
+
+/*!
+ * \brief OptionsDialog::readMOSEditorSettings
+ * Reads the MOSEditor settings from omedit.ini
+ */
+void OptionsDialog::readMOSEditorSettings()
+{
+  if (mpSettings->contains("mosEditor/textRuleColor")) {
+    mpMOSEditorPage->setColor("Text", QColor(mpSettings->value("mosEditor/textRuleColor").toUInt()));
+  } else {
+    mpMOSEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+  }
+
+  if (mpSettings->contains("mosEditor/numberRuleColor")) {
+    mpMOSEditorPage->setColor("Number", QColor(mpSettings->value("mosEditor/numberRuleColor").toUInt()));
+  } else {
+    mpMOSEditorPage->setColor("Number", OptionsDefaults::MOSEditor::numberRuleColor);
+  }
+
+  if (mpSettings->contains("mosEditor/keywordRuleColor")) {
+    mpMOSEditorPage->setColor("Keyword", QColor(mpSettings->value("mosEditor/keywordRuleColor").toUInt()));
+  } else {
+    mpMOSEditorPage->setColor("Keyword", OptionsDefaults::MOSEditor::keywordRuleColor);
+  }
+
+  if (mpSettings->contains("mosEditor/typeRuleColor")) {
+    mpMOSEditorPage->setColor("Type", QColor(mpSettings->value("mosEditor/typeRuleColor").toUInt()));
+  } else {
+    mpMOSEditorPage->setColor("Type", OptionsDefaults::MOSEditor::typeRuleColor);
+  }
+
+  if (mpSettings->contains("mosEditor/quotesRuleColor")) {
+    mpMOSEditorPage->setColor("Quotes", QColor(mpSettings->value("mosEditor/quotesRuleColor").toUInt()));
+  } else {
+    mpMOSEditorPage->setColor("Quotes", OptionsDefaults::MOSEditor::quotesRuleColor);
+  }
+
+  if (mpSettings->contains("mosEditor/commentRuleColor")) {
+    mpMOSEditorPage->setColor("Comment", QColor(mpSettings->value("mosEditor/commentRuleColor").toUInt()));
+  } else {
+    mpMOSEditorPage->setColor("Comment", OptionsDefaults::MOSEditor::commentRuleColor);
   }
 }
 
@@ -1226,6 +1277,34 @@ void OptionsDialog::readCRMLSettings()
     mpCRMLPage->getCRMLLibraryPaths()->setText(mpSettings->value("crml/libraryPaths").toString());
   } else {
     mpCRMLPage->getCRMLLibraryPaths()->setText(OptionsDefaults::CRML::libraryPaths);
+  }
+}
+
+//! Reads the MOS section settings from omedit.ini
+void OptionsDialog::readMOSSettings()
+{
+  if (mpSettings->contains("mos/compilerjar")) {
+    mpMOSPage->getMOSCompilerJarTextBox()->setText(mpSettings->value("mos/compilerjar").toString());
+  } else {
+    mpMOSPage->getMOSCompilerJarTextBox()->setText(OptionsDefaults::MOS::compilerJar);
+  }
+
+  if (mpSettings->contains("mos/commandlineparameters")) {
+    mpMOSPage->getMOSCompilerCommandLineOptionsTextBox()->setText(mpSettings->value("mos/commandlineparameters").toString());
+  } else {
+    mpMOSPage->getMOSCompilerCommandLineOptionsTextBox()->setText(OptionsDefaults::MOS::commandLineOptions);
+  }
+
+  if (mpSettings->contains("mos/process") && !mpSettings->value("mos/process").toString().isEmpty()) {
+    mpMOSPage->getMOSCompilerProcessTextBox()->setText(mpSettings->value("mos/process").toString());
+  } else {
+    mpMOSPage->getMOSCompilerProcessTextBox()->setText(OptionsDefaults::MOS::process);
+  }
+
+  if (mpSettings->contains("mos/libraryPaths")) {
+    mpMOSPage->getMOSLibraryPaths()->setText(mpSettings->value("mos/libraryPaths").toString());
+  } else {
+    mpMOSPage->getMOSLibraryPaths()->setText(OptionsDefaults::MOS::libraryPaths);
   }
 }
 
@@ -1921,6 +2000,55 @@ void OptionsDialog::saveCRMLEditorSettings()
     mpSettings->remove("crmlEditor/commentRuleColor");
   } else {
     mpSettings->setValue("crmlEditor/commentRuleColor", commentRuleColor.rgba());
+  }
+}
+
+/*!
+ * \brief OptionsDialog::saveMOSEditorSettings
+ * Saves the MOSEditor settings to omedit.ini
+ */
+void OptionsDialog::saveMOSEditorSettings()
+{
+  QColor textRuleColor = mpMOSEditorPage->getColor("Text");
+  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
+    mpSettings->remove("mosEditor/textRuleColor");
+  } else {
+    mpSettings->setValue("mosEditor/textRuleColor", textRuleColor.rgba());
+  }
+
+  QColor numberRuleColor = mpMOSEditorPage->getColor("Number");
+  if (numberRuleColor == OptionsDefaults::MOSEditor::numberRuleColor) {
+    mpSettings->remove("mosEditor/numberRuleColor");
+  } else {
+    mpSettings->setValue("mosEditor/numberRuleColor", numberRuleColor.rgba());
+  }
+
+  QColor keywordRuleColor = mpMOSEditorPage->getColor("Keyword");
+  if (keywordRuleColor == OptionsDefaults::MOSEditor::keywordRuleColor) {
+    mpSettings->remove("mosEditor/keywordRuleColor");
+  } else {
+    mpSettings->setValue("mosEditor/keywordRuleColor", keywordRuleColor.rgba());
+  }
+
+  QColor typeRuleColor = mpMOSEditorPage->getColor("Type");
+  if (typeRuleColor == OptionsDefaults::MOSEditor::typeRuleColor) {
+    mpSettings->remove("mosEditor/typeRuleColor");
+  } else {
+    mpSettings->setValue("mosEditor/typeRuleColor", typeRuleColor.rgba());
+  }
+
+  QColor quotesRuleColor = mpMOSEditorPage->getColor("Quotes");
+  if (quotesRuleColor == OptionsDefaults::MOSEditor::quotesRuleColor) {
+    mpSettings->remove("mosEditor/quotesRuleColor");
+  } else {
+    mpSettings->setValue("mosEditor/quotesRuleColor", quotesRuleColor.rgba());
+  }
+
+  QColor commentRuleColor = mpMOSEditorPage->getColor("Comment");
+  if (commentRuleColor == OptionsDefaults::MOSEditor::commentRuleColor) {
+    mpSettings->remove("mosEditor/commentRuleColor");
+  } else {
+    mpSettings->setValue("mosEditor/commentRuleColor", commentRuleColor.rgba());
   }
 }
 
@@ -2696,6 +2824,37 @@ void OptionsDialog::saveCRMLSettings()
   }
 }
 
+//! Saves the MOS section settings to omedit.ini
+void OptionsDialog::saveMOSSettings()
+{
+  QString compilerJar = mpMOSPage->getMOSCompilerJarTextBox()->text();
+  if (compilerJar.compare(OptionsDefaults::MOS::compilerJar) == 0) {
+    mpSettings->remove("mos/compilerjar");
+  } else {
+    mpSettings->setValue("mos/compilerjar", compilerJar);
+  }
+
+  QString commandLineOptions = mpMOSPage->getMOSCompilerCommandLineOptionsTextBox()->text();
+  if (commandLineOptions.compare(OptionsDefaults::MOS::commandLineOptions) == 0) {
+    mpSettings->remove("mos/commandlineparameters");
+  } else {
+    mpSettings->setValue("mos/commandlineparameters", commandLineOptions);
+  }
+
+  QString process = mpMOSPage->getMOSCompilerProcessTextBox()->text();
+  if (process.compare(OptionsDefaults::MOS::process) == 0) {
+    mpSettings->remove("mos/process");
+  } else {
+    mpSettings->setValue("mos/process", process);
+  }
+
+  QString libraries = mpMOSPage->getMOSLibraryPaths()->text();
+  if (libraries.compare(OptionsDefaults::MOS::libraryPaths) == 0) {
+    mpSettings->remove("mos/libraryPaths");
+  } else {
+    mpSettings->setValue("mos/libraryPaths", libraries);
+  }
+}
 
 /*!
   Saves the Debugger section settings to omedit.ini
@@ -3027,6 +3186,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pCRMLEditorItem = new QListWidgetItem(mpOptionsList);
   pCRMLEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pCRMLEditorItem->setText(tr("CRML Editor"));
+  // MOS Editor Item
+  QListWidgetItem *pMOSEditorItem = new QListWidgetItem(mpOptionsList);
+  pCRMLEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pCRMLEditorItem->setText(tr("Modelica Script Editor"));
   // SSP Editor Item
   QListWidgetItem *pOMSimulatorEditorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
@@ -3075,6 +3238,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pCRMLItem = new QListWidgetItem(mpOptionsList);
   pCRMLItem->setIcon(QIcon(":/Resources/icons/crml-icon.svg"));
   pCRMLItem->setText(Helper::crml);
+  // MOS Item
+  QListWidgetItem *pMOSItem = new QListWidgetItem(mpOptionsList);
+  pMOSItem->setIcon(QIcon(":/Resources/icons/mos-icon.svg"));
+  pMOSItem->setText(Helper::mos);
   // Debugger Item
   QListWidgetItem *pDebuggerItem = new QListWidgetItem(mpOptionsList);
   pDebuggerItem->setIcon(QIcon(":/Resources/icons/debugger.svg"));
@@ -3103,6 +3270,7 @@ void OptionsDialog::createPages()
   addPage(mpModelicaEditorPage);
   addPage(mpMetaModelicaEditorPage);
   addPage(mpCRMLEditorPage);
+  addPage(mpMOSEditorPage);
   addPage(mpOMSimulatorEditorPage);
   addPage(mpCEditorPage);
   addPage(mpHTMLEditorPage);
@@ -3115,6 +3283,7 @@ void OptionsDialog::createPages()
   addPage(mpPlottingPage);
   addPage(mpFigaroPage);
   addPage(mpCRMLPage);
+  addPage(mpMOSPage);
   addPage(mpDebuggerPage);
   addPage(mpFMIPage);
   addPage(mpOMSimulatorPage);
@@ -3221,6 +3390,8 @@ void OptionsDialog::saveSettings()
   emit metaModelicaEditorSettingsChanged();
   saveCRMLEditorSettings();
   emit crmlEditorSettingsChanged();
+  saveMOSEditorSettings();
+  emit mosEditorSettingsChanged();
   saveOMSimulatorEditorSettings();
   emit omsimulatorEditorSettingsChanged();
   saveCEditorSettings();
@@ -3238,6 +3409,7 @@ void OptionsDialog::saveSettings()
   savePlottingSettings();
   saveFigaroSettings();
   saveCRMLSettings();
+  saveMOSSettings();
   saveDebuggerSettings();
   saveFMISettings();
   saveOMSimulatorSettings();
@@ -4492,6 +4664,101 @@ QColor CRMLEditorPage::getColor(QString item)
  * Sets the mpPreviewPlainTextBox line wrapping mode.
  */
 void CRMLEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
+}
+
+/*!
+ * \class MOSEditorPage
+ * \brief Creates an interface for MOS Text settings.
+ */
+/*!
+ * \brief MOSEditorPage::MOSEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+MOSEditorPage::MOSEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // code colors widget
+  mpCodeColorsWidget = new CodeColorsWidget(this);
+  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  // Add items to list
+  // number (purple)
+  new ListWidgetItem("Number", OptionsDefaults::MOSEditor::numberRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  // keyword (dark red)
+  new ListWidgetItem("Keyword", OptionsDefaults::MOSEditor::keywordRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  // type (red)
+  new ListWidgetItem("Type", OptionsDefaults::MOSEditor::typeRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  // Quotes (dark green)
+  new ListWidgetItem("Quotes", OptionsDefaults::MOSEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  // comment (dark green)
+  new ListWidgetItem("Comment", OptionsDefaults::MOSEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  // preview text
+  QString previewText;
+  previewText.append("loadModel(Modelica); getErrorString();\n"
+                     "simulate(Modelica.Electrical.Analog.Example.Resistor); getErrorString()\n");
+  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
+  // highlight preview textbox
+  MOSHighlighter *pMOSHighlighter = new MOSHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
+  connect(this, SIGNAL(updatePreview()), pMOSHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
+          pMOSHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pMOSHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->addWidget(mpCodeColorsWidget);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MOSEditorPage::setColor
+ * Sets the color of an item.
+ * \param item
+ * \param color
+ */
+void MOSEditorPage::setColor(QString item, QColor color)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      pListWidgetItem->setColor(color);
+      pListWidgetItem->setForeground(color);
+    }
+  }
+}
+
+/*!
+ * \brief MOSEditorPage::getColor
+ * Returns the color of an item.
+ * \param item
+ * \return
+ */
+QColor MOSEditorPage::getColor(QString item)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      return pListWidgetItem->getColor();
+    }
+  }
+  return QColor(0, 0, 0);
+}
+
+/*!
+ * \brief MOSEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void MOSEditorPage::setLineWrapping(bool enabled)
 {
   if (enabled) {
     mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
@@ -6629,4 +6896,76 @@ void CRMLPage::browseCRMLCompilerProcessFile()
 void CRMLPage::resetCRMLCompilerProcessPath()
 {
   mpCRMLCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
+}
+
+//! @class MOSPage
+//! @brief Creates an interface for MOS settings.
+
+//! Constructor
+//! @param pOptionsDialog is the pointer to OptionsDialog
+MOSPage::MOSPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpMOSGroupBox = new QGroupBox(Helper::mos);
+  // MOS compiler jar file
+  mpMOSCompilerJarFileLabel = new Label(tr("MOS Compiler Jar:"));
+  mpMOSCompilerJarTextBox = new QLineEdit;
+  mpBrowseMOSCompilerJarFileButton = new QPushButton(Helper::browse);
+  mpBrowseMOSCompilerJarFileButton->setAutoDefault(false);
+  connect(mpBrowseMOSCompilerJarFileButton, SIGNAL(clicked()), SLOT(browseMOSCompilerJarFile()));
+  // MOS CommandLine arguments
+  mpMOSCompilerCommandLineOptionsLabel = new Label(tr("MOS Compiler Arguments:"));
+  mpMOSCompilerCommandLineOptionsTextBox = new QLineEdit;
+  // MOS Process
+  mpMOSCompilerProcessLabel = new Label(tr("MOS Processor:"));
+  mpMOSCompilerProcessTextBox = new QLineEdit;
+  mpBrowseMOSCompilerProcessButton = new QPushButton(Helper::browse);
+  mpBrowseMOSCompilerProcessButton->setAutoDefault(false);
+  connect(mpBrowseMOSCompilerProcessButton, SIGNAL(clicked()), SLOT(browseMOSCompilerProcessFile()));
+  mpResetMOSCompilerProcessButton = new QPushButton(Helper::reset);
+  mpResetMOSCompilerProcessButton->setToolTip(tr("Resets to default MOS Processor path"));
+  mpResetMOSCompilerProcessButton->setAutoDefault(false);
+  connect(mpResetMOSCompilerProcessButton, SIGNAL(clicked()), SLOT(resetMOSCompilerProcessPath()));
+  mpMOSLibraryPaths = new PathSelector(pOptionsDialog, tr("MOS Library Paths:"));
+
+  // set the layout
+  QGridLayout *pMOSLayout = new QGridLayout;
+  // pMOSLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pMOSLayout->addWidget(mpMOSCompilerJarFileLabel, 0, 0);
+  pMOSLayout->addWidget(mpMOSCompilerJarTextBox, 0, 1, 1, 2);
+  pMOSLayout->addWidget(mpBrowseMOSCompilerJarFileButton, 0, 3);
+  pMOSLayout->addWidget(mpMOSCompilerCommandLineOptionsLabel, 1, 0);
+  pMOSLayout->addWidget(mpMOSCompilerCommandLineOptionsTextBox, 1, 1, 1, 2);
+  pMOSLayout->addWidget(mpMOSCompilerProcessLabel, 2, 0);
+  pMOSLayout->addWidget(mpMOSCompilerProcessTextBox, 2, 1);
+  pMOSLayout->addWidget(mpBrowseMOSCompilerProcessButton, 2, 2);
+  pMOSLayout->addWidget(mpResetMOSCompilerProcessButton, 2, 3);
+  pMOSLayout->addWidget(mpMOSLibraryPaths, 3, 0, 1, 4);
+  mpMOSGroupBox->setLayout(pMOSLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpMOSGroupBox);
+  setLayout(pMainLayout);
+}
+
+void MOSPage::browseMOSCompilerJarFile()
+{
+  mpMOSCompilerJarTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                                      NULL, Helper::jarFileTypes, NULL));
+}
+
+void MOSPage::browseMOSCompilerProcessFile()
+{
+  mpMOSCompilerProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                                 NULL, Helper::exeFileTypes, NULL));
+}
+
+/*!
+ * \brief MOSPage::resetMOSCompilerProcessPath
+ * Resets the MOS process path to default.
+ */
+void MOSPage::resetMOSCompilerProcessPath()
+{
+  mpMOSCompilerProcessTextBox->setText(OptionsDefaults::MOS::process);
 }

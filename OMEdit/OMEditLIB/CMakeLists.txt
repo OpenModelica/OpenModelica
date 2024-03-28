@@ -43,6 +43,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Editors/TextEditor.cpp
                       Editors/CEditor.cpp
                       Editors/CRMLEditor.cpp
+                      Editors/MOSEditor.cpp
                       Editors/OMSimulatorEditor.cpp
                       Editors/MetaModelicaEditor.cpp
                       Editors/HTMLEditor.cpp
@@ -108,6 +109,9 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       CRML/CRMLFile.cpp
                       CRML/CRMLModelDialog.cpp
                       CRML/CRMLProxy.cpp
+                      MOS/MOSFile.cpp
+                      MOS/MOSDialog.cpp
+                      MOS/MOSProxy.cpp
                       Git/GitCommands.cpp
                       Git/CommitChangesDialog.cpp
                       Git/RevertCommitsDialog.cpp
@@ -173,6 +177,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Editors/TextEditor.h
                       Editors/CEditor.h
                       Editors/CRMLEditor.h
+                      Editors/MOSEditor.h
                       Editors/OMSimulatorEditor.h
                       Editors/MetaModelicaEditor.h
                       Editors/HTMLEditor.h
@@ -239,6 +244,9 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       CRML/CRMLFile.h
                       CRML/CRMLProxy.h
                       CRML/CRMLModelDialog.h
+                      MOS/MOSFile.h
+                      MOS/MOSProxy.h
+                      MOS/MOSDialog.h
                       Git/GitCommands.h
                       Git/CommitChangesDialog.h
                       Git/RevertCommitsDialog.h

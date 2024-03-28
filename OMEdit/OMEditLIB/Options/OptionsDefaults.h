@@ -114,6 +114,14 @@ namespace OptionsDefaults
     QColor commentRuleColor = QColor(0, 150, 0);
   }
 
+  namespace MOSEditor {
+    QColor numberRuleColor = QColor(139, 0, 139);
+    QColor keywordRuleColor = QColor(139, 0, 0);
+    QColor typeRuleColor = QColor(255, 10, 10);
+    QColor quotesRuleColor = QColor(0, 139, 0);
+    QColor commentRuleColor = QColor(0, 150, 0);
+  }
+
   namespace OMSimulatorEditor {
     QColor tagRuleColor = QColor(0, 0, 255);
     QColor elementRuleColor = QColor(0, 0, 255);
@@ -209,7 +217,14 @@ namespace OptionsDefaults
     QString process; // this value is set in FigaroPage constructor.
   }
 
-namespace CRML {
+  namespace CRML {
+    QString libraryPaths = "";
+    QString compilerJar = "crml-compiler-all.jar";
+    QString commandLineOptions = "";
+    QString process = "java";
+  }
+
+  namespace MOS {
     QString libraryPaths = "";
     QString compilerJar = "crml-compiler-all.jar";
     QString commandLineOptions = "";

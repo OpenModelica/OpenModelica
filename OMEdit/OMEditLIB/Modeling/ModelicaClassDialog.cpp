@@ -1962,7 +1962,7 @@ SaveChangesDialog::SaveChangesDialog(QWidget *pParent)
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Save Changes")));
   setMinimumWidth(400);
-  mpSaveChangesLabel = new Label(tr("Save changes to the following classes?"));
+  mpSaveChangesLabel = new Label(tr("Save changes to the following items?"));
   mpUnsavedClassesListWidget = new QListWidget;
   mpUnsavedClassesListWidget->setObjectName("UnsavedClassesListWidget");
   mpUnsavedClassesListWidget->setItemDelegate(new ItemDelegate(mpUnsavedClassesListWidget));

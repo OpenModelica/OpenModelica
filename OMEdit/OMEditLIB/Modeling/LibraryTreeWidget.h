@@ -112,7 +112,8 @@ public:
   const QString& getVersionBuild() const;
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
-  bool isCRMLFile() const {return mFileName.endsWith(".crml");}
+  bool isCRMLFile() const {return mFileName.endsWith(".crml") || getName().endsWith(".crml");}
+  bool isMOSFile() const {return mFileName.endsWith(".mos") || getName().endsWith(".mos");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
@@ -474,6 +475,11 @@ public:
   void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openCRMLFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
+<<<<<<< HEAD
+=======
+  void openMOSFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
+  void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
+>>>>>>> d12c404a7a (fix creation of crml files, add mos file support)
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);

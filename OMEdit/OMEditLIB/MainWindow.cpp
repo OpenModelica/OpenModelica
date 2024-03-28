@@ -45,6 +45,8 @@
 #include "OMS/ModelDialog.h"
 #include "CRML/CRMLProxy.h"
 #include "CRML/CRMLModelDialog.h"
+#include "MOS/MOSProxy.h"
+#include "MOS/MOSDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -206,6 +208,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   OMSProxy::create();
   // create an object of CRMLProxy
   CRMLProxy::create();
+  // create an object of MOSProxy
+  MOSProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
@@ -2052,6 +2056,57 @@ void MainWindow::openCRMLFile()
   hideProgressBar();
 }
 
+<<<<<<< HEAD
+=======
+/*!
+ * \brief MainWindow::createNewMOSFile
+ * Opens the new Modelica Scripting dialog.
+ */
+void MainWindow::createNewMOSFile()
+{
+  CreateMOSDialog *pCreateMOSDialog = new CreateMOSDialog(this);
+  pCreateMOSDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::openMOSFile
+ * Opens the Modelica Scripting .mos file(s).\n
+ * Slot activated when mpOpenMOSFileAction triggered signal is raised.
+ */
+void MainWindow::openMOSFile()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
+                                              Helper::omScriptFileTypes, NULL);
+  if (fileNames.isEmpty()) {
+    return;
+  }
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames) {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file)) {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else {
+      mpLibraryWidget->openFile(file, Helper::utf8, false);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
+>>>>>>> d12c404a7a (fix creation of crml files, add mos file support)
 /*!
  * \brief MainWindow::openDirectory
  * Opens the directory.
@@ -3667,6 +3722,21 @@ void MainWindow::createActions()
   mpOpenCRMLFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open CRML Model(s)"), this);
   mpOpenCRMLFileAction->setStatusTip(tr("Opens the CRML file(s)"));
   connect(mpOpenCRMLFileAction, SIGNAL(triggered()), SLOT(openCRMLFile()));
+<<<<<<< HEAD
+=======
+  // create new MOS action
+  mpNewMOSFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newMOSScript, this);
+  mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
+  connect(mpNewMOSFileAction, SIGNAL(triggered()), SLOT(createNewMOSFile()));
+  // open MOS file action
+  mpOpenMOSFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Modelica Script(s)"), this);
+  mpOpenMOSFileAction->setStatusTip(tr("Opens the Modelica Scripting file(s)"));
+  connect(mpOpenMOSFileAction, SIGNAL(triggered()), SLOT(openMOSFile()));
+  // load External Model action
+  mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
+  mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
+  connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
+>>>>>>> d12c404a7a (fix creation of crml files, add mos file support)
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
@@ -4150,6 +4220,9 @@ void MainWindow::createMenus()
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpNewCRMLFileAction);
   mpFileMenu->addAction(mpOpenCRMLFileAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpNewMOSFileAction);
+  mpFileMenu->addAction(mpOpenMOSFileAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
   mpFileMenu->addSeparator();
