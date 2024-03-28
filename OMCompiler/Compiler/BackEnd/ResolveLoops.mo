@@ -1031,10 +1031,6 @@ algorithm
       (daeEqs,replEqs) := resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqs,daeVarsIn,replEqs);
   then
       (daeEqs,replEqs);
-  else
-    equation
-      print("resolveLoops_resolveAndReplace failed!\n");
-    then fail();
   end matchcontinue;
 end resolveLoops_resolveAndReplace;
 
@@ -1233,7 +1229,7 @@ algorithm
   startEqIdx::restLoop := loopIn;
   startEqDaeIdx := arrayGet(eqMap,startEqIdx);
   loop1 := sortLoop(restLoop,m,mT,{startEqIdx});
-  if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
+  if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) and listLength(loop1) > 1 then
     print("solve the loop: " + List.toString(loop1, intString) + "\n");
   end if;
   eq := BackendEquation.get(daeEqsIn,startEqDaeIdx);
