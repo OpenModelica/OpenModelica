@@ -1255,6 +1255,11 @@ void OptionsDialog::readFigaroSettings()
 //! Reads the CRML section settings from omedit.ini
 void OptionsDialog::readCRMLSettings()
 {
+  if (mpSettings->contains("crml/repositoryDirectory")) {
+    mpCRMLPage->getCRMLRepositoryDirectoryTextBox()->setText(mpSettings->value("crml/repositoryDirectory").toString());
+  } else {
+    mpCRMLPage->getCRMLRepositoryDirectoryTextBox()->setText(OptionsDefaults::CRML::repositoryDirectory);
+  }
   if (mpSettings->contains("crml/compilerjar")) {
     mpCRMLPage->getCRMLCompilerJarTextBox()->setText(mpSettings->value("crml/compilerjar").toString());
   } else {
@@ -2795,6 +2800,13 @@ void OptionsDialog::saveFigaroSettings()
 //! Saves the CRML section settings to omedit.ini
 void OptionsDialog::saveCRMLSettings()
 {
+  QString repositoryDirectory = mpCRMLPage->getCRMLRepositoryDirectoryTextBox()->text();
+  if (repositoryDirectory.compare(OptionsDefaults::CRML::repositoryDirectory) == 0) {
+    mpSettings->remove("crml/repositoryDirectory");
+  } else {
+    mpSettings->setValue("crml/repositoryDirectory", repositoryDirectory);
+  }
+
   QString compilerJar = mpCRMLPage->getCRMLCompilerJarTextBox()->text();
   if (compilerJar.compare(OptionsDefaults::CRML::compilerJar) == 0) {
     mpSettings->remove("crml/compilerjar");
@@ -3188,8 +3200,8 @@ void OptionsDialog::addListItems()
   pCRMLEditorItem->setText(tr("CRML Editor"));
   // MOS Editor Item
   QListWidgetItem *pMOSEditorItem = new QListWidgetItem(mpOptionsList);
-  pCRMLEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pCRMLEditorItem->setText(tr("Modelica Script Editor"));
+  pMOSEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pMOSEditorItem->setText(tr("Modelica Script Editor"));
   // SSP Editor Item
   QListWidgetItem *pOMSimulatorEditorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
@@ -4701,7 +4713,10 @@ MOSEditorPage::MOSEditorPage(OptionsDialog *pOptionsDialog)
   // preview text
   QString previewText;
   previewText.append("loadModel(Modelica); getErrorString();\n"
-                     "simulate(Modelica.Electrical.Analog.Example.Resistor); getErrorString()\n");
+                     "simulate(Modelica.Electrical.Analog.Example.Resistor); getErrorString();\n"
+                     "a := 1; getErrorString();\n"
+                     "b := 2; getErrorString();\n"
+                     "x := if true then a else b; getErrorString();\n");
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   MOSHighlighter *pMOSHighlighter = new MOSHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
@@ -6836,12 +6851,18 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
   mpCRMLGroupBox = new QGroupBox(Helper::crml);
+  // CRML compiler repository directory
+  mpCRMLRepositoryDirectoryLabel = new Label(tr("CRML Respository Directory:"));
+  mpCRMLRepositoryDirectoryTextBox = new QLineEdit;
+  mpBrowseCRMLRepositoryDirectoryButton = new QPushButton(Helper::browse);
+  mpBrowseCRMLRepositoryDirectoryButton->setAutoDefault(false);
+  connect(mpBrowseCRMLRepositoryDirectoryButton, SIGNAL(clicked()), SLOT(browseCRMLRepositoryDirectory()));
   // CRML compiler jar file
-  mpCRMLCompilerJarFileLabel = new Label(tr("CRML Compiler Jar:"));
+  mpCRMLCompilerJarLabel = new Label(tr("CRML Compiler Jar:"));
   mpCRMLCompilerJarTextBox = new QLineEdit;
-  mpBrowseCRMLCompilerJarFileButton = new QPushButton(Helper::browse);
-  mpBrowseCRMLCompilerJarFileButton->setAutoDefault(false);
-  connect(mpBrowseCRMLCompilerJarFileButton, SIGNAL(clicked()), SLOT(browseCRMLCompilerJarFile()));
+  mpBrowseCRMLCompilerJarButton = new QPushButton(Helper::browse);
+  mpBrowseCRMLCompilerJarButton->setAutoDefault(false);
+  connect(mpBrowseCRMLCompilerJarButton, SIGNAL(clicked()), SLOT(browseCRMLCompilerJar()));
   // CRML CommandLine arguments
   mpCRMLCompilerCommandLineOptionsLabel = new Label(tr("CRML Compiler Arguments:"));
   mpCRMLCompilerCommandLineOptionsTextBox = new QLineEdit;
@@ -6860,16 +6881,19 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   // set the layout
   QGridLayout *pCRMLLayout = new QGridLayout;
   // pCRMLLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pCRMLLayout->addWidget(mpCRMLCompilerJarFileLabel, 0, 0);
-  pCRMLLayout->addWidget(mpCRMLCompilerJarTextBox, 0, 1, 1, 2);
-  pCRMLLayout->addWidget(mpBrowseCRMLCompilerJarFileButton, 0, 3);
-  pCRMLLayout->addWidget(mpCRMLCompilerCommandLineOptionsLabel, 1, 0);
-  pCRMLLayout->addWidget(mpCRMLCompilerCommandLineOptionsTextBox, 1, 1, 1, 2);
-  pCRMLLayout->addWidget(mpCRMLCompilerProcessLabel, 2, 0);
-  pCRMLLayout->addWidget(mpCRMLCompilerProcessTextBox, 2, 1);
-  pCRMLLayout->addWidget(mpBrowseCRMLCompilerProcessButton, 2, 2);
-  pCRMLLayout->addWidget(mpResetCRMLCompilerProcessButton, 2, 3);
-  pCRMLLayout->addWidget(mpCRMLLibraryPaths, 3, 0, 1, 4);
+  pCRMLLayout->addWidget(mpCRMLRepositoryDirectoryLabel, 0, 0);
+  pCRMLLayout->addWidget(mpCRMLRepositoryDirectoryTextBox, 0, 1, 1, 2);
+  pCRMLLayout->addWidget(mpBrowseCRMLRepositoryDirectoryButton, 0, 3);
+  pCRMLLayout->addWidget(mpCRMLCompilerJarLabel, 1, 0);
+  pCRMLLayout->addWidget(mpCRMLCompilerJarTextBox, 1, 1, 1, 2);
+  pCRMLLayout->addWidget(mpBrowseCRMLCompilerJarButton, 1, 3);
+  pCRMLLayout->addWidget(mpCRMLCompilerCommandLineOptionsLabel, 2, 0);
+  pCRMLLayout->addWidget(mpCRMLCompilerCommandLineOptionsTextBox, 2, 1, 1, 2);
+  pCRMLLayout->addWidget(mpCRMLCompilerProcessLabel, 3, 0);
+  pCRMLLayout->addWidget(mpCRMLCompilerProcessTextBox, 3, 1);
+  pCRMLLayout->addWidget(mpBrowseCRMLCompilerProcessButton, 3, 2);
+  pCRMLLayout->addWidget(mpResetCRMLCompilerProcessButton, 3, 3);
+  pCRMLLayout->addWidget(mpCRMLLibraryPaths, 4, 0, 1, 4);
   mpCRMLGroupBox->setLayout(pCRMLLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
@@ -6877,10 +6901,15 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   setLayout(pMainLayout);
 }
 
-void CRMLPage::browseCRMLCompilerJarFile()
+void CRMLPage::browseCRMLCompilerJar()
 {
   mpCRMLCompilerJarTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                       NULL, Helper::jarFileTypes, NULL));
+}
+
+void CRMLPage::browseCRMLRepositoryDirectory()
+{
+  mpCRMLRepositoryDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
 }
 
 void CRMLPage::browseCRMLCompilerProcessFile()

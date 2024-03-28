@@ -219,6 +219,7 @@ namespace OptionsDefaults
 
   namespace CRML {
     QString libraryPaths = "";
+    QString repositoryDirectory = "";
     QString compilerJar = "crml-compiler-all.jar";
     QString commandLineOptions = "";
     QString process = "java";

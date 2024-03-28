@@ -13946,8 +13946,8 @@ algorithm
     print("numer of all vars: " + String(omsiFunc.nAllVars)+"\n");
     print("Context\n");    // ToDo: add dump context
     print("number of algebraic systems: " + String(omsiFunc.nAlgebraicSystems)+"\n");
-    else
-      print("ERROR in dumpOMSIFunc\n");
+  else
+    print("ERROR in dumpOMSIFunc\n");
   end try;
 end dumpOMSIFunc;
 
@@ -13958,7 +13958,7 @@ public function omsiFuncEqnString
   output String s="";
 algorithm
   for eqs in omsiFunc.equations loop
-    s := s+simEqSystemString(eqs) + "\n";
+    s := s + simEqSystemString(eqs) + "\n";
   end for;
 end omsiFuncEqnString;
 
@@ -13969,7 +13969,7 @@ public function derivativeMatrixString
   output String s="";
 algorithm
   for col in matrix.columns loop
-    s := s+omsiFuncEqnString(col);
+    s := s + omsiFuncEqnString(col);
   end for;
 end derivativeMatrixString;
 

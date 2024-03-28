@@ -59,6 +59,7 @@
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
+#include "CRML/CRMLTranslatorOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
 #include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
@@ -1028,6 +1029,123 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
       mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
     }
   }
+}
+
+void loadCRMLLibs(LibraryWidget *pLibraryWidget) {
+  QStringList libs = {"CRML.mo", "CRMLtoModelica.mo", "CRML_test/package.mo"};
+  for (const auto& l : libs) {
+    CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+    QStringList paths = ep->getCRMLLibraryPaths()->text().split(QDir::listSeparator());
+    for (const auto& p : paths) {
+      QString fn(p + QDir::separator() + l);
+      QFile f(fn);
+      if (f.exists()) {
+        pLibraryWidget->openFile(fn, Helper::utf8, false, true);
+      }
+    }
+  }
+}
+
+void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString translationOutput = CRMLProxy::instance()->translateModel(pLibraryTreeItem->getFileName());
+  if (!translationOutput.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure());
+    CRMLInformationDialog *pInformationDialog = new CRMLInformationDialog(windowTitle, translationOutput, this);
+    pInformationDialog->show();
+  }
+
+  loadCRMLLibs(mpLibraryWidget);
+
+  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
+  QString fileName = fi.absoluteDir().absolutePath() + QDir::separator() + "generated" + QDir::separator() + fi.fileName();
+  fileName = fileName.remove(fileName.lastIndexOf(".crml"), 5);
+  fileName += ".mo";
+  mpLibraryWidget->openFile(fileName, Helper::utf8, false, true);
+  // now open it if we can find it in the tree!
+  LibraryTreeItem *pMOLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
+  if (pMOLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
+void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if the CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+
+  QString outputDirectory = StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append("Choose output directory"), NULL);
+
+  QString translationOutput = CRMLProxy::instance()->translateModel(pLibraryTreeItem->getFileName(), outputDirectory);
+  if (!translationOutput.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure());
+    CRMLInformationDialog *pInformationDialog = new CRMLInformationDialog(windowTitle, translationOutput, this);
+    pInformationDialog->show();
+  }
+
+  loadCRMLLibs(mpLibraryWidget);
+
+  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
+  QString fileName = outputDirectory + QDir::separator() +  fi.baseName() + QDir::separator() + fi.baseName() + ".mo";
+  mpLibraryWidget->openFile(fileName, Helper::utf8, false, true);
+  // now open it if we can find it in the tree!
+  LibraryTreeItem *pMOLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
+  if (pMOLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
+void MainWindow::runScript(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString result = mpOMCProxy->runScript(pLibraryTreeItem->getFileName());
+  if (!result.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, result, true, this);
+    pInformationDialog->show();
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
@@ -3483,6 +3601,12 @@ void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &n
     if (pOMSSimulationOutputWidget) {
       connect(pOMSSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
       connect(pOMSSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+    } else {
+      CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(pSimulationOutputTab);
+      if (pCRMLTranslatorOutputWidget) {
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+      }
     }
   }
 }
@@ -3534,25 +3658,22 @@ void MainWindow::showDataReconciliationDialog()
 /*!
  * \brief MainWindow::showRunCRMLTestsuiteDialog
  * Slot activated when mpRunCRMLTestsuiteAction triggered signal is raised.\n
- * Shows the data reconciliation dialog.
+ * Runs the CRML testsuite and opens the result as html.
  */
 void MainWindow::showRunCRMLTestsuiteDialog()
 {
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-    DataReconciliationDialog *pDataReconciliationDialog = new DataReconciliationDialog(pLibraryTreeItem);
-    if (pDataReconciliationDialog->exec()) {
-      if (!mpSimulationDialog) {
-        mpSimulationDialog = new SimulationDialog(this);
-      }
-      /* if Modelica text is changed manually by user then validate it before saving. */
-      if (pModelWidget && !pModelWidget->validateText(&pLibraryTreeItem)) {
-        return;
-      }
-      mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, true);
-    }
-  }
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+
+  crmlTranslatorOptions.setCRMLCompilerJar(ep->getCRMLCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCRMLCompilerCommandLineOptions(ep->getCRMLCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCRMLCompilerProcess(ep->getCRMLCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setCRMLLibraryPaths(ep->getCRMLLibraryPaths()->text());
+  crmlTranslatorOptions.setCRMLRepositoryDirectory(ep->getCRMLRepositoryDirectoryTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, Helper::runningCRMLTestsuite);
+  pCRMLTranslatorOutputWidget->start();
 }
 
 

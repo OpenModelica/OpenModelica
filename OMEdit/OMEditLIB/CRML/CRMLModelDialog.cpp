@@ -36,6 +36,7 @@
 #include <Modeling/ModelWidgetContainer.h>
 #include <Modeling/Commands.h>
 #include <CRML/CRMLProxy.h>
+#include <Options/OptionsDialog.h>
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -112,3 +113,70 @@ void CreateCRMLModelDialog::createNewModel()
   }
 }
 
+/*!
+ * \class CRMLInformationDialog
+ * \brief Creates a dialog that shows the users the result of OMCProxy::instantiateModel and OMCProxy::checkModel.
+ */
+/*!
+ * \brief CRMLInformationDialog::CRMLInformationDialog
+ * \param windowTitle - title string for dialog
+ * \param informationText - main text string for dialog
+ * \param modelicaTextHighlighter - highlights the modelica code.
+ * \param pParent
+ */
+CRMLInformationDialog::CRMLInformationDialog(QString windowTitle, QString informationText, QWidget *pParent)
+  : QWidget(pParent, Qt::Window)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(windowTitle));
+  // instantiate the model
+  mpTextEditor = new TextEditor(pParent);
+  mpTextEditor->setPlainText(informationText);
+  // Create the button
+  QPushButton *pOkButton = new QPushButton(Helper::ok);
+  pOkButton->setAutoDefault(true);
+  connect(pOkButton, SIGNAL(clicked()), SLOT(close()));
+  // set layout
+  QHBoxLayout *buttonLayout = new QHBoxLayout;
+  buttonLayout->setAlignment(Qt::AlignRight);
+  buttonLayout->addWidget(pOkButton);
+  QVBoxLayout *mainLayout = new QVBoxLayout;
+  mainLayout->addWidget(mpTextEditor);
+  mainLayout->addLayout(buttonLayout);
+  setLayout(mainLayout);
+  pOkButton->setFocus();
+  /* restore the window geometry. */
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    restoreGeometry(pSettings->value("CRMLInformationDialog/geometry").toByteArray());
+  }
+}
+
+/*!
+ * \brief CRMLInformationDialog::closeEvent
+ * Saves the widgets geometry.
+ * \param event
+ */
+void CRMLInformationDialog::closeEvent(QCloseEvent *event)
+{
+  /* save the window geometry. */
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    pSettings->setValue("CRMLInformationDialog/geometry", saveGeometry());
+  }
+  event->accept();
+}
+
+/*!
+ * \brief CRMLInformationDialog::keyPressEvent
+ * Closes the widget when Esc key is pressed.
+ * \param event
+ */
+void CRMLInformationDialog::keyPressEvent(QKeyEvent *event)
+{
+  if (event->key() == Qt::Key_Escape) {
+    close();
+    return;
+  }
+  QWidget::keyPressEvent(event);
+}

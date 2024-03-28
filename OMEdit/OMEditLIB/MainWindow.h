@@ -231,6 +231,9 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void translateCRML(LibraryTreeItem *pLibraryTreeItem);
+  void translateAsCRML(LibraryTreeItem *pLibraryTreeItem);
+  void runScript(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);

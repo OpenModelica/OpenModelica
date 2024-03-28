@@ -1113,15 +1113,19 @@ class CRMLPage : public QWidget
 public:
   CRMLPage(OptionsDialog *pOptionsDialog);
   QLineEdit* getCRMLCompilerJarTextBox() {return mpCRMLCompilerJarTextBox;}
+  QLineEdit* getCRMLRepositoryDirectoryTextBox() {return mpCRMLRepositoryDirectoryTextBox;}
   QLineEdit* getCRMLCompilerCommandLineOptionsTextBox() {return mpCRMLCompilerCommandLineOptionsTextBox;}
   QLineEdit* getCRMLCompilerProcessTextBox() {return mpCRMLCompilerProcessTextBox;}
   PathSelector* getCRMLLibraryPaths() {return mpCRMLLibraryPaths;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpCRMLGroupBox;
-  Label *mpCRMLCompilerJarFileLabel;
+  Label *mpCRMLCompilerJarLabel;
   QLineEdit *mpCRMLCompilerJarTextBox;
-  QPushButton *mpBrowseCRMLCompilerJarFileButton;
+  QPushButton *mpBrowseCRMLCompilerJarButton;
+  Label *mpCRMLRepositoryDirectoryLabel;
+  QLineEdit *mpCRMLRepositoryDirectoryTextBox;
+  QPushButton *mpBrowseCRMLRepositoryDirectoryButton;
   Label *mpCRMLCompilerCommandLineOptionsLabel;
   QLineEdit *mpCRMLCompilerCommandLineOptionsTextBox;
   Label *mpCRMLCompilerProcessLabel;
@@ -1131,7 +1135,8 @@ private:
   PathSelector *mpCRMLLibraryPaths;
 
 private slots:
-  void browseCRMLCompilerJarFile();
+  void browseCRMLCompilerJar();
+  void browseCRMLRepositoryDirectory();
   void browseCRMLCompilerProcessFile();
   void resetCRMLCompilerProcessPath();
 };
