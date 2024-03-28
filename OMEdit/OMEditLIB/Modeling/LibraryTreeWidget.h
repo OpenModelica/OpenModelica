@@ -101,7 +101,8 @@ public:
   const QString& getVersionBuild() const;
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
-  bool isCRMLFile() const {return mFileName.endsWith(".crml");}
+  bool isCRMLFile() const {return mFileName.endsWith(".crml") || getName().endsWith(".crml");}
+  bool isMOSFile() const {return mFileName.endsWith(".mos") || getName().endsWith(".mos");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
@@ -494,6 +495,7 @@ public:
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false);
   void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openCRMLFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
+  void openMOSFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
   void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);

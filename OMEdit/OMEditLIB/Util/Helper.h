@@ -77,7 +77,7 @@ public:
   static QString jarFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
-  static QString omScriptTypes;
+  static QString omScriptFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -143,6 +143,8 @@ public:
   static QString openConvertModelicaFiles;
   static QString newCRMLModel;
   static QString newCRMLModelTip;
+  static QString newMOSScript;
+  static QString newMOSScriptTip;
   static QString libraries;
   static QString clearRecentFiles;
   static QString encoding;
@@ -234,6 +236,7 @@ public:
   static QString unloadClassTip;
   static QString unloadCompositeModelOrTextTip;
   static QString unloadCRMLTip;
+  static QString unloadMOSTip;
   static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
@@ -295,6 +298,7 @@ public:
   static QString curveStyle;
   static QString figaro;
   static QString crml;
+  static QString mos;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;

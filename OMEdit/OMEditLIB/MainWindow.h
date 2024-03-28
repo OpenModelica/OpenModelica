@@ -344,6 +344,9 @@ private:
   // CRML File Actions
   QAction *mpNewCRMLFileAction;
   QAction *mpOpenCRMLFileAction;
+  // MOS File Actions
+  QAction *mpNewMOSFileAction;
+  QAction *mpOpenMOSFileAction;
   // Directory actions
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
@@ -520,6 +523,8 @@ public slots:
   void loadExternalModels();
   void createNewCRMLFile();
   void openCRMLFile();
+  void createNewMOSFile();
+  void openMOSFile();
   void openDirectory();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);

@@ -31,31 +31,31 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "CRMLModelDialog.h"
+#include "MOSDialog.h"
 #include <Modeling/LibraryTreeWidget.h>
 #include <Modeling/ModelWidgetContainer.h>
 #include <Modeling/Commands.h>
-#include <CRML/CRMLProxy.h>
+#include <MOS/MOSProxy.h>
 
 #include <QGridLayout>
 #include <QMessageBox>
 
 /*!
- * \class CreateCRMLModelDialog
- * \brief Creates a dialog to allow users to create a new OMSimulator model.
+ * \class CreateMOSDialog
+ * \brief Creates a dialog to allow users to create a new .mos script.
  */
 /*!
- * \brief CreateCRMLModelDialog::CreateCRMLModelDialog
+ * \brief CreateMOSDialog::CreateMOSDialog
  * \param pParent
  */
-CreateCRMLModelDialog::CreateCRMLModelDialog(QWidget *pParent)
+CreateMOSDialog::CreateMOSDialog(QWidget *pParent)
   : QDialog(pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::newCRMLModel));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::newMOSScript));
   setMinimumWidth(400);
   // set heading
-  mpHeading = Utilities::getHeadingLabel(Helper::newCRMLModel);
+  mpHeading = Utilities::getHeadingLabel(Helper::newMOSScript);
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // model name
@@ -64,7 +64,7 @@ CreateCRMLModelDialog::CreateCRMLModelDialog(QWidget *pParent)
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(createNewModel()));
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(createNewScript()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
@@ -84,19 +84,19 @@ CreateCRMLModelDialog::CreateCRMLModelDialog(QWidget *pParent)
 }
 
 /*!
- * \brief CreateCRMLModelDialog::createNewModel
- * Creates a new OMSimulator model.
+ * \brief CreateMOSDialog::createNewScript
+ * Creates a new .mos script.
  */
-void CreateCRMLModelDialog::createNewModel()
+void CreateMOSDialog::createNewScript()
 {
   if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), Helper::ok);
     return;
   }
 
-    // create new model
-  if (CRMLProxy::instance()->newModel(mpNameTextBox->text())) {
-    QString fileName = QString("%1.%2").arg(mpNameTextBox->text(),"crml");
+    // create new script
+  if (MOSProxy::instance()->newScript(mpNameTextBox->text())) {
+    QString fileName = QString("%1.%2").arg(mpNameTextBox->text(),"mos");
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     LibraryTreeItem *pLibraryTreeItem =
       pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileName, "",
@@ -106,8 +106,8 @@ void CreateCRMLModelDialog::createNewModel()
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
       accept();
     } else {
-      // if creating the CRML model failed then delete the model created.
-      CRMLProxy::instance()->crmlDelete(fileName);
+      // if creating the mos script failed then delete the model created.
+      MOSProxy::instance()->mosDelete(fileName);
     }
   }
 }
