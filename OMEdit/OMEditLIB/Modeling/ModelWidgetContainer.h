@@ -45,6 +45,8 @@
 #include "Editors/CompositeModelEditor.h"
 #include "Editors/OMSimulatorEditor.h"
 #include "Editors/CEditor.h"
+#include "Editors/CRMLEditor.h"
+#include "Editors/MOSEditor.h"
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"

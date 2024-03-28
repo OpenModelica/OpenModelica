@@ -558,6 +558,11 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       default:
         return ResourceCache::getIcon(":/Resources/icons/type-icon.svg");
     }
+  } else if (mLibraryType == LibraryTreeItem::Text) {
+    if (isCRMLFile())
+      return ResourceCache::getIcon(":/Resources/icons/crml-icon.svg");
+    if (isMOSFile())
+      return ResourceCache::getIcon(":/Resources/icons/mos-icon.svg");
   }
   return QIcon();
 }
@@ -864,6 +869,8 @@ QVariant LibraryTreeItem::data(int column, int role) const
           return mName;
         case Qt::DecorationRole: {
           if (mLibraryType == LibraryTreeItem::Text) {
+            if (isCRMLFile() || isMOSFile())
+              return mPixmap.isNull() ? getLibraryTreeItemIcon() : mPixmap;
             QFileInfo fileInfo(getFileName());
             return Utilities::FileIconProvider::icon(fileInfo);
           } else {
@@ -2011,6 +2018,76 @@ bool LibraryTreeModel::unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryT
 }
 
 /*!
+ * \brief LibraryTreeModel::unloadCRMLFile
+ * Unloads/deletes the CRML class.
+ * \param pLibraryTreeItem
+ * \param askQuestion
+ * \return
+ */
+bool LibraryTreeModel::unloadCRMLFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+{
+  if (askQuestion) {
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::UNLOAD_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        // Yes was clicked. Don't return.
+        break;
+      case QMessageBox::No:
+        // No was clicked. Return
+        return false;
+      default:
+        // should never be reached
+        return false;
+    }
+  }
+  removeLibraryTreeItem(pLibraryTreeItem);
+  pLibraryTreeItem->deleteLater();
+  return true;
+}
+
+/*!
+ * \brief LibraryTreeModel::unloadMOSFile
+ * Unloads/deletes the MOS class.
+ * \param pLibraryTreeItem
+ * \param askQuestion
+ * \return
+ */
+bool LibraryTreeModel::unloadMOSFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+{
+  if (askQuestion) {
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::UNLOAD_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        // Yes was clicked. Don't return.
+        break;
+      case QMessageBox::No:
+        // No was clicked. Return
+        return false;
+      default:
+        // should never be reached
+        return false;
+    }
+  }
+  removeLibraryTreeItem(pLibraryTreeItem);
+  pLibraryTreeItem->deleteLater();
+  return true;
+}
+
+/*!
  * \brief LibraryTreeModel::unloadOMSModel
  * Unloads/deletes the OMSimulator model.
  * \param pLibraryTreeItem
@@ -3101,6 +3178,15 @@ void LibraryTreeView::createActions()
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
+  // translate CRML Action
+  mpTranslateCRMLAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::translateCRML, this);
+  mpTranslateCRMLAction->setStatusTip(Helper::translateCRMLTip);
+  connect(mpTranslateCRMLAction, SIGNAL(triggered()), SLOT(translateCRML()));
+  // run Script Action
+  mpRunScriptAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::runScript, this);
+  mpRunScriptAction->setStatusTip(Helper::runScriptTip);
+  connect(mpRunScriptAction, SIGNAL(triggered()), SLOT(runScript()));
+
   // call function Action
   mpCallFunctionAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::callFunction, this);
   mpCallFunctionAction->setStatusTip(Helper::callFunctionTip);
@@ -3140,6 +3226,16 @@ void LibraryTreeView::createActions()
   mpUnloadCompositeModelFileAction->setShortcut(QKeySequence::Delete);
   mpUnloadCompositeModelFileAction->setStatusTip(Helper::unloadCompositeModelOrTextTip);
   connect(mpUnloadCompositeModelFileAction, SIGNAL(triggered()), SLOT(unloadCompositeModelOrTextFile()));
+  // unload CRML file Action
+  mpUnloadCRMLFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadCRMLFileAction->setShortcut(QKeySequence::Delete);
+  mpUnloadCRMLFileAction->setStatusTip(Helper::unloadCRMLTip);
+  connect(mpUnloadCRMLFileAction, SIGNAL(triggered()), SLOT(unloadCRMLFile()));
+  // unload MOS file Action
+  mpUnloadMOSFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadMOSFileAction->setShortcut(QKeySequence::Delete);
+  mpUnloadMOSFileAction->setStatusTip(Helper::unloadMOSTip);
+  connect(mpUnloadMOSFileAction, SIGNAL(triggered()), SLOT(unloadMOSFile()));
   // new file Action
   mpNewFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
   mpNewFileAction->setStatusTip(tr("Creates a new file"));
@@ -3466,7 +3562,15 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpDeleteAction);
           if (pLibraryTreeItem->isTopLevel()) {
             menu.addSeparator();
-            menu.addAction(mpUnloadCompositeModelFileAction);
+            if (pLibraryTreeItem->isCRMLFile()) {
+              menu.addAction(mpTranslateCRMLAction);
+              menu.addAction(mpUnloadCRMLFileAction);
+            } else if (pLibraryTreeItem->isMOSFile()) {
+              menu.addAction(mpRunScriptAction);
+              menu.addAction(mpUnloadMOSFileAction);
+            } else {
+              menu.addAction(mpUnloadCompositeModelFileAction);
+            }
           }
           break;
         case LibraryTreeItem::CompositeModel:
@@ -3782,6 +3886,30 @@ void LibraryTreeView::simulationSetup()
 }
 
 /*!
+ * \brief LibraryTreeView::translateCRML
+ * Translates the selected LibraryTreeItem CRML model to Modelica.
+ */
+void LibraryTreeView::translateCRML()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->translateCRML(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::runScript
+ * Runs the the selected LibraryTreeItem Modelica Script.
+ */
+void LibraryTreeView::runScript()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->runScript(pLibraryTreeItem);
+  }
+}
+
+/*!
  * \brief LibraryTreeView::duplicateClass
  * Opens the DuplicateClassDialog.
  */
@@ -3817,6 +3945,31 @@ void LibraryTreeView::unloadCompositeModelOrTextFile()
     mpLibraryWidget->getLibraryTreeModel()->unloadCompositeModelOrTextFile(pLibraryTreeItem);
   }
 }
+
+/*!
+ * \brief LibraryTreeView::unloadCRMLFile
+ * Unloads the CRML LibraryTreeItem.
+ */
+void LibraryTreeView::unloadCRMLFile()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->unloadCRMLFile(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::unloadMOSFile
+ * Unloads the MOS LibraryTreeItem.
+ */
+void LibraryTreeView::unloadMOSFile()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->unloadMOSFile(pLibraryTreeItem);
+  }
+}
+
 
 /*!
  * \brief LibraryTreeView::createNewFile
@@ -4226,6 +4379,10 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
     openEncrytpedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("ssp") == 0 && !loadExternalModel) {
     openOMSModelFile(fileInfo, showProgress);
+  } else if (fileInfo.suffix().compare("crml") == 0 && !loadExternalModel) {
+    openCRMLFile(fileInfo, encoding, showProgress);
+  } else if (fileInfo.suffix().compare("mos") == 0 && !loadExternalModel) {
+    openMOSFile(fileInfo, encoding, showProgress);
   } else if (fileInfo.isDir()) {
     openDirectory(fileInfo, showProgress);
   } else {
@@ -4446,6 +4603,104 @@ void LibraryWidget::openCompositeModelOrTextFile(QFileInfo fileInfo, bool showPr
                                                                    mpLibraryTreeModel->getRootLibraryTreeItem());
     }
   } else {
+    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
+                                                                 fileInfo.absoluteFilePath(), true,
+                                                                 mpLibraryTreeModel->getRootLibraryTreeItem());
+  }
+  if (pLibraryTreeItem) {
+    mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  }
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->clearMessage();
+  }
+}
+
+/*!
+ * \brief LibraryWidget::openCRMLFile
+ * Opens a CRML file and creates a LibraryTreeItem for it.
+ * \param fileInfo
+ * \param encoding
+ * \param showProgress
+ */
+void LibraryWidget::openCRMLFile(QFileInfo fileInfo, QString encoding, bool showProgress)
+{
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+  }
+  // check if the file is already loaded.
+  for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
+    if (pLibraryTreeItem && pLibraryTreeItem->getFileName().compare(fileInfo.absoluteFilePath()) == 0) {
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+      pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                      .arg(fileInfo.fileName()).append("\n")
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+      if (showProgress) {
+        MainWindow::instance()->getStatusBar()->clearMessage();
+      }
+      return;
+    }
+  }
+  // create a LibraryTreeItem for new loaded file.
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  QString compositeModelName;
+  if (fileInfo.suffix().compare("crml") == 0) {
+    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
+                                                                 fileInfo.absoluteFilePath(), true,
+                                                                 mpLibraryTreeModel->getRootLibraryTreeItem());
+  }
+  if (pLibraryTreeItem) {
+    mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  }
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->clearMessage();
+  }
+}
+
+/*!
+ * \brief LibraryWidget::openMOSFile
+ * Opens a .mos file and creates a LibraryTreeItem for it.
+ * \param fileInfo
+ * \param encoding
+ * \param showProgress
+ */
+void LibraryWidget::openMOSFile(QFileInfo fileInfo, QString encoding, bool showProgress)
+{
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+  }
+  // check if the file is already loaded.
+  for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
+    if (pLibraryTreeItem && pLibraryTreeItem->getFileName().compare(fileInfo.absoluteFilePath()) == 0) {
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+      pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                      .arg(fileInfo.fileName()).append("\n")
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+      if (showProgress) {
+        MainWindow::instance()->getStatusBar()->clearMessage();
+      }
+      return;
+    }
+  }
+  // create a LibraryTreeItem for new loaded file.
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  QString compositeModelName;
+  if (fileInfo.suffix().compare("mos") == 0) {
     pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
                                                                  fileInfo.absoluteFilePath(), true,
                                                                  mpLibraryTreeModel->getRootLibraryTreeItem());
@@ -5141,7 +5396,14 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, b
   QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
     QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::txtFileTypes, NULL, "txt", &name);
+    QString fileTypes = pLibraryTreeItem->isCRMLFile() ? Helper::crmlFileTypes : pLibraryTreeItem->isMOSFile() ? Helper::omScriptFileTypes : Helper::txtFileTypes;
+    QString extension = pLibraryTreeItem->isCRMLFile() ? "crml" : pLibraryTreeItem->isMOSFile() ? "mos" : "txt";
+    // if the name contains the extension already, remove it
+    QString dotext = "." + extension;
+    if (name.endsWith(dotext)) {
+      name =  name.remove(name.lastIndexOf(dotext), dotext.length());
+    }
+    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, fileTypes, NULL, extension, &name);
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }
