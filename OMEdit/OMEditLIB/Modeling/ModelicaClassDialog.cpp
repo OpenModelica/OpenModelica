@@ -786,8 +786,7 @@ DuplicateClassDialog::DuplicateClassDialog(LibraryTreeItem *pLibraryTreeItem, QW
  * \param pParentLibraryTreeItem - The parent LibraryTreeItem where the class will be duplicated.
  * \return
  */
-DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeItem *pLibraryTreeItem,
-                                                                    LibraryTreeItem *pParentLibraryTreeItem)
+DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
   // if the destination package is saved in one file then we always save in one file
   if (pLibraryTreeItem->getRestriction() == StringHandler::Package
@@ -806,7 +805,7 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     Label *pPixmapLabel = new Label;
     pPixmapLabel->setPixmap(tmpIcon.pixmap(iconSize, iconSize));
     // text
-    Label *pTextLabel = new Label(tr("Select file type for %1").arg(pLibraryTreeItem->getNameStructure()));
+    Label *pTextLabel = new Label(tr("Select file type for <b>%1</b>").arg(pLibraryTreeItem->getNameStructure()));
     // buttons
     QSignalMapper signalMapper;
     // Keep structure button
@@ -891,8 +890,7 @@ void DuplicateClassDialog::setSaveContentsTypeAsFolderStructure(LibraryTreeItem 
  * \param pSourceLibraryTreeItem
  * \param fileType
  */
-void DuplicateClassDialog::duplicateClassHelper(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem,
-                                                FileType fileType)
+void DuplicateClassDialog::duplicateClassHelper(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem, FileType fileType)
 {
   QString classText;
   if (pDestinationLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveInOneFile
@@ -1153,7 +1151,7 @@ void DuplicateClassDialog::duplicateClass()
      * Case 10: The source is a package saved in folder structure and destination is within. The duplicated package saved in one file.
      * Case 11: // // // // // // // // // // // // // // // // // // // // // // // // //. The duplicated package saved as folder structure.
      */
-    FileType fileType = selectFileType(mpLibraryTreeItem, pParentLibraryTreeItem);
+    FileType fileType = selectFileType(pLibraryTreeItem, pParentLibraryTreeItem);
     if (fileType == Directory || fileType == Directories
         || (fileType == KeepStructure && mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
       pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
