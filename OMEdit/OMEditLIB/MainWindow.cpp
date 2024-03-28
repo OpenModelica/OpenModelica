@@ -1068,6 +1068,56 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
   }
 }
 
+void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString modelicaModel = CRMLProxy::instance()->translateModel(pLibraryTreeItem->getFileName());
+  if (!modelicaModel.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, modelicaModel, true, this);
+    pInformationDialog->show();
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
+void MainWindow::runScript(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString result = mpOMCProxy->runScript(pLibraryTreeItem->getFileName());
+  if (!result.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, result, true, this);
+    pInformationDialog->show();
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */

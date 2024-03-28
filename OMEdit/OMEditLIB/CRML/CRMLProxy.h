@@ -68,6 +68,7 @@ public:
 
   bool newModel(QString cref);
   bool crmlDelete(QString cref);
+  QString translateModel(QString filename);
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
 signals:

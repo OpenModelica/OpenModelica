@@ -184,6 +184,7 @@ public:
   QString listFile(QString className, bool nestedClasses = true);
   QString diffModelicaFileListings(const QString &before, const QString &after);
   QString instantiateModel(QString className);
+  QString runScript(QString fileName);
   bool addClassAnnotation(QString className, QString annotation);
   QString getDefaultComponentName(QString className);
   QString getDefaultComponentPrefixes(QString className);

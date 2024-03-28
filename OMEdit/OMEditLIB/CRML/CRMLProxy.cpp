@@ -35,6 +35,7 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Util/Utilities.h"
+#include "Options/OptionsDialog.h"
 
 #include <QTime>
 
@@ -174,6 +175,27 @@ bool CRMLProxy::crmlDelete(QString cref)
   LOG_COMMAND(command, args);
   logResponse(command, 1, &commandTime);
   return true;
+}
+
+/*!
+ * \brief CRMLProxy::translateModel
+ * Translates the CRML Model to Modelica
+ * \param filename
+ */
+QString CRMLProxy::translateModel(QString filename)
+{
+  QString command = "crml_translateModel";
+  QStringList args;
+  args << "\"" + filename + "\"";
+  LOG_COMMAND(command, args);
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+  QString compilerJar = ep->getCRMLCompilerJarTextBox()->text();
+  QString commandLineOptions = ep->getCRMLCompilerCommandLineOptionsTextBox()->text();
+  QString process = ep->getCRMLCompilerProcessTextBox()->text();
+  QString libraries = ep->getCRMLLibraryPaths()->text();
+  QString response = process + " " + compilerJar + " " + commandLineOptions + " " + filename + " " + libraries;
+  logResponse(response, 1, &commandTime);
+  return response;
 }
 
 /*!

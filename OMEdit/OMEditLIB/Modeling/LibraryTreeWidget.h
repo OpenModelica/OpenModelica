@@ -320,6 +320,7 @@ public:
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true, bool doDeleteClass = true);
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadCRMLFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadMOSFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
@@ -399,6 +400,8 @@ private:
   QAction *mpCallFunctionAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
+  QAction *mpTranslateCRMLAction;
+  QAction *mpRunScriptAction;
 #if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
 #endif
@@ -407,6 +410,7 @@ private:
   QAction *mpUnloadClassAction;
   QAction *mpUnloadCompositeModelFileAction;
   QAction *mpUnloadCRMLFileAction;
+  QAction *mpUnloadMOSFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -453,10 +457,13 @@ public slots:
   void simulateWithAlgorithmicDebugger();
   void simulateWithAnimation();
   void simulationSetup();
+  void translateCRML();
+  void runScript();
   void duplicateClass();
   void unloadClass();
   void unloadCompositeModelOrTextFile();
   void unloadCRMLFile();
+  void unloadMOSFile();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();

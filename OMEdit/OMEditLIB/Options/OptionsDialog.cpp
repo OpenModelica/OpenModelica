@@ -3554,8 +3554,8 @@ void OptionsDialog::addListItems()
   pCRMLEditorItem->setText(tr("CRML Editor"));
   // MOS Editor Item
   QListWidgetItem *pMOSEditorItem = new QListWidgetItem(mpOptionsList);
-  pCRMLEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pCRMLEditorItem->setText(tr("Modelica Script Editor"));
+  pMOSEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pMOSEditorItem->setText(tr("Modelica Script Editor"));
   // CompositeModel Editor Item
   QListWidgetItem *pCompositeModelEditorItem = new QListWidgetItem(mpOptionsList);
   pCompositeModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
@@ -5104,7 +5104,10 @@ MOSEditorPage::MOSEditorPage(OptionsDialog *pOptionsDialog)
   // preview text
   QString previewText;
   previewText.append("loadModel(Modelica); getErrorString();\n"
-                     "simulate(Modelica.Electrical.Analog.Example.Resistor); getErrorString()\n");
+                     "simulate(Modelica.Electrical.Analog.Example.Resistor); getErrorString();\n"
+                     "a := 1; getErrorString();\n"
+                     "b := 2; getErrorString();\n"
+                     "x := if true then a else b; getErrorString();\n");
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
   MOSHighlighter *pMOSHighlighter = new MOSHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());

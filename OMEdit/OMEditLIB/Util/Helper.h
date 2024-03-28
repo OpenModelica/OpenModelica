@@ -259,6 +259,10 @@ public:
   static QString simulation;
   static QString reSimulation;
   static QString interactiveSimulation;
+  static QString translateCRML;
+  static QString translateCRMLTip;
+  static QString runScript;
+  static QString runScriptTip;
   static QString options;
   static QString extent;
   static QString bottom;
