@@ -3160,8 +3160,9 @@ Element* GraphicsView::getConnectorElement(ModelInstance::Connector *pConnector)
  * \brief GraphicsView::addConnection
  * Adds the connection to GraphicsView.
  * \param pElement
+ * \param createConnector true when function is called from GraphicsView::createConnector
  */
-void GraphicsView::addConnection(Element *pElement)
+void GraphicsView::addConnection(Element *pElement, bool createConnector)
 {
   // When clicking the start element
   if (!isCreatingConnection()) {
@@ -3315,7 +3316,11 @@ void GraphicsView::addConnection(Element *pElement)
         } else {
           if (mpModelWidget->isNewApi()) {
             if (!connectionExists(startElementName, endElementName, false)) {
-              if (mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+              /* Issue #12163. Do not check conneciton validity when called from GraphicsView::createConnector
+               * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
+               * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
+               */
+              if (createConnector || mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
                 mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
                 mpConnectionLineAnnotation->updateLine();
                 mpConnectionLineAnnotation->drawCornerItems();
@@ -3323,9 +3328,11 @@ void GraphicsView::addConnection(Element *pElement)
                 ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
                 addConnectionToView(mpConnectionLineAnnotation, false);
                 addConnectionToClass(mpConnectionLineAnnotation);
-                ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-                mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
-                mpModelWidget->updateModelText();
+                if (!createConnector) {
+                  ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+                  mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
+                  mpModelWidget->updateModelText();
+                }
               } else {
                 QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                                       GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), Helper::ok);
@@ -4381,7 +4388,18 @@ void GraphicsView::createConnector()
 {
   if (mpConnectionLineAnnotation && mpConnectionLineAnnotation->getStartElement()) {
     Element *pConnectorElement = mpConnectionLineAnnotation->getStartElement();
-    if (pConnectorElement->getLibraryTreeItem()) {
+    if (mpModelWidget->isNewApi()) {
+      QString defaultName;
+      QString name = getUniqueElementName(pConnectorElement->getClassName(), pConnectorElement->getName(), &defaultName);
+      ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+      bool connector = pConnectorElement->getModel() ? pConnectorElement->getModel()->isConnector() : false;
+      ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pConnectorElement->getClassName(), connector);
+      addElementToView(pComponent, false, true, true, mapToScene(mapFromGlobal(QCursor::pos())), "", true);
+      addConnection(mElementsList.last(), true);
+      ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add connector"));
+      mpModelWidget->updateModelText();
+    } else if (pConnectorElement->getLibraryTreeItem()) {
       mpModelWidget->beginMacro("Add connector");
       QString defaultName;
       QString name = getUniqueElementName(pConnectorElement->getLibraryTreeItem()->getNameStructure(), pConnectorElement->getLibraryTreeItem()->getName(), &defaultName);
@@ -4389,6 +4407,8 @@ void GraphicsView::createConnector()
       addComponentToView(name, pConnectorElement->getLibraryTreeItem(), "", mapToScene(mapFromGlobal(QCursor::pos())), pElementInfo, true, true, true);
       addConnection(mElementsList.last());
       mpModelWidget->endMacro();
+    } else {
+      qDebug() << "GraphicsView::createConnector() should never be reached.";
     }
   }
 }

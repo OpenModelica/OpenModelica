@@ -423,7 +423,7 @@ signals:
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
 public slots:
-  void addConnection(Element *pComponent);
+  void addConnection(Element *pComponent, bool createConnector = false);
   void removeCurrentConnection();
   void deleteConnection(LineAnnotation *pConnectionLineAnnotation);
   void addTransition(Element *pComponent);
