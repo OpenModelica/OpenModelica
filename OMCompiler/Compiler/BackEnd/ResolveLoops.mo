@@ -45,6 +45,7 @@ import AvlSetInt;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
+import BackendVarTransform;
 import BackendDump;
 import ComponentReference;
 import Expression;
@@ -54,8 +55,8 @@ import ExpressionDump;
 import Flags;
 import HpcOmTaskGraph;
 import List;
-import Util;
 import Tearing;
+import Util;
 
 public function resolveLoops "author:Waurich TUD 2013-12
   traverses the equations and finds simple equations(i.e. linear functions
@@ -1242,52 +1243,66 @@ protected function resolveClosedLoop2 "author:Waurich TUD 2013-12"
   input BackendDAE.Variables daeVarsIn;
   output BackendDAE.Equation eqOut;
 algorithm
-  (eqOut) := matchcontinue(eqIn,loopIn,m,mT,eqMap,varMap,daeEqsIn,daeVarsIn)
+  (eqOut) := match loopIn
     local
-      Boolean isPosOnRhs1, isPosOnRhs2, algSign;
-      Integer eqIdx1, eqIdx2, eqDaeIdx2, varIdx, daeVarIdx;
-      list<Integer> adjVars, adjVars1 ,adjVars2, eqIdcs,varIdcs,varNodes,restLoop, row;
-      list<BackendDAE.Equation> eqs;
-      BackendDAE.Equation eq2,resolvedEq;
-      BackendDAE.Var var;
-      DAE.ComponentRef cref, eqCrefs;
-    case(_,{_},_,_,_,_,_,_)
-      equation
-          //print("finished loop\n");
-      then
-        eqIn;
-    case(_,(eqIdx1::restLoop),_,_,_,_,_,_)
-      equation
-        // the equation to add
-        eqIdx2 = listHead(restLoop);
-        eqDaeIdx2 = arrayGet(eqMap,eqIdx2);
-        eq2 = BackendEquation.get(daeEqsIn,eqDaeIdx2);
+      Boolean algSign;
+      Integer eqIdx1, eqIdx2, eqDaeIdx2;
+      list<Integer> adjVars, adjVars1 ,adjVars2, restLoop;
+      list<DAE.ComponentRef> adjCrefs, posCrefs, negCrefs;
+      BackendDAE.Equation eq2, resolvedEq;
+      BackendVarTransform.VariableReplacements replacements;
+    case {_} then eqIn;
+    case eqIdx1::restLoop algorithm
+      // the equation to add
+      eqIdx2 := listHead(restLoop);
+      eqDaeIdx2 := arrayGet(eqMap,eqIdx2);
+      eq2 := BackendEquation.get(daeEqsIn,eqDaeIdx2);
 
-        // get the vars that are shared of the 2 equations
-        adjVars1 = arrayGet(m,eqIdx1);
-        adjVars2 = arrayGet(m,eqIdx2);
-        (adjVars,adjVars1,_) = List.intersection1OnTrue(adjVars1,adjVars2,intEq);
+      // get the vars that are shared of the 2 equations
+      adjVars1 := arrayGet(m,eqIdx1);
+      adjVars2 := arrayGet(m,eqIdx2);
+      (adjVars,adjVars1,_) := List.intersection1OnTrue(adjVars1,adjVars2,intEq);
 
-        // just take  the first
-        varIdx = listHead(adjVars);
-        daeVarIdx = arrayGet(varMap,varIdx);
-        var = BackendVariable.getVarAt(daeVarsIn,daeVarIdx);
-        cref = BackendVariable.varCref(var);
+      // split shared crefs by sign
+      adjCrefs := list(crefFromIndex(idx, varMap, daeVarsIn) for idx in adjVars);
+      (posCrefs, negCrefs) := List.splitOnTrue(adjCrefs, function varSign(eq1 = eqIn, eq2 = eq2));
+      algSign := listLength(posCrefs) > listLength(negCrefs);
+      adjCrefs := if algSign then posCrefs else negCrefs;
 
-        // check the algebraic signs
-        isPosOnRhs1 = CRefIsPosOnRHS(cref,eqIn);
-        isPosOnRhs2 = CRefIsPosOnRHS(cref,eq2);
-        algSign = boolOr((not isPosOnRhs1) and isPosOnRhs2,(not isPosOnRhs2) and isPosOnRhs1); // XOR
-        resolvedEq = sumUp2Equations(algSign,eqIn,eq2);
-        if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
-          print("From eqs \n"+BackendDump.equationString(eqIn)+"\n"+BackendDump.equationString(eq2)+"\n");
-          print("resolved the eq \n"+BackendDump.equationString(resolvedEq)+"\n\n");
-        end if;
-        resolvedEq = resolveClosedLoop2(resolvedEq,restLoop,m,mT,eqMap,varMap,daeEqsIn,daeVarsIn);
-      then
-        resolvedEq;
-  end matchcontinue;
+      // replace `cref` with zero to make the job easier for `simplify`
+      replacements := BackendVarTransform.emptyReplacementsSized(listLength(adjVars));
+      replacements := BackendVarTransform.addReplacements(replacements, adjCrefs, list(Expression.createZeroExpression(ComponentReference.crefTypeFull(c)) for c in adjCrefs), NONE());
+      ({resolvedEq, eq2}, _) := BackendVarTransform.replaceEquations({eqIn, eq2}, replacements, NONE());
+
+      resolvedEq := sumUp2Equations(algSign,resolvedEq,eq2);
+      if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
+        print("From eqs \n"+BackendDump.equationString(eqIn)+"\n"+BackendDump.equationString(eq2)+"\n");
+        print("resolved the eq \n"+BackendDump.equationString(resolvedEq)+"\n\n");
+      end if;
+    then resolveClosedLoop2(resolvedEq,restLoop,m,mT,eqMap,varMap,daeEqsIn,daeVarsIn);
+  end match;
 end resolveClosedLoop2;
+
+protected function crefFromIndex
+  input Integer varIdx;
+  input array<Integer> varMap;
+  input BackendDAE.Variables daeVarsIn;
+  output DAE.ComponentRef cref;
+protected
+  Integer daeVarIdx;
+  BackendDAE.Var var;
+algorithm
+  daeVarIdx := arrayGet(varMap, varIdx);
+  var := BackendVariable.getVarAt(daeVarsIn, daeVarIdx);
+  cref := BackendVariable.varCref(var);
+end crefFromIndex;
+
+protected function varSign
+  input DAE.ComponentRef cref;
+  input BackendDAE.Equation eq1;
+  input BackendDAE.Equation eq2;
+  output Boolean algSign = CRefIsPosOnRHS(cref, eq1) <> CRefIsPosOnRHS(cref, eq2) "check the algebraic signs"; // XOR
+end varSign;
 
 public function sortLoop "author:Waurich TUD 2014-01
   sorts the equations in a loop so that they are solved in a row."
@@ -1674,7 +1689,7 @@ algorithm
   exp2 := sumUp2Expressions(sumUp, exp2, exp4);
   exp2 := sumUp2Expressions(false, exp2, exp1);
   (exp2, _) := ExpressionSimplify.simplify(exp2);
-  exp1 := DAE.RCONST(0.0);
+  exp1 := Expression.createZeroExpression(Expression.typeof(exp2));
   eqOut := BackendDAE.EQUATION(exp1, exp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   eqOut := simplifyZeroAssignment(eqOut);
 end sumUp2Equations;
