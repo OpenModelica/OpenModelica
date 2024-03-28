@@ -803,6 +803,8 @@ QVariant LibraryTreeItem::data(int column, int role) const
           return mName;
         case Qt::DecorationRole: {
           if (isText()) {
+            if (isCRMLFile() || isMOSFile())
+              return mPixmap.isNull() ? getLibraryTreeItemIcon() : mPixmap;
             QFileInfo fileInfo(getFileName());
             return Utilities::FileIconProvider::icon(fileInfo);
           } else {
