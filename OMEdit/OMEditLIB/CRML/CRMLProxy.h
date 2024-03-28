@@ -36,6 +36,7 @@
 
 #include "Modeling/MessagesWidget.h"
 #include "CRML/CRMLFile.h"
+#include "CRML/CRMLModelDialog.h"
 
 #include <QObject>
 #include <QElapsedTimer>
@@ -68,6 +69,8 @@ public:
 
   bool newModel(QString cref);
   bool crmlDelete(QString cref);
+  QString translateModel(QString crmlFileName, QString outputDirectory = "", QString modelicaPath = "");
+  QString runTestsuite(CRMLInformationDialog *pInformationDialog = NULL, QString directory = "");
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
 signals:

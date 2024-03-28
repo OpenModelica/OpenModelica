@@ -2600,6 +2600,20 @@ QString OMCProxy::instantiateModel(QString className)
 }
 
 /*!
+ * \brief OMCProxy::runScript
+ * runs the scirpt.
+ * \param fileName - the name of the file.
+ * \return the result of running the script
+ */
+QString OMCProxy::runScript(QString fileName)
+{
+  QString result = mpOMCInterface->runScript(fileName);
+  printMessagesStringInternal();
+  return result;
+}
+
+
+/*!
  * \brief OMCProxy::isExperiment
  * Returns the simulation options stored in the model.
  * \param className - the name of the class.

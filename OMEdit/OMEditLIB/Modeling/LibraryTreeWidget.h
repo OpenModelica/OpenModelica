@@ -321,6 +321,7 @@ public:
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true, bool doDeleteClass = true);
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadCRMLFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadMOSFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
@@ -400,6 +401,9 @@ private:
   QAction *mpCallFunctionAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
+  QAction *mpTranslateCRMLAction;
+  QAction *mpTranslateAsCRMLAction;
+  QAction *mpRunScriptAction;
 #if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
 #endif
@@ -408,6 +412,7 @@ private:
   QAction *mpUnloadClassAction;
   QAction *mpUnloadCompositeModelFileAction;
   QAction *mpUnloadCRMLFileAction;
+  QAction *mpUnloadMOSFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -454,10 +459,14 @@ public slots:
   void simulateWithAlgorithmicDebugger();
   void simulateWithAnimation();
   void simulationSetup();
+  void translateCRML();
+  void translateAsCRML();
+  void runScript();
   void duplicateClass();
   void unloadClass();
   void unloadCompositeModelOrTextFile();
   void unloadCRMLFile();
+  void unloadMOSFile();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();
@@ -493,7 +502,7 @@ public:
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false,
                 bool loadExternalModel = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false);
-  void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openCRMLFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
   void openMOSFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
   void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);

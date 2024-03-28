@@ -41,6 +41,7 @@
 #include <QGroupBox>
 #include <QDialogButtonBox>
 #include <QScrollArea>
+#include <Editors/TextEditor.h>
 
 class LibraryTreeItem;
 class Label;
@@ -60,6 +61,18 @@ private:
   QDialogButtonBox *mpButtonBox;
 private slots:
   void createNewModel();
+};
+
+class CRMLInformationDialog : public QWidget
+{
+  Q_OBJECT
+public:
+  CRMLInformationDialog(QString windowTitle, QString informationText, QWidget *pParent = 0);
+  void closeEvent(QCloseEvent *event) override;
+  TextEditor *getTextEditor() {return mpTextEditor;}
+protected:
+  TextEditor *mpTextEditor;
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 

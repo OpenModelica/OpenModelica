@@ -34,7 +34,12 @@
 #include "CRMLProxy.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
+#include "CRMLModelDialog.h"
 #include "Util/Utilities.h"
+#include "Options/OptionsDialog.h"
+#include "QFileInfo"
+#include "QDir"
+#include "QProcess"
 
 #include <QTime>
 
@@ -174,6 +179,117 @@ bool CRMLProxy::crmlDelete(QString cref)
   LOG_COMMAND(command, args);
   logResponse(command, 1, &commandTime);
   return true;
+}
+
+/*!
+ * \brief CRMLProxy::translateModel
+ * Translates the CRML Model to Modelica
+ * modelicaFileName: where it should be stored, default automatic path/to/file.crml -> path/to/generated/file.mo
+ * modelicaPath: if we should add "within Path.To.Library" to the .mo file, default empty
+ * \param filename
+ */
+QString CRMLProxy::translateModel(QString crmlFileName, QString outputDirectory, QString modelicaPath)
+{
+  QString command = "crml_translateModel";
+  QStringList args;
+  QString response = "";
+  args << "\"" + crmlFileName + "\" " << "\"" + outputDirectory + "\" " << "\"" + modelicaPath + "\"";
+  LOG_COMMAND(command, args);
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+  QString compilerJar = ep->getCRMLCompilerJarTextBox()->text();
+  QString commandLineOptions = ep->getCRMLCompilerCommandLineOptionsTextBox()->text();
+  QString process = ep->getCRMLCompilerProcessTextBox()->text();
+  QString libraries = ep->getCRMLLibraryPaths()->text();
+  if (!crmlFileName.isEmpty()) {
+    QProcess crmlCompilerProcess;
+    QString processDirectory = "";
+    QStringList pargs = {"-jar", compilerJar};
+    if (!outputDirectory.isEmpty()) {
+      pargs.append("-o");
+      pargs.append(outputDirectory);
+      processDirectory = outputDirectory;
+    }
+    if (!modelicaPath.isEmpty()) {
+      pargs.append("--within");
+      pargs.append(modelicaPath);
+    }
+    if (!commandLineOptions.isEmpty()) {
+      QStringList qsl = commandLineOptions.split(" ");
+      pargs.append(qsl);
+    }
+    pargs.append("\"" + crmlFileName + "\"");
+    pargs.removeAll(QString(""));
+    LOG_COMMAND(command, pargs);
+    QFileInfo fileInfo(crmlFileName);
+    if (processDirectory.isEmpty()) {
+       processDirectory = fileInfo.absoluteDir().absolutePath();
+    }
+    response = "Running: " + process + " " + pargs.join(" ") + " in directory: " + processDirectory + "\n\n";
+    crmlCompilerProcess.setWorkingDirectory(processDirectory);
+    crmlCompilerProcess.start(process, pargs);
+    crmlCompilerProcess.waitForFinished(30000);
+    response = response + crmlCompilerProcess.readAllStandardOutput();
+    if (crmlCompilerProcess.exitCode()) {
+      response = response + "\nTranslation process for " + crmlFileName + " failed with code: " + QString::number(crmlCompilerProcess.exitCode());
+    } else {
+      response = response + "\nTranslation process for " + crmlFileName + " finished with code: " + QString::number(crmlCompilerProcess.exitCode()) + "\n";
+    }
+  }
+  logResponse(response, 1, &commandTime);
+  return response;
+}
+
+/*!
+ * \brief CRMLProxy::runTestsuite
+ * Runs the crml testsuite
+ * \param filename
+ */
+QString CRMLProxy::runTestsuite(CRMLInformationDialog *pInformationDialog, QString directory)
+{
+  QString command = "crml_runTestsuite";
+  QStringList args;
+  QString response = "no filename";
+  args << "\"" + directory + "\"";
+  LOG_COMMAND(command, args);
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+  QString compilerJar = ep->getCRMLCompilerJarTextBox()->text();
+  QString commandLineOptions = ep->getCRMLCompilerCommandLineOptionsTextBox()->text();
+  QString process = ep->getCRMLCompilerProcessTextBox()->text();
+  QString libraries = ep->getCRMLLibraryPaths()->text();
+  QString dir = directory;
+  if (dir.isEmpty()) {
+    dir = compilerJar;
+    dir.replace("build/libs/crml-compiler-all.jar", "");
+    dir.replace("build\\libs\\crml-compiler-all.jar", "");
+  }
+
+  if (!dir.isEmpty())
+  {
+    QProcess crmlCompilerProcess;
+    QStringList pargs = {"-jar", compilerJar, commandLineOptions, "--testsuite"};
+    pargs.removeAll(QString(""));
+    LOG_COMMAND(command, pargs);
+    QFileInfo fi(dir);
+    crmlCompilerProcess.setWorkingDirectory(fi.absolutePath());
+    crmlCompilerProcess.start(process, pargs);
+    crmlCompilerProcess.waitForFinished();
+    response = crmlCompilerProcess.readAllStandardOutput();
+    pInformationDialog->getTextEditor()->setPlainText(response);
+    while (crmlCompilerProcess.state() != QProcess::NotRunning) {
+      crmlCompilerProcess.waitForFinished();
+      response = crmlCompilerProcess.readAllStandardOutput();
+      pInformationDialog->getTextEditor()->getPlainTextEdit()->appendPlainText(response);
+    }
+    if (crmlCompilerProcess.exitCode()) {
+      response = "Running CRML --testsuite in directory: " + fi.absolutePath() + " failed with code: " + QString::number(crmlCompilerProcess.exitCode()) + "\n";
+      pInformationDialog->getTextEditor()->getPlainTextEdit()->appendPlainText(response);
+    } else {
+      response = fi.absolutePath() + "/build/" + "test_report.html" + "\nRunning CRML --testsuite in directory: " + fi.absolutePath() + " finished with code: " + QString::number(crmlCompilerProcess.exitCode()) + "\n";
+      pInformationDialog->getTextEditor()->getPlainTextEdit()->appendPlainText(response);
+    }
+  }
+  logResponse(response, 1, &commandTime);
+  return response;
 }
 
 /*!
