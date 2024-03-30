@@ -705,7 +705,7 @@ algorithm
   name := Prefix.prefix(pre);
   v := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
 
-  if var < Variability.DISCRETE and not unfix then
+  if var < Variability.DISCRETE and not unfix and not Type.isComplex(Type.arrayElementType(ty)) then
     // Check that the component has a binding if it's required to have one.
     verifyBinding(v, var, binding, settings);
   end if;
