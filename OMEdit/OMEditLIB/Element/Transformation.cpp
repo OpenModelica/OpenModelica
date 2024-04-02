@@ -257,11 +257,13 @@ void Transformation::updateTransformation(const Transformation &transformation)
   mExtentDiagram = transformation.getExtentDiagram();
   mRotateAngleDiagram = transformation.getRotateAngleDiagram();
   mPositionDiagram = transformation.getPositionDiagram();
+  mExtentCenterDiagram = transformation.getExtentCenterDiagram();
   mVisibleIcon = transformation.getVisibleIcon();
   mOriginIcon = transformation.getOriginIcon();
   mExtentIcon = transformation.getExtentIcon();
   mRotateAngleIcon = transformation.getRotateAngleIcon();
   mPositionIcon = transformation.getPositionIcon();
+  mExtentCenterIcon = transformation.getExtentCenterIcon();
 }
 
 QTransform Transformation::getTransformationMatrix()
@@ -325,6 +327,20 @@ QPointF Transformation::getPosition()
     case StringHandler::ModelicaText:
     default:
       return getPositionDiagram();
+  }
+}
+
+void Transformation::setExtentCenter(QPointF extentCenter)
+{
+  switch (mViewType) {
+    case StringHandler::Icon:
+      setExtentCenterIcon(extentCenter);
+      break;
+    case StringHandler::Diagram:
+    case StringHandler::ModelicaText:
+    default:
+      setExtentCenterDiagram(extentCenter);
+      break;
   }
 }
 

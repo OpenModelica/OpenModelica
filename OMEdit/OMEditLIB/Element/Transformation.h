@@ -67,6 +67,7 @@ public:
   void setRotateAngle(qreal rotateAngle);
   RealAnnotation getRotateAngle() const;
   QPointF getPosition();
+  void setExtentCenter(QPointF extentCenter);
   // operator overloading
   bool operator==(const Transformation &transformation) const;
 private:
@@ -101,6 +102,8 @@ private:
   void setRotateAngleDiagram(qreal rotateAngle) {mRotateAngleDiagram = rotateAngle;}
   const RealAnnotation &getRotateAngleDiagram() const {return mRotateAngleDiagram;}
   QPointF getPositionDiagram() const;
+  void setExtentCenterDiagram(QPointF extentCenter) {mExtentCenterDiagram = extentCenter;}
+  QPointF getExtentCenterDiagram() const {return mExtentCenterDiagram;}
   QTransform getTransformationMatrixIcon();
   void adjustPositionIcon(qreal x, qreal y);
   void setOriginIcon(QPointF origin);
@@ -110,6 +113,8 @@ private:
   void setRotateAngleIcon(qreal rotateAngle) {mRotateAngleIcon = rotateAngle;}
   const RealAnnotation &getRotateAngleIcon() const {return mRotateAngleIcon;}
   QPointF getPositionIcon() const;
+  void setExtentCenterIcon(QPointF extentCenter) {mExtentCenterIcon = extentCenter;}
+  QPointF getExtentCenterIcon() const {return mExtentCenterIcon;}
 };
 
 #endif // TRANSFORMATION_H
