@@ -1003,7 +1003,11 @@ algorithm
       guard Expression.variability(outExp.condition) <= Variability.PARAMETER
       algorithm
         cond := Ceval.tryEvalExp(outExp.condition);
-        Structural.markExp(outExp.condition);
+
+        // Only mark the condition as structural if it could be evaluated.
+        if not referenceEq(cond, outExp.condition) then
+          Structural.markExp(outExp.condition);
+        end if;
       then
         match cond
           case Expression.BOOLEAN() then splitRecordCref(if cond.value then outExp.trueBranch else outExp.falseBranch);
