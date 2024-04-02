@@ -1215,6 +1215,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     extern "C" {
     #endif
 
+    #if defined(OMC_DLL_MAIN_DEFINE)
+    #define GC_THREADS
+    #endif
+
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "simulation/solver/events.h"
 
@@ -1385,11 +1389,17 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #define OMC_CHAR wchar_t
     #define OMC_EXPORT __declspec(dllexport) extern
 
-    #else
+    #else /* Linux */
+
     #define omc_fixWindowsArgv(N, A) (A)
     #define OMC_MAIN main
     #define OMC_CHAR char
     #define OMC_EXPORT extern
+
+    #endif /* #if defined(__MINGW32__) || defined(_MSC_VER) */
+
+    #if defined(OMC_DLL_MAIN_DEFINE)
+    #include <gc.h>
     #endif
 
     #if defined(threadData)
@@ -1407,6 +1417,14 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
         Set the error functions to be used for simulation.
         The default value for them is 'functions' version. Change it here to 'simulation' versions
       */
+      #if defined(OMC_DLL_MAIN_DEFINE)
+        GC_init();
+        GC_allow_register_threads();
+        struct GC_stack_base sb;
+        GC_get_stack_base(&sb);
+        GC_register_my_thread(&sb);
+      #endif
+
       omc_assert = omc_assert_simulation;
       omc_assert_withEquationIndexes = omc_assert_simulation_withEquationIndexes;
 
@@ -1432,6 +1450,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       fflush(NULL);
     #if !defined(OMC_DLL_MAIN_DEFINE) /* do not exit, return in DLL mode */
       EXIT(res);
+    #else /* DLL mode, unregister thread! */
+      GC_unregister_my_thread();
     #endif
       return res;
     }
