@@ -538,11 +538,12 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
   // transformation
   mTransformation = Transformation(mpGraphicsView->getViewType(), this);
   if (createTransformation) {
-    if (boundingRect().width() > 0) {
-      mTransformation.setWidth(boundingRect().width());
+    QRectF boundingRectangle = boundingRect();
+    if (boundingRectangle.width() > 0) {
+      mTransformation.setWidth(boundingRectangle.width());
     }
-    if (boundingRect().height() > 0) {
-      mTransformation.setHeight(boundingRect().height());
+    if (boundingRectangle.height() > 0) {
+      mTransformation.setHeight(boundingRectangle.height());
     }
     // snap to grid while creating component
     position = mpGraphicsView->snapPointToGrid(position);
@@ -550,12 +551,13 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
     ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
     qreal initialScale = coordinateSystem.getInitialScale();
     QVector<QPointF> extent;
-    qreal xExtent = initialScale * boundingRect().width() / 2;
-    qreal yExtent = initialScale * boundingRect().height() / 2;
+    qreal xExtent = initialScale * boundingRectangle.width() / 2;
+    qreal yExtent = initialScale * boundingRectangle.height() / 2;
     extent.append(QPointF(-xExtent, -yExtent));
     extent.append(QPointF(xExtent, yExtent));
     mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
+    mTransformation.setExtentCenter(boundingRectangle.center());
   } else if (!placementAnnotation.isEmpty()) {
     mTransformation.parseTransformationString(placementAnnotation, boundingRect().width(), boundingRect().height());
   } else {
