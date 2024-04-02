@@ -352,6 +352,24 @@ algorithm
   outEvaluated := evaluated and outEvaluated;
 end evalExpPartial;
 
+function tryEvalCref
+  input ComponentRef cref;
+  input Expression defaultExp;
+  input Boolean evalSubscripts = true;
+  input Boolean liftExp = true;
+  output Expression exp;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    exp := evalCref(cref, defaultExp, EvalTarget.IGNORE_ERRORS(), evalSubscripts, liftExp);
+  else
+    exp := defaultExp;
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+end tryEvalCref;
+
 function evalCref
   input ComponentRef cref;
   input Expression defaultExp;

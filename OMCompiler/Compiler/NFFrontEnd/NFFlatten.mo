@@ -901,6 +901,8 @@ algorithm
       binding_exp := Ceval.evalExp(binding_exp);
       binding_exp := flattenExp(binding_exp, prefix);
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
+      binding_exp := SimplifyExp.simplify(binding_exp);
+
       // Try to use inlining first.
       try
         binding_exp := Inline.inlineCallExp(binding_exp, forceInline = true);

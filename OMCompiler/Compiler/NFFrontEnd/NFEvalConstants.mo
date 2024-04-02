@@ -203,7 +203,10 @@ algorithm
         if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER and
            not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
-          outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
+          // TODO: A structural parameter that can't be evaluated should either
+          //       give an error or not be marked as structural in the first
+          //       place, so tryEvalCref shouldn't be necessary here.
+          outExp := Ceval.tryEvalCref(cref, outExp, evalSubscripts = false);
           outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref));
           outChanged := true;
         elseif outChanged then
@@ -636,11 +639,7 @@ algorithm
       algorithm
         if evaluateAll or not isLocalFunctionVariable(e.cref, fnNode) then
           ErrorExt.setCheckpoint(getInstanceName());
-          try
-            outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          else
-            outExp := e;
-          end try;
+          outExp := Ceval.tryEvalCref(e.cref, e, evalSubscripts = false);
           ErrorExt.rollBack(getInstanceName());
           outChanged := true;
         elseif outChanged then
