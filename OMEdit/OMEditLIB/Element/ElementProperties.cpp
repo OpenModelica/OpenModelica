@@ -344,17 +344,20 @@ Parameter::Parameter(ModelInstance::Element *pElement, ElementParameters *pEleme
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
     setValueWidget(pReplaceableClass->getBaseClass(), true, mUnit);
   } else if (mValueType == Parameter::ReplaceableComponent) {
-    QString value = "redeclare " % mpModelInstanceElement->getType()
-                    % " " % mpModelInstanceElement->getName();
-    QString modifiers;
+    QString value;
     if (mpModelInstanceElement->getModifier()) {
-      modifiers = mpModelInstanceElement->getModifier()->toString(true);
-    }
-    if (!modifiers.isEmpty()) {
-      if (modifiers.startsWith("(")) {
-        value = value % modifiers;
+      if (mpModelInstanceElement->getModifier()->isValueDefined()) {
+        value = mpModelInstanceElement->getModifier()->getValue();
       } else {
-        value = value % "(" % modifiers % ")";
+        value = "redeclare " % mpModelInstanceElement->getType() % " " % mpModelInstanceElement->getName();
+        QString modifier = mpModelInstanceElement->getModifier()->toString(true);
+        if (!modifier.isEmpty()) {
+          if (modifier.startsWith("(")) {
+            value = value % modifier;
+          } else {
+            value = value % "(" % modifier % ")";
+          }
+        }
       }
     }
     setValueWidget(value, true, mUnit);
@@ -1353,9 +1356,14 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
         }
       } else { // if not builtin type then use all sub modifiers
-        QString modifierValue = pModifier->toString(true);
-        if (modifierValue.startsWith("(")) {
-          modifierValue = pParameter->getModelInstanceElement()->getName() % modifierValue;
+        QString modifierValue;
+        if (pModifier->isValueDefined()) {
+          modifierValue = pModifier->getValue();
+        } else {
+          modifierValue = pModifier->toString(true);
+          if (modifierValue.startsWith("(")) {
+            modifierValue = pParameter->getModelInstanceElement()->getName() % modifierValue;
+          }
         }
         pParameter->setValueWidget(modifierValue, defaultValue, pParameter->getUnit(), mNested);
       }
