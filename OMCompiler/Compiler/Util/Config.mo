@@ -47,7 +47,7 @@ import System;
 
 public
 
-type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', latest, experimental)
+type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', latest, experimental)
   "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
@@ -422,29 +422,19 @@ end setLanguageStandard;
 
 public function languageStandardAtLeast
   input LanguageStandard inStandard;
-  output Boolean outRes;
-protected
-  LanguageStandard std;
-algorithm
-  std := getLanguageStandard();
-  outRes := intGe(languageStandardInt(std), languageStandardInt(inStandard));
+  output Boolean outRes = getLanguageStandard() >= inStandard;
 end languageStandardAtLeast;
 
 public function languageStandardAtMost
   input LanguageStandard inStandard;
-  output Boolean outRes;
-protected
-  LanguageStandard std;
-algorithm
-  std := getLanguageStandard();
-  outRes := intLe(languageStandardInt(std), languageStandardInt(inStandard));
+  output Boolean outRes = getLanguageStandard() <= inStandard;
 end languageStandardAtMost;
 
 protected function languageStandardInt
   input LanguageStandard inStandard;
   output Integer outValue;
 protected
-  constant Integer lookup[LanguageStandard] = array(10, 20, 30, 31, 32, 33, 34, 1000, 1035, 9999);
+  constant Integer lookup[LanguageStandard] = array(10, 20, 30, 31, 32, 33, 34, 35, 36, 1000, 9999);
 algorithm
   outValue := lookup[inStandard];
 end languageStandardInt;
@@ -462,6 +452,7 @@ algorithm
     case 33 then LanguageStandard.'3.3';
     case 34 then LanguageStandard.'3.4';
     case 35 then LanguageStandard.'3.5';
+    case 36 then LanguageStandard.'3.6';
     case 1000 then LanguageStandard.latest;
     case 9999 then LanguageStandard.experimental;
   end match;
@@ -471,7 +462,7 @@ public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
 protected
-  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.5","experimental" /*Change this to latest version if you add more versions!*/);
+  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6", "3.6", "experimental" /*Change this to latest version if you add more versions!*/);
 algorithm
   outString := lookup[inStandard];
 end languageStandardString;
@@ -523,29 +514,20 @@ algorithm
 end hasLanguageStandardChanged;
 
 public function versionStringToStd
-  input String inVersion;
-  output LanguageStandard outStandard;
-protected
-  list<String> version;
-algorithm
-  version := System.strtok(inVersion, ".");
-  outStandard := versionStringToStd2(version);
-end versionStringToStd;
-
-protected function versionStringToStd2
-  input list<String> inVersion;
+  input String inVersion "MSL version string";
   output LanguageStandard outStandard;
 algorithm
-  outStandard := match(inVersion)
+  outStandard := match System.strtok(inVersion, ".")
     case "1" :: _ then LanguageStandard.'1.x';
     case "2" :: _ then LanguageStandard.'2.x';
     case "3" :: "0" :: _ then LanguageStandard.'3.0';
     case "3" :: "1" :: _ then LanguageStandard.'3.1';
     case "3" :: _ then LanguageStandard.'3.2';
     case "4" :: "0" :: _ then LanguageStandard.'3.4';
+    case "4" :: "1" :: _ then LanguageStandard.'3.6';
     case _ then LanguageStandard.latest;
   end match;
-end versionStringToStd2;
+end versionStringToStd;
 
 public function showErrorMessages
   output Boolean outShowErrorMessages;
@@ -634,6 +616,10 @@ public function synchronousFeaturesAllowed
  checks returns true if language standard is above or equal to Modelica 3.3"
   output Boolean outRes = getLanguageStandard() >= LanguageStandard.'3.3';
 end synchronousFeaturesAllowed;
+
+public function defaultStartValueAvailable
+  output Boolean b = getLanguageStandard() < LanguageStandard.'3.3';
+end defaultStartValueAvailable;
 
 public function flatModelica
   output Boolean value;

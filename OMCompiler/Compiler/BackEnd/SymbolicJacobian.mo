@@ -1766,7 +1766,7 @@ try
   varlst := BackendVariable.varList(v);
   knvarlst := BackendVariable.varList(globalKnownVars);
 
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+  states := if Config.synchronousFeaturesAllowed() then
     BackendVariable.getAllClockedStatesFromVariables(v) else {};
 
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
@@ -1925,7 +1925,7 @@ try
   eqSyst::{} := backendDAE.eqs;
   v := eqSyst.orderedVars;
   // get state var from simulation DAE
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+  states := if Config.synchronousFeaturesAllowed() then
     BackendVariable.getAllClockedStatesFromVariables(v) else {};
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
 
@@ -4364,8 +4364,8 @@ algorithm
     diffExp := Differentiate.differentiateExpSolve(exp,seedVar,NONE());
     for var in diffVars loop
       if not ComponentReference.crefEqual(var.varName, state.varName) and Expression.expContains(diffExp,Expression.crefExp(var.varName)) then
-        // Heuristic to punish vars with a value of zero
-        if Expression.isZero(BackendVariable.varStartValue(var)) then
+        // Heuristic to punish vars without start attribute
+        if not BackendVariable.varHasStartValue(var) then
           nonlinearCount := nonlinearCount + 2;
         else
           nonlinearCount := nonlinearCount + 1;

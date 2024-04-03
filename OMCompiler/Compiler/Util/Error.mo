@@ -909,9 +909,9 @@ public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.ME
 public constant ErrorTypes.Message INITIALIZATION_ITERATION_VARIABLES = ErrorTypes.MESSAGE(498, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("There are nonlinear iteration variables with default zero start attribute found in %s. %s."));
 public constant ErrorTypes.Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = ErrorTypes.MESSAGE(499, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
+  Gettext.gettext("Parameter %s has no binding, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
 public constant ErrorTypes.Message UNBOUND_PARAMETER_ERROR = ErrorTypes.MESSAGE(500, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)."));
+  Gettext.gettext("Parameter %s has neither binding nor start value, and is fixed during initialization (fixed=true)."));
 public constant ErrorTypes.Message BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER = ErrorTypes.MESSAGE(502, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Function \"product\" has scalar as argument in %s in component %s."));
 public constant ErrorTypes.Message SETTING_FIXED_ATTRIBUTE = ErrorTypes.MESSAGE(503, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),

@@ -10233,6 +10233,7 @@ protected function setDefaultStartValue
   output Option<DAE.Exp> exp;
 algorithm
   exp := match type_
+    case _ guard not Config.defaultStartValueAvailable() then NONE();
     case (DAE.T_INTEGER()) then SOME(DAE.ICONST(0));
     case (DAE.T_REAL()) then SOME(DAE.RCONST(0.0));
     case (DAE.T_BOOL()) then SOME(DAE.BCONST(false));

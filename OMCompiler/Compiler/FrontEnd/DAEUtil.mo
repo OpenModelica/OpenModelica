@@ -914,14 +914,17 @@ algorithm
     case SOME(DAE.VAR_ATTR_BOOL(start = SOME(e))) then e;
     case SOME(DAE.VAR_ATTR_STRING(start = SOME(e))) then e;
     case SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(e))) then e;
-    else
-      match Types.getBasicType(inType)
+    case _ guard Config.defaultStartValueAvailable()
+      then match Types.getBasicType(inType)
         case DAE.Type.T_INTEGER() then DAE.ICONST(0);
         case DAE.Type.T_STRING() then DAE.SCONST("");
         case DAE.Type.T_BOOL() then DAE.BCONST(false);
         case DAE.Type.T_ENUMERATION() then Types.getNthEnumLiteral(inType, 1);
         else DAE.RCONST(0.0);
       end match;
+    else algorithm
+      Error.addInternalError(getInstanceName() + " failed because type " +  Types.printTypeStr(inType) + " has no default start value.", sourceInfo());
+    then fail();
   end match;
 end getStartAttr;
 
@@ -1378,8 +1381,6 @@ public function hasStartAttr "
   output Boolean hasStart;
 algorithm
   hasStart:= match(inVariableAttributesOption)
-    local
-      DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(_)))) then true;
     case (SOME(DAE.VAR_ATTR_INT(start = SOME(_)))) then true;
     case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(_)))) then true;
