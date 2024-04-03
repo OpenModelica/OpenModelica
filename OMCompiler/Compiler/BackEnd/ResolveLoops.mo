@@ -1330,18 +1330,20 @@ algorithm
       equation
       then
         listReverse(sortLoopIn);
-    case(_,_,_,start::rest)
-      equation
-        vars = arrayGet(m,start);
-        varEqs = List.map1(vars,Array.getIndexFirst,mT);
-        eqs = List.flatten(varEqs);
-        eqs = List.unique(eqs);
-        eqs = List.intersectionOnTrue(eqs,loopIn,intEq);
-        next = listHead(eqs);
-        rest = List.deleteMember(loopIn,next);
-        rest = sortLoop(rest,m,mT,next::sortLoopIn);
-      then
-        rest;
+    case(_,_,_,start::_)
+      algorithm
+        vars := arrayGet(m,start);
+        varEqs := List.map1(vars,Array.getIndexFirst,mT);
+        eqs := List.flatten(varEqs);
+        eqs := List.unique(eqs);
+        eqs := List.intersectionOnTrue(eqs,loopIn,intEq);
+        if listEmpty(eqs) then
+          next := List.first(loopIn);
+        else
+          next := List.first(eqs);
+        end if;
+        rest := List.deleteMember(loopIn,next);
+      then sortLoop(rest,m,mT,next::sortLoopIn);
   end matchcontinue;
 end sortLoop;
 
@@ -1810,6 +1812,11 @@ algorithm
     then
       (exists,sign);
   case(DAE.RCONST(),_)
+    equation
+      // constant
+    then
+      (false,false);
+  case(DAE.ICONST(),_)
     equation
       // constant
     then
