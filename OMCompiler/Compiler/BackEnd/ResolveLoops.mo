@@ -1816,6 +1816,11 @@ algorithm
       // constant
     then
       (false,false);
+  case(DAE.ICONST(),_)
+    equation
+      // constant
+    then
+      (false,false);
   else
     equation
       print("add a case to expIsCref:"+ExpressionDump.printExpStr(expIn)+"\n");
