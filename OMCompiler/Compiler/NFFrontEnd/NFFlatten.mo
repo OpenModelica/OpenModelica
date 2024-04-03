@@ -620,7 +620,7 @@ algorithm
       then ComponentType.RECORD;
     case Type.COMPLEX() then ComponentType.COMPLEX;
     case Type.ARRAY()   then getComponentType(ty.elementType, settings);
-                        else ComponentType.NORMAL;
+    else ComponentType.NORMAL;
   end match;
 end getComponentType;
 
@@ -669,7 +669,8 @@ algorithm
   // variability, and scalarization is enabled, move the binding into an equation.
   // This avoids having to scalarize the binding.
   if not settings.nfAPI and settings.scalarize then
-    if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
+    if var >= Variability.DISCRETE and Type.isArray(ty) and
+       not Type.isExternalObject(Type.arrayElementType(ty)) and Binding.isBound(binding) then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
         InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));

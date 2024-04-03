@@ -504,6 +504,7 @@ ExternalObject2.mo \
 ExternalObject3.mo \
 ExternalObject4.mo \
 ExternalObject5.mo \
+ExternalObject6.mo \
 ExternalObjectInvalidElement1.mo \
 ExternalObjectInvalidStructor1.mo \
 ExternalObjectMissingStructor1.mo \
