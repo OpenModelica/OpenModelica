@@ -559,7 +559,7 @@ public
     list<Pointer<Equation>> new_then_eqns = {};
   algorithm
     // causalize this branch equations for the unknowns
-    comps := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
+    (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
     // solve each strong component explicitely and save equations to branch
     for comp in comps loop
       (solved_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, systemType, implicit_index, slicing_map);

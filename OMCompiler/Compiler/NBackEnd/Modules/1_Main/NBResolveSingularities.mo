@@ -112,7 +112,7 @@ public
     Pointer<Differentiate.DifferentiationArguments> diffArguments_ptr;
     VariablePointers candidate_ptrs;
     EquationPointers constraint_ptrs;
-    Adjacency.Matrix set_adj;
+    Adjacency.Matrix set_adj, full;
     Matching set_matching;
     list<list<Integer>> marked_eqns_lst = {}; // todo: fill!
 
@@ -177,7 +177,10 @@ public
       constraint_ptrs := EquationPointers.fromList(sliced_constraints);
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
-      set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, NBAdjacency.MatrixStrictness.LINEAR);
+      // create full matrix
+      full := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
+      // create solvable adjacency matrix for matching
+      set_adj := Adjacency.Matrix.fromFull(full, candidate_ptrs.map, constraint_ptrs.map, constraint_ptrs, NBAdjacency.MatrixStrictness.LINEAR);
       set_matching := Matching.regular(NBMatching.EMPTY_MATCHING, set_adj, true, true);
 
       if debug then

@@ -1198,9 +1198,10 @@ protected
     // II. check for regular vs. reduced dimensions
     regulars := Dependency.toBoolean(d);
     if List.all(regulars, Util.id) then
-      // all regular - single dependency per row.
+      // II.1 all regular - single dependency per row.
+      mode := Mode.MODE(eqn_arr_idx, {cref}, false);
       scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
-      print("all regular for " + ComponentRef.toString(cref) + ". scalar: " + List.toString(scalarized, ComponentRef.toString) + "\n");
+      //print("all regular for " + ComponentRef.toString(cref) + ". scalar: " + List.toString(scalarized, ComponentRef.toString) + "\n");
       map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
       for scal in scalarized loop
         UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
@@ -1210,7 +1211,6 @@ protected
       if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
         for i in 1:size/scal_size loop
           for scal in scalarized loop
-            mode := Mode.MODE({scal}, false);
             for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
               addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
               shift := shift + 1;
@@ -1225,7 +1225,7 @@ protected
       end if;
 
     elseif List.any(regulars, Util.id) then
-      // mixed regularity - find all necessary configurations and add them to a map with a proper key
+      // II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key
       // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
       subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
       dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
@@ -1247,7 +1247,7 @@ protected
 
         // 4. iterate over all equation dimensions and use the map to get the correct dependencies
         key := arrayCreate(listLength(subs), 0);
-        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.MODE({cref}, false), Pointer.create(skip_idx));
+        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.MODE(eqn_arr_idx, {cref}, false), Pointer.create(skip_idx));
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
           + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1258,7 +1258,7 @@ protected
       end if;
 
     else
-      // all reduced - full dependency per row. scalarize and add to all rows of the equation
+      // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
       repeated    := UnorderedSet.contains(cref, rep);
       scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
       map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
@@ -1268,7 +1268,7 @@ protected
 
       // if its repeated, use the same cref always
       if repeated then
-        mode := Mode.MODE({cref}, false);
+        mode := Mode.MODE(eqn_arr_idx, {cref}, false);
       end if;
 
       for i in skip_idx:iter_size:skip_idx+size-iter_size loop
@@ -1276,7 +1276,7 @@ protected
         for scal in scalarized loop
           // if its not repeated use local cref
           if not repeated then
-            mode := Mode.MODE({scal}, true);
+            mode := Mode.MODE(eqn_arr_idx, {scal}, true);
           end if;
           for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
             if intMod(shift, iter_size) == 0 then shift := 0; end if;
@@ -1343,7 +1343,7 @@ protected
     input Integer var_idx;
     input Mode mode;
   algorithm
-    print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
+    //print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
     arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
     UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
   end addMatrixEntry;
