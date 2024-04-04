@@ -2431,7 +2431,8 @@ algorithm
           stateSetIdxString = substring(stateSetIdxString,10,stringLength(stateSetIdxString));
           stateSetIdx = stringInt(stateSetIdxString);
           arrayUpdate(stateSetFixCounts, stateSetIdx, arrayGet(stateSetFixCounts, stateSetIdx) + 1);
-        elseif BackendVariable.varHasStartValue(var) then
+        elseif BackendVariable.varHasStartValue(var) or Config.defaultStartValueAvailable() then
+          startExp = BackendVariable.varStartValue(var, sourceInfo());
           // if startExp is constant, generate "cref = $START.cref" otherwise "cref = startExp"
           if Expression.isConstValue(startExp) then
             eqn = BackendDAE.EQUATION(crefExp, Expression.crefExp(startCR), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
