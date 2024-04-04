@@ -2664,45 +2664,52 @@ algorithm
       else
         isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       end if;
-      preUsed = BaseHashSet.has(cr, hs);
-      _ = Expression.crefExp(cr);
 
-      startCR = ComponentReference.crefPrefixStart(cr);
-      startVar = BackendVariable.copyVarNewName(startCR, var);
-      startVar = BackendVariable.setBindExp(startVar, NONE());
-      startVar = BackendVariable.setVarDirection(startVar, DAE.BIDIR());
-      startVar = BackendVariable.setVarFixed(startVar, false);
-      startVar = BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
-      startVar = BackendVariable.setVarStartValueOption(startVar, NONE());
-
-      startExp = BackendVariable.varStartValue(var, sourceInfo());
-      parameters = Expression.getAllCrefs(startExp);
-
-      if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
-        eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-        eqns = BackendEquation.add(eqn, eqns);
-
-        vars = BackendVariable.addVar(startVar, vars);
-      end if;
-
-      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendVariable.copyVarNewName(preCR, var);
-      preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
-      preVar = BackendVariable.setBindExp(preVar, NONE());
-      preVar = BackendVariable.setVarFixed(preVar, true);
-      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
-
-      // if startExp is constant, generate "cref = $START.cref" otherwise "cref = startExp"
-      if Expression.isConstValue(startExp) then
-        eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      if isInput then
+        fixvars = BackendVariable.addVar(var, fixvars);
       else
-        eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+        vars = BackendVariable.addVar(var, vars);
       end if;
 
-      vars = if not isInput then BackendVariable.addVar(var, vars) else vars;
-      fixvars = if isInput then BackendVariable.addVar(var, fixvars) else fixvars;
-      vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
-      eqns = if preUsed then BackendEquation.add(eqn, eqns) else eqns;
+      if BackendVariable.varHasStartValue(var) then
+        startExp = BackendVariable.varStartValueFail(var);
+        parameters = Expression.getAllCrefs(startExp);
+
+        if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
+          startCR = ComponentReference.crefPrefixStart(cr);
+          startVar = BackendVariable.copyVarNewName(startCR, var);
+          startVar = BackendVariable.setBindExp(startVar, NONE());
+          startVar = BackendVariable.setVarDirection(startVar, DAE.BIDIR());
+          startVar = BackendVariable.setVarFixed(startVar, false);
+          startVar = BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
+          startVar = BackendVariable.setVarStartValueOption(startVar, NONE());
+
+          eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+
+          eqns = BackendEquation.add(eqn, eqns);
+          vars = BackendVariable.addVar(startVar, vars);
+        end if;
+
+        preUsed = BaseHashSet.has(cr, hs);
+        if preUsed then
+          preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+          preVar = BackendVariable.copyVarNewName(preCR, var);
+          preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+          preVar = BackendVariable.setBindExp(preVar, NONE());
+          preVar = BackendVariable.setVarFixed(preVar, true);
+          preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
+
+          // if startExp is constant, generate "cref = $START.cref" otherwise "cref = startExp"
+          if Expression.isConstValue(startExp) then
+            eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+          else
+            eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+          end if;
+
+          vars = BackendVariable.addVar(preVar, vars);
+          eqns = BackendEquation.add(eqn, eqns);
+        end if;
+      end if;
 
       // Error.addCompilerNotification("VARIABLE (fixed=false); " + BackendDump.varString(var));
     then (var, (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon));

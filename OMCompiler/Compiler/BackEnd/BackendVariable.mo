@@ -275,19 +275,12 @@ end varStartValueOption;
 
 public function varHasStartValue
   input BackendDAE.Var inVar;
-  output Boolean outHasStartValue;
-protected
-  Option<DAE.VariableAttributes> attr;
-algorithm
-  BackendDAE.VAR(values=attr) := inVar;
-  outHasStartValue := DAEUtil.hasStartAttr(attr);
+  output Boolean outHasStartValue = DAEUtil.hasStartAttr(inVar.values);
 end varHasStartValue;
 
 public function varHasNoStartValue
   input BackendDAE.Var inVar;
-  output Boolean outHasNoStartValue;
-algorithm
-  outHasNoStartValue := not varHasStartValue(inVar);
+  output Boolean outHasNoStartValue = not varHasStartValue(inVar);
 end varHasNoStartValue;
 
 public function varStartOrigin "author: Frenkel TUD

@@ -1381,11 +1381,12 @@ public function hasStartAttr "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output Boolean hasStart;
 algorithm
-  hasStart:= match(inVariableAttributesOption)
-    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(_)))) then true;
-    case (SOME(DAE.VAR_ATTR_INT(start = SOME(_)))) then true;
-    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(_)))) then true;
-    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(_)))) then true;
+  hasStart:= match inVariableAttributesOption
+    case SOME(DAE.VAR_ATTR_REAL(start = SOME(_))) then true;
+    case SOME(DAE.VAR_ATTR_INT(start = SOME(_))) then true;
+    case SOME(DAE.VAR_ATTR_BOOL(start = SOME(_))) then true;
+    case SOME(DAE.VAR_ATTR_STRING(start = SOME(_))) then true;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(_))) then true;
     else false;
   end match;
 end hasStartAttr;
