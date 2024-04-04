@@ -847,7 +847,7 @@ algorithm
     hs := HashSet.emptyHashSetSized(2*nGlobalKnownVars+1);
     for i in flatComps loop
       v := BackendVariable.getVarAt(globalKnownVars, i);
-      bindExp := BackendVariable.varBindExpStartValueNoFail(v);
+      bindExp := BackendVariable.varBindExpStartValueNoFail(v, sourceInfo());
       crefs := Expression.getAllCrefsExpanded(bindExp);
       //BackendDump.dumpVarList({v}, intString(i));
 
@@ -954,7 +954,7 @@ algorithm
     Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
   end if;
 
-  rhs := BackendVariable.varBindExpStartValueNoFail(var);
+  rhs := BackendVariable.varBindExpStartValueNoFail(var, sourceInfo());
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createGlobalKnownVarsEquations;

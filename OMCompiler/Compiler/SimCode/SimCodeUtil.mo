@@ -7414,7 +7414,7 @@ protected
   DAE.ComponentRef cr;
   DAE.ElementSource source;
 algorithm
-  e := BackendVariable.varBindExpStartValueNoFail(inVar);
+  e := BackendVariable.varBindExpStartValueNoFail(inVar, sourceInfo());
   source := BackendVariable.getVarSource(inVar);
   if Types.isArray(inVar.varType) then
     varExp := BackendVariable.varExp(inVar);
@@ -14220,7 +14220,7 @@ algorithm
     // check for param Vars, as we are only interested in causality = parameters
     if BackendVariable.isParam(var) and not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
+      rhs := BackendVariable.varBindExpStartValueNoFail(var, sourceInfo()) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       BackendEquation.add(eqn, currentSystem.orderedEqs);
       //var := BackendVariable.setBindExp(var,NONE());

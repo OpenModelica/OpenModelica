@@ -1865,7 +1865,7 @@ try
     if BackendVariable.isParam(var) and not BackendVariable.varHasConstantBindExp(var) then
       //print("\n PARAM_CHECK: " + ComponentReference.printComponentRefStr(var.varName));
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
+      rhs := BackendVariable.varBindExpStartValueNoFail(var, sourceInfo()) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       //BackendDump.printEquation(eqn);
       BackendEquation.add(eqn, currentSystem.orderedEqs);

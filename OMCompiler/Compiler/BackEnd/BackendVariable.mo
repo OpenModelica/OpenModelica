@@ -385,6 +385,7 @@ end varBindExpStartValue;
 public function varBindExpStartValueNoFail
   "Returns the binding or the start value if no binding is available."
   input BackendDAE.Var v;
+  input SourceInfo info;
   output DAE.Exp sv;
 algorithm
   sv := match(v)
@@ -394,7 +395,7 @@ algorithm
     case (BackendDAE.VAR(bindExp=SOME(e)))
     then e;
 
-    else varStartValue(v, sourceInfo());
+    else varStartValue(v, info);
   end match;
 end varBindExpStartValueNoFail;
 

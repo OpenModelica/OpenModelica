@@ -8151,7 +8151,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   lhs := BackendVariable.varExp(var);
-  rhs := BackendVariable.varBindExpStartValueNoFail(var);
+  rhs := BackendVariable.varBindExpStartValueNoFail(var, sourceInfo());
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createGlobalKnownVarsEquations;
