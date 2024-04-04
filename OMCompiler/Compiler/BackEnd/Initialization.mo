@@ -795,10 +795,12 @@ algorithm
      parameter Real x_start = 6.0;
   */
   for var in BackendVariable.varList(dae.shared.globalKnownVars) loop
-    if BackendVariable.isInput(var) and not Expression.isConstValue(BackendVariable.varStartValue(var, sourceInfo())) and not Types.isArray(BackendVariable.varType(var)) then
+    if BackendVariable.isInput(var) and BackendVariable.varHasStartValue(var) and not Types.isArray(BackendVariable.varType(var)) then
       bindExp := BackendVariable.varStartValue(var, sourceInfo());
-      (v, _) := BackendVariable.getVarSingle(Expression.expCref(bindExp), dae.shared.globalKnownVars);
-      var := BackendVariable.setVarStartValueOption(var, v.bindExp);
+      if not Expression.isConstValue(bindExp) then
+        (v, _) := BackendVariable.getVarSingle(Expression.expCref(bindExp), dae.shared.globalKnownVars);
+        var := BackendVariable.setVarStartValueOption(var, v.bindExp);
+      end if;
     end if;
     globalKnownVarList := var :: globalKnownVarList;
   end for;
