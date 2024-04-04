@@ -2404,21 +2404,23 @@ algorithm
       crefExp = Expression.crefExp(cr);
 
       startCR = ComponentReference.crefPrefixStart(cr);
-      startVar = BackendVariable.copyVarNewName(startCR, var);
-      startVar = BackendVariable.setBindExp(startVar, NONE());
-      startVar = BackendVariable.setVarDirection(startVar, DAE.BIDIR());
-      startVar = BackendVariable.setVarFixed(startVar, false);
-      startVar = BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
-      startVar = BackendVariable.setVarStartValueOption(startVar, NONE());
 
-      startExp = BackendVariable.varStartValue(var, sourceInfo());
-      parameters = Expression.getAllCrefs(startExp);
+      if BackendVariable.varHasStartValue(var) then
+        startExp = BackendVariable.varStartValueFail(var);
+        parameters = Expression.getAllCrefs(startExp);
 
-      if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
-        eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-        eqns = BackendEquation.add(eqn, eqns);
+        if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
+          eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+          eqns = BackendEquation.add(eqn, eqns);
 
-        vars = BackendVariable.addVar(startVar, vars);
+          startVar = BackendVariable.copyVarNewName(startCR, var);
+          startVar = BackendVariable.setBindExp(startVar, NONE());
+          startVar = BackendVariable.setVarDirection(startVar, DAE.BIDIR());
+          startVar = BackendVariable.setVarFixed(startVar, false);
+          startVar = BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
+          startVar = BackendVariable.setVarStartValueOption(startVar, NONE());
+          vars = BackendVariable.addVar(startVar, vars);
+        end if;
       end if;
 
       if isFixed then
@@ -2429,7 +2431,7 @@ algorithm
           stateSetIdxString = substring(stateSetIdxString,10,stringLength(stateSetIdxString));
           stateSetIdx = stringInt(stateSetIdxString);
           arrayUpdate(stateSetFixCounts, stateSetIdx, arrayGet(stateSetFixCounts, stateSetIdx) + 1);
-        else
+        elseif BackendVariable.varHasStartValue(var) then
           // if startExp is constant, generate "cref = $START.cref" otherwise "cref = startExp"
           if Expression.isConstValue(startExp) then
             eqn = BackendDAE.EQUATION(crefExp, Expression.crefExp(startCR), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
