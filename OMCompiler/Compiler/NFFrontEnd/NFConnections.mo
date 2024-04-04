@@ -169,13 +169,32 @@ public
   protected
     list<Connector> cl1, cl2;
     Connector c2;
+    ComponentRef lhsCref1, rhsCref1;
+    Type lhsType1, rhsType1;
+    NFDimension.Dimension d;
   algorithm
     if isDeleted(lhsCref) or isDeleted(rhsCref) then
       return;
     end if;
 
-    cl1 := makeConnectors(lhsCref, lhsType, source);
-    cl2 := makeConnectors(rhsCref, rhsType, source);
+    lhsCref1 := lhsCref;
+    lhsType1 := lhsType;
+    if Type.isUnknown(lhsType) and not ComponentRef.hasSubscripts(lhsCref) and Type.isArray(rhsType) then
+      d := Type.nthDimension(rhsType, 1);
+      lhsType1 := Type.ARRAY(Type.arrayElementType(rhsType), {d});
+      lhsCref1 := ComponentRef.setNodeType(lhsType1, lhsCref1);
+    end if;
+
+    rhsCref1 := rhsCref;
+    rhsType1 := rhsType;
+    if Type.isUnknown(rhsType) and not ComponentRef.hasSubscripts(rhsCref) and Type.isArray(lhsType) then
+      d := Type.nthDimension(lhsType, 1);
+      rhsType1 := Type.ARRAY(Type.arrayElementType(lhsType), {d});
+      rhsCref1 := ComponentRef.setNodeType(rhsType1, rhsCref1);
+    end if;
+    
+    cl1 := makeConnectors(lhsCref1, lhsType1, source);
+    cl2 := makeConnectors(rhsCref1, rhsType1, source);
 
     for c1 in cl1 loop
       c2 :: cl2 := cl2;
