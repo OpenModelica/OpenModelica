@@ -45,7 +45,7 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2");
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.bug_2994_res.mat",
@@ -69,6 +69,6 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2");
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // endResult

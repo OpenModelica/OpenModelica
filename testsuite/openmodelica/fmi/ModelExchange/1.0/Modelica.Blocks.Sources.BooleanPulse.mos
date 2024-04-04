@@ -30,7 +30,7 @@ val(y, 1);
 // Result:
 // true
 // "Modelica_Blocks_Sources_BooleanPulse.fmu"
-// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // "Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo"
 // ""
@@ -53,7 +53,7 @@ val(y, 1);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // 1.0
 // 1.0

@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -f BB.BouncingBall.xml
 // cflags: -d=newInst
-// 
+//
 // Tests that reinit works
 //
 
@@ -31,10 +31,10 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 //   end when;
 // end BB.BouncingBall;
 // "
-// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no value, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
+// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
 // "
 // (true,"BB.BouncingBall.xml")
-// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no value, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
+// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
 // "
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"

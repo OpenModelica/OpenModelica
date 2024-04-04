@@ -35,9 +35,9 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// [Modelica 3.1.0+maint.om/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.1.0+maint.om/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.1.0+maint.om/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1.0+maint.om/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[3] has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1.0+maint.om/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[2] has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1.0+maint.om/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[1] has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
 // "true
