@@ -904,6 +904,7 @@ public function getStartAttr "
   Return the start attribute."
   input Option<DAE.VariableAttributes> inAttributes;
   input DAE.Type inType;
+  input SourceInfo info;
   output DAE.Exp start;
 protected
   DAE.Exp e;
@@ -923,7 +924,7 @@ algorithm
         else DAE.RCONST(0.0);
       end match;
     else algorithm
-      Error.addInternalError(getInstanceName() + " failed because type " +  Types.printTypeStr(inType) + " has no default start value.", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed because type " +  Types.printTypeStr(inType) + " has no default start value.", info);
     then fail();
   end match;
 end getStartAttr;

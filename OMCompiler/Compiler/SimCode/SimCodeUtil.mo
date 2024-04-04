@@ -8071,7 +8071,7 @@ algorithm
            exp = replaceCrefWithStartValue(exp,varsIn);
          end if;
        elseif BackendVariable.varHasStartValue(var) then
-         exp = BackendVariable.varStartValue(var);
+         exp = BackendVariable.varStartValue(var, sourceInfo());
        else
          exp = expIn;
        end if;
@@ -10442,7 +10442,7 @@ algorithm
     // C RUNTIME
     // Parameters without binding. Investigate if it has start value
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr, varType = tp)) guard not stringEq(Config.simCodeTarget(), "Cpp") equation
-      e = DAEUtil.getStartAttr(dae_var_attr, tp);
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
     // CPP RUNTIME

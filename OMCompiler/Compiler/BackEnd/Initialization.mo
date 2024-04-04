@@ -795,8 +795,8 @@ algorithm
      parameter Real x_start = 6.0;
   */
   for var in BackendVariable.varList(dae.shared.globalKnownVars) loop
-    if BackendVariable.isInput(var) and not Expression.isConstValue(BackendVariable.varStartValue(var)) and not Types.isArray(BackendVariable.varType(var)) then
-      bindExp := BackendVariable.varStartValue(var);
+    if BackendVariable.isInput(var) and not Expression.isConstValue(BackendVariable.varStartValue(var, sourceInfo())) and not Types.isArray(BackendVariable.varType(var)) then
+      bindExp := BackendVariable.varStartValue(var, sourceInfo());
       (v, _) := BackendVariable.getVarSingle(Expression.expCref(bindExp), dae.shared.globalKnownVars);
       var := BackendVariable.setVarStartValueOption(var, v.bindExp);
     end if;
@@ -945,7 +945,7 @@ algorithm
 
   if BackendVariable.isParam(var) and not BackendVariable.varHasBindExp(var) and BackendVariable.varFixed(var) then
     s := ExpressionDump.printExpStr(lhs);
-    startValue := BackendVariable.varStartValue(var);
+    startValue := BackendVariable.varStartValue(var, sourceInfo());
     str := ExpressionDump.printExpStr(startValue);
     v := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
     v := BackendVariable.setBindExp(v, SOME(startValue));
@@ -2202,7 +2202,7 @@ algorithm
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs)) equation
       preUsed = BaseHashSet.has(cr, hs);
       isFixed = BackendVariable.varFixed(var);
-      startValue = BackendVariable.varStartValue(var);
+      startValue = BackendVariable.varStartValue(var, sourceInfo());
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false);
@@ -2399,7 +2399,6 @@ algorithm
     // state
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters,datarecon)) equation
       isFixed = BackendVariable.varFixed(var);
-      //_ = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
 
       crefExp = Expression.crefExp(cr);
@@ -2412,7 +2411,7 @@ algorithm
       startVar = BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
       startVar = BackendVariable.setVarStartValueOption(startVar, NONE());
 
-      startExp = BackendVariable.varStartValue(var);
+      startExp = BackendVariable.varStartValue(var, sourceInfo());
       parameters = Expression.getAllCrefs(startExp);
 
       if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
@@ -2467,7 +2466,7 @@ algorithm
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) equation
       true = BaseHashSet.has(cr, hs);
       true = BackendVariable.varFixed(var);
-      startValue_ = BackendVariable.varStartValue(var);
+      startValue_ = BackendVariable.varStartValue(var, sourceInfo());
 
       var = BackendVariable.setVarFixed(var, false);
 
@@ -2506,7 +2505,7 @@ algorithm
     // parameter without binding and fixed=true
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) equation
       true = BackendVariable.varFixed(var);
-      startExp = BackendVariable.varStartValueType(var);
+      startExp = BackendVariable.varStartValue(var, sourceInfo());
 
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(startExp);
@@ -2621,7 +2620,7 @@ algorithm
       startVar = BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
       startVar = BackendVariable.setVarStartValueOption(startVar, NONE());
 
-      startExp = BackendVariable.varStartValue(var);
+      startExp = BackendVariable.varStartValue(var, sourceInfo());
       parameters = Expression.getAllCrefs(startExp);
 
       if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
@@ -2676,7 +2675,7 @@ algorithm
       startVar = BackendVariable.setVarKind(startVar, BackendDAE.VARIABLE());
       startVar = BackendVariable.setVarStartValueOption(startVar, NONE());
 
-      startExp = BackendVariable.varStartValue(var);
+      startExp = BackendVariable.varStartValue(var, sourceInfo());
       parameters = Expression.getAllCrefs(startExp);
 
       if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
@@ -2773,7 +2772,7 @@ algorithm
         else (vars, eqns);
       end match;
       // add clocked variable and initial equation
-      startExp = BackendVariable.varStartValue(var);
+      startExp = BackendVariable.varStartValue(var, sourceInfo());
       vars = BackendVariable.addVar(var, vars);
       eqns = BackendEquation.add(BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
     then (var, (vars, eqns));

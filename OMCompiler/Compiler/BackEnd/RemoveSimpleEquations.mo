@@ -5351,7 +5351,7 @@ algorithm
     BaseHashTable.clear(HTNominalExpToInt);
     (v,i) := BackendVariable.getVarSingle(cr1,outVars);
     if BackendVariable.varHasStartValue(v) then
-      e := BackendVariable.varStartValue(v);
+      e := BackendVariable.varStartValue(v, sourceInfo());
       if Expression.isZero(e) then
         e := DAE.RCONST(0.0);
       end if;
@@ -5429,7 +5429,7 @@ algorithm
       (v,_) = BackendVariable.getVarSingle(cr1,inAliasVars);
       e = BackendVariable.varBindExp(v);
       if BackendVariable.varHasStartValue(v) then
-        res = BackendVariable.varStartValue(v);
+        res = BackendVariable.varStartValue(v, sourceInfo());
         BackendDAE.EQUATION(scalar=e1) = BackendEquation.solveEquation(BackendDAE.EQUATION(Expression.crefExp(cr1),e,DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING), Expression.crefExp(cr),NONE());
         BackendDAE.EQUATION(scalar=e2) = BackendEquation.solveEquation(BackendDAE.EQUATION(res,e,DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING), Expression.crefExp(cr),NONE());
         (e2,_) = ExpressionSimplify.simplify(e2);

@@ -1048,14 +1048,15 @@ Helper function to smCompToDataFlow
   input DAE.Element inElt;
   output Option<DAE.Exp> outExpOpt;
 protected
-  DAE.Exp start;
-  DAE.Type ty;
   Option<DAE.VariableAttributes> varAttrOpt;
 algorithm
-  DAE.VAR(variableAttributesOption=varAttrOpt, ty=ty) := inElt;
+  DAE.VAR(variableAttributesOption=varAttrOpt) := inElt;
   if isSome(varAttrOpt) then
-    start := DAEUtil.getStartAttr(varAttrOpt, ty);
-    outExpOpt := SOME(start);
+    try
+      outExpOpt := SOME(DAEUtil.getStartAttrFail(varAttrOpt));
+    else
+      outExpOpt := NONE();
+    end try;
   else
     outExpOpt := NONE();
   end if;
