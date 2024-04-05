@@ -47,8 +47,11 @@ public
   import NBStrongComponent.CountCollector;
   import NBSystem;
   import NBSystem.System;
-
 protected
+  // Old Frontend imports
+  import Absyn.Path;
+  import AbsynUtil;
+
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
@@ -62,6 +65,7 @@ protected
   import Expression = NFExpression;
   import FEquation = NFEquation;
   import FlatModel = NFFlatModel;
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Statement = NFStatement;
@@ -74,8 +78,9 @@ protected
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
   import Causalize = NBCausalize;
-  import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
+  import DetectStates = NBDetectStates;
+  import Differentiate = NBDifferentiate;
   import FunctionAlias = NBFunctionAlias;
   import Initialization = NBInitialization;
   import Inline = NBInline;
@@ -210,11 +215,11 @@ public
     VarData variableData;
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
+    UnorderedMap<Path, Function> functions;
   algorithm
-    // expand records to its children. Put behind flag?
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
+    bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, lowerFunctions(funcTree));
   end lower;
 
   function main
@@ -1312,6 +1317,22 @@ public
       else exp;
     end match;
   end lowerIteratorExp;
+
+  function lowerFunctions
+    input output FunctionTree funcTree;
+  protected
+    // ToDo: replace all function trees with this UnorderedMap
+    UnorderedMap<Path, Function> functions = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
+  protected
+    Path path;
+    Function fn;
+  algorithm
+    for tpl in FunctionTree.toList(funcTree) loop
+      (path, fn) := tpl;
+      (fn, funcTree) := Differentiate.resolvePartialDerivatives(fn, funcTree);
+      UnorderedMap.add(path, fn, functions);
+    end for;
+  end lowerFunctions;
 
   function backenddaeinfo
     input BackendDAE bdae;

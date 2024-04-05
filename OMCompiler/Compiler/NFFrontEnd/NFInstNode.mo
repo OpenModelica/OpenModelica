@@ -1717,6 +1717,26 @@ uniontype InstNode
     end match;
   end protectComponent;
 
+  function protect
+      input output InstNode node;
+  algorithm
+    () := match node
+      case COMPONENT_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          node.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      case CLASS_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          node.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      else ();
+    end match;
+  end protect;
+
   function isEncapsulated
     input InstNode node;
     output Boolean enc;
