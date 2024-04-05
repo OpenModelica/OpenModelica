@@ -198,7 +198,7 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   sData->timeValue = irkscoData->radauTime + irkscoData->radauStepSize;
   solverInfo->currentTime = sData->timeValue;
 
-  newtonData->initialized = 1;
+  newtonData->initialized = TRUE;
   newtonData->numberOfIterations = 0;
   newtonData->numberOfFunctionEvaluations = 0;
   newtonData->n = n*irkscoData->ordersize;
