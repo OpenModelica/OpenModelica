@@ -1406,73 +1406,78 @@ public
     InstNode diffVar;
     ComponentRef diffCref;
     list<InstNode> local_outputs;
+    Boolean changed = false;
   algorithm
     func := match func
       case der_func as Function.FUNCTION(node = InstNode.CLASS_NODE(cls = cls)) algorithm
-        new_cls := match Pointer.access(cls)
-          case wrap_cls as Class.TYPED_DERIVED(baseClass = node as InstNode.CLASS_NODE(cls = tmp_cls))
-        then match Pointer.access(tmp_cls)
-          case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS(algorithms = algorithms)) algorithm
-            // prepare differentiation arguments
-            diffArgs.diffType     := DifferentiationType.FUNCTION;
-            diffArgs.funcTree     := funcTree;
+        wrap_cls := Pointer.access(cls);
+        new_cls := match wrap_cls
+          case wrap_cls as Class.TYPED_DERIVED(baseClass = node as InstNode.CLASS_NODE(cls = tmp_cls)) algorithm
+            new_cls :=  match Pointer.access(tmp_cls)
+              case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS(algorithms = algorithms)) algorithm
+                // prepare differentiation arguments
+                diffArgs.diffType     := DifferentiationType.FUNCTION;
+                diffArgs.funcTree     := funcTree;
 
-            interface_map := UnorderedMap.fromLists(list(InstNode.name(var) for var in der_func.inputs), List.fill(false, listLength(der_func.inputs)), stringHashDjb2, stringEqual);
+                interface_map := UnorderedMap.fromLists(list(InstNode.name(var) for var in der_func.inputs), List.fill(false, listLength(der_func.inputs)), stringHashDjb2, stringEqual);
 
-            // add all differentiated inputs to the interface map
-            for var in List.getAtIndexLst(der_func.inputs, der_func.derivedInputs) loop
-              UnorderedMap.remove(InstNode.name(var), interface_map);
+                // add all differentiated inputs to the interface map
+                for var in List.getAtIndexLst(der_func.inputs, der_func.derivedInputs) loop
+                  UnorderedMap.remove(InstNode.name(var), interface_map);
 
-              // prepare outputs that become locals
-              local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs);
-              local_outputs     := list(InstNode.protect(node) for node in local_outputs);
+                  // prepare outputs that become locals
+                  local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs);
+                  local_outputs     := list(InstNode.protect(node) for node in local_outputs);
 
-              // differentiate interface arguments
-              createInterfaceDerivatives({var}, interface_map, diff_map);
-              createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
-              createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
-              diffArgs.jacobianHT   := SOME(diff_map);
+                  // differentiate interface arguments
+                  createInterfaceDerivatives({var}, interface_map, diff_map);
+                  createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
+                  createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+                  diffArgs.jacobianHT   := SOME(diff_map);
 
-              der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, true);
-              der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, diffArgs, false);
+                  der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, true);
+                  der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, diffArgs, false);
 
-              diffCref          := UnorderedMap.getSafe(ComponentRef.fromNode(var, InstNode.getType(var)), diff_map, sourceInfo());
-              der_func.locals   := listAppend(der_func.locals, local_outputs);
+                  diffCref          := UnorderedMap.getSafe(ComponentRef.fromNode(var, InstNode.getType(var)), diff_map, sourceInfo());
+                  der_func.locals   := listAppend(der_func.locals, local_outputs);
 
-              // differentiate function statements
-              (algorithms, diffArgs) := List.mapFold(algorithms, differentiateAlgorithm, diffArgs);
-              algorithms := Algorithm.mapExpList(algorithms, function Replacements.single(old = Expression.fromCref(diffCref), new = Expression.makeOne(ComponentRef.getSubscriptedType(diffCref))));
+                  // differentiate function statements
+                  (algorithms, diffArgs) := List.mapFold(algorithms, differentiateAlgorithm, diffArgs);
+                  algorithms := Algorithm.mapExpList(algorithms, function Replacements.single(old = Expression.fromCref(diffCref), new = Expression.makeOne(ComponentRef.getSubscriptedType(diffCref))));
 
-              UnorderedMap.add(InstNode.name(var), false, interface_map);
-            end for;
+                  UnorderedMap.add(InstNode.name(var), false, interface_map);
+                end for;
 
-            // add them to new node
-            sections.algorithms     := algorithms;
-            new_cls.sections        := sections;
-            new_cls.ty              := wrap_cls.ty;
-            new_cls.restriction     := wrap_cls.restriction;
-            node.cls                := Pointer.create(new_cls);
-            cachedData              := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node           := InstNode.setFuncCache(node, cachedData);
-            der_func.derivatives    := {};
-            der_func.derivedInputs  := {};
+                // add them to new node
+                sections.algorithms     := algorithms;
+                new_cls.sections        := sections;
+                new_cls.ty              := wrap_cls.ty;
+                new_cls.restriction     := wrap_cls.restriction;
+                node.cls                := Pointer.create(new_cls);
+                cachedData              := CachedData.FUNCTION({der_func}, true, false);
+                der_func.node           := InstNode.setFuncCache(node, cachedData);
+                der_func.derivatives    := {};
+                der_func.derivedInputs  := {};
+
+                changed := true;
+              then new_cls;
+
+              else wrap_cls;
+            end match;
           then new_cls;
+          else wrap_cls;
+        end match;
 
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), func.node) + "."});
-          then fail();
-        end match; end match;
-
-        if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-          print("\n[BEFORE] " + Function.toFlatString(func) + "\n");
-          print("\n[AFTER ] " + Function.toFlatString(der_func) + "\n\n");
+        if changed then
+          if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+            print("\n[BEFORE] " + Function.toFlatString(func) + "\n");
+            print("\n[AFTER ] " + Function.toFlatString(der_func) + "\n\n");
+          end if;
+          funcTree := FunctionTreeImpl.add(funcTree, der_func.path, der_func, FunctionTreeImpl.addConflictReplace);
         end if;
-        funcTree := FunctionTreeImpl.add(funcTree, der_func.path, der_func, FunctionTreeImpl.addConflictReplace);
       then der_func;
 
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for uninstanced function " + Function.signatureString(func) + "."});
-      then fail();
+      else func;
     end match;
   end resolvePartialDerivatives;
 
