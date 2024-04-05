@@ -73,7 +73,7 @@ extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doubler
  */
 typedef struct DATA_HOMOTOPY
 {
-  int initialized; /* 1 = initialized, else = 0*/
+  modelica_boolean initialized;
 
   size_t n; /* dimension; n == size */
   size_t m; /* dimension: m == size+1 */
@@ -169,7 +169,7 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
   assertStreamPrint(NULL, NULL != homotopyData, "allocationHomotopyData() failed!");
 
-  homotopyData->initialized = 0;
+  homotopyData->initialized = FALSE;
   homotopyData->n = size;
   homotopyData->m = size + 1;
   homotopyData->xtol_sqrd = newtonXTol*newtonXTol;

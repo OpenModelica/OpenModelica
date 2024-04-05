@@ -64,7 +64,7 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
   DATA_HYBRD* hybrdData = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
   assertStreamPrint(NULL, hybrdData != NULL, "allocationHybrdData() failed!");
 
-  hybrdData->initialized = 0;
+  hybrdData->initialized = FALSE;
   hybrdData->resScaling = (double*) malloc(size*sizeof(double));
   hybrdData->fvecScaled = (double*) malloc(size*sizeof(double));
   hybrdData->useXScaling = 1;
@@ -328,7 +328,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
   threadData_t* threadData = userData->threadData;
   NONLINEAR_SYSTEM_DATA* systemData = userData->nlsData;
   DATA_HYBRD* hybrdData = (DATA_HYBRD*)(systemData->solverData);
-  int continuous = data->simulationInfo->solveContinuous;
+  modelica_boolean continuous = data->simulationInfo->solveContinuous;
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
 
   switch(*iflag)
@@ -364,7 +364,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
   case 2:
     /* set residual function continuous for jacobian calculation */
     if(continuous)
-      data->simulationInfo->solveContinuous = 0;
+      data->simulationInfo->solveContinuous = FALSE;
 
     if(ACTIVE_STREAM(LOG_NLS_RES))
       infoStreamPrint(LOG_NLS_RES, 0, "-- begin calculating jacobian --");
@@ -404,7 +404,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
     }
     /* reset residual function again */
     if(continuous)
-      data->simulationInfo->solveContinuous = 1;
+      data->simulationInfo->solveContinuous = TRUE;
 
     /* performance measurement and statistics */
     systemData->jacobianTime += rt_ext_tp_tock(&(systemData->jacobianTimeClock));
@@ -439,7 +439,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
   double local_tol = 1e-12;
   double initial_factor = hybrdData->factor;
   int nfunc_evals = 0;
-  int continuous = 1;
+  modelica_boolean continuous = TRUE;
   int nonContinuousCase = 0;
 
   int giveUp = 0;
@@ -520,13 +520,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       printVector(hybrdData->x, hybrdData->n, LOG_NLS_V, "Iteration variable values (scaled)");
     }
 
-    /* set residual function continuous
-     */
-    if(continuous) {
-      data->simulationInfo->solveContinuous = 1;
-    } else {
-      data->simulationInfo->solveContinuous = 0;
-    }
+    /* set residual function continuous */
+    data->simulationInfo->solveContinuous = continuous;
 
     giveUp = 1;
 
@@ -587,15 +582,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       }
     }
 
-    /* set residual function continuous */
-    if(continuous)
-    {
-      data->simulationInfo->solveContinuous = 0;
-    }
-    else
-    {
-      data->simulationInfo->solveContinuous = 1;
-    }
+    /* reset residual function continuous */
+    data->simulationInfo->solveContinuous = !continuous;
 
     /* re-scaling x vector */
     if(hybrdData->useXScaling)
@@ -617,7 +605,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
         if(scaling)
           hybrdData->useXScaling = 0;
 
-        data->simulationInfo->solveContinuous = 0;
+        data->simulationInfo->solveContinuous = FALSE;
 
         /* try */
 #ifndef OMC_EMCC
@@ -889,7 +877,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       retries++;
 
       /* try to solve a discontinuous system */
-      continuous = 0;
+      continuous = FALSE;
 
       nonContinuousCase = 1;
       memcpy(relationsPreBackup, data->simulationInfo->relationsPre, sizeof(modelica_boolean)*data->modelData->nRelations);
@@ -910,7 +898,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       if(!scaling)
         hybrdData->useXScaling = 1;
 
-      continuous = 1;
+      continuous = TRUE;
       hybrdData->factor = initial_factor;
 
       retries = 0;
