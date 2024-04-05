@@ -1530,6 +1530,7 @@ public function pathRest
   output Absyn.Path outPath;
 algorithm
   outPath := match inPath
+    case Absyn.IDENT(_) then inPath;
     case Absyn.QUALIFIED(path = outPath) then outPath;
     case Absyn.FULLYQUALIFIED(path = outPath) then pathRest(outPath);
   end match;
@@ -1540,24 +1541,20 @@ public function pathStripSamePrefix
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
   output Absyn.Path outPath;
+protected
+  Absyn.Ident ident1, ident2;
+  Absyn.Path path1, path2;
 algorithm
-  outPath := matchcontinue(inPath1, inPath2)
-    local
-      Absyn.Ident ident1, ident2;
-      Absyn.Path path1, path2;
-
-    case (_, _)
-      equation
-        ident1 = pathFirstIdent(inPath1);
-        ident2 = pathFirstIdent(inPath2);
-        true = stringEq(ident1, ident2);
-        path1 = pathRest(inPath1);
-        path2 = pathRest(inPath2);
-      then
-        pathStripSamePrefix(path1, path2);
-
-    else inPath1;
-  end matchcontinue;
+  try
+    ident1 := pathFirstIdent(inPath1);
+    ident2 := pathFirstIdent(inPath2);
+    true := stringEq(ident1, ident2);
+    path1 := pathRest(inPath1);
+    path2 := pathRest(inPath2);
+    outPath := pathStripSamePrefix(path1, path2);
+  else
+    outPath := inPath1;
+  end try;
 end pathStripSamePrefix;
 
 public function pathPrefix
