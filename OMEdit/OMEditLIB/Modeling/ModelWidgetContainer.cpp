@@ -2764,6 +2764,10 @@ void GraphicsView::emitResetDynamicSelect()
 void GraphicsView::createActions()
 {
   bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView();
+  // parameters Action
+  mpParametersAction = new QAction(Helper::parameters, this);
+  mpParametersAction->setStatusTip(tr("Shows the class parameters"));
+  connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Graphics View Properties Action
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     mpPropertiesAction = new QAction(Helper::systemSimulationInformation, this);
@@ -3730,6 +3734,10 @@ void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
     pMenu->addAction(MainWindow::instance()->getPrintModelAction());
     pMenu->addSeparator();
   }
+  if (mpModelWidget->isNewApi()) {
+    pMenu->addAction(mpParametersAction);
+    pMenu->addSeparator();
+  }
   pMenu->addAction(mpPropertiesAction);
 }
 
@@ -4190,6 +4198,25 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Error in class annotation %1").arg(pMainWindow->getOMCProxy()->getResult()),
                                                           Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief GraphicsView::showParameters
+ * Opens the ElementParameters dialog for a class.
+ *
+ */
+void GraphicsView::showParameters()
+{
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    MainWindow::instance()->getStatusBar()->showMessage(tr("Opening %1 parameters window").arg(mpModelWidget->getModelInstance()->getName()));
+    MainWindow::instance()->getProgressBar()->setRange(0, 0);
+    MainWindow::instance()->showProgressBar();
+    ElementParameters *pElementParameters = new ElementParameters(0, this, false, false, 0, 0, 0, MainWindow::instance());
+    MainWindow::instance()->hideProgressBar();
+    MainWindow::instance()->getStatusBar()->clearMessage();
+    pElementParameters->exec();
+    pElementParameters->deleteLater();
   }
 }
 
