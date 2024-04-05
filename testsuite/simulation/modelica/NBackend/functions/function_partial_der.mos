@@ -1,0 +1,53 @@
+// name: function_partial_der
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model function_partial_der
+    function sinwave
+        input Real x;
+        output Real y;
+    protected
+        Real b = 1.0 \"tests the differentiation of locals\";
+    algorithm
+        y := sin(x) * b;
+    end sinwave;
+    function coswave = der(sinwave,x);
+    Real x, cosVal, realcos;
+    equation
+    x = time;
+    cosVal  = coswave(x);
+    realcos = cos(x);
+end function_partial_der;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=debugDifferentiation"); getErrorString();
+simulate(function_partial_der); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// [BEFORE] function 'function_partial_der.coswave' = der('function_partial_der.sinwave', x)
+//
+// [AFTER ] function 'function_partial_der.coswave'
+//   input Real 'x';
+//   output Real '$fDER_y';
+//   Real 'b' = 1.0;
+//   Real '$fDER_b' = 0.0;
+//   Real 'y';
+// algorithm
+//   '$fDER_y' := sin('x') * '$fDER_b' + (cos('x') * 1.0) * 'b';
+//   'y' := sin('x') * 'b';
+// end 'function_partial_der.coswave'
+//
+// record SimulationResult
+//     resultFile = "function_partial_der_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'function_partial_der', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
