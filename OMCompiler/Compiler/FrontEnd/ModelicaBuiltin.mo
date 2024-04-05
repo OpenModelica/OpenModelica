@@ -3349,6 +3349,18 @@ annotation(
   preferredView="text");
 end setElementAnnotation;
 
+function setElementType
+  input TypeName elementName;
+  input VariableName typeName;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Changes the type of a component or short class element.</p>
+</html>"),
+  preferredView="text");
+end setElementType;
+
 function removeExtendsModifiers
   input TypeName className;
   input TypeName baseClassName;
