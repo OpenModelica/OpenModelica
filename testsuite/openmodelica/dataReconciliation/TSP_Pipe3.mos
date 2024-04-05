@@ -2258,7 +2258,7 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Starting!
 // LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.TSP_Pipe3
 // LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 1.000000. That might raise performance issues, for more information use -lv LOG_LS.
-// LOG_NLS           | error   | residualFunc76: Iteration variable xloc[0] is nan.
+// LOG_NLS           | error   | residualFunc76: Iteration variable `singularPressureLoss3.Pm` is inf or nan.
 // LOG_ASSERT        | debug   | residualFunc76 failed at time=1.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // LOG_ASSERT        | debug   | Solving non-linear system 76 failed at time=1.
