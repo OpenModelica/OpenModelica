@@ -498,6 +498,10 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
   /* start solving loop */
   while(!giveUp && !success)
   {
+    /* constrain x */
+    for(i=0; i<hybrdData->n; i++)
+      hybrdData->x[i] = fmax(nlsData->min[i], fmin(hybrdData->x[i], nlsData->max[i]));
+
     for(i=0; i<hybrdData->n; i++)
       hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->nominal[i]);
 
