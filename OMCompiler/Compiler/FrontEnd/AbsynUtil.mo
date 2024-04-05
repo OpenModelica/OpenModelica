@@ -2295,6 +2295,20 @@ algorithm
   end match;
 end crefToPathIgnoreSubs;
 
+public function crefToTypeSpec
+  "Converts a ComponentRef to a TypeSpec, treating subscripts on the last
+   identifier as dimensions and failing if any other identifier is subscripted."
+  input Absyn.ComponentRef cref;
+  output Absyn.TypeSpec ty;
+protected
+  list<Absyn.Subscript> subs;
+  Absyn.Path path;
+algorithm
+  subs := crefGetLastSubs(cref);
+  path := crefToPath(crefStripLastSubs(cref));
+  ty := Absyn.TypeSpec.TPATH(path, if listEmpty(subs) then NONE() else SOME(subs));
+end crefToTypeSpec;
+
 public function pathToCref "This function converts a Absyn.Path to a Absyn.ComponentRef."
   input Absyn.Path inPath;
   output Absyn.ComponentRef outComponentRef;
@@ -6537,6 +6551,68 @@ algorithm
     else false;
   end match;
 end isAlgorithmSection;
+
+function setElementType
+  "Sets the type of a component or short class definition. If the element
+   contains multiple components the type is only changed if
+   allowMultipleComponents = true, otherwise the function will fail."
+  input output Absyn.Element element;
+  input Absyn.TypeSpec typeSpec;
+  input Boolean allowMultipleComponents = false;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := setElementSpecType(element.specification, typeSpec, allowMultipleComponents);
+      then
+        ();
+
+    else ();
+  end match;
+end setElementType;
+
+function setElementSpecType
+  input output Absyn.ElementSpec spec;
+  input Absyn.TypeSpec typeSpec;
+  input Boolean allowMultipleComponents = false;
+protected
+  Absyn.Class cls;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        spec.class_ := setClassType(spec.class_, typeSpec);
+      then
+        ();
+
+    case Absyn.ElementSpec.COMPONENTS()
+      guard allowMultipleComponents or listLength(spec.components) == 1
+      algorithm
+        spec.typeSpec := typeSpec;
+      then
+        ();
+  end match;
+end setElementSpecType;
+
+function setClassType
+  input output Absyn.Class cls;
+  input Absyn.TypeSpec typeSpec;
+algorithm
+  cls.body := setClassDefType(cls.body, typeSpec);
+end setClassType;
+
+function setClassDefType
+  input output Absyn.ClassDef cdef;
+  input Absyn.TypeSpec typeSpec;
+algorithm
+  () := match cdef
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        cdef.typeSpec := typeSpec;
+      then
+        ();
+  end match;
+end setClassDefType;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

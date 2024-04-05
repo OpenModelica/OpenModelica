@@ -6080,5 +6080,29 @@ algorithm
   end while;
 end getInheritedAnnotation;
 
+public function setElementType
+  input Absyn.Path elementPath;
+  input Absyn.ComponentRef className;
+  input output Absyn.Program program;
+        output Boolean success = true;
+protected
+  Option<Absyn.Annotation> ann;
+  String name;
+  Option<Absyn.Element> elem_opt;
+  Absyn.TypeSpec ty;
+algorithm
+  try
+    ty := AbsynUtil.crefToTypeSpec(className);
+    (program, elem_opt, success) := transformPathedElementInProgram(elementPath,
+      function AbsynUtil.setElementType(typeSpec = ty, allowMultipleComponents = false), program);
+
+    if success then
+      SymbolTable.setAbsynElement(program, Util.getOption(elem_opt), elementPath);
+    end if;
+  else
+    success := false;
+  end try;
+end setElementType;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

@@ -3099,6 +3099,14 @@ algorithm
       then
         Values.BOOL(b);
 
+    case ("setElementType",
+          {Values.CODE(Absyn.C_TYPENAME(path)),
+           Values.CODE(Absyn.C_VARIABLENAME(cr))})
+      algorithm
+        (p, b) := InteractiveUtil.setElementType(path, cr, SymbolTable.getAbsyn());
+      then
+        Values.BOOL(b);
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

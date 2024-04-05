@@ -1,0 +1,40 @@
+// name: setElementType
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the setElementType API function.
+//
+
+loadString("
+  model M
+    Real x;
+    connector C = RealInput;
+  end M;
+");
+
+setElementType(M.x, Integer[3]);
+list(M);
+setElementType(M.C, RealOutput);
+list(M);
+setElementType(M.C, RealOutput[2]);
+list(M);
+
+// Result:
+// true
+// true
+// "model M
+//   Integer[3] x;
+//   connector C = RealInput;
+// end M;"
+// true
+// "model M
+//   Integer[3] x;
+//   connector C = RealOutput;
+// end M;"
+// true
+// "model M
+//   Integer[3] x;
+//   connector C = RealOutput[2];
+// end M;"
+// endResult

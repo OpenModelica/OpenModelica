@@ -100,6 +100,7 @@ saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
 setElementAnnotation.mos \
+setElementType.mos \
 setElementModifierValue.mos \
 setExtendsModifierValue.mos \
 setSourceFileListFile.mos \
