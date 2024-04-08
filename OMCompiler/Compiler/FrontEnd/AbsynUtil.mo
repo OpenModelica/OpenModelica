@@ -1539,25 +1539,19 @@ public function pathStripSamePrefix
   "strips the same prefix paths and returns the stripped path. e.g pathStripSamePrefix(P.M.A, P.M.B) => A"
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
-  output Absyn.Path outPath;
+  output Absyn.Path outPath = inPath1;
+protected
+  Absyn.Path path2 = inPath2;
 algorithm
-  outPath := matchcontinue(inPath1, inPath2)
-    local
-      Absyn.Ident ident1, ident2;
-      Absyn.Path path1, path2;
+  while pathFirstIdent(outPath) == pathFirstIdent(path2) loop
+    outPath := pathRest(outPath);
 
-    case (_, _)
-      equation
-        ident1 = pathFirstIdent(inPath1);
-        ident2 = pathFirstIdent(inPath2);
-        true = stringEq(ident1, ident2);
-        path1 = pathRest(inPath1);
-        path2 = pathRest(inPath2);
-      then
-        pathStripSamePrefix(path1, path2);
+    if pathIsIdent(path2) then
+      return;
+    end if;
 
-    else inPath1;
-  end matchcontinue;
+    path2 := pathRest(path2);
+  end while;
 end pathStripSamePrefix;
 
 public function pathPrefix
