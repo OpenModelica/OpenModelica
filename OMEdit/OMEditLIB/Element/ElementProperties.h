@@ -230,7 +230,11 @@ public:
                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementParentClassName() const;
+  QString getComponentClassName() const;
+  QString getComponentClassComment() const;
+  ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  bool hasElement() const {return mpElement ? true : false;}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification, bool checkFinal);

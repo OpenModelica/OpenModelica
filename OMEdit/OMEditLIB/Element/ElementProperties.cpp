@@ -1308,7 +1308,37 @@ ElementParameters::~ElementParameters()
  */
 QString ElementParameters::getElementParentClassName() const
 {
-  return mpElement ? mpElement->getParentModel()->getName() : mpGraphicsView->getModelWidget()->getModelInstance()->getName();
+  return hasElement() ? mpElement->getParentModel()->getName() : mpGraphicsView->getModelWidget()->getModelInstance()->getName();
+}
+
+/*!
+ * \brief ElementParameters::getComponentClassName
+ * Returns the component's class name in case of component or class name in case of top level.
+ * \return
+ */
+QString ElementParameters::getComponentClassName() const
+{
+  return hasElement() ? mpElement->getModel()->getName() : mpGraphicsView->getModelWidget()->getModelInstance()->getName();
+}
+
+/*!
+ * \brief ElementParameters::getComponentClassComment
+ * Returns the component's class comment in case of component or class comment in case of top level.
+ * \return
+ */
+QString ElementParameters::getComponentClassComment() const
+{
+  return hasElement() ? mpElement->getModel()->getComment() : mpGraphicsView->getModelWidget()->getModelInstance()->getComment();
+}
+
+/*!
+ * \brief ElementParameters::getModel
+ * Return the model instance.
+ * \return
+ */
+ModelInstance::Model *ElementParameters::getModel() const
+{
+  return hasElement() ? mpElement->getModel() : mpGraphicsView->getModelWidget()->getModelInstance();
 }
 
 /*!
@@ -1435,9 +1465,9 @@ void ElementParameters::setUpDialog()
   mpComponentGroupBox = new QGroupBox(tr("Component"));
   // Component name
   mpComponentNameLabel = new Label(Helper::name);
-  mpComponentNameTextBox = new Label(mpElement ? mpElement->getQualifiedName() : "");
+  mpComponentNameTextBox = new Label(hasElement() ? mpElement->getQualifiedName() : "");
   mpComponentCommentLabel = new Label(Helper::comment);
-  mpComponentCommentTextBox = new Label(mpElement ? mpElement->getComment() : "");
+  mpComponentCommentTextBox = new Label(hasElement() ? mpElement->getComment() : "");
   QGridLayout *pComponentGroupBoxLayout = new QGridLayout;
   pComponentGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pComponentGroupBoxLayout->addWidget(mpComponentNameLabel, 0, 0);
@@ -1449,13 +1479,13 @@ void ElementParameters::setUpDialog()
   mpComponentClassGroupBox = new QGroupBox(tr("Class"));
   // Component class name
   mpComponentClassNameLabel = new Label(Helper::path);
-  mpComponentClassNameTextBox = new Label(mpElement ? mpElement->getModel()->getName() : mpGraphicsView->getModelWidget()->getModelInstance()->getName());
+  mpComponentClassNameTextBox = new Label(getComponentClassName());
   // Component comment
   mpComponentClassCommentLabel = new Label(Helper::comment);
   mpComponentClassCommentTextBox = new Label;
   mpComponentClassCommentTextBox->setTextFormat(Qt::RichText);
   mpComponentClassCommentTextBox->setTextInteractionFlags(mpComponentClassCommentTextBox->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-  mpComponentClassCommentTextBox->setText(mpElement ? mpElement->getModel()->getComment() : mpGraphicsView->getModelWidget()->getModelInstance()->getComment());
+  mpComponentClassCommentTextBox->setText(getComponentClassComment());
   connect(mpComponentClassCommentTextBox, SIGNAL(linkActivated(QString)), SLOT(commentLinkClicked(QString)));
   QGridLayout *pComponentClassGroupBoxLayout = new QGridLayout;
   pComponentClassGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1467,7 +1497,7 @@ void ElementParameters::setUpDialog()
   // Create General tab and Parameters GroupBox
   ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
   // first add the Component Group Box and component class group box
-  if (mpElement) {
+  if (hasElement()) {
     pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
   }
   pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
@@ -1477,9 +1507,9 @@ void ElementParameters::setUpDialog()
   pParametersScrollArea->addGroupBox(pInitializationGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
-  createTabsGroupBoxesAndParameters(mpElement ? mpElement->getModel() : mpGraphicsView->getModelWidget()->getModelInstance(), mpElement ? true : false);
-  fetchElementExtendsModifiers(mpElement ? mpElement->getModel() : mpGraphicsView->getModelWidget()->getModelInstance(), mpElement ? true : false);
-  if (mpElement) {
+  createTabsGroupBoxesAndParameters(getModel() , hasElement());
+  fetchElementExtendsModifiers(getModel(), hasElement());
+  if (hasElement()) {
     fetchElementModifiers();
     fetchClassExtendsModifiers(mpElement);
   }
@@ -1517,7 +1547,7 @@ void ElementParameters::setUpDialog()
           } else {
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
-          if (mpElement) {
+          if (hasElement()) {
             pGroupBoxGridLayout->addWidget(pParameter->getFinalEachMenu(), layoutIndex, columnIndex++);
           }
           if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
@@ -1929,7 +1959,7 @@ void ElementParameters::updateElementParameters()
         /* Issue #11715 and #11839
          * Add each prefix if element is an array OR parameter is an array.
          */
-        if ((mpElement && mpElement->getDimensions().isArray()) || pParameter->getModelInstanceElement()->getDimensions().isArray()) {
+        if ((hasElement() && mpElement->getDimensions().isArray()) || pParameter->getModelInstanceElement()->getDimensions().isArray()) {
           displayUnitModifier.append("each ");
         }
         if (pParameter->getDisplayUnitFinalEachMenu()->isFinal()) {
@@ -2024,14 +2054,14 @@ void ElementParameters::updateElementParameters()
         mModification = "(" % modifiersJoin(modifiersList, ", ") % ")";
       }
     } else {
-      if (mpElement) {
+      if (hasElement()) {
         QString modifiers = modifiersJoin(modifiersList, ", ");
         if (!modifiers.isEmpty()) {
           // if the element is inherited then add the modifier value into the extends.
           if (mInherited) {
             pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getName(), modifiers);
           } else {
-            pOMCProxy->setElementModifierValue(className, mpElement ? mpElement->getName() : "R", modifiers);
+            pOMCProxy->setElementModifierValue(className, mpElement->getName(), modifiers);
           }
           ModelInfo newModelInfo = pModelWidget->createModelInfo();
           pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo,
