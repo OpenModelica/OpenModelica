@@ -153,6 +153,7 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   TextAnnotation *mpErrorTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
+  QAction *mpParametersAction;
   QAction *mpPropertiesAction;
   QAction *mpRenameAction;
   QAction *mpSimulationParamsAction;
@@ -438,6 +439,7 @@ public slots:
   void pasteItems();
   void clearSelection(QGraphicsItem *pSelectGraphicsItem = 0);
   void addClassAnnotation(bool alwaysAdd = true);
+  void showParameters();
   void showGraphicsViewProperties();
   void showRenameDialog();
   void showSimulationParamsDialog();

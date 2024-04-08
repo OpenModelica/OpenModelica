@@ -77,7 +77,7 @@ public:
     ChoicesAllMatching
   };
   Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox, ElementParametersOld *pElementParametersOld);
-  Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
+  Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   bool isParameter() const;
@@ -95,6 +95,8 @@ public:
   const StringAnnotation &getGroupImage() const {return mGroupImage;}
   void updateNameLabel();
   QString getName() const {return mName;}
+  QString getExtendName() const {return mExtendName;}
+  bool isInherited() const {return mInherited;}
   Label* getNameLabel() {return mpNameLabel;}
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   QString getOriginalFixedValue() const {return mOriginalFixedValue;}
@@ -148,6 +150,8 @@ private:
   BooleanAnnotation mConnectorSizing;
 
   QString mName;
+  QString mExtendName;
+  bool mInherited;
   Label *mpNameLabel;
   FixedCheckBox *mpFixedCheckBox;
   QString mOriginalFixedValue;
@@ -226,7 +230,11 @@ public:
                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementParentClassName() const;
+  QString getComponentClassName() const;
+  QString getComponentClassComment() const;
+  ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  bool hasElement() const {return mpElement ? true : false;}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification, bool checkFinal);
@@ -262,8 +270,8 @@ private:
   QDialogButtonBox *mpButtonBox;
 
   void setUpDialog();
-  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
-  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
+  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance, bool defaultValue);
+  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
   void fetchElementModifiers();
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);

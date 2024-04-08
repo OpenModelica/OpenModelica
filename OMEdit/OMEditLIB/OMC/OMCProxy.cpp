@@ -1127,8 +1127,13 @@ bool OMCProxy::setElementModifierValue(QString className, QString modifierName, 
   /* Issue #11790 and #11891.
    * Remove extra parentheses if there are any.
    */
-  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue);
-  const QString expression = "setElementModifierValue(" % className % ", " % modifierName % ", $Code((" % modifierValue % ")))";
+  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue.trimmed());
+  QString expression;
+  if (modifierValue.startsWith("=") || modifierValue.startsWith("(")) {
+    expression = "setElementModifierValue(" % className % ", " % modifierName % ", $Code(" % modifierValue % "))";
+  } else {
+    expression = "setElementModifierValue(" % className % ", " % modifierName % ", $Code((" % modifierValue % ")))";
+  }
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
     return true;
@@ -1237,8 +1242,13 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
   /* Issue #11790 and #11891.
    * Remove extra parentheses if there are any.
    */
-  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue);
-  const QString expression = "setExtendsModifierValue(" % className % ", " % extendsClassName % ", " % modifierName % ", $Code((" % modifierValue % ")))";
+  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue.trimmed());
+  QString expression;
+  if (modifierValue.startsWith("=") || modifierValue.startsWith("(")) {
+    expression = "setExtendsModifierValue(" % className % ", " % extendsClassName % ", " % modifierName % ", $Code(" % modifierValue % "))";
+  } else {
+    expression = "setExtendsModifierValue(" % className % ", " % extendsClassName % ", " % modifierName % ", $Code((" % modifierValue % ")))";
+  }
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
     return true;

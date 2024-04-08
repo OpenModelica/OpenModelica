@@ -1804,7 +1804,7 @@ namespace ModelInstance
   {
     Element *pElement = getTopLevelExtendElement();
 
-    if (pElement->getModel()) {
+    if (pElement && pElement->getModel()) {
       return pElement->getModel()->getName();
     } else {
       return mpParentModel->getName();
