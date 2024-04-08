@@ -2,6 +2,7 @@ TEST = ../../rtest -v
 
 TESTFILES = \
 AddClassAnnotation.mos \
+addComponent1.mos \
 ArraySlicing.mos \
 Bug2871.mos \
 Bug2882.mos \
