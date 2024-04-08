@@ -1356,6 +1356,18 @@ algorithm
       then
         ();
 
+    case (Component.INVALID_COMPONENT(), SCode.Element.COMPONENT())
+      algorithm
+        json := JSON.addPair("$kind", JSON.makeString("component"), json);
+        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+        json := JSON.addPair("type", dumpJSONComponentType(cls, node, Component.getType(comp)), json);
+        json := dumpJSONSCodeMod(elem.modifications, scope, json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
+        json := dumpJSONCommentOpt(SOME(elem.comment), scope, json);
+        json := JSON.addPair("$error", JSON.makeString(comp.errors), json);
+      then
+        ();
+
     case (Component.COMPONENT(), SCode.Element.COMPONENT())
 algorithm
         json := JSON.addPair("$kind", JSON.makeString("component"), json);
