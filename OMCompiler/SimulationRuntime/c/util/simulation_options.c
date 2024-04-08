@@ -161,6 +161,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_UP_HESSIAN */                   "keepHessian",
   /* FLAG_W */                            "w",
   /* FLAG_PARMODNUMTHREADS */             "parmodNumThreads",
+  /* FLAG_USE_MEMORY_POOL */              "use_memory_pool",
 
   "FLAG_MAX"
 };
@@ -296,6 +297,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_UP_HESSIAN */                   "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
   /* FLAG_PARMODNUMTHREADS */             "[int default: 0] value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
+  /* FLAG_USE_MEMORY_POOL */              "[default: false] will switch to using memory pool instead of Boehm GC",
 
   "FLAG_MAX"
 };
@@ -635,6 +637,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Shows all warnings even if a related log-stream is inactive.",
   /* FLAG_PARMODNUMTHREADS */
   "  Value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
+  /* FLAG_USE_MEMORY_POOL */
+  "  Switch to memoy pool instead of Boehm GC",
 
   "FLAG_MAX"
 };
@@ -770,6 +774,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_UP_HESSIAN */                   FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_W */                            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMODNUMTHREADS */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_USE_MEMORY_POOL */              FLAG_REPEAT_POLICY_FORBID,
 };
 
 
@@ -904,6 +909,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,
   /* FLAG_W */                            FLAG_TYPE_FLAG,
   /* FLAG_PARMODNUMTHREADS */             FLAG_TYPE_OPTION,
+  /* FLAG_USE_MEMORY_POOL */              FLAG_TYPE_FLAG,
 };
 
 const char *GB_METHOD_NAME[RK_MAX] = {

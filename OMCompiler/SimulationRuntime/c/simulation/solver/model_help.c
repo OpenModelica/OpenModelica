@@ -1014,11 +1014,11 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
     */
     tmpSimData.timeValue = data->simulationInfo->startTime;
     /* buffer for all variable values */
-    tmpSimData.realVars = (modelica_real*) calloc(data->modelData->nVariablesReal, sizeof(modelica_real));
+    tmpSimData.realVars = (modelica_real*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesReal * sizeof(modelica_real));
     assertStreamPrint(threadData, 0 == data->modelData->nVariablesReal || 0 != tmpSimData.realVars, "out of memory");
-    tmpSimData.integerVars = (modelica_integer*) calloc(data->modelData->nVariablesInteger, sizeof(modelica_integer));
+    tmpSimData.integerVars = (modelica_integer*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesInteger * sizeof(modelica_integer));
     assertStreamPrint(threadData, 0 == data->modelData->nVariablesInteger || 0 != tmpSimData.integerVars, "out of memory");
-    tmpSimData.booleanVars = (modelica_boolean*) calloc(data->modelData->nVariablesBoolean, sizeof(modelica_boolean));
+    tmpSimData.booleanVars = (modelica_boolean*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesBoolean * sizeof(modelica_boolean));
     assertStreamPrint(threadData, 0 == data->modelData->nVariablesBoolean || 0 != tmpSimData.booleanVars, "out of memory");
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
     tmpSimData.stringVars = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesString * sizeof(modelica_string));

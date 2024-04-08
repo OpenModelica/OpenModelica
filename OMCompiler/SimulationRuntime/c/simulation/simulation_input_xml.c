@@ -992,7 +992,7 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
 
     fseek(infile, 0L, SEEK_END);
     n = ftell(infile);
-    line = (char*) malloc(n+1);
+    line = (char*) omc_alloc_interface.malloc_uncollectable(n+1);
     line[0] = '\0';
     fseek(infile, 0L, SEEK_SET);
     errno = 0;
@@ -1001,7 +1001,7 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
       throwStreamPrint(NULL, "simulation_input_xml.c: could not read overrideFile %s: %s", overrideFile, strerror(errno));
     }
     line[n] = '\0';
-    overrideLine = (char*) malloc(n+1);
+    overrideLine = (char*) omc_alloc_interface.malloc_uncollectable(n+1);
     overrideLine[0] = '\0';
     overrideStr2 = overrideLine;
     tline = line;
@@ -1022,7 +1022,7 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
       tline = tline2+1;
     }
     fclose(infile);
-    free(line);
+    omc_alloc_interface.free_uncollectable(line);
   }
 
   if (overrideStr1 != NULL || overrideStr2 != NULL) {
