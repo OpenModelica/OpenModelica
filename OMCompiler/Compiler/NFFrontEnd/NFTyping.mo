@@ -144,9 +144,15 @@ algorithm
 
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
-        for c in cls_tree.components loop
-          typeComponent(c, context);
-        end for;
+        if InstContext.inInstanceAPI(context) then
+          for c in cls_tree.components loop
+            typeComponentTry(c, context);
+          end for;
+        else
+          for c in cls_tree.components loop
+            typeComponent(c, context);
+          end for;
+        end if;
 
         () := match c.ty
           case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
@@ -476,6 +482,7 @@ algorithm
     case Component.COMPONENT() then c.ty;
     case Component.ITERATOR() then c.ty;
     case Component.ENUM_LITERAL(literal = Expression.ENUM_LITERAL(ty = ty)) then ty;
+    case Component.INVALID_COMPONENT() then Component.getType(c);
 
     // Any other type of component shouldn't show up here.
     else
@@ -486,6 +493,23 @@ algorithm
 
   end match;
 end typeComponent;
+
+function typeComponentTry
+  input InstNode componentNode;
+  input InstContext.Type context;
+protected
+  Component comp;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    typeComponent(componentNode, context);
+  else
+    comp := InstNode.component(componentNode);
+    comp := Component.INVALID_COMPONENT(comp, ErrorExt.printCheckpointMessagesStr());
+    InstNode.updateComponent(comp, componentNode);
+  end try;
+  ErrorExt.delCheckpoint(getInstanceName());
+end typeComponentTry;
 
 function checkComponentStreamAttribute
   input ConnectorType.Type cty;
@@ -976,7 +1000,7 @@ algorithm
 
   () := match c
     case Component.COMPONENT()
-      guard Component.isDeleted(c)
+      guard Component.isDeleted(c) or Component.isInvalid(c)
       then ();
 
     case Component.COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
@@ -1074,6 +1098,8 @@ algorithm
         InstNode.updateComponent(c, node);
       then
         ();
+
+    case Component.INVALID_COMPONENT() then ();
 
     else
       algorithm

@@ -1,0 +1,63 @@
+// name: GetModelInstanceBinding10
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x[:, :];
+  end A;
+
+  model M
+    A a(x = [0, -1; 1, 1, 1.1, -1]);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"$error\": \"[<interactive>:3:5-3:17:writable] Error: Type mismatch for positional argument 2 in cat(arg=cat(2, {{0}}, {{-1}})). The argument has type:\\n  Real[1, 2]\\nexpected type:\\n  Real[:, 4]\\n\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"modifiers\": {
+//         \"x\": \"[0, -1; 1, 1, 1.1, -1]\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 8,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

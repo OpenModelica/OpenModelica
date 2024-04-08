@@ -93,9 +93,10 @@ public
     Modifier modifier;
   end TYPE_ATTRIBUTE;
 
-  record DELETED_COMPONENT
+  record INVALID_COMPONENT
     Component component;
-  end DELETED_COMPONENT;
+    String errors;
+  end INVALID_COMPONENT;
 
   record WILD "needed for new crefs in the backend" end WILD;
 
@@ -236,6 +237,7 @@ public
       case COMPONENT() then component.ty;
       case ITERATOR() then component.ty;
       case TYPE_ATTRIBUTE() then component.ty;
+      case INVALID_COMPONENT() then getType(component.component);
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -905,6 +907,16 @@ public
       else false;
     end match;
   end isDeleted;
+
+  function isInvalid
+    input Component component;
+    output Boolean invalid;
+  algorithm
+    invalid := match component
+      case INVALID_COMPONENT() then true;
+      else false;
+    end match;
+  end isInvalid;
 
   function isTypeAttribute
     input Component component;
