@@ -450,6 +450,7 @@ ExpandableConnector9.mo \
 ExpandableConnector10.mo \
 ExpandableConnector11.mo \
 ExpandableConnector12.mo \
+ExpandableConnector13.mo \
 ExpandableConnectorComplex1.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \

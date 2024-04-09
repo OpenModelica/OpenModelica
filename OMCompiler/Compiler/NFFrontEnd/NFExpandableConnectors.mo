@@ -443,7 +443,7 @@ algorithm
     end for;
   else
     var := Variable.VARIABLE(connectorName, connectorType, NFBinding.EMPTY_BINDING,
-      Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR, {}, {},
+      Visibility.PUBLIC, NFAttributes.AUGMENTED_ATTR, {}, {},
       SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
       info, NFBackendExtension.DUMMY_BACKEND_INFO);
     vars := var :: vars;

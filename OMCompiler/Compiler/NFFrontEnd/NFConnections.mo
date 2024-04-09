@@ -140,15 +140,25 @@ public
   protected
     Component comp;
     Connector c;
+    DAE.ElementSource src;
   algorithm
     // Collect all flow variables.
     for var in flatModel.variables loop
       comp := InstNode.component(ComponentRef.node(var.name));
 
       if Component.isFlow(comp) then
-        c := Connector.fromFacedCref(var.name, var.ty,
-          NFConnector.Face.INSIDE, ElementSource.createElementSource(Component.info(comp)));
+        // Add all flow variables as inside connectors, to generate default
+        // equations if they're not connected.
+        src := ElementSource.createElementSource(Component.info(comp));
+        c := Connector.fromFacedCref(var.name, var.ty, NFConnector.Face.INSIDE, src);
         conns := addFlow(c, conns);
+
+        // Also add outside connectors for flow variables that were added during
+        // augmentation of expandable connectors.
+        if ConnectorType.isAugmented(var.attributes.connectorType) then
+          c := Connector.fromFacedCref(var.name, var.ty, NFConnector.Face.OUTSIDE, src);
+          conns := addFlow(c, conns);
+        end if;
       end if;
     end for;
   end collectFlows;

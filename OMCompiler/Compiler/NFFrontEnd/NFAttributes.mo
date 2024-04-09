@@ -106,6 +106,19 @@ public
       Replaceable.NOT_REPLACEABLE()
     );
 
+  constant Attributes AUGMENTED_ATTR =
+    ATTRIBUTES(
+      ConnectorType.AUGMENTED,
+      Parallelism.NON_PARALLEL,
+      Variability.CONTINUOUS,
+      Direction.NONE,
+      InnerOuter.NOT_INNER_OUTER,
+      false,
+      false,
+      Replaceable.NOT_REPLACEABLE()
+    );
+
+
   record ATTRIBUTES
     ConnectorType.Type connectorType;
     Parallelism parallelism;
