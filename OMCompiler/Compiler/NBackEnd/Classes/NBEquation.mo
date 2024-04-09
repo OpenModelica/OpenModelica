@@ -1651,11 +1651,25 @@ public
       output Boolean b;
     algorithm
       b := match Pointer.access(eqn)
-        case Equation.RECORD_EQUATION() then true;
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() guard(not Type.isTuple(e.ty)) then true;
         case Equation.ARRAY_EQUATION(recordSize = SOME(_)) then true;
         else false;
       end match;
     end isRecordEquation;
+
+    function isTupleEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() guard(Type.isTuple(e.ty)) then true;
+        else false;
+      end match;
+    end isTupleEquation;
 
     function isAlgorithm
       input Pointer<Equation> eqn;

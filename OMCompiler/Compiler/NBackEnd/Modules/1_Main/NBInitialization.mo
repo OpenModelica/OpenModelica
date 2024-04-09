@@ -258,7 +258,7 @@ public
     var_ptr := BVariable.getVarPointer(cref);
     pre_post := BVariable.getPrePost(var_ptr);
     if Util.isSome(pre_post) then
-      subscripts := ComponentRef.subscriptsAllWithWholeFlat(cref);
+      subscripts := ComponentRef.subscriptsAllFlat(cref);
       pre := BVariable.getVarName(Util.getOption(pre_post));
       pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
       kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;

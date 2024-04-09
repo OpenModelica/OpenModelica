@@ -88,15 +88,67 @@ public
   end PseudoBucketKey;
 
   uniontype PseudoBucketValue
-    record PSEUDO_BUCKET_SINGLE
+    record SINGLE_VAL
       ComponentRef cref_to_solve      "cref to solve for in this mode";
       list<Integer> eqn_scal_indices  "indices of all scalarized equations that have to be solved that way";
-    end PSEUDO_BUCKET_SINGLE;
+    end SINGLE_VAL;
+
+    record MULTI_VAL
+      list<ComponentRef> crefs_to_solve "crefs to solve for in this mode";
+      list<Integer> eqn_scal_indices    "indices of all scalarized equations that have to be solved that way";
+    end MULTI_VAL;
 
     function toString
       input PseudoBucketValue val;
-      output String str = "\n\tval: (" + ComponentRef.toString(val.cref_to_solve) + ")";
+      output String str;
+    algorithm
+      str := match val
+        case SINGLE_VAL() then "\n\tval: (" + ComponentRef.toString(val.cref_to_solve) + ")";
+        case MULTI_VAL()  then "\n\tval: " + List.toString(val.crefs_to_solve, ComponentRef.toString);
+      end match;
     end toString;
+
+    function filter
+      input output PseudoBucketValue val;
+      input UnorderedSet<Integer> set;
+    algorithm
+      val := match val
+        case SINGLE_VAL() algorithm val.eqn_scal_indices := list(idx for idx guard(not UnorderedSet.contains(idx, set)) in val.eqn_scal_indices); then val;
+        case MULTI_VAL()  algorithm val.eqn_scal_indices := list(idx for idx guard(not UnorderedSet.contains(idx, set)) in val.eqn_scal_indices); then val;
+      end match;
+    end filter;
+
+    function getEquations
+      input PseudoBucketValue val;
+      output list<Integer> eqn_scal_indices;
+    algorithm
+      eqn_scal_indices := match val
+        case SINGLE_VAL() then val.eqn_scal_indices;
+        case MULTI_VAL()  then val.eqn_scal_indices;
+      end match;
+    end getEquations;
+
+    function addEquation
+      input output PseudoBucketValue val;
+      input Integer eqn_idx;
+    algorithm
+      val := match val
+        case SINGLE_VAL() algorithm val.eqn_scal_indices := eqn_idx :: val.eqn_scal_indices; then val;
+        case MULTI_VAL()  algorithm val.eqn_scal_indices := eqn_idx :: val.eqn_scal_indices; then val;
+      end match;
+    end addEquation;
+
+    function addCref
+      input output PseudoBucketValue val;
+      input ComponentRef cref;
+    algorithm
+      val := match val
+        case MULTI_VAL() algorithm val.crefs_to_solve := cref :: val.crefs_to_solve; then val;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because trying to add a cref to a single value."});
+        then fail();
+      end match;
+    end addCref;
   end PseudoBucketValue;
 
   uniontype PseudoBucket
@@ -119,18 +171,28 @@ public
       "recollects subsets of multi-dimensional equations that have to be solved in the same way.
       currently only for loops!"
       input array<Integer> eqn_to_var           "eqn to var matching";
+      input EquationPointers eqns;
       input Adjacency.Mapping mapping           "scalar <-> array index mapping";
-      input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       input UnorderedMap<Mode.Key, Mode> modes2;
       output UnorderedMap<Mode, PseudoBucketValue> buckets = UnorderedMap.new<PseudoBucketValue>(Mode.hash, Mode.isEqual);
     protected
-      Option<Mode> mode;
+      Option<Mode> mode_opt;
+      Mode mode;
+      ComponentRef cref;
     algorithm
       // add each equation to a bucket if solved the same way
       for eqn_scal_idx in 1:arrayLength(eqn_to_var) loop
-        mode := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes2);
-        if Util.isSome(mode) then
-          add(eqn_scal_idx, Util.getOption(mode), buckets);
+        mode_opt := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes2);
+        if Util.isSome(mode_opt) then
+          mode := Util.getOption(mode_opt);
+          if Equation.isTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
+            // add the cref to the result, but remove it from the modes so all modes of a tuple equations are equal
+            cref := List.first(mode.crefs);
+            mode.crefs := {};
+            addMulti(cref, eqn_scal_idx, mode, buckets);
+          else
+            add(eqn_scal_idx, mode, buckets);
+          end if;
         end if;
       end for;
 
@@ -149,15 +211,35 @@ public
     algorithm
       if Util.isSome(val_opt) then
         SOME(val) := val_opt;
-        val.eqn_scal_indices := eqn_scal_idx :: val.eqn_scal_indices;
+        val := PseudoBucketValue.addEquation(val, eqn_scal_idx);
         UnorderedMap.add(mode, val, buckets);
       else
-        val := PSEUDO_BUCKET_SINGLE(List.first(mode.crefs), {eqn_scal_idx});
+        val := PseudoBucketValue.SINGLE_VAL(List.first(mode.crefs), {eqn_scal_idx});
         UnorderedMap.addNew(mode, val, buckets);
       end if;
     end add;
 
-    function filterBucketTpl
+    function addMulti
+      input ComponentRef cref;
+      input Integer eqn_scal_idx;
+      input Mode mode;
+      input UnorderedMap<Mode, PseudoBucketValue> buckets;
+    protected
+      Option<PseudoBucketValue> val_opt = UnorderedMap.get(mode, buckets);
+      PseudoBucketValue val;
+    algorithm
+      if Util.isSome(val_opt) then
+        SOME(val) := val_opt;
+        val := PseudoBucketValue.addCref(val, cref);
+        val := PseudoBucketValue.addEquation(val, eqn_scal_idx);
+        UnorderedMap.add(mode, val, buckets);
+      else
+        val := PseudoBucketValue.MULTI_VAL(mode.crefs, {eqn_scal_idx});
+        UnorderedMap.addNew(mode, val, buckets);
+      end if;
+    end addMulti;
+
+    function filter
       "filters out the indices that are in in the set"
       input output tuple<Mode, PseudoBucketValue> tpl;
       input UnorderedSet<Integer> set;
@@ -166,9 +248,9 @@ public
       PseudoBucketValue val;
     algorithm
       (mode, val) := tpl;
-      val.eqn_scal_indices := list(idx for idx guard(not UnorderedSet.contains(idx, set)) in val.eqn_scal_indices);
+      val := PseudoBucketValue.filter(val, set);
       tpl := (mode, val);
-    end filterBucketTpl;
+    end filter;
 
     function relevant
       "returns true if the value has more than one entry"
@@ -178,7 +260,7 @@ public
       PseudoBucketValue val;
     algorithm
       (_, val) := tpl;
-      b := listLength(val.eqn_scal_indices) > 1;
+      b := listLength(PseudoBucketValue.getEquations(val)) > 1;
     end relevant;
 
     function get
@@ -222,7 +304,7 @@ public
           if Flags.isSet(Flags.DUMP_SORTING) then
             print(StringUtil.headline_1("Sorting"));
           end if;
-          buckets := PseudoBucket.create(matching.eqn_to_var, adj.mapping, adj.modes, adj.modes2);
+          buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.modes2);
 
           comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
@@ -374,7 +456,7 @@ public
       Mode mode;
       PseudoBucketValue val;
       Integer index, shift;
-      list<Integer> var_lst;
+      list<Integer> var_lst, eqn_lst;
       UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
     algorithm
       phase2_adj := match phase2_adj
@@ -385,7 +467,7 @@ public
           end for; end for;
 
           // remove loop indices from array buckets (so they are not used twice)
-          buckets := list(PseudoBucket.filterBucketTpl(bucket_tpl, alg_loop_set) for bucket_tpl in buckets);
+          buckets := list(PseudoBucket.filter(bucket_tpl, alg_loop_set) for bucket_tpl in buckets);
           buckets := list(bucket_tpl for bucket_tpl guard(PseudoBucket.relevant(bucket_tpl)) in buckets);
           shift := listLength(algebraic_loops) + listLength(buckets);
 
@@ -417,11 +499,14 @@ public
             index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
           end for;
 
-          // 4.3. merge all for-loop variables of one bucket to one single variable
+          // 4.3. merge all array variables of one bucket to one single variable
           for bucket in buckets loop
             (mode, val) := bucket;
-            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in val.eqn_scal_indices);
-            mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, mode.eqn_idx, false);
+            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in PseudoBucketValue.getEquations(val));
+            _ := match val
+              case PseudoBucketValue.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, mode.eqn_idx, false); then ();
+              case PseudoBucketValue.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, var_lst, index, false); then ();
+            end match;
             index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
           end for;
 
@@ -438,8 +523,12 @@ public
           // 5.3. merge all for-loop equations of one bucket to one single equation
           for bucket in buckets loop
             (mode, val) := bucket;
-            mergeArrayNodes(super_nodes, val.cref_to_solve, val.eqn_scal_indices, index, mode.eqn_idx, true);
-            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, val.eqn_scal_indices, index);
+            eqn_lst := PseudoBucketValue.getEquations(val);
+            _ := match val
+              case PseudoBucketValue.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, eqn_lst, index, mode.eqn_idx, true); then ();
+              case PseudoBucketValue.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, eqn_lst, index, true); then ();
+            end match;
+            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, eqn_lst, index);
           end for;
 
           // 5.4. transpose it back to have it consistent (probably not actually necessary for phase2 tarjan but more safe)
