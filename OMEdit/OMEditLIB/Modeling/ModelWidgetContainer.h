@@ -253,6 +253,7 @@ public:
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
   void addElementToClass(Element *pElement);
+  static void addUsesAnnotation(const QString &insertedClassName, const QString &containingClassName, bool updateParentText);
   void addElementItem(Element *pElement);
   void removeElementItem(Element *pElement);
   void deleteElement(Element *pElement);

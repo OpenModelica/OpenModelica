@@ -1160,6 +1160,8 @@ void DuplicateClassDialog::duplicateClass()
     syncDuplicatedModelWithOMC(pLibraryTreeItem);
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+    // add uses annotation
+    GraphicsView::addUsesAnnotation(mpLibraryTreeItem->getNameStructure(), mpPathTextBox->text(), true);
     accept();
   } else {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),

@@ -1081,45 +1081,15 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
 void GraphicsView::addElementToClass(Element *pElement)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
-    MainWindow *pMainWindow = MainWindow::instance();
     // Add the component to model in OMC.
     /* Ticket:4132
      * Always send the full path so that addComponent API doesn't fail when it makes a call to getDefaultPrefixes.
      * I updated the addComponent API to make path relative.
      */
-    pMainWindow->getOMCProxy()->addComponent(pElement->getName(), pElement->getClassName(),
-                                             mpModelWidget->getLibraryTreeItem()->getNameStructure(), pElement->getPlacementAnnotation());
-    LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
-    // get the toplevel class of dragged component
-    QString packageName = StringHandler::getFirstWordBeforeDot(pElement->getClassName());
-    LibraryTreeItem *pPackageLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(packageName);
-    // get the top level class of current class
-    QString topLevelClassName = StringHandler::getFirstWordBeforeDot(mpModelWidget->getLibraryTreeItem()->getNameStructure());
-    LibraryTreeItem *pTopLevelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(topLevelClassName);
-    if (pPackageLibraryTreeItem && pTopLevelLibraryTreeItem) {
-      // get uses annotation of the toplevel class
-      QList<QList<QString > > usesAnnotation = pMainWindow->getOMCProxy()->getUses(pTopLevelLibraryTreeItem->getNameStructure());
-      QStringList newUsesAnnotation;
-      for (int i = 0 ; i < usesAnnotation.size() ; i++) {
-        if (usesAnnotation.at(i).at(0).compare(packageName) == 0) {
-          return; // if the package is already in uses annotation of class then simply return without doing anything.
-        } else {
-          newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
-        }
-      }
-      // if the package has version only then add the uses annotation
-      if (!pPackageLibraryTreeItem->mClassInformation.version.isEmpty() &&
-          // Do not add a uses-annotation to itself
-          pTopLevelLibraryTreeItem->getNameStructure() != packageName) {
-        newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
-        QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
-        pMainWindow->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
-        // if save folder structure then update the parent package
-        if (pTopLevelLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-          pLibraryTreeModel->updateLibraryTreeItemClassText(pTopLevelLibraryTreeItem);
-        }
-      }
-    }
+    const QString className = pElement->getClassName();
+    MainWindow::instance()->getOMCProxy()->addComponent(pElement->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pElement->getPlacementAnnotation());
+    // add uses annotation
+    addUsesAnnotation(className, mpModelWidget->getLibraryTreeItem()->getNameStructure(), false);
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     // add SubModel Element
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
@@ -1130,6 +1100,47 @@ void GraphicsView::addElementToClass(Element *pElement)
      */
     foreach (Element *pInterfaceComponent, pElement->getElementsList()) {
       pCompositeModelEditor->addInterface(pInterfaceComponent, pElement->getName());
+    }
+  }
+}
+
+/*!
+ * \brief GraphicsView::addUsesAnnotation
+ * \param insertedClassName - the name of the class that is dragged or duplicated.
+ * \param containingClassName - the name of the containing class where the component is dropped or duplicated model is added.
+ * \param updateParentText - update the text of the parent.
+ */
+void GraphicsView::addUsesAnnotation(const QString &insertedClassName, const QString &containingClassName, bool updateParentText)
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  // get the toplevel class of dragged component or duplicated model
+  QString packageName = StringHandler::getFirstWordBeforeDot(insertedClassName);
+  LibraryTreeItem *pPackageLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(packageName);
+  // get the top level class of containing class
+  QString topLevelClassName = StringHandler::getFirstWordBeforeDot(containingClassName);
+  LibraryTreeItem *pTopLevelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(topLevelClassName);
+  if (pPackageLibraryTreeItem && pTopLevelLibraryTreeItem) {
+    // get uses annotation of the toplevel class
+    QList<QList<QString > > usesAnnotation = MainWindow::instance()->getOMCProxy()->getUses(pTopLevelLibraryTreeItem->getNameStructure());
+    QStringList newUsesAnnotation;
+    for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+      if (usesAnnotation.at(i).at(0).compare(packageName) == 0) {
+        return; // if the package is already in uses annotation of class then simply return without doing anything.
+      } else {
+        newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+      }
+    }
+    // if the package has version only then add the uses annotation
+    if (!pPackageLibraryTreeItem->mClassInformation.version.isEmpty() &&
+        // Do not add a uses-annotation to itself
+        pTopLevelLibraryTreeItem->getNameStructure() != packageName) {
+      newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
+      QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
+      MainWindow::instance()->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
+      // if save folder structure then update the parent package
+      if (pTopLevelLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure || updateParentText) {
+        pLibraryTreeModel->updateLibraryTreeItemClassText(pTopLevelLibraryTreeItem);
+      }
     }
   }
 }
