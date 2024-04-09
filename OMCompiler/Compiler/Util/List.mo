@@ -733,14 +733,12 @@ public function getAtIndexLst<T>
   input list<T> lst;
   input list<Integer> positions;
   input Boolean zeroBased = false;
-  output list<T> olst = {};
+  output list<T> olst;
 protected
   array<T> arr = listArray(lst);
   Integer shift = if zeroBased then 1 else 0;
 algorithm
-  for pos in listReverse(positions) loop
-    olst := arr[pos+shift] :: olst;
-  end for;
+  olst := list(arr[pos+shift] for pos in positions);
 end getAtIndexLst;
 
 public function firstN<T>

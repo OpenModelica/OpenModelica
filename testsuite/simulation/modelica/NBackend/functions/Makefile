@@ -4,6 +4,7 @@ TESTFILES = \
 builtin_functions.mos\
 function_annotation_der.mos\
 function_diff.mos\
+function_partial_der.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
