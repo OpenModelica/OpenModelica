@@ -1517,12 +1517,7 @@ public
         Integer ind;
 
       // add a cref dependency
-      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
-        if not UnorderedMap.contains(exp.cref, dep_map) then
-          UnorderedMap.add(exp.cref, Dependency.create(ComponentRef.getSubscriptedType(exp.cref)), dep_map);
-        end if;
-        Solvability.update(exp.cref, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
-      then UnorderedSet.fromList({exp.cref}, ComponentRef.hash, ComponentRef.isEqual);
+      case Expression.CREF() then UnorderedSet.fromList(collectDependenciesCref(exp.cref, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
 
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
@@ -1698,6 +1693,31 @@ public
       else UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     end match;
   end collectDependencies;
+
+  function collectDependenciesCref
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
+    input UnorderedMap<ComponentRef, Dependency> dep_map;
+    input UnorderedMap<ComponentRef, Solvability> sol_map;
+    output list<ComponentRef> crefs;
+  protected
+    ComponentRef child;
+    Integer skips = 1;
+  algorithm
+    if UnorderedMap.contains(cref, map) then
+      if not UnorderedMap.contains(cref, dep_map) then
+        UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref)), dep_map);
+      end if;
+      Solvability.update(cref, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
+      crefs := {cref};
+    else
+      crefs := List.flatten(list(collectDependenciesCref(BVariable.getVarName(var), map, dep_map, sol_map) for var in BVariable.getRecordChildren(BVariable.getVarPointer(cref))));
+      for cref in crefs loop
+        Dependency.skip(cref, skips, dep_map);
+        skips := skips + 1;
+      end for;
+    end if;
+  end collectDependenciesCref;
 
   function addRepetitionsCond
     "adds component references from a set to the repetition set,

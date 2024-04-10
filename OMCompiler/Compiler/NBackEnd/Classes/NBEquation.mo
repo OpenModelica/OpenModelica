@@ -1646,6 +1646,19 @@ public
       end match;
     end isArrayEquation;
 
+    function isRecordOrTupleEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() then true;
+        case Equation.ARRAY_EQUATION(recordSize = SOME(_)) then true;
+        else false;
+      end match;
+    end isRecordOrTupleEquation;
+
     function isRecordEquation
       input Pointer<Equation> eqn;
       output Boolean b;

@@ -38,9 +38,13 @@ protected
   import Slice = NBSlice;
 
   // NF imports
+  import Class = NFClass;
+  import NFClassTree.ClassTree;
+  import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
@@ -1071,11 +1075,12 @@ protected
   algorithm
     (index, ty) := match (ty, skips)
       local
-        Boolean cont = true;
-        Integer skip, i = 0;
+        Integer skip;
         list<Integer> rest, tail;
         Type sub_ty;
         list<Type> rest_ty;
+        list<InstNode> record_fields;
+        InstNode field;
 
       // 0 skips are full dependencies
       case (Type.TUPLE(types = rest_ty), 0::rest) then (index, ty);
@@ -1083,16 +1088,24 @@ protected
       // skip to a tuple element
       case (Type.TUPLE(types = rest_ty), skip::rest) guard(skip <= listLength(rest_ty)) algorithm
         // skip to the desired sub type and shift the starting index accordingly
-        while cont loop
+        for i in 1:skip-1 loop
           sub_ty :: rest_ty := rest_ty;
-          i := i + 1;
-          cont := i < skip;
-          if cont then
-            index := index + Type.sizeOf(sub_ty);
-          end if;
-        end while;
+          index := index + Type.sizeOf(sub_ty);
+        end for;
+        sub_ty :: rest_ty := rest_ty;
         // see if there is nested skips
       then resolveSkips(index, sub_ty, rest);
+
+      // skip to a record element
+      case (Type.COMPLEX(complexTy = ComplexType.RECORD()), skip::rest) algorithm
+        record_fields := ClassTree.enumerateComponents(Class.classTree(InstNode.getClass(ty.cls)));
+        for i in 1:skip-1 loop
+          field :: record_fields := record_fields;
+          index := index + Type.sizeOf(InstNode.getType(field));
+        end for;
+        field :: record_fields := record_fields;
+        // see if there is nested skips
+      then resolveSkips(index, InstNode.getType(field), rest);
 
       // skip to an array element
       case (Type.ARRAY(), rest) guard(listLength(rest) >= listLength(ty.dimensions)) algorithm

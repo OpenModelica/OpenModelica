@@ -185,7 +185,7 @@ public
         mode_opt := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes2);
         if Util.isSome(mode_opt) then
           mode := Util.getOption(mode_opt);
-          if Equation.isTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
+          if Equation.isRecordOrTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
             // add the cref to the result, but remove it from the modes so all modes of a tuple equations are equal
             cref := List.first(mode.crefs);
             mode.crefs := {};
