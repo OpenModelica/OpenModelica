@@ -143,8 +143,6 @@ void PlotWindow::initializePlot(QStringList arguments)
   }
   setTimeUnit("");
   setPrefixUnits(true);
-  setCanUseXPrefixUnits(false);
-  setCanUseYPrefixUnits(false);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 18; i < arguments.length(); i++)
@@ -448,7 +446,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
             pPlotCurve->addYAxisValue(QString(values[1]).toDouble());
             currentLine = mpTextStream->readLine();
           }
-          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+          pPlotCurve->plotData();
           pPlotCurve->attach(mpPlot);
           mpPlot->replot();
         }
@@ -513,7 +511,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           pPlotCurve->addXAxisValue(timeVals[i]);
           pPlotCurve->addYAxisValue(vals[i]);
         }
-        pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+        pPlotCurve->plotData();
         pPlotCurve->attach(mpPlot);
         mpPlot->replot();
       }
@@ -581,7 +579,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
             pPlotCurve->addXAxisValue(timeVals[i]);
             pPlotCurve->addYAxisValue(vals[i]);
           }
-          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+          pPlotCurve->plotData();
           pPlotCurve->attach(mpPlot);
           mpPlot->replot();
         } else { // if variable is a parameter then
@@ -595,7 +593,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           pPlotCurve->addYAxisValue(val);
           pPlotCurve->addXAxisValue(stopTime);
           pPlotCurve->addYAxisValue(val);
-          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+          pPlotCurve->plotData();
           pPlotCurve->attach(mpPlot);
           mpPlot->replot();
         }
@@ -693,7 +691,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
             // when two variables are found plot then plot them
             if (variablesPlotted.size() == 2)
             {
-              pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+              pPlotCurve->plotData();
               pPlotCurve->attach(mpPlot);
               mpPlot->replot();
             }
@@ -755,7 +753,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         pPlotCurve->addXAxisValue(xVals[i]);
         pPlotCurve->addYAxisValue(yVals[i]);
       }
-      pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+      pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
       mpPlot->replot();
       // check which requested variables are not found in the file
@@ -837,7 +835,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         }
         pPlotCurve->addYAxisValue(yval);
       }
-      pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+      pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
       mpPlot->replot();
       omc_free_matlab4_reader(&reader);
@@ -996,7 +994,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         pPlotCurve->addXAxisValue(i+1);
         pPlotCurve->addYAxisValue(arrLst[i]);
       }
-      pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+      pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
       updateTimeText();
     }
@@ -1055,7 +1053,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         pPlotCurve->addXAxisValue(j+1);
         pPlotCurve->addYAxisValue(res[j]);
       }
-      pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+      pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
       updateTimeText();
     }
@@ -1114,7 +1112,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
           pPlotCurve->addXAxisValue(i+1);
           pPlotCurve->addYAxisValue(res[i]);
         }
-        pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+        pPlotCurve->plotData();
         pPlotCurve->attach(mpPlot);
         updateTimeText();
         delete[] res;
@@ -1209,7 +1207,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         pPlotCurve->addXAxisValue(xValsLst[i]);
         pPlotCurve->addYAxisValue(yValsLst[i]);
       }
-      pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+      pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
       updateTimeText();
       mFile.close();
@@ -1276,7 +1274,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
             pPlotCurve->addYAxisValue(res[i]);
         }
       }
-      pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+      pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
       updateTimeText();
       omc_free_csv_reader(csvReader);
@@ -1348,7 +1346,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         }
         delete[] res;
       }
-      pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+      pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
       updateTimeText();
       omc_free_matlab4_reader(&reader);
@@ -1610,26 +1608,6 @@ void PlotWindow::setPrefixUnits(bool prefixUnits)
   mPrefixUnits = prefixUnits;
 }
 
-bool PlotWindow::canUseXPrefixUnits() const
-{
-  return mCanUseXPrefixUnits;
-}
-
-void PlotWindow::setCanUseXPrefixUnits(bool canUseXPrefixUnits)
-{
-  mCanUseXPrefixUnits = canUseXPrefixUnits;
-}
-
-bool PlotWindow::canUseYPrefixUnits() const
-{
-  return mCanUseYPrefixUnits;
-}
-
-void PlotWindow::setCanUseYPrefixUnits(bool canUseYPrefixUnits)
-{
-  mCanUseYPrefixUnits = canUseYPrefixUnits;
-}
-
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
 {
   QStringList nonExistingVariables;
@@ -1870,7 +1848,7 @@ bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
     for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
       pPlotCurve->updateYAxisValue(i, -pPlotCurve->mYAxisVector.at(i));
     }
-    pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+    pPlotCurve->plotData();
     toggleSign = true;
   }
   return toggleSign;
