@@ -1156,31 +1156,27 @@ uniontype InstNode
   function getAnnotation
     input String name;
     input InstNode node;
-    output Option<SCode.SubMod> mod = NONE();
+    output SCode.Mod mod;
+    output InstNode scope = node;
+  protected
+    Option<SCode.Annotation> ann;
   algorithm
+    while InstNode.isComponent(scope) loop
+      ann := SCodeUtil.optCommentAnnotation(Component.comment(InstNode.component(scope)));
 
-    if InstNode.isComponent(node) then
-      mod := match Component.comment(InstNode.component(node))
-        local
-          list<SCode.SubMod> subModLst;
-          Boolean done = false;
+      if isSome(ann) then
+        mod := SCodeUtil.lookupAnnotation(Util.getOption(ann), name);
 
-        case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification = SCode.MOD(subModLst = subModLst)))))
-        algorithm
-          for sm in subModLst loop
-            if sm.ident == name then
-              mod := SOME(sm);
-              done := true;
-              break;
-            end if;
-          end for;
-          if not done then
-            mod := getAnnotation(name, parent(node));
-          end if;
-        then mod;
-        else getAnnotation(name, parent(node));
-      end match;
-    end if;
+        if not SCodeUtil.isEmptyMod(mod) then
+          scope := parent(scope);
+          return;
+        end if;
+      end if;
+
+      scope := parent(scope);
+    end while;
+
+    mod := SCode.Mod.NOMOD();
   end getAnnotation;
 
   type ScopeType = enumeration(

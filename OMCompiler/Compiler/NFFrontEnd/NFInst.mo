@@ -244,7 +244,7 @@ algorithm
 
   // propagate hide result attribute
   // ticket #4346
-  flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, var) for var in flatModel.variables);
+  flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, true, var) for var in flatModel.variables);
 
   flatModel := FlatModel.removeNonTopLevelDirections(flatModel);
 
@@ -1885,7 +1885,7 @@ algorithm
         // is created by instClass. To break the circle we leave the class node
         // empty here, and let instClass set it for us instead.
         inst_comp := Component.COMPONENT(InstNode.EMPTY_NODE(), Type.UNKNOWN(),
-          binding, condition, attr, NONE(), SOME(component.comment),
+          binding, condition, attr, SOME(component.comment),
           ComponentState.PartiallyInstantiated, info);
         InstNode.updateComponent(inst_comp, node);
 
@@ -2121,7 +2121,7 @@ algorithm
         cmt := orig_comp.comment;
       then
         Component.COMPONENT(rdcl_comp.classInst, rdcl_ty, binding, condition,
-          attr, NONE(), cmt, ComponentState.PartiallyInstantiated, rdcl_comp.info);
+          attr, cmt, ComponentState.PartiallyInstantiated, rdcl_comp.info);
 
     else
       algorithm
