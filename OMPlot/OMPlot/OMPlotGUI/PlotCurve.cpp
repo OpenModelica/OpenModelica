@@ -75,14 +75,14 @@ void PlotCurve::setTitleLocal()
 {
   if (mCustomTitle.isEmpty()) {
     QString titleStr = getYVariable();
-    if (!getYDisplayUnit().isEmpty() || !mpParentPlot->getYScaleDraw()->getUnitPrefix().isEmpty()) {
-      titleStr += QString(" (%1%2)").arg(mpParentPlot->getYScaleDraw()->getUnitPrefix(), getYDisplayUnit());
+    if (!getYDisplayUnit().isEmpty() || !getYUnitPrefix().isEmpty()) {
+      titleStr += QString(" (%1%2)").arg(getYUnitPrefix(), getYDisplayUnit());
     }
 
     if (mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
       QString xVariable = getXVariable();
-      if (!getXDisplayUnit().isEmpty() || !mpParentPlot->getXScaleDraw()->getUnitPrefix().isEmpty()) {
-        xVariable += QString(" (%1%2)").arg(mpParentPlot->getXScaleDraw()->getUnitPrefix(), getXDisplayUnit());
+      if (!getXDisplayUnit().isEmpty() || !getXUnitPrefix().isEmpty()) {
+        xVariable += QString(" (%1%2)").arg(getXUnitPrefix(), getXDisplayUnit());
       }
       if (!xVariable.isEmpty()) {
         titleStr += QString(" <b>vs</b> %1").arg(xVariable);
@@ -106,7 +106,7 @@ void PlotCurve::setTitleLocal()
   }
 }
 
-Qt::PenStyle PlotCurve::getPenStyle(int style)
+Qt::PenStyle PlotCurve::getPenStyle(int style) const
 {
   switch (style)
   {
@@ -123,7 +123,7 @@ Qt::PenStyle PlotCurve::getPenStyle(int style)
   }
 }
 
-QwtPlotCurve::CurveStyle PlotCurve::getCurveStyle(int style)
+QwtPlotCurve::CurveStyle PlotCurve::getCurveStyle(int style) const
 {
   switch (style)
   {
@@ -170,11 +170,6 @@ void PlotCurve::updateXAxisValue(int index, double value)
   mXAxisVector.replace(index, value);
 }
 
-const double* PlotCurve::getXAxisVector() const
-{
-  return mXAxisVector.data();
-}
-
 QPair<QVector<double>*, QVector<double>*> PlotCurve::getAxisVectors()
 {
   return qMakePair(&mXAxisVector, &mYAxisVector);
@@ -193,11 +188,6 @@ void PlotCurve::addYAxisValue(double value)
 void PlotCurve::updateYAxisValue(int index, double value)
 {
   mYAxisVector.replace(index, value);
-}
-
-const double* PlotCurve::getYAxisVector() const
-{
-  return mYAxisVector.data();
 }
 
 int PlotCurve::getSize()
@@ -264,12 +254,132 @@ void PlotCurve::toggleVisibility(bool visibility)
   setVisible(visibility);
 }
 
-void PlotCurve::setData(const double* xData, const double* yData, int size)
+/*!
+ * \brief getUnitPrefixAndExponent
+ * \param lowerBound
+ * \param upperBound
+ * \param unitPrefix
+ * \param exponent
+ */
+void getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent)
 {
+  /* Since log(1900) returns 3.278 so we need to round down for positive values to make it 3
+   * And log(0.0011) return -2.95 so we also need to round down for negative value to make it -3
+   * log(0) is undefined so avoid it
+   */
+
+  if (!(qFuzzyCompare(lowerBound, 0.0) && qFuzzyCompare(upperBound, 0.0))) {
+    if (fabs(lowerBound) > fabs(upperBound)) {
+      exponent = qFloor(std::log10(fabs(lowerBound)));
+    } else {
+      exponent = qFloor(std::log10(fabs(upperBound)));
+    }
+
+    // We don't do anything for exponent values between -1 and 2.
+    if ((exponent < -1) || (exponent > 2)) {
+      if (exponent > 2) {
+        if (exponent >= 3 && exponent < 6) {
+          unitPrefix = "k";
+          exponent = 3;
+        } else if (exponent >= 6 && exponent < 9) {
+          unitPrefix = "M";
+          exponent = 6;
+        } else if (exponent >= 9 && exponent < 12) {
+          unitPrefix = "G";
+          exponent = 9;
+        } else if (exponent >= 12 && exponent < 15) {
+          unitPrefix = "T";
+          exponent = 12;
+        } else {
+          unitPrefix = "P";
+          exponent = 15;
+        }
+      } else if (exponent < -1) {
+        if (exponent <= -2 && exponent > -6) {
+          unitPrefix = "m";
+          exponent = -3;
+        } else if (exponent <= -6 && exponent > -9) {
+          unitPrefix = QChar(0x03BC);
+          exponent = -6;
+        } else if (exponent <= -9 && exponent > -12) {
+          unitPrefix = "n";
+          exponent = -9;
+        } else if (exponent <= -12 && exponent > -15) {
+          unitPrefix = "p";
+          exponent = -12;
+        } else {
+          unitPrefix = "f";
+          exponent = -15;
+        }
+      }
+    } else {
+      unitPrefix = "";
+      exponent = 0;
+    }
+  }
+}
+
+/*!
+ * \brief PlotCurve::plotData
+ * Plot the curve data.
+ */
+void PlotCurve::plotData()
+{
+  // Fixes ticket #5447 checks the lower and upper bound of variable and detect if we can add prefix automatically.
+  bool canUseXPrefixUnits;
+  if ((mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
+      && !Plot::prefixableUnit(getXDisplayUnit())) {
+    canUseXPrefixUnits = false;
+  } else {
+    canUseXPrefixUnits = true;
+  }
+
+  bool canUseYPrefixUnits = Plot::prefixableUnit(getYDisplayUnit());
+
+  if (mpParentPlot->getParentPlotWindow()->getPrefixUnits()) {
+    double xLowerBound = 0.0;
+    double xUpperBound = 0.0;
+    double yLowerBound = 0.0;
+    double yUpperBound = 0.0;
+
+    for (int i = 0 ; i < getSize() ; i++) {
+      xLowerBound = qMin(xLowerBound, mXAxisVector.at(i));
+      xUpperBound = qMax(xUpperBound, mXAxisVector.at(i));
+      yLowerBound = qMin(yLowerBound, mYAxisVector.at(i));
+      yUpperBound = qMax(yUpperBound, mYAxisVector.at(i));
+    }
+
+    if (canUseXPrefixUnits) {
+      QString unitPrefix;
+      int exponent = 0;
+      getUnitPrefixAndExponent(xLowerBound, xUpperBound, unitPrefix, exponent);
+      mXUnitPrefix = unitPrefix;
+      // update if unit prefix is not empty.
+      if (!mXUnitPrefix.isEmpty()) {
+        for (int i = 0 ; i < mXAxisVector.size() ; i++) {
+          updateXAxisValue(i, mXAxisVector.at(i) / qPow(10, exponent));
+        }
+      }
+    }
+
+    if (canUseYPrefixUnits) {
+      QString unitPrefix;
+      int exponent = 0;
+      getUnitPrefixAndExponent(yLowerBound, yUpperBound, unitPrefix, exponent);
+      mYUnitPrefix = unitPrefix;
+      // update if unit prefix is not empty.
+      if (!mYUnitPrefix.isEmpty()) {
+        for (int i = 0 ; i < mYAxisVector.size() ; i++) {
+          updateYAxisValue(i, mYAxisVector.at(i) / qPow(10, exponent));
+        }
+      }
+    }
+  }
+
 #if QWT_VERSION >= 0x060000
-  setRawSamples(xData, yData, size);
+  setRawSamples(mXAxisVector.data(), mYAxisVector.data(), getSize());
 #else
-  setRawData(xData, yData, size);
+  setRawData(mXAxisVector.data(), mYAxisVector.data(), getSize());
 #endif
 }
 
