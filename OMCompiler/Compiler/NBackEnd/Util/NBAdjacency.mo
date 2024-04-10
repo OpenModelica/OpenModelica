@@ -1729,8 +1729,9 @@ public
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;
   algorithm
-    // variables in conditions are unsolvable
+    // variables in conditions are unsolvable and reduced
     set := collectDependencies(body.condition, map, dep_map, sol_map, rep_set);
+    Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
     Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
 
     // get variables from 'then' branch
@@ -1768,8 +1769,9 @@ public
     list<UnorderedSet<ComponentRef>> lst = {}, lst1, lst2;
     list<tuple<UnorderedSet<ComponentRef>, UnorderedSet<ComponentRef>>> tpl_lst = {};
   algorithm
-    // variables in conditions are unsolvable
+    // variables in conditions are unsolvable and reduced
     set := collectDependencies(body.condition, map, dep_map, sol_map, rep_set);
+    Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
     Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
 
     // make condition repeat if the body is larger than 1
