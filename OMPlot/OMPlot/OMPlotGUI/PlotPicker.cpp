@@ -176,7 +176,7 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
     if (mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTPARAMETRIC
         && mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTARRAYPARAMETRIC
         && !mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
-      timeUnit = QString("%1%2").arg(mpPlot->getXScaleDraw()->getUnitPrefix(), mpPlot->getParentPlotWindow()->getTimeUnit());
+      timeUnit = mpPlot->getParentPlotWindow()->getTimeUnit();
     }
     QString toolTip;
     for (int i = 0 ; i < plotCurves.size() ; i++) {
@@ -188,9 +188,6 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
 
       pPlotCurve->getPointMarker()->setValue(x, y);
       pPlotCurve->getPointMarker()->setVisible(true);
-
-      x = x / qPow(10, mpPlot->getXScaleDraw()->getExponent());
-      y = y / qPow(10, mpPlot->getYScaleDraw()->getExponent());
 
       if (i > 0) {
         toolTip += QString("<br /><br />");
