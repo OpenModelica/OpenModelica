@@ -1410,6 +1410,11 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #if defined(threadData)
     #undef threadData
     #endif
+
+    #if defined(OMC_DLL_MAIN_DEFINE_LOCK)
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    #endif
+
     /* call the simulation runtime main from our main! */
     #if defined(OMC_DLL_MAIN_DEFINE)
     OMC_EXPORT int omcDllMain(int argc, OMC_CHAR **argv)
@@ -1417,6 +1422,9 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     int OMC_MAIN(int argc, OMC_CHAR** argv)
     #endif
     {
+      #if defined(OMC_DLL_MAIN_DEFINE_LOCK)
+      pthread_mutex_lock(&mutex);
+      #endif
       #if defined(OMC_DLL_MAIN_DEFINE_BOEHM_GC)
         GC_init();
         GC_enable_incremental();
@@ -1425,10 +1433,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
         GC_get_stack_base(&sb);
         GC_register_my_thread(&sb);
       #endif
-      pthread_mutex_t mutex;
-      pthread_mutex_lock(&mutex);
       char** newargv = omc_fixWindowsArgv(argc, argv);
-      pthread_mutex_unlock(&mutex);
       /*
         Set the error functions to be used for simulation.
         The default value for them is 'functions' version. Change it here to 'simulation' versions
@@ -1451,8 +1456,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       compiledInDAEMode = <% if Flags.getConfigBool(Flags.DAE_MODE) then 1 else 0%>;
       compiledWithSymSolver = <% intSub(Flags.getConfigEnum(Flags.SYM_SOLVER), 0) %>;
       <%mainInit%>
+      #if defined(OMC_DLL_MAIN_DEFINE_LOCK)
+      pthread_mutex_unlock(&mutex);
+      #endif
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
-
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
       <%if Flags.getConfigBool(Flags.PARMODAUTO) then "dump_times(pm_model);" %>
       fflush(NULL);
