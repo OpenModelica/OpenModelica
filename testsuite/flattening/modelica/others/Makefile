@@ -41,6 +41,7 @@ ForIterator1.mo \
 ForIterator2.mo \
 ForIterator3.mo \
 GetInstanceName.mo \
+HideResult1.mo \
 IconsRecursiveTest.mo \
 if_then_elseif_else.mo \
 IfExpCombiTable1.mo \

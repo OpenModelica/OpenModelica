@@ -416,7 +416,6 @@ constant InstNode TIME =
       NFBinding.EMPTY_BINDING,
       NFAttributes.INPUT_ATTR,
       NONE(),
-      NONE(),
       ComponentState.TypeChecked,
       AbsynUtil.dummyInfo)),
     InstNode.EMPTY_NODE(),

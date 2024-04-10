@@ -48,13 +48,16 @@ encapsulated uniontype NFVariable
   import NFBackendExtension.BackendInfo;
 
 protected
+  import Ceval = NFCeval;
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
+  import Inst = NFInst;
   import IOStream;
+  import MetaModelica.Dangerous.listReverseInPlace;
   import StringUtil;
+  import Typing = NFTyping;
   import Util;
   import Variable = NFVariable;
-  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   record VARIABLE
@@ -363,31 +366,47 @@ public
   function propagateAnnotation
     input String name;
     input Boolean overwrite;
+    input Boolean evaluate = false;
     input output Variable var;
   protected
     InstNode node;
-    Option<SCode.SubMod> mod;
+    SCode.Mod mod;
+    Absyn.Exp aexp;
+    Expression exp;
   protected
     SCode.Annotation anno;
+    InstNode scope;
   algorithm
     if ComponentRef.isCref(var.name) then
       node := ComponentRef.node(var.name);
       // InstNode.getAnnotation is recursive and returns the first annotation found.
       // if the original is supposed to be overwritten, skip the node itself and look at the parent
-      if overwrite then
-        mod := match node
-          case InstNode.COMPONENT_NODE() then InstNode.getAnnotation(name, node.parent);
-          else NONE();
-        end match;
-      else
-        mod := InstNode.getAnnotation(name, node);
+      if overwrite and InstNode.isComponent(node) then
+        node := InstNode.parent(node);
       end if;
 
-      if isSome(mod) then
+      (mod, scope) := InstNode.getAnnotation(name, node);
+
+      if not SCodeUtil.isEmptyMod(mod) then
+        if evaluate then
+          () := matchcontinue mod
+            case SCode.Mod.MOD(binding = SOME(aexp))
+              algorithm
+                exp := Inst.instExp(aexp, scope, NFInstContext.ANNOTATION, mod.info);
+                exp := Typing.typeExp(exp, NFInstContext.ANNOTATION, mod.info);
+                exp := Ceval.evalExp(exp);
+                mod.binding := SOME(Expression.toAbsyn(exp));
+              then
+                ();
+
+            else ();
+          end matchcontinue;
+        end if;
+
         anno := SCode.ANNOTATION(modification = SCode.MOD(
           finalPrefix = SCode.NOT_FINAL(),
           eachPrefix  = SCode.NOT_EACH(),
-          subModLst   = {Util.getOption(mod)},
+          subModLst   = {SCode.SubMod.NAMEMOD(name, mod)},
           binding     = NONE(),
           info        = sourceInfo()));
         var.comment := SCodeUtil.appendAnnotationToCommentOption(anno, var.comment, true);
