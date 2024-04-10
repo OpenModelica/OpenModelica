@@ -533,7 +533,7 @@ public
       attr.variability := Variability.IMPLICITLY_DISCRETE;
     elseif var < Variability.CONTINUOUS and InstContext.inFunction(context) and
            attr.direction <> Direction.NONE and
-           isNone(InstNode.getAnnotation("__OpenModelica_functionVariability", compNode)) then
+           SCodeUtil.isEmptyMod(InstNode.getAnnotation("__OpenModelica_functionVariability", compNode)) then
       // Variability prefixes on function parameters has no semantic meaning,
       // remove them so we don't have to worry about accidentally evaluating
       // e.g. an input declared as constant/parameter.
