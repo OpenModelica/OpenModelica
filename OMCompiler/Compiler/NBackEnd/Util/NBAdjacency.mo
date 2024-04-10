@@ -319,6 +319,13 @@ public
         and List.isEqualOnTrue(mode1.crefs, mode2.crefs, ComponentRef.isEqual);
     end isEqual;
 
+    function create
+      input Integer eqn_idx;
+      input list<ComponentRef> crefs;
+      input Boolean scalarize;
+      output Mode mode = MODE(eqn_idx, list(ComponentRef.simplifySubscripts(cref) for cref in crefs), scalarize);
+    end create;
+
     function merge
       input output Mode mode1;
       input Mode mode2;

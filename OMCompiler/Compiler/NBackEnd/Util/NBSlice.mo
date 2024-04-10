@@ -1198,7 +1198,7 @@ protected
     regulars := Dependency.toBoolean(d);
     if List.all(regulars, Util.id) then
       // II.1 all regular - single dependency per row.
-      mode := Mode.MODE(eqn_arr_idx, {cref}, false);
+      mode := Mode.create(eqn_arr_idx, {cref}, false);
       scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
       map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
       for scal in scalarized loop
@@ -1245,7 +1245,7 @@ protected
 
         // 4. iterate over all equation dimensions and use the map to get the correct dependencies
         key := arrayCreate(listLength(subs), 0);
-        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.MODE(eqn_arr_idx, {cref}, false), Pointer.create(skip_idx));
+        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_arr_idx, {cref}, false), Pointer.create(skip_idx));
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
           + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1266,7 +1266,7 @@ protected
 
       // if its repeated, use the same cref always
       if repeated then
-        mode := Mode.MODE(eqn_arr_idx, {cref}, false);
+        mode := Mode.create(eqn_arr_idx, {cref}, false);
       end if;
 
       for i in skip_idx:iter_size:skip_idx+size-iter_size loop
@@ -1274,7 +1274,7 @@ protected
         for scal in scalarized loop
           // if its not repeated use local cref
           if not repeated then
-            mode := Mode.MODE(eqn_arr_idx, {scal}, true);
+            mode := Mode.create(eqn_arr_idx, {scal}, true);
           end if;
           for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
             if intMod(shift, iter_size) == 0 then shift := 0; end if;
