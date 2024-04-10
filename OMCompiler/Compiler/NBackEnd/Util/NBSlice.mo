@@ -1182,7 +1182,6 @@ protected
     Boolean repeated;
     Mode mode;
   algorithm
-    //print("resolving " + ComponentRef.toString(cref) + "\n");
     // I. resolve the skips
     d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
     (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
@@ -1201,7 +1200,6 @@ protected
       // II.1 all regular - single dependency per row.
       mode := Mode.MODE(eqn_arr_idx, {cref}, false);
       scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
-      //print("all regular for " + ComponentRef.toString(cref) + ". scalar: " + List.toString(scalarized, ComponentRef.toString) + "\n");
       map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
       for scal in scalarized loop
         UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
@@ -1452,7 +1450,7 @@ protected
     list<Integer> sizes;
     list<Expression> subs;
   algorithm
-    stripped        := ComponentRef.stripSubscriptsAll(cref);
+    stripped        := if listEmpty(frames) then cref else ComponentRef.stripSubscriptsAll(cref);
     var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
     (var_start, _)  := mapping.var_AtS[var_arr_idx];
     sizes           := ComponentRef.sizes(stripped);
@@ -1472,7 +1470,7 @@ protected
     list<Integer> values;
   algorithm
     replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
-    values := list(Expression.integerValue(SimplifyExp.simplifyDump(rep, true, getInstanceName())) for rep in replaced);
+    values := list(Expression.integerValueOrDefault(SimplifyExp.simplifyDump(rep, true, getInstanceName()), 1) for rep in replaced);
     ranges := List.zip(sizes, values);
   end resolveDimensionsSubscripts;
 

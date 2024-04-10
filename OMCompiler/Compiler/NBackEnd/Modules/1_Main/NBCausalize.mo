@@ -185,7 +185,7 @@ public
   function simple
     input VariablePointers vars;
     input EquationPointers eqns;
-    input Adjacency.MatrixStrictness st = NBAdjacency.MatrixStrictness.SORTING;
+    input Adjacency.MatrixStrictness st = NBAdjacency.MatrixStrictness.MATCHING;
     output Matching matching;
     output list<StrongComponent> comps;
   protected

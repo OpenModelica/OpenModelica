@@ -1086,7 +1086,6 @@ public
       Iterator iter = Equation.getForIterator(eqn);
       Type ty = Equation.getType(eqn, true);
     algorithm
-      //print("ty: " + Type.toString(ty) + " equation: " + Equation.pointerToString(eqn_ptr) + "\n");
       // don't do this for if equations as soon as we properly split them
       if Equation.isAlgorithm(eqn_ptr) or Equation.isIfEquation(eqn_ptr) then
         // algorithm full dependency

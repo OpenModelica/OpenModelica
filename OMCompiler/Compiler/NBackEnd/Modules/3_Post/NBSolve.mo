@@ -184,7 +184,8 @@ public
     Status solve_status;
     StrongComponent implicit_comp;
   algorithm
-    (solved_comps, solve_status) := match comp
+    try
+      (solved_comps, solve_status) := match comp
         local
           Equation eqn;
           Slice<VariablePointer> var_slice;
@@ -331,7 +332,11 @@ public
         then (solved_comps, solve_status);
 
         else ({comp}, Status.UNSOLVABLE);
-    end match;
+      end match;
+    else
+      // this fails in the next case because of the unsolvable status
+      (solved_comps, solve_status) := ({comp}, Status.UNSOLVABLE);
+    end try;
 
     // solve implicit equation (algebraic loop is always implicit)
     if solve_status == Status.IMPLICIT and listLength(solved_comps) == 1 then
