@@ -1370,8 +1370,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
 {
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
-  }
-  if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
+  } else if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
     return pLibraryTreeItem;
   }
   for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
