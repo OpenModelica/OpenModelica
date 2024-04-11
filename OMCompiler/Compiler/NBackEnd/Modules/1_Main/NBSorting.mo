@@ -173,7 +173,7 @@ public
       input array<Integer> eqn_to_var           "eqn to var matching";
       input EquationPointers eqns;
       input Adjacency.Mapping mapping           "scalar <-> array index mapping";
-      input UnorderedMap<Mode.Key, Mode> modes2;
+      input UnorderedMap<Mode.Key, Mode> modes;
       output UnorderedMap<Mode, PseudoBucketValue> buckets = UnorderedMap.new<PseudoBucketValue>(Mode.hash, Mode.isEqual);
     protected
       Option<Mode> mode_opt;
@@ -182,7 +182,7 @@ public
     algorithm
       // add each equation to a bucket if solved the same way
       for eqn_scal_idx in 1:arrayLength(eqn_to_var) loop
-        mode_opt := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes2);
+        mode_opt := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes);
         if Util.isSome(mode_opt) then
           mode := Util.getOption(mode_opt);
           if Equation.isRecordOrTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
@@ -304,19 +304,19 @@ public
           if Flags.isSet(Flags.DUMP_SORTING) then
             print(StringUtil.headline_1("Sorting"));
           end if;
-          buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.modes2);
+          buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.modes);
 
           comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
           // phase 2 tarjan
-          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, comps_indices, buckets);
+          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, eqns.map, comps_indices, buckets);
 
           // kabdelhak: this match-statement is superfluous, SuperNode.create always returns these types.
           // it is just safer if something is changed in the future
           () := match phase2_adj
             case Adjacency.Matrix.FINAL() algorithm
               phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
-              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
+              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
             then ();
 
             else algorithm
@@ -374,7 +374,6 @@ public
     // reverse for correct ordering
     comps := listReverse(comps);
   end tarjanScalar;
-
 
   uniontype SuperNode
     record SINGLE
@@ -445,14 +444,15 @@ public
     function create
       input Adjacency.Matrix adj;
       input Matching matching;
+      input UnorderedMap<ComponentRef, Integer> eqn_map;
       input list<list<Integer>> scc_phase1;
-      input UnorderedMap<Mode, PseudoBucketValue> b;
+      input UnorderedMap<Mode, PseudoBucketValue> buck;
       output Adjacency.Matrix phase2_adj = adj;
       output Matching phase2_matching = matching;
       output array<SuperNode> super_nodes;
     protected
       list<list<Integer>> algebraic_loops = list(scc for scc guard(listLength(scc) > 1) in scc_phase1);
-      list<tuple<Mode, PseudoBucketValue>> buckets = UnorderedMap.toList(b);
+      list<tuple<Mode, PseudoBucketValue>> buckets = UnorderedMap.toList(buck);
       Mode mode;
       PseudoBucketValue val;
       Integer index, shift;
@@ -504,7 +504,7 @@ public
             (mode, val) := bucket;
             var_lst := list(phase2_matching.eqn_to_var[idx] for idx in PseudoBucketValue.getEquations(val));
             _ := match val
-              case PseudoBucketValue.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, mode.eqn_idx, false); then ();
+              case PseudoBucketValue.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), false); then ();
               case PseudoBucketValue.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, var_lst, index, false); then ();
             end match;
             index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
@@ -525,7 +525,7 @@ public
             (mode, val) := bucket;
             eqn_lst := PseudoBucketValue.getEquations(val);
             _ := match val
-              case PseudoBucketValue.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, eqn_lst, index, mode.eqn_idx, true); then ();
+              case PseudoBucketValue.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, eqn_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), true); then ();
               case PseudoBucketValue.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, eqn_lst, index, true); then ();
             end match;
             index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, eqn_lst, index);
@@ -553,7 +553,6 @@ public
       input array<SuperNode> super_nodes;
       input array<list<Integer>> m;
       input Adjacency.Mapping mapping;
-      input Adjacency.CausalizeModes modes;
       input array<Integer> var_to_eqn;
       input array<Integer> eqn_to_var;
       input VariablePointers vars;

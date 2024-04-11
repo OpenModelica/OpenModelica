@@ -1047,6 +1047,7 @@ public
   function upgradeRow
     "For-Loop equations.
     Turns cref dependencies into index lists, used for adjacency."
+    input ComponentRef eqn_name;
     input Integer eqn_arr_idx;
     input Iterator iter                                     "iterator frames";
     input Type ty;
@@ -1059,7 +1060,7 @@ public
     input UnorderedMap<Mode.Key, Mode> modes;
   algorithm
     for cref in dependencies loop
-      resolveDependency(cref, eqn_arr_idx, iter, ty, dep, rep, map, m, mapping, modes);
+      resolveDependency(cref, eqn_name, eqn_arr_idx, iter, ty, dep, rep, map, m, mapping, modes);
     end for;
   end upgradeRow;
 
@@ -1166,6 +1167,7 @@ protected
     I.  Resolve skip dimensions (Tuples, Records, Array Constructors)
     II. Resolve regular vs. reduced dimensions"
     input ComponentRef cref;
+    input ComponentRef eqn_name;
     input Integer eqn_arr_idx;
     input Iterator iter;
     input Type ty;
@@ -1211,7 +1213,7 @@ protected
     regulars := Dependency.toBoolean(d);
     if List.all(regulars, Util.id) then
       // II.1 all regular - single dependency per row.
-      mode := Mode.create(eqn_arr_idx, {cref}, false);
+      mode := Mode.create(eqn_name, {cref}, false);
       scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
       map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
       for scal in scalarized loop
@@ -1258,7 +1260,7 @@ protected
 
         // 4. iterate over all equation dimensions and use the map to get the correct dependencies
         key := arrayCreate(listLength(subs), 0);
-        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_arr_idx, {cref}, false), Pointer.create(skip_idx));
+        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {cref}, false), Pointer.create(skip_idx));
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
           + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1279,7 +1281,7 @@ protected
 
       // if its repeated, use the same cref always
       if repeated then
-        mode := Mode.create(eqn_arr_idx, {cref}, false);
+        mode := Mode.create(eqn_name, {cref}, false);
       end if;
 
       for i in skip_idx:iter_size:skip_idx+size-iter_size loop
@@ -1287,7 +1289,7 @@ protected
         for scal in scalarized loop
           // if its not repeated use local cref
           if not repeated then
-            mode := Mode.create(eqn_arr_idx, {scal}, true);
+            mode := Mode.create(eqn_name, {scal}, true);
           end if;
           for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
             if intMod(shift, iter_size) == 0 then shift := 0; end if;

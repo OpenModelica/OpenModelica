@@ -114,6 +114,7 @@ public
     "
     input output Matching matching;
     input output Adjacency.Matrix adj;
+    input output Adjacency.Matrix full;
     input output VariablePointers vars;
     input output EquationPointers eqns;
     input output FunctionTree funcTree;
@@ -144,13 +145,13 @@ public
     changed := match systemType
       case NBSystem.SystemType.INI algorithm
         // ####### BALANCE INITIALIZATION #######
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, adj, matching, mapping);
+        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
       then changed;
 
       else algorithm
         // ####### INDEX REDUCTION ######
         // for now no index reduction
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(vars, eqns, varData, eqData, funcTree, adj, matching, mapping);
+        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
       then changed;
     end match;
 
@@ -159,7 +160,7 @@ public
       // ToDo: keep more of old information by only updating changed stuff
       adj := Adjacency.Matrix.createFull(vars, eqns);
       adj := Adjacency.Matrix.fromFull(adj, vars.map, eqns.map, eqns, matrixStrictness);
-      (matching, adj, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, vars, eqns, funcTree, varData, eqData, systemType, false, true);
+      (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, systemType, false, true);
     end if;
   end singular;
 

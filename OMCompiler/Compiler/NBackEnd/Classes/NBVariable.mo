@@ -410,6 +410,17 @@ public
     end if;
   end getPrePostCref;
 
+  function hasStartAttr extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      local
+        VariableAttributes attr;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attr))
+        then Util.isSome(VariableAttributes.getStartAttribute(attr));
+      else false;
+    end match;
+  end hasStartAttr;
+
   function hasPre
     "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
     extends checkVar;
@@ -513,7 +524,7 @@ public
   algorithm
     b := match Pointer.access(var_ptr)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))             then not isFixed(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.ALGEBRAIC()))         then not isFixed(var_ptr) or hasPre(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.ALGEBRAIC()))         then not isFixed(var_ptr) and hasStartAttr(var_ptr);
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))          then not isFixed(var_ptr) or hasPre(var_ptr);
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))    then not isFixed(var_ptr) or hasPre(var_ptr);
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))         then not isFixed(var_ptr);

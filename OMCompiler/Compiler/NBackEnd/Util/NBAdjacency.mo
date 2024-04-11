@@ -63,15 +63,6 @@ protected
   import Slice = NBSlice;
   import StringUtil;
 
-  // SetBased Graph imports
-  import SBGraph.BipartiteIncidenceList;
-  import SBGraph.VertexDescriptor;
-  import SBGraph.SetType;
-  import SBInterval;
-  import SBMultiInterval;
-  import SBPWLinearMap;
-  import SBSet;
-
 public
   type MatrixStrictness  = enumeration(LINEAR, SOLVABLE, MATCHING, SORTING, FULL);
 
@@ -128,12 +119,12 @@ public
       list<Pointer<Variable>> var_lst = VariablePointers.toList(vars);
       array<Integer> eqn_StA, var_StA;
       array<tuple<Integer,Integer>> eqn_AtS, var_AtS;
-      Integer eqn_scalar_size, var_scalar_size, size;
+      Integer eqn_scalar_size, var_scalar_size;
       Integer eqn_idx_scal = 1, eqn_idx_arr = 1, var_idx_scal = 1, var_idx_arr = 1;
     algorithm
       // prepare the mappings
-      eqn_scalar_size := sum(array(Equation.size(eqn) for eqn in eqn_lst));
-      var_scalar_size := sum(array(BVariable.size(var) for var in var_lst));
+      eqn_scalar_size := sum(Equation.size(eqn) for eqn in eqn_lst);
+      var_scalar_size := sum(BVariable.size(var) for var in var_lst);
       eqn_StA := arrayCreate(eqn_scalar_size, -1);
       var_StA := arrayCreate(var_scalar_size, -1);
       eqn_AtS := arrayCreate(EquationPointers.size(eqns), (-1, -1));
@@ -150,14 +141,14 @@ public
       input output Mapping mapping;
       input list<Pointer<Equation>> eqn_lst;
       input list<Pointer<Variable>> var_lst;
-      input Integer neqn_scal;
-      input Integer nvar_scal;
-      input Integer neqn_arr;
-      input Integer nvar_arr;
     protected
       array<Integer> eqn_StA, var_StA;
       array<tuple<Integer,Integer>> eqn_AtS, var_AtS;
       Integer eqn_scalar_size, var_scalar_size;
+      Integer neqn_scal = sum(Equation.size(eqn) for eqn in eqn_lst);
+      Integer nvar_scal = sum(BVariable.size(var) for var in var_lst);
+      Integer neqn_arr = listLength(eqn_lst);
+      Integer nvar_arr = listLength(var_lst);
       Integer eqn_idx_scal = arrayLength(mapping.eqn_StA) + 1, eqn_idx_arr = arrayLength(mapping.eqn_AtS) + 1;
       Integer var_idx_scal = arrayLength(mapping.var_StA) + 1, var_idx_arr = arrayLength(mapping.var_AtS) + 1;
     algorithm
@@ -297,14 +288,14 @@ public
       "most of the time this will only have one cref. if there are multiple crefs
       representing the same variable its a multi mode and the equation needs to
       be split when solved for it"
-      Integer eqn_idx           "the array index of the equation";
+      ComponentRef eqn_name     "the equation name";
       list<ComponentRef> crefs  "the cref(s) to solve for";
       Boolean scalarize         "true if the equation needs to be scalarized to find the cref to solve for";
     end MODE;
 
     function toString
       input Mode mode;
-      output String str = "[eqn: " + intString(mode.eqn_idx) + ", crefs: " + List.toString(mode.crefs, ComponentRef.toString) + ", scal: " + boolString(mode.scalarize) + "]";
+      output String str = "[eqn: " + ComponentRef.toString(mode.eqn_name) + ", crefs: " + List.toString(mode.crefs, ComponentRef.toString) + ", scal: " + boolString(mode.scalarize) + "]";
     end toString;
 
     function hash
@@ -315,15 +306,15 @@ public
     function isEqual
       input Mode mode1;
       input Mode mode2;
-      output Boolean b = mode1.eqn_idx == mode2.eqn_idx and mode1.scalarize == mode2.scalarize
+      output Boolean b = ComponentRef.isEqual(mode1.eqn_name, mode2.eqn_name) and mode1.scalarize == mode2.scalarize
         and List.isEqualOnTrue(mode1.crefs, mode2.crefs, ComponentRef.isEqual);
     end isEqual;
 
     function create
-      input Integer eqn_idx;
+      input ComponentRef eqn_name;
       input list<ComponentRef> crefs;
       input Boolean scalarize;
-      output Mode mode = MODE(eqn_idx, list(ComponentRef.simplifySubscripts(cref) for cref in crefs), scalarize);
+      output Mode mode = MODE(eqn_name, list(ComponentRef.simplifySubscripts(cref) for cref in crefs), scalarize);
     end create;
 
     function merge
@@ -373,136 +364,6 @@ public
     end keyEqual;
   end Mode;
 
-  uniontype CausalizeModes
-    record CAUSALIZE_MODES
-      "for-loop reconstruction information"
-      array<array<Integer>> mode_to_var       "scal_eqn:  mode idx -> var";
-      array<array<ComponentRef>> mode_to_cref "arr_eqn:   mode idx -> cref to solve for";
-      Pointer<list<Integer>> mode_eqns        "array indices of relevant eqns";
-    end CAUSALIZE_MODES;
-
-    function empty
-      input Integer eqn_scalar_size;
-      input Integer eqn_array_size;
-      output CausalizeModes modes = CAUSALIZE_MODES(
-          mode_to_var  = arrayCreate(eqn_scalar_size, arrayCreate(0,0)),
-          mode_to_cref = arrayCreate(eqn_array_size, arrayCreate(0,ComponentRef.EMPTY())),
-          mode_eqns    = Pointer.create({})
-        );
-    end empty;
-
-    function contains
-      "checks if there is a mode for this eqn array index"
-      input Integer eqn_scal_idx;
-      input CausalizeModes modes;
-      output Boolean b = not arrayEmpty(arrayGet(modes.mode_to_var, eqn_scal_idx));
-    end contains;
-
-    function get
-      "returns the proper mode for an eqn-var index tuple"
-      input Integer eqn_scal_idx;
-      input Integer var_scal_idx;
-      input CausalizeModes modes;
-      output Integer mode = -1;
-    protected
-      array<Integer> mtv = arrayGet(modes.mode_to_var, eqn_scal_idx);
-    algorithm
-      for i in 1:arrayLength(mtv) loop
-        if mtv[i] == var_scal_idx then
-          mode := i;
-          return;
-        end if;
-      end for;
-    end get;
-
-    function expand
-      input output CausalizeModes modes;
-      input Mapping mapping;
-    protected
-      array<array<Integer>> mode_to_var       = arrayCreate(arrayLength(mapping.eqn_StA), arrayCreate(0,0));
-      array<array<ComponentRef>> mode_to_cref = arrayCreate(arrayLength(mapping.eqn_AtS), arrayCreate(0,ComponentRef.EMPTY()));
-    algorithm
-      Array.copy(modes.mode_to_var, mode_to_var);
-      Array.copy(modes.mode_to_cref, mode_to_cref);
-      modes := CAUSALIZE_MODES(mode_to_var, mode_to_cref, modes.mode_eqns);
-    end expand;
-
-    function update
-      input CausalizeModes modes;
-      input Integer eqn_scal_idx;
-      input Integer eqn_arr_idx;
-      input array<array<Integer>> mode_to_var_part;
-      input list<ComponentRef> unique_dependencies;
-    protected
-      // get clean pointers -> type checking fails otherwise
-      array<array<Integer>> mode_to_var = modes.mode_to_var;
-      array<array<ComponentRef>> mode_to_cref = modes.mode_to_cref;
-    algorithm
-      // if there is no mode yet this equation index has not been added
-      if arrayLength(mode_to_cref[eqn_arr_idx]) == 0 then
-        Pointer.update(modes.mode_eqns, eqn_arr_idx :: Pointer.access(modes.mode_eqns));
-      end if;
-
-      // create scalar mode idx to variable mapping
-      for i in 1:arrayLength(mode_to_var_part) loop
-        arrayUpdate(mode_to_var, eqn_scal_idx+(i-1), arrayAppend(mode_to_var_part[i], mode_to_var[eqn_scal_idx+(i-1)]));
-      end for;
-
-      // create array mode to cref mapping
-      arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(unique_dependencies), mode_to_cref[eqn_arr_idx]));
-    end update;
-
-    function clean
-      "cleans up all equation causalize modes of given indices
-      used for the updating routine."
-      input CausalizeModes modes;
-      input Mapping mapping;
-      input list<Integer> idx_lst;
-    protected
-      array<array<Integer>> mode_to_var = modes.mode_to_var;
-      array<array<ComponentRef>> mode_to_cref = modes.mode_to_cref;
-      list<Integer> scal_indices;
-    algorithm
-      for arr_idx in idx_lst loop
-        scal_indices := Mapping.getEqnScalIndices(arr_idx, mapping);
-        mode_to_cref[arr_idx] := arrayCreate(0, ComponentRef.EMPTY());
-        for scal_idx in scal_indices loop
-          mode_to_var[scal_idx] := arrayCreate(0, 0);
-        end for;
-      end for;
-    end clean;
-
-    function toString
-      input CausalizeModes modes;
-      output String str;
-    protected
-      array<Integer> mtv;
-      array<ComponentRef> mtc;
-    algorithm
-      str := StringUtil.headline_2("Causalization Modes");
-
-      str := str + StringUtil.headline_3("(scalar) mode index -> variable index");
-      for j in 1:arrayLength(modes.mode_to_var) loop
-        mtv := modes.mode_to_var[j];
-        str := str + "[" + intString(j) + "]\t";
-        for i in 1:arrayLength(mtv) loop
-          str := str + "(" + intString(i) + "->" + intString(mtv[i]) + ")";
-        end for;
-        str := str + "\n";
-      end for;
-
-      str := str + "\n" + StringUtil.headline_3("(array) mode index -> variable cref");
-      for j in 1:arrayLength(modes.mode_to_cref) loop
-        mtc := modes.mode_to_cref[j];
-        str := str + "[" + intString(j) + "]\t";
-        for i in 1:arrayLength(mtc) loop
-          str := str + "(" + intString(i) + "->" + ComponentRef.toString(mtc[i]) + ")";
-        end for;
-        str := str + "\n";
-      end for;
-    end toString;
-  end CausalizeModes;
-
   uniontype Matrix
     "used to store adjacency information for the bipartite graph representing the system of equations and variables
     you have to create it in this specific order: EMPTY->FULL->FINAL(LINEAR)->FINAL->(MATCHING)->FINAL(SORTING)
@@ -514,7 +375,7 @@ public
 
     record FULL "contains all information needed. create specific final matrices from this"
       array<ComponentRef> equation_names;
-      array<list<ComponentRef>> occurences;
+      array<UnorderedSet<ComponentRef>> occurences;
       array<UnorderedMap<ComponentRef, Dependency>> dependencies;
       array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
       array<UnorderedSet<ComponentRef>> repetitions;
@@ -522,31 +383,189 @@ public
     end FULL;
 
     record FINAL "specific final matrix, defined by its strictness"
-      array<list<Integer>> m        "eqn -> list<var>";
-      array<list<Integer>> mT       "var -> list<eqn>";
-      Mapping mapping               "index mapping scalar <-> array";
-      UnorderedMap<Mode.Key, Mode> modes2;
-      CausalizeModes modes          "for-loop reconstruction information";
-      MatrixStrictness st           "strictness with which it was created";
+      array<list<Integer>> m              "eqn -> list<var>";
+      array<list<Integer>> mT             "var -> list<eqn>";
+      Mapping mapping                     "index mapping scalar <-> array";
+      UnorderedMap<Mode.Key, Mode> modes  "array reconstruction information";
+      MatrixStrictness st                 "strictness with which it was created";
     end FINAL;
 
-    function expand
-      input output Matrix adj                             "adjancency matrix to be expanded";
-      input Matrix full                                   "full matrix having all information";
-      input UnorderedMap<ComponentRef, Integer> vo, vn    "old and new variable index map";
-      input UnorderedMap<ComponentRef, Integer> eo, en    "old and new equation index map";
+    function createFull
       input VariablePointers vars;
       input EquationPointers eqns;
+      output Matrix adj;
     protected
-      Integer size_vo, size_vn, size_eo, size_en;
+      Integer index, size = EquationPointers.size(eqns);
+      array<ComponentRef> equation_names;
+      array<UnorderedSet<ComponentRef>> occurences;
+      array<UnorderedMap<ComponentRef, Dependency>> dependencies;
+      array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
+      array<UnorderedSet<ComponentRef>> repetitions;
+      UnorderedSet<ComponentRef> occ_set, rep_set;
+      UnorderedMap<ComponentRef, Dependency> dep_map;
+      UnorderedMap<ComponentRef, Solvability> sol_map;
+      Mapping mapping;
+    algorithm
+      // only create matrix if there are any variables or equations
+      if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqns.eqArr) > 0 then
+        // create empty arrays for the structures
+        equation_names  := arrayCreate(size, ComponentRef.EMPTY());
+        occurences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+        dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
+        solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
+        repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+        // loop over each equation and create the corresponding maps and sets
+        for eqn_ptr in EquationPointers.toList(eqns) loop
+          index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
+          dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
+          sol_map := UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual);
+          rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), vars.map, dep_map, sol_map, rep_set);
+          equation_names[index] := Equation.getEqnName(eqn_ptr);
+          occurences[index]     := occ_set;
+          dependencies[index]   := dep_map;
+          solvabilities[index]  := sol_map;
+          repetitions[index]    := rep_set;
+        end for;
+        // create the index mapping and the matrix
+        mapping := Mapping.create(eqns, vars);
+        adj := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
+      else
+        adj := EMPTY(MatrixStrictness.FULL);
+      end if;
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(StringUtil.headline_1("Creating Adjacency Matrices") + "\n");
+        print(EquationPointers.toString(eqns) + "\n");
+        print(VariablePointers.toString(vars) + "\n");
+        print(toString(adj, "Full") + "\n");
+        print(solvabilityString(adj, "Full") + "\n");
+        print(dependencyString(adj, "Full") + "\n");
+      end if;
+    end createFull;
+
+    function fromFull
+      input Matrix full;
+      input UnorderedMap<ComponentRef, Integer> vars_map;
+      input UnorderedMap<ComponentRef, Integer> eqns_map;
+      input EquationPointers eqns;
+      input MatrixStrictness st;
+      output Matrix adj = upgrade(EMPTY(MatrixStrictness.FULL), full, vars_map, eqns_map, eqns, st);
+    end fromFull;
+
+    function upgrade
+      "upgrades a matrix using the information provided by the full matrix"
+      input output Matrix adj;
+      input Matrix full;
+      input UnorderedMap<ComponentRef, Integer> vars_map;
+      input UnorderedMap<ComponentRef, Integer> eqns_map;
+      input EquationPointers eqns;
+      input MatrixStrictness st;
+    protected
+      array<UnorderedSet<ComponentRef>> occ;
+      array<UnorderedMap<ComponentRef, Dependency>> dep;
+      array<UnorderedMap<ComponentRef, Solvability>> sol;
+      array<UnorderedSet<ComponentRef>> rep;
+      Mapping mapping;
+      Integer index, min, max;
+      list<ComponentRef> filtered;
+    algorithm
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(StringUtil.headline_1("Upgrading from [" + strictnessString(getStrictness(adj)) + "] to [" + strictnessString(st) +"]") + "\n");
+      end if;
+
+       adj := match full
+        case EMPTY() then EMPTY(st);
+
+        case FULL() algorithm
+          (mapping, occ, dep, sol, rep) := (full.mapping, full.occurences, full.dependencies, full.solvabilities, full.repetitions);
+
+          // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
+          if isEmpty(adj) then
+            min := 0;
+            adj := initialize(mapping, st);
+          else
+            min := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
+          end if;
+          max := Solvability.rank(Solvability.fromStrictness(st));
+
+          adj := match adj
+            local
+              Matrix result;
+
+            // default case
+            case FINAL() algorithm
+              // only do if valid upgrade otherwise create from scratch and issue warning if failtrace is activated
+              if max == min then
+                result := adj;
+              elseif max > min then
+                for name in UnorderedMap.keyList(eqns_map) loop
+                  index := UnorderedMap.getSafe(name, eqns_map, sourceInfo());
+                  filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
+                  // now run the normal createPseudo pipeline but use dependencies
+                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, adj.m, adj.mapping, adj.modes);
+                end for;
+                adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
+                result := adj;
+              else
+                if Flags.isSet(Flags.FAILTRACE) then
+                  Error.addCompilerWarning("Invalid matrix upgrade request. Cannot upgrade matrix of type "
+                    + Solvability.toString(Solvability.fromStrictness(getStrictness(adj))) + " to type "
+                    + Solvability.toString(Solvability.fromStrictness(st)) + ". The new matrix will be
+                    created from using only the full adjacency matrix.");
+                end if;
+                result := fromFull(full, vars_map, eqns_map, eqns, st);
+              end if;
+            then result;
+
+            // if its still empty even after initializing it, there are no variables or equations
+            case EMPTY() then adj;
+
+            // cannot upgrade a full matrix
+            case FULL() algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 1st input.
+                Expected: final or empty, Got :" + strictnessString(getStrictness(adj)) + "."});
+            then fail();
+          end match;
+        then adj;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 2nd input.
+            Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});
+        then fail();
+      end match;
+
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(toString(adj, "Final") + "\n");
+      end if;
+    end upgrade;
+
+    function expand
+      "expands the adjacency matrix adj with new information provided by vn and en.
+      If necessary it also expands the full matrix."
+      input output Matrix adj                             "adjancency matrix to be expanded";
+      input output Matrix full                            "full matrix having all information";
+      input UnorderedMap<ComponentRef, Integer> vo, vn    "old and new variable index map";
+      input UnorderedMap<ComponentRef, Integer> eo, en    "old and new equation index map";
+      input VariablePointers vars                         "all variables, containing new and old";
+      input EquationPointers eqns                         "all equations, containing new and old";
+    protected
+      Integer size_vo, size_vn, size_eo, size_en; //only for debugging
     algorithm
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
         size_vo := sum(ComponentRef.size(var) for var in UnorderedMap.keyList(vo));
         size_vn := sum(ComponentRef.size(var) for var in UnorderedMap.keyList(vn)) + size_vo;
         size_eo := sum(ComponentRef.size(eqn) for eqn in UnorderedMap.keyList(eo));
         size_en := sum(ComponentRef.size(eqn) for eqn in UnorderedMap.keyList(en)) + size_eo;
-        print(StringUtil.headline_1("Expanding from size [" + intString(size_vo) + "|" + intString(size_eo) + "] to [" + intString(size_vn) + "|" + intString(size_en) +  "]") + "\n");
+        print(StringUtil.headline_1("Expanding from size [vars: " + intString(size_vo) + "| eqns: " + intString(size_eo) + "] to [vars: " + intString(size_vn) + "| eqns: " + intString(size_en) +  "]") + "\n");
       end if;
+
+      // check if full has to be expanded
+      full := match full
+        case FULL() guard(EquationPointers.size(eqns) > arrayLength(full.equation_names))
+          then expandFull(full, vo, vn, eo, en, vars, eqns);
+        else full;
+      end match;
+
       adj := match (adj, full)
         local
           Matrix new;
@@ -562,9 +581,11 @@ public
           end if;
         then new;
 
+        // default case
         case (FINAL(), FULL()) algorithm
-          // expand the integer matrix
+          // 0. expand the integer matrix
           adj.m := expandMatrix(adj.m, EquationPointers.scalarSize(eqns) - arrayLength(adj.m));
+          adj.mapping := full.mapping;
 
           // get the strictness ranking
           rank := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
@@ -576,16 +597,16 @@ public
           // I. update all old equations with the new variables
           if not UnorderedMap.isEmpty(vn) then
             for e in UnorderedMap.valueList(eo) loop
-              filtered := Solvability.filter(full.occurences[e], full.solvabilities[e], vn, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, adj.m, adj.mapping, adj.modes2);
+              filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], vn, 0, rank);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
 
-          // II. update new equations with both old and new variables
+          // II. update new equations with all variables
           if not UnorderedMap.isEmpty(en) then
             for e in UnorderedMap.valueList(en) loop
-              filtered := Solvability.filter(full.occurences[e], full.solvabilities[e], v, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, adj.m, adj.mapping, adj.modes2);
+              filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], v, 0, rank);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
 
@@ -598,32 +619,156 @@ public
           adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars));
         then adj;
 
+        // fail cases
         case (FINAL(), _) algorithm
-          print(Adjacency.Matrix.toString(adj) + "\n");
-          print(Adjacency.Matrix.toString(full) + "\n");
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the full matrix expected to contain all information is instead of type "
             + strictnessString(getStrictness(full)) + "."});
         then fail();
 
         case (_, FULL()) algorithm
-          print(Adjacency.Matrix.toString(adj) + "\n");
-          print(Adjacency.Matrix.toString(full) + "\n");
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the matrix to be expanded of type "
             + strictnessString(getStrictness(adj)) + " should be of type final."});
         then fail();
 
         else algorithm
-          print(Adjacency.Matrix.toString(adj) + "\n");
-          print(Adjacency.Matrix.toString(full) + "\n");
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the matrix to be expanded of type " + strictnessString(getStrictness(adj))
-            + " should be of type final and the full matrix expected to contain all information is instead of type " + strictnessString(getStrictness(full)) + "."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected types final and full, got types " + strictnessString(getStrictness(adj))
+            + " and " + strictnessString(getStrictness(full)) + "."});
         then fail();
       end match;
 
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(toString(adj, "Final") + "\n");
+        print(toString(adj, "Expanded Final") + "\n");
       end if;
     end expand;
+
+    function expandFull
+      "usually only called from expand()"
+      input output Matrix full                            "full matrix having all information";
+      input UnorderedMap<ComponentRef, Integer> vo, vn    "old and new variable index map";
+      input UnorderedMap<ComponentRef, Integer> eo, en    "old and new equation index map";
+      input VariablePointers vars                         "all variables, containing new and old";
+      input EquationPointers eqns                         "all equations, containing new and old";
+    algorithm
+      full := match full
+        local
+          list<Pointer<Variable>> new_vars = list(VariablePointers.getVarAt(vars, idx) for idx in UnorderedMap.valueList(vn));
+          list<Pointer<Equation>> new_eqns = list(EquationPointers.getEqnAt(eqns, idx) for idx in UnorderedMap.valueList(en));
+          Integer index, size = EquationPointers.size(eqns);
+          Pointer<Equation> eqn_ptr;
+          UnorderedSet<ComponentRef> occ_set;
+        case FULL() algorithm
+          // 0. enlargen the arrays
+          full.mapping        := Mapping.expand(full.mapping, new_eqns, new_vars);
+          full.equation_names := Array.expandToSize(size, full.equation_names, ComponentRef.EMPTY());
+          full.occurences     := Array.expandToSize(size, full.occurences, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          full.dependencies   := Array.expandToSize(size, full.dependencies, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
+          full.solvabilities  := Array.expandToSize(size, full.solvabilities, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
+          full.repetitions    := Array.expandToSize(size, full.repetitions, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+
+          // I. update all old equations with the new variables
+          if not UnorderedMap.isEmpty(vn) then
+            for e in UnorderedMap.valueList(eo) loop
+              eqn_ptr := EquationPointers.getEqnAt(eqns, e);
+              index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
+              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), vn, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
+              full.occurences[index] := UnorderedSet.union(full.occurences[index], occ_set);
+            end for;
+          end if;
+
+          // II. update new equations with all variables
+          if not UnorderedMap.isEmpty(en) then
+            for e in UnorderedMap.valueList(en) loop
+              eqn_ptr := EquationPointers.getEqnAt(eqns, e);
+              index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
+              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), vars.map, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
+              full.equation_names[index] := Equation.getEqnName(eqn_ptr);
+              full.occurences[index] := occ_set;
+            end for;
+          end if;
+        then full;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected types final, got type " + strictnessString(getStrictness(full)) + "."});
+        then fail();
+      end match;
+
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(toString(full, "Expanded Full") + "\n");
+      end if;
+    end expandFull;
+
+    function compress
+      "use after equations have been removed"
+      input output Matrix adj;
+      input output Matrix full;
+      input EquationPointers eqns;
+      input VariablePointers vars;
+      input UnorderedMap<ComponentRef, Integer> old_map;
+    protected
+      Integer index_old, index_new, size = EquationPointers.size(eqns);
+      ComponentRef name;
+      array<ComponentRef> equation_names;
+      array<UnorderedSet<ComponentRef>> occurences;
+      array<UnorderedMap<ComponentRef, Dependency>> dependencies;
+      array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
+      array<UnorderedSet<ComponentRef>> repetitions;
+      Mapping mapping;
+      array<list<Integer>> m;
+      Integer old_start, old_size, new_start, new_size;
+    algorithm
+      (adj, full) := match (adj, full)
+        local
+          Matrix new_adj, new_full;
+        case (FINAL(), FULL()) algorithm
+          // create the index mapping from scratch
+          mapping := Mapping.create(eqns, vars);
+
+          // create empty arrays for the structures
+          m               := arrayCreate(arrayLength(mapping.eqn_StA), {});
+          equation_names  := arrayCreate(size, ComponentRef.EMPTY());
+          occurences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
+          solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
+          repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          // loop over each equation and copy the corresponding maps and sets
+          for eqn_ptr in EquationPointers.toList(eqns) loop
+            name        := Equation.getEqnName(eqn_ptr);
+            index_new   := UnorderedMap.getSafe(name, eqns.map, sourceInfo());
+            index_old   := UnorderedMap.getSafe(name, old_map, sourceInfo());
+            // create structures for final matrix
+            (old_start, old_size)     := adj.mapping.eqn_AtS[index_old];
+            (new_start, new_size)     := mapping.eqn_AtS[index_new];
+            if old_size == new_size then
+              for i in 0:old_size-1 loop
+                m[new_start+i] := adj.m[old_start+i];
+              end for;
+            else
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " sizes (old: " + intString(old_size) + ", new: "
+                + intString(new_size) + " do not mach for equation:\n" + Equation.pointerToString(eqn_ptr)});
+              fail();
+            end if;
+            // create the structures for full matrix
+            equation_names[index_new] := name;
+            occurences[index_new]     := full.occurences[index_old];
+            dependencies[index_new]   := full.dependencies[index_old];
+            solvabilities[index_new]  := full.solvabilities[index_old];
+            repetitions[index_new]    := full.repetitions[index_old];
+          end for;
+
+          new_adj  := FINAL(m, transposeScalar(m, VariablePointers.scalarSize(vars)), mapping, adj.modes, adj.st);
+          new_full := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
+        then (new_adj, new_full);
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected types final and full, got types " + strictnessString(getStrictness(adj))
+            + " and " + strictnessString(getStrictness(full)) + "."});
+        then fail();
+      end match;
+
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(toString(adj, "Compressed Final") + "\n");
+        print(toString(full, "Compressed Full") + "\n");
+      end if;
+    end compress;
 
     function toString
       input Matrix adj;
@@ -643,10 +788,9 @@ public
           for i in 1:arrayLength(names) loop
             str := str + arrayGet(types, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types, i))) + " "
               + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
-              + " " + List.toString(adj.occurences[i], function fullString(dep_map = adj.dependencies[i],
+              + " " + List.toString(UnorderedSet.toList(adj.occurences[i]), function fullString(dep_map = adj.dependencies[i],
               sol_map = adj.solvabilities[i], rep_set = adj.repetitions[i])) + "\n";
           end for;
-          str := str + Mapping.toString(adj.mapping) + "\n";
         then str;
 
         case FINAL() algorithm
@@ -685,7 +829,7 @@ public
           types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
-            (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(adj.occurences[i], adj.solvabilities[i]);
+            (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurences[i]), adj.solvabilities[i]);
             xx := List.toString(XX, ComponentRef.toString, "XX ", "{", ",", "}", false) :: xx;
             ii := List.toString(II, ComponentRef.toString, "II ", "{", ",", "}", false) :: ii;
             nm := List.toString(NM, ComponentRef.toString, "N- ", "{", ",", "}", false) :: nm;
@@ -746,7 +890,7 @@ public
           types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
-            (F, R, E, A, S, K) := Dependency.categorize(adj.occurences[i], adj.dependencies[i], adj.repetitions[i]);
+            (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurences[i]), adj.dependencies[i], adj.repetitions[i]);
             f := List.toString(F, ComponentRef.toString, "[!]", "{", ",", "}", false) :: f;
             r := List.toString(R, ComponentRef.toString, "[-]", "{", ",", "}", false) :: r;
             e := List.toString(E, ComponentRef.toString, "[+]", "{", ",", "}", false) :: e;
@@ -865,156 +1009,6 @@ public
       end for;
     end transposeScalar;
 
-    function createFull
-      input VariablePointers vars;
-      input EquationPointers eqns;
-      output Matrix adj;
-    protected
-      Integer index, size = EquationPointers.size(eqns);
-      array<ComponentRef> equation_names;
-      array<list<ComponentRef>> occurences;
-      array<UnorderedMap<ComponentRef, Dependency>> dependencies;
-      array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
-      array<UnorderedSet<ComponentRef>> repetitions;
-      UnorderedSet<ComponentRef> occ_set, rep_set;
-      UnorderedMap<ComponentRef, Dependency> dep_map;
-      UnorderedMap<ComponentRef, Solvability> sol_map;
-      Mapping mapping;
-    algorithm
-      // only create matrix if there are any variables or equations
-      if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqns.eqArr) > 0 then
-        // create empty arrays for the structures
-        equation_names  := arrayCreate(size, ComponentRef.EMPTY());
-        occurences      := arrayCreate(size, {});
-        dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
-        solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
-        repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
-        // loop over each equation and create the corresponding maps and sets
-        for eqn_ptr in EquationPointers.toList(eqns) loop
-          index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
-          dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
-          sol_map := UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual);
-          rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-          occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), vars.map, dep_map, sol_map, rep_set);
-          equation_names[index] := Equation.getEqnName(eqn_ptr);
-          occurences[index]     := UnorderedSet.toList(occ_set);
-          dependencies[index]   := dep_map;
-          solvabilities[index]  := sol_map;
-          repetitions[index]    := rep_set;
-        end for;
-        // create the index mapping and the matrix
-        mapping := Mapping.create(eqns, vars);
-        adj := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
-      else
-        adj := EMPTY(MatrixStrictness.FULL);
-      end if;
-      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(StringUtil.headline_1("Creating Adjacency Matrices") + "\n");
-        print(EquationPointers.toString(eqns) + "\n");
-        print(VariablePointers.toString(vars) + "\n");
-        print(toString(adj, "Full") + "\n");
-        print(solvabilityString(adj, "Full") + "\n");
-        print(dependencyString(adj, "Full") + "\n");
-      end if;
-    end createFull;
-
-    function fromFull
-      input Matrix full;
-      input UnorderedMap<ComponentRef, Integer> vars_map;
-      input UnorderedMap<ComponentRef, Integer> eqns_map;
-      input EquationPointers eqns;
-      input MatrixStrictness st;
-      output Matrix adj = upgrade(EMPTY(MatrixStrictness.FULL), full, vars_map, eqns_map, eqns, st);
-    end fromFull;
-
-    function upgrade
-      "upgrades a matrix using the information provided by the full matrix"
-      input output Matrix adj;
-      input Matrix full;
-      input UnorderedMap<ComponentRef, Integer> vars_map;
-      input UnorderedMap<ComponentRef, Integer> eqns_map;
-      input EquationPointers eqns;
-      input MatrixStrictness st;
-    protected
-      array<list<ComponentRef>> occ;
-      array<UnorderedMap<ComponentRef, Dependency>> dep;
-      array<UnorderedMap<ComponentRef, Solvability>> sol;
-      array<UnorderedSet<ComponentRef>> rep;
-      Mapping mapping;
-      Integer index, min, max;
-      list<ComponentRef> filtered;
-    algorithm
-      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(StringUtil.headline_1("Upgrading from [" + strictnessString(getStrictness(adj)) + "] to [" + strictnessString(st) +"]") + "\n");
-      end if;
-
-       adj := match full
-        case EMPTY() then EMPTY(st);
-
-        case FULL() algorithm
-          (mapping, occ, dep, sol, rep) := (full.mapping, full.occurences, full.dependencies, full.solvabilities, full.repetitions);
-
-          // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
-          if isEmpty(adj) then
-            min := 0;
-            adj := initialize(mapping, st);
-          else
-            min := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
-          end if;
-          max := Solvability.rank(Solvability.fromStrictness(st));
-
-          adj := match adj
-            local
-              Matrix result;
-
-            // default case
-            case FINAL() algorithm
-              // only do if valid upgrade otherwise create from scratch and issue warning if failtrace is activated
-              if max == min then
-                result := adj;
-              elseif max > min then
-                for name in UnorderedMap.keyList(eqns_map) loop
-                  index := UnorderedMap.getSafe(name, eqns_map, sourceInfo());
-                  filtered := Solvability.filter(occ[index], sol[index], vars_map, min, max);
-                  // now run the normal createPseudo pipeline but use dependencies
-                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, adj.m, adj.mapping, adj.modes2);
-                end for;
-                adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
-                result := adj;
-              else
-                if Flags.isSet(Flags.FAILTRACE) then
-                  Error.addCompilerWarning("Invalid matrix upgrade request. Cannot upgrade matrix of type "
-                    + Solvability.toString(Solvability.fromStrictness(getStrictness(adj))) + " to type "
-                    + Solvability.toString(Solvability.fromStrictness(st)) + ". The new matrix will be
-                    created from using only the full adjacency matrix.");
-                end if;
-                result := fromFull(full, vars_map, eqns_map, eqns, st);
-              end if;
-            then result;
-
-            // if its still empty even after initializing it, there are no variables or equations
-            case EMPTY() then adj;
-
-            // cannot upgrade a full matrix
-            case FULL() algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 1st input.
-                Expected: final or empty, Got :" + strictnessString(getStrictness(adj)) + "."});
-            then fail();
-          end match;
-        then adj;
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 2nd input.
-            Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});
-        then fail();
-      end match;
-
-      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(toString(adj, "Final") + "\n");
-      end if;
-    end upgrade;
-
-
   protected
     function fullString
       input ComponentRef cref;
@@ -1059,18 +1053,16 @@ public
     protected
       array<list<Integer>> m, mT;
       Integer eqn_scalar_size, var_scalar_size;
-      CausalizeModes modes;
     algorithm
       eqn_scalar_size := arrayLength(mapping.eqn_StA);
       var_scalar_size := arrayLength(mapping.var_StA);
       if eqn_scalar_size > 0 or var_scalar_size > 0 then
         // create empty for-loop reconstruction information
-        modes           := CausalizeModes.empty(eqn_scalar_size, 0);
         // create empty matrix and transposed matrix
         m := arrayCreate(eqn_scalar_size, {});
         mT := transposeScalar(m, var_scalar_size);
         // create record
-        adj := FINAL(m, mT, mapping, UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual), modes, st);
+        adj := FINAL(m, mT, mapping, UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual), st);
       else
         adj := EMPTY(st);
       end if;
@@ -1103,7 +1095,7 @@ public
         end for;
       else
         // todo: if, when single equation (needs to be updated for if)
-        Slice.upgradeRow(eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
+        Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
       end if;
     end upgradeRow;
 
@@ -1701,7 +1693,7 @@ public
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     output list<ComponentRef> crefs;
   protected
-    ComponentRef child;
+    Pointer<Variable> var;
     Integer skips = 1;
   algorithm
     if UnorderedMap.contains(cref, map) then
@@ -1711,11 +1703,16 @@ public
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
       crefs := {cref};
     else
-      crefs := List.flatten(list(collectDependenciesCref(BVariable.getVarName(var), map, dep_map, sol_map) for var in BVariable.getRecordChildren(BVariable.getVarPointer(cref))));
-      for cref in crefs loop
-        Dependency.skip(cref, skips, dep_map);
-        skips := skips + 1;
-      end for;
+      var := BVariable.getVarPointer(cref);
+      if BVariable.isRecord(var) then
+        crefs := List.flatten(list(collectDependenciesCref(BVariable.getVarName(var), map, dep_map, sol_map) for var in BVariable.getRecordChildren(var)));
+        for cref in crefs loop
+          Dependency.skip(cref, skips, dep_map);
+          skips := skips + 1;
+        end for;
+      else
+        crefs := {};
+      end if;
     end if;
   end collectDependenciesCref;
 
