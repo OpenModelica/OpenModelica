@@ -609,7 +609,7 @@ private:
     bool isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const;
     bool isTypeCompatibleWith(const Model &other, bool lhsOutside, bool rhsOutside) const;
     QPair<QString, bool> getParameterValue(const QString &parameter, QString &typeName);
-    QPair<QString, bool> getParameterValueFromExtendsModifiers(const QString &parameter);
+    QPair<QString, bool> getParameterValueFromExtendsModifiers(const QStringList &parameter);
 
     FlatModelica::Expression* getVariableBinding(const QString &variableName);
     const Element *lookupElement(const QString &name) const;

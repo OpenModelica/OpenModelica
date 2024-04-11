@@ -1470,14 +1470,14 @@ namespace ModelInstance
     return value;
   }
 
-  QPair<QString, bool> Model::getParameterValueFromExtendsModifiers(const QString &parameter)
+  QPair<QString, bool> Model::getParameterValueFromExtendsModifiers(const QStringList &parameter)
   {
     QPair<QString, bool> value("", false);
     foreach (auto pElement, mElements) {
       if (pElement->isExtend()) {
         auto pExtend = dynamic_cast<Extend*>(pElement);
         if (pExtend->getModifier()) {
-          value = pExtend->getModifier()->getModifierValue(QStringList() << parameter);
+          value = pExtend->getModifier()->getModifierValue(parameter);
         }
         if (value.second) {
           return value;

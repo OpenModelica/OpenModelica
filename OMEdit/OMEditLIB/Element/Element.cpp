@@ -1049,7 +1049,17 @@ QRectF Element::boundingRect() const
       return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
     }
   } else if (isPort()) {
-    return childrenBoundingRect();
+    ExtentAnnotation extent;
+    if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
+      mpModelComponent->getAnnotation()->getPlacementAnnotation().getTransformation().getExtent();
+    } else {
+      mpModelComponent->getAnnotation()->getPlacementAnnotation().getIconTransformation().getExtent();
+    }
+    qreal left = extent.at(0).x();
+    qreal bottom = extent.at(0).y();
+    qreal right = extent.at(1).x();
+    qreal top = extent.at(1).y();
+    return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
   } else {
     return QRectF();
   }
@@ -1858,7 +1868,7 @@ QPair<QString, bool> Element::getParameterDisplayString(QString parameterName)
   /* case 0 */
   if (isInheritedElement()) {
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      displayString = mpModel->getParameterValueFromExtendsModifiers(parameterName);
+      displayString = mpGraphicsView->getModelWidget()->getModelInstance()->getParameterValueFromExtendsModifiers(QStringList() << getName() << parameterName);
       if (displayString.second) {
         return displayString;
       }
@@ -3007,7 +3017,7 @@ QPair<QString, bool> Element::getParameterDisplayStringFromExtendsModifiers(QStr
    * Get the extends modifiers of the class not the inherited class.
    */
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    displayString = mpModel->getParameterValueFromExtendsModifiers(parameterName);
+    displayString = mpModel->getParameterValueFromExtendsModifiers(QStringList() << parameterName);
   } else if (mpLibraryTreeItem) {
     foreach (Element *pElement, mInheritedElementsList) {
       if (pElement->getLibraryTreeItem()) {

@@ -9211,14 +9211,13 @@ void ModelWidget::removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
 /*!
  * \brief ModelWidget::dependsOnModel
  * Checks if modelName exists in dependsOnModel list
- * We check for complete name OR if the name ends with same name.
  * \param modelName
  * \return
  */
 bool ModelWidget::dependsOnModel(const QString &modelName)
 {
   foreach (QString model, mDependsOnModelsList) {
-    if ((model.compare(modelName) == 0) || (StringHandler::getLastWordAfterDot(modelName).compare(StringHandler::getLastWordAfterDot(model)) == 0)) {
+    if ((model.compare(modelName) == 0)) {
       return true;
     }
   }
