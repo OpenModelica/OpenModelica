@@ -641,7 +641,7 @@ namespace IAEX
                   pPlotCurve->addYAxisValue(d);
                 }
                 // set the curve data
-                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+                pPlotCurve->plotData();
               }
               gCell->mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
               pPlotCurve->attach(gCell->mpPlotWindow->getPlot());
