@@ -751,7 +751,7 @@ DuplicateClassDialog::DuplicateClassDialog(LibraryTreeItem *pLibraryTreeItem, QW
   mpNameTextBox = new QLineEdit(mpLibraryTreeItem->getName());
   mpNameTextBox->selectAll();
   mpPathLabel = new Label(Helper::path);
-  mpPathTextBox = new QLineEdit(mpLibraryTreeItem->isTopLevel() ? "" : mpLibraryTreeItem->parent()->getNameStructure());
+  mpPathTextBox = new QLineEdit(mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemLibrary() ? "" : mpLibraryTreeItem->parent()->getNameStructure());
   mpPathBrowseButton = new QPushButton(Helper::browse);
   mpPathBrowseButton->setAutoDefault(false);
   connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
