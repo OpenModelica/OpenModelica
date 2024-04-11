@@ -1035,33 +1035,33 @@ bool Element::hasNonExistingClass()
  */
 QRectF Element::boundingRect() const
 {
-  if (isRoot()) {
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
+  if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    if (isRoot()) {
       ModelInstance::CoordinateSystem coordinateSystem = getCoOrdinateSystemNew();
       return coordinateSystem.getExtentRectangle();
-    } else {
-      CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
-      ExtentAnnotation extent = coOrdinateSystem.getExtent();
+    } else if (isPort()) {
+      ExtentAnnotation extent;
+      if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
+        mpModelComponent->getAnnotation()->getPlacementAnnotation().getTransformation().getExtent();
+      } else {
+        mpModelComponent->getAnnotation()->getPlacementAnnotation().getIconTransformation().getExtent();
+      }
       qreal left = extent.at(0).x();
       qreal bottom = extent.at(0).y();
       qreal right = extent.at(1).x();
       qreal top = extent.at(1).y();
       return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
-    }
-  } else if (isPort()) {
-    ExtentAnnotation extent;
-    if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
-      mpModelComponent->getAnnotation()->getPlacementAnnotation().getTransformation().getExtent();
     } else {
-      mpModelComponent->getAnnotation()->getPlacementAnnotation().getIconTransformation().getExtent();
+      return QRectF();
     }
+  } else {
+    CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
+    ExtentAnnotation extent = coOrdinateSystem.getExtent();
     qreal left = extent.at(0).x();
     qreal bottom = extent.at(0).y();
     qreal right = extent.at(1).x();
     qreal top = extent.at(1).y();
     return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
-  } else {
-    return QRectF();
   }
 }
 
