@@ -1168,12 +1168,12 @@ uniontype InstNode
         mod := SCodeUtil.lookupAnnotation(Util.getOption(ann), name);
 
         if not SCodeUtil.isEmptyMod(mod) then
-          scope := parent(scope);
+          scope := instanceParent(scope);
           return;
         end if;
       end if;
 
-      scope := parent(scope);
+      scope := instanceParent(scope);
     end while;
 
     mod := SCode.Mod.NOMOD();
