@@ -1161,7 +1161,8 @@ void DuplicateClassDialog::duplicateClass()
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     // add uses annotation
-    GraphicsView::addUsesAnnotation(mpLibraryTreeItem->getNameStructure(), mpPathTextBox->text(), true);
+    const QString containingClassName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text();
+    GraphicsView::addUsesAnnotation(mpLibraryTreeItem->getNameStructure(), containingClassName, true);
     accept();
   } else {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
