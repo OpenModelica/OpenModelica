@@ -1782,6 +1782,10 @@ namespace ModelInstance
       mComment = jsonObject.value("comment").toString();
     }
 
+    if (jsonObject.contains("$error")) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+    }
+
     deserialize_impl(jsonObject);
   }
 
