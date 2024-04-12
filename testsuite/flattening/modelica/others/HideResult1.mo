@@ -11,6 +11,7 @@ model A
 end A;
 
 model B
+  extends A;
   A a1 annotation(HideResult = true);
   A a2;
   Real z;
@@ -24,12 +25,16 @@ end HideResult1;
 
 // Result:
 // class HideResult1
+//   Real b1.x annotation(HideResult = false);
+//   Real b1.y annotation(HideResult = false);
 //   Real b1.a1.x annotation(HideResult = true);
 //   Real b1.a1.y annotation(HideResult = false);
 //   Real b1.a2.x annotation(HideResult = false);
 //   Real b1.a2.y annotation(HideResult = false);
 //   Real b1.z annotation(HideResult = false);
 //   parameter Boolean hide = true;
+//   Real b2.x annotation(HideResult = true);
+//   Real b2.y annotation(HideResult = false);
 //   Real b2.a1.x annotation(HideResult = true);
 //   Real b2.a1.y annotation(HideResult = false);
 //   Real b2.a2.x annotation(HideResult = true);
