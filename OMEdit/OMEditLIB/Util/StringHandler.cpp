@@ -1800,19 +1800,20 @@ bool StringHandler::isFileWritAble(QString filePath)
 }
 
 /*!
- * \brief StringHandler::containsSpace
- * Returns true if string contains a space.
- * \param str
+ * \brief StringHandler::nameContainsComma
+ * Checks if the name contains the comma.
+ * Quoted identifiers are allowed to have comma in them.
+ * \param name
  * \return
  */
-bool StringHandler::containsSpace(QString str)
+bool StringHandler::nameContainsComma(const QString &name)
 {
-  for (int i = 0 ; i < str.size() ; i++) {
-    if (str.at(i).isSpace()) {
-      return true;
-    }
+  QString str = name.trimmed();
+  if (str.contains(',') && !(str.startsWith('\'') && str.endsWith('\''))) {
+    return true;
+  } else {
+    return false;
   }
-  return false;
 }
 
 /*!
