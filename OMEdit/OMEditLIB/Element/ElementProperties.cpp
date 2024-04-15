@@ -3046,14 +3046,8 @@ void ElementAttributes::updateElementAttributes()
       return;
     }
   }
-  // check for spaces
-  if (StringHandler::containsSpace(mpNameTextBox->text())) {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("A component name should not have spaces. Please choose another name."), Helper::ok);
-    return;
-  }
   // check for comma
-  if (mpNameTextBox->text().contains(',')) {
+  if (StringHandler::nameContainsComma(mpNameTextBox->text())) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
     return;
