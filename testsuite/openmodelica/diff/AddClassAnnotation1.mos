@@ -24,9 +24,8 @@ answer := "model M1
       Line(points={{-60,50},{60,50}}, color={0,0,255}),
       Line(points={{0,90},{0,50}}, color={0,0,255})}),
   Diagram(coordinateSystem(
-      preserveAspectRatio=false,
-      extent={{-100,-100},{100,100}}, initialScale = 0.1, grid = {2, 2}), graphics={
-      Line(points={{-60,50},{60,50}}, color={0,0,255}), Rectangle(origin = {-30, -43}, extent = {{-74, 49}, {74, -49}})}));
+      preserveAspectRatio=false, extent = {{-100, -100}, {100, 100}, {-100, -100}, {100, 100}}, initialScale = 0.1, grid = {2, 2}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255}), Line(points = {{-60, 50}, {60, 50}}, color = {0, 0, 255}), Rectangle(origin = {-30, -43}, extent = {{-74, 49}, {74, -49}})}));
 end M1;";
 s2 := listFile(M1);
 s3 := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
