@@ -28,6 +28,7 @@ ModifierVariabilityError.mos \
 NotbasicType.mos NotbasicType2.mos \
 OverloadingFunc.mos \
 QuotedFunction.mos \
+QuotedIdentifiers.mos \
 Return.mos \
 StringArrayReturn.mos \
 TestLoadModel.mos \

@@ -1,0 +1,15 @@
+// name: QuotedIdentifier
+// status: correct
+// teardown_command: rm -rf QuotedIdentifier_tmp
+
+loadFile("QuotedIdentifier.mo");getErrorString();
+
+echo(false);
+mkdir("QuotedIdentifier_tmp"); cd("QuotedIdentifier_tmp");
+echo(true);
+
+translate(QuotedIdentifier); getErrorString();
+simulate(QuotedIdentifier); getErrorString();
+
+// Result:
+
