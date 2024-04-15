@@ -139,7 +139,7 @@ getClassNames(B, includeConstants=true);
 //     Integer x = 33;
 //     Real z;
 //     annotation(
-//       Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
+//       Icon(graphics = {Line(points = {{0, 0}, {100, 100}}), Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
 //       Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
 //       Documentation(info = \"<HTML>foo</HTML>\", revisions = \"1.0\"));
 //   end test;
@@ -147,11 +147,11 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(A.test)
-// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0.0, {{0.0, 0.0}, {100.0, 100.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, Smooth.None), Line(true, {0.0, 0.0}, 0.0, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, Smooth.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDiagramAnnotation(A.test)
-// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0.0, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, Smooth.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDocumentationAnnotation(A.test)
@@ -218,7 +218,7 @@ getClassNames(B, includeConstants=true);
 //     Integer x = 33;
 //     Real z;
 //     annotation(
-//       Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
+//       Icon(graphics = {Line(points = {{0, 0}, {100, 100}}), Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
 //       Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
 //       Documentation(info = \"<HTML>foo</HTML>\", revisions = \"1.0\"));
 //   end test;
@@ -226,11 +226,11 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(A.test)
-// {-10.0,-10.0,10.0,10.0,{Line(true, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
+// {-10.0,-10.0,10.0,10.0,{Line(true, {{0.0, 0.0}, {100.0, 100.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, false), Line(true, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDiagramAnnotation(A.test)
-// {-100.0,-100.0,100.0,100.0,{Line(true, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
+// {-100.0,-100.0,100.0,100.0,{Line(true, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDocumentationAnnotation(A.test)

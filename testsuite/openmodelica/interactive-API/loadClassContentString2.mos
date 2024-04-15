@@ -1,0 +1,22 @@
+// name: loadClassContentString2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  model M
+    annotation(Diagram(graphics = {Rectangle(origin = {1, 2}, extent = {{-1, 1}, {1, -1}})}));
+  end M;
+");
+
+loadClassContentString("annotation(Diagram(graphics = {Text(textString = \"text\")}));", M);
+list(M);
+
+// Result:
+// true
+// true
+// "model M
+//   annotation(
+//     Diagram(graphics = {Rectangle(origin = {1, 2}, extent = {{-1, 1}, {1, -1}}), Text(textString = \"text\")}));
+// end M;"
+// endResult
