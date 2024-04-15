@@ -643,6 +643,13 @@ algorithm
                                 SCode.NOMOD(), SCode.defaultVarAttr),
          node, info);
 
+    case SCode.PDER()
+      algorithm
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
+          {"partial derivative of function", "use --newBackend flag."}, InstNode.info(node));
+      then
+        fail();
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown class:\n" + SCodeDump.unparseElementStr(def), sourceInfo());
