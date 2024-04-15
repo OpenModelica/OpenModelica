@@ -162,7 +162,7 @@ public:
   static QMap<int, int> getLeadingSpaces(QString contents);
   static int getLeadingSpacesSize(QString str);
   static bool isFileWritAble(QString filePath);
-  static bool containsSpace(QString str);
+  static bool nameContainsComma(const QString &name);
   static QString trimmedEnd(const QString &str);
   static QString joinDerivativeAndPreviousVariable(QString fullVariableName, QString variableName, QString derivativeOrPrevious);
   static QString removeLeadingSpaces(QString contents);
