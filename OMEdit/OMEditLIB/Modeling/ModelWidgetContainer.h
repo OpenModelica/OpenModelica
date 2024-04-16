@@ -397,6 +397,7 @@ private:
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void omsMultipleItemsContextMenu(QMenu *pMenu);
+  void getCoOrdinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 signals:
   void manhattanize();
   void deleteSignal();
@@ -439,7 +440,7 @@ public slots:
   void copyItems();
   void pasteItems();
   void clearSelection(QGraphicsItem *pSelectGraphicsItem = 0);
-  void addClassAnnotation(bool alwaysAdd = true);
+  void addClassAnnotation();
   void showParameters();
   void showGraphicsViewProperties();
   void showRenameDialog();
