@@ -115,24 +115,28 @@ function evaluateBinding
   input EvalSettings settings;
 protected
   Expression exp, eexp;
-  SourceInfo info;
 algorithm
   if Binding.isBound(binding) then
     exp := Binding.getTypedExp(binding);
 
     if structural then
-      if not settings.scalarize and Expression.isLiteralFill(exp) then
-        eexp := exp;
-      elseif InstContext.inRelaxed(context) then
-        eexp := Ceval.tryEvalExp(exp);
+      if not settings.scalarize then
+        eexp := evaluateExp(exp, Binding.getInfo(binding));
       else
-        eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
+        eexp := exp;
+      end if;
+
+      if not (Expression.isLiteral(eexp) or Expression.isLiteralFill(eexp)) then
+        if InstContext.inRelaxed(context) then
+          eexp := Ceval.tryEvalExp(eexp);
+        else
+          eexp := Ceval.evalExp(eexp, Ceval.EvalTarget.ATTRIBUTE(binding));
+        end if;
       end if;
 
       eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(InstNode.EMPTY_NODE(), prefix));
     else
-      info := Binding.getInfo(binding);
-      eexp := evaluateExp(exp, info);
+      eexp := evaluateExp(exp, Binding.getInfo(binding));
     end if;
 
     if not referenceEq(exp, eexp) then
