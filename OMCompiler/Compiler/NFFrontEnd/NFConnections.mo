@@ -177,21 +177,11 @@ public
       return;
     end if;
 
-    lhsCref1 := lhsCref;
-    lhsType1 := lhsType;
-    if Type.isUnknown(lhsType) and not ComponentRef.hasSubscripts(lhsCref) and Type.isArray(rhsType) then
-      d := Type.nthDimension(rhsType, 1);
-      lhsType1 := Type.ARRAY(Type.arrayElementType(rhsType), {d});
-      lhsCref1 := ComponentRef.setNodeType(lhsType1, lhsCref1);
-    end if;
-
-    rhsCref1 := rhsCref;
-    rhsType1 := rhsType;
-    if Type.isUnknown(rhsType) and not ComponentRef.hasSubscripts(rhsCref) and Type.isArray(lhsType) then
-      d := Type.nthDimension(lhsType, 1);
-      rhsType1 := Type.ARRAY(Type.arrayElementType(lhsType), {d});
-      rhsCref1 := ComponentRef.setNodeType(rhsType1, rhsCref1);
-    end if;
+    // if type of connector is unknown (for expandeble connectors) and another connector is array
+    // set type of unknown connector equal to another connector type
+    // cause they should have equal number of elements (for next loop)
+    (lhsCref1, lhsType1) := trySetTypeFromKnown(lhsCref, lhsType, rhsType);
+    (rhsCref1, rhsType1) := trySetTypeFromKnown(rhsCref, rhsType, lhsType);
     
     cl1 := makeConnectors(lhsCref1, lhsType1, source);
     cl2 := makeConnectors(rhsCref1, rhsType1, source);
@@ -204,6 +194,20 @@ public
       end if;
     end for;
   end makeConnections;
+
+  function trySetTypeFromKnown
+    input output ComponentRef cref;
+    input output Type ty;
+    input Type knownTy;
+  protected
+    NFDimension.Dimension d;
+  algorithm
+    if Type.isUnknown(ty) and not ComponentRef.hasSubscripts(cref) and Type.isArray(knownTy) then
+      d := Type.nthDimension(knownTy, 1);
+      ty := Type.ARRAY(Type.arrayElementType(knownTy), {d});
+      cref := ComponentRef.setNodeType(ty, cref);
+    end if;
+  end trySetTypeFromKnown; 
 
   function makeConnectors
     input ComponentRef cref;

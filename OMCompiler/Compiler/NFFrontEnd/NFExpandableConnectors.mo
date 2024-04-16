@@ -296,19 +296,22 @@ algorithm
   normal_cref := normalConnector.name;
   ty := normalConnector.ty;
 
+  // take subscripts for virtual connector
   subs := ComponentRef.getSubscripts(virtual_cref);
-  if (listLength(subs) > 0) then
+  if listLength(subs) > 0 then
     if not (listLength(subs) == 1) then
-      print("to many subscripts in expandable connector\n");
+      Error.addInternalError("too many subscripts in expandable connector", sourceInfo());
+      fail();
     end if;
     s1 := List.first(subs);
     expr := Subscript.toExp(s1);
     expr := Ceval.evalExp(expr);
-    if not Type.isInteger(Expression.typeOf(expr)) then
-      print("unknown type in expandable connector\n");
-    end if;
+    // if not Type.isInteger(Expression.typeOf(expr)) then
+    //   Error.addInternalError("unknown type in expandable connector", sourceInfo());
+    //   fail();
+    // end if;
     arrIndex := Expression.toInteger(expr);
-    ty := Type.ARRAY(ty, {NFDimension.INTEGER(arrIndex, NFPrefixes.Variability.CONSTANT)});
+    ty := Type.liftArrayLeft(ty, NFDimension.fromInteger(arrIndex));
     subs := { Subscript.makeIndex(expr) };
   end if;
 
@@ -341,6 +344,7 @@ algorithm
     if ConnectorType.isExpandable(c.cty) then
       exp_conns := c :: exp_conns;
     elseif ConnectorType.isUndeclared(c.cty) then
+      // take max array index as array length
       con_in_set := UnorderedSet.get(c, exp_set);
       () := match con_in_set
         case NONE() 
