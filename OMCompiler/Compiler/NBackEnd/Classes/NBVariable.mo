@@ -48,6 +48,7 @@ public
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
   import NFBinding.Binding;
+  import Ceval = NFCeval;
   import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -1132,7 +1133,7 @@ public
     end match;
   end getBindingVariability;
 
-  function hasLiteralBinding extends checkVar;
+  function hasEvaluableBinding extends checkVar;
   protected
     Variable var;
     Expression binding;
@@ -1141,16 +1142,15 @@ public
     if isBound(var_ptr) then
       var := Pointer.access(var_ptr);
       binding := Binding.getExp(var.binding);
-      if Expression.isLiteral(binding) then
-        b := true;
-      else
+      b := Expression.isLiteral(Ceval.tryEvalExp(binding));
+      if not b then
         // try to extract literal from array constructor
         (_, binding) := Iterator.extract(binding);
         binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
-        b := Expression.isLiteral(binding);
+        b := Expression.isLiteral(Ceval.tryEvalExp(binding));
       end if;
     end if;
-  end hasLiteralBinding;
+  end hasEvaluableBinding;
 
   function setFixed
     input output Pointer<Variable> var_ptr;
