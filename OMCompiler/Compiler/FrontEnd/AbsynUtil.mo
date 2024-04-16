@@ -4003,7 +4003,6 @@ algorithm
     try
       mod2 := List.find(res, function isModificationOfPath(path=p));
       mod1 := subModsInSameOrder(mod2, mod);
-      mod1 := mergeAnnotationEqMod(mod2, mod1);
       (res, true) := List.replaceOnTrue(mod1, res, function isModificationOfPath(path=p));
     else
       res := mod::res;
@@ -4011,51 +4010,6 @@ algorithm
   end for;
   res := listReverse(res);
 end mergeAnnotations2;
-
-function mergeAnnotationEqMod
-  input Absyn.ElementArg oldMod;
-  input output Absyn.ElementArg newMod;
-protected
-  Absyn.Modification mod1, mod2;
-algorithm
-  () := match (oldMod, newMod)
-    case (Absyn.ElementArg.MODIFICATION(modification = SOME(mod1)),
-          Absyn.ElementArg.MODIFICATION())
-      algorithm
-        if isSome(newMod.modification) then
-          SOME(mod2) := newMod.modification;
-          mod2.eqMod := mergeAnnotationEqMod2(mod1.eqMod, mod2.eqMod);
-          newMod.modification := SOME(mod2);
-        else
-          newMod.modification := SOME(mod1);
-        end if;
-      then
-        ();
-
-    else ();
-  end match;
-end mergeAnnotationEqMod;
-
-function mergeAnnotationEqMod2
-  input Absyn.EqMod oldEqMod;
-  input output Absyn.EqMod newEqMod;
-protected
-  Absyn.Exp e1, e2;
-algorithm
-  newEqMod := match (oldEqMod, newEqMod)
-    // Special merging rule for annotations, concatenate array bindings
-    // (such as Diagram(graphics = {...})).
-    case (Absyn.EqMod.EQMOD(exp = e1 as Absyn.Exp.ARRAY()),
-          Absyn.EqMod.EQMOD(exp = e2 as Absyn.Exp.ARRAY()))
-      algorithm
-        newEqMod.exp := Absyn.Exp.ARRAY(listAppend(e1.arrayExp, e2.arrayExp));
-      then
-        newEqMod;
-
-    case (_, Absyn.EqMod.EQMOD()) then newEqMod;
-    else oldEqMod;
-  end match;
-end mergeAnnotationEqMod2;
 
 public function mergeCommentAnnotation
   "Merges an annotation into a Absyn.Comment option."
