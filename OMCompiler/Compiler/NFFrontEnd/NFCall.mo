@@ -561,6 +561,28 @@ public
     end match;
   end isExternalObjectConstructor;
 
+  function isLiteral
+    input Call call;
+    output Boolean literal;
+  protected
+    function is_literal_iter
+      input tuple<InstNode, Expression> iter;
+      output Boolean literal = Expression.isLiteral(Util.tuple22(iter));
+    end is_literal_iter;
+  algorithm
+    literal := match call
+      case TYPED_CALL() then List.all(call.arguments, Expression.isLiteral);
+
+      case TYPED_REDUCTION()
+        then Expression.isLiteral(call.exp) and List.all(call.iters, is_literal_iter);
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        then Expression.isLiteral(call.exp) and List.all(call.iters, is_literal_iter);
+
+      else false;
+    end match;
+  end isLiteral;
+
   function inlineType
     input NFCall call;
     output DAE.InlineType inlineTy;

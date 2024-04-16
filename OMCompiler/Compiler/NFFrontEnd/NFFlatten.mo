@@ -1170,7 +1170,7 @@ algorithm
   binding_ty := Type.liftArrayLeftList(binding_ty, dims);
 
   if not listEmpty(dims) then
-    if Expression.isLiteral(exp) then
+    if Expression.isLiteral(exp) or not Expression.contains(exp, Expression.isIterator) then
       array_call := Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
         exp :: list(Dimension.sizeExp(d) for d in dims),
         Binding.variability(binding), Purity.PURE, binding_ty);

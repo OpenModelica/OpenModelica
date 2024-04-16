@@ -9,6 +9,7 @@ else
 endif
 
 TESTFILES = \
+  ArrayBinding1.mo \
 	Comments.mo \
   DoublePendulum.mos \
 	Expression1.mo \
