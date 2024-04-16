@@ -79,7 +79,6 @@ ListExpressions.mos \
 ListImport.mos \
 ListMultilineComment.mos \
 loadClassContentString1.mos \
-loadClassContentString2.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
