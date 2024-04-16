@@ -1705,7 +1705,7 @@ public
     else
       var := BVariable.getVarPointer(cref);
       if BVariable.isRecord(var) then
-        crefs := List.flatten(list(collectDependenciesCref(BVariable.getVarName(var), map, dep_map, sol_map) for var in BVariable.getRecordChildren(var)));
+        crefs := List.flatten(list(collectDependenciesCref(BVariable.getVarName(child), map, dep_map, sol_map) for child in BVariable.getRecordChildren(var)));
         for cref in crefs loop
           Dependency.skip(cref, skips, dep_map);
           skips := skips + 1;
