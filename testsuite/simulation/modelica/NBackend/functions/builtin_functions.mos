@@ -23,359 +23,31 @@ equation
   der(x[13]) = log10(y+1);
   der(x[14]) = atan2(y, x[1]);
 end builtin_functions;
-
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=symjacdump"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
 simulate(builtin_functions); getErrorString();
+
+val(x[1],1.0);
+val(x[2],1.0);
+val(x[3],1.0);
+val(x[4],1.0);
+val(x[5],1.0);
+val(x[6],1.0);
+val(x[7],1.0);
+val(x[8],1.0);
+val(x[9],1.0);
+val(x[10],1.0);
+val(x[11],1.0);
+val(x[12],1.0);
+val(x[13],1.0);
+val(x[14],1.0);
+
 // Result:
 // true
 // ""
 // true
 // ""
-// #################################################
-//
-// 	[symjacdump] Creating symbolic Jacobians:
-//
-// #################################################
-//
-// ===========================
-// CONTINUOUS 1 ODE System
-// ===========================
-//
-// --- Alias of INI[1 | 2] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] (1) y = abs(x[2]) ($RES_$AUX_29)
-//
-// --- Alias of INI[1 | 17] ---
-// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_9
-// ### Equation:
-// 	[SCAL] (1) $FUN_9 = sinh(y) ($RES_$AUX_21)
-//
-// --- Alias of INI[1 | 15] ---
-// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_8
-// ### Equation:
-// 	[SCAL] (1) $FUN_8 = atan(y) ($RES_$AUX_22)
-//
-// --- Alias of INI[1 | 13] ---
-// BLOCK 4: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_7
-// ### Equation:
-// 	[SCAL] (1) $FUN_7 = acos(y) ($RES_$AUX_23)
-//
-// --- Alias of INI[1 | 11] ---
-// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_6
-// ### Equation:
-// 	[SCAL] (1) $FUN_6 = asin(y) ($RES_$AUX_24)
-//
-// --- Alias of INI[1 | 9] ---
-// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_5
-// ### Equation:
-// 	[SCAL] (1) $FUN_5 = tan(y) ($RES_$AUX_25)
-//
-// --- Alias of INI[1 | 7] ---
-// BLOCK 7: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_4
-// ### Equation:
-// 	[SCAL] (1) $FUN_4 = cos(y) ($RES_$AUX_26)
-//
-// --- Alias of INI[1 | 5] ---
-// BLOCK 8: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_3
-// ### Equation:
-// 	[SCAL] (1) $FUN_3 = sin(y) ($RES_$AUX_27)
-//
-// --- Alias of INI[1 | 3] ---
-// BLOCK 9: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_2
-// ### Equation:
-// 	[SCAL] (1) $FUN_2 = sqrt(y) ($RES_$AUX_28)
-//
-// --- Alias of INI[1 | 29] ---
-// BLOCK 10: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_15
-// ### Equation:
-// 	[SCAL] (1) $FUN_15 = atan2(y, x[1]) ($RES_$AUX_15)
-//
-// --- Alias of INI[1 | 27] ---
-// BLOCK 11: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_14
-// ### Equation:
-// 	[SCAL] (1) $FUN_14 = log10(1.0 + y) ($RES_$AUX_16)
-//
-// --- Alias of INI[1 | 4] ---
-// BLOCK 12: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[1]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[1] = $FUN_2 ($RES_SIM_13)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 6] ---
-// BLOCK 13: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[2]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[2] = $FUN_3 ($RES_SIM_12)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 8] ---
-// BLOCK 14: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[3]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[3] = $FUN_4 ($RES_SIM_11)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 10] ---
-// BLOCK 15: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[4]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[4] = $FUN_5 ($RES_SIM_10)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 12] ---
-// BLOCK 16: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[5]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[5] = $FUN_6 ($RES_SIM_9)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 14] ---
-// BLOCK 17: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[6]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[6] = $FUN_7 ($RES_SIM_8)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 16] ---
-// BLOCK 18: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[7]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[7] = $FUN_8 ($RES_SIM_7)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 18] ---
-// BLOCK 19: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[8]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[8] = $FUN_9 ($RES_SIM_6)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 19] ---
-// BLOCK 20: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_10
-// ### Equation:
-// 	[SCAL] (1) $FUN_10 = cosh(y) ($RES_$AUX_20)
-//
-// --- Alias of INI[1 | 20] ---
-// BLOCK 21: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[9]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[9] = $FUN_10 ($RES_SIM_5)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 21] ---
-// BLOCK 22: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_11
-// ### Equation:
-// 	[SCAL] (1) $FUN_11 = tanh(y) ($RES_$AUX_19)
-//
-// --- Alias of INI[1 | 22] ---
-// BLOCK 23: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[10]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[10] = $FUN_11 ($RES_SIM_4)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 23] ---
-// BLOCK 24: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_12
-// ### Equation:
-// 	[SCAL] (1) $FUN_12 = exp(y) ($RES_$AUX_18)
-//
-// --- Alias of INI[1 | 24] ---
-// BLOCK 25: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[11]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[11] = $FUN_12 ($RES_SIM_3)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 25] ---
-// BLOCK 26: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_13
-// ### Equation:
-// 	[SCAL] (1) $FUN_13 = log(1.0 + y) ($RES_$AUX_17)
-//
-// --- Alias of INI[1 | 26] ---
-// BLOCK 27: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[12]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[12] = $FUN_13 ($RES_SIM_2)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 28] ---
-// BLOCK 28: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[13]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[13] = $FUN_14 ($RES_SIM_1)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 30] ---
-// BLOCK 29: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[14]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[14] = $FUN_15 ($RES_SIM_0)
-// 	 slice: {}
-//
-// ###################################
-//
-// 	[ODE] Jacobian ODE_JAC: SIM
-//
-// ###################################
-//
-// Partial Derivative Variables (16/29)
-// **************************************
-// (1)       [ALGB] (1) Real $FUN_9
-// (2)       [ALGB] (1) Real $FUN_8
-// (3)       [ALGB] (1) Real $FUN_7
-// (4)       [ALGB] (1) Real $FUN_6
-// (5)       [ALGB] (1) Real $FUN_5
-// (6)       [ALGB] (1) Real $FUN_4
-// (7)       [ALGB] (1) Real $FUN_3
-// (8)       [ALGB] (1) Real $FUN_2
-// (9)       [ALGB] (1) Real y
-// (10)      [ALGB] (1) Real $FUN_15
-// (11)      [ALGB] (1) Real $FUN_14
-// (12)      [DER-] (14) Real[14] $DER.x
-// (13)      [ALGB] (1) Real $FUN_13
-// (14)      [ALGB] (1) Real $FUN_12
-// (15)      [ALGB] (1) Real $FUN_11
-// (16)      [ALGB] (1) Real $FUN_10
-//
-// Seed Variables (1/14)
-// ***********************
-// (1)       [STAT] (14) Real[14] x (fixed = {true for $i1 in 1:14}, start = {-1.0 for $i1 in 1:14})
-//
-// ==============================
-// Sparsity Pattern (nnz: 15)
-// ==============================
-//
-// ### Seeds (col vars) ###
-// --------------------------
-// {x[14], x[13], x[12], x[11], x[10], x[9], x[8], x[7], x[6], x[5], x[4], x[3], x[2], x[1]}
-//
-// ### Partials (row vars) ###
-// -----------------------------
-// {$DER.x[14], $DER.x[13], $DER.x[12], $DER.x[11], $DER.x[10], $DER.x[9], $DER.x[8], $DER.x[7], $DER.x[6], $DER.x[5], $DER.x[4], $DER.x[3], $DER.x[2], $DER.x[1]}
-//
-// ### Columns ###
-// -----------------
-// (x[1])	 affects:	{$DER.x[14]}
-// (x[2])	 affects:	{$DER.x[9],$DER.x[14],$DER.x[1],$DER.x[2],$DER.x[3],$DER.x[4],$DER.x[5],$DER.x[10],$DER.x[6],$DER.x[11],$DER.x[7],$DER.x[12],$DER.x[8],$DER.x[13]}
-// (x[3])	 affects:	{}
-// (x[4])	 affects:	{}
-// (x[5])	 affects:	{}
-// (x[6])	 affects:	{}
-// (x[7])	 affects:	{}
-// (x[8])	 affects:	{}
-// (x[9])	 affects:	{}
-// (x[10])	 affects:	{}
-// (x[11])	 affects:	{}
-// (x[12])	 affects:	{}
-// (x[13])	 affects:	{}
-// (x[14])	 affects:	{}
-//
-// ##### Rows #####
-// ------------------
-// ($DER.x[1])	 depends on:	{x[2]}
-// ($DER.x[2])	 depends on:	{x[2]}
-// ($DER.x[3])	 depends on:	{x[2]}
-// ($DER.x[4])	 depends on:	{x[2]}
-// ($DER.x[5])	 depends on:	{x[2]}
-// ($DER.x[6])	 depends on:	{x[2]}
-// ($DER.x[7])	 depends on:	{x[2]}
-// ($DER.x[8])	 depends on:	{x[2]}
-// ($DER.x[9])	 depends on:	{x[2]}
-// ($DER.x[10])	 depends on:	{x[2]}
-// ($DER.x[11])	 depends on:	{x[2]}
-// ($DER.x[12])	 depends on:	{x[2]}
-// ($DER.x[13])	 depends on:	{x[2]}
-// ($DER.x[14])	 depends on:	{x[2],x[1]}
-//
-// =====================
-// Sparsity Coloring
-// =====================
-// Color (1)
-//   - Column: {x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14]}
-//   - Row:    {}
-//
-// Color (2)
-//   - Column: {x[1]}
-//   - Row:    {}
-//
-//
 // record SimulationResult
 //     resultFile = "builtin_functions_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'builtin_functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -384,4 +56,18 @@ simulate(builtin_functions); getErrorString();
 // "
 // end SimulationResult;
 // ""
+// -0.1949680036981218
+// -0.39666298542884787
+// -0.22157219439097658
+// -0.18129859846135266
+// -0.24442009631048392
+// -0.18478357689461986
+// -0.4264604060338793
+// -0.2804123141042697
+// 0.24442400370441986
+// -0.4334016307733458
+// 0.96401168960015
+// -0.49889818933944474
+// -0.7823742487583922
+// 1.2533133489600217
 // endResult
