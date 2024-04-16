@@ -184,7 +184,8 @@ public
     Status solve_status;
     StrongComponent implicit_comp;
   algorithm
-    (solved_comps, solve_status) := match comp
+    try
+      (solved_comps, solve_status) := match comp
         local
           Equation eqn;
           Slice<VariablePointer> var_slice;
@@ -331,7 +332,11 @@ public
         then (solved_comps, solve_status);
 
         else ({comp}, Status.UNSOLVABLE);
-    end match;
+      end match;
+    else
+      // this fails in the next case because of the unsolvable status
+      (solved_comps, solve_status) := ({comp}, Status.UNSOLVABLE);
+    end try;
 
     // solve implicit equation (algebraic loop is always implicit)
     if solve_status == Status.IMPLICIT and listLength(solved_comps) == 1 then
@@ -535,8 +540,8 @@ public
       else
         // If eqn is non-linear in cref
         if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to solve Cref: "
-            + ComponentRef.toString(fixed_cref) + " in equation:\n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cref: "
+            + ComponentRef.toString(fixed_cref) + " has to be solved implicitely in equation:\n" + Equation.toString(eqn)});
         end if;
         invertRelation := false;
         status := Status.IMPLICIT;
@@ -559,7 +564,7 @@ public
     list<Pointer<Equation>> new_then_eqns = {};
   algorithm
     // causalize this branch equations for the unknowns
-    comps := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
+    (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
     // solve each strong component explicitely and save equations to branch
     for comp in comps loop
       (solved_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, systemType, implicit_index, slicing_map);

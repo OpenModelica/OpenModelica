@@ -131,12 +131,13 @@ public
 //                  Index Reduction + Balance Initialization
 // *************************************************************************
   partial function resolveSingularitiesInterface
+    input output Adjacency.Matrix adj;
+    input output Adjacency.Matrix full;
     input output VariablePointers variables;
     input output EquationPointers equations;
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
-    input Adjacency.Matrix adj;
     input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
     output Boolean changed;

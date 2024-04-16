@@ -637,7 +637,7 @@ protected
         vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
-        comps := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;
@@ -648,7 +648,7 @@ protected
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system
-        comps := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;

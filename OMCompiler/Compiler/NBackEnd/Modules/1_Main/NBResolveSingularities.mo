@@ -112,7 +112,7 @@ public
     Pointer<Differentiate.DifferentiationArguments> diffArguments_ptr;
     VariablePointers candidate_ptrs;
     EquationPointers constraint_ptrs;
-    Adjacency.Matrix set_adj;
+    Adjacency.Matrix set_adj, full_local;
     Matching set_matching;
     list<list<Integer>> marked_eqns_lst = {}; // todo: fill!
 
@@ -177,7 +177,10 @@ public
       constraint_ptrs := EquationPointers.fromList(sliced_constraints);
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
-      set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, NBAdjacency.MatrixStrictness.LINEAR);
+      // create full matrix
+      full_local := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
+      // create solvable adjacency matrix for matching
+      set_adj := Adjacency.Matrix.fromFull(full_local, candidate_ptrs.map, constraint_ptrs.map, constraint_ptrs, NBAdjacency.MatrixStrictness.LINEAR);
       set_matching := Matching.regular(NBMatching.EMPTY_MATCHING, set_adj, true, true);
 
       if debug then
@@ -310,6 +313,7 @@ public
     Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqns = Pointer.create({});
     Pointer<Integer> idx;
     String error_msg;
+    UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
   algorithm
     (_, unmatched_vars, _, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if Flags.isSet(Flags.INITIALIZATION) then
@@ -326,12 +330,17 @@ public
       // simplify equation and check for 0 = 0
       if not listEmpty(unmatched_eqns) then
         Error.addMessage(Error.COMPILER_WARNING, {getInstanceName()
-        + " reports an overdetermined initialization!\nChecking for consistency is not yet supported, following equations had to be removed:\n"
-        + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = ""))});
+          + " reports an overdetermined initialization!\nChecking for consistency is not yet supported, following equations had to be removed:\n"
+          + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = ""))});
         // update this for potential arrays!
+        // copy old map to update adjacency matrix correctly
+        eo          := UnorderedMap.copy(equations.map);
+        // get all unmatched equations and remove them from the system and overall equations
         sliced_eqns := list(Slice.getT(eqn) for eqn in unmatched_eqns);
-        eqData := EqData.removeList(sliced_eqns, eqData);
-        equations := EquationPointers.removeList(sliced_eqns, equations);
+        eqData      := EqData.removeList(sliced_eqns, eqData);
+        equations   := EquationPointers.removeList(sliced_eqns, equations);
+        // also update adjacency matrices
+        (adj, full) := Adjacency.Matrix.compress(adj, full, equations, variables, eo);
       end if;
 
       // --------------------------------------------------------
@@ -350,8 +359,12 @@ public
       end for;
 
       if listEmpty(failed_vars) then
-        start_vars := Pointer.access(ptr_start_vars);
-        start_eqns := Pointer.access(ptr_start_eqns);
+        start_vars  := Pointer.access(ptr_start_vars);
+        start_eqns  := Pointer.access(ptr_start_eqns);
+
+        // copy old equation map to update adjacency matrices correctly
+        vo          := variables.map;
+        eo          := UnorderedMap.copy(equations.map);
 
         // add new vars and equations to overall data
         varData := VarData.addTypedList(varData, start_vars, VarData.VarType.START);
@@ -359,6 +372,11 @@ public
 
         // add new equations to system pointer arrays
         equations := EquationPointers.addList(start_eqns, equations);
+
+        // update adjacency matrices
+        vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        en := UnorderedMap.subSet(equations.map, list(Equation.getEqnName(eqn) for eqn in start_eqns));
+        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations);
 
         if Flags.isSet(Flags.INITIALIZATION) then
           print(List.toString(start_eqns, function Equation.pointerToString(str = ""),

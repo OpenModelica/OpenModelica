@@ -101,7 +101,6 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, eqData.uniqueIndex, " External Object ");
 
-
             // clone all simulation equations and add them to the initial equations. also remove/replace when equations
             initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
             initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
@@ -259,7 +258,7 @@ public
     var_ptr := BVariable.getVarPointer(cref);
     pre_post := BVariable.getPrePost(var_ptr);
     if Util.isSome(pre_post) then
-      subscripts := ComponentRef.subscriptsAllWithWholeFlat(cref);
+      subscripts := ComponentRef.subscriptsAllFlat(cref);
       pre := BVariable.getVarName(Util.getOption(pre_post));
       pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
       kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;

@@ -941,7 +941,13 @@ public
     input Expression exp;
     output Integer value;
   algorithm
-    INTEGER(value=value) := exp;
+    try
+      INTEGER(value=value) := exp;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an integer: \n"
+        + toString(exp)});
+      fail();
+    end try;
   end integerValue;
 
   function integerValueOrDefault

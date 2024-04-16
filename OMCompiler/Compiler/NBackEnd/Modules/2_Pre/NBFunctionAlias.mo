@@ -331,7 +331,7 @@ protected
                                                             or Equation.isIfEquation(Pointer.create(body)));
       case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), true);
       case Equation.IF_EQUATION()               then (Iterator.EMPTY(), true);
-      case Equation.ALGORITHM()                 then (Iterator.EMPTY(), false);
+      case Equation.ALGORITHM()                 then (Iterator.EMPTY(), true);
                                                 else (Iterator.EMPTY(), false);
     end match;
     if not stop then

@@ -114,6 +114,7 @@ public
     "
     input output Matching matching;
     input output Adjacency.Matrix adj;
+    input output Adjacency.Matrix full;
     input output VariablePointers vars;
     input output EquationPointers eqns;
     input output FunctionTree funcTree;
@@ -144,21 +145,22 @@ public
     changed := match systemType
       case NBSystem.SystemType.INI algorithm
         // ####### BALANCE INITIALIZATION #######
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, adj, matching, mapping);
+        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
       then changed;
 
       else algorithm
         // ####### INDEX REDUCTION ######
         // for now no index reduction
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(vars, eqns, varData, eqData, funcTree, adj, matching, mapping);
+        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
       then changed;
     end match;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
-      adj := Adjacency.Matrix.create(vars, eqns, matrixStrictness);
-      (matching, adj, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, vars, eqns, funcTree, varData, eqData, systemType, false, true);
+      adj := Adjacency.Matrix.createFull(vars, eqns);
+      adj := Adjacency.Matrix.fromFull(adj, vars.map, eqns.map, eqns, matrixStrictness);
+      (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, systemType, false, true);
     end if;
   end singular;
 
@@ -176,14 +178,14 @@ public
     // 1. Match the system
     (matching, marked_eqns, mapping, matrixStrictness) := match adj
       // PSEUDO ARRAY
-      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+      case Adjacency.Matrix.FINAL() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
         (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
         matching := MATCHING(var_to_eqn, eqn_to_var);
       then (matching, marked_eqns, SOME(adj.mapping), adj.st);
 
       // EMPTY
-      case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX()
+      case Adjacency.Matrix.EMPTY()
       then (EMPTY_MATCHING, {}, NONE(), NBAdjacency.MatrixStrictness.FULL);
 
       // FAIL

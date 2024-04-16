@@ -1519,16 +1519,24 @@ public
 
     function getType
       input Equation eq;
+      input Boolean skipIterator = false;
       output Type ty;
     algorithm
       ty := match eq
         case SCALAR_EQUATION()  then eq.ty;
         case ARRAY_EQUATION()   then eq.ty;
         case RECORD_EQUATION()  then eq.ty;
-        case FOR_EQUATION()     then Type.liftArrayRightList(getType(List.first(eq.body)), Iterator.dimensions(eq.iter));
+        case FOR_EQUATION()     algorithm
+          ty := getType(List.first(eq.body));
+          if not skipIterator then
+            ty := Type.liftArrayRightList(ty, Iterator.dimensions(eq.iter));
+          end if;
+        then ty;
+        case WHEN_EQUATION()    then WhenEquationBody.getType(eq.body);
                                 else Type.REAL(); // TODO: WRONG there should not be an else case
       end match;
     end getType;
+
 
     function getForIterator
       "does not work for algorithms"
@@ -1638,16 +1646,43 @@ public
       end match;
     end isArrayEquation;
 
+    function isRecordOrTupleEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() then true;
+        case Equation.ARRAY_EQUATION(recordSize = SOME(_)) then true;
+        else false;
+      end match;
+    end isRecordOrTupleEquation;
+
     function isRecordEquation
       input Pointer<Equation> eqn;
       output Boolean b;
     algorithm
       b := match Pointer.access(eqn)
-        case Equation.RECORD_EQUATION() then true;
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() guard(not Type.isTuple(e.ty)) then true;
         case Equation.ARRAY_EQUATION(recordSize = SOME(_)) then true;
         else false;
       end match;
     end isRecordEquation;
+
+    function isTupleEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() guard(Type.isTuple(e.ty)) then true;
+        else false;
+      end match;
+    end isTupleEquation;
 
     function isAlgorithm
       input Pointer<Equation> eqn;
@@ -2340,6 +2375,21 @@ public
       output Integer s = sum(WhenStatement.size(stmt) for stmt in body.when_stmts);
     end size;
 
+    function getType
+      "only works if properly split up"
+      input WhenEquationBody body;
+      output Type ty;
+    algorithm
+      ty := match body.when_stmts
+        local
+          WhenStatement stmt;
+        case {stmt} then WhenStatement.getType(stmt);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of not properly split up when equation body: " + toString(body)});
+        then fail();
+      end match;
+    end getType;
+
     function isEqual
       input WhenEquationBody body1;
       input WhenEquationBody body2;
@@ -2769,6 +2819,16 @@ public
         else false;
       end match;
     end isAssignOrReinit;
+
+    function getType
+      input WhenStatement stmt;
+      output Type ty;
+    algorithm
+      ty := match stmt
+        case ASSIGN() then Expression.typeOf(stmt.lhs);
+        else Type.ANY();
+      end match;
+    end getType;
 
     function map
       input output WhenStatement stmt;

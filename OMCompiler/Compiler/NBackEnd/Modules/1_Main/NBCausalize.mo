@@ -184,16 +184,23 @@ public
 
   function simple
     input VariablePointers vars;
-    input EquationPointers eqs;
+    input EquationPointers eqns;
+    input Adjacency.MatrixStrictness st = NBAdjacency.MatrixStrictness.MATCHING;
+    output Matching matching;
     output list<StrongComponent> comps;
   protected
-    Adjacency.Matrix adj;
-    Matching matching;
+    Adjacency.Matrix full, adj;
   algorithm
-    // create scalar adjacency matrix for now
-    adj := Adjacency.Matrix.create(vars, eqs);
+    // create full matrix
+    full := Adjacency.Matrix.createFull(vars, eqns);
+
+    // create solvable adjacency matrix for matching
+    adj := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, st);
     matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
-    comps := Sorting.tarjan(adj, matching, vars, eqs);
+
+    // create all occurence adjacency matrix for sorting, upgrading the matching matrix
+    adj := Adjacency.Matrix.upgrade(adj, full, vars.map, eqns.map, eqns, NBAdjacency.MatrixStrictness.SORTING);
+    comps := Sorting.tarjan(adj, matching, vars, eqns);
   end simple;
 
   function getModule
@@ -221,62 +228,85 @@ protected
   protected
     VariablePointers variables;
     EquationPointers equations;
-    Adjacency.Matrix adj;
+    Adjacency.Matrix full, adj_matching, adj_sorting;
     Matching matching;
     list<StrongComponent> comps;
   algorithm
-    (variables, equations, adj, matching, comps) := match system.systemType
+    (variables, equations, full, matching, comps) := match system.systemType
       local
         list<Pointer<Variable>> fixable, unfixable;
         list<Pointer<Equation>> initials, simulation;
+        UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
       case NBSystem.SystemType.INI algorithm
+        // compress the arrays to remove gaps
+        system.unknowns   := VariablePointers.compress(system.unknowns);
+        system.equations  := EquationPointers.compress(system.equations);
+
+        // split the variables and equations
         (fixable, unfixable)    := List.splitOnTrue(VariablePointers.toList(system.unknowns), BVariable.isFixable);
         (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(system.equations), Equation.isInitial);
-        matching                := NBMatching.EMPTY_MATCHING;
 
+        // create full matrix
+        full := Adjacency.Matrix.createFull(system.unknowns, system.equations);
+
+        // do not resolve potential singular systems in Phase I or II! -> regular matching
         // #################################################
         // Phase I: match initial equations <-> unfixable vars
         // #################################################
-        variables := VariablePointers.fromList(unfixable);
-        equations := EquationPointers.fromList(initials);
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.SOLVABLE);
-        // do not resolve potential singular systems in Phase I or II! -> regular matching
-        matching := Matching.regular(matching, adj, true, true);
+        vn := UnorderedMap.subSet(system.unknowns.map, list(BVariable.getVarName(var) for var in unfixable));
+        en := UnorderedMap.subSet(system.equations.map, list(Equation.getEqnName(eqn) for eqn in initials));
+
+        adj_matching := Adjacency.Matrix.fromFull(full, vn, en, system.equations, NBAdjacency.MatrixStrictness.MATCHING);
+        matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj_matching, true, true);
 
         // #################################################
         // Phase II: match all equations <-> unfixables
         // #################################################
-        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, {}, simulation);
-        // do not resolve potential singular systems in Phase I or II! -> regular matching
-        matching := Matching.regular(matching, adj, true, true);
+        vo := vn;
+        eo := en;
+        vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        en := UnorderedMap.subSet(system.equations.map, list(Equation.getEqnName(eqn) for eqn in simulation));
+
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, system.unknowns, system.equations);
+        matching := Matching.regular(matching, adj_matching, true, true);
 
         // #################################################
         // Phase III: match all equations <-> all vars
         // #################################################
-        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, fixable, {});
-        (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true, false);
+        vo := UnorderedMap.merge(vo, vn, sourceInfo());
+        eo := UnorderedMap.merge(eo, en, sourceInfo());
+        vn := UnorderedMap.subSet(system.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
+        en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, system.unknowns, system.equations);
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, system.unknowns, system.equations, funcTree, varData, eqData, system.systemType, false, true, false);
 
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.FULL);
-        comps := Sorting.tarjan(adj, matching, variables, equations);
-      then (variables, equations, adj, matching, comps);
+        // create all occurence adjacency matrix for sorting, upgrading the matching matrix
+        adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
+        comps := Sorting.tarjan(adj_sorting, matching, variables, equations);
+      then (variables, equations, full, matching, comps);
 
       else algorithm
         // compress the arrays to remove gaps
         variables := VariablePointers.compress(system.unknowns);
         equations := EquationPointers.compress(system.equations);
 
-        // create solvable adjacency matrix for matching and full for sorting
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.SOLVABLE);
-        (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true);
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.FULL);
-        comps := Sorting.tarjan(adj, matching, variables, equations);
-      then (variables, equations, adj, matching, comps);
+        // create full matrix
+        full := Adjacency.Matrix.createFull(variables, equations);
+
+        // create solvable adjacency matrix for matching
+        adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, system.systemType, false, true);
+
+        // create all occurence adjacency matrix for sorting, upgrading the matching matrix
+        adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
+        comps := Sorting.tarjan(adj_sorting, matching, variables, equations);
+      then (variables, equations, full, matching, comps);
     end match;
 
     system.unknowns := variables;
     system.equations := equations;
-    system.adjacencyMatrix := SOME(adj);
+    system.adjacencyMatrix := SOME(full);
     system.matching := SOME(matching);
     system.strongComponents := SOME(listArray(comps));
   end causalizePseudoArray;

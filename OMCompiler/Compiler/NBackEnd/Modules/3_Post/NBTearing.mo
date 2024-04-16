@@ -56,6 +56,7 @@ protected
   import BEquation = NBEquation;
   import BJacobian = NBJacobian;
   import BVariable = NBVariable;
+  import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
   import Inline = NBInline;
   import Jacobian = NBackendDAE.BackendDAE;
@@ -355,10 +356,8 @@ protected
           discreteVars    := VariablePointers.fromList(disc_vars);
           eqns            := EquationPointers.fromList(disc_eqns);
 
-          (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
-          matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, false);
+          (matching, inner_comps) := Causalize.simple(discreteVars, eqns, NBAdjacency.MatrixStrictness.LINEAR);
           (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
-          inner_comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
         end if;
 
         // create residual equations

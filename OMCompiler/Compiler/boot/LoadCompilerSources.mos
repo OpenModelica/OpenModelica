@@ -288,7 +288,6 @@ if true then /* Suppress output */
     "../NBackEnd/Classes/NBVariable.mo",
   // "NBackend Modules"
     "../NBackEnd/Modules/NBModule.mo",
-    "../NBackEnd/Modules/1_Main/NBAdjacency.mo",
     "../NBackEnd/Modules/1_Main/NBCausalize.mo",
     "../NBackEnd/Modules/1_Main/NBDAEMode.mo",
     "../NBackEnd/Modules/1_Main/NBInitialization.mo",
@@ -307,6 +306,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
     "../NBackEnd/Modules/3_Post/NBEvaluation.mo",
   // "NBackend Util"
+    "../NBackEnd/Util/NBAdjacency.mo",
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",
     "../NBackEnd/Util/NBReplacements.mo",
