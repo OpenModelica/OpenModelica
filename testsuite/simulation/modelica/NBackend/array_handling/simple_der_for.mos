@@ -15,7 +15,7 @@ end simple_der_for;
 
 "); getErrorString();
 
-//setCommandLineOptions("--newBackend");
+setCommandLineOptions("--newBackend");
 
 simulate(simple_der_for); getErrorString();
 
