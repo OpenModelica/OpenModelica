@@ -3158,7 +3158,7 @@ Element* GraphicsView::getConnectorElement(ModelInstance::Connector *pConnector)
     // If an element type is connector then we only get one item in elementList
     // Check the elementList
     // If conditional connector or condition is false or if type is missing then connect with the red cross box
-    if (elementList.size() < 2 || element->isExpandableConnector() || !element->getModelComponent()->getCondition() || element->getModel()->isMissing()) {
+    if (elementList.size() < 2 || element->isExpandableConnector() || !element->isCondition() || (element->getModel() && element->getModel()->isMissing())) {
       connectorElement = element;
     } else {
       // Look for port from the parent element
@@ -3639,7 +3639,7 @@ void GraphicsView::copyItems(bool cut)
       if (itemsList.at(i)->isSelected()) {
         if (Element *pElement = dynamic_cast<Element*>(itemsList.at(i))) {
           QString modifiers;
-          if (pElement->getModelComponent()->getModifier()) {
+          if (pElement->getModelComponent() && pElement->getModelComponent()->getModifier()) {
             modifiers = pElement->getModelComponent()->getModifier()->toString();
           }
           components << pElement->getClassName() % " " % pElement->getName() % modifiers % " " % "annotation(" % pElement->getPlacementAnnotation(true) % ");";
