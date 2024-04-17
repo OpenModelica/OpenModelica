@@ -386,7 +386,7 @@ fragment
 SCHAR : NL | ~('\r' | '\n' | '\\' | '"');
 
 fragment
-SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' |
+SESCAPE : esc='\\' ('\'' | '"' | '\\' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' |
   {
     char chars[2] = {LA(1),'\0'};
     const char *str = chars;
@@ -428,11 +428,12 @@ IDENT2 : NONDIGIT (NONDIGIT | DIGIT)* | '$cpuTime';
 
 fragment
 QIDENT :
-         '\'' (QCHAR | SESCAPE) (QCHAR | SESCAPE)* '\'' ;
+         '\'' (QCHAR | SESCAPE)* '\'' ;
 
 fragment
-QCHAR :  (DIGIT | NONDIGIT | '!' | '#' | '$' | '%' | '&' | '(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '>' | '=' | '?' | '@' | '[' | ']' | '^' |
-'{' | '}' | '|' | '~' | ' ');
+QCHAR :  (DIGIT | NONDIGIT | '!' | '#' | '$' | '%' | '&' | '(' | ')'
+          | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '>' | '='
+          | '?' | '@' | '[' | ']' | '^' | '{' | '}' | '|' | '~' | ' ' | '"' );
 
 fragment
 NONDIGIT :   ('_' | 'a'..'z' | 'A'..'Z');
