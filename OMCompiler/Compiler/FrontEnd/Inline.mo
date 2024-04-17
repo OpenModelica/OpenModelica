@@ -697,11 +697,18 @@ algorithm
       Boolean b;
     case (e,(SOME(functionTree),_),source)
       guard
-        Expression.isConstValue(inExp)
-      equation
-        e_1 = Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
-        source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-      then (e_1,source,true);
+        Expression.isConst(inExp)
+      algorithm
+        try
+          e_1 := Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
+          source := ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+          b := true;
+        else
+          e_1 := inExp;
+          source := inSource;
+          b := false;
+        end try;
+      then (e_1,source,b);
     case (e,fns,source)
       equation
         (e_1,_) = Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns, visitedPaths=AvlSetPath.Tree.EMPTY()),{});
