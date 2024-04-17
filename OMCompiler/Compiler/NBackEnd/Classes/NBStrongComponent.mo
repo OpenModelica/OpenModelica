@@ -57,7 +57,7 @@ protected
   import Matching = NBMatching;
   import Solve = NBSolve;
   import Sorting = NBSorting;
-  import NBSorting.{PseudoBucket, PseudoBucketKey, PseudoBucketValue, SuperNode};
+  import NBSorting.SuperNode;
   import BSystem = NBSystem;
   import NBSystem.{System, SystemType};
   import Tearing = NBTearing;
@@ -323,7 +323,6 @@ public
     input list<Integer> eqn_scal_indices;
     input EquationPointers eqns;
     input Adjacency.Mapping mapping;
-//    input PseudoBucket bucket;
     output StrongComponent slice;
   protected
     Pointer<Equation> eqn_ptr;
