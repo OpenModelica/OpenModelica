@@ -216,6 +216,7 @@ public:
   QRectF itemsBoundingRect();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   ModelInstance::Model *getModel() const {return mpModel;}
+  void setModel(ModelInstance::Model *pModel) {mpModel = pModel;}
   ModelInstance::Component *getModelComponent() const {return mpModelComponent;}
   void setModelComponent(ModelInstance::Component *pModelComponent) {mpModelComponent = pModelComponent;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
