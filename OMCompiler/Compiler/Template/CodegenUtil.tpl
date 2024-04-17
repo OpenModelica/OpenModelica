@@ -104,11 +104,17 @@ template crefStr(ComponentRef cr)
 end crefStr;
 
 template crefStrNoUnderscore(ComponentRef cr)
- "Generates the name of a variable for variable name array. However does not use underscores on qualified names.
- a.b not a._b. Used for generating variable names that are exported e.g. xml files"
+ "Generates the name of a variable for variable name array.
+  However does not use underscores on qualified names.
+  a.b not a._b.
+  Escaping single and double quotes from quoted identifiers.
+
+  Used for generating variable names that are exported e.g. xml files"
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
+  case CREF_IDENT(__) then
+    let escapedIdent = Util.escapeModelicaStringToCString(escapeSingleQuoteIdent(ident))
+    '<%escapedIdent%><%subscriptsStr(subscriptLst)%>'
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrNoUnderscore(componentRef)%>)'
   case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStrNoUnderscore(componentRef)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStrNoUnderscore(componentRef)%>'
@@ -193,6 +199,13 @@ template crefCCommentWithVariability(SimVar v)
 end crefCCommentWithVariability;
 
 /*********************************************************/
+
+template escapeSingleQuoteIdent(String ident)
+  "Escape single quotes from quoted identifiers."
+::=
+  // TODO: How to replace "'" with "\'" but not "\'" with "\\'"?
+  '<%System.stringReplace(System.stringReplace(ident, "\\'", "\\\\'"), "'", "\\'")%>'
+end escapeSingleQuoteIdent;
 
 template initDefaultValXml(DAE.Type type_)
 ::=

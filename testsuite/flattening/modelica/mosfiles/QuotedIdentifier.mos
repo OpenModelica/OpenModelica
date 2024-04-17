@@ -1,0 +1,50 @@
+// name: QuotedIdentifier
+// status: correct
+// teardown_command: rm -rf QuotedIdentifier_tmp
+//
+// Test compilation of C code containing */ or ".
+// Test lineariazion of modle with quoted identifiers containing additional '.
+
+loadFile("QuotedIdentifier.mo");getErrorString();
+
+echo(false);
+mkdir("QuotedIdentifier_tmp"); cd("QuotedIdentifier_tmp");
+echo(true);
+
+buildModel(QuotedIdentifier); getErrorString();
+linearize(QuotedIdentifier); getErrorString();
+
+loadFile("linearized_model.mo"); getErrorString();
+
+simulate(linearized_model); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// {"QuotedIdentifier","QuotedIdentifier_init.xml"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "QuotedIdentifier_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'QuotedIdentifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 1.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_STDOUT        | info    | Linear model is created.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "linearized_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// endResult
