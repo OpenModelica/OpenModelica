@@ -4461,15 +4461,15 @@ public
     end match;
   end isLiteral;
 
-  function isLiteralFill
+  function isKnownSizeFill
     input Expression exp;
     output Boolean literal;
   algorithm
     literal := match exp
-      case CALL() then Call.isNamed(exp.call, "fill") and List.all(Call.arguments(exp.call), isLiteral);
+      case CALL() then Call.isKnownSizeFill(exp.call);
       else false;
     end match;
-  end isLiteralFill;
+  end isKnownSizeFill;
 
   function isInteger
     input Expression exp;

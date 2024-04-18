@@ -583,6 +583,22 @@ public
     end match;
   end isLiteral;
 
+  function isKnownSizeFill
+    input Call call;
+    output Boolean res;
+  protected
+    function is_literal_iter
+      input tuple<InstNode, Expression> iter;
+      output Boolean literal = Expression.isLiteral(Util.tuple22(iter));
+    end is_literal_iter;
+  algorithm
+    res := match call
+      case TYPED_CALL() then isNamed(call, "fill") and List.all(listRest(call.arguments), Expression.isLiteral);
+      case TYPED_ARRAY_CONSTRUCTOR() then List.all(call.iters, is_literal_iter);
+      else false;
+    end match;
+  end isKnownSizeFill;
+
   function inlineType
     input NFCall call;
     output DAE.InlineType inlineTy;
@@ -806,7 +822,7 @@ public
             // Vectorized calls contains iterators with illegal Modelica names
             // (to avoid name conflicts), to make the flat output legal such
             // calls are reverted to their original form here.
-            str := toFlatString(devectorizeCall(call));
+            str := Expression.toFlatString(devectorizeCall(call));
           else
             name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
             arg_str := Expression.toFlatString(call.exp);
@@ -2763,7 +2779,7 @@ protected
      used as a helper to output valid flat Modelica, and should probably not
      be used where e.g. correct types are required."
     input NFCall call;
-    output NFCall outCall;
+    output Expression result;
   protected
     Expression exp, iter_exp;
     list<tuple<InstNode, Expression>> iters;
@@ -2776,8 +2792,7 @@ protected
       exp := Expression.replaceIterator(exp, iter_node, iter_exp);
     end for;
 
-    exp := SimplifyExp.simplify(exp);
-    Expression.CALL(call = outCall) := exp;
+    result := SimplifyExp.simplify(exp);
   end devectorizeCall;
 
   function evaluateCallType

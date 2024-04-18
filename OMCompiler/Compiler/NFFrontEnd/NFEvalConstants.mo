@@ -97,13 +97,13 @@ protected
 algorithm
   structural := Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER and
                 not Type.isExternalObject(var.ty);
-  binding := evaluateBinding(var.binding, var.name, structural, context, settings);
+  binding := evaluateBinding(var.binding, var.name, structural, context);
 
   if not referenceEq(binding, var.binding) then
     var.binding := binding;
   end if;
 
-  var.typeAttributes := list(evaluateTypeAttribute(a, var.name, context, settings) for a in var.typeAttributes);
+  var.typeAttributes := list(evaluateTypeAttribute(a, var.name, context) for a in var.typeAttributes);
   var.children := list(evaluateVariable(v, context, settings) for v in var.children);
 end evaluateVariable;
 
@@ -112,7 +112,6 @@ function evaluateBinding
   input ComponentRef prefix;
   input Boolean structural;
   input InstContext.Type context;
-  input EvalSettings settings;
 protected
   Expression exp, eexp;
 algorithm
@@ -120,13 +119,10 @@ algorithm
     exp := Binding.getTypedExp(binding);
 
     if structural then
-      if not settings.scalarize then
-        eexp := evaluateExp(exp, Binding.getInfo(binding));
-      else
-        eexp := exp;
-      end if;
+      eexp := evaluateExp(exp, Binding.getInfo(binding));
+      eexp := SimplifyExp.simplify(eexp);
 
-      if not (Expression.isLiteral(eexp) or Expression.isLiteralFill(eexp)) then
+      if not (Expression.isLiteral(eexp) or Expression.isKnownSizeFill(eexp)) then
         if InstContext.inRelaxed(context) then
           eexp := Ceval.tryEvalExp(eexp);
         else
@@ -149,7 +145,6 @@ function evaluateTypeAttribute
   input output tuple<String, Binding> attribute;
   input ComponentRef prefix;
   input InstContext.Type context;
-  input EvalSettings settings;
 protected
   String name;
   Binding binding, sbinding;
@@ -157,7 +152,7 @@ protected
 algorithm
   (name, binding) := attribute;
   structural := name == "fixed" or name == "stateSelect";
-  sbinding := evaluateBinding(binding, prefix, structural, context, settings);
+  sbinding := evaluateBinding(binding, prefix, structural, context);
 
   if not referenceEq(binding, sbinding) then
     attribute := (name, sbinding);
