@@ -598,7 +598,7 @@ public
           name := ComponentRef.fromNode(stmt.iterator, Type.INTEGER());
           new_frames := (name, range) :: frames;
           for elem in stmt.body loop
-            fromStatement(elem, bucket_ptr, eqn, funcTree, frames);
+            fromStatement(elem, bucket_ptr, eqn, funcTree, new_frames);
           end for;
         then ();
         else algorithm
