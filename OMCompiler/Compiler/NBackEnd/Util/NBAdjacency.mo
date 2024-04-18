@@ -501,7 +501,7 @@ public
                 for name in UnorderedMap.keyList(eqns_map) loop
                   index := UnorderedMap.getSafe(name, eqns_map, sourceInfo());
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
-                  // now run the normal createPseudo pipeline but use dependencies
+                  // upgrade the row and all meta data
                   upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, adj.m, adj.mapping, adj.modes);
                 end for;
                 adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
@@ -1085,18 +1085,23 @@ public
       Iterator iter = Equation.getForIterator(eqn);
       Type ty = Equation.getType(eqn, true);
     algorithm
-      // don't do this for if equations as soon as we properly split them
-      if Equation.isAlgorithm(eqn_ptr) or Equation.isIfEquation(eqn_ptr) then
-        // algorithm full dependency
-        (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-        row := Slice.upgradeRowFull(dependencies, map, mapping);
-        for i in 0:eqn_size-1 loop
-          updateIntegerRow(m, eqn_scal_idx+i, row);
-        end for;
+      try
+        // don't do this for if equations as soon as we properly split them
+        if Equation.isAlgorithm(eqn_ptr) or Equation.isIfEquation(eqn_ptr) then
+          // algorithm full dependency
+          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+          row := Slice.upgradeRowFull(dependencies, map, mapping);
+          for i in 0:eqn_size-1 loop
+            updateIntegerRow(m, eqn_scal_idx+i, row);
+          end for;
+        else
+          // todo: if, when single equation (needs to be updated for if)
+          Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
+        end if;
       else
-        // todo: if, when single equation (needs to be updated for if)
-        Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
-      end if;
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.pointerToString(eqn_ptr)});
+        fail();
+      end try;
     end upgradeRow;
 
     function updateIntegerRow
@@ -1212,6 +1217,24 @@ public
       end if;
     end skip;
 
+    function removeSkips
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, Dependency> map;
+    protected
+      Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
+      Dependency dep;
+    algorithm
+      if Util.isSome(opt_dep) then
+        SOME(dep) := opt_dep;
+        dep.skips := {};
+        UnorderedMap.add(cref, dep, map);
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
+         + ComponentRef.toString(cref) + " was not found in the map."});
+        fail();
+      end if;
+    end removeSkips;
+
     function updateList
       input list<ComponentRef> lst;
       input Integer num;
@@ -1232,6 +1255,15 @@ public
         skip(cref, skips, map);
       end for;
     end skipList;
+
+    function removeSkipsList
+      input list<ComponentRef> lst;
+      input UnorderedMap<ComponentRef, Dependency> map;
+    algorithm
+      for cref in lst loop
+        removeSkips(cref, map);
+      end for;
+    end removeSkipsList;
 
     function addListFull
       "adds a list and applies full dependency"
@@ -1625,16 +1657,16 @@ public
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
       then set;
 
-      // variables in conditions and not occuring in both branches are unsolvable
+      // variables in conditions are unsolvable and variables not occuring in both branches are implicit
       case Expression.IF() algorithm
         set1  := collectDependencies(exp.trueBranch, map, dep_map, sol_map, rep_set);
         set2  := collectDependencies(exp.falseBranch, map, dep_map, sol_map, rep_set);
-        // variables not occuring in both branches will be tagged unsolvable
+        // variables not occuring in both branches will be tagged implicit
         diff  := UnorderedSet.sym_difference(set1, set2);
-        Solvability.updateList(UnorderedSet.toList(diff), Solvability.UNSOLVABLE(), sol_map);
-        // variables in conditions are unsolvable
+        Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
+        // variables in conditions are unsolvable and their skips have to be removed
         set   := collectDependencies(exp.condition, map, dep_map, sol_map, rep_set);
-        Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
+        updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
       then UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
 
       // for array constructors replace all iterators (temporarily)
@@ -1753,10 +1785,9 @@ public
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;
   algorithm
-    // variables in conditions are unsolvable and reduced
+    // variables in conditions are unsolvable, reduced and get their skips removed
     set := collectDependencies(body.condition, map, dep_map, sol_map, rep_set);
-    Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
-    Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
+    updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
 
     // get variables from 'then' branch
     for eqn in body.then_eqns loop
@@ -1793,10 +1824,9 @@ public
     list<UnorderedSet<ComponentRef>> lst = {}, lst1, lst2;
     list<tuple<UnorderedSet<ComponentRef>, UnorderedSet<ComponentRef>>> tpl_lst = {};
   algorithm
-    // variables in conditions are unsolvable and reduced
+    // variables in conditions are unsolvable, reduced and get their skips removed
     set := collectDependencies(body.condition, map, dep_map, sol_map, rep_set);
-    Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
-    Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
+    updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
 
     // make condition repeat if the body is larger than 1
     if sum(WhenStatement.size(stmt) for stmt in body.when_stmts) > 1 then
@@ -1853,6 +1883,7 @@ public
       case WhenStatement.ASSERT() algorithm
         set1 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         set2 := collectDependencies(stmt.condition, map, dep_map, sol_map, rep_set);
+        updateConditionCrefs(UnorderedSet.toList(set2), dep_map, sol_map);
       then (set1, set2);
 
       else algorithm
@@ -1861,6 +1892,17 @@ public
       then (set1, set2);
     end match;
   end collectDependenciesStmt;
+
+  function updateConditionCrefs
+    "variables in conditions are unsolvable, reduced and get their skips removed"
+    input list<ComponentRef> crefs;
+    input UnorderedMap<ComponentRef, Dependency> dep_map;
+    input UnorderedMap<ComponentRef, Solvability> sol_map;
+  algorithm
+    Dependency.removeSkipsList(crefs, dep_map);
+    Dependency.updateList(crefs, -1, false, dep_map);
+    Solvability.updateList(crefs, Solvability.UNSOLVABLE(), sol_map);
+  end updateConditionCrefs;
 
   annotation(__OpenModelica_Interface="backend");
 end NBAdjacency;
