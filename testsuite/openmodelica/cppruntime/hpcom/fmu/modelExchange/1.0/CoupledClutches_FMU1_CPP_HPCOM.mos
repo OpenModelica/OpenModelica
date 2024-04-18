@@ -9,7 +9,7 @@ loadModel(Modelica, {"3.2.3"}); getErrorString();
 setDebugFlags("hpcom,hardcodedStartValues"); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp +n=2 +hpcomCode=openmp +hpcomScheduler=list"); getErrorString();
 loadFile("CoupledClutches.mo"); getErrorString();
-translateModelFMU(CoupledClutches); getErrorString();
+buildModelFMU(CoupledClutches); getErrorString();
 
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();

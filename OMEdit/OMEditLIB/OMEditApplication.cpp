@@ -60,10 +60,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 {
   // set the stylesheet
   setStyleSheet("file:///:/Resources/css/stylesheet.qss");
-#if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-  QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
-  QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
-#endif
 #ifndef WIN32
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif

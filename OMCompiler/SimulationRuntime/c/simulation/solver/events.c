@@ -99,8 +99,11 @@ int checkForStateEvent(DATA* data, LIST *eventList)
   for(i=0; i<data->modelData->nZeroCrossings; i++)
   {
     int *eq_indexes;
-    const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    debugStreamPrintWithEquationIndexes(LOG_EVENTS, omc_dummyFileInfo, 1, eq_indexes, "%s", exp_str);
+    if (DEBUG_STREAM(LOG_EVENTS))
+    {
+      const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
+      debugStreamPrintWithEquationIndexes(LOG_EVENTS, omc_dummyFileInfo, 1, eq_indexes, "%s", exp_str);
+    }
 
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {

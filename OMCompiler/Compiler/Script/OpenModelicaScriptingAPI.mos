@@ -6,6 +6,7 @@ if bool then
   bool := loadFile("OpenModelicaScriptingAPI.tmp.mo");
   if bool then
     bool := OpenModelica.Scripting.compareFilesAndMove("OpenModelicaScriptingAPI.tmp.mo", "OpenModelicaScriptingAPI.mo");
+    OpenModelica.Scripting.deleteFile("OpenModelicaScriptingAPI.tmp.mo");
   else
     exit(1);
   end if;

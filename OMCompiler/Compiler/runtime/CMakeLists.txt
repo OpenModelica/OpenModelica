@@ -57,7 +57,7 @@ set(OMC_RUNTIIME_SOURCES
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp
-    ffi_omc.c)
+    ffi_omc.cpp)
 
 
 # ######################################################################################################################
@@ -92,6 +92,12 @@ endif()
 # Corba support
 if(OM_OMC_USE_CORBA)
   if(MINGW)
+    if(DEFINED ENV{MSYSTEM_PREFIX})
+      string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
+      if(IS_UCRT64)
+        message(FATAL_ERROR "No corba support on UCRT64")
+      endif()
+    endif()
     # setup omniORB for MinGW OMDev
     include(.cmake/omdev_omniorb_setup.cmake)
     # Include the macro for compiling corba targets.
@@ -208,7 +214,7 @@ set(WITH_UUID "#define WITH_LIBUUID 1")
 
 set(USE_GRAPH 0)
 
-set(RUNTIMECFLAGS "-fPIC")
+set(RUNTIMECFLAGS "-fPIC -DOM_HAVE_PTHREADS")
 
 configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
 configure_file(${OMCompiler_SOURCE_DIR}/omc_config.unix.h.in ${OMCompiler_SOURCE_DIR}/omc_config.unix.h)

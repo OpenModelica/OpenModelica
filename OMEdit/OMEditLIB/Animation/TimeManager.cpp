@@ -48,19 +48,19 @@ TimeManager::TimeManager(const double simTime, const double realTime, const doub
     mSpeedUp(1.0),
     mTimeDiscretization(1000)
 {
-  mpUpdateSceneTimer = new QTimer;
+  mpUpdateSceneTimer = new QTimer();
   mpUpdateSceneTimer->setInterval(100);
   rt_ext_tp_tick_realtime(&_visualTimer);
 }
 
 void TimeManager::updateTick()
 {
-  _realTime = rt_ext_tp_tock(&_visualTimer)*1e9;
+  _realTime = rt_ext_tp_tock(&_visualTimer) * 1e9;
 }
 
 int TimeManager::getTimeFraction()
 {
-  return int(_visTime / (_endTime - _startTime)*mTimeDiscretization);
+  return int((_visTime - _startTime) / (_endTime - _startTime) * mTimeDiscretization);
 }
 
 double TimeManager::getEndTime() const

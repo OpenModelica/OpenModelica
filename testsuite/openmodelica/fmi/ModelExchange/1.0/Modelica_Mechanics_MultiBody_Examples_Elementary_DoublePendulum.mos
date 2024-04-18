@@ -11,7 +11,7 @@ loadModel(Modelica, {"3.2.3"});
 // Although it is not correct to do it by default, evaluate protected parameters,
 // otherwise building the _me_FMU.mo fails. It seems that it is necessary to evaluate string parameters.
 setCommandLineOptions("--evaluateProtectedParameters"); getErrorString();
-translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, version="1.0");
+buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, version="1.0");
 getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu", loglevel=0);
 getErrorString();

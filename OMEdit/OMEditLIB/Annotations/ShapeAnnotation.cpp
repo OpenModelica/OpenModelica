@@ -504,45 +504,35 @@ QRectF ShapeAnnotation::getBoundingRect() const
  */
 void ShapeAnnotation::applyLinePattern(QPainter *painter)
 {
-  qreal thickness = Utilities::convertMMToPixel(mLineThickness);
-  /* Ticket #4490
-   * The specification doesn't say anything about it.
-   * But just to keep this consist with Dymola set a default line thickness for border patterns raised & sunken.
-   * We need better handling of border patterns.
+  /* Fixes issue #12090.
+   * Some old issues with nice use cases #3222, #2272, #2268.
    */
-  if (mBorderPattern == StringHandler::BorderRaised || mBorderPattern == StringHandler::BorderSunken) {
-    thickness = Utilities::convertMMToPixel(0.25);
-  }
-  // Make the display of Library Browser icons sharper. Very low line thickness is hardly visible on high resolution.
-  if (mLineThickness < 1.0 && ((mpGraphicsView && mpGraphicsView->useSharpLibraryPixmap())
-                               || (mpParentComponent && mpParentComponent->getGraphicsView()->useSharpLibraryPixmap()))) {
-    thickness = Utilities::convertMMToPixel(1.0);
+  qreal thickness = mLineThickness;
+
+  qreal curScale = 0.0;
+  if ((mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) || (mpParentComponent && mpParentComponent->getGraphicsView()->isRenderingLibraryPixmap())) {
+    thickness = mLineThickness + 3.0;
+  } else if (mpParentComponent) {
+    const QTransform painterTransform = painter->transform();
+    const qreal m11 = painterTransform.m11();
+    const qreal m22 = painterTransform.m22();
+    const qreal m12 = painterTransform.m12();
+    const qreal m21 = painterTransform.m21();
+    qreal xScale = qSqrt(m11*m11 + m12*m12);
+    qreal yScale = qSqrt(m22*m22 + m21*m21);
+    curScale = qMin(xScale, yScale);
+
+    if (mLineThickness > 0.0 && mLineThickness < 1.0 && curScale < 1.0) {
+      thickness = 1.0;
+    }
   }
 
-  QPen pen(QBrush(mLineColor), thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
-  /* The specification doesn't say anything about it.
-   * But just to keep this consist with Dymola we use Qt::BevelJoin for Line shapes.
-   * All other shapes use Qt::MiterJoin
-   */
-  if (dynamic_cast<LineAnnotation*>(this)) {
-    pen.setJoinStyle(Qt::BevelJoin);
+  QPen pen(QBrush(mLineColor), thickness, StringHandler::getLinePatternType(mLinePattern), Qt::FlatCap, Qt::MiterJoin);
+  if (qFuzzyCompare(mLineThickness, 0.0) || (mpParentComponent && mLineThickness < 1.0 && curScale < 1.0)) {
+    pen.setCosmetic(true);
   }
-  /* Ticket #3222
-   * Make all the shapes use cosmetic pens so that they perserve their pen width when scaled i.e zoomed in/out.
-   */
-  pen.setCosmetic(true);
-  /* Ticket #2272, Ticket #2268.
-   * If thickness is greater than 4 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
-   * Use non cosmetic pens for Libraries Browser and shapes inside component when thickness is greater than 4.
-   */
-  if (thickness > 4
-      && ((mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) || mpParentComponent)) {
-    pen.setCosmetic(false);
-  }
-  // if thickness is greater than 1 pixel then use antialiasing.
-  if (thickness > 1) {
-    painter->setRenderHint(QPainter::Antialiasing);
-  }
+  pen.setMiterLimit(1);
+  painter->setRenderHint(QPainter::Antialiasing);
   painter->setPen(pen);
 }
 
@@ -609,10 +599,10 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
     ModelInstance::Extend *pExtend = dynamic_cast<ModelInstance::Extend*>(getExtend());
     if (pExtend) {
       if (pGraphicsView->getViewType() == StringHandler::Icon) {
-        extent = pExtend->getAnnotation()->getIconMap().getExtent();
+        extent = pExtend->getIconDiagramMapExtent(true);
         preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
       } else {
-        extent = pExtend->getAnnotation()->getDiagramMap().getExtent();
+        extent = pExtend->getIconDiagramMapExtent(false);
         preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
       }
     }
@@ -687,7 +677,7 @@ void ShapeAnnotation::applyTransformation()
     pGraphicsView = mpReferenceShapeAnnotation->getGraphicsView();
   }
 
-  if (!mpParentComponent && pGraphicsView && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType)
+  if (!mpParentComponent && pGraphicsView && (!pLineAnnotation || pLineAnnotation->isLineShape())
       && ((mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) || (pGraphicsView->getModelWidget()->isNewApi() && mIsInheritedShape))) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
     ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
@@ -1312,11 +1302,11 @@ void ShapeAnnotation::deleteMe()
 {
   // delete the shape
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+  if (pLineAnnotation && pLineAnnotation->isConnection()) {
     mpGraphicsView->deleteConnection(pLineAnnotation);
-  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+  } else if (pLineAnnotation && pLineAnnotation->isTransition()) {
     mpGraphicsView->deleteTransition(pLineAnnotation);
-  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::InitialStateType) {
+  } else if (pLineAnnotation && pLineAnnotation->isInitialState()) {
     mpGraphicsView->deleteInitialState(pLineAnnotation);
   } else {
     mpGraphicsView->deleteShape(this);
@@ -1562,13 +1552,13 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
           return;
         }
       } else {
-        if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        if (pLineAnnotation && pLineAnnotation->isConnection()) {
           manhattanizeShape(false);
           removeRedundantPointsGeometriesAndCornerItems();
           // Call getOMCShapeAnnotation() after manhattanizeShape() and removeRedundantPointsGeometriesAndCornerItems() to get a correct new annotation
           QString newAnnotation = getOMCShapeAnnotation();
           pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
-        } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+        } else if (pLineAnnotation && pLineAnnotation->isTransition()) {
           manhattanizeShape(false);
           removeRedundantPointsGeometriesAndCornerItems();
           QString newAnnotation = getOMCShapeAnnotation();
@@ -1610,7 +1600,7 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
   if (dynamic_cast<LineAnnotation*>(this)) {
     point = mapFromScene(point);
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-    if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+    if (pLineAnnotation && pLineAnnotation->isConnection()) {
       if (mPoints.size() > index) {
         // if moving the 2nd last point then we need to add more points after it to keep the last point manhattanized with connector
         int secondLastIndex = mPoints.size() - 2;
@@ -1868,10 +1858,6 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
   QGraphicsItem::itemChange(change, value);
   if (change == QGraphicsItem::ItemSelectedHasChanged) {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-    LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-    if (pLineAnnotation) {
-      lineType = pLineAnnotation->getLineType();
-    }
     if (isSelected()) {
       setCornerItemsActiveOrPassive();
       setCursor(Qt::SizeAllCursor);
@@ -1881,7 +1867,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           connect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
         }
         connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
-        if (lineType == LineAnnotation::ShapeType) {
+        if (!pLineAnnotation || !pLineAnnotation->isConnection()) {
           connect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()), Qt::UniqueConnection);
@@ -1914,7 +1900,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()));
         }
         disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
-        if (lineType == LineAnnotation::ShapeType) {
+        if (!pLineAnnotation || !pLineAnnotation->isConnection()) {
           disconnect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));
           disconnect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()));

@@ -84,11 +84,13 @@ public
       case Expression.CALL()     then expandCall(exp.call, exp);
       case Expression.SIZE()     then expandSize(exp);
       case Expression.BINARY()   then expandBinary(exp, exp.operator);
+      case Expression.MULTARY()  then expand(SimplifyExp.splitMultary(exp), backend);
       case Expression.UNARY()    then expandUnary(exp);
       case Expression.LBINARY()  then expandLogicalBinary(exp);
       case Expression.LUNARY()   then expandLogicalUnary(exp);
       case Expression.RELATION() then (exp, true);
-      case Expression.CAST()     then expandCast(exp.exp, exp.ty);
+      case Expression.CAST()     then expandCast(exp);
+      case Expression.FILENAME() then (exp, true);
       else expandGeneric(exp);
     end match;
   end expand;
@@ -881,6 +883,7 @@ public
 
       // a ^ n where n is a literal value.
       case Expression.INTEGER(n)
+        guard n > 0
         algorithm
           (exp1, expanded) := expand(exp1);
 
@@ -1010,17 +1013,20 @@ public
   end makeLogicalUnaryOp;
 
   function expandCast
-    input Expression exp;
-    input Type ty;
+    input Expression castExp;
     output Expression outExp;
     output Boolean expanded;
+  protected
+    Expression exp;
+    Type ty;
   algorithm
+    Expression.CAST(exp = exp, ty = ty) := castExp;
     (outExp, expanded) := expand(exp);
 
-    if expanded then
+    if expanded and not referenceEq(exp, outExp) then
       outExp := Expression.typeCast(outExp, ty);
     else
-      outExp := exp;
+      outExp := castExp;
     end if;
   end expandCast;
 

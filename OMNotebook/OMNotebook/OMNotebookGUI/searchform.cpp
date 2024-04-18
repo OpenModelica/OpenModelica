@@ -39,12 +39,8 @@
 
 // QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #include <QMessageBox>
-#else
-#include <QtGui/QMessageBox>
-#endif
 
 // IAEX Headers
 #include "cellcursor.h"
@@ -567,18 +563,10 @@ namespace IAEX
    */
   void SearchForm::closeForm()
   {
-    QList<Cell*>::iterator iter = openedCells_.begin();
-    while( iter != openedCells_.end() )
-    {
-      (*iter)->setClosed( true, false );
-      if( typeid( (*(*iter)) ) == typeid( CellGroup ) )
-      {
-        CellGroup* groupcell = dynamic_cast<CellGroup*>( (*iter) );
-        if( groupcell )
-          groupcell->closeChildCells();
-      }
-
-      ++iter;
+    for (auto cell: openedCells_) {
+      cell->setClosed( true, false );
+      CellGroup* groupcell = dynamic_cast<CellGroup*>( cell );
+      if( groupcell ) groupcell->closeChildCells();
     }
 
     close();

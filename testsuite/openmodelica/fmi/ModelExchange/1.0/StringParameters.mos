@@ -7,7 +7,7 @@
 //
 setCFlags(getCFlags() + " -g"); getErrorString();
 loadFile("StringParameters.mo"); getErrorString();
-translateModelFMU(StringParameters, version="1.0"); getErrorString();
+buildModelFMU(StringParameters, version="1.0"); getErrorString();
 importFMU("StringParameters.fmu"); getErrorString();
 loadFile("StringParameters_me_FMU.mo"); getErrorString();
 simulate(StringParameters_me_FMU, stopTime=3.0, simflags="-output=sball,eball"); getErrorString();

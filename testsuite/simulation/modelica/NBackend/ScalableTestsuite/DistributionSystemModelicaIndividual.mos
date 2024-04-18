@@ -1,0 +1,27 @@
+// name: ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadModel(ScalableTestSuite); getErrorString();
+
+simulate(ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_res.mat",
+  "ReferenceFiles/ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_res.mat",
+  "ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_diff.csv",0.01,0.0001,
+  {"secondary_2_2.LossPower"});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

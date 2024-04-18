@@ -35,7 +35,6 @@
 #include <fstream>
 #include <QApplication>
 #include <QMessageBox>
-using namespace std;
 
 EvalThread::EvalThread(InputCellDelegate* delegate_, QString expr_, QObject* parent):
   QThread(parent), delegate_(delegate_), expr(expr_)

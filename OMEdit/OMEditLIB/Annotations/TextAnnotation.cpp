@@ -269,6 +269,7 @@ void TextAnnotation::parseShapeAnnotation()
   mExtent = mpText->getExtent();
   mExtent.evaluate(mpText->getParentModel());
   mTextString = mpText->getTextString();
+  mTextString.evaluate(mpText->getParentModel());
   mOriginalTextString = mTextString;
   initUpdateTextString();
 
@@ -343,7 +344,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     }
     // text annotation on a transition
     LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
-    if (pTransitionLineAnnotation && pTransitionLineAnnotation->getLineType() == LineAnnotation::TransitionType
+    if (pTransitionLineAnnotation && pTransitionLineAnnotation->isTransition()
         && pTransitionLineAnnotation->getGraphicsView() && pTransitionLineAnnotation->getGraphicsView()->isVisualizationView()) {
       if (pTransitionLineAnnotation->isActiveState()) {
         painter->setOpacity(1.0);
@@ -351,54 +352,55 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         painter->setOpacity(0.2);
       }
     }
-    drawTextAnnotation(painter);
+    drawAnnotation(painter);
   }
 }
 
 /*!
- * \brief TextAnnotation::drawTextAnnotation
- * Draws the Text annotation
+ * \brief TextAnnotation::drawAnnotation
+ * Draws the text.
  * \param painter
  */
-void TextAnnotation::drawTextAnnotation(QPainter *painter)
+void TextAnnotation::drawAnnotation(QPainter *painter)
 {
+  QPointF p1 = mExtent.size() > 0 ? mExtent.at(0) : QPointF(-100.0, -100.0);
+  QPointF p2 = mExtent.size() > 1 ? mExtent.at(1) : QPointF(100.0, 100.0);
+  bool startInv = p1.x() > p2.x();
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */
   /*applyFillPattern(painter);*/
   // store the existing transformations
   const QTransform painterTransform = painter->transform();
-  const qreal scaleX = painterTransform.m11();
-  const qreal scaleY = painterTransform.m22();
-  const qreal shearX = painterTransform.m21();
-  const qreal shearY = painterTransform.m12();
+  const qreal m11 = painterTransform.m11();
+  const qreal m22 = painterTransform.m22();
+  const qreal m12 = painterTransform.m12();
+  const qreal m21 = painterTransform.m21();
+  qreal xScale = qSqrt(m11*m11 + m12*m12);
+  qreal yScale = qSqrt(m22*m22 + m21*m21);
   // set new transformation for the text based on rotation or scale.
-  qreal sx, sy;
-  if (painterTransform.type() == QTransform::TxRotate) {
-    // if no flip or XY flip
-    if ((shearX >= 0 && shearY >= 0) || (shearX < 0 && shearY < 0)) {
-      painter->setTransform(QTransform(painterTransform.m11(), (shearY < 0 ? -1.0 : 1.0), painterTransform.m13(),
-                                       (shearX >= 0 ? -1.0 : 1.0), painterTransform.m22(), painterTransform.m23(),
-                                       painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
-      sx = shearX * (shearX < 0 ? -1.0 : 1.0);
-      sy = shearY * (shearY >= 0 ? -1.0 : 1.0);
-    } else { // if x or y flip
-      painter->setTransform(QTransform(painterTransform.m11(), (shearY < 0 ? 1.0 : -1.0), painterTransform.m13(),
-                                       (shearX >= 0 ? -1.0 : 1.0), painterTransform.m22(), painterTransform.m23(),
-                                       painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
-      sx = shearX * (shearX < 0 ? 1.0 : -1.0);
-      sy = shearY * (shearY >= 0 ? -1.0 : 1.0);
+  qreal invx = (m11 >= 0) ? 1.0 : -1.0;
+  qreal invy = (m22 >= 0) ? 1.0 : -1.0;
+  if ((m11 == 0) && (m22 == 0))
+  {
+    invx = (m12 > 0) ? -1.0 : 1.0;
+    invy = (m21 > 0) ? 1.0 : -1.0;
+
+    if ((!startInv && (m12 > 0)) || (startInv && (m12 < 0)))
+    {
+      invx = -1.0 * invx;
+      invy = -1.0 * invy;
     }
-  } else {
-    painter->setTransform(QTransform(1.0, painterTransform.m12(), painterTransform.m13(),
-                                     painterTransform.m21(), 1.0, painterTransform.m23(),
-                                     painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
-    sx = scaleX;
-    sy = scaleY;
   }
+  QTransform curTransform = QTransform(qAbs(painterTransform.m11()), invx * painterTransform.m12(), painterTransform.m13(),
+                                  invy * painterTransform.m21(), qAbs(painterTransform.m22()), painterTransform.m23(),
+                                  painterTransform.m31(), painterTransform.m32(), painterTransform.m33())
+                            .scale(1/xScale, 1/yScale);
+  painter->setTransform(curTransform);
   // map the existing bounding rect to new transformation
-  QRectF mappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, boundingRect().width() * sx, boundingRect().height() * sy);
-  // map the existing bounding rect to new transformation but with positive width and height so that font metrics can work
-  QRectF absMappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, qAbs(boundingRect().width() * sx), qAbs(boundingRect().height() * sy));
+  QRectF boundingRectangle = boundingRect();
+  qreal xtl = (invx >= 0) ? boundingRectangle.left() : -boundingRectangle.right();
+  qreal ytl = (invy >= 0) ? boundingRectangle.top() : -boundingRectangle.bottom();
+  QRectF mappedBoundingRect = QRectF(xtl * xScale, ytl * yScale, boundingRectangle.width() * xScale, boundingRectangle.height() * yScale);
   // normalize the text for drawing
   QString textString = StringHandler::removeFirstLastQuotes(mTextString);
   textString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
@@ -419,34 +421,42 @@ void TextAnnotation::drawTextAnnotation(QPainter *painter)
   // if absolute font size is defined and is greater than 0 then we don't need to calculate the font size.
   if (mFontSize <= 0) {
     QFontMetrics fontMetrics(painter->font());
-    QRect fontBoundRect = fontMetrics.boundingRect(absMappedBoundingRect.toRect(), Qt::TextDontClip, textString);
-    const qreal xFactor = absMappedBoundingRect.width() / fontBoundRect.width();
-    const qreal yFactor = absMappedBoundingRect.height() / fontBoundRect.height();
+    QRect fontBoundRect = fontMetrics.boundingRect(mappedBoundingRect.toRect(), Qt::TextDontClip, textString);
+    const qreal xFactor = mappedBoundingRect.width() / fontBoundRect.width();
+    const qreal yFactor = mappedBoundingRect.height() / fontBoundRect.height();
     /* Ticket:4256
      * Text aspect when x1=x2 i.e, width is 0.
      * Use height.
      */
-    const qreal factor = (absMappedBoundingRect.width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
+    const qreal factor = (mappedBoundingRect.width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
     qreal fontSizeFactor = font.pointSizeF() * factor;
     // Yes we don't go below Helper::minimumTextFontSize font pt.
     font.setPointSizeF(qMax(fontSizeFactor, Helper::minimumTextFontSize));
     painter->setFont(font);
   }
   /* Try to get the elided text if calculated font size <= Helper::minimumTextFontSize
-   * OR if font size is absolute.
+   * OR if font size is absolute and text is not multiline.
    */
   QString textToDraw = textString;
-  if (absMappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || mFontSize > 0)) {
+  if (mappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || (mFontSize > 0 && !Utilities::isMultiline(textString)))) {
     QFontMetrics fontMetrics(painter->font());
-    textToDraw = fontMetrics.elidedText(textString, Qt::ElideRight, absMappedBoundingRect.width());
+    textToDraw = fontMetrics.elidedText(textString, Qt::ElideRight, mappedBoundingRect.width());
     // if we get "..." i.e., QChar(0x2026) as textToDraw then don't draw anything
     if (textToDraw.compare(QChar(0x2026)) == 0) {
       textToDraw = "";
     }
   }
+  Qt::Alignment alignment = StringHandler::getTextAlignment(mHorizontalAlignment);
+  if ((invx < 0) ^ startInv)
+  {
+    if (alignment == Qt::AlignLeft)
+      alignment = Qt::AlignRight;
+    else if (alignment == Qt::AlignRight)
+      alignment = Qt::AlignLeft;
+  }
   // draw the font
   if (mpElement || mappedBoundingRect.width() != 0 || mappedBoundingRect.height() != 0) {
-    painter->drawText(mappedBoundingRect, StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
+    painter->drawText(mappedBoundingRect, alignment | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
   }
 }
 
@@ -559,54 +569,54 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
       variable.remove("%");
       variable = StringHandler::removeFirstLastCurlBrackets(variable);
       if (!variable.isEmpty()) {
-        QString textValue;
         /* Ticket:4204
          * If we have extend element then call Element::getParameterDisplayString from root element.
          */
-        textValue = mpElement->getRootParentElement()->getParameterDisplayString(variable);
-        if (!textValue.isEmpty()) {
-          QString unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
-          QString displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
+        QPair<QString, bool> parameterValue = mpElement->getRootParentElement()->getParameterDisplayString(variable);
+        if (parameterValue.second || !parameterValue.first.isEmpty()) {
+          QString textValue = parameterValue.first;
+          QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
+          QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
           if (MainWindow::instance()->isNewApi()) {
             ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
             if (pModelComponent) {
-              if (displayUnit.isEmpty()) {
+              if (!displayUnit.second) {
                 displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
               }
-              if (unit.isEmpty()) {
+              if (!unit.second) {
                 unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
               }
             }
           } else {
             Element *pElement = mpElement->getRootParentElement()->getElementByName(variable);
             if (pElement) {
-              if (displayUnit.isEmpty()) {
-                displayUnit = pElement->getDerivedClassModifierValue("displayUnit");
+              if (displayUnit.first.isEmpty()) {
+                displayUnit.first = pElement->getDerivedClassModifierValue("displayUnit");
               }
-              if (unit.isEmpty()) {
-                unit = pElement->getDerivedClassModifierValue("unit");
+              if (unit.first.isEmpty()) {
+                unit.first = pElement->getDerivedClassModifierValue("unit");
               }
             }
           }
           // if display unit is still empty then use unit
-          if (displayUnit.isEmpty()) {
+          if (displayUnit.first.isEmpty()) {
             displayUnit = unit;
           }
           QString textValueWithDisplayUnit;
           // Do not show displayUnit if value is not a literal constant or if displayUnit is empty or if unit and displayUnit are 1!
-          if (!Utilities::isValueLiteralConstant(textValue) || displayUnit.isEmpty() || (displayUnit.compare("1") == 0 && unit.compare("1") == 0)) {
+          if (!Utilities::isValueLiteralConstant(textValue) || displayUnit.first.isEmpty() || (displayUnit.first.compare("1") == 0 && unit.first.compare("1") == 0)) {
             textValueWithDisplayUnit = textValue;
-          } else if (unit.compare(displayUnit) == 0) {  // Do not do any conversion if unit and displayUnit are same.
-            textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit));
+          } else if (unit.first.compare(displayUnit.first) == 0) {  // Do not do any conversion if unit and displayUnit are same.
+            textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit.first));
           } else {
             OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-            OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit, displayUnit);
+            OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit.first, displayUnit.first);
             if (convertUnit.unitsCompatible) {
               qreal convertedValue = Utilities::convertUnit(textValue.toDouble(), convertUnit.offset, convertUnit.scaleFactor);
-              textValue = StringHandler::number(convertedValue, textValue);
-              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit));
+              textValue = StringHandler::number(convertedValue);
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit.first));
             } else {
-              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(unit));
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(unit.first));
             }
           }
           mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);

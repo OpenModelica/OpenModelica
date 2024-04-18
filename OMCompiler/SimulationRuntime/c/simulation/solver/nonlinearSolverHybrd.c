@@ -64,7 +64,7 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
   DATA_HYBRD* hybrdData = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
   assertStreamPrint(NULL, hybrdData != NULL, "allocationHybrdData() failed!");
 
-  hybrdData->initialized = 0;
+  hybrdData->initialized = FALSE;
   hybrdData->resScaling = (double*) malloc(size*sizeof(double));
   hybrdData->fvecScaled = (double*) malloc(size*sizeof(double));
   hybrdData->useXScaling = 1;
@@ -328,7 +328,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
   threadData_t* threadData = userData->threadData;
   NONLINEAR_SYSTEM_DATA* systemData = userData->nlsData;
   DATA_HYBRD* hybrdData = (DATA_HYBRD*)(systemData->solverData);
-  int continuous = data->simulationInfo->solveContinuous;
+  modelica_boolean continuous = data->simulationInfo->solveContinuous;
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
 
   switch(*iflag)
@@ -364,7 +364,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
   case 2:
     /* set residual function continuous for jacobian calculation */
     if(continuous)
-      data->simulationInfo->solveContinuous = 0;
+      data->simulationInfo->solveContinuous = FALSE;
 
     if(ACTIVE_STREAM(LOG_NLS_RES))
       infoStreamPrint(LOG_NLS_RES, 0, "-- begin calculating jacobian --");
@@ -404,7 +404,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
     }
     /* reset residual function again */
     if(continuous)
-      data->simulationInfo->solveContinuous = 1;
+      data->simulationInfo->solveContinuous = TRUE;
 
     /* performance measurement and statistics */
     systemData->jacobianTime += rt_ext_tp_tock(&(systemData->jacobianTimeClock));
@@ -439,7 +439,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
   double local_tol = 1e-12;
   double initial_factor = hybrdData->factor;
   int nfunc_evals = 0;
-  int continuous = 1;
+  modelica_boolean continuous = TRUE;
   int nonContinuousCase = 0;
 
   int giveUp = 0;
@@ -472,9 +472,11 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
     int indexes[2] = {1,eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "Start solving non-linear system >>%d<< using Hybrd solver at time %g", eqSystemNumber, data->localData[0]->timeValue);
-    for(i=0; i<hybrdData->n; i++)
-    {
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
+      "Start solving Non-Linear System %d (size %d) at time %g with Hybrd Solver",
+      eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
+
+    for(i = 0; i < hybrdData->n; i++) {
       infoStreamPrint(LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], nlsData->nlsx[i]);
       infoStreamPrint(LOG_NLS_V, 0, "    nominal = %f\nold = %f\nextrapolated = %f",
           nlsData->nominal[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
@@ -496,6 +498,10 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
   /* start solving loop */
   while(!giveUp && !success)
   {
+    /* constrain x */
+    for(i=0; i<hybrdData->n; i++)
+      hybrdData->x[i] = fmax(nlsData->min[i], fmin(hybrdData->x[i], nlsData->max[i]));
+
     for(i=0; i<hybrdData->n; i++)
       hybrdData->xScalefactors[i] = fmax(fabs(hybrdData->x[i]), nlsData->nominal[i]);
 
@@ -518,13 +524,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       printVector(hybrdData->x, hybrdData->n, LOG_NLS_V, "Iteration variable values (scaled)");
     }
 
-    /* set residual function continuous
-     */
-    if(continuous) {
-      data->simulationInfo->solveContinuous = 1;
-    } else {
-      data->simulationInfo->solveContinuous = 0;
-    }
+    /* set residual function continuous */
+    data->simulationInfo->solveContinuous = continuous;
 
     giveUp = 1;
 
@@ -585,15 +586,8 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       }
     }
 
-    /* set residual function continuous */
-    if(continuous)
-    {
-      data->simulationInfo->solveContinuous = 0;
-    }
-    else
-    {
-      data->simulationInfo->solveContinuous = 1;
-    }
+    /* reset residual function continuous */
+    data->simulationInfo->solveContinuous = !continuous;
 
     /* re-scaling x vector */
     if(hybrdData->useXScaling)
@@ -615,7 +609,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
         if(scaling)
           hybrdData->useXScaling = 0;
 
-        data->simulationInfo->solveContinuous = 0;
+        data->simulationInfo->solveContinuous = FALSE;
 
         /* try */
 #ifndef OMC_EMCC
@@ -711,21 +705,10 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
       success = NLS_SOLVED;
       nfunc_evals += hybrdData->nfev;
-      if(ACTIVE_STREAM(LOG_NLS_V))
-      {
-        int indexes[2] = {1,eqSystemNumber};
-        /* output solution */
-        infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes, "solution for NLS %d at t=%g", eqSystemNumber, data->localData[0]->timeValue);
-        for(i=0; i<hybrdData->n; ++i)
-        {
-          infoStreamPrint(LOG_NLS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i],  hybrdData->x[i]);
-        }
-        messageClose(LOG_NLS_V);
-      }else if (ACTIVE_STREAM(LOG_NLS_V)){
-        infoStreamPrint(LOG_NLS_V, 1, "system solved");
+      if (ACTIVE_STREAM(LOG_NLS_V)){
+        infoStreamPrint(LOG_NLS_V, 1, "System solved");
         infoStreamPrint(LOG_NLS_V, 0, "%d retries\n%d restarts", retries, retries2+retries3);
         messageClose(LOG_NLS_V);
-        printStatus(data, hybrdData, eqSystemNumber, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
       scaling = hybrdData->useXScaling;
       if(scaling)
@@ -898,7 +881,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       retries++;
 
       /* try to solve a discontinuous system */
-      continuous = 0;
+      continuous = FALSE;
 
       nonContinuousCase = 1;
       memcpy(relationsPreBackup, data->simulationInfo->relationsPre, sizeof(modelica_boolean)*data->modelData->nRelations);
@@ -919,7 +902,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       if(!scaling)
         hybrdData->useXScaling = 1;
 
-      continuous = 1;
+      continuous = TRUE;
       hybrdData->factor = initial_factor;
 
       retries = 0;

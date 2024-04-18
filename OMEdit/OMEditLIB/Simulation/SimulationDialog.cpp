@@ -48,6 +48,10 @@
 #include "TranslationFlagsWidget.h"
 
 #include <QDebug>
+#include <QDesktopServices>
+#include <QDockWidget>
+#include <QMessageBox>
+
 #include <limits>
 
 /*!
@@ -126,33 +130,6 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
   simulate();
   mpSimulateCheckBox->setChecked(simulateCheckBoxState);
   mpSaveSimulationFlagsAnnotationCheckBox->setChecked(simuationFlagsCheckState);
-}
-
-/*!
- * \brief SimulationDialog::removeSimulationOutputWidget
- * Remove the simulation output widget.
- * \param pSimulationOutputWidget
- */
-void SimulationDialog::removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget)
-{
-  // close the window
-  // remove the old opc ua instance
-  int port = pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
-  if (mOpcUaClientsMap.contains(port)) {
-    OMPlot::PlotWindow *pPlotWindow = mOpcUaClientsMap.value(pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber())->getTargetPlotWindow();
-    if (pPlotWindow) {
-      pPlotWindow->parentWidget()->close();
-    }
-    delete mOpcUaClientsMap.value(port);
-    mOpcUaClientsMap.remove(port);
-  }
-  // Kill the compilation and simulation processes if they are running.
-  if (pSimulationOutputWidget->isCompilationProcessRunning() && pSimulationOutputWidget->getCompilationProcess()) {
-    pSimulationOutputWidget->getCompilationProcess()->kill();
-  }
-  if (pSimulationOutputWidget->isSimulationProcessRunning() && pSimulationOutputWidget->getSimulationProcess()) {
-    pSimulationOutputWidget->getSimulationProcess()->kill();
-  }
 }
 
 /*!
@@ -526,7 +503,7 @@ void SimulationDialog::setUpForm()
   mpVariableFilterHelpButton->setToolTip(tr("Variable Filter help"));
   connect(mpVariableFilterHelpButton, SIGNAL(clicked()), SLOT(showVariableFilterHelp()));
   // Protected Variabels
-  mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
+  mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables if not encrypted"));
   // ignore hide result
   mpIgnoreHideResultCheckBox = new QCheckBox(tr("Ignore HideResult"));
   // Equidistant time grid
@@ -618,7 +595,10 @@ bool SimulationDialog::validate()
    * Check if there is already active simulation running of this model.
    */
   SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(mClassName);
-  if (pSimulationOutputWidget && (pSimulationOutputWidget->isCompilationProcessRunning() || pSimulationOutputWidget->isSimulationProcessRunning())) {
+  if (pSimulationOutputWidget
+      && (pSimulationOutputWidget->isCompilationProcessRunning()
+          || pSimulationOutputWidget->isPostCompilationProcessRunning()
+          || pSimulationOutputWidget->isSimulationProcessRunning())) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("Simulation of model <b>%1</b> is already running. Please wait for it to finish or cancel it before running another simulation of the same model.")
                           .arg(mClassName), Helper::ok);
@@ -654,17 +634,15 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
      * by the user.
      */
     if (!mpLibraryTreeItem->mSimulationOptions.isValid()) {
-      // if the class has experiment annotation then read it.
-      if (MainWindow::instance()->getOMCProxy()->isExperiment(mClassName)) {
-        // get the simulation options....
-        OMCInterface::getSimulationOptions_res simulationOptions_res = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
-        // since we always get simulationOptions so just get the values from array
-        mpStartTimeTextBox->setText(QString::number(simulationOptions_res.startTime));
-        mpStopTimeTextBox->setText(QString::number(simulationOptions_res.stopTime));
-        mpToleranceTextBox->setText(QString::number(simulationOptions_res.tolerance));
-        mpNumberofIntervalsSpinBox->setValue(simulationOptions_res.numberOfIntervals);
-        mpIntervalTextBox->setText(QString::number(simulationOptions_res.interval));
-      }
+      // get the simulation options....
+      OMCInterface::getSimulationOptions_res simulationOptions_res = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
+      // since we always get simulationOptions so just get the values from array
+      mpStartTimeTextBox->setText(QString::number(simulationOptions_res.startTime));
+      mpStopTimeTextBox->setText(QString::number(simulationOptions_res.stopTime));
+      mpToleranceTextBox->setText(QString::number(simulationOptions_res.tolerance));
+      mpNumberofIntervalsSpinBox->setValue(simulationOptions_res.numberOfIntervals);
+      mpIntervalTextBox->setText(QString::number(simulationOptions_res.interval));
+
       // apply the global translation flags
       TranslationFlagsWidget *pGlobalTranslationFlagsWidget = OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget();
       mpTranslationFlagsWidget->getMatchingAlgorithmComboBox()->setCurrentIndex(pGlobalTranslationFlagsWidget->getMatchingAlgorithmComboBox()->currentIndex());
@@ -1088,7 +1066,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
-  // check clear messages browser before simulation option
+  // check clear message browser before simulation option
   if (OptionsDialog::instance()->getMessagesPage()->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->clearMessages();
   }
@@ -1214,6 +1192,8 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (!mpInteractiveSimulationGroupBox->isChecked()) {
     if (!mpResultFileNameTextBox->text().isEmpty()) {
       simulationOptions.setResultFileName(mpResultFileNameTextBox->text());
+    } else {
+      simulationOptions.setResultFileName("");
     }
   } else {
     // set an invalid result file name to avoid interactive simulations to destroy previous results
@@ -1385,7 +1365,15 @@ SimulationOptions SimulationDialog::createSimulationOptions()
         simulationFlags.append(QString("-embeddedServerPort=").append(QString::number(portNumber)));
         // if the user enters a used port
         if (mOpcUaClientsMap.contains(portNumber)) {
-          killSimulationProcess(portNumber);
+          OpcUaClient *pOpcUaClient = getOpcUaClient(portNumber);
+          if (pOpcUaClient && pOpcUaClient->getSimulationOptions().getClassName().compare(simulationOptions.getClassName()) != 0) {
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                  tr("Port <b>%1</b> is already in use for interactive simulation of <b>%2</b>. Cannot run the interactive simulation.")
+                                                                  .arg(QString::number(portNumber), pOpcUaClient->getSimulationOptions().getClassName()),
+                                                                  Helper::scriptingKind, Helper::notificationLevel));
+            simulationOptions.setIsValid(false);
+            return simulationOptions; // return from here without setting valid for SimulationOptions
+          }
         }
       }
     }
@@ -1414,15 +1402,13 @@ void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptio
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
     showAlgorithmicDebugger(simulationOptions);
   } else {
-    if (simulationOptions.isReSimulate() && simulationOptions.isInteractiveSimulation()) {
-      removeVariablesFromTree(simulationOptions.getClassName());
-    }
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     MessagesWidget::instance()->addSimulationOutputTab(pSimulationOutputWidget, simulationOptions.getOutputFileName());
+    pSimulationOutputWidget->start();
     if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
       MainWindow::instance()->switchToPlottingPerspectiveSlot();
     } else {
-      // stay in current perspective and show variables browser
+      // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
   }
@@ -1806,162 +1792,8 @@ void SimulationDialog::showVariableFilterHelp()
   QDesktopServices::openUrl(variabeFilterHelpPath);
 }
 
-/*!
- * \brief SimulationDialog::simulationStarted
- * This slot makes a call for diabling parameter changes during a simulation \n
- * and update the control buttons. \n
- */
-void SimulationDialog::simulationStarted()
+void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simulationOptions)
 {
-  setInteractiveControls(false);
-}
-
-/*!
- * \brief SimulationDialog::simulationStarted
- * This slot makes a call for diabling parameter changes during a simulation \n
- * and update the control buttons. \n
- */
-void SimulationDialog::simulationPaused()
-{
-  setInteractiveControls(true);
-}
-
-void SimulationDialog::updateInteractiveSimulationCurves()
-{
-  OMPlot::PlotWindow* window = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
-  if (window) {
-    window->updateCurves();
-  }
-}
-
-void SimulationDialog::updateYAxis(double min, double max)
-{
-  OMPlot::PlotWindow* window = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
-  if (window) {
-    window->updateYAxis(qMakePair(min, max));
-  }
-}
-
-void SimulationDialog::removeVariablesFromTree(QString className)
-{
-  MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->removeVariableTreeItem(className);
-}
-
-/*!
- * \brief SimulationDialog::setInteractiveControls
- * \param enabled
- * Sets the graphical response depending on the parameter enabled. \n
- * true = started, false = paused \n
- */
-void SimulationDialog::setInteractiveControls(bool enabled)
-{
-  int port = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow()->getInteractivePort();
-  OpcUaClient *pOpcUaClient = getOpcUaClient(port);
-  if (pOpcUaClient) {
-    // control buttons
-    pOpcUaClient->getTargetPlotWindow()->getStartSimulationButton()->setEnabled(enabled);
-    pOpcUaClient->getTargetPlotWindow()->getPauseSimulationButton()->setEnabled(!enabled);
-    //plotpicker
-    pOpcUaClient->getTargetPlotWindow()->getPlot()->getPlotPicker()->setEnabled(enabled);
-  }
-}
-
-/*!
- * \brief SimulationDialog::killSimulationProcess
- * \param port
- * If another executable is running over the port, kill it. \n
- */
-void SimulationDialog::killSimulationProcess(int port)
-{
-  std::string endPoint = "opc.tcp://localhost:" + std::to_string(port);
-  UA_Client *pClient = UA_Client_new(UA_ClientConfig_standard);
-  UA_StatusCode returnValue = UA_Client_connect(pClient, endPoint.c_str());
-
-  if (returnValue == UA_STATUSCODE_GOOD) {
-    removeVariablesFromTree(mOpcUaClientsMap.value(port)->getSimulationOptions().getClassName());
-
-    foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
-      if (pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber() == port) {
-        removeSimulationOutputWidget(pSimulationOutputWidget);
-        break;
-      }
-    }
-  }
-  UA_Client_disconnect(pClient);
-  UA_Client_delete(pClient);
-}
-
-/*!
- * \brief SimulationDialog::createOpcUaClient
- * \param simulationOptions
- * Creates a OpcUaClient object when embedded server is up and running. \n
- */
-void SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions)
-{
-  OpcUaClient *pOpcUaClient = new OpcUaClient(simulationOptions);
-  if (pOpcUaClient->connectToServer()) {
-    // create the sample thread
-    OpcUaWorker *pOpcUaWorker = new OpcUaWorker(pOpcUaClient, simulationOptions.isInteractiveSimulationWithSteps());
-    pOpcUaClient->setOpcUaWorker(pOpcUaWorker);
-    pOpcUaWorker->moveToThread(pOpcUaClient->getSampleThread());
-    pOpcUaClient->getSampleThread()->start();
-
-    connect(pOpcUaWorker, SIGNAL(sendUpdateCurves()), SLOT(updateInteractiveSimulationCurves()));
-    connect(pOpcUaWorker, SIGNAL(sendUpdateYAxis(double, double)), SLOT(updateYAxis(double, double)));
-    connect(pOpcUaWorker, SIGNAL(sendAddMonitoredItem(int,QString)), pOpcUaWorker, SLOT(addMonitoredItem(int,QString)));
-    connect(pOpcUaWorker, SIGNAL(sendRemoveMonitoredItem(QString)), pOpcUaWorker, SLOT(removeMonitoredItem(QString)));
-
-    // insert the newly created OpcUaClient to the data structure
-    mOpcUaClientsMap.insert(simulationOptions.getInteractiveSimulationPortNumber(), pOpcUaClient);
-
-    // determine the model owner of the interactive plot window
-    QString owner = simulationOptions.getClassName();
-    PlotWindowContainer* pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-    OMPlot::PlotWindow* pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(true, owner, simulationOptions.getInteractiveSimulationPortNumber());
-    connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(startInteractiveSimulation()));
-    connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(pauseInteractiveSimulation()));
-    connect(pInteractivePlotWindow->getSimulationSpeedBox(), SIGNAL(editTextChanged(QString)), pOpcUaWorker, SLOT(setSpeed(QString)));
-
-    // make graphical responses from the main thread
-    connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked(bool)), SLOT(simulationStarted()));
-    connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked(bool)), SLOT(simulationPaused()));
-
-    pOpcUaClient->setTargetPlotWindow(pInteractivePlotWindow);
-
-    // fetch variables
-    QStringList list = pOpcUaClient->fetchVariableNamesFromServer();
-    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
-    // insert them into the tree structure
-    pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getClassName(), simulationOptions.getWorkingDirectory(), list, simulationOptions);
-    // remember the variablestreeitem root pointer
-    foreach (VariablesTreeItem *pVariablesTreeItem, pVariablesWidget->getVariablesTreeModel()->getRootVariablesTreeItem()->mChildren) {
-      if (pVariablesTreeItem->getFileName() == simulationOptions.getClassName()) {
-        pOpcUaWorker->setVariablesTreeItemRoot(pVariablesTreeItem);
-      }
-    }
-
-    MainWindow::instance()->switchToPlottingPerspectiveSlot();
-  } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not connect to the embedded server.",
-                                                          Helper::scriptingKind, Helper::errorLevel));
-  }
-}
-
-OpcUaClient* SimulationDialog::getOpcUaClient(int port)
-{
-  return mOpcUaClientsMap.value(port);
-}
-
-/*!
- * \brief SimulationDialog::simulationProcessFinished
- * \param simulationOptions
- * \param resultFileLastModifiedDateTime
- * Handles what should be done after the simulation process has finished.\n
- * Reads the result variables and inserts them into the variables browser.\n
- */
-void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
-{
-  // Simulation is over, the sampling thread should stop sampling...
   if (simulationOptions.isInteractiveSimulation()) {
     OpcUaClient *pOpcUaClient = getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber());
     if (pOpcUaClient && pOpcUaClient->getSampleThread()) {
@@ -1970,8 +1802,113 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (pOpcUaClient && pOpcUaClient->getOpcUaWorker()) {
       pOpcUaClient->getOpcUaWorker()->pauseInteractiveSimulation();
     }
-    return;
   }
+}
+
+/*!
+ * \brief VariablesWidget::removeInteractiveSimulation
+ * Stops the interatice simulation and removes the OpcUaClient associated to it.
+ * \param isInteractiveSimulation
+ * \param className
+ * \param closeInteractivePlotWindow
+ */
+void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation, QString className, bool closeInteractivePlotWindow)
+{
+  if (isInteractiveSimulation) {
+    className.remove(QRegExp("_res.int"));
+    SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
+    if (pSimulationOutputWidget) {
+      pSimulationOutputWidget->cancelCompilationOrSimulation();
+    }
+    // remove the opc ua instance
+    if (closeInteractivePlotWindow) {
+      int port = pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
+      if (mOpcUaClientsMap.contains(port)) {
+        OpcUaClient *pOpcUaClient = getOpcUaClient(port);
+        if (pOpcUaClient) {
+          OMPlot::PlotWindow *pPlotWindow = pOpcUaClient->getTargetPlotWindow();
+          if (pPlotWindow) {
+            pPlotWindow->parentWidget()->close();
+          }
+          mOpcUaClientsMap.remove(port);
+          delete pOpcUaClient;
+        }
+      }
+    }
+  }
+}
+
+/*!
+ * \brief SimulationDialog::createOpcUaClient
+ * Creates a OpcUaClient object when embedded server is up and running. \n
+ * \param simulationOptions
+ * \param pErrorString
+ * \return
+ */
+bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QString *pErrorString)
+{
+  OpcUaClient *pOpcUaClient = new OpcUaClient(simulationOptions);
+  if (!pOpcUaClient->connectToServer(pErrorString)) {
+    return false;
+  }
+  // create the sample thread
+  OpcUaWorker *pOpcUaWorker = new OpcUaWorker(pOpcUaClient, simulationOptions.isInteractiveSimulationWithSteps());
+  pOpcUaClient->setOpcUaWorker(pOpcUaWorker);
+  pOpcUaWorker->moveToThread(pOpcUaClient->getSampleThread());
+  pOpcUaClient->getSampleThread()->start();
+
+  connect(pOpcUaWorker, SIGNAL(sendAddMonitoredItem(int,QString)), pOpcUaWorker, SLOT(addMonitoredItem(int,QString)));
+  connect(pOpcUaWorker, SIGNAL(sendRemoveMonitoredItem(QString)), pOpcUaWorker, SLOT(removeMonitoredItem(QString)));
+  // insert the newly created OpcUaClient to the data structure
+  mOpcUaClientsMap.insert(simulationOptions.getInteractiveSimulationPortNumber(), pOpcUaClient);
+  // determine the model owner of the interactive plot window
+  QString owner = simulationOptions.getResultFileName();
+  PlotWindowContainer* pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
+  OMPlot::PlotWindow* pInteractivePlotWindow = MainWindow::instance()->getPlotWindowContainer()->getInteractiveWindow(owner);
+  // if we have a pInteractivePlotWindow then clear it
+  if (pInteractivePlotWindow) {
+    MainWindow::instance()->getPlotWindowContainer()->removePlotCurves(pInteractivePlotWindow);
+    MainWindow::instance()->getPlotWindowContainer()->setActiveSubWindow(pInteractivePlotWindow->getSubWindow());
+    pInteractivePlotWindow->interactiveSimulationPaused();
+  } else {
+    pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(true, owner, simulationOptions.getInteractiveSimulationPortNumber());
+  }
+  connect(pOpcUaWorker, SIGNAL(sendUpdateCurves()), pInteractivePlotWindow, SLOT(updateCurves()));
+  qRegisterMetaType<QPair<double,double>>();
+  connect(pOpcUaWorker, SIGNAL(sendUpdateYAxis(QPair<double,double>)), pInteractivePlotWindow, SLOT(updateYAxis(QPair<double, double>)));
+  connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(startInteractiveSimulation()));
+  connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(pauseInteractiveSimulation()));
+  connect(pInteractivePlotWindow->getSimulationSpeedBox(), SIGNAL(editTextChanged(QString)), pOpcUaWorker, SLOT(setSpeed(QString)));
+  pOpcUaClient->setTargetPlotWindow(pInteractivePlotWindow);
+  // fetch variables
+  QStringList list = pOpcUaClient->fetchVariableNamesFromServer();
+  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+  // insert them into the tree structure
+  pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), simulationOptions.getWorkingDirectory(), list, simulationOptions);
+  // remember the variablestreeitem root pointer
+  foreach (VariablesTreeItem *pVariablesTreeItem, pVariablesWidget->getVariablesTreeModel()->getRootVariablesTreeItem()->mChildren) {
+    if (pVariablesTreeItem->getFileName() == simulationOptions.getClassName()) {
+      pOpcUaWorker->setVariablesTreeItemRoot(pVariablesTreeItem);
+    }
+  }
+  MainWindow::instance()->switchToPlottingPerspectiveSlot();
+  return true;
+}
+
+OpcUaClient* SimulationDialog::getOpcUaClient(int port)
+{
+  return mOpcUaClientsMap.value(port, nullptr);
+}
+
+/*!
+ * \brief SimulationDialog::simulationProcessFinished
+ * \param simulationOptions
+ * \param resultFileLastModifiedDateTime
+ * Handles what should be done after the simulation process has finished.\n
+ * Reads the result variables and inserts them into the variable browser.\n
+ */
+void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
+{
   QString workingDirectory = simulationOptions.getWorkingDirectory();
   QRegExp regExp(Helper::omResultFileTypesRegExp);
   bool resultFileKnown = regExp.indexIn(simulationOptions.getFullResultFileName()) != -1;
@@ -1992,14 +1929,12 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
       MainWindow::instance()->switchToPlottingPerspectiveSlot();
     } else {
-      // stay in current perspective and show variables browser
+      // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
-    bool showPlotWindow = true;
 #if !defined(WITHOUT_OSG)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
-      showPlotWindow = false;
       if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
         MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
         AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
@@ -2012,15 +1947,11 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       }
     }
 #endif
-    if (showPlotWindow) {
-      OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
-      if (pPlotWindow) {
-        MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
-      } else {
-        MainWindow::instance()->getPlotWindowContainer()->addPlotWindow(true);
-      }
-    }
     pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
+    /* issue #11811
+     * Make sure we always update the diagramWindow after simulation.
+     */
+    MainWindow::instance()->getPlotWindowContainer()->showDiagramWindow(0);
   }
   bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
@@ -2190,42 +2121,44 @@ void SimulationDialog::simulate()
 {
   if (validate()) {
     SimulationOptions simulationOptions = createSimulationOptions();
-    // If we are not doing a re-simulation then save the new SimulationOptions in the class.
-    if (!mIsReSimulate) {
-      mpLibraryTreeItem->mSimulationOptions = simulationOptions;
-    }
-    // interactive simulation
-    if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
-      performSimulation(simulationOptions);
-    } else {
-      // if no option is selected then show error message to user
-      if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
-            mpSaveTranslationFlagsAnnotationCheckBox->isChecked() ||
-            mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
-            mpSimulateCheckBox->isChecked())) {
-        QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
-        return;
+    if (simulationOptions.isValid()) {
+      // If we are not doing a re-simulation then save the new SimulationOptions in the class.
+      if (!mIsReSimulate) {
+        mpLibraryTreeItem->mSimulationOptions = simulationOptions;
       }
-      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
-          mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->beginMacro("Simulation settings");
-      }
-      if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
-        saveExperimentAnnotation();
-      }
-      if (mpSaveTranslationFlagsAnnotationCheckBox->isChecked()) {
-        saveTranslationFlagsAnnotation();
-      }
-      if (mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        saveSimulationFlagsAnnotation();
-      }
-      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
-          mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->endMacro();
-      }
-      if (mpSimulateCheckBox->isChecked()) {
+      // interactive simulation
+      if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
         performSimulation(simulationOptions);
+      } else {
+        // if no option is selected then show error message to user
+        if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
+              mpSaveTranslationFlagsAnnotationCheckBox->isChecked() ||
+              mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
+              mpSimulateCheckBox->isChecked())) {
+          QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                                   GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
+          return;
+        }
+        if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+            mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+          mpLibraryTreeItem->getModelWidget()->beginMacro("Simulation settings");
+        }
+        if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
+          saveExperimentAnnotation();
+        }
+        if (mpSaveTranslationFlagsAnnotationCheckBox->isChecked()) {
+          saveTranslationFlagsAnnotation();
+        }
+        if (mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+          saveSimulationFlagsAnnotation();
+        }
+        if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+            mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+          mpLibraryTreeItem->getModelWidget()->endMacro();
+        }
+        if (mpSimulateCheckBox->isChecked()) {
+          performSimulation(simulationOptions);
+        }
       }
     }
     if (isVisible()) {

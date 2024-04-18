@@ -65,6 +65,7 @@ import Sections = NFSections;
 import NFOCConnectionGraph;
 import Prefixes = NFPrefixes;
 import RangeIterator = NFRangeIterator;
+import StringUtil;
 import Subscript = NFSubscript;
 import Type = NFType;
 import Util;
@@ -133,6 +134,7 @@ uniontype FlattenSettings
     Boolean scalarize;
     Boolean arrayConnect;
     Boolean nfAPI;
+    Boolean relaxedErrorChecking;
     Boolean newBackend;
     Boolean vectorizeBindings;
   end SETTINGS;
@@ -140,13 +142,25 @@ end FlattenSettings;
 
 uniontype Prefix
   record PREFIX
+    InstNode root;
     ComponentRef prefix;
   end PREFIX;
 
   record INDEXED_PREFIX
+    InstNode root;
     ComponentRef prefix;
     ComponentRef indexedPrefix;
   end INDEXED_PREFIX;
+
+  function new
+    input InstNode root;
+    input Boolean indexed = false;
+    output Prefix prefix;
+  algorithm
+    prefix := if indexed then
+      INDEXED_PREFIX(root, ComponentRef.EMPTY(), ComponentRef.EMPTY()) else
+      PREFIX(root, ComponentRef.EMPTY());
+  end new;
 
   function isEmpty
     input Prefix prefix;
@@ -236,7 +250,7 @@ uniontype Prefix
   algorithm
     prefix := match prefix
       case PREFIX() then prefix;
-      case INDEXED_PREFIX() then PREFIX(prefix.prefix);
+      case INDEXED_PREFIX() then PREFIX(prefix.root, prefix.prefix);
     end match;
   end toNonIndexedPrefix;
 
@@ -270,14 +284,35 @@ uniontype Prefix
     input Prefix pre;
     output String str = ComponentRef.toString(prefix(pre));
   end toString;
+
+  function rootNode
+    input Prefix pre;
+    output InstNode node;
+  algorithm
+    node := match pre
+      case PREFIX() then pre.root;
+      case INDEXED_PREFIX() then pre.root;
+    end match;
+  end rootNode;
+
+  function instanceName
+    input Prefix pre;
+    output String str;
+  algorithm
+    str := InstNode.name(rootNode(pre));
+
+    if not ComponentRef.isEmpty(indexedPrefix(pre)) then
+      str := str + "." + toString(pre);
+    end if;
+  end instanceName;
 end Prefix;
 
-constant Prefix EMPTY_PREFIX = Prefix.PREFIX(ComponentRef.EMPTY());
-constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(ComponentRef.EMPTY(), ComponentRef.EMPTY());
+constant Prefix EMPTY_PREFIX = Prefix.PREFIX(InstNode.EMPTY_NODE(), ComponentRef.EMPTY());
+constant Prefix EMPTY_INDEXED_PREFIX = Prefix.INDEXED_PREFIX(InstNode.EMPTY_NODE(), ComponentRef.EMPTY(), ComponentRef.EMPTY());
 
 function flatten
   input InstNode classInst;
-  input String name;
+  input Absyn.Path classPath;
   input Boolean getConnectionResolved = true;
   output FlatModel flatModel;
 protected
@@ -295,11 +330,12 @@ algorithm
     Flags.isSet(Flags.NF_SCALARIZE),
     Flags.isSet(Flags.ARRAY_CONNECT),
     Flags.isSet(Flags.NF_API),
+    Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
     Flags.isSet(Flags.VECTORIZE_BINDINGS)
   );
 
-  prefix := if settings.vectorizeBindings then EMPTY_INDEXED_PREFIX else EMPTY_PREFIX;
+  prefix := Prefix.new(classInst, indexed = settings.vectorizeBindings);
 
   sections := Sections.EMPTY();
   src := ElementSource.createElementSource(InstNode.info(classInst));
@@ -320,9 +356,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src);
+        FlatModel.FLAT_MODEL(classPath, vars, eql, ieql, alg, ialg, src);
 
-      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(classPath, vars, {}, {}, {}, {}, src);
   end match;
 
   // get inputs and outputs for algorithms now that types are computed
@@ -344,13 +380,13 @@ end flatten;
 
 function flattenConnection
   input InstNode classInst;
-  input String name;
+  input Absyn.Path classPath;
   output Connections conns;
 protected
   FlatModel flatModel;
   UnorderedSet<ComponentRef> deleted_vars;
 algorithm
-  flatModel := flatten(classInst, name, false);
+  flatModel := flatten(classInst, classPath, false);
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
   // get the connections from the model
@@ -584,7 +620,7 @@ algorithm
       then ComponentType.RECORD;
     case Type.COMPLEX() then ComponentType.COMPLEX;
     case Type.ARRAY()   then getComponentType(ty.elementType, settings);
-                        else ComponentType.NORMAL;
+    else ComponentType.NORMAL;
   end match;
 end getComponentType;
 
@@ -615,8 +651,10 @@ protected
   Variability var;
   Boolean unfix;
   Prefix pre;
+  Variable v;
 algorithm
   Component.COMPONENT(ty = ty, binding = binding, attributes = comp_attr, comment = cmt, info = info) := comp;
+  checkUnspecifiedEnumType(ty, node, info);
   var := comp_attr.variability;
 
   if isSome(outerBinding) then
@@ -627,10 +665,12 @@ algorithm
     unfix := false;
   end if;
 
-  // If the component is an array component with a binding and at least discrete variability,
-  // move the binding into an equation. This avoids having to scalarize the binding.
-  if not settings.nfAPI then
-    if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
+  // If the component is an array component with a binding and at least discrete
+  // variability, and scalarization is enabled, move the binding into an equation.
+  // This avoids having to scalarize the binding.
+  if not settings.nfAPI and settings.scalarize then
+    if var >= Variability.DISCRETE and Type.isArray(ty) and
+       not Type.isExternalObject(Type.arrayElementType(ty)) and Binding.isBound(binding) then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
         InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
@@ -652,7 +692,7 @@ algorithm
   ty := flattenType(ty, prefix);
   verifyDimensions(Type.arrayDims(ty), comp_node);
   pre := Prefix.push(comp_node, ty, Type.arrayDims(ty), prefix);
-  ty_attrs := list(flattenTypeAttribute(m, pre) for m in typeAttrs);
+  ty_attrs := list(flattenTypeAttribute(m, prefix) for m in typeAttrs);
 
   // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
@@ -664,8 +704,31 @@ algorithm
   // kabdelhak: add dummy backend info, will be changed to actual value in
   // conversion to backend process. NBackendDAE.lower
   name := Prefix.prefix(pre);
-  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
+  v := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
+
+  if var < Variability.DISCRETE and not unfix and not Type.isComplex(Type.arrayElementType(ty)) then
+    // Check that the component has a binding if it's required to have one.
+    verifyBinding(v, var, binding, settings);
+  end if;
+
+  vars := v :: vars;
 end flattenSimpleComponent;
+
+function checkUnspecifiedEnumType
+  input Type ty;
+  input InstNode node;
+  input SourceInfo info;
+algorithm
+  () := match ty
+    case Type.ENUMERATION(literals = {})
+      algorithm
+        Error.addSourceMessage(Error.UNSPECIFIED_ENUM_COMPONENT, {InstNode.name(node)}, info);
+      then
+        fail();
+
+    else ();
+  end match;
+end checkUnspecifiedEnumType;
 
 function flattenTypeAttribute
   input Modifier attr;
@@ -688,6 +751,71 @@ algorithm
   (attr_name, _) := attr;
   isNamed := name == attr_name;
 end isTypeAttributeNamed;
+
+function verifyBinding
+  input Variable var;
+  input Variability variability;
+  input Binding binding;
+  input FlattenSettings settings;
+protected
+  Binding fixed_binding, start_binding;
+  Expression fixed_exp;
+  Boolean fixed;
+algorithm
+  if variability > Variability.CONSTANT and Binding.isBound(binding) then
+    // Parameter with a binding is ok.
+    return;
+  end if;
+
+  // Check if the variable is fixed or not.
+  fixed_binding := Variable.lookupTypeAttribute("fixed", var);
+
+  if Binding.isBound(fixed_binding) then
+    fixed_exp := Binding.getExp(fixed_binding);
+    fixed_exp := Ceval.tryEvalExp(fixed_exp);
+
+    if not Expression.isBoolean(fixed_exp) then
+      return;
+    end if;
+
+    fixed := Expression.isTrue(fixed_exp);
+  else
+    fixed := true;
+  end if;
+
+  if variability == Variability.CONSTANT then
+    if not fixed then
+      // Constants are not allowed to be non-fixed.
+      Error.addSourceMessage(Error.NON_FIXED_CONSTANT,
+        {ComponentRef.toString(var.name)}, var.info);
+
+      if not settings.relaxedErrorChecking then
+        fail();
+      end if;
+    end if;
+
+    // Constants also must have binding equations if they are used, but this is
+    // checked when evaluating them.
+
+  else
+    if fixed and Binding.isUnbound(binding) then
+      start_binding := Variable.lookupTypeAttribute("start", var);
+
+      if Binding.isUnbound(start_binding) then
+        // Fixed parameters must have a binding equation or a start attribute.
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_ERROR,
+          {ComponentRef.toString(var.name)}, var.info);
+
+        if not settings.relaxedErrorChecking then
+          fail();
+        end if;
+      else
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING,
+          {ComponentRef.toString(var.name), Binding.toString(start_binding)}, var.info);
+      end if;
+    end if;
+  end if;
+end verifyBinding;
 
 function getRecordBindings
   input Binding binding;
@@ -760,28 +888,31 @@ algorithm
   dims := Type.arrayDims(ty);
   binding := if isSome(outerBinding) then Util.getOption(outerBinding) else Component.getBinding(comp);
 
-  // Create an equation if there's a binding on a complex component.
+  // For a complex component with a binding the binding needs to be split into
+  // a binding for each record field, or moved to an initial equation if
+  // splitting the binding fails.
   if Binding.isExplicitlyBound(binding) then
-    binding := flattenBinding(binding, Prefix.toNonIndexedPrefix(prefix));
+    binding := flattenBinding(binding, prefix);
     binding_exp := Binding.getTypedExp(binding);
     binding_var := Binding.variability(binding);
 
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
+      // Constant evaluate parameters that are structural/constant.
       binding_exp := Ceval.evalExp(binding_exp);
-      binding_exp := flattenExp(binding_exp, Prefix.toNonIndexedPrefix(prefix));
+      binding_exp := flattenExp(binding_exp, prefix);
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
       try
-        binding_exp := Inline.inlineRecordConstructorCall(binding_exp);
+        binding_exp := Inline.inlineCallExp(binding_exp, forceInline = true);
       else
       end try;
 
       // If inlining fails, try to evaluate the binding instead.
       if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
-          binding_exp_eval := Ceval.evalExp(binding_exp);
-          binding_exp_eval := flattenExp(binding_exp_eval, Prefix.toNonIndexedPrefix(prefix));
+          binding_exp_eval := Ceval.tryEvalExp(binding_exp);
+          binding_exp_eval := flattenExp(binding_exp_eval, prefix);
 
           // Throw away the evaluated binding if the number of dimensions no
           // longer match after evaluation, in case Ceval fails to apply the
@@ -803,10 +934,15 @@ algorithm
     //       create an equation for each non-literal in the array, and pass the
     //       rest on as usual.
     if not Expression.isRecordOrRecordArray(binding_exp) then
-      name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
-      eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
-        InstNode.EMPTY_NODE(), ElementSource.createElementSource(InstNode.info(node)));
-      sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
+      // Skip adding the equation when using the new backend, since this only
+      // occurs when flattening the children of a record instance and will
+      // conflict with the binding on the actual record instance.
+      if not settings.newBackend then
+        name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
+        eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
+          InstNode.EMPTY_NODE(), ElementSource.createElementSource(InstNode.info(node)));
+        sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
+      end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
     else
       binding := Binding.setTypedExp(binding_exp, binding);
@@ -852,7 +988,7 @@ algorithm
         for i in arrayLength(comps):-1:1 loop
           ty := InstNode.getType(comps[i]);
           field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
-          field_cr := flattenCref(field_cr, Prefix.PREFIX(cr));
+          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr));
           fields := Expression.fromCref(field_cr) :: fields;
         end for;
       then
@@ -868,7 +1004,11 @@ algorithm
       guard Expression.variability(outExp.condition) <= Variability.PARAMETER
       algorithm
         cond := Ceval.tryEvalExp(outExp.condition);
-        Structural.markExp(outExp.condition);
+
+        // Only mark the condition as structural if it could be evaluated.
+        if not referenceEq(cond, outExp.condition) then
+          Structural.markExp(outExp.condition);
+        end if;
       then
         match cond
           case Expression.BOOLEAN() then splitRecordCref(if cond.value then outExp.trueBranch else outExp.falseBranch);
@@ -1000,7 +1140,7 @@ algorithm
   end if;
 
   prefix_cr := Prefix.indexedPrefix(prefix);
-  subs := ComponentRef.subscriptsAllFlat(prefix_cr);
+  subs := list(s for s guard Subscript.isIterator(s) in ComponentRef.subscriptsAllFlat(prefix_cr));
 
   if listEmpty(subs) then
     return;
@@ -1009,19 +1149,33 @@ algorithm
   exp := Binding.getExp(binding);
   binding_ty := Binding.getType(binding);
 
+  // When replacing split indices we often get expressions such as
+  // {"m" for $i1 in 1:3}[$x1]. If the subscripts are the same as the subscripts
+  // in the prefix we can just remove all the subscripts and be done.
+  () := match exp
+    case Expression.SUBSCRIPTED_EXP()
+      guard Subscript.isEqualList(exp.subscripts, subs)
+      algorithm
+        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding));
+        return;
+      then
+        ();
+
+    else ();
+  end match;
+
   nodes := ComponentRef.nodes(prefix_cr);
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
+  dims := List.lastN(dims, listLength(subs));
   binding_ty := Type.liftArrayLeftList(binding_ty, dims);
 
-  dims := List.stripN(dims, Expression.dimensionCount(exp));
-
   if not listEmpty(dims) then
-    if Expression.isLiteral(exp) then
+    if Expression.isLiteral(exp) or not Expression.contains(exp, Expression.isIterator) then
       array_call := Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
         exp :: list(Dimension.sizeExp(d) for d in dims),
         Binding.variability(binding), Purity.PURE, binding_ty);
     else
-      iters := list((Subscript.toIterator(s), Dimension.toRange(d)) threaded for s in subs, d in dims);
+      iters := listReverse((Subscript.toIterator(s), Dimension.toRange(d)) threaded for s in subs, d in dims);
 
       array_call := Call.TYPED_ARRAY_CONSTRUCTOR(binding_ty,
         Expression.variability(exp), Expression.purity(exp), exp, iters);
@@ -1106,7 +1260,13 @@ algorithm
         DAE.ElementSource src;
 
       // convert simple equality of crefs to array equality
+      // kabdelhak: only do it if all subscripts are simple enough
+      //            will lead to complicated code if not index or whole dim
+      //            and we are better of just using for loops for these
       case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
+        guard(not Flags.getConfigBool(Flags.NEW_BACKEND)
+          or (List.all(ComponentRef.subscriptsAllWithWholeFlat(lhs.cref), Subscript.isSimple)
+          and List.all(ComponentRef.subscriptsAllWithWholeFlat(rhs.cref), Subscript.isSimple)))
         algorithm
           ty := Type.liftArrayLeftList(eq.ty, dimensions);
           lhs := Expression.CREF(ty, lhs.cref);
@@ -1138,7 +1298,7 @@ algorithm
             eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
           end while;
         then
-          eq :: equations;
+          splitForLoop(eq, EMPTY_PREFIX, equations, settings);
 
     end match;
   end for;
@@ -1238,7 +1398,6 @@ function addIterator_traverse
   input list<Subscript> subscripts;
 protected
   String restString, prefixString = ComponentRef.toString(Prefix.prefix(prefix));
-  Integer prefixLength = stringLength(prefixString);
 algorithm
   exp := match exp
     local
@@ -1246,7 +1405,7 @@ algorithm
     case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
       algorithm
         restString := ComponentRef.toString(restCref);
-        if prefixLength <= stringLength(restString) and prefixString == substring(restString, 1, prefixLength) then
+        if StringUtil.startsWith(restString, prefixString) then
           exp.cref := ComponentRef.mergeSubscripts(subscripts, exp.cref, applyToScope = true);
         end if;
       then
@@ -1355,6 +1514,10 @@ algorithm
           flattenConditionalArrayIfExp(exp),
           function flattenExp(prefix = prefix));
 
+    case Expression.CALL()
+      guard Call.isNamed(exp.call, "getInstanceName")
+      then Expression.STRING(Prefix.instanceName(prefix));
+
     else Expression.mapShallow(exp, function flattenExp(prefix = prefix));
   end match;
 
@@ -1370,7 +1533,7 @@ protected
   Integer index;
   InstNode cr_node;
 algorithm
-  for cr in ComponentRef.toListReverse(Prefix.prefix(prefix)) loop
+  for cr in ComponentRef.toListReverse(Prefix.indexedPrefix(prefix)) loop
     cr_subs := ComponentRef.getSubscripts(cr);
 
     if not listEmpty(cr_subs) then
@@ -1427,7 +1590,7 @@ protected
 algorithm
   sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
 
-  for cr in ComponentRef.toListReverse(Prefix.prefix(prefix)) loop
+  for cr in ComponentRef.toListReverse(Prefix.indexedPrefix(prefix)) loop
     if ComponentRef.hasSubscripts(cr) then
       UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
     end if;
@@ -1632,7 +1795,7 @@ protected
   InstNode scope;
 algorithm
   Equation.IF(branches = branches, scope = scope, source = src) := eq;
-  has_connect := Equation.contains(eq, isConnectEq);
+  has_connect := Equation.contains(eq, Equation.isConnection);
 
   // Print errors for unbound constants/parameters if the if-equation contains
   // connects, since we must select a branch in that case.
@@ -1716,21 +1879,6 @@ algorithm
   end if;
 end flattenIfEquation;
 
-function isConnectEq
-  input Equation eq;
-  output Boolean isConnect;
-algorithm
-  isConnect := match eq
-    local
-      Function fn;
-
-    case Equation.CONNECT() then true;
-    case Equation.NORETCALL(exp = Expression.CALL(call = Call.TYPED_CALL(fn = fn)))
-      then AbsynUtil.pathFirstIdent(Function.name(fn)) == "Connections";
-    else false;
-  end match;
-end isConnectEq;
-
 function flattenEqBranch
   input output Equation.Branch branch;
   input Prefix prefix;
@@ -1811,6 +1959,17 @@ function splitForLoop2
   output list<Equation> connects = {};
   output list<Equation> nonConnects = {};
 protected
+  function is_conn_operator
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CALL()
+        then Call.isConnectionsOperator(exp.call) or Call.isStreamOperator(exp.call);
+      else false;
+    end match;
+  end is_conn_operator;
+protected
   list<Equation> conns, nconns;
 algorithm
   for eq in forBody loop
@@ -1837,7 +1996,11 @@ algorithm
 
       else
         algorithm
-          nonConnects := eq :: nonConnects;
+          if Equation.containsExp(eq, function Expression.contains(func = is_conn_operator)) then
+            connects := eq :: connects;
+          else
+            nonConnects := eq :: nonConnects;
+          end if;
         then
           ();
 
@@ -2041,6 +2204,7 @@ algorithm
 
   // Elaborate expandable connectors.
   (flatModel, conns) := ExpandableConnectors.elaborate(flatModel, conns);
+  flatModel.variables := list(v for v guard Variable.isPresent(v) in flatModel.variables);
 
   // Collect flow variables from the model, which needs to be done after
   // elaborating expandable connectors to get all of them.
@@ -2074,7 +2238,6 @@ algorithm
 
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
-  flatModel.variables := list(v for v guard Variable.isPresent(v) in flatModel.variables);
 
   // remove input and output prefixes from local IOs that are determined through connect equations
   if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then

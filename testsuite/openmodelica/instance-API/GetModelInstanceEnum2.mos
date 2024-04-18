@@ -25,9 +25,29 @@ getModelInstance(M, prettyPrint=true);
 //       \"$kind\": \"component\",
 //       \"name\": \"e\",
 //       \"type\": {
-//         \"name\": \"E2\",
-//         \"restriction\": \"enumeration\",
+//         \"name\": \"M.E2\",
+//         \"restriction\": \"type\",
 //         \"elements\": [
+//           {
+//             \"$kind\": \"extends\",
+//             \"baseClass\": {
+//               \"name\": \"M.E1\",
+//               \"restriction\": \"type\",
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"extends\",
+//                   \"baseClass\": \"enumeration\"
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 3,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 3,
+//                 \"columnEnd\": 47
+//               }
+//             }
+//           },
 //           {
 //             \"$kind\": \"component\",
 //             \"name\": \"a\",

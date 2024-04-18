@@ -236,7 +236,7 @@ interface package GraphvizDumpTV
       record CONST end CONST;
       record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
       record JAC_VAR end JAC_VAR;
-      record JAC_DIFF_VAR end JAC_DIFF_VAR;
+      record JAC_TMP_VAR end JAC_TMP_VAR;
     end VarKind;
 
     uniontype ZeroCrossing

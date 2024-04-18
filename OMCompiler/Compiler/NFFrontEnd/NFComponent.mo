@@ -71,7 +71,6 @@ public
     Binding binding;
     Binding condition;
     Attributes attributes;
-    Option<Modifier> ann "the annotation from SCode.Comment as a modifier";
     Option<SCode.Comment> comment;
     ComponentState state;
     SourceInfo info;
@@ -93,9 +92,10 @@ public
     Modifier modifier;
   end TYPE_ATTRIBUTE;
 
-  record DELETED_COMPONENT
+  record INVALID_COMPONENT
     Component component;
-  end DELETED_COMPONENT;
+    String errors;
+  end INVALID_COMPONENT;
 
   record WILD "needed for new crefs in the backend" end WILD;
 
@@ -236,6 +236,7 @@ public
       case COMPONENT() then component.ty;
       case ITERATOR() then component.ty;
       case TYPE_ATTRIBUTE() then component.ty;
+      case INVALID_COMPONENT() then getType(component.component);
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -356,6 +357,24 @@ public
       end if;
     end if;
   end getImplicitBinding;
+
+  function getTypeAttributeBinding
+    input Component component;
+    input String attrName;
+    output Binding binding;
+  protected
+    InstNode start_node;
+    Component start_comp;
+  algorithm
+    try
+      start_node := Class.lookupElement(attrName, InstNode.getClass(classInstance(component)));
+      start_comp := InstNode.component(start_node);
+      true := Component.isTypeAttribute(start_comp);
+      binding := Component.getBinding(start_comp);
+    else
+      binding := NFBinding.EMPTY_BINDING;
+    end try;
+  end getTypeAttributeBinding;
 
   function setBinding
     input Binding binding;
@@ -701,6 +720,7 @@ public
   function toFlatStream
     input String name;
     input Component component;
+    input String indent;
     input output IOStream.IOStream s;
   protected
     list<tuple<String, Binding>> ty_attrs;
@@ -708,6 +728,7 @@ public
     () := match component
       case COMPONENT()
         algorithm
+          s := IOStream.append(s, indent);
           s := Attributes.toFlatStream(component.attributes, component.ty, s);
           s := IOStream.append(s, Type.toFlatString(component.ty));
           s := IOStream.append(s, " '");
@@ -776,12 +797,13 @@ public
   function toFlatString
     input String name;
     input Component component;
+    input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(name, IOStream.IOStreamType.LIST());
-    s := toFlatStream(name, component, s);
+    s := toFlatStream(name, component, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;
@@ -807,16 +829,6 @@ public
       else NONE();
     end match;
   end comment;
-
-  function ann
-    input Component component;
-    output Option<Modifier> ann;
-  algorithm
-    ann := match component
-      case COMPONENT() then component.ann;
-      else NONE();
-    end match;
-  end ann;
 
   function getEvaluateAnnotation
     input Component component;
@@ -884,6 +896,16 @@ public
       else false;
     end match;
   end isDeleted;
+
+  function isInvalid
+    input Component component;
+    output Boolean invalid;
+  algorithm
+    invalid := match component
+      case INVALID_COMPONENT() then true;
+      else false;
+    end match;
+  end isInvalid;
 
   function isTypeAttribute
     input Component component;

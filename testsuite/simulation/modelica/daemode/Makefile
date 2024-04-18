@@ -13,6 +13,7 @@ testDAEp9.mos \
 testDAEmodeDrumBoiler.mos \
 testDAEScaling.mos \
 testDAE10.mos \
+testDAEModeFileSplit_Issue4851.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

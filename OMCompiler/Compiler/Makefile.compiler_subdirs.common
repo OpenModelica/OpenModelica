@@ -1,6 +1,6 @@
 #
 # A common Makefile for subdirectories (runtime and parser)
-# Should be used for both OMDev and Linux
+# Should be used for both Windows and Linux
 #
 
 include $(srcdir)/Makefile.common

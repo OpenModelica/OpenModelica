@@ -43,13 +43,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QHash>
-#include <QtGui/QScrollArea>
-#include <QtGui/QGridLayout>
-#endif
 
 
 //Forward declaration
@@ -73,7 +67,7 @@ namespace IAEX
     Q_OBJECT
 
   public:
-    typedef vector<DocumentView*> observers_t;
+    typedef std::vector<DocumentView*> observers_t;
 
     CellDocument(CellApplication *a, const QString filename, int readmode = READMODE_NORMAL);
     virtual ~CellDocument();
@@ -138,7 +132,7 @@ namespace IAEX
     CellCursor *getCursor();
     Factory *cellFactory();
     Cell* getMainCell();        // Added 2006-08-24 AF
-    vector<Cell*> getSelection();
+    std::vector<Cell*> getSelection();
 
     //Command
     void executeCommand(Command *cmd);
@@ -205,7 +199,7 @@ namespace IAEX
     CellCursor *current_;
     Factory *factory_;
 
-    vector<Cell*> selectedCells_;
+    std::vector<Cell*> selectedCells_;
 
   public:
     observers_t observers_;

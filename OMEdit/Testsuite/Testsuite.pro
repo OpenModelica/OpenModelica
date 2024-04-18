@@ -36,7 +36,8 @@ SUBDIRS = Util \
   Transformation \
   Homotopy \
   Expression \
-  ModelInstance
+  ModelInstance \
+  Utilities
 
 BrowseMSL.depends = Util
 Diagram.depends = Util
@@ -44,3 +45,4 @@ Transformation.depends = Util
 Homotopy.depends = Util
 Expression.depends = Util
 ModelInstance.depends = Util
+Utilities.depends = Util

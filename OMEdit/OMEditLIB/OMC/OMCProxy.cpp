@@ -341,7 +341,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 
   /* Check if any custom command updates the program.
    * saveToHistory is true for custom commands.
-   * Fixes issuse #8052
+   * Fixes issue #8052
    */
   if (saveToHistory) {
     try {
@@ -1081,14 +1081,16 @@ QString OMCProxy::getElementModifierValue(QString className, QString name)
 }
 
 /*!
- * \brief OMCProxy::setElementModifierValue
+ * \brief OMCProxy::setElementModifierValueOld
  * Sets the element modifier value.
  * \param className - is the name of the class whose modifier value is set.
  * \param modifierName - is the name of the modifier whose value is set.
  * \param modifierValue - is the value to set.
  * \return true on success.
+ * \deprecated
+ * \see OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
  */
-bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
+bool OMCProxy::setElementModifierValueOld(QString className, QString modifierName, QString modifierValue)
 {
   const QString sapi = QString("setElementModifierValue");
   QString expression;
@@ -1100,6 +1102,37 @@ bool OMCProxy::setElementModifierValue(QString className, QString modifierName, 
     expression = QString("%1(%2, %3, $Code((%4)))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   } else {
     expression = QString("%1(%2, %3, $Code(=%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
+  }
+  sendCommand(expression);
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    QString msg = tr("Unable to set the element modifier value using command <b>%1</b>").arg(expression);
+    MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::setElementModifierValue
+ * Sets the element modifier value.
+ * \param className - is the name of the class whose modifier value is set.
+ * \param modifierName - is the name of the modifier whose value is set.
+ * \param modifierValue - is the value to set.
+ * \return true on success.
+ */
+bool OMCProxy::setElementModifierValue(QString className, QString modifierName, QString modifierValue)
+{
+  /* Issue #11790 and #11891.
+   * Remove extra parentheses if there are any.
+   */
+  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue.trimmed());
+  QString expression;
+  if (modifierValue.startsWith("=") || modifierValue.startsWith("(")) {
+    expression = "setElementModifierValue(" % className % ", " % modifierName % ", $Code(" % modifierValue % "))";
+  } else {
+    expression = "setElementModifierValue(" % className % ", " % modifierName % ", $Code((" % modifierValue % ")))";
   }
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
@@ -1161,15 +1194,17 @@ QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClas
 }
 
 /*!
- * \brief OMCProxy::setExtendsModifierValue
+ * \brief OMCProxy::setExtendsModifierValueOld
  * Sets the extends modifier value.
  * \param className - is the name of the class whose modifier value is set.
  * \param extendsClassName - is the name of the extends class.
  * \param modifierName - is the name of the modifier whose value is set.
  * \param modifierValue - is the value to set.
  * \return true on success.
+ * \deprecated
+ * \see OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
  */
-bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
+bool OMCProxy::setExtendsModifierValueOld(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
 {
   const QString sapi = QString("setExtendsModifierValue");
   QString expression;
@@ -1181,6 +1216,38 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
     expression = QString("%1(%2, %3, %4, $Code((%5)))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
   } else {
     expression = QString("%1(%2, %3, %4, $Code(=%5))").arg(sapi, className, extendsClassName, modifierName, modifierValue);
+  }
+  sendCommand(expression);
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    QString msg = tr("Unable to set the extends modifier value using command <b>%1</b>").arg(expression);
+    MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::setExtendsModifierValue
+ * Sets the extends modifier value.
+ * \param className - is the name of the class whose modifier value is set.
+ * \param extendsClassName - is the name of the extends class.
+ * \param modifierName - is the name of the modifier whose value is set.
+ * \param modifierValue - is the value to set.
+ * \return true on success.
+ */
+bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
+{
+  /* Issue #11790 and #11891.
+   * Remove extra parentheses if there are any.
+   */
+  modifierValue = StringHandler::removeFirstLastParentheses(modifierValue.trimmed());
+  QString expression;
+  if (modifierValue.startsWith("=") || modifierValue.startsWith("(")) {
+    expression = "setExtendsModifierValue(" % className % ", " % extendsClassName % ", " % modifierName % ", $Code(" % modifierValue % "))";
+  } else {
+    expression = "setExtendsModifierValue(" % className % ", " % extendsClassName % ", " % modifierName % ", $Code((" % modifierValue % ")))";
   }
   sendCommand(expression);
   if (StringHandler::unparseBool(getResult())) {
@@ -1653,10 +1720,24 @@ bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool noti
  */
 bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool merge, bool checkError)
 {
-  bool result = mpOMCInterface->loadString(value, fileName, encoding, merge);
+  bool result = mpOMCInterface->loadString(value, fileName, encoding, merge, true, true, false);
   if (checkError) {
     printMessagesStringInternal();
   }
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::loadClassContentString
+ * Loads class elements from a string data and inserts them into the given loaded class.
+ * \param data
+ * \param className
+ * \return
+ */
+bool OMCProxy::loadClassContentString(const QString &data, const QString &className)
+{
+  bool result = mpOMCInterface->loadClassContentString(data, className);
+  printMessagesStringInternal();
   return result;
 }
 
@@ -1860,11 +1941,19 @@ bool OMCProxy::saveModifiedModel(QString modelText)
  * \param stripAnnotations
  * \param stripComments
  * \param obfuscate
+ * \param simplified
  * \return true on success.
  */
-bool OMCProxy::saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
+bool OMCProxy::saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate, bool simplified)
 {
-  bool result = mpOMCInterface->saveTotalModel(fileName, className, stripAnnotations, stripComments, obfuscate);
+  bool result;
+
+  if (simplified) {
+    result = mpOMCInterface->saveTotalModelDebug(fileName, className, stripAnnotations, stripComments, obfuscate);
+  } else {
+    result = mpOMCInterface->saveTotalModel(fileName, className, stripAnnotations, stripComments, obfuscate);
+  }
+
   printMessagesStringInternal();
   return result;
 }
@@ -2034,16 +2123,36 @@ bool OMCProxy::renameComponent(QString className, QString oldName, QString newNa
 }
 
 /*!
-  Updates the component annotations.
-  \param name - the component name
-  \param className - the component fully qualified name.
-  \param componentName - the name of the component to update.
-  \param annotation - the updated annotation.
-  \return true on success.
-  */
+ * \brief OMCProxy::updateComponent
+ * Updates the component annotations.
+ * \param name - the component name
+ * \param className - the component fully qualified name.
+ * \param componentName - the name of the component to update.
+ * \param placementAnnotation - the updated annotation.
+ * \return true on success.
+ * \deprecated
+ * \see OMCProxy::setElementAnnotation(const QString &elementName, QString annotation)
+ */
 bool OMCProxy::updateComponent(QString name, QString className, QString componentName, QString placementAnnotation)
 {
   sendCommand("updateComponent(" + name + "," + className + "," + componentName + "," + placementAnnotation + ")");
+  if (StringHandler::unparseBool(getResult())) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/*!
+ * \brief OMCProxy::setElementAnnotation
+ * Sets the element annotation.
+ * \param elementName
+ * \param annotation
+ * \return true on success.
+ */
+bool OMCProxy::setElementAnnotation(const QString &elementName, QString annotation)
+{
+  sendCommand("setElementAnnotation(" % elementName % "," + annotation + ")");
   if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
@@ -3115,7 +3224,7 @@ bool OMCProxy::exportToFigaro(QString className, QString directory, QString data
  */
 bool OMCProxy::copyClass(QString className, QString newClassName, QString withIn)
 {
-  bool result = mpOMCInterface->copyClass(className, newClassName, withIn.isEmpty() ? "TopLevel" : withIn);
+  bool result = mpOMCInterface->copyClass(className, newClassName, withIn.isEmpty() ? "__OpenModelica_TopLevel" : withIn);
   if (!result) printMessagesStringInternal();
   return result;
 }
@@ -3443,10 +3552,11 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   QString modelInstanceJson = "";
   if (icon) {
-    modelInstanceJson = mpOMCInterface->getModelInstanceIcon(className, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstanceAnnotation(className, {"Icon", "IconMap", "Diagram", "DiagramMap"}, prettyPrint);
     if (modelInstanceJson.isEmpty()) {
       if (MainWindow::instance()->isDebug()) {
-        QString msg = QString("<b>getModelInstanceIcon(%1, %2)</b> failed. Using <b>getModelInstance(%1, %2)</b>.").arg(className).arg(prettyPrint ? "true" : "false");
+        QString msg = QString("<b>getModelInstanceAnnotation(%1, {\"Icon\", \"IconMap\", \"Diagram\", \"DiagramMap\"}, %2)</b> failed. Using <b>getModelInstance(%1, %2)</b>.")
+                      .arg(className).arg(prettyPrint ? "true" : "false");
         MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
         MessagesWidget::instance()->addGUIMessage(messageItem);
         printMessagesStringInternal();
@@ -3460,7 +3570,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
   }
 
   if (MainWindow::instance()->isNewApiProfiling()) {
-    const QString api = icon ? "getModelInstanceIcon" : "getModelInstance";
+    const QString api = icon ? "getModelInstanceAnnotation" : "getModelInstance";
     double elapsed = (double)timer.elapsed() / 1000.0;
     MainWindow::instance()->writeNewApiProfiling(QString("Time for %1 %2 secs").arg(api, QString::number(elapsed, 'f', 6)));
   }
@@ -3496,7 +3606,7 @@ QJsonObject OMCProxy::modifierToJSON(const QString &modifier, bool prettyPrint)
 {
   QString modifierJson = mpOMCInterface->modifierToJSON(modifier, prettyPrint);
   printMessagesStringInternal();
-  if (!modifierJson.isEmpty()) {
+  if (!modifierJson.isEmpty() && modifierJson.compare(QStringLiteral("null")) != 0) {
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modifierJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {

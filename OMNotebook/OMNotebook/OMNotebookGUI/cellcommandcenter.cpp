@@ -37,16 +37,11 @@
 //QT Headers
 #include <QtGlobal>
 #include <QObject>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtGui/QMessageBox>
-#endif
 
 //IAEX Headers
 #include "cellcommandcenter.h"
 
-using namespace std;
 
 namespace IAEX
 {
@@ -81,7 +76,7 @@ namespace IAEX
     {
       cmd->execute();
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       QString msg = e.what();
 
@@ -107,13 +102,13 @@ namespace IAEX
 
    void CellCommandCenter::storeCommands()
    {
-      ofstream diskstorage("lastcommands.txt");
+      std::ofstream diskstorage("lastcommands.txt");
 
-      vector<Command *>::iterator i = storage_.begin();
+      std::vector<Command *>::iterator i = storage_.begin();
 
       for(;i!= storage_.end();++i)
       {
-      diskstorage << (*i)->commandName().toStdString() << endl;
+      diskstorage << (*i)->commandName().toStdString() << std::endl;
       }
    }
 }

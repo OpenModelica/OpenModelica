@@ -163,6 +163,13 @@ if not installPackage(Modelica_Synchronous, "0.92.2", exactMatch=true) then
 else
   print("Installed: Modelica_Synchronous 0.92.2\n");
 end if;
+if not installPackage(ScalableTestSuite, "2.2.0", exactMatch=true) then
+  print("ScalableTestSuite 2.2.0 failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ScalableTestSuite 2.2.0\n");
+end if;
 if not installPackage(SiemensPower, "2.2.0", exactMatch=true) then
   print("SiemensPower 2.2.0 failed.\n");
   print(getErrorString());
@@ -205,4 +212,4 @@ if not installPackage(WasteWater, "2.1.0", exactMatch=true) then
 else
   print("Installed: WasteWater 2.1.0\n");
 end if;
-system("touch .openmodelica/20221031131604.stamp")
+system("touch .openmodelica/20231121140110.stamp")

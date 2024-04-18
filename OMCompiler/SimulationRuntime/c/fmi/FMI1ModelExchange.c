@@ -69,7 +69,7 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   /* Load the binary (dll/so) */
   status = fmi1_import_create_dllfmu(FMI1ME->FMIImportInstance, FMI1ME->FMICallbackFunctions, 0);
   if (status == jm_status_error) {
-    ModelicaFormatError("Loading of FMU dynamic link library failed with status : %s\n", jm_log_level_to_string(status));
+    ModelicaFormatError("Loading of FMU dynamic link library failed");
     return 0;
   }
   FMI1ME->FMIInstanceName = (char*) malloc(strlen(instanceName)+1);
@@ -77,7 +77,7 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI1ME->FMIDebugLogging = debugLogging;
   instantiateModelStatus = fmi1_import_instantiate_model(FMI1ME->FMIImportInstance, FMI1ME->FMIInstanceName);
   if (instantiateModelStatus == jm_status_error) {
-    ModelicaFormatError("fmiInstantiateModel failed with status : %s\n", jm_log_level_to_string(instantiateModelStatus));
+    ModelicaFormatError("fmiInstantiateModel failed");
     return 0;
   }
   debugLoggingStatus = fmi1_import_set_debug_logging(FMI1ME->FMIImportInstance, FMI1ME->FMIDebugLogging);

@@ -69,6 +69,8 @@
 #include "util/varinfo.h"
 #include "epsilon.h"
 
+extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
+
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -816,7 +818,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         /* Set NLS user data */
         NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         nlsUserData->solverData = (void*) gbfData;
-        solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE);
+        solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE, gbfData->nlsData->isPatternAvailable);
         break;
       default:
         throwStreamPrint(NULL, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
@@ -1776,7 +1778,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         gbData->stepSizeValues[i] = gbData->stepSizeValues[i - 1];
       }
       // update new values
-      gbData->errValues[0] = _omc_gen_maximumVectorNorm(gbData->err, nStates);
+      gbData->errValues[0] = err = _omc_gen_maximumVectorNorm(gbData->err, nStates);
       gbData->stepSizeValues[0] = gbData->stepSize;
 
       // Store performed step size for latter interpolation
@@ -1966,6 +1968,13 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     // reduce step size with respect to the simulation stop time, if necessary
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
+
+    if(omc_flag[FLAG_PORT] && solverInfo->integratorSteps) {
+      if(0 != strcmp("ia", data->simulationInfo->outputFormat)) {
+        communicateStatus("Running", (solverInfo->currentTime - data->simulationInfo->startTime)/(data->simulationInfo->stopTime - data->simulationInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
+      }
+    }
+
   }
   // end of while-loop (gbData->time < targetTime)
 

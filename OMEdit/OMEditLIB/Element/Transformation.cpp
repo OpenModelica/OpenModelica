@@ -71,6 +71,7 @@ void Transformation::initialize(StringHandler::ViewType viewType)
   mExtentIcon.clear();
   mRotateAngleIcon = 0.0;
   mPositionIcon = QPointF(0.0, 0.0);
+  mExtentCenterDiagram = QPointF(0.0, 0.0);
 }
 
 void Transformation::parseTransformationString(QString value, qreal width, qreal height)
@@ -144,6 +145,17 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
   if (rect.height() > 0) {
     mHeight = rect.height();
   }
+  ExtentAnnotation elementCoordinateSystemExtent = coordinateSystem.getExtent();
+
+  if (mpComponent) {
+    mExtentCenterDiagram = mpComponent->boundingRect().center();
+    mExtentCenterIcon = mpComponent->boundingRect().center();
+  }
+
+  ModelInstance::Extend *pExtend = 0;
+  if (mpComponent && mpComponent->getModelComponent() && mpComponent->getModelComponent()->getParentModel()) {
+    pExtend = mpComponent->getModelComponent()->getParentModel()->getParentExtend();
+  }
 
   // transformation
   mVisible = placementAnnotation.getVisible();
@@ -155,6 +167,39 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
   mExtentDiagram.evaluate(placementAnnotation.getParentModel());
   mRotateAngleDiagram = transformation.getRotation();
   mRotateAngleDiagram.evaluate(placementAnnotation.getParentModel());
+  // map values from element coordinate system to DiagramMap extent
+  if (pExtend && pExtend->getIconDiagramMapHasExtent(false)) {
+    ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(false);
+    if (elementCoordinateSystemExtent.size() > 1 && extendsCoOrdinateExtents.size() > 1) {
+      const qreal x1 = elementCoordinateSystemExtent.at(0).x();
+      const qreal y1 = elementCoordinateSystemExtent.at(0).y();
+      const qreal x2 = elementCoordinateSystemExtent.at(1).x();
+      const qreal y2 = elementCoordinateSystemExtent.at(1).y();
+
+      const qreal x3 = extendsCoOrdinateExtents.at(0).x();
+      const qreal y3 = extendsCoOrdinateExtents.at(0).y();
+      const qreal x4 = extendsCoOrdinateExtents.at(1).x();
+      const qreal y4 = extendsCoOrdinateExtents.at(1).y();
+
+      QPointF origin;
+      origin.setX(Utilities::mapToCoOrdinateSystem(mOriginDiagram.x(), x1, x2, x3, x4));
+      origin.setY(Utilities::mapToCoOrdinateSystem(mOriginDiagram.y(), y1, y2, y3, y4));
+      mOriginDiagram = origin;
+
+      QVector<QPointF> extent;
+      QPointF point;
+      point.setX(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(0).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(0).y(), y1, y2, y3, y4));
+      extent.append(point);
+      point.setX(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(1).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(1).y(), y1, y2, y3, y4));
+      extent.append(point);
+      mExtentDiagram = extent;
+
+      mExtentCenterDiagram.setX(Utilities::mapToCoOrdinateSystem(mExtentCenterDiagram.x(), x1, x2, x3, x4));
+      mExtentCenterDiagram.setY(Utilities::mapToCoOrdinateSystem(mExtentCenterDiagram.y(), y1, y2, y3, y4));
+    }
+  }
   // icon transformation
   mVisibleIcon = placementAnnotation.getIconVisible();
   mVisibleIcon.evaluate(placementAnnotation.getParentModel());
@@ -165,6 +210,39 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
   mExtentIcon.evaluate(placementAnnotation.getParentModel());
   mRotateAngleIcon = iconTransformation.getRotation();
   mRotateAngleIcon.evaluate(placementAnnotation.getParentModel());
+  // map values from element coordinate system to IconMap extent.
+  if (pExtend && pExtend->getIconDiagramMapHasExtent(true)) {
+    ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(true);
+    if (elementCoordinateSystemExtent.size() > 1 && extendsCoOrdinateExtents.size() > 1) {
+      const qreal x1 = elementCoordinateSystemExtent.at(0).x();
+      const qreal y1 = elementCoordinateSystemExtent.at(0).y();
+      const qreal x2 = elementCoordinateSystemExtent.at(1).x();
+      const qreal y2 = elementCoordinateSystemExtent.at(1).y();
+
+      const qreal x3 = extendsCoOrdinateExtents.at(0).x();
+      const qreal y3 = extendsCoOrdinateExtents.at(0).y();
+      const qreal x4 = extendsCoOrdinateExtents.at(1).x();
+      const qreal y4 = extendsCoOrdinateExtents.at(1).y();
+
+      QPointF origin;
+      origin.setX(Utilities::mapToCoOrdinateSystem(mOriginIcon.x(), x1, x2, x3, x4));
+      origin.setY(Utilities::mapToCoOrdinateSystem(mOriginIcon.y(), y1, y2, y3, y4));
+      mOriginIcon = origin;
+
+      QVector<QPointF> extent;
+      QPointF point;
+      point.setX(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(0).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(0).y(), y1, y2, y3, y4));
+      extent.append(point);
+      point.setX(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(1).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(1).y(), y1, y2, y3, y4));
+      extent.append(point);
+      mExtentIcon = extent;
+
+      mExtentCenterIcon.setX(Utilities::mapToCoOrdinateSystem(mExtentCenterIcon.x(), x1, x2, x3, x4));
+      mExtentCenterIcon.setY(Utilities::mapToCoOrdinateSystem(mExtentCenterIcon.y(), y1, y2, y3, y4));
+    }
+  }
 }
 
 void Transformation::updateTransformation(const Transformation &transformation)
@@ -179,11 +257,13 @@ void Transformation::updateTransformation(const Transformation &transformation)
   mExtentDiagram = transformation.getExtentDiagram();
   mRotateAngleDiagram = transformation.getRotateAngleDiagram();
   mPositionDiagram = transformation.getPositionDiagram();
+  mExtentCenterDiagram = transformation.getExtentCenterDiagram();
   mVisibleIcon = transformation.getVisibleIcon();
   mOriginIcon = transformation.getOriginIcon();
   mExtentIcon = transformation.getExtentIcon();
   mRotateAngleIcon = transformation.getRotateAngleIcon();
   mPositionIcon = transformation.getPositionIcon();
+  mExtentCenterIcon = transformation.getExtentCenterIcon();
 }
 
 QTransform Transformation::getTransformationMatrix()
@@ -247,6 +327,20 @@ QPointF Transformation::getPosition()
     case StringHandler::ModelicaText:
     default:
       return getPositionDiagram();
+  }
+}
+
+void Transformation::setExtentCenter(QPointF extentCenter)
+{
+  switch (mViewType) {
+    case StringHandler::Icon:
+      setExtentCenterIcon(extentCenter);
+      break;
+    case StringHandler::Diagram:
+    case StringHandler::ModelicaText:
+    default:
+      setExtentCenterDiagram(extentCenter);
+      break;
   }
 }
 
@@ -328,10 +422,6 @@ QTransform Transformation::getTransformationMatrixDiagram() const
   if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
     sy = 1;
   }
-  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
-  if (mpComponent) {
-    position = position - (QPointF(mpComponent->boundingRect().center().x() * sx, mpComponent->boundingRect().center().y() * sy));
-  }
 
   // get the horizontal flip
   if (extent2Diagram.x() < extent1Diagram.x()) {
@@ -343,7 +433,8 @@ QTransform Transformation::getTransformationMatrixDiagram() const
   }
   // return the transformations
   if (mpComponent) {
-    QTransform transformationMatrix = QTransform::fromScale(sx, sy);
+    QTransform transformationMatrix = QTransform::fromTranslate(-mExtentCenterDiagram.x(), -mExtentCenterDiagram.y());
+    transformationMatrix *= QTransform::fromScale(sx, sy);
     transformationMatrix *= QTransform::fromTranslate(position.x(), position.y());
     transformationMatrix *= QTransform().translate(mOriginDiagram.x(), mOriginDiagram.y()).rotate(mRotateAngleDiagram).translate(-mOriginDiagram.x(), -mOriginDiagram.y());
     return transformationMatrix;
@@ -399,10 +490,7 @@ QTransform Transformation::getTransformationMatrixIcon()
   if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
     sy = 1;
   }
-  /* Ticket #3032. Adjust position based on the coordinate system of the component. */
-  if (mpComponent) {
-    position = position - (QPointF(mpComponent->boundingRect().center().x() * sx, mpComponent->boundingRect().center().y() * sy));
-  }
+
   // get the horizontal flip
   if (extent2Icon.x() < extent1Icon.x()) {
     sx = -sx;
@@ -413,7 +501,8 @@ QTransform Transformation::getTransformationMatrixIcon()
   }
   // return the transformations
   if (mpComponent) {
-    QTransform transformationMatrix = QTransform::fromScale(sx, sy);
+    QTransform transformationMatrix = QTransform::fromTranslate(-mExtentCenterIcon.x(), -mExtentCenterIcon.y());
+    transformationMatrix *= QTransform::fromScale(sx, sy);
     transformationMatrix *= QTransform::fromTranslate(position.x(), position.y());
     transformationMatrix *= QTransform().translate(mOriginIcon.x(), mOriginIcon.y()).rotate(mRotateAngleIcon).translate(-mOriginIcon.x(), -mOriginIcon.y());
     return transformationMatrix;

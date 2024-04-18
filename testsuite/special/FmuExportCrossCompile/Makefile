@@ -4,7 +4,10 @@
 # all cross-compilation targets (including OSX)
 # fmuCheck.linux32 fmuCheck.linux64 fmuCheck.win32.exe fmuCheck.win64.exe
 
-OMC=../../../build/bin/omc
+# I hate if conditions in make...
+OMC := $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
+               || test -e ../../../build_cmake/install_cmake/bin/omc && echo ../../../build_cmake/install_cmake/bin/omc \
+               || echo ../../../build/bin/omc )
 
 test: clean
 	$(MAKE) fmuExportCrossCompile
@@ -50,6 +53,6 @@ fmu-check:
 	./fmu-run.sh WaterTank_TestSingleWaterTank
 	$(OMC) check-files.mos
 clean:
-	rm -f *.json *.xml *.html *.fmu* *.c *.makefile *.log *.o *.opt *.libs *.h *.mat *.csv
+	rm -rf *.json *.xml *.html *.fmu* *.c *.makefile *.log *.o *.opt *.libs *.h *.mat *.csv
 	rm -f BouncingBall FmuExportCrossCompile RoomHeating_OM_RH WaterTank_Control WaterTank_TestSingleWaterTank
 	rm -rf CMakeCrossCompile/ Test_FMUs/

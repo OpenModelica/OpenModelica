@@ -54,9 +54,6 @@
 #include "omcinteractiveenvironment.h"
 #include "otherdlg.h"
 
-
-using namespace std;
-
 static QString omc_version_;
 static QString omhome;
 static IAEX::OmcInteractiveEnvironment* delegate_;
@@ -155,9 +152,9 @@ bool MyTextEdit::insideCommandSign()
     int cursorPos = textCursor().position();
     if( blockStartPos <= cursorPos && cursorPos < (blockStartPos+3) && signPos == 0)
     {
-      cerr << "Inside Command Sign" << endl;
-      cerr << "BlockStart: " << blockStartPos <<
-        ", Cursor: " << cursorPos << endl << endl;
+      std::cerr << "Inside Command Sign" << std::endl;
+      std::cerr << "BlockStart: " << blockStartPos <<
+        ", Cursor: " << cursorPos << std::endl << std::endl;
 
       return true;
     }
@@ -165,7 +162,7 @@ bool MyTextEdit::insideCommandSign()
       return false;
   }
   else
-    cerr << "Not a valid QTextBlock (insideCommandSign)" << endl;
+    std::cerr << "Not a valid QTextBlock (insideCommandSign)" << std::endl;
 
   return true;
 }
@@ -184,7 +181,7 @@ bool MyTextEdit::startOfCommandSign()
       return false;
   }
   else
-    cerr << "Not a valid QTextBlock (startOfCommandSign)" << endl;
+    std::cerr << "Not a valid QTextBlock (startOfCommandSign)" << std::endl;
 
   return true;
 }
@@ -275,7 +272,7 @@ OMS::OMS( QWidget* parent )
 
     commandcompletion_ = IAEX::CommandCompletion::instance( commandfile );
   }
-  catch( exception &e )
+  catch( std::exception &e )
   {
     QString msg = e.what();
     msg += "\nCould not create command completion class!";
@@ -480,7 +477,7 @@ void OMS::returnPressed()
     }
     else
     {
-      cerr << "Not a valid QTextBlock (returnPressed)" << endl;
+      std::cerr << "Not a valid QTextBlock (returnPressed)" << std::endl;
       break;
     }
   }
@@ -510,7 +507,7 @@ void OMS::returnPressed()
     {
       delegate_->evalExpression( commandText );
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       exceptionInEval(e);
       return;
@@ -540,7 +537,7 @@ void OMS::returnPressed()
   addCommandLine();
 }
 
-void OMS::exceptionInEval(exception &e)
+void OMS::exceptionInEval(std::exception &e)
 {
   // 2006-0-09 AF, try to reconnect to OMC first.
   returnPressed();
@@ -630,7 +627,7 @@ void OMS::goHome( bool shift )
     moshEdit_->setTextCursor( cursor_ );
   }
   else
-    cout << "Not a valid QTextBlock (selectCommandLine)" << endl;
+    std::cout << "Not a valid QTextBlock (selectCommandLine)" << std::endl;
 }
 
 void OMS::codeCompletion( bool same )
@@ -689,7 +686,7 @@ void OMS::selectCommandLine()
     }
     else
     {
-      cout << "Not a valid QTextBlock (selectCommandLine)" << endl;
+      std::cout << "Not a valid QTextBlock (selectCommandLine)" << std::endl;
       break;
     }
   }

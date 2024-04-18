@@ -13,7 +13,7 @@ loadString("
   end M;
 ");
 
-getModelInstanceIcon(M, prettyPrint=true);
+getModelInstanceAnnotation(M, {"Icon"}, prettyPrint=true);
 
 // Result:
 // true

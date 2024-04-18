@@ -17,6 +17,8 @@ my $no_colour = 0;
 my $withxml = 0;
 my $rtest_extra_args = "";
 my $test_baseline = 0;
+my $isWSL = (defined $ENV{'WSLENV'} && rindex(Cwd::abs_path(),"/mnt/",0)==0);
+my $osname = $^O;
 
 for(@ARGV){
   if(/--no-colour/) {
@@ -70,7 +72,11 @@ sub symlink_if_exists {
   my $dst = shift;
 
   if (-e $src) {
-    symlink($src, $dst)
+    if ($isWSL or ($osname eq 'MSWin32')) {
+      link($src, $dst);
+    } else {
+      symlink($src, $dst);
+    }
   }
 }
 
@@ -225,9 +231,13 @@ my $n = ($test_full =~ tr/\///) - ($sandbox_needed ? 0 : 1);
 my $test_suit_path_rel = "../" x $n;
 
 my $rtest = $test_suit_path_rel . "rtest $rtest_extra_args -v -nolib ";
+if ( $osname eq 'MSWin32' ) {
+  $rtest = "perl " . $rtest;
+}
 
 # Run the testscript and redirect output to a logfile.
 my $cmd = "$rtest $test > $test.test_log 2>&1";
+# print ("CMD: ", $cmd, "\n");
 system("$cmd");
 
 # Read the logfile and see if the test succeeded or failed.
@@ -296,6 +306,8 @@ if ($no_colour) {
 } else {
   print color 'reset';
 }
+
+close( $test_log );
 
 if ($withxml) {
   my $XMLOUT;

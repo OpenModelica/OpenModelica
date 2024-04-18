@@ -48,7 +48,12 @@
 #include <QDesktopServices>
 #include <QApplication>
 #include <QDesktopWidget>
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#include <QWebEnginePage>
+#include <QWebEngineSettings>
+#else
 #include <QWebFrame>
+#endif
 #include <QWidgetAction>
 #include <QButtonGroup>
 #include <QInputDialog>
@@ -182,24 +187,40 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpBoldAction->setStatusTip(tr("Make your text bold"));
   mpBoldAction->setShortcut(QKeySequence("Ctrl+b"));
   mpBoldAction->setCheckable(true);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  connect(mpBoldAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleBold), SLOT(trigger()));
+#else
   connect(mpBoldAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleBold), SLOT(trigger()));
+#endif
   // italic action
   mpItalicAction = new QAction(QIcon(":/Resources/icons/italic-icon.svg"), Helper::italic, this);
   mpItalicAction->setStatusTip(tr("Italicize your text"));
   mpItalicAction->setShortcut(QKeySequence("Ctrl+i"));
   mpItalicAction->setCheckable(true);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  connect(mpItalicAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleItalic), SLOT(trigger()));
+#else
   connect(mpItalicAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SLOT(trigger()));
+#endif
   // underline action
   mpUnderlineAction = new QAction(QIcon(":/Resources/icons/underline-icon.svg"), Helper::underline, this);
   mpUnderlineAction->setStatusTip(tr("Underline your text"));
   mpUnderlineAction->setShortcut(QKeySequence("Ctrl+u"));
   mpUnderlineAction->setCheckable(true);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  connect(mpUnderlineAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleUnderline), SLOT(trigger()));
+#else
   connect(mpUnderlineAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SLOT(trigger()));
+#endif
   // strikethrough action
   mpStrikethroughAction = new QAction(QIcon(":/Resources/icons/strikethrough-icon.svg"), tr("Strikethrough"), this);
   mpStrikethroughAction->setStatusTip(tr("Cross something out by drawing a line through it"));
   mpStrikethroughAction->setCheckable(true);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  connect(mpStrikethroughAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::ToggleStrikethrough), SLOT(trigger()));
+#else
   connect(mpStrikethroughAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SLOT(trigger()));
+#endif
   // subscript superscript action group
   QActionGroup *pSubscriptSuperscriptActionGroup = new QActionGroup(this);
   pSubscriptSuperscriptActionGroup->setExclusive(true);
@@ -207,12 +228,20 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpSubscriptAction = new QAction(QIcon(":/Resources/icons/subscript-icon.svg"), tr("Subscript"), pSubscriptSuperscriptActionGroup);
   mpSubscriptAction->setStatusTip(tr("Type very small letters just below the line of text"));
   mpSubscriptAction->setCheckable(true);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // TODO: ToggleSubscript
+#else
   connect(mpSubscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SLOT(trigger()));
+#endif
   // superscript action
   mpSuperscriptAction = new QAction(QIcon(":/Resources/icons/superscript-icon.svg"), tr("Superscript"), pSubscriptSuperscriptActionGroup);
   mpSuperscriptAction->setStatusTip(tr("Type very small letters just above the line of text"));
   mpSuperscriptAction->setCheckable(true);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // TODO: ToggleSuperscript
+#else
   connect(mpSuperscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SLOT(trigger()));
+#endif
   // text color toobutton
   mTextColor = Qt::black;
   mpTextColorDialog = new QColorDialog;
@@ -298,11 +327,19 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // decrease indent action
   mpDecreaseIndentAction = new QAction(QIcon(":/Resources/icons/decrease-indent.svg"), tr("Decrease Indent"), this);
   mpDecreaseIndentAction->setStatusTip(tr("Decreases the indent by moving left"));
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  connect(mpDecreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::Outdent), SLOT(trigger()));
+#else
   connect(mpDecreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::Outdent), SLOT(trigger()));
+#endif
   // increase indent action
   mpIncreaseIndentAction = new QAction(QIcon(":/Resources/icons/increase-indent.svg"), tr("Increase Indent"), this);
   mpIncreaseIndentAction->setStatusTip(tr("Increases the indent by moving right"));
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  connect(mpIncreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebEnginePage::Indent), SLOT(trigger()));
+#else
   connect(mpIncreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::Indent), SLOT(trigger()));
+#endif
   // bullet list action
   mpBulletListAction = new QAction(QIcon(":/Resources/icons/bullet-list.svg"), tr("Bullet List"), this);
   mpBulletListAction->setStatusTip(tr("Creates a bulleted list"));
@@ -363,7 +400,11 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // create the HTMLEditor
   mpHTMLSourceEditor = new HTMLEditor(this);
   mpHTMLSourceEditor->hide();
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // TODO: contentsChanged
+#else
   connect(mpHTMLEditor->page(), SIGNAL(contentsChanged()), SLOT(updateHTMLSourceEditor()));
+#endif
   HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(OptionsDialog::instance()->getHTMLEditorPage(), mpHTMLSourceEditor->getPlainTextEdit());
   connect(OptionsDialog::instance(), SIGNAL(HTMLEditorSettingsChanged()), pHTMLHighlighter, SLOT(settingsChanged()));
   // eidtors widget layout
@@ -472,9 +513,14 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
  */
 void DocumentationWidget::execCommand(const QString &commandName)
 {
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   QString javaScript = QString("document.execCommand(\"%1\", false, null)").arg(commandName);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript);
+#else
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   pWebFrame->evaluateJavaScript(javaScript);
+#endif
 }
 
 /*!
@@ -486,9 +532,14 @@ void DocumentationWidget::execCommand(const QString &commandName)
  */
 void DocumentationWidget::execCommand(const QString &command, const QString &valueArgument)
 {
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   QString javaScript = QString("document.execCommand(\"%1\", false, \"%2\")").arg(command).arg(valueArgument);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript);
+#else
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   pWebFrame->evaluateJavaScript(javaScript);
+#endif
 }
 
 /*!
@@ -500,9 +551,15 @@ void DocumentationWidget::execCommand(const QString &command, const QString &val
  */
 bool DocumentationWidget::queryCommandState(const QString &commandName)
 {
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   QString javaScript = QString("document.queryCommandState(\"%1\")").arg(commandName);
-  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
+  QVariant result;
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
+#else
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  result = pWebFrame->evaluateJavaScript(javaScript);
+#endif
   return result.toString().simplified().toLower() == "true";
 }
 
@@ -515,9 +572,15 @@ bool DocumentationWidget::queryCommandState(const QString &commandName)
  */
 QString DocumentationWidget::queryCommandValue(const QString &commandName)
 {
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   QString javaScript = QString("document.queryCommandValue(\"%1\")").arg(commandName);
-  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
+  QVariant result;
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
+#else
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  result = pWebFrame->evaluateJavaScript(javaScript);
+#endif
   return result.toString();
 }
 
@@ -529,7 +592,11 @@ void DocumentationWidget::saveScrollPosition()
 {
   if (mDocumentationHistoryPos > -1 && mpDocumentationHistoryList->size() > 0) {
     DocumentationHistory documentationHistory = mpDocumentationHistoryList->at(mDocumentationHistoryPos);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+    documentationHistory.mScrollPosition = mpDocumentationViewer->page()->scrollPosition().toPoint();
+#else
     documentationHistory.mScrollPosition = mpDocumentationViewer->page()->mainFrame()->scrollPosition();
+#endif
     mpDocumentationHistoryList->replace(mDocumentationHistoryPos, documentationHistory);
   }
 }
@@ -597,7 +664,6 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
  */
 bool DocumentationWidget::isLinkSelected()
 {
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   QString javaScript = QString("function isLinkSelected() {"
                                "  if (document.getSelection().anchorNode.parentNode.nodeName == 'A') {"
                                "    return true;"
@@ -606,7 +672,14 @@ bool DocumentationWidget::isLinkSelected()
                                "  }"
                                "}"
                                "isLinkSelected()");
-  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
+  QVariant result;
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
+#else
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  result = pWebFrame->evaluateJavaScript(javaScript);
+#endif
   return result.toString().simplified().toLower() == "true";
 }
 
@@ -854,11 +927,6 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
         pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldDocAnnotationString, newDocAnnotationString);
         pLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
         pLibraryTreeItem->getModelWidget()->updateModelText();
-      } else {
-        // send the documentation annotation to OMC
-        MainWindow::instance()->getOMCProxy()->addClassAnnotation(pLibraryTreeItem->getNameStructure(), newDocAnnotationString);
-        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-        pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
       }
       /* ticket:5190 Save the class when documentation save button is hit. */
       MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
@@ -945,12 +1013,20 @@ void DocumentationWidget::updateActions()
     mpFontSizeSpinBox->setValue(fontSize);
     mpFontSizeSpinBox->blockSignals(state);
   }
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleBold)->isChecked());
+  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleItalic)->isChecked());
+  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleUnderline)->isChecked());
+  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleStrikethrough)->isChecked());
+  // TODO: ToggleSubscript/ToggleSuperscript
+#else
   mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
   mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
   mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
   mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
   mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
   mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
+#endif
   mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
   mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
   mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
@@ -1102,7 +1178,6 @@ void DocumentationWidget::numberedList()
  */
 void DocumentationWidget::createLink()
 {
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   QString javaScript = QString("function getLinkHref() {"
                                "  if (document.getSelection().anchorNode.parentNode.nodeName == 'A') {"
                                "    if (document.getSelection().anchorNode.parentNode.hasAttribute('href')) {"
@@ -1112,7 +1187,14 @@ void DocumentationWidget::createLink()
                                "  return '';"
                                "}"
                                "getLinkHref()");
-  QString href = pWebFrame->evaluateJavaScript(javaScript).toString();
+  QString href;
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ href = arg.toString(); });
+#else
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  href = pWebFrame->evaluateJavaScript(javaScript).toString();
+#endif
   href = QInputDialog::getText(this, tr("Create Link"), "Enter URL", QLineEdit::Normal, href);
   execCommand("createLink", href);
 }
@@ -1128,12 +1210,17 @@ void DocumentationWidget::removeLink()
 
 /*!
  * \brief DocumentationWidget::updateHTMLSourceEditor
- * Slot activated when QWebView::page() contentsChanged SIGNAL is rasied.\n
+ * Slot activated when QWebView::page() contentsChanged SIGNAL is raised.\n
  * Updates the contents of the HTML source editor.
  */
 void DocumentationWidget::updateHTMLSourceEditor()
 {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  PlainTextEdit *textEdit = mpHTMLSourceEditor->getPlainTextEdit();
+  mpHTMLEditor->page()->toHtml([textEdit](const QString &result){ textEdit->setPlainText(result); });
+#else
   mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
+#endif
 }
 
 /*!
@@ -1155,22 +1242,40 @@ void DocumentationWidget::updateDocumentationHistory()
  * \param isContentEditable
  */
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable)
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  : QWebEngineView(pDocumentationWidget)
+#else
   : QWebView(pDocumentationWidget)
+#endif
+  , mIsContentEditable(isContentEditable)
 {
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   mpDocumentationWidget = pDocumentationWidget;
   resetZoom();
   // set DocumentationViewer settings
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
+  settings()->setFontSize(QWebEngineSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
+  settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+#else
   settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
+#endif
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
   // set DocumentationViewer web page policy
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  if (isContentEditable)
+    page()->runJavaScript("document.documentElement.contentEditable = true");
+  // TODO: DelegateAllLinks, linkClicked
+  connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
+#else
   page()->setContentEditable(isContentEditable);
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
+#endif
   createActions();
   if (!isContentEditable) {
     connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
@@ -1197,8 +1302,13 @@ void DocumentationViewer::setFocusInternal()
  */
 void DocumentationViewer::createActions()
 {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  page()->action(QWebEnginePage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
+  page()->action(QWebEnginePage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
+#else
   page()->action(QWebPage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebPage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
+#endif
 }
 
 /*!
@@ -1218,7 +1328,7 @@ void DocumentationViewer::resetZoom()
  */
 void DocumentationViewer::processLinkClick(QUrl url)
 {
-  if (page()->isContentEditable()) {
+  if (mIsContentEditable) {
     return;
   }
   // Send all http requests to desktop services for now.
@@ -1240,10 +1350,14 @@ void DocumentationViewer::processLinkClick(QUrl url)
       }
     }
   } else { // if it is normal http request then check if its not redirected to https
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+    // TODO: QNetworkAccessManager
+#else
     QNetworkAccessManager* accessManager = page()->networkAccessManager();
     QNetworkRequest request(url);
     QNetworkReply* reply = accessManager->get(request);
     connect(reply, SIGNAL(finished()), SLOT(requestFinished()));
+#endif
   }
 }
 
@@ -1273,16 +1387,22 @@ void DocumentationViewer::requestFinished()
  * \param title
  * \param textContent
  */
-void DocumentationViewer::processLinkHover(QString link, QString title, QString textContent)
+void DocumentationViewer::processLinkHover(QString link)
 {
-  Q_UNUSED(title);
-  Q_UNUSED(textContent);
   if (link.isEmpty()) {
     MainWindow::instance()->getStatusBar()->clearMessage();
   } else {
     MainWindow::instance()->getStatusBar()->showMessage(link);
   }
 }
+
+void DocumentationViewer::processLinkHover(QString link, QString title, QString textContent)
+{
+  Q_UNUSED(title);
+  Q_UNUSED(textContent);
+  processLinkHover(link);
+}
+
 
 /*!
  * \brief DocumentationViewer::showContextMenu
@@ -1294,8 +1414,13 @@ void DocumentationViewer::showContextMenu(QPoint point)
 {
   QMenu menu(this);
   // add QWebPage default actions
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  menu.addAction(page()->action(QWebEnginePage::SelectAll));
+  menu.addAction(page()->action(QWebEnginePage::Copy));
+#else
   menu.addAction(page()->action(QWebPage::SelectAll));
   menu.addAction(page()->action(QWebPage::Copy));
+#endif
   menu.exec(mapToGlobal(point));
 }
 
@@ -1308,7 +1433,11 @@ void DocumentationViewer::pageLoaded(bool ok)
 {
   Q_UNUSED(ok);
   const QPoint scrollPosition = mpDocumentationWidget->getScrollPosition();
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  page()->runJavaScript(QString("window.scrollTo(%1, %2);").arg(scrollPosition.x()).arg(scrollPosition.y()));
+#else
   page()->mainFrame()->scroll(scrollPosition.x(), scrollPosition.y());
+#endif
 }
 
 /*!
@@ -1316,11 +1445,20 @@ void DocumentationViewer::pageLoaded(bool ok)
  * \param type
  * \return
  */
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+QWebEngineView* DocumentationViewer::createWindow(QWebEnginePage::WebWindowType type)
+#else
 QWebView* DocumentationViewer::createWindow(QWebPage::WebWindowType type)
+#endif
 {
   Q_UNUSED(type);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QWebEngineView *webView = new QWebEngineView;
+  QWebEnginePage *newWeb = new QWebEnginePage(webView);
+#else
   QWebView *webView = new QWebView;
   QWebPage *newWeb = new QWebPage(webView);
+#endif
   webView->setAttribute(Qt::WA_DeleteOnClose, true);
   webView->setPage(newWeb);
   webView->show();
@@ -1338,12 +1476,20 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   // if editable QWebView
-  if (page()->isContentEditable()) {
+  if (mIsContentEditable) {
     if (!shiftModifier && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)) {
 //      mpDocumentationWidget->execCommand("insertHTML", "<p><br></p>");
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+      QWebEngineView::keyPressEvent(event);
+#else
       QWebView::keyPressEvent(event);
+#endif
     } else {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+      QWebEngineView::keyPressEvent(event);
+#else
       QWebView::keyPressEvent(event);
+#endif
     }
   } else { // if non-editable QWebView
     if (shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
@@ -1355,9 +1501,17 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
         mpDocumentationWidget->previousDocumentation();
       }
     } else if (controlModifier && event->key() == Qt::Key_A) {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+      page()->triggerAction(QWebEnginePage::SelectAll);
+#else
       page()->triggerAction(QWebPage::SelectAll);
+#endif
     } else {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+      QWebEngineView::keyPressEvent(event);
+#else
       QWebView::keyPressEvent(event);
+#endif
     }
   }
 }
@@ -1392,7 +1546,11 @@ void DocumentationViewer::wheelEvent(QWheelEvent *event)
     }
     setZoomFactor(zf);
   } else {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+    QWebEngineView::wheelEvent(event);
+#else
     QWebView::wheelEvent(event);
+#endif
   }
 }
 
@@ -1407,6 +1565,10 @@ void DocumentationViewer::mouseDoubleClickEvent(QMouseEvent *event)
   if (event->modifiers().testFlag(Qt::ControlModifier)) {
     resetZoom();
   } else {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+    QWebEngineView::mouseDoubleClickEvent(event);
+#else
     QWebView::mouseDoubleClickEvent(event);
+#endif
   }
 }

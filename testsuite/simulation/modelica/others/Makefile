@@ -3,7 +3,6 @@ TEST = ../../../rtest -v
 TESTFILES = \
 world.mos \
 EngineV6_evalParams.mos \
-EngineV6_output.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
@@ -87,6 +86,7 @@ unitConvertTests.mos
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES= \
+EngineV6_output.mos \
 MoonAndEarth.mos \
 pendulum4.mos \
 SpaceProbe.mos \

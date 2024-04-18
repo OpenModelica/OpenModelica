@@ -434,11 +434,11 @@ public:
   void undo();
 private:
   LibraryTreeItem *mpLibraryTreeItem;
+  LibraryTreeItem *mpParentContainingLibraryTreeItem;
   QString mOldModelText;
   ModelInfo mOldModelInfo;
   QString mNewModelText;
   ModelInfo mNewModelInfo;
-  bool mUndoDoneOnce;
 };
 
 #endif // COMMANDS_H

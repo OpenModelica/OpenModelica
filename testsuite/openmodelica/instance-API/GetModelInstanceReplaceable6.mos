@@ -1,0 +1,95 @@
+// name: GetModelInstanceReplaceable6
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package P
+    model A
+      replaceable Real x[:];
+    end A;
+
+    model M
+      A a(redeclare replaceable Real x[2] = {1, 2});
+    end M;
+  end P;
+");
+
+getModelInstance(P.M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"P.M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"P.A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \":\"
+//               ],
+//               \"typed\": [
+//                 \"2\"
+//               ]
+//             },
+//             \"value\": {
+//               \"binding\": [
+//                 1,
+//                 2
+//               ]
+//             },
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 10
+//         }
+//       },
+//       \"modifiers\": {
+//         \"x\": {
+//           \"$value\": {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \"2\"
+//               ]
+//             },
+//             \"modifiers\": \"{1, 2}\",
+//             \"prefixes\": {
+//               \"replaceable\": true,
+//               \"redeclare\": true
+//             }
+//           }
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 7,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 10
+//   }
+// }"
+// endResult

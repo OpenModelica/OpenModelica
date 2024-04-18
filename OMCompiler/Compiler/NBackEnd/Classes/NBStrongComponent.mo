@@ -215,6 +215,66 @@ public
     end match;
   end toString;
 
+  uniontype CountCollector
+    record COUNT_COLLECTOR
+      Integer single_scalar;
+      Integer single_array;
+      Integer single_record;
+      Integer multi_algorithm;
+      Integer multi_when;
+      Integer multi_if;
+      Integer multi_tpl;
+      Integer generic_for;
+      Integer entwined_for;
+      Integer loop_lin;
+      Integer loop_nlin;
+    end COUNT_COLLECTOR;
+  end CountCollector;
+
+  function strongComponentInfo
+    input output StrongComponent comp;
+    input Pointer<CountCollector> collector_ptr;
+  protected
+    CountCollector collector = Pointer.access(collector_ptr);
+  algorithm
+    _ := match comp
+      case StrongComponent.SINGLE_COMPONENT() algorithm
+        _ := match Pointer.access(comp.eqn)
+          case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
+          case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
+          case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
+          else                            algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");          then ();
+        end match;
+      then ();
+
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        _ := match Pointer.access(comp.eqn)
+          case Equation.ALGORITHM()       algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
+          case Equation.WHEN_EQUATION()   algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
+          case Equation.IF_EQUATION()     algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
+          case Equation.RECORD_EQUATION() algorithm collector.multi_tpl := collector.multi_tpl + 1; Pointer.update(collector_ptr, collector);               then ();
+          else                            algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");              then ();
+        end match;
+      then ();
+
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        _ := match Pointer.access(Slice.getT(comp.eqn))
+          case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
+          case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
+          case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
+          else                            algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");          then ();
+        end match;
+      then ();
+
+      case StrongComponent.GENERIC_COMPONENT()  algorithm collector.generic_for := collector.generic_for + 1; Pointer.update(collector_ptr, collector);   then ();
+      case StrongComponent.ENTWINED_COMPONENT() algorithm collector.entwined_for := collector.entwined_for + 1; Pointer.update(collector_ptr, collector); then ();
+      case StrongComponent.ALGEBRAIC_LOOP() guard(comp.linear) algorithm collector.loop_lin := collector.loop_lin + 1; Pointer.update(collector_ptr, collector);         then ();
+      case StrongComponent.ALGEBRAIC_LOOP()     algorithm collector.loop_nlin := collector.loop_nlin + 1; Pointer.update(collector_ptr, collector);         then ();
+      case StrongComponent.ALIAS()              algorithm strongComponentInfo(comp.original, collector_ptr);                                              then ();
+      else                                      algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");        then ();
+    end match;
+  end strongComponentInfo;
+
   function hash
     "only hashes basic types, isEqual is used to differ between sliced/entwined loops"
     input StrongComponent comp;
@@ -237,16 +297,25 @@ public
     output Boolean b;
   algorithm
     b := match(comp1, comp2)
-      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
-      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.equalName(comp1.eqn, comp2.eqn);
-      case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
-      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
+      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
+      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
       case (ENTWINED_COMPONENT(), ENTWINED_COMPONENT()) then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
       case (ALGEBRAIC_LOOP(), ALGEBRAIC_LOOP())         then Tearing.isEqual(comp1.strict, comp2.strict);
       case (ALIAS(), ALIAS())                           then AliasInfo.isEqual(comp1.aliasInfo, comp2.aliasInfo);
       else false;
     end match;
   end isEqual;
+
+  function removeAlias
+    input output StrongComponent comp;
+  algorithm
+    comp := match comp
+      case ALIAS() then comp.original;
+      else comp;
+    end match;
+  end removeAlias;
 
   function createPseudoSlice
     input Integer eqn_arr_idx;
@@ -461,9 +530,12 @@ public
 
       case MULTI_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
+        dependencies := list(ComponentRef.stripIteratorSubscripts(dep) for dep in dependencies);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         for var in comp.vars loop
-          updateDependencyMap(BVariable.getVarName(var), dependencies, map, jacType);
+          for cref in ComponentRef.scalarizeAll(BVariable.getVarName(var)) loop
+            updateDependencyMap(cref, dependencies, map, jacType);
+          end for;
         end for;
       then ();
 
@@ -476,7 +548,9 @@ public
         else
           cref := comp.var_cref;
         end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices, false);
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
@@ -485,7 +559,7 @@ public
 
       // sliced array equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
-        eqn as Equation.FOR_EQUATION(iter = iter) := Pointer.access(Slice.getT(comp.eqn));
+        eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(comp.var_cref, dependencies, comp.eqn.indices);
         for tpl in scalarized_dependencies loop
@@ -511,7 +585,9 @@ public
         else
           cref := comp.var_cref;
         end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, comp.eqn.indices, false);
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
           updateDependencyMap(cref, dependencies, map, jacType);
@@ -535,7 +611,9 @@ public
             // we do not really care for order and assume full dependency anyway
             eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(eqn_ptr);
             cref := Equation.getEqnName(eqn_ptr);
-            scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(cref, tmp, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, iter, slice.indices, true);
+            scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+              cref, tmp, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+              iter, Equation.size(eqn_ptr), slice.indices, true);
             tmp := List.flatten(list(Util.tuple22(tpl) for tpl in scalarized_dependencies));
           end if;
           dependencies := listAppend(tmp, dependencies);
@@ -639,6 +717,16 @@ public
     end match;
   end isDiscrete;
 
+  function isAlias
+    input StrongComponent comp;
+    output Boolean b;
+  algorithm
+    b := match comp
+      case ALIAS() then true;
+      else false;
+    end match;
+  end isAlias;
+
   function createPseudoScalar
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
@@ -693,7 +781,10 @@ public
       case _ algorithm
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
-          case ({var_slice}, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+          case ({var_slice}, {eqn_slice}) guard(
+            not Equation.isForEquation(Slice.getT(eqn_slice))
+            and not Equation.isAlgorithm(Slice.getT(eqn_slice)))
+            algorithm
             if Slice.isFull(var_slice) then
               comp := SINGLE_COMPONENT(
                 var       = Slice.getT(var_slice),
@@ -770,9 +861,9 @@ protected
       eqn_arr_idx       := mapping.eqn_StA[eqn_idx];
 
       // collect variable and equation slices
-      idx_lst := if UnorderedMap.contains(var_arr_idx, var_map) then UnorderedMap.getSafe(var_arr_idx, var_map, sourceInfo()) else {};
+      idx_lst := UnorderedMap.getOrDefault(var_arr_idx, var_map, {});
       UnorderedMap.add(var_arr_idx, var_idx :: idx_lst, var_map);
-      idx_lst := if UnorderedMap.contains(eqn_arr_idx, eqn_map) then UnorderedMap.getSafe(eqn_arr_idx, eqn_map, sourceInfo()) else {};
+      idx_lst := UnorderedMap.getOrDefault(eqn_arr_idx, eqn_map, {});
       UnorderedMap.add(eqn_arr_idx, eqn_idx :: idx_lst, eqn_map);
     end for;
 
@@ -800,20 +891,27 @@ protected
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
     input JacobianType jacType                                "gives context";
   protected
-    list<ComponentRef> tmp_dependencies, fixed_dependencies = {};
+    list<ComponentRef> fixed_dependencies;
+    UnorderedSet<ComponentRef> set;
   algorithm
     try
       // replace non derivative dependencies with their previous dependencies (also remove self dependency)
       // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
-      if jacType == NBJacobian.JacobianType.SIMULATION then
+      if jacType == NBJacobian.JacobianType.ODE then
+        set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for dep in listReverse(dependencies) loop
+          // if the dependency is a state add itself, otherwise add the dependencies already saved
+          // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
           if BVariable.checkCref(dep, BVariable.isState) then
-            fixed_dependencies := dep :: fixed_dependencies;
+            UnorderedSet.add(dep, set);
           else
-            tmp_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in UnorderedMap.getSafe(dep, map, sourceInfo()));
-            fixed_dependencies := listAppend(tmp_dependencies, fixed_dependencies);
+            for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop
+              UnorderedSet.add(tmp, set);
+            end for;
+            UnorderedSet.remove(cref, set);
           end if;
         end for;
+        fixed_dependencies := UnorderedSet.toList(set);
       else
         // only remove self dependency
         fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in dependencies);

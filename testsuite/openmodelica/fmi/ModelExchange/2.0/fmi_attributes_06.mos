@@ -22,7 +22,7 @@ equation
 end fmi_attributes_06;
 "); getErrorString();
 
-translateModelFMU(fmi_attributes_06); getErrorString();
+buildModelFMU(fmi_attributes_06); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq fmi_attributes_06.fmu modelDescription.xml > fmi_attributes_06_tmp.xml"); getErrorString();
@@ -168,7 +168,6 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     name=\"_D_STATESET1.A[1]\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     initial=\"exact\">
 //     <Integer start=\"1\"/>
 //   </ScalarVariable>
@@ -177,7 +176,6 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     name=\"_D_STATESET1.A[2]\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     initial=\"exact\">
 //     <Integer start=\"0\"/>
 //   </ScalarVariable>
@@ -186,7 +184,6 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     name=\"_D_STATESET2.A[1]\"
 //     valueReference=\"2\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     initial=\"exact\">
 //     <Integer start=\"1\"/>
 //   </ScalarVariable>
@@ -195,7 +192,6 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     name=\"_D_STATESET2.A[2]\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     initial=\"exact\">
 //     <Integer start=\"0\"/>
 //   </ScalarVariable>

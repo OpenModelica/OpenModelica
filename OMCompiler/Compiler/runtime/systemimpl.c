@@ -328,38 +328,25 @@ extern char* SystemImpl__pwd(void)
 #endif
 }
 
-extern int SystemImpl__regularFileExists(const char* str)
+/**
+ * @brief Check if regular file exists.
+ *
+ * Use stat and check mode of file.
+ *
+ * @param filename  Multibyte string with file name.
+ * @return int      Return 1 if it exists, 0 otherwise.
+ */
+extern int SystemImpl__regularFileExists(const char* filename)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  WIN32_FIND_DATAW FileData;
-  HANDLE sh;
+  omc_stat_t buf;
+  int res = omc_stat(filename, &buf);
 
-  wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(str);
-  sh = FindFirstFileW(unicodeFilename, &FileData);
-  free(unicodeFilename);
-
-  if (sh == INVALID_HANDLE_VALUE) {
-    if (strlen(str) >= MAXPATHLEN)
-    {
-      const char *c_tokens[1]={str};
-      c_add_message(NULL,85, /* error opening file */
-        ErrorType_scripting,
-        ErrorLevel_error,
-        gettext("Error opening file: %s."),
-        c_tokens,
-        1);
-    }
+  if(res != 0) {
     return 0;
   }
-  FindClose(sh);
-  return ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
-#else
-  omc_stat_t buf;
-  /* adrpo: TODO: check if str leads to a path > PATH_MAX, maybe use realpath impl. from below */
-  if (omc_stat(str, &buf)) return 0;
   return (buf.st_mode & S_IFREG) != 0;
-#endif
 }
+
 
 extern int SystemImpl__regularFileWritable(const char* str)
 {
@@ -929,37 +916,22 @@ extern double SystemImpl__time(void)
   return (double)cl / (double)CLOCKS_PER_SEC;
 }
 
-extern int SystemImpl__directoryExists(const char *str)
+/**
+ * @brief Check if regular directory exists.
+ *
+ * Use stat and check mode of directory.
+ *
+ * @param dirname   Multibyte string with directory name.
+ * @return int      Return 1 if it exists, 0 otherwise.
+ */
+extern int SystemImpl__directoryExists(const char *dirname)
 {
-  /* if the string is NULL return 0 */
-  if (!str) return 0;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  WIN32_FIND_DATAW FileData;
-  HANDLE sh;
-  char* path = strdup(str);
-  int last = strlen(path)-1;
-  /* adrpo: RTFM! the path cannot end in a slash??!! https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx */
-  while (last > 0 && (path[last] == '\\' || path[last] == '/'))
-      last--;
-
-  path[last + 1] = '\0';
-
-  wchar_t* unicodePath = omc_multibyte_to_wchar_str(path);
-  sh = FindFirstFileW(unicodePath, &FileData);
-  free(unicodePath);
-  free(path);
-
-  if (sh == INVALID_HANDLE_VALUE)
-    return 0;
-
-  FindClose(sh);
-  return (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-#else
+  if (!dirname) return 0;
   omc_stat_t buf;
-  if (omc_stat(str, &buf))
+  if (omc_stat(dirname, &buf)) {
     return 0;
+  }
   return (buf.st_mode & S_IFDIR) != 0;
-#endif
 }
 
 extern int SystemImpl__createDirectory(const char *str)
@@ -973,7 +945,10 @@ extern int SystemImpl__createDirectory(const char *str)
 #endif
   if (rv == -1)
   {
-    return 0;
+    if (errno == EEXIST) // directory exists, return success!
+      return 1;
+    else
+      return 0;
   }
   else
   {
@@ -2995,12 +2970,18 @@ int SystemImpl__rename(const char *source, const char *dest)
    return (0 == omc_rename(source, dest));
 }
 
+/**
+ * @brief Convert unix time to string
+ *
+ * @param time    Calendar time value (integer)
+ * @return char*  Time string in format Www Mmm dd hh:mm:ss yyyy
+ */
 char* SystemImpl__ctime(double time)
 {
   char buf[64] = {0}; /* needs to be >=26 char */
   time_t t = (time_t) time;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  errno_t e = ctime_s(buf, 64, t);
+  errno_t e = ctime_s(buf, 64, &t);
   assert(e == 0 && "ctime_s returned an error");
   return omc_alloc_interface.malloc_strdup(buf);
 #else
@@ -3334,6 +3315,12 @@ int SystemImpl__fputs(const char *str, int stream)
   }
 
   return -1;
+}
+
+void SystemImpl__waitForInput()
+{
+  printf("Press enter to continue\n");
+  getchar();
 }
 
 #ifdef __cplusplus

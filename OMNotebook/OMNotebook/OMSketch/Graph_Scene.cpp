@@ -3679,11 +3679,7 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                   rect->setBrushStyle(objects[i]->getbrush().style());
           qDebug()<<"object rotation "<<objects[i]->rotation<<"\n";
           if(objects[i]->rotation!=0)
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
             rect->item->setRotation(rect->item->rotation() + objects[i]->rotation);
-#else
-            rect->item->rotate(objects[i]->rotation);
-#endif
                   addItem(rect->item);
                   rect->setEdgeRects();
                   addItem(rect->Strt_Rect);

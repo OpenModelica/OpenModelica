@@ -1,0 +1,35 @@
+// name:     CopyClass4
+// keywords:
+// status:   correct
+// cflags:   -d=newInst
+//
+// Checks that copyClass can handle builtin names.
+//
+
+loadString("
+  package P
+    model A
+      StateSelect s = StateSelect.always;
+      Real x[:] = ones(3);
+    end A;
+  end P;
+
+  package P2
+  end P2;
+");
+
+copyClass(P.A, "A", P2);
+getErrorString();
+list(P2);
+
+// Result:
+// true
+// true
+// ""
+// "package P2
+//   model A
+//     StateSelect s = StateSelect.always;
+//     Real x[:] = ones(3);
+//   end A;
+// end P2;"
+// endResult

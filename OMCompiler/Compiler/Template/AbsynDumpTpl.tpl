@@ -127,6 +127,14 @@ match cls
     '<%redecl_str%><%fin_str%><%io_str%><%repl_str%><%enc_str%><%partial_str%>'
 end dumpClassPrefixes;
 
+template dumpPurity(Absyn.FunctionPurity purity)
+::=
+match purity
+  case PURE(__) then "pure "
+  case IMPURE(__) then "impure "
+  case NO_PURITY(__) then ""
+end dumpPurity;
+
 template dumpRestriction(Absyn.Restriction restriction)
 ::=
 match restriction
@@ -141,9 +149,7 @@ match restriction
   case R_PACKAGE(__) then "package"
   case R_FUNCTION(__) then
     let prefix_str = match functionRestriction
-      case FR_NORMAL_FUNCTION(purity = IMPURE()) then "impure "
-      case FR_NORMAL_FUNCTION(purity = PURE()) then "pure "
-      case FR_NORMAL_FUNCTION(purity = NO_PURITY()) then ""
+      case FR_NORMAL_FUNCTION() then dumpPurity(purity)
       case FR_OPERATOR_FUNCTION() then "operator "
       case FR_PARALLEL_FUNCTION() then "parallel "
       case FR_KERNEL_FUNCTION() then "kernel "
@@ -845,6 +851,9 @@ match exp
     '<%dumpExp(exp)%>.<%dumpExp(index)%>'
   case EXPRESSIONCOMMENT(__) then
     ((commentsBefore |> cmt => cmt ; absIndent=0) + dumpExp(exp) + (commentsAfter |> cmt => cmt ; absIndent=0))
+  case SUBSCRIPTED_EXP(__) then
+    '(<%dumpExp(exp)%>)[<%dumpSubscripts(subscripts)%>]'
+  case BREAK(__) then 'break'
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 

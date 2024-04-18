@@ -917,7 +917,8 @@ public function prependSubscriptExp
 algorithm
   outExp := match(exp,subscr)
     local
-      Type t; ComponentRef cr,cr1,cr2;
+      Type t;
+      ComponentRef cr, cr1, cr2;
       list<DAE.Subscript> subs;
       DAE.Exp e;
 
@@ -4086,7 +4087,7 @@ algorithm
     then expPow(makeDiv(e4,e3), negate(e2));
 
     // x^0.5 => sqrt(x)
-    case (_, _) guard(isHalf(e2))
+    case (_, _) guard(isHalf(e2) and isPositiveOrZero(e1))
     then Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
 
     else equation
@@ -7718,43 +7719,39 @@ public function isPositiveOrZero
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-
-
   outBoolean := match (inExp)
     local
       Boolean b,b1,b2,b3;
       DAE.Exp e1,e2;
       Integer i;
       Real r;
-      /* abs(e) */
-    case DAE.CALL(path = Absyn.IDENT("abs")) then true;
-    // exp(x)
-    case DAE.CALL(path = Absyn.IDENT("exp")) then true;
-    // cosh(x)
-    case DAE.CALL(path = Absyn.IDENT("cosh")) then true;
-      /* literals */
+
+    /* literals */
     case DAE.ICONST(i) then i >= 0;
     case DAE.RCONST(r) then r >= 0.0;
-      /* e1 + e2 */
+
+    /* e1 + e2 */
     case DAE.BINARY(e1,DAE.ADD(),e2)
       then isPositiveOrZero(e1) and isPositiveOrZero(e2);
-      /* e1 - e2 */
+    /* e1 - e2 */
     case DAE.BINARY(e1,DAE.SUB(),e2)
       then isPositiveOrZero(e1) and isNegativeOrZero(e2);
-      /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
+
+    /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
     case DAE.BINARY(e1,DAE.MUL(),e2)
       equation
         b1 = (isPositiveOrZero(e1) and isPositiveOrZero(e2));
         b2 = (isNegativeOrZero(e1) and isNegativeOrZero(e2));
         b3 = expEqual(e1,e2);
       then b1 or b2 or b3;
-      /* e1 / e2, -e1 / -e2 */
+    /* e1 / e2, -e1 / -e2 */
     case DAE.BINARY(e1,DAE.DIV(),e2)
       equation
         b1 = (isPositiveOrZero(e1) and isPositiveOrZero(e2));
         b2 = (isNegativeOrZero(e1) and isNegativeOrZero(e2));
       then b1 or b2;
-      /* Integer power we can say something good about */
+
+    /* Integer power we can say something good about */
     case DAE.BINARY(e1,DAE.POW(),DAE.RCONST(r))
       equation
         i = realInt(r);
@@ -7764,10 +7761,24 @@ algorithm
         b = b2 or b3;
       then b1 and b;
     case DAE.BINARY(_,DAE.POW(),e2) then isEven(e2);
-    // -(x)
-    case DAE.UNARY(DAE.UMINUS(), e1) then isNegativeOrZero(e1);
-    else isZero(inExp);
 
+    /* -(x) */
+    case DAE.UNARY(DAE.UMINUS(), e1) then isNegativeOrZero(e1);
+
+    /* builtin calls */
+    case DAE.CALL(path = Absyn.IDENT("abs"))  then true;
+    case DAE.CALL(path = Absyn.IDENT("cosh")) then true;
+    case DAE.CALL(path = Absyn.IDENT("exp"))  then true;
+    case DAE.CALL(path = Absyn.IDENT("sign"),  expLst = {e1}) then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("sinh"),  expLst = {e1}) then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("tanh"),  expLst = {e1}) then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("ceil"),  expLst = {e1}) then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("floor"), expLst = {e1}) then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("integer"), expLst = {e1}) then isPositiveOrZero(e1);
+
+    // TODO div, mod, rem, ...
+
+    else isZero(inExp);
   end match;
 end isPositiveOrZero;
 
@@ -7787,7 +7798,6 @@ algorithm
     case DAE.BINARY(_,DAE.POW(),e2) guard(isOdd(e2)) then isNegativeOrZero(e2);
 
     else isZero(inExp);
-
   end match;
 end isNegativeOrZero;
 

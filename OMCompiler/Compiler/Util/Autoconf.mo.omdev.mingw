@@ -2,6 +2,7 @@ encapsulated package Autoconf
 
   constant Boolean is64Bit = @ISMINGW64@;
   constant Boolean isNewOMDev = @IS_NEW_OMDEV@;
+  constant Boolean isNewNewOMDev = @IS_NEW_NEW_OMDEV@;
 
   constant String bstatic = "-Wl,-Bstatic";
   constant String bdynamic = "-Wl,-Bdynamic";
@@ -18,7 +19,7 @@ encapsulated package Autoconf
   constant String dllExt = ".dll";
   constant String libFortran = if not isNewOMDev then "-lgfortranbegin " else " ";
   constant String libMsvcrt = if not isNewOMDev then "-lmsvcrt " else " ";
-  constant String ldflags_basic = " -lomcgc " + linkType + "-static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32" +
+  constant String ldflags_basic = " -lomcgc -lryu " + linkType + "-static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32" +
                                   " -lpthread -lm " +
                                   libFortran +
                                   "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
@@ -26,18 +27,22 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
+  constant String ldflags_runtime_sim = "-lSimulationRuntimeC -Wl,-Bdynamic -lomcgc -lryu -lopenblas" + linkType + " -lstdc++ -Wl,-Bdynamic ";
+  // Same for szip instead of sz.
+  constant String ldflags_zip = if isNewNewOMDev then "-lz -lsz " else "-lzip -lszip ";
   constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
-                                        libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic";
+                                        libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 "
+                                        + ldflags_zip +
+                                        "-Wl,-Bdynamic";
   constant String ldflags_runtime_fmu_static = " -lSimulationRuntimeFMI " + ldflags_runtime_fmu;
 
   constant String platform = if is64Bit then "WIN64" else "WIN32";
   constant String pathDelimiter = "/";
   constant String groupDelimiter = ";";
 
-  constant String corbaLibs = "-L$(OPENMODELICAHOME)/lib/omc -lomniORB420_rt -lomnithread40_rt";
+  constant String corbaLibs = "";
   constant list<String> systemLibs = {};
 
   constant String triple = "";

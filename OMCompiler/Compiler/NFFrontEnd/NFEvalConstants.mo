@@ -61,11 +61,24 @@ import Record = NFRecord;
 import Flatten = NFFlatten;
 
 public
+
+uniontype EvalSettings
+  record SETTINGS
+    Boolean scalarize;
+  end SETTINGS;
+end EvalSettings;
+
 function evaluate
   input output FlatModel flatModel;
   input InstContext.Type context;
+protected
+  EvalSettings settings;
 algorithm
-  flatModel.variables := list(evaluateVariable(v, context) for v in flatModel.variables);
+  settings := EvalSettings.SETTINGS(
+    Flags.isSet(Flags.NF_SCALARIZE)
+  );
+
+  flatModel.variables := list(evaluateVariable(v, context, settings) for v in flatModel.variables);
   flatModel.equations := evaluateEquations(flatModel.equations);
   flatModel.initialEquations := evaluateEquations(flatModel.initialEquations);
   flatModel.algorithms := evaluateAlgorithms(flatModel.algorithms);
@@ -77,18 +90,21 @@ end evaluate;
 function evaluateVariable
   input output Variable var;
   input InstContext.Type context;
+  input EvalSettings settings;
 protected
   Binding binding;
+  Boolean structural;
 algorithm
-  binding := evaluateBinding(var.binding, var.name,
-    Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER, context);
+  structural := Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER and
+                not Type.isExternalObject(var.ty);
+  binding := evaluateBinding(var.binding, var.name, structural, context, settings);
 
   if not referenceEq(binding, var.binding) then
     var.binding := binding;
   end if;
 
-  var.typeAttributes := list(evaluateTypeAttribute(a, var.name, context) for a in var.typeAttributes);
-  var.children := list(evaluateVariable(v, context) for v in var.children);
+  var.typeAttributes := list(evaluateTypeAttribute(a, var.name, context, settings) for a in var.typeAttributes);
+  var.children := list(evaluateVariable(v, context, settings) for v in var.children);
 end evaluateVariable;
 
 function evaluateBinding
@@ -96,24 +112,31 @@ function evaluateBinding
   input ComponentRef prefix;
   input Boolean structural;
   input InstContext.Type context;
+  input EvalSettings settings;
 protected
   Expression exp, eexp;
-  SourceInfo info;
 algorithm
   if Binding.isBound(binding) then
     exp := Binding.getTypedExp(binding);
 
     if structural then
-      if InstContext.inRelaxed(context) then
-        eexp := Ceval.tryEvalExp(exp);
+      if not settings.scalarize then
+        eexp := evaluateExp(exp, Binding.getInfo(binding));
       else
-        eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
+        eexp := exp;
       end if;
 
-      eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(prefix));
+      if not (Expression.isLiteral(eexp) or Expression.isLiteralFill(eexp)) then
+        if InstContext.inRelaxed(context) then
+          eexp := Ceval.tryEvalExp(eexp);
+        else
+          eexp := Ceval.evalExp(eexp, Ceval.EvalTarget.ATTRIBUTE(binding));
+        end if;
+      end if;
+
+      eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(InstNode.EMPTY_NODE(), prefix));
     else
-      info := Binding.getInfo(binding);
-      eexp := evaluateExp(exp, info);
+      eexp := evaluateExp(exp, Binding.getInfo(binding));
     end if;
 
     if not referenceEq(exp, eexp) then
@@ -126,6 +149,7 @@ function evaluateTypeAttribute
   input output tuple<String, Binding> attribute;
   input ComponentRef prefix;
   input InstContext.Type context;
+  input EvalSettings settings;
 protected
   String name;
   Binding binding, sbinding;
@@ -133,7 +157,7 @@ protected
 algorithm
   (name, binding) := attribute;
   structural := name == "fixed" or name == "stateSelect";
-  sbinding := evaluateBinding(binding, prefix, structural, context);
+  sbinding := evaluateBinding(binding, prefix, structural, context, settings);
 
   if not referenceEq(binding, sbinding) then
     attribute := (name, sbinding);
@@ -180,10 +204,11 @@ algorithm
           Expression.mapFoldShallow(exp,
             function evaluateExpTraverser(info = info), false);
 
-        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
+        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER and
+           not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(cref));
+          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref));
           outChanged := true;
         elseif outChanged then
           ty := ComponentRef.getSubscriptedType(cref);

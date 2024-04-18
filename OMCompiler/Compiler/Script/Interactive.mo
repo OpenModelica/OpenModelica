@@ -144,37 +144,26 @@ public function evaluate
                      will be empty. The error messages can be retrieved by calling print_messages_str()
                      in Error.mo."
   input GlobalScript.Statements inStatements;
-  input Boolean inBoolean;
+  input Boolean verbose;
   output String outString;
+protected
+  Boolean semicolon;
+  String res;
+  list<String> resl = {};
 algorithm
-  outString := matchcontinue (inStatements,inBoolean)
-    local
-      String res,res_1,res2,res_2;
-      Boolean echo,semicolon,verbose;
-      GlobalScript.Statement x;
-      list<GlobalScript.Statement> xs;
+  for stmt in inStatements.interactiveStmtLst loop
+    semicolon := inStatements.semicolon;
+    showStatement(stmt, semicolon, true);
+    res := evaluate2(stmt);
 
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),verbose)
-      equation
-        showStatement(x, semicolon, true);
-        res = evaluate2(GlobalScript.ISTMTS({x},verbose));
-        echo = getEcho();
-        res_1 = selectResultstr(res, semicolon, verbose, echo);
-        showStatement(x, semicolon, false);
-      then res_1;
+    if getEcho() and (verbose or not semicolon) then
+      resl := res :: resl;
+    end if;
 
-    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),verbose)
-      equation
-        showStatement(x, semicolon, true);
-        res = evaluate2(GlobalScript.ISTMTS({x},semicolon));
-        echo = getEcho();
-        res_1 = selectResultstr(res, semicolon, verbose, echo);
-        showStatement(x, semicolon, false);
+    showStatement(stmt, semicolon, false);
+  end for;
 
-        res2 = evaluate(GlobalScript.ISTMTS(xs,semicolon), verbose);
-        res_2 = stringAppendList({res_1,res2});
-      then res_2;
-  end matchcontinue;
+  outString := stringAppendList(Dangerous.listReverseInPlace(resl));
 end evaluate;
 
 public function evaluateToStdOut
@@ -185,20 +174,21 @@ public function evaluateToStdOut
   input GlobalScript.Statements statements;
   input Boolean verbose;
 protected
-  GlobalScript.Statement x;
-  list<GlobalScript.Statement> xs;
   Boolean semicolon;
   String res;
 algorithm
-  xs := statements.interactiveStmtLst;
   semicolon := statements.semicolon;
-  while not listEmpty(xs) loop
-    x::xs := xs;
-    showStatement(x, semicolon, true);
-    res := evaluate2(GlobalScript.ISTMTS({x},if listEmpty(xs) then verbose else semicolon));
-    print(selectResultstr(res, semicolon, verbose, getEcho()));
-    showStatement(x, semicolon, false);
-  end while;
+
+  for stmt in statements.interactiveStmtLst loop
+    showStatement(stmt, semicolon, true);
+    res := evaluate2(stmt);
+
+    if getEcho() and (verbose or not semicolon) then
+      print(res);
+    end if;
+
+    showStatement(stmt, semicolon, false);
+  end for;
 end evaluateToStdOut;
 
 public function evaluateFork
@@ -278,26 +268,6 @@ algorithm
   end matchcontinue;
 end showStatement;
 
-protected function selectResultstr
-"Returns result string depending on three boolean variables
-  - semicolon
-  - verbose
-  - echo"
-  input String inString;
-  input Boolean inSemicolon "semicolon";
-  input Boolean inVerbose "verbose";
-  input Boolean inEcho "echo";
-  output String outString;
-algorithm
-  outString := match (inString,inSemicolon,inVerbose,inEcho)
-    local String str;
-    case (_,_,_,false) then "";  // echo off always empty string
-    case (str,_,true,_) then str;  // .. verbose on always return str
-    case (_,true,_,_) then "";   // ... semicolon, no resultstr
-    case (str,false,_,_) then str; // no semicolon
-  end match;
-end selectResultstr;
-
 protected function getEcho
 "Return echo variable, which determines
   if result should be printed or not."
@@ -308,15 +278,13 @@ end getEcho;
 
 public function evaluate2
 "Helper function to evaluate."
-  input GlobalScript.Statements inStatements;
+  input GlobalScript.Statement inStatement;
   output String outString;
 protected
-  GlobalScript.Statement stmt;
   String str, str_1;
 algorithm
-  GlobalScript.ISTMTS(interactiveStmtLst = {stmt}) := inStatements;
   try /* Stack overflow */
-  outString := matchcontinue stmt
+  outString := matchcontinue inStatement
     local
       Absyn.AlgorithmItem algitem;
       Boolean outres;
@@ -335,7 +303,7 @@ algorithm
         keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
         FlagsUtil.setConfigBool(Flags.KEEP_ARRAYS, false);
         InstHashTable.init();
-        str = evaluateGraphicalApi(stmt, partialInst, gen, evalfunc, keepArrays);
+        str = evaluateGraphicalApi(inStatement, partialInst, gen, evalfunc, keepArrays);
         str_1 = stringAppend(str, "\n");
       then str_1;
 
@@ -343,7 +311,7 @@ algorithm
     case GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))
       equation
         InstHashTable.init();
-        str = evaluateAlgStmt(algitem);
+        str = evaluateAlgItem(algitem);
         str_1 = stringAppend(str, "\n");
       then str_1;
 
@@ -366,176 +334,165 @@ algorithm
        */
       Error.clearCurrentComponent();
     end if;
-    Error.addMessage(Error.STACK_OVERFLOW_DETAILED, {GlobalScriptDump.printIstmtStr(stmt), str});
+    Error.addMessage(Error.STACK_OVERFLOW_DETAILED, {GlobalScriptDump.printIstmtStr(inStatement), str});
     Error.clearCurrentComponent();
     outString := "\n";
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end evaluate2;
 
-protected function evaluateAlgStmt
+protected function evaluateAlgItem
 "This function takes an AlgorithmItem, i.e. a statement located in an
   algorithm section, and a symboltable as input arguments. The statements
   are recursivly evalutated and a new interactive symbol table is returned."
-  input Absyn.AlgorithmItem inAlgorithmItem;
-  output String outString;
+  input Absyn.AlgorithmItem alg;
+  output String result;
 algorithm
-  outString := matchcontinue inAlgorithmItem
-    local
-      FCore.Graph env;
-      DAE.Exp econd,msg_1,sexp,srexp;
-      DAE.Properties prop,rprop;
-      Absyn.Exp cond,msg,exp,rexp;
-      Absyn.Program p;
-      String str,ident;
-      DAE.Type t;
-      Values.Value value;
-      list<DAE.Type> types;
-      list<String> idents;
-      list<Values.Value> values,valList;
-      list<Absyn.Exp> crefexps;
-      tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> cond1;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cond2,cond3,elseifexpitemlist;
-      list<Absyn.AlgorithmItem> algitemlist,elseitemlist;
-      list<GlobalScript.Variable> vars;
-      String iter,estr;
-      list<Absyn.AlgorithmItem> algItemList;
-      Values.Value startv, stepv, stopv;
-      Absyn.Exp starte, stepe, stope;
-      Absyn.ComponentRef cr;
-      FCore.Cache cache;
-      SourceInfo info;
-      Absyn.FunctionArgs fargs;
-      list<Absyn.Subscript> asubs;
-      list<DAE.Subscript> dsubs;
-      list<DAE.ComponentRef> crefs;
+  result := match alg
+    case Absyn.AlgorithmItem.ALGORITHMITEM() then evaluateAlgStmt(alg.algorithm_, alg.info);
+    else "";
+  end match;
+end evaluateAlgItem;
 
-    case Absyn.ALGORITHMITEM(info=info,
-          algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {cond,_})))
-      equation
-        env = SymbolTable.buildEnv();
-        (cache,econd,_) = StaticScript.elabExp(FCore.emptyCache(), env, cond, true, true, DAE.NOPRE(), info);
-        (_,Values.BOOL(true)) = CevalScript.ceval(cache,env, econd, true, Absyn.MSG(info), 0);
-      then "";
+protected function evaluateAlgStmt
+  input Absyn.Algorithm alg;
+  input SourceInfo info;
+  output String result;
+protected
+  FCore.Graph env;
+  FCore.Cache cache;
+  Absyn.Exp cond, msg, exp;
+  DAE.Exp dcond, dmsg, dexp;
+  String str, ident;
+  Absyn.ComponentRef cr;
+  Values.Value value;
+  list<Values.Value> values;
+  DAE.Type ty;
+  list<Absyn.Subscript> subs;
+  list<DAE.Subscript> dsubs;
+  list<Absyn.Exp> expl;
+  DAE.Properties prop;
+  list<DAE.Type> types;
+  list<DAE.ComponentRef> crefs;
+  list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
+  Values.Value startv, stepv, stopv;
+  Absyn.Exp starte, stepe, stope;
+algorithm
+  result := matchcontinue alg
+    case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+                             functionArgs = Absyn.FUNCTIONARGS(args = {cond,_}))
+      algorithm
+        env := SymbolTable.buildEnv();
+        (cache, dcond, _) := StaticScript.elabExp(FCore.emptyCache(), env, cond, true, true, DAE.NOPRE(), info);
+        (_,Values.BOOL(true)) := CevalScript.ceval(cache,env, dcond, true, Absyn.MSG(info), 0);
+      then
+        "";
 
-    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {_,msg})))
-      equation
-        env = SymbolTable.buildEnv();
-        (cache,msg_1,_) = StaticScript.elabExp(FCore.emptyCache(), env, msg, true, true, DAE.NOPRE(), info);
-        (_,Values.STRING(str)) = CevalScript.ceval(cache,env, msg_1, true, Absyn.MSG(info), 0);
-      then str;
+    case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+                             functionArgs = Absyn.FUNCTIONARGS(args = {_, msg}))
+      algorithm
+        env := SymbolTable.buildEnv();
+        (cache, dmsg,_) := StaticScript.elabExp(FCore.emptyCache(), env, msg, true, true, DAE.NOPRE(), info);
+        (_,Values.STRING(str)) := CevalScript.ceval(cache,env, dmsg, true, Absyn.MSG(info), 0);
+      then
+        str;
 
-    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs))
-      equation
-        env = SymbolTable.buildEnv();
-        exp = Absyn.CALL(cr,fargs,{});
-        (cache,sexp,_) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, DAE.NOPRE(), info);
-        (_,_) = CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(info), 0);
-      then "";
+    case Absyn.ALG_NORETCALL()
+      algorithm
+        env := SymbolTable.buildEnv();
+        exp := Absyn.CALL(alg.functionCall, alg.functionArgs, {});
+        (cache, dexp) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, DAE.NOPRE(), info);
+        (_, _) := CevalScript.ceval(cache, env, dexp, true, Absyn.MSG(info), 0);
+      then
+        "";
 
     // Special case to lookup fields of records.
     // SimulationResult, etc are not in the environment,
     // but it's nice to be able to script them anyway
-    case Absyn.ALGORITHMITEM(algorithm_ =
-          Absyn.ALG_ASSIGN(assignComponent =
-          Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr)))
-      equation
-        value = getVariableValueLst(AbsynUtil.pathToStringList(AbsynUtil.crefToPath(cr)), SymbolTable.getVars());
-        str = ValuesUtil.valString(value);
-        t = Types.typeOfValue(value);
-        SymbolTable.addVar(DAE.CREF_IDENT(ident, t, {}), value, FGraph.empty());
-      then str;
+    case Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.CREF_IDENT(name = ident, subscripts = {})),
+                          value = Absyn.CREF(cr))
+      algorithm
+        value := getVariableValueLst(AbsynUtil.pathToStringList(AbsynUtil.crefToPath(cr)), SymbolTable.getVars());
+        str := ValuesUtil.valString(value);
+        ty := Types.typeOfValue(value);
+        SymbolTable.addVar(DAE.CREF_IDENT(ident, ty, {}), value, FGraph.empty());
+      then
+        str;
 
-    case
-      Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_ASSIGN(assignComponent =
-        Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = asubs)),value = exp))
-      equation
-        env = SymbolTable.buildEnv();
-        (cache,sexp,DAE.PROP(_,_)) = StaticScript.elabExp(FCore.emptyCache(),env, exp, true, true, DAE.NOPRE(),info);
-        (_,value) = CevalScript.ceval(cache,env, sexp, true,Absyn.MSG(info),0);
-        (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, DAE.NOPRE(), info);
+    case Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.CREF_IDENT(name = ident, subscripts = subs)))
+      algorithm
+        env := SymbolTable.buildEnv();
+        (cache, dexp, DAE.PROP(_,_)) := StaticScript.elabExp(FCore.emptyCache(), env, alg.value, true, true, DAE.NOPRE(), info);
+        (_, value) := CevalScript.ceval(cache, env, dexp, true, Absyn.MSG(info), 0);
+        (_, dsubs, _) := Static.elabSubscripts(cache, env, subs, true, DAE.NOPRE(), info);
 
-        t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
-        str = ValuesUtil.valString(value);
-        SymbolTable.addVar(DAE.CREF_IDENT(ident, t, dsubs), value, env);
-      then str;
+        ty := Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
+        str := ValuesUtil.valString(value);
+        SymbolTable.addVar(DAE.CREF_IDENT(ident, ty, dsubs), value, env);
+      then
+        str;
 
     // Since expressions cannot be tuples an empty string is returned
-    case
-      Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_ASSIGN(assignComponent =
-        Absyn.TUPLE(expressions = crefexps),value = rexp))
-      equation
-        env = SymbolTable.buildEnv();
-        (cache,srexp,rprop) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, true, DAE.NOPRE(),info);
-        DAE.T_TUPLE(types = types) = Types.getPropType(rprop);
-        crefs = makeTupleCrefs(crefexps, types, env, cache, info);
-        (_,Values.TUPLE(values)) = CevalScript.ceval(cache, env, srexp, true, Absyn.MSG(info),0);
+    case Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl))
+      algorithm
+        env := SymbolTable.buildEnv();
+        (cache, dexp, prop) := StaticScript.elabExp(FCore.emptyCache(), env, alg.value, true, true, DAE.NOPRE(), info);
+        DAE.T_TUPLE(types = types) := Types.getPropType(prop);
+        crefs := makeTupleCrefs(expl, types, env, cache, info);
+        (_, Values.TUPLE(values)) := CevalScript.ceval(cache, env, dexp, true, Absyn.MSG(info), 0);
         SymbolTable.addVars(crefs, values, env);
       then "";
 
     // if statement
-    case
-      Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_IF(
-        ifExp = exp,
-        trueBranch = algitemlist,
-        elseIfAlgorithmBranch = elseifexpitemlist,
-        elseBranch = elseitemlist))
-      equation
-        cond1 = (exp,algitemlist);
-        cond2 = (cond1 :: elseifexpitemlist);
-        cond3 = listAppend(cond2, {(Absyn.BOOL(true), elseitemlist)});
-        evaluateIfStatementLst(cond3,info);
-      then "";
+    case Absyn.ALG_IF()
+      algorithm
+        branches := (alg.ifExp, alg.trueBranch) :: alg.elseIfAlgorithmBranch;
+        branches := List.appendElt((Absyn.BOOL(true), alg.elseBranch), branches);
+        evaluateIfStatementLst(branches, info);
+      then
+        "";
 
     // while-statement
-    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_WHILE(boolExpr = exp,whileBody = algitemlist))
-      equation
-        value = evaluateExpr(exp, info);
-        evaluateWhileStmt(value, exp, algitemlist, info);
-      then "";
+    case Absyn.ALG_WHILE()
+      algorithm
+        value := evaluateExpr(alg.boolExpr, info);
+        evaluateWhileStmt(value, alg.boolExpr, alg.whileBody, info);
+      then
+        "";
 
     // for-statement, optimized case, e.g.: for i in 1:1000 loop
-    case Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(iter, NONE(), SOME(Absyn.RANGE(start=starte,step=NONE(), stop=stope)))},
-        forBody = algItemList))
-      equation
-        startv = evaluateExpr(starte, info);
-        stopv = evaluateExpr(stope, info);
-        evaluateForStmtRangeOpt(iter, startv, Values.INTEGER(1), stopv, algItemList);
-     then "";
+    case Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(ident, NONE(), SOME(Absyn.RANGE(start=starte, step=NONE(), stop=stope)))})
+      algorithm
+        startv := evaluateExpr(starte, info);
+        stopv := evaluateExpr(stope, info);
+        evaluateForStmtRangeOpt(ident, startv, Values.INTEGER(1), stopv, alg.forBody);
+     then
+       "";
 
     // for-statement, optimized case, e.g.: for i in 7.3:0.4:1000.3 loop
-    case Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(iter, NONE(), SOME(Absyn.RANGE(start=starte, step=SOME(stepe), stop=stope)))},
-        forBody = algItemList))
-      equation
-        startv = evaluateExpr(starte, info);
-        stepv = evaluateExpr(stepe, info);
-        stopv = evaluateExpr(stope, info);
-        evaluateForStmtRangeOpt(iter, startv, stepv, stopv, algItemList);
-      then "";
+    case Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(ident, NONE(), SOME(Absyn.RANGE(start=starte, step=SOME(stepe), stop=stope)))})
+      algorithm
+        startv := evaluateExpr(starte, info);
+        stepv := evaluateExpr(stepe, info);
+        stopv := evaluateExpr(stope, info);
+        evaluateForStmtRangeOpt(ident, startv, stepv, stopv, alg.forBody);
+      then
+        "";
 
     // for-statement, general case
-    case Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(iter, NONE(), SOME(exp))},forBody = algItemList))
-      equation
-        Values.ARRAY(valueLst = valList) = evaluateExpr(exp, info);
-        evaluateForStmt(iter, valList, algItemList);
-      then "";
+    case Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(ident, NONE(), SOME(exp))})
+      algorithm
+        Values.ARRAY(valueLst = values) := evaluateExpr(exp, info);
+        evaluateForStmt(ident, values, alg.forBody);
+      then
+        "";
 
     // for-statement - not an array type
-    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(range = SOME(exp))}))
-      equation
-        estr = stringRepresOfExpr(exp);
-        Error.addSourceMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr}, info);
-      then fail();
-
-    case Absyn.ALGORITHMITEMCOMMENT() then "";
-
+    case Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(range = SOME(exp))})
+      algorithm
+        str := stringRepresOfExpr(exp);
+        Error.addSourceMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {str}, info);
+      then
+        fail();
   end matchcontinue;
 end evaluateAlgStmt;
 
@@ -692,7 +649,7 @@ protected function evaluateAlgStmtLst
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
 algorithm
   for algitem in inAbsynAlgorithmItemLst loop
-    evaluateAlgStmt(algitem);
+    evaluateAlgItem(algitem);
   end for;
 end evaluateAlgStmtLst;
 
@@ -10181,7 +10138,7 @@ algorithm
 
             else
               algorithm
-                if not Util.stringStartsWith(name, "__") then
+                if not StringUtil.startsWith(name, "__") then
                   Error.addSourceMessage(Error.CONVERSION_UNKNOWN_ANNOTATION, {name}, info);
                 end if;
               then
@@ -10199,7 +10156,7 @@ algorithm
 
     case Absyn.MODIFICATION(path = Absyn.IDENT(name = name), info = info)
       algorithm
-        if not Util.stringStartsWith(name, "__") then
+        if not StringUtil.startsWith(name, "__") then
           Error.addSourceMessage(Error.CONVERSION_UNKNOWN_ANNOTATION, {name}, info);
         end if;
       then
@@ -14848,7 +14805,7 @@ protected
 algorithm
   try
     Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := InteractiveUtil.getPathedClassInProgram(path, p);
-    encryptedClass := Util.endsWith(fileName, ".moc");
+    encryptedClass := StringUtil.endsWith(fileName, ".moc");
     if encryptedClass then
       access := getAccessAnnotation(path, p);
       if access == "Access.hide" then
@@ -14894,7 +14851,7 @@ algorithm
   end match;
   for c in classes loop
     Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := c;
-    containsEncryptedClass := containsEncryptedClass or Util.endsWith(fileName, ".moc");
+    containsEncryptedClass := containsEncryptedClass or StringUtil.endsWith(fileName, ".moc");
     if containsEncryptedClass then break; end if;
   end for;
 end astContainsEncryptedClass;

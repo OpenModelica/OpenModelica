@@ -62,7 +62,6 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
 static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], const int np, const int nsi);
 
 /* pick up model data
- * author: Vitalij Ruge
  */
 int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
@@ -132,7 +131,6 @@ int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
 }
 
 /* pick up information(nStates...) from model data to optimizer struct
- * author: Vitalij Ruge
  */
 static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
   char * cflags = NULL;
@@ -179,7 +177,6 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
 
 
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct
- * author: Vitalij Ruge
  */
 static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime){
   const int nsi = dim->nsi;
@@ -343,7 +340,6 @@ static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], c
 }
 
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct
- * author: Vitalij Ruge
  */
 static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* data){
   char ** inputName;

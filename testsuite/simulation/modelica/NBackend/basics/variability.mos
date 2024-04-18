@@ -1,0 +1,33 @@
+// name: variability
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model variability
+    Integer m;
+  equation
+    m = time^2;
+  end variability;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(variability); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'variability', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: variability"
+// end SimulationResult;
+// "Error: NBCausalize.checkSystemVariabilities failed. The following strong component has conflicting types: Integer != Real
+// BLOCK: Single Strong Component (status = Solve.UNPROCESSED)
+// -------------------------------------------------------------
+// ### Variable:
+// 	Integer m
+// ### Equation:
+// 	[SCAL] (1) m = time ^ 2.0 ($RES_SIM_0)
+// "
+// endResult

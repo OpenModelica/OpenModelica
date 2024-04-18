@@ -181,10 +181,11 @@ QPainterPath RectangleAnnotation::shape() const
 {
   QPainterPath path;
   path.addRoundedRect(getBoundingRect(), mRadius, mRadius);
-  if (mFillPattern == StringHandler::FillNone)
+  if (mFillPattern == StringHandler::FillNone) {
     return addPathStroker(path);
-  else
+  } else {
     return path;
+  }
 }
 
 void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -202,11 +203,16 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
         painter->setOpacity(0.2);
       }
     }
-    drawRectangleAnnotation(painter);
+    drawAnnotation(painter);
   }
 }
 
-void RectangleAnnotation::drawRectangleAnnotation(QPainter *painter)
+/*!
+ * \brief RectangleAnnotation::drawAnnotation
+ * Draws the rectangle.
+ * \param painter
+ */
+void RectangleAnnotation::drawAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);

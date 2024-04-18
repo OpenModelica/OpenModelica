@@ -31,16 +31,35 @@
 encapsulated package NBAlias
 "file:        NBAlias.mo
  package:     NBAlias
- description: This file contains the functions for the alias module.
+ description: This file contains the functions for the alias elimination module.
+              It eliminates alias variables (ToDo: and resolves simple index reduction problems).
 "
 
-// ToDo: simple state rules
-// 1. state = state
-// 2. state = alg
-// 3. state = time
-// 4. state = const
+// ToDo:
+// 1. simple state rules (with derivative replacement)
+//    - state = state
+//    - state = alg
+//    - state = time
+//    - state = const
+// 2. write rateVar() and decide if we want an auxiliary for each set
+//    - rateVar() --> mergeAttributes()
+// 3. post causalize alias elimination
+//    - for the ODE
+//    - for jacobians/hessians (once we got hessians)
+//    - for strong components in general
+// 4. simplify only replaced equations and remove simplify2 module
+//    - probably not that trivial
+//    - Equation mapExp function that returns true if something was replaced
+//    - EquationArray map function that accumulates pointers if function returns true
+//    - simplify all equations in pointer list
 
-// trivial solution a = b; a = -b;
+// 5. trivial solution a = b; a = -b; (or other cyclic sets)
+//    - take an equation from the set, get both crefs in it (a,b)
+//    - solve for a -> set a as known
+//    - solve the rest of the set with causalize
+//    - replacements a -> what it solves for in eq1 and apply on all eq in set
+//    - find equation that solves b, and solve for b. add to replacements
+//    - apply replacements on all eq
 
 public
   import Module = NBModule;
@@ -54,6 +73,7 @@ protected
   import Expression = NFExpression;
   import Operator = NFOperator;
   import Variable = NFVariable;
+  import NFPrefixes.Variability;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -199,16 +219,17 @@ protected
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
-          eqData.equations := EquationPointers.compress(eqData.equations);
+          eqData.equations  := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
+          eqData.discretes  := EquationPointers.compress(eqData.discretes);
 
           // remove alias vars from all relevant arrays after splitting off non trivial alias vars
-          varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
-          varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
-          varData.algebraics := VariablePointers.removeList(alias_vars, varData.algebraics);
-          varData.states := VariablePointers.removeList(alias_vars, varData.states);
-          varData.discretes := VariablePointers.removeList(alias_vars, varData.discretes);
-          varData.initials := VariablePointers.removeList(alias_vars, varData.initials);
+          varData.variables   := VariablePointers.removeList(alias_vars, varData.variables);
+          varData.unknowns    := VariablePointers.removeList(alias_vars, varData.unknowns);
+          varData.algebraics  := VariablePointers.removeList(alias_vars, varData.algebraics);
+          varData.states      := VariablePointers.removeList(alias_vars, varData.states);
+          varData.discretes   := VariablePointers.removeList(alias_vars, varData.discretes);
+          varData.initials    := VariablePointers.removeList(alias_vars, varData.initials);
 
           // categorize alias vars and sort them to the correct arrays
           (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
@@ -299,7 +320,7 @@ protected
   algorithm
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
-      case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs, true) and isSimpleExp(eq.rhs, true)) algorithm
+      case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
@@ -323,7 +344,7 @@ protected
           UnorderedMap.add(cr1, Pointer.create(set), map);
         else
           // it already belongs to a set, try to update it and throw error if there already is a const binding
-          set_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
+          set_ptr := UnorderedMap.getOrFail(cr1, map);
           set := Pointer.access(set_ptr);
           if isSome(set.const_opt) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to add Equation:\n"
@@ -341,8 +362,8 @@ protected
       case CREF_TPL(cr_lst = {cr1, cr2}) algorithm
         if (UnorderedMap.contains(cr1, map) and UnorderedMap.contains(cr2, map)) then
           // Merge sets
-          set1_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
-          set2_ptr := UnorderedMap.getSafe(cr2, map, sourceInfo());
+          set1_ptr := UnorderedMap.getOrFail(cr1, map);
+          set2_ptr := UnorderedMap.getOrFail(cr2, map);
           set1 := Pointer.access(set1_ptr);
           set2 := Pointer.access(set2_ptr);
           set := EMPTY_ALIAS_SET;
@@ -388,7 +409,7 @@ protected
 
         elseif UnorderedMap.contains(cr1, map) then
           // Update set
-          set_ptr := UnorderedMap.getSafe(cr1, map, sourceInfo());
+          set_ptr := UnorderedMap.getOrFail(cr1, map);
           set := Pointer.access(set_ptr);
           // add cr2 to variables and add new equation pointer
           set.simple_variables := cr2 :: set.simple_variables;
@@ -398,7 +419,7 @@ protected
           UnorderedMap.add(cr2, set_ptr, map);
         elseif UnorderedMap.contains(cr2, map) then
           // Update set
-          set_ptr := UnorderedMap.getSafe(cr2, map, sourceInfo());
+          set_ptr := UnorderedMap.getOrFail(cr2, map);
           set := Pointer.access(set_ptr);
           // add cr1 to variables and add new equation pointer
           set.simple_variables := cr1 :: set.simple_variables;
@@ -425,7 +446,7 @@ protected
   end findSimpleEquation;
 
   function findCrefs "BB, kabdelhak
-  looks for variable crefs in Expressions, if more then 2 are found stop searching
+  looks for variable crefs in Expressions, if more than 2 are found stop searching
   also stop if complex structures appear, e.g. IFEXP
   "
      input Expression exp;
@@ -440,9 +461,9 @@ protected
           guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
         then tpl;
 
-        // fail for multidimensional crefs for now
+        // fail for multidimensional crefs and record elements for now
         case Expression.CREF()
-          guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1)
+          guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1 or Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref))))
         then FAILED_CREF_TPL;
 
         // variable found
@@ -485,67 +506,68 @@ protected
   function isSimpleExp
     "checks if an expression can be considered simple."
     input Expression exp;
-    input output Boolean simple;
+    input output Boolean simple = true;
     output Integer num_cref = 0;
   algorithm
-    if not simple then num_cref := 10; return; end if;
+    if not simple then return; end if;
     (simple, num_cref) := match exp
       local
         Integer num_cref_tmp;
+        Operator.Op op;
 
       case Expression.INTEGER()   then (true, 0);
       case Expression.REAL()      then (true, 0);
       case Expression.BOOLEAN()   then (true, 0);
       case Expression.STRING()    then (true, 0);
       case Expression.CREF()      then (true, 1);
+      // TODO what about parameters in the denominator, they could be zero, (alias strictness?)
+      //case Expression.CREF()      then (true, if ComponentRef.variability(exp.cref) > Variability.NON_STRUCTURAL_PARAMETER then 1 else 0);
 
-      case Expression.CAST() algorithm
-        (simple, num_cref) := isSimpleExp(exp.exp, simple);
-      then (simple, num_cref);
+      case Expression.CAST()      then isSimpleExp(exp.exp);
 
       case Expression.UNARY() algorithm
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp, simple);
-        num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        (simple, num_cref) := isSimpleExp(exp.exp);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
       case Expression.LUNARY() algorithm
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp, simple);
-        num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        (simple, num_cref) := isSimpleExp(exp.exp);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
-      case Expression.BINARY() algorithm
+      case Expression.BINARY(operator = Operator.OPERATOR(op = op)) algorithm
+        (simple, num_cref) := isSimpleExp(exp.exp2);
+        // 1/x is not considered simple
+        if op == NFOperator.Op.DIV and num_cref <> 0 then simple := false; return; end if;
         (simple, num_cref_tmp) := isSimpleExp(exp.exp1, simple);
         num_cref := num_cref + num_cref_tmp;
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp2, simple);
-        num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
       case Expression.LBINARY() algorithm
-        (simple, num_cref_tmp) := isSimpleExp(exp.exp1, simple);
-        num_cref := num_cref + num_cref_tmp;
+        (simple, num_cref) := isSimpleExp(exp.exp1);
         (simple, num_cref_tmp) := isSimpleExp(exp.exp2, simple);
         num_cref := num_cref + num_cref_tmp;
-        simple := checkOp(exp.operator, num_cref);
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
-      case Expression.MULTARY() algorithm
-        for arg in exp.arguments loop
-          if not simple then num_cref := 10; return; end if;
-          (simple, num_cref_tmp) := isSimpleExp(arg, simple);
-          num_cref := num_cref + num_cref_tmp;
-        end for;
+      case Expression.MULTARY(operator = Operator.OPERATOR(op = op)) algorithm
         for arg in exp.inv_arguments loop
-          if not simple then num_cref := 10; return; end if;
           (simple, num_cref_tmp) := isSimpleExp(arg, simple);
+          if not simple then return; end if;
           num_cref := num_cref + num_cref_tmp;
         end for;
-        simple := checkOp(exp.operator, num_cref);
+        // 1/x is not considered simple
+        if op == NFOperator.Op.MUL and num_cref <> 0 then simple := false; return; end if;
+        for arg in exp.arguments loop
+          (simple, num_cref_tmp) := isSimpleExp(arg, simple);
+          if not simple then return; end if;
+          num_cref := num_cref + num_cref_tmp;
+        end for;
+        simple := if simple then checkOp(exp.operator, num_cref) else false;
       then (simple, num_cref);
 
-      else (false, 10);
+      else (false, num_cref);
     end match;
   end isSimpleExp;
 
@@ -615,7 +637,7 @@ protected
         vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
-        comps := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;
@@ -626,7 +648,7 @@ protected
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system
-        comps := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;
@@ -678,6 +700,7 @@ protected
   algorithm
     // ToDo: put acutal rating algorithm here
     rating := if BVariable.isFixed(var_ptr) then 1 else 0;
+    rating := if BVariable.isFunctionAlias(var_ptr) then rating - 5 else rating;
   end rateVar;
 
   annotation(__OpenModelica_Interface="backend");

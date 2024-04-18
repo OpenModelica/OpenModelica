@@ -150,6 +150,7 @@ public
   algorithm
     isBound := match binding
       case UNBOUND() then false;
+      case INVALID_BINDING() then false;
       else true;
     end match;
   end isBound;
@@ -161,6 +162,7 @@ public
     isBound := match binding
       case UNBOUND() then false;
       case CEVAL_BINDING() then false;
+      case INVALID_BINDING() then false;
       else true;
     end match;
   end isExplicitlyBound;
@@ -174,6 +176,16 @@ public
       else false;
     end match;
   end isUnbound;
+
+  function isInvalid
+    input Binding binding;
+    output Boolean isInvalid;
+  algorithm
+    isInvalid := match binding
+      case INVALID_BINDING() then true;
+      else false;
+    end match;
+  end isInvalid;
 
   function untypedExp
     input Binding binding;

@@ -13,10 +13,11 @@ LDFLAGS += ../../3rdParty/FMIL/build/Config.cmake/Minizip/libminizip.a
 
 SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/
 
-ifndef OMDEV
-	configUnix = $(OMC_CONFIG_INC)/omc_config.unix.h
-else
+detected_OS ?= $(shell uname -s)
+ifeq (MINGW,$(findstring MINGW,$(detected_OS)))
 	configUnix =
+else
+	configUnix = $(OMC_CONFIG_INC)/omc_config.unix.h
 endif
 
 OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
@@ -43,6 +44,10 @@ all: install
 
 install: libomcruntime$(SHREXT) libomcbackendruntime.a
 	cp libomcruntime$(SHREXT) $(builddir_lib)/$(TRIPLE)/omc/
+
+
+# If we are using the Makefiles then assume we have PThreads available.
+CPPFLAGS += -DOM_HAVE_PTHREADS
 
 OBJEXT=.o
 BOOTH=../OpenModelicaBootstrappingHeader.h
@@ -96,7 +101,9 @@ libomcruntime-boot.dll : $(OMC_OBJ)
 	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
 
 omc_communication.cc : omc_communication.idl
+ifdef USE_CORBA
 	$(IDL) omc_communication.idl
+endif
 omc_communication.h: omc_communication.cc
 
 Print_omc.o : printimpl.c printimpl.h
@@ -112,7 +119,7 @@ ZeroMQ_omc.o : zeromqimpl.c
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
 OMSimulator_omc.o : OMSimulator_omc.c
-ffi_omc.o : ffi_omc.c
+ffi_omc.o : ffi_omc.cpp
 
 # Objects depending on BOOTH
 Dynload_omc$(OBJEXT): systemimpl.h errorext.h $(BOOTH) $(SimRuntimeCDir)/util/read_write.h $(SimRuntimeCDir)/gc/omc_gc.h Dynload.cpp $(RML_COMPAT)

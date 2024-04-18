@@ -41,10 +41,29 @@ getModelInstance(M, prettyPrint = true);
 //       \"$kind\": \"extends\",
 //       \"modifiers\": {
 //         \"B\": {
-//           \"$value\": \"redeclare model B = MB\"
+//           \"$value\": {
+//             \"$kind\": \"class\",
+//             \"name\": \"B\",
+//             \"restriction\": \"model\",
+//             \"prefixes\": {
+//               \"redeclare\": true
+//             },
+//             \"baseClass\": \"MB\"
+//           }
 //         },
 //         \"C\": {
-//           \"$value\": \"redeclare model C = C(y = 2.0)\"
+//           \"$value\": {
+//             \"$kind\": \"class\",
+//             \"name\": \"C\",
+//             \"restriction\": \"model\",
+//             \"prefixes\": {
+//               \"redeclare\": true
+//             },
+//             \"baseClass\": \"C\",
+//             \"modifiers\": {
+//               \"y\": \"2.0\"
+//             }
+//           }
 //         }
 //       },
 //       \"baseClass\": {
@@ -55,7 +74,7 @@ getModelInstance(M, prettyPrint = true);
 //             \"$kind\": \"component\",
 //             \"name\": \"b\",
 //             \"type\": {
-//               \"name\": \"B\",
+//               \"name\": \"M.B\",
 //               \"restriction\": \"model\",
 //               \"prefixes\": {
 //                 \"redeclare\": true
@@ -64,7 +83,7 @@ getModelInstance(M, prettyPrint = true);
 //                 {
 //                   \"$kind\": \"extends\",
 //                   \"baseClass\": {
-//                     \"name\": \"MB\",
+//                     \"name\": \"M.MB\",
 //                     \"restriction\": \"model\",
 //                     \"elements\": [
 //                       {

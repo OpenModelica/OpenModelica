@@ -244,7 +244,7 @@ template variableCategoryXml(VarKind varKind)
   case CONST(__)        then "independentConstant"
   case EXTOBJ(__)       then 'externalObject_<%dotPathXml(fullClassName)%>'
   case JAC_VAR(__)      then "jacobianVar"
-  case JAC_DIFF_VAR(__) then "jacobianDiffVar"
+  case JAC_TMP_VAR(__) then "jacobianTmpVar"
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
 
@@ -1359,7 +1359,7 @@ template extArgCXml(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BU
       <exp:Size>
         <%name%>
         <%dim%>
-      </exp:size>
+      </exp:Size>
       >>
 end extArgCXml;
 
@@ -1394,7 +1394,7 @@ template extArgF77Xml(SimExtArg extArg, Text &preExp, Text &varDecls)
       <exp:Size>
         <%name%>
         <%dim%>
-      </exp:size>
+      </exp:Size>
       >>
 end extArgF77Xml;
 

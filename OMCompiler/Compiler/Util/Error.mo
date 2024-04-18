@@ -155,7 +155,7 @@ public constant ErrorTypes.Message LOOKUP_BASECLASS_ERROR = ErrorTypes.MESSAGE(3
 public constant ErrorTypes.Message INVALID_REDECLARE_AS = ErrorTypes.MESSAGE(40, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid redeclaration of %s %s as %s."));
 public constant ErrorTypes.Message REDECLARE_NON_REPLACEABLE = ErrorTypes.MESSAGE(41, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Trying to redeclare %1 %2 but %1 not declared as replaceable."));
+  Gettext.gettext("Redeclaration with a new type requires '%s' to be replaceable."));
 public constant ErrorTypes.Message COMPONENT_INPUT_OUTPUT_MISMATCH = ErrorTypes.MESSAGE(42, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Component declared as %s when having the variable %s declared as %s."));
 public constant ErrorTypes.Message ARRAY_DIMENSION_MISMATCH = ErrorTypes.MESSAGE(43, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -295,7 +295,7 @@ public constant ErrorTypes.Message NON_PARAMETER_ITERATOR_RANGE = ErrorTypes.MES
 public constant ErrorTypes.Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = ErrorTypes.MESSAGE(110, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Identifier %s of implicit for iterator must be present as array subscript in the loop body."));
 public constant ErrorTypes.Message CONNECTOR_NON_PARAMETER_SUBSCRIPT = ErrorTypes.MESSAGE(111, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Connector ‘%s‘ has non-parameter subscript ‘%s‘."));
+  Gettext.gettext("Connector '%s' has non-parameter subscript '%s'."));
 public constant ErrorTypes.Message LOOKUP_CLASS_VIA_COMP_COMP = ErrorTypes.MESSAGE(112, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Illegal access of class '%s' via a component when looking for '%s'."));
 public constant ErrorTypes.Message SUBSCRIPTED_FUNCTION_CALL = ErrorTypes.MESSAGE(113, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -371,7 +371,7 @@ public constant ErrorTypes.Message TUPLE_ASSIGN_CREFS_ONLY = ErrorTypes.MESSAGE(
 public constant ErrorTypes.Message LOOKUP_FUNCTION_GOT_CLASS = ErrorTypes.MESSAGE(148, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Looking for a function %s but found a %s."));
 public constant ErrorTypes.Message NON_STREAM_OPERAND_IN_STREAM_OPERATOR = ErrorTypes.MESSAGE(149, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Operand ‘%s‘ to operator ‘%s‘ is not a stream variable."));
+  Gettext.gettext("Operand '%s' to operator '%s' is not a stream variable."));
 public constant ErrorTypes.Message UNBALANCED_CONNECTOR = ErrorTypes.MESSAGE(150, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Connector %s is not balanced: The number of potential variables (%s) is not equal to the number of flow variables (%s)."));
 public constant ErrorTypes.Message RESTRICTION_VIOLATION = ErrorTypes.MESSAGE(151, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -661,7 +661,7 @@ public constant ErrorTypes.Message EACH_ON_NON_ARRAY = ErrorTypes.MESSAGE(292, E
 public constant ErrorTypes.Message BUILTIN_EXTENDS_INVALID_ELEMENTS = ErrorTypes.MESSAGE(293, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("A class extending from builtin type %s may not have other elements."));
 public constant ErrorTypes.Message INITIAL_CALL_WARNING = ErrorTypes.MESSAGE(294, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition ‘%s‘."));
+  Gettext.gettext("initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition '%s'."));
 public constant ErrorTypes.Message RANGE_TYPE_MISMATCH = ErrorTypes.MESSAGE(295, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Type mismatch in range: '%s' of type\n  %s\nis not type compatible with '%s' of type\n  %s"));
 public constant ErrorTypes.Message RANGE_TOO_SMALL_STEP = ErrorTypes.MESSAGE(296, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -677,7 +677,7 @@ public constant ErrorTypes.Message CYCLIC_DIMENSIONS = ErrorTypes.MESSAGE(300, E
 public constant ErrorTypes.Message INVALID_DIMENSION_TYPE = ErrorTypes.MESSAGE(301, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Dimension '%s' of type %s is not an integer expression or an enumeration or Boolean type name."));
 public constant ErrorTypes.Message NON_PARAMETER_EXPRESSION_DIMENSION = ErrorTypes.MESSAGE(302, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Expression ‘%s‘ that determines the size of dimension ‘%s‘ of ‘%s‘ is not an evaluable parameter expression."));
+  Gettext.gettext("Expression '%s' that determines the size of dimension '%s' of '%s' is not an evaluable parameter expression."));
 public constant ErrorTypes.Message INVALID_TYPENAME_USE = ErrorTypes.MESSAGE(303, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Type name '%s' is not allowed in this context."));
 public constant ErrorTypes.Message FOUND_WRONG_INNER_ELEMENT = ErrorTypes.MESSAGE(305, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -729,9 +729,9 @@ public constant ErrorTypes.Message REDECLARE_MISMATCHED_PREFIX = ErrorTypes.MESS
 public constant ErrorTypes.Message EXTERNAL_ARG_NONCONSTANT_SIZE_INDEX = ErrorTypes.MESSAGE(328, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid external argument '%s', the dimension index must be a constant expression."));
 public constant ErrorTypes.Message FAILURE_TO_DEDUCE_DIMS_EACH = ErrorTypes.MESSAGE(329, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Failed to deduce dimension %s of ‘%s‘ due to ‘each‘ prefix on binding equation."));
+  Gettext.gettext("Failed to deduce dimension %s of '%s' due to 'each' prefix on binding equation."));
 public constant ErrorTypes.Message MISSING_TYPE_BASETYPE = ErrorTypes.MESSAGE(330, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Type ‘%s‘ does not extend a basic type."));
+  Gettext.gettext("Type '%s' does not extend a basic type."));
 public constant ErrorTypes.Message ASSERT_TRIGGERED_WARNING = ErrorTypes.MESSAGE(331, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("assert triggered: %s"));
 public constant ErrorTypes.Message ASSERT_TRIGGERED_ERROR = ErrorTypes.MESSAGE(332, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -745,53 +745,53 @@ public constant ErrorTypes.Message UNASSIGNED_FUNCTION_OUTPUT = ErrorTypes.MESSA
 public constant ErrorTypes.Message INVALID_WHEN_STATEMENT_CONTEXT = ErrorTypes.MESSAGE(336, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("A when-statement may not be used inside a function or a while, if, or for-clause."));
 public constant ErrorTypes.Message MISSING_FUNCTION_DERIVATIVE_NAME = ErrorTypes.MESSAGE(337, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Derivative annotation for function ‘%s‘ does not specify a derivative function."));
+  Gettext.gettext("Derivative annotation for function '%s' does not specify a derivative function."));
 public constant ErrorTypes.Message INVALID_FUNCTION_ANNOTATION_ATTR = ErrorTypes.MESSAGE(338, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("‘%s‘ is not a valid function %s attribute."));
+  Gettext.gettext("'%s' is not a valid function %s attribute."));
 public constant ErrorTypes.Message INVALID_FUNCTION_ANNOTATION_INPUT = ErrorTypes.MESSAGE(339, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("‘%s‘ is not an input of function ‘%s‘."));
+  Gettext.gettext("'%s' is not an input of function '%s'."));
 public constant ErrorTypes.Message OPERATOR_OVERLOADING_ONE_OUTPUT_ERROR = ErrorTypes.MESSAGE(340, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Operator %s must have exactly one output."));
 public constant ErrorTypes.Message OPERATOR_OVERLOADING_INVALID_OUTPUT_TYPE = ErrorTypes.MESSAGE(341, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Output ‘%s‘ in operator %s must be of type %s, got type %s."));
+  Gettext.gettext("Output '%s' in operator %s must be of type %s, got type %s."));
 public constant ErrorTypes.Message OPERATOR_NOT_ENCAPSULATED = ErrorTypes.MESSAGE(342, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Operator %s is not encapsulated."));
 public constant ErrorTypes.Message NO_SUCH_INPUT_PARAMETER = ErrorTypes.MESSAGE(343, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Function %s has no input parameter named %s."));
 public constant ErrorTypes.Message INVALID_REDUCTION_TYPE = ErrorTypes.MESSAGE(344, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Invalid expression ‘%s‘ of type %s in %s reduction, expected %s."));
+  Gettext.gettext("Invalid expression '%s' of type %s in %s reduction, expected %s."));
 public constant ErrorTypes.Message INVALID_COMPONENT_PREFIX = ErrorTypes.MESSAGE(345, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Prefix ‘%s‘ on component ‘%s‘ not allowed in class specialization ‘%s‘."));
+  Gettext.gettext("Prefix '%s' on component '%s' not allowed in class specialization '%s'."));
 public constant ErrorTypes.Message INVALID_CARDINALITY_CONTEXT = ErrorTypes.MESSAGE(346, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("cardinality may only be used in the condition of an if-statement/equation or an assert."));
 public constant ErrorTypes.Message VARIABLE_BINDING_DIMS_MISMATCH = ErrorTypes.MESSAGE(347, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Type mismatch in binding ‘%s = %s‘, expected array dimensions %s, got %s."));
+  Gettext.gettext("Type mismatch in binding '%s = %s', expected array dimensions %s, got %s."));
 public constant ErrorTypes.Message MODIFIER_NON_ARRAY_TYPE_ERROR = ErrorTypes.MESSAGE(348, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Non-array modification ‘%s‘ for array component ‘%s‘, possibly due to missing ‘each‘."));
+  Gettext.gettext("Non-array modification '%s' for array component '%s', possibly due to missing 'each'."));
 public constant ErrorTypes.Message INST_RECURSION_LIMIT_REACHED = ErrorTypes.MESSAGE(349, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Recursion limit reached while instantiating ‘%s‘."));
+  Gettext.gettext("Recursion limit reached while instantiating '%s'."));
 public constant ErrorTypes.Message WHEN_IF_VARIABLE_MISMATCH = ErrorTypes.MESSAGE(350, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The branches of an if-equation inside a when-equation must have the same set of component references on the left-hand side."));
 public constant ErrorTypes.Message DIMENSION_DEDUCTION_FROM_BINDING_FAILURE = ErrorTypes.MESSAGE(351, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Dimension %s of ‘%s‘ could not be deduced from the component's binding equation ‘%s‘."));
+  Gettext.gettext("Dimension %s of '%s' could not be deduced from the component's binding equation '%s'."));
 public constant ErrorTypes.Message NON_REAL_FLOW_OR_STREAM = ErrorTypes.MESSAGE(352, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Invalid prefix ‘%s‘ on non-Real component ‘%s‘."));
+  Gettext.gettext("Invalid prefix '%s' on non-Real component '%s'."));
 public constant ErrorTypes.Message LIBRARY_UNEXPECTED_NAME_CASE_SENSITIVE = ErrorTypes.MESSAGE(353, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Expected the package to have name %s, but got %s. Proceeding since only the case of the names are different."));
 public constant ErrorTypes.Message PACKAGE_ORDER_CASE_SENSITIVE = ErrorTypes.MESSAGE(354, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("The package.order file contains a class %s, which is expected to be stored in file %s, but seems to be named %s. Proceeding since only the case of the names are different."));
 public constant ErrorTypes.Message REDECLARE_CLASS_NON_SUBTYPE = ErrorTypes.MESSAGE(355, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Redeclaration of %s ‘%s‘ is not a subtype of the redeclared element."));
+  Gettext.gettext("Redeclaration of %s '%s' is not a subtype of the redeclared element."));
 public constant ErrorTypes.Message REDECLARE_ENUM_NON_SUBTYPE = ErrorTypes.MESSAGE(356, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Redeclaration of enumeration ‘%s‘ is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration)."));
+  Gettext.gettext("Redeclaration of enumeration '%s' is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration)."));
 public constant ErrorTypes.Message CONDITIONAL_COMPONENT_INVALID_CONTEXT = ErrorTypes.MESSAGE(357, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Conditional component ‘%s‘ is used in a non-connect context."));
+  Gettext.gettext("Conditional component '%s' is used in a non-connect context."));
 public constant ErrorTypes.Message OPERATOR_RECORD_MISSING_OPERATOR = ErrorTypes.MESSAGE(358, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Type ‘%s‘ of expression ‘%s‘ in ‘%s‘ does not implement the required operator ‘%s‘"));
+  Gettext.gettext("Type '%s' of expression '%s' in '%s' does not implement the required operator '%s'"));
 public constant ErrorTypes.Message IMPORT_IN_COMPOSITE_NAME = ErrorTypes.MESSAGE(359, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Found imported name ‘%s‘ while looking up composite name ‘%s‘."));
+  Gettext.gettext("Found imported name '%s' while looking up composite name '%s'."));
 public constant ErrorTypes.Message SHADOWED_ITERATOR = ErrorTypes.MESSAGE(360, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("An iterator named ‘%s‘ is already declared in this scope."));
+  Gettext.gettext("An iterator named '%s' is already declared in this scope."));
 public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_FIRST = ErrorTypes.MESSAGE(361, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The first argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
 public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_SECOND = ErrorTypes.MESSAGE(362, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
@@ -803,13 +803,13 @@ public constant ErrorTypes.Message INVALID_FLAG_CONDITION = ErrorTypes.MESSAGE(3
 public constant ErrorTypes.Message EXPERIMENTAL_REQUIRED = ErrorTypes.MESSAGE(365, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("%s is an experimental feature and requires the --std=experimental flag."));
 public constant ErrorTypes.Message INVALID_NUMBER_OF_DIMENSIONS_FOR_PROMOTE = ErrorTypes.MESSAGE(366, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("The second argument ‘%s‘ of promote may not be smaller than the number of dimensions (%s) of the first argument."));
+  Gettext.gettext("The second argument '%s' of promote may not be smaller than the number of dimensions (%s) of the first argument."));
 public constant ErrorTypes.Message PURE_FUNCTION_WITH_IMPURE_CALLS = ErrorTypes.MESSAGE(367, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Pure function ‘%s‘ contains a call to impure function ‘%s‘."));
+  Gettext.gettext("Pure function '%s' contains a call to impure function '%s'."));
 public constant ErrorTypes.Message DISCRETE_REAL_UNDEFINED = ErrorTypes.MESSAGE(368, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Following variable is discrete, but does not appear on the LHS of a when-statement: ‘%s‘."));
+  Gettext.gettext("Following variable is discrete, but does not appear on the LHS of a when-statement: '%s'."));
 public constant ErrorTypes.Message DER_OF_NONDIFFERENTIABLE_EXP = ErrorTypes.MESSAGE(369, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Argument ‘%s‘ of der is not differentiable."));
+  Gettext.gettext("Argument '%s' of der is not differentiable."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_WITHOUT_CONVERSION = ErrorTypes.MESSAGE(370, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is fully compatible without conversion script needed."));
 // The following errors (371, 372, 373) are used by OMEdit. Do not change them.
@@ -822,51 +822,51 @@ public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_NEWER = ErrorTy
 public constant ErrorTypes.Message EQUATION_NOT_SOLVABLE_DIFFERENT_COUNT = ErrorTypes.MESSAGE(374, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   Gettext.gettext("%s has size %s but %s variables (%s)"));
 public constant ErrorTypes.Message PARTIAL_COMPONENT_TYPE = ErrorTypes.MESSAGE(375, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Component ‘%s‘ has partial type ‘%s‘."));
+  Gettext.gettext("Component '%s' has partial type '%s'."));
 public constant ErrorTypes.Message PARTIAL_FUNCTION_CALL = ErrorTypes.MESSAGE(376, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Called function ‘%s‘ is partial."));
+  Gettext.gettext("Called function '%s' is partial."));
 public constant ErrorTypes.Message TOO_MANY_TYPE_VARS_IN_CALL = ErrorTypes.MESSAGE(377, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Too many type variables given in call to ‘%s‘."));
+  Gettext.gettext("Too many type variables given in call to '%s'."));
 public constant ErrorTypes.Message BREAK_OUTSIDE_LOOP = ErrorTypes.MESSAGE(378, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("‘break' may only be used in a while- or for-loop."));
+  Gettext.gettext("'break' may only be used in a while- or for-loop."));
 public constant ErrorTypes.Message TOP_LEVEL_OUTER = ErrorTypes.MESSAGE(379, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("The model can't be instantiated due to top-level outer element ‘%s‘, it may only be used as part of a simulation model."));
+  Gettext.gettext("The model can't be instantiated due to top-level outer element '%s', it may only be used as part of a simulation model."));
 public constant ErrorTypes.Message MISSING_INNER_NAME_CONFLICT = ErrorTypes.MESSAGE(380, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("An inner declaration for outer element ‘%s‘ could not be found, and could not be automatically generated due to an existing declaration of that name."));
+  Gettext.gettext("An inner declaration for outer element '%s' could not be found, and could not be automatically generated due to an existing declaration of that name."));
 public constant ErrorTypes.Message TOP_LEVEL_INPUT_WITH_BINDING = ErrorTypes.MESSAGE(381, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Top-level input ‘%s‘ has a binding equation and will not be accessible as an input of the model."));
+  Gettext.gettext("Top-level input '%s' has a binding equation and will not be accessible as an input of the model."));
 public constant ErrorTypes.Message NON_DISCRETE_WHEN_CONDITION = ErrorTypes.MESSAGE(382, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("When-condition ‘%s‘ is not a discrete-time expression."));
+  Gettext.gettext("When-condition '%s' is not a discrete-time expression."));
 public constant ErrorTypes.Message CYCLIC_FUNCTION_COMPONENTS = ErrorTypes.MESSAGE(383, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Cyclically dependent function components found: %s"));
 public constant ErrorTypes.Message EXTERNAL_FUNCTION_NOT_FOUND = ErrorTypes.MESSAGE(384, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("External function ‘%s‘ could not be found in any of the given shared libraries:\n%s"));
+  Gettext.gettext("External function '%s' could not be found in any of the given shared libraries:\n%s"));
 public constant ErrorTypes.Message INVALID_CONVERSION_RULE = ErrorTypes.MESSAGE(385, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("Invalid conversion rule ‘%s‘."));
+  Gettext.gettext("Invalid conversion rule '%s'."));
 public constant ErrorTypes.Message CONVERSION_MESSAGE = ErrorTypes.MESSAGE(386, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("%s"));
 public constant ErrorTypes.Message CONVERSION_MISMATCHED_PLACEHOLDER = ErrorTypes.MESSAGE(387, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  Gettext.gettext("Mismatched % in conversion modifier ‘%s‘."));
+  Gettext.gettext("Mismatched % in conversion modifier '%s'."));
 public constant ErrorTypes.Message CONVERSION_MISSING_PLACEHOLDER_VALUE = ErrorTypes.MESSAGE(388, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  Gettext.gettext("No replacement value for placeholder ‘%s‘ could be found."));
+  Gettext.gettext("No replacement value for placeholder '%s' could be found."));
 public constant ErrorTypes.Message UNSUPPORTED_RECORD_REORDERING = ErrorTypes.MESSAGE(389, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("The record constructor for ‘%s‘ requires reordering of local fields to initialize them in the correct order, which is not yet supported."));
+  Gettext.gettext("The record constructor for '%s' requires reordering of local fields to initialize them in the correct order, which is not yet supported."));
 public constant ErrorTypes.Message FUNCTION_INVALID_OUTPUTS_FOR_INVERSE = ErrorTypes.MESSAGE(390, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Invalid inverse annotation for ‘%s‘, only functions with exactly one output may have an inverse."));
+  Gettext.gettext("Invalid inverse annotation for '%s', only functions with exactly one output may have an inverse."));
 public constant ErrorTypes.Message NOTIFY_IMPLICIT_LOAD = ErrorTypes.MESSAGE(391, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Automatically loaded package %s %s due to usage."));
 public constant ErrorTypes.Message CONVERSION_MISSING_USES = ErrorTypes.MESSAGE(392, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("Cannot convert ‘%s‘ since it has no uses-annotation for ‘%s‘."));
+  Gettext.gettext("Cannot convert '%s' since it has no uses-annotation for '%s'."));
 public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = ErrorTypes.MESSAGE(393, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("No compatible conversion script for converting from %s %s to %s could be found."));
 
 public constant Gettext.TranslatableContent FUNCTION_CALL_EXPRESSION = Gettext.gettext("a function call expression");
 public constant ErrorTypes.Message FUNCTION_ARGUMENT_MUST_BE = ErrorTypes.MESSAGE(394, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("The argument to ‘%s‘ must be %s."));
+  Gettext.gettext("The argument to '%s' must be %s."));
 public constant ErrorTypes.Message UNEXPECTED_COMPONENT_IN_COMPOSITE_NAME = ErrorTypes.MESSAGE(395, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Found component ‘%s‘ in composite name ‘%s‘, expected class."));
+  Gettext.gettext("Found component '%s' in composite name '%s', expected class."));
 public constant ErrorTypes.Message NF_MODIFY_PROTECTED = ErrorTypes.MESSAGE(396, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Protected element ‘%s‘ may not be modified, got ‘%s‘."));
+  Gettext.gettext("Protected element '%s' may not be modified, got '%s'."));
 public constant ErrorTypes.Message PROTECTED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(397, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Protected sections are not allowed in %s."));
 public constant ErrorTypes.Message DEPRECATED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(398, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
@@ -874,19 +874,33 @@ public constant ErrorTypes.Message DEPRECATED_TRANSITION_FAILURE = ErrorTypes.ME
 public constant ErrorTypes.Message INITIAL_ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(399, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Initial algorithm sections are not allowed in %s."));
 public constant ErrorTypes.Message INVALID_SPECIALIZATION_FOR_BINDING_EQUATION = ErrorTypes.MESSAGE(400, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Component ‘%s‘ may not have a binding equation due to class specialization ‘%s‘."));
+  Gettext.gettext("Component '%s' may not have a binding equation due to class specialization '%s'."));
 public constant ErrorTypes.Message INVALID_SPECIALIZATION_IN_ASSIGNMENT = ErrorTypes.MESSAGE(401, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Component ‘%s‘ may not be assigned to due to class specialization ‘%s‘."));
+  Gettext.gettext("Component '%s' may not be assigned to due to class specialization '%s'."));
 public constant ErrorTypes.Message NF_PDE_NOT_IMPLEMENTED = ErrorTypes.MESSAGE(402, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("PDEModelica is not yet supported by the new front-end, using the old front-end instead."));
 public constant ErrorTypes.Message NON_CONSTANT_IN_ENCLOSING_SCOPE = ErrorTypes.MESSAGE(403, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Component ‘%s‘ was found in an enclosing scope but is not a constant."));
+  Gettext.gettext("Component '%s' was found in an enclosing scope but is not a constant."));
 public constant ErrorTypes.Message PARTIAL_DERIVATIVE_INPUT_NOT_FOUND = ErrorTypes.MESSAGE(404, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("‘%s‘ in partial derivative of ‘%s‘ does not name an input parameter of the function."));
+  Gettext.gettext("'%s' in partial derivative of '%s' does not name an input parameter of the function."));
 public constant ErrorTypes.Message PARTIAL_DERIVATIVE_INPUT_INVALID_TYPE = ErrorTypes.MESSAGE(405, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("‘%s‘ in partial derivative of ‘%s‘ is not a scalar Real input parameter of the function."));
+  Gettext.gettext("'%s' in partial derivative of '%s' is not a scalar Real input parameter of the function."));
 public constant ErrorTypes.Message CONNECT_TYPE_MISMATCH = ErrorTypes.MESSAGE(406, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The connectors in connect(%s, %s) are not type compatible."));
+public constant ErrorTypes.Message UNSPECIFIED_ENUM_COMPONENT = ErrorTypes.MESSAGE(407, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Component '%s' has an unspecified enumeration type (enumeration(:))."));
+public constant ErrorTypes.Message ELEMENT_REPLACEABLE_NOT_ALLOWED = ErrorTypes.MESSAGE(408, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("'%s' may not be replaceable."));
+public constant ErrorTypes.Message INVALID_NEGATIVE_POW = ErrorTypes.MESSAGE(409, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid operation %s ^ %s, exponent must be an Integer when the base is negative."));
+public constant ErrorTypes.Message DEPRECATED_EXPRESSION = ErrorTypes.MESSAGE(411, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("'%s' is deprecated, use '%s' instead."));
+public constant ErrorTypes.Message UNKNOWN_ANNOTATION_VALUE = ErrorTypes.MESSAGE(412, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("Unknown value '%s' for annotation '%s'"));
+public constant ErrorTypes.Message NON_FIXED_CONSTANT = ErrorTypes.MESSAGE(413, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Constant '%s' must be fixed but has 'fixed = false'"));
+public constant ErrorTypes.Message CONFLICTING_INHERITED_ANNOTATIONS = ErrorTypes.MESSAGE(414, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Conflicting '%s' annotations inherited by class '%s':\n  %s from 'extends %s'\n  %s from 'extends %s'"));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
@@ -896,7 +910,7 @@ public constant ErrorTypes.Message INITIALIZATION_ITERATION_VARIABLES = ErrorTyp
   Gettext.gettext("There are nonlinear iteration variables with default zero start attribute found in %s. %s."));
 public constant ErrorTypes.Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = ErrorTypes.MESSAGE(499, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
-public constant ErrorTypes.Message UNBOUND_PARAMETER_WARNING = ErrorTypes.MESSAGE(500, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+public constant ErrorTypes.Message UNBOUND_PARAMETER_ERROR = ErrorTypes.MESSAGE(500, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)."));
 public constant ErrorTypes.Message BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER = ErrorTypes.MESSAGE(502, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Function \"product\" has scalar as argument in %s in component %s."));
@@ -921,7 +935,7 @@ public constant ErrorTypes.Message CONSISTENT_UNITS = ErrorTypes.MESSAGE(518, Er
 public constant ErrorTypes.Message INCOMPLETE_UNITS = ErrorTypes.MESSAGE(519, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("The system of units is incomplete. Please provide unit information to the model by e.g. using types from the SIunits package."));
 public constant ErrorTypes.Message INVALID_UNIT = ErrorTypes.MESSAGE(520, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Invalid unit expression ‘%s‘."));
+  Gettext.gettext("Invalid unit expression '%s'."));
 
 public constant ErrorTypes.Message ASSIGN_RHS_ELABORATION = ErrorTypes.MESSAGE(521, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to elaborate rhs of %s."));
@@ -1072,7 +1086,7 @@ public constant ErrorTypes.Message NON_STATE_STATESELECT_ALWAYS = ErrorTypes.MES
 public constant ErrorTypes.Message STATE_STATESELECT_NEVER = ErrorTypes.MESSAGE(593, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
 public constant ErrorTypes.Message FUNCTION_HIGHER_VARIABILITY_BINDING = ErrorTypes.MESSAGE(594, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Component ‘%s’ of variability %s has binding %s of higher variability %s."));
+  Gettext.gettext("Component '%s' of variability %s has binding %s of higher variability %s."));
 public constant ErrorTypes.Message OCG_MISSING_BRANCH = ErrorTypes.MESSAGE(595, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Connections.rooted(%s) needs exactly one statement Connections.branch(%s, B.R) involving %s but we found none in the graph. Run with -d=cgraphGraphVizFile to debug"));
 public constant ErrorTypes.Message UNBOUND_PARAMETER_EVALUATE_TRUE = ErrorTypes.MESSAGE(596, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),

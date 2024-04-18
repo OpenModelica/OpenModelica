@@ -9,12 +9,17 @@ omc_check_function_exists_and_define(ctime_s)
 omc_check_function_exists_and_define(ctime_r)
 
 
+add_subdirectory(Absyn)
 
 # Libraries
 ##################################################################################################
 set(OMC_FRONTEND_CPP_SOURCES
-    MetaModelica.cpp)
-
+    Inst.cpp
+    MetaModelica.cpp
+    Path.cpp
+    Prefixes.cpp
+    Restriction.cpp
+    SourceInfo.cpp)
 
 # ######################################################################################################################
 # Library: omcruntime
@@ -23,12 +28,19 @@ add_library(omc::compiler::frontendcpp ALIAS omcfrontendcpp)
 
 target_sources(omcfrontendcpp PRIVATE ${OMC_FRONTEND_CPP_SOURCES})
 
+target_link_libraries(omcfrontendcpp PUBLIC omc::compiler::frontendcpp::absyn)
 target_link_libraries(omcfrontendcpp PUBLIC omc::simrt::runtime)
 
 target_include_directories(omcfrontendcpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(CC ${CMAKE_C_COMPILER})
 set(CXX ${CMAKE_CXX_COMPILER})
+
+if (MSVC)
+
+else()
+  target_compile_options(omcfrontendcpp PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 # For now assume mingw32-make is available here. It should be because it is what we use
 # to compile generated simulation code on Windows when omc is issuing the compilation.

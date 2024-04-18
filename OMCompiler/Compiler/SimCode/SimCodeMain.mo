@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -108,7 +108,6 @@ import Util;
 import SerializeTaskSystemInfo;
 
 public
-constant Boolean debug=true;
 uniontype TranslateModelKind
   record NORMAL
   end NORMAL;
@@ -310,7 +309,7 @@ algorithm
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
   ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-  Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
   /* Do not fail or we can loop too much */
   StackOverflow.clearStacktraceMessages();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
@@ -428,7 +427,7 @@ algorithm
   else
     setGlobalRoot(Global.stackoverFlowIndex, NONE());
     ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     /* Do not fail or we can loop too much */
     StackOverflow.clearStacktraceMessages();
     fail();
@@ -895,8 +894,6 @@ algorithm
 
         // I need to see some tests failing or something not working to make sense of what to add here
         shared_source_files := List.flatten({RuntimeSources.simrt_c_sources,
-                                             // dgesv_sources, // listed separately
-                                             // simrt_c_sundials_sources, // listed separately
                                              simrt_linear_solver_sources,
                                              simrt_non_linear_solver_sources,
                                              simrt_mixed_solver_sources
@@ -906,7 +903,12 @@ algorithm
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          model_desc_src_files := listAppend(model_gen_files, shared_source_files);
+          model_desc_src_files := List.flatten({model_gen_files,      //  order matters
+                                                shared_source_files,
+                                                dgesv_sources,
+                                                cminpack_sources,
+                                                simrt_c_sundials_sources
+                                    });
         end if;
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
@@ -1091,15 +1093,17 @@ algorithm
     timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
     ExecStat.execStat("FrontEnd");
 
+    if runBackend then
+      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+    end if;
+
+    // This must be done after calling the backend since it uses the FlatModel,
+    // and converting it to DAE is destructive.
     if dumpValidFlatModelicaNF then
       flatString := NFFlatString;
     elseif not runSilent then
       (dae, funcs) := NFConvertDAE.convert(flatModel, funcTree);
       flatString := DAEDump.dumpStr(dae, funcs);
-    end if;
-
-    if runBackend then
-      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
     end if;
 
   // old backend

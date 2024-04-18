@@ -686,21 +686,21 @@ extern struct record_description NFType_NFType_ENUMERATION__desc;
 #define NFType__ENUMERATION_3dBOX2 8
 #define NFType__ENUMERATION(typePath,literals) (mmc_mk_box3(8,&NFType_NFType_ENUMERATION__desc,typePath,literals))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef NFType_NFType_ENUMERATION__ANY__desc_added
-#define NFType_NFType_ENUMERATION__ANY__desc_added
-ADD_METARECORD_DEFINITIONS const char* NFType_NFType_ENUMERATION__ANY__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description NFType_NFType_ENUMERATION__ANY__desc = {
-  "NFType_NFType_ENUMERATION__ANY",
-  "NFType.NFType.ENUMERATION_ANY",
-  NFType_NFType_ENUMERATION__ANY__desc__fields
+#ifndef NFType_NFType_____ENUMERATION__ANY__NOT__USED______desc_added
+#define NFType_NFType_____ENUMERATION__ANY__NOT__USED______desc_added
+ADD_METARECORD_DEFINITIONS const char* NFType_NFType_____ENUMERATION__ANY__NOT__USED______desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description NFType_NFType_____ENUMERATION__ANY__NOT__USED______desc = {
+  "NFType_NFType_____ENUMERATION__ANY__NOT__USED____",
+  "NFType.NFType.__ENUMERATION_ANY_NOT_USED__",
+  NFType_NFType_____ENUMERATION__ANY__NOT__USED______desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description NFType_NFType_ENUMERATION__ANY__desc;
+extern struct record_description NFType_NFType_____ENUMERATION__ANY__NOT__USED______desc;
 #endif
-#define NFType__ENUMERATION_5fANY_3dBOX0 9
-static const MMC_DEFSTRUCTLIT(NFType__ENUMERATION_5fANY__struct,1,9) {&NFType_NFType_ENUMERATION__ANY__desc}};
-static void *NFType__ENUMERATION_5fANY = MMC_REFSTRUCTLIT(NFType__ENUMERATION_5fANY__struct);
+#define NFType___5f_5fENUMERATION_5fANY_5fNOT_5fUSED_5f_5f_3dBOX0 9
+static const MMC_DEFSTRUCTLIT(NFType___5f_5fENUMERATION_5fANY_5fNOT_5fUSED_5f_5f__struct,1,9) {&NFType_NFType_____ENUMERATION__ANY__NOT__USED______desc}};
+static void *NFType___5f_5fENUMERATION_5fANY_5fNOT_5fUSED_5f_5f = MMC_REFSTRUCTLIT(NFType___5f_5fENUMERATION_5fANY_5fNOT_5fUSED_5f_5f__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFType_NFType_ARRAY__desc_added
 #define NFType_NFType_ARRAY__desc_added
@@ -869,6 +869,21 @@ extern struct record_description NFType_NFType_CONDITIONAL__ARRAY__desc;
 #endif
 #define NFType__CONDITIONAL_5fARRAY_3dBOX3 20
 #define NFType__CONDITIONAL_5fARRAY(trueType,falseType,matchedBranch) (mmc_mk_box4(20,&NFType_NFType_CONDITIONAL__ARRAY__desc,trueType,falseType,matchedBranch))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef NFType_NFType_UNTYPED__desc_added
+#define NFType_NFType_UNTYPED__desc_added
+ADD_METARECORD_DEFINITIONS const char* NFType_NFType_UNTYPED__desc__fields[2] = {"typeNode","dimensions"};
+ADD_METARECORD_DEFINITIONS struct record_description NFType_NFType_UNTYPED__desc = {
+  "NFType_NFType_UNTYPED",
+  "NFType.NFType.UNTYPED",
+  NFType_NFType_UNTYPED__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description NFType_NFType_UNTYPED__desc;
+#endif
+#define NFType__UNTYPED_3dBOX2 21
+#define NFType__UNTYPED(typeNode,dimensions) (mmc_mk_box3(21,&NFType_NFType_UNTYPED__desc,typeNode,dimensions))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef FMI_Info_INFO__desc_added
 #define FMI_Info_INFO__desc_added
@@ -2848,6 +2863,21 @@ extern struct record_description Absyn_EqMod_NOMOD__desc;
 static const MMC_DEFSTRUCTLIT(Absyn__NOMOD__struct,1,3) {&Absyn_EqMod_NOMOD__desc}};
 static void *Absyn__NOMOD = MMC_REFSTRUCTLIT(Absyn__NOMOD__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_ElementArg_ELEMENTARGCOMMENT__desc_added
+#define Absyn_ElementArg_ELEMENTARGCOMMENT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_ElementArg_ELEMENTARGCOMMENT__desc__fields[1] = {"comment"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_ElementArg_ELEMENTARGCOMMENT__desc = {
+  "Absyn_ElementArg_ELEMENTARGCOMMENT",
+  "Absyn.ElementArg.ELEMENTARGCOMMENT",
+  Absyn_ElementArg_ELEMENTARGCOMMENT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_ElementArg_ELEMENTARGCOMMENT__desc;
+#endif
+#define Absyn__ELEMENTARGCOMMENT_3dBOX1 5
+#define Absyn__ELEMENTARGCOMMENT(comment) (mmc_mk_box2(5,&Absyn_ElementArg_ELEMENTARGCOMMENT__desc,comment))
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_ElementArg_REDECLARATION__desc_added
 #define Absyn_ElementArg_REDECLARATION__desc_added
 ADD_METARECORD_DEFINITIONS const char* Absyn_ElementArg_REDECLARATION__desc__fields[6] = {"finalPrefix","redeclareKeywords","eachPrefix","elementSpec","constrainClass","info"};
@@ -3228,6 +3258,52 @@ extern struct record_description Absyn_Direction_INPUT__desc;
 #define Absyn__INPUT_3dBOX0 3
 static const MMC_DEFSTRUCTLIT(Absyn__INPUT__struct,1,3) {&Absyn_Direction_INPUT__desc}};
 static void *Absyn__INPUT = MMC_REFSTRUCTLIT(Absyn__INPUT__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Exp_BREAK__desc_added
+#define Absyn_Exp_BREAK__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_BREAK__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_BREAK__desc = {
+  "Absyn_Exp_BREAK",
+  "Absyn.Exp.BREAK",
+  Absyn_Exp_BREAK__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Exp_BREAK__desc;
+#endif
+#define Absyn__BREAK_3dBOX0 29
+static const MMC_DEFSTRUCTLIT(Absyn__BREAK__struct,1,29) {&Absyn_Exp_BREAK__desc}};
+static void *Absyn__BREAK = MMC_REFSTRUCTLIT(Absyn__BREAK__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Exp_SUBSCRIPTED__EXP__desc_added
+#define Absyn_Exp_SUBSCRIPTED__EXP__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_SUBSCRIPTED__EXP__desc__fields[2] = {"exp","subscripts"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_SUBSCRIPTED__EXP__desc = {
+  "Absyn_Exp_SUBSCRIPTED__EXP",
+  "Absyn.Exp.SUBSCRIPTED_EXP",
+  Absyn_Exp_SUBSCRIPTED__EXP__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Exp_SUBSCRIPTED__EXP__desc;
+#endif
+#define Absyn__SUBSCRIPTED_5fEXP_3dBOX2 28
+#define Absyn__SUBSCRIPTED_5fEXP(exp,subscripts) (mmc_mk_box3(28,&Absyn_Exp_SUBSCRIPTED__EXP__desc,exp,subscripts))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Exp_EXPRESSIONCOMMENT__desc_added
+#define Absyn_Exp_EXPRESSIONCOMMENT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_EXPRESSIONCOMMENT__desc__fields[3] = {"commentsBefore","exp","commentsAfter"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_EXPRESSIONCOMMENT__desc = {
+  "Absyn_Exp_EXPRESSIONCOMMENT",
+  "Absyn.Exp.EXPRESSIONCOMMENT",
+  Absyn_Exp_EXPRESSIONCOMMENT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Exp_EXPRESSIONCOMMENT__desc;
+#endif
+#define Absyn__EXPRESSIONCOMMENT_3dBOX3 27
+#define Absyn__EXPRESSIONCOMMENT(commentsBefore,exp,commentsAfter) (mmc_mk_box4(27,&Absyn_Exp_EXPRESSIONCOMMENT__desc,commentsBefore,exp,commentsAfter))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Exp_DOT__desc_added
 #define Absyn_Exp_DOT__desc_added

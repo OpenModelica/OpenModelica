@@ -1,0 +1,160 @@
+// name: GetModelInstanceInnerOuter5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model World
+    Position p;
+    parameter Boolean enableAnimation = true;
+  end World;
+
+  model Arrow
+    outer World world;
+    Real x if world.enableAnimation;
+  end Arrow;
+
+  model WorldForce
+    Arrow arrow;
+  end WorldForce;
+
+  type Length = Real;
+  type Position = Length;
+
+  model M
+    WorldForce force_a;
+    inner World world;
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"force_a\",
+//       \"type\": {
+//         \"name\": \"WorldForce\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"arrow\",
+//             \"type\": {
+//               \"name\": \"Arrow\",
+//               \"restriction\": \"model\",
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"component\",
+//                   \"name\": \"x\",
+//                   \"type\": \"Real\",
+//                   \"condition\": {
+//                     \"binding\": true
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 7,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 10,
+//                 \"columnEnd\": 12
+//               }
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 12,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 14,
+//           \"columnEnd\": 17
+//         }
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"world\",
+//       \"type\": {
+//         \"name\": \"World\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"p\",
+//             \"type\": {
+//               \"name\": \"Position\",
+//               \"restriction\": \"type\",
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"extends\",
+//                   \"baseClass\": {
+//                     \"name\": \"Length\",
+//                     \"restriction\": \"type\",
+//                     \"elements\": [
+//                       {
+//                         \"$kind\": \"extends\",
+//                         \"baseClass\": \"Real\"
+//                       }
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 16,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 16,
+//                       \"columnEnd\": 21
+//                     }
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 17,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 17,
+//                 \"columnEnd\": 25
+//               }
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"enableAnimation\",
+//             \"type\": \"Boolean\",
+//             \"modifiers\": \"true\",
+//             \"value\": {
+//               \"binding\": true
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 12
+//         }
+//       },
+//       \"prefixes\": {
+//         \"inner\": true
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 19,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 22,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

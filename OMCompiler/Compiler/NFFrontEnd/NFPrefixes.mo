@@ -46,6 +46,7 @@ package ConnectorType
   constant Type VIRTUAL             = intBitLShift(1, 4) "A virtual connector used in a connection.";
   constant Type CONNECTOR           = intBitLShift(1, 5) "A non-expandable connector that contains elements.";
   constant Type EXPANDABLE          = intBitLShift(1, 6) "An expandable connector.";
+  constant Type AUGMENTED           = intBitLShift(1, 7) "A variable added during augmentation of an expandable connector.";
 
   // flow/stream
   constant Type FLOW_STREAM_MASK = intBitOr(FLOW, STREAM);
@@ -217,6 +218,14 @@ package ConnectorType
     annotation(__OpenModelica_EarlyInline = true);
   end setPresent;
 
+  function isAugmented
+    input Type cty;
+    output Boolean augmented;
+  algorithm
+    augmented := intBitAnd(cty, AUGMENTED) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isAugmented;
+
   function toString
     input Type cty;
     output String str;
@@ -300,6 +309,17 @@ type InnerOuter = enumeration(
 type Visibility = enumeration(
   PUBLIC,
   PROTECTED
+);
+
+type AccessLevel = enumeration(
+  HIDE,
+  ICON,
+  DOCUMENTATION,
+  DIAGRAM,
+  NON_PACKAGE_TEXT,
+  NON_PACKAGE_DUPLICATE,
+  PACKAGE_TEXT,
+  PACKAGE_DUPLICATE
 );
 
 uniontype Replaceable
@@ -705,6 +725,31 @@ algorithm
     InstNode.info(node));
   fail();
 end printPrefixError;
+
+function accessLevelFromAbsyn
+  input Absyn.Exp exp;
+  output Option<AccessLevel> access;
+protected
+  String name;
+algorithm
+  access := match exp
+    case Absyn.Exp.CREF(componentRef = Absyn.ComponentRef.CREF_QUAL(name = "Access",
+                          componentRef = Absyn.ComponentRef.CREF_IDENT(name = name)))
+      then match name
+        case "hide"                then SOME(AccessLevel.HIDE);
+        case "icon"                then SOME(AccessLevel.ICON);
+        case "documentation"       then SOME(AccessLevel.DOCUMENTATION);
+        case "diagram"             then SOME(AccessLevel.DIAGRAM);
+        case "nonPackageText"      then SOME(AccessLevel.NON_PACKAGE_TEXT);
+        case "nonPackageDuplicate" then SOME(AccessLevel.NON_PACKAGE_DUPLICATE);
+        case "packageText"         then SOME(AccessLevel.PACKAGE_TEXT);
+        case "packageDuplicate"    then SOME(AccessLevel.PACKAGE_DUPLICATE);
+        else NONE();
+      end match;
+
+    else NONE();
+  end match;
+end accessLevelFromAbsyn;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFPrefixes;

@@ -34,16 +34,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtGui/QGridLayout>
-#include <QtGui/QLabel>
-#include <QtGui/QMessageBox>
-#include <QtGui/QMouseEvent>
-#include <QtGui/QResizeEvent>
-#include <QtGui/QTextCursor>
-#endif
 
 #include <exception>
 #include <stdexcept>
@@ -54,7 +45,6 @@
 
 
 using namespace IAEX;
-using namespace std;
 
 namespace IAEX
 {
@@ -180,7 +170,7 @@ namespace IAEX
       setStyle( style );
     else
     {
-      cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << endl;
+      std::cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << std::endl;
     }
   }
 
@@ -275,7 +265,7 @@ namespace IAEX
     QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border" );
     if( 0 > r->attribute().indexOf( expression ))
     {
-      cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
+      std::cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << std::endl;
     }
     else
     {
@@ -283,25 +273,25 @@ namespace IAEX
       {
         QRegExp fontslant( "Italic" );
         if( 0 > r->value().indexOf( fontslant ))
-          cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "TextAlignment" )
       {
         QRegExp textalignment( "Right|Left|Center|Justify" );
         if( 0 > r->value().indexOf( textalignment ))
-          cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "TextJustification" )
       {
         QRegExp textjustification( "1|0" );
         if( 0 > r->value().indexOf( textjustification ))
-          cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << std::endl;
       }
       else if( r->attribute() == "FontWeight" )
       {
         QRegExp fontweight( "Bold|Plain" );
         if( 0 > r->value().indexOf( fontweight ))
-          cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
+          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << std::endl;
       }
     }
 
@@ -531,7 +521,7 @@ namespace IAEX
   QWidget *Cell::mainWidget()
   {
     if(!mainWidget_)
-      throw logic_error("Cell::mainWidget(): No mainWidget set.");
+      throw std::logic_error("Cell::mainWidget(): No mainWidget set.");
 
     return mainWidget_;
   }
@@ -572,7 +562,7 @@ namespace IAEX
   TreeView *Cell::treeView()
   {
     if(!treeView_)
-      throw logic_error("Cell::treeView(): No treeView set.");
+      throw std::logic_error("Cell::treeView(): No treeView set.");
 
     return treeView_;
   }
@@ -622,7 +612,7 @@ namespace IAEX
     }*/
 
     if(!treeView_)
-      throw logic_error("SetHeight(const int height): TreeView is not set.");
+      throw std::logic_error("SetHeight(const int height): TreeView is not set.");
 
         setFixedHeight(h);
 
@@ -870,12 +860,12 @@ namespace IAEX
 
   void Cell::printCell(Cell *current)
   {
-    cout << "This: " << current << endl
-      << "Parent: " << current->parentCell() << endl
-      << "Child: " << current->child() << endl
-      << "Last: " << current->last() << endl
-      << "Next: " << current->next() << endl
-      << "Prev: " << current->previous() << endl;
+    std::cout << "This: " << current << std::endl
+      << "Parent: " << current->parentCell() << std::endl
+      << "Child: " << current->child() << std::endl
+      << "Last: " << current->last() << std::endl
+      << "Next: " << current->next() << std::endl
+      << "Prev: " << current->previous() << std::endl;
   }
 
   void Cell::printSurrounding(Cell *current)

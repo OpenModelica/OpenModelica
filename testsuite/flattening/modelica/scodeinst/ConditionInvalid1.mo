@@ -5,7 +5,7 @@
 //
 
 model ConditionInvalid1
-  parameter Boolean b;
+  parameter Boolean b(fixed = false);
   Real x if b;
 end ConditionInvalid1;
 

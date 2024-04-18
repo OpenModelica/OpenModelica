@@ -3,6 +3,9 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 simple_record.mos \
 record_inlining.mos \
+simple_tuple.mos \
+ComplexTest.mos \
+NonTopLevelInputs.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

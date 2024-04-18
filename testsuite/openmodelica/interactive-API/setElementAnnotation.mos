@@ -1,0 +1,76 @@
+// name: setElementAnnotation
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  package P
+    model A
+      Real x;
+      Real y, z, w;
+    end A;
+  end P;
+");
+
+setElementAnnotation(P, $Code((Documentation(info = "<html>test</html>"))));
+setElementAnnotation(P.A, $Code((Inline = true)));
+setElementAnnotation(P.A.x, $Code((Evaluate = true)));
+setElementAnnotation(P.A.y, $Code((Evaluate = true)));
+list(P);
+setElementAnnotation(P.A.z, $Code((Evaluate = true)));
+list(P);
+setElementAnnotation(P.A.w, $Code((Evaluate = true)));
+list(P);
+setElementAnnotation(Missing, $Code((Inline = true)));
+setElementAnnotation(P.Missing, $Code((Inline = true)));
+
+// Result:
+// true
+// true
+// true
+// true
+// true
+// "package P
+//   model A
+//     Real x annotation(
+//       Evaluate = true);
+//     Real y annotation(
+//       Evaluate = true), z, w;
+//     annotation(
+//       Inline = true);
+//   end A;
+//   annotation(
+//     Documentation(info = \"<html>test</html>\"));
+// end P;"
+// true
+// "package P
+//   model A
+//     Real x annotation(
+//       Evaluate = true);
+//     Real y annotation(
+//       Evaluate = true), z annotation(
+//       Evaluate = true), w;
+//     annotation(
+//       Inline = true);
+//   end A;
+//   annotation(
+//     Documentation(info = \"<html>test</html>\"));
+// end P;"
+// true
+// "package P
+//   model A
+//     Real x annotation(
+//       Evaluate = true);
+//     Real y annotation(
+//       Evaluate = true), z annotation(
+//       Evaluate = true), w annotation(
+//       Evaluate = true);
+//     annotation(
+//       Inline = true);
+//   end A;
+//   annotation(
+//     Documentation(info = \"<html>test</html>\"));
+// end P;"
+// false
+// false
+// endResult

@@ -63,6 +63,12 @@ algorithm
   /* Do nothing */
 end codegenExpSanityCheck;
 
+function getExpNominal
+  input output DAE.Exp e;
+algorithm
+  /* Do nothing */
+end getExpNominal;
+
 function getValueReference
   input SimCodeVar.SimVar inSimVar;
   input SimCode.SimCode inSimCode;

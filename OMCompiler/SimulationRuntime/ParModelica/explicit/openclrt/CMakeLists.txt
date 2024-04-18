@@ -1,19 +1,27 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/ParModelica/auto)
 
-PROJECT(ParModelicaExpl)
+find_package(OpenCL REQUIRED)
 
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
-
-FIND_PACKAGE(OpenCL REQUIRED)
-
-SET(PARMODELICA_SRC omc_ocl_memory_ops.cpp
+set(PARMODEXP_SOURCES omc_ocl_memory_ops.cpp
                     omc_ocl_interface.cpp
                     omc_ocl_builtin_kernels.cpp
                     omc_ocl_util.cpp)
 
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(../../../c)
+add_library(ParModelicaExpl STATIC)
+TARGET_SOURCES(ParModelicaExpl PRIVATE ${PARMODEXP_SOURCES})
+
+target_link_libraries(ParModelicaExpl PUBLIC omc::simrt::runtime)
+target_link_libraries(ParModelicaExpl PUBLIC OpenCL::OpenCL)
 
 
-ADD_LIBRARY(ParModelicaExpl ${PARMODELICA_SRC})
+install(TARGETS ParModelicaExpl)
+install(FILES ParModelicaBuiltin.mo
+            DESTINATION lib/omc)
+
+install(FILES
+            omc_ocl_interface.h
+            omc_ocl_common_header.h
+            omc_ocl_memory_ops.h
+            OCLRuntimeUtil.cl
+        TYPE INCLUDE)

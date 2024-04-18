@@ -1,6 +1,7 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+GetModelInstanceAlgorithm1.mos \
 GetModelInstanceAnnotation1.mos \
 GetModelInstanceAnnotation2.mos \
 GetModelInstanceAnnotation3.mos \
@@ -10,6 +11,8 @@ GetModelInstanceAnnotation6.mos \
 GetModelInstanceAnnotation7.mos \
 GetModelInstanceAnnotation8.mos \
 GetModelInstanceAnnotation9.mos \
+GetModelInstanceAnnotation10.mos \
+GetModelInstanceAnnotation11.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \
@@ -17,6 +20,12 @@ GetModelInstanceBinding2.mos \
 GetModelInstanceBinding3.mos \
 GetModelInstanceBinding4.mos \
 GetModelInstanceBinding5.mos \
+GetModelInstanceBinding6.mos \
+GetModelInstanceBinding7.mos \
+GetModelInstanceBinding8.mos \
+GetModelInstanceBinding9.mos \
+GetModelInstanceBinding10.mos \
+GetModelInstanceBreak1.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \
 GetModelInstanceComment1.mos \
@@ -24,9 +33,14 @@ GetModelInstanceConditional1.mos \
 GetModelInstanceConditional2.mos \
 GetModelInstanceConnection1.mos \
 GetModelInstanceConnection2.mos \
+GetModelInstanceConnection3.mos \
+GetModelInstanceConnection4.mos \
+GetModelInstanceConnection5.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
+GetModelInstanceDim1.mos \
+GetModelInstanceDim2.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \
@@ -36,6 +50,7 @@ GetModelInstanceExp2.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceExtends2.mos \
 GetModelInstanceExtends3.mos \
+GetModelInstanceFunction1.mos \
 GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
@@ -44,16 +59,22 @@ GetModelInstanceInnerOuter1.mos \
 GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
 GetModelInstanceInnerOuter4.mos \
+GetModelInstanceInnerOuter5.mos \
 GetModelInstanceMissingClass1.mos \
 GetModelInstanceMissingClass2.mos \
+GetModelInstanceMissingClass3.mos \
 GetModelInstanceMod1.mos \
 GetModelInstanceMod2.mos \
 GetModelInstanceMod3.mos \
 GetModelInstanceMod4.mos \
+GetModelInstanceMod5.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \
 GetModelInstanceReplaceable3.mos \
 GetModelInstanceReplaceable4.mos \
+GetModelInstanceReplaceable5.mos \
+GetModelInstanceReplaceable6.mos \
+GetModelInstanceReplaceableComment.mos \
 GetModelInstanceStateMachine1.mos \
 ModifierToJSON1.mos \
 QualifyPath1.mos \

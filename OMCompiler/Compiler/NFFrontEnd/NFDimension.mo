@@ -248,6 +248,52 @@ public
     end match;
   end isEqualKnown;
 
+  function isEqualKnownSize
+    "Same as isEqualKnown, but also takes the nodes and dimension indices that
+     the dimensions come from in order to check for equality when one dimension
+     is a size-expression that refers to the other dimension."
+    input Dimension dim1;
+    input InstNode node1;
+    input Integer index1;
+    input Dimension dim2;
+    input InstNode node2;
+    input Integer index2;
+    output Boolean isEqual;
+  protected
+    Expression cref_exp, index_exp;
+  algorithm
+    isEqual := match (dim1, dim2)
+      // dim1 is equal to dim2 if dim1 = size(node2, ...)
+      case (EXP(), _) guard isSizeOf(dim1, node2, index2) then true;
+
+      // dim2 is equal to dim1 if dim2 = size(node1, ...)
+      case (_, EXP()) guard isSizeOf(dim2, node1, index1) then true;
+
+      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (UNKNOWN(), _) then false;
+      case (_, UNKNOWN()) then false;
+      else Dimension.size(dim1) == Dimension.size(dim2);
+    end match;
+  end isEqualKnownSize;
+
+  function isSizeOf
+    "Returns true if the dimension is size(node, index)."
+    input Dimension dim;
+    input InstNode node;
+    input Integer index;
+    output Boolean res;
+  protected
+    Expression cref_exp, index_exp;
+  algorithm
+    res := match dim
+      case EXP(exp = Expression.SIZE(exp = cref_exp as Expression.CREF(), dimIndex = SOME(index_exp)))
+        then InstNode.refEqual(ComponentRef.node(cref_exp.cref), node) and
+             Expression.isEqual(index_exp, Expression.INTEGER(index));
+
+      else false;
+    end match;
+  end isSizeOf;
+
   function allEqualKnown
     input list<Dimension> dims1;
     input list<Dimension> dims2;
@@ -360,7 +406,7 @@ public
   function endExp
     "Returns an expression for the last index in a dimension."
     input Dimension dim;
-    input ComponentRef cref;
+    input Expression subscriptedExp;
     input Integer index;
     output Expression sizeExp;
   algorithm
@@ -374,8 +420,13 @@ public
         then Expression.makeEnumLiteral(ty, listLength(ty.literals));
       case EXP() then dim.exp;
       case UNKNOWN()
-        then Expression.SIZE(Expression.fromCref(ComponentRef.stripSubscripts(cref)),
-                             SOME(Expression.INTEGER(index)));
+        then match subscriptedExp
+          case Expression.CREF()
+            then Expression.SIZE(Expression.fromCref(ComponentRef.stripSubscripts(subscriptedExp.cref)),
+                                 SOME(Expression.INTEGER(index)));
+          case Expression.SUBSCRIPTED_EXP()
+            then Expression.SIZE(subscriptedExp.exp, SOME(Expression.INTEGER(index)));
+        end match;
     end match;
   end endExp;
 

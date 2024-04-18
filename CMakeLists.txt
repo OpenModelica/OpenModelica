@@ -68,8 +68,11 @@ omc_option(OM_USE_CCACHE "Use ccache to speedup compilations." ON)
 ## Our sources contain a lot of c99 and gnu extension code.
 # set(CMAKE_C_STANDARD 90)
 
-## Set the C++ standard to use.
-set(CMAKE_CXX_STANDARD 11)
+## Set the C++ standard to use. We use C++17 for everything in OpenModelica now.
+## Note that 3rdParty libraries might set their own standards.
+## If you need to use a different C++ standard for parts of OpenModelica, you can
+## of course override this in the corresponding directory's CMake file.
+set(CMAKE_CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED ON)
 ## Make sure we do not start relying on extensions down the road.
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -162,15 +165,24 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMPlot)
   omc_add_subdirectory(OMShell)
   omc_add_subdirectory(OMNotebook)
-  include(omsimulator.cmake)
+  omc_add_subdirectory(OMSimulator)
   omc_add_subdirectory(OMEdit)
   omc_add_subdirectory(OMSens_Qt)
 endif()
 
+## do not add OMSens to cmake list as it does not have cmake support yet
+## omc_add_subdirectory(OMSens)
 omc_add_subdirectory(libraries)
 omc_add_subdirectory(testsuite)
 
-include(cmake/packaging/common.cmake)
+## Packaging ##########################################################################################
+# Configure the file OpenModelicaCPackOptions.in.cmake to pick up full paths based on the current location.
+# This will generate the output file in the build directory.
+configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
+# Tell CPack to use this configured file when it is invoked to create packages.
+set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
+# Tell CPack about our components (dispaly names, descriptions, dependencies ...)
+include(cmake/packaging/components.cmake)
 
 
 ## Report some status info.

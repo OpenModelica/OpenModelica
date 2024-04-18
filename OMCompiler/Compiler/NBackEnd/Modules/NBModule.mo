@@ -81,6 +81,7 @@ protected
 
   // Util imports
   import BuiltinSystem = System;
+  import StringUtil;
 
 public
   partial function wrapper
@@ -130,13 +131,15 @@ public
 //                  Index Reduction + Balance Initialization
 // *************************************************************************
   partial function resolveSingularitiesInterface
+    input output Adjacency.Matrix adj;
+    input output Adjacency.Matrix full;
     input output VariablePointers variables;
     input output EquationPointers equations;
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
+    input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
-    input Adjacency.MatrixType matrixType;
     output Boolean changed;
   end resolveSingularitiesInterface;
 
@@ -200,12 +203,14 @@ public
     "DetectDiscreteStates
      This function is only allowed to read and change equations, change algebraic
      variables to discrete and create previous discrete variables."
-    input output VariablePointers variables     "All variables";
-    input output EquationPointers equations     "ONLY Discrete equations!";
-    input output VariablePointers knowns        "Knowns";
-    input output VariablePointers initials      "Initial unknowns";
-    input output VariablePointers discretes     "Discrete variables";
-    input output VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
+    input output VariablePointers variables       "All variables";
+    input output EquationPointers equations       "ONLY discrete or initial equations!";
+    input output VariablePointers knowns          "Knowns";
+    input output VariablePointers initials        "Initial unknowns";
+    input output VariablePointers discretes       "Discrete variables";
+    input output VariablePointers discrete_states "Discrete variables";
+    input output VariablePointers previous        "Previous discrete variables (pre(d) -> $PRE.d)";
+    input String context                          "only for debugging";
   end detectDiscreteStatesInterface;
 
 // =========================================================================
@@ -214,6 +219,17 @@ public
 
 //                                 ALIAS
 // *************************************************************************
+  partial function functionAliasInterface
+    "Alias
+     This module is allowed to read and remove equations and move variables from
+     unknowns to knowns. Since this can also affect all other pointer arrays, the
+     full variable data is needed. All things that are allowed to be changed
+     are pointers, so no return value."
+    input output VarData varData         "Data containing variable pointers";
+    input output EqData eqData           "Data containing equation pointers";
+  end functionAliasInterface;
+
+
   partial function aliasInterface
     "Alias
      This module is allowed to read and remove equations and move variables from
@@ -231,7 +247,7 @@ public
      This module is allowed to read, change and add equations. It uses the
      function tree to evaluate and inline functions."
     input output EqData eqData                "Data containing equation pointers";
-    input VarData varData                     "Data containing equation pointers, for lowering purposes";
+    input output VarData varData              "Data containing variable pointers, for lowering purposes";
     input FunctionTree funcTree               "function tree for differentiation (solve)";
     input list<DAE.InlineType> inline_types   "Inline types for which to inline at the current state";
   end inlineInterface;
@@ -273,6 +289,8 @@ public
     input output StrongComponent comp     "the suspected algebraic loop.";
     input output FunctionTree funcTree    "Function call bodies";
     input output Integer index            "current unique loop index";
+    input VariablePointers variables      "all variables";
+    input Pointer<Integer> eq_index       "equation index";
     input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   end tearingInterface;
 

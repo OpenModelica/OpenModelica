@@ -1,26 +1,49 @@
 
-macro(target_public_headers TARGET)
-    set_target_properties(${TARGET} PROPERTIES PUBLIC_HEADER "${ARGN}")
-endmacro()
 
+#####################################################################################################
+# Configure and generate the files 'ModelicaLibraryConfig_gcc.inc' and 'ModelicaConfig_gcc.inc'
+# These files tell the CPP code generator what name to use and where to find the necessary
+# libraries for the generated simulation code. This does not cover all variables that are used
+# or set by the old CPP-runtime build system. However, these seem to be enough to build things
+# on Linux and Windows with OMDev.
+
+# SCOREP_INCLUDE_ is added to the compilation command-line of the generated code (in the Makefiles).
+# It is not clear why this one is chosen among the many others to be explicitly added to the generated
+# compilation code. It needs to be set to a valid directory resembling path.
 set(SCOREP_INCLUDE_ ".")
+
+# The boost libraries and headers are expected to be in the system directories.
+# For MSVC this needs to be adjusted. However, it is not clear which approach we are
+# taking for MSVC yet. So leave it like this until we decide.
 set(Boost_INCLUDE_ ".")
+# This is supposwed to signify the directory where the boost libraries can be found (for -L ...)
 set(Boost_LIBS_ ".")
+# The actual boost libraries needed to be linked.
+set(Boost_LIBRARIES_ "-lboost_program_options -lboost_filesystem")
+
+# Lapack libs are also expected to be in the system directories.
 set(LAPACK_LIBS_ ".")
-set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -fPIC -DUSE_THREAD")
 if(UNIX)
   set(LAPACK_LIBRARIES_ "-llapack -lblas")
-else()
-  set(LAPACK_LIBRARIES_ "")
+  set(LINUX_LIB_DL "-ldl")
 endif()
 
+# The thread library flag (can be something like -lpthreads for example). Let CMake decide the value.
+set(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
+
+# Some common flags for the generated simulation code. It is not clear why OMC_BUILD is defined
+# by the old system. It is always defined for some reason. USE_THREAD means use the C++ standard
+# library's thread library (instead of something like boost threads).
+set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC")
+
+# Configure the files.
 configure_file(Modelica/ModelicaLibraryConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc)
 configure_file(Modelica/ModelicaConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaConfig_gcc.inc)
 
+# Install them during installtion. They end up in the appropriate include directory. Right now that is 'include/cpp'.
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc
                ${CMAKE_CURRENT_BINARY_DIR}/ModelicaConfig_gcc.inc
          TYPE INCLUDE)
-
 
 
 

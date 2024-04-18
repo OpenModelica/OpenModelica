@@ -535,7 +535,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
       solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
-      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData, TRUE);
+      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData, TRUE, nonlinsys->isPatternAvailable);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;
@@ -615,20 +615,20 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 #endif
   }
 
-  for(i=0; i<data->modelData->nNonLinearSystems; ++i) {
+  for (i=0; i<data->modelData->nNonLinearSystems; ++i) {
     initializeNonlinearSystemData(data, threadData, &nonlinsys[i], i, &someSmallDensity, &someBigSize);
   }
 
   /* print relevant flag information */
-  if(someSmallDensity) {
-    if(someBigSize) {
+  if (someSmallDensity) {
+    if (someBigSize) {
       infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
                                      "specified using the runtime flags '<-nlssMaxDensity=value>' and '<-nlssMinSize=value>'.");
     } else {
       infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
                                      "using the runtime flag '<-nlssMaxDensity=value>'.");
     }
-  } else if(someBigSize) {
+  } else if (someBigSize) {
     infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
                                    "using the runtime flag '<-nlssMinSize=value>'.");
   }
@@ -660,7 +660,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
-    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], 0 /* false */, 0 /* false */);
+    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], FALSE, FALSE);
   }
 
   messageClose(LOG_NLS);
@@ -690,6 +690,8 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
   free(nonlinsys->nominal);
   free(nonlinsys->min);
   free(nonlinsys->max);
+  nonlinsys->freeStaticNLSData(data, threadData, nonlinsys);
+
   freeValueList(nonlinsys->oldValueList, 1);
   freeNonlinearPattern(nonlinsys->nonlinearPattern);
 
@@ -1183,6 +1185,10 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   FILE *pFile = NULL;
   double originalLambda = data->simulationInfo->lambda;
 
+  if (!nonlinsys->logActive) {
+    deactivateLogging();
+  }
+
 #if !defined(OMC_MINIMAL_RUNTIME)
   kinsol = (nonlinsys->nlsMethod == NLS_KINSOL);
 #endif
@@ -1399,6 +1405,11 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 #endif
   res = check_nonlinear_solution(data, 1, sysNumber);
   data->simulationInfo->lambda = originalLambda;
+
+  if (!nonlinsys->logActive) {
+    reactivateLogging();
+  }
+
   return res;
 }
 

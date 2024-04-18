@@ -129,32 +129,31 @@ readFile("linearized_model.py"); getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "function linearized_model()
-// #= simple_test =#
-// #= der(x) = A * x + B * u =#
-// #= y = C * x + D * u =#
-//   local n = 2 #= number of states =#
-//   local m = 1 #= number of inputs =#
-//   local p = 1 #= number of outputs =#
+//   # simple_test #
+//   local n = 2 # number of states
+//   local m = 1 # number of inputs
+//   local p = 1 # number of outputs
 //
-//   local x0 = {1.626558527192664, 2.380918053900121}
-//   local u0 = {0}
+//   local x0 = [1.626558527192664 2.380918053900121]
+//   local u0 = [0]
 //
-//   local A =	[-2.887152375617477, -1.62655852935388;
-// 	-2.380918056675567, -2.388394731625707]
+//   local A = [-2.887152375617477 -1.62655852935388;
+// 	-2.380918056675567 -2.388394731625707]
 //
-//   local B =	[0;
+//   local B = [0;
 // 	0]
 //
-//   local C =	[0, 0]
+//   local C = [0 0]
 //
-//   local D =	[4.007476581092785]
+//   local D = [4.007476581092785]
 //
-//   # x_num_x(1) = x(1);
-//   # x_num_x(2) = x(2);
-//   # u_u = u(1);
-//   # y_y = y(1);
+//   stateVars  = [\"num_x(1)\",\"num_x(2)\"]
+//   inputVars  = [\"u\"]
+//   outputVars = [\"y\"]
+//   Ts = 0.5; #stop time
 //
-//   (n, m, p, x0, u0, A, B, C, D)
+//
+//   return (n, m, p, x0, u0, A, B, C, D, stateVars, inputVars, outputVars)
 // end"
 // ""
 // true

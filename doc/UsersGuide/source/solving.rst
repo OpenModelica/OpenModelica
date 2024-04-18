@@ -3,8 +3,6 @@
 Solving Modelica Models
 =======================
 
-.. TODO: Describe the Backend related modules.
-
 .. _cruntime-integration-methods :
 
 Integration Methods
@@ -386,7 +384,7 @@ The following minimal working example demonstrates the use of the initial value 
       x = 4;
     annotation(
       experiment(StopTime = 1),
-      __OpenModelica_simulationFlags(r = "initial.mat"));
+      __OpenModelica_simulationFlags(r = "../initial.mat"));
     end ResultFileGenerator;
 
     model M "Relies on Modelica code only for initialization"
@@ -403,32 +401,34 @@ The following minimal working example demonstrates the use of the initial value 
 
     model M2 "Imports parameters and initial guesses only, solve initial equations"
       extends M;
-    annotation(__OpenModelica_simulationFlags(iif = "initial.mat"));
+    annotation(__OpenModelica_simulationFlags(iif = "../initial.mat"));
     end M2;
 
     model M3 "import parameters, initial guesses and initial states, skip initial equations"
       extends M;
-    annotation(__OpenModelica_simulationFlags(iim = "none", iif = "initial.mat"));
+    annotation(__OpenModelica_simulationFlags(iim = "none", iif = "../initial.mat"));
     end M3;
   end ImportInitialValues;
 
-Running the `ResultFileGenerator` model creates a .mat file with some initial values in the working directory:
-`p1 = 7`, `p2 = 10`, `p3 = 21`, `v1 = 2.8`, `v2 = 10`, `x = 4`, `der(x) = 0`.
+Running the `ResultFileGenerator` model creates an `initial.mat` file with some initial values in the root OMEdit working directory:
+`p1 = 7`, `p2 = 10`, `p3 = 21`, `v1 = 2.8`, `v2 = 10`, `x = 4`, `der(x) = 0`. Note that the default directory when running simulations
+in OMEdit is a sub-directory named as the full model pathname, located in the working directory, so it is necessary to go up one
+directory to access the root working directory.
 
 When running model `M`, the simulation process only relies on the initial and guess values provided by the Modelica source code. Regarding the
-parameter values, `p1 = 1, `p2 = 1`, `p3 = 3*p1 = 3`; regarding `v1`, the implicit cubic equation is solved iteratively using the start value
+parameter values, `p1 = 1`, `p2 = 1`, `p3 = 3*p1 = 3`; regarding `v1`, the implicit cubic equation is solved iteratively using the start value
 14 as an initial guess, thus converging to the nearest solution `v1 = 15`. The other variable `v2` can be computed explicitly, so there is no
 need of any guess value for it. Finally, the initial value of the state variable is set to `x = 6` by the initial equations.
 
-When running model `M2`, the values of the .mat file are imported to provide values for non-final parameters and guess values for the initial
+When running model `M2`, the values of the `initial.mat` file are imported to provide values for non-final parameters and guess values for the initial
 equations, which are solved starting from there. Hence, the imported parameter values p1 = 7 and p2 = 10 override the model's binding equations,
 that would set both to 1; on the other hand, the final parameter p3 is computed based on the final binding equation to `p3 = p1*3 = 21`. Regarding
 `v1`, the iterative solver converges to the solution closest to the imported start value of 2.8, i.e. `v1 = 3`, while `v2` is computed explicitly,
-so it doesn't depend on the imported start value. The initial value of the state `x = 6` is obtained by solving the initial equation, which is
-explicit and thus ignores the imported guess value `x = 4`.
+so it doesn't depend on the imported start value, which is ignored. The initial value of the state `x = 6` is obtained by solving the initial equation,
+which is explicit and thus ignores the imported guess value `x = 4`.
 
 Finally, when running model `M3`, parameters are handled like in the previous case, as well as the algebraic variables `v1` and `v2`. However,
-in this case the initial equations are skipped, so the state variable gets its initial value `x = 4` straight from the imported .mat file.
+in this case the solution of the initial equations is skipped, so the state variable gets its initial value `x = 4` straight from the imported `initial.mat` file.
 
 
 Homotopy Method
@@ -448,7 +448,7 @@ OpenModelica has different solvers available for non-linear systems.
 Initializing with homotopy on the first try
 is default if a homotopy operator is used. It can be switched off with
 :ref:`noHomotopyOnFirstTry <simflag-noHomotopyOnFirstTry>`. For a general
-overview see :cite:`sielemann2011robust`, for details on the implementation in
+overview see :cite:`sielemann2011robust`, :cite:`sielemann2012PhD`, for details on the implementation in
 OpenModelica see :cite:`openmodelica.org:doc-extra:ochel2013initialization`.
 
 The homotopy methods distinguish between local and global methods meaning, if

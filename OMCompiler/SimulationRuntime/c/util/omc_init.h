@@ -33,7 +33,7 @@
 
 #include "../openmodelica.h"
 
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 #include <pthread.h>
 DLLDirection extern pthread_key_t mmc_thread_data_key;
 DLLDirection extern pthread_once_t mmc_init_once;
@@ -45,9 +45,10 @@ static const int mmc_thread_data_key = 1;
 #define OMC_MAIN_THREADDATA_NAME globalThreadData_UnknownModel
 #endif
 DLLDirection extern threadData_t *OMC_MAIN_THREADDATA_NAME;
-static inline pthread_getspecific(int key)
+static inline void* pthread_getspecific(int key)
 {
   assert(key==mmc_thread_data_key);
+  return NULL;
 }
 #endif
 

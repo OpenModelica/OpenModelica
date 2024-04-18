@@ -54,7 +54,7 @@ namespace IAEX
       void storeCommands();
 
       CellApplication *app_;
-      vector<Command *> storage_;
+      std::vector<Command *> storage_;
    };
 }
 

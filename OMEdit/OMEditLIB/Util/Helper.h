@@ -41,10 +41,6 @@
 #include <QObject>
 #include <QFontInfo>
 
-#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
-#define QStringLiteral QString::fromUtf8
-#endif
-
 class Helper : public QObject
 {
   Q_OBJECT
@@ -325,7 +321,7 @@ public:
   static QString dontShowThisMessageAgain;
   static QString clickAndDragToResize;
   static QString variables;
-  static QString variablesBrowser;
+  static QString variableBrowser;
   static QString description;
   static QString previous;
   static QString next;
@@ -360,6 +356,7 @@ public:
   static QString attachToRunningProcess;
   static QString attachToRunningProcessTip;
   static QString reportIssue;
+  static QString crashTest;
   static QString parsingFailedJson;
   static QString expandAll;
   static QString collapseAll;
@@ -450,7 +447,7 @@ class GUIMessages : public QObject
   Q_OBJECT
 public:
   enum MessagesTypes {
-    CHECK_MESSAGES_BROWSER,
+    CHECK_MESSAGE_BROWSER,
     SAME_COMPONENT_NAME,
     SAME_COMPONENT_CONNECT,
     MISMATCHED_CONNECTORS_IN_CONNECT,
@@ -522,7 +519,8 @@ public:
     GDB_ERROR,
     INVALID_INSTANCE_NAME,
     ENTER_SCRIPT,
-    LIBRARY_INDEX_FILE_NOT_FOUND
+    LIBRARY_INDEX_FILE_NOT_FOUND,
+    VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH,
   };
 
   static QString getMessage(int type);

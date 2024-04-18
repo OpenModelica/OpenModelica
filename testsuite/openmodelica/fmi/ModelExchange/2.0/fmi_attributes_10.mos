@@ -15,7 +15,7 @@ equation
   der(x) = 0;
 end fmi_attributes_10;
 "); getErrorString();
-translateModelFMU(fmi_attributes_10); getErrorString();
+buildModelFMU(fmi_attributes_10); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq fmi_attributes_10.fmu modelDescription.xml > fmi_attributes_10_tmp.xml"); getErrorString();

@@ -67,7 +67,8 @@ void DiagramWindow::showVisualizationDiagram(ModelWidget *pModelWidget)
     setWindowTitle(pModelWidget->getLibraryTreeItem()->getName());
     mpModelWidget = pModelWidget;
     mpModelWidget->getDiagramGraphicsView()->setIsVisualizationView(true);
-    connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)));
+    connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)), Qt::UniqueConnection);
+    MainWindow::instance()->getVariablesWidget()->updateVisualization();
     mpModelWidget->getDiagramGraphicsView()->show();
     mpMainLayout->addWidget(mpModelWidget->getDiagramGraphicsView());
   } else {

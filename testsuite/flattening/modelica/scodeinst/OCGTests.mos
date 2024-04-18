@@ -190,7 +190,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.PlanarLoops_analytic completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.PlanarLoops_analytic has 4009 equation(s) and 4009 variable(s).
-// 3052 of these are trivial equation(s)."
+// 3034 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive has 1525 equation(s) and 1525 variable(s).
@@ -217,7 +217,9 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // "Check of Transformer.SC2 completed successfully.
 // Class Transformer.SC2 has 393 equation(s) and 393 variable(s).
 // 183 of these are trivial equation(s)."
-// ""
+// "[flattening/modelica/scodeinst/Transformer.mo:42:5-42:94:writable] Warning: Parameter singlePhaseTransformerQS1.TRef has no value, and is fixed during initialization (fixed=true), using available start value (start=288.15) as default value.
+// [flattening/modelica/scodeinst/Transformer.mo:427:13-427:88:writable] Warning: Parameter voltageSource1.phi has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// "
 // true
 // ""
 // "Check of PowerSystems.Examples.AC3ph.Inverters.Rectifier completed successfully.

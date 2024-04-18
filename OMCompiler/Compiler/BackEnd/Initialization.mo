@@ -42,6 +42,7 @@ import BackendDAE;
 import BackendDAEFunc;
 import DAE;
 import HashSet;
+import StringUtil;
 import Util;
 
 protected
@@ -264,7 +265,7 @@ protected
   String msg;
 algorithm
 
-  (initsyst, dumpVars) := preBalanceInitialSystem(inInitsyst);
+  (initsyst, dumpVars) := preBalanceInitialSystem(inInitsyst, initVars, isLambda0);
   execStat("preBalanceInitialSystem (" + systemStr + ")");
 
   initdae := BackendDAE.DAE({initsyst}, shared);
@@ -1115,6 +1116,8 @@ end simplifyInitialFunctionsExp;
 
 protected function preBalanceInitialSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
+  input BackendDAE.Variables initVars;
+  input Boolean isLambda0;
   output BackendDAE.EqSystem outEqSystem = inEqSystem;
   output list<BackendDAE.Var> outDumpVars;
 protected
@@ -1124,7 +1127,7 @@ protected
   BackendDAE.AdjacencyMatrix mt;
 algorithm
   (_, mt) := BackendDAEUtil.adjacencyMatrix(inEqSystem, BackendDAE.NORMAL(), NONE(), true);
-  (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, inEqSystem.orderedVars, inEqSystem.orderedEqs, false, {});
+  (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, inEqSystem.orderedVars, inEqSystem.orderedEqs, initVars, isLambda0, false, {});
   if b then
     outEqSystem.orderedEqs := orderedEqs;
     outEqSystem.orderedVars := orderedVars;
@@ -1137,6 +1140,8 @@ protected function preBalanceInitialSystem1 "author: lochel"
   input BackendDAE.AdjacencyMatrix mt;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
+  input BackendDAE.Variables initVars;
+  input Boolean isLambda0;
   input Boolean inB;
   input list<BackendDAE.Var> inDumpVars;
   output BackendDAE.Variables outVars;
@@ -1160,8 +1165,8 @@ algorithm
 
     else equation
       true = n > 0;
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem2(n, mt, inVars, inEqs, inB, inDumpVars);
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, vars, eqs, b, dumpVars);
+      (vars, eqs, b, dumpVars) = preBalanceInitialSystem2(n, mt, inVars, inEqs, initVars, isLambda0, inB, inDumpVars);
+      (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, vars, eqs, initVars, isLambda0, b, dumpVars);
     then (vars, eqs, b, dumpVars);
   end match;
 end preBalanceInitialSystem1;
@@ -1171,6 +1176,8 @@ protected function preBalanceInitialSystem2 "author: lochel"
   input BackendDAE.AdjacencyMatrix mt;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
+  input BackendDAE.Variables initVars;
+  input Boolean isLambda0;
   input Boolean inB;
   input list<BackendDAE.Var> inDumpVars;
   output BackendDAE.Variables outVars = inVars;
@@ -1181,6 +1188,7 @@ protected
   list<Integer> row;
   BackendDAE.Var var;
   DAE.ComponentRef cref;
+  String str, err_str = " with unknown reason.";
 algorithm
   try
     row := mt[n];
@@ -1191,12 +1199,17 @@ algorithm
 
       if ComponentReference.isPreCref(cref) then
         (outVars, _) := BackendVariable.removeVars({n}, inVars, {});
-      else
+      elseif BackendVariable.containsVar(var, initVars) then
         (outEqs, outDumpVars) := addStartValueEquations({var}, inEqs, inDumpVars);
+      else
+        str := if isLambda0 then "lambda 0 " else "";
+        err_str := " because variable " + BackendDump.varString(var)
+          + " does not appear in any equation in the " + str + "initial system and is not fixable.";
+        fail();
       end if;
     end if;
   else
-    Error.addInternalError("function preBalanceInitialSystem2 failed", sourceInfo());
+    Error.addInternalError(getInstanceName() + " failed" + err_str, sourceInfo());
     fail();
   end try;
 end preBalanceInitialSystem2;
@@ -2411,7 +2424,7 @@ algorithm
 
       if isFixed then
         // Special case for initial state selection
-        if Util.stringStartsWith("$STATESET",ComponentReference.crefFirstIdent(cr)) and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
+        if StringUtil.startsWith(ComponentReference.crefFirstIdent(cr), "$STATESET") and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
           stateSetSplit = Util.stringSplitAtChar(ComponentReference.crefFirstIdent(cr),".");
           stateSetIdxString::stateSetSplit = stateSetSplit;
           stateSetIdxString = substring(stateSetIdxString,10,stringLength(stateSetIdxString));

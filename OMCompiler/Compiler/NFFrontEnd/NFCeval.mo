@@ -64,7 +64,6 @@ import Class = NFClass;
 import TypeCheck = NFTypeCheck;
 import ExpandExp = NFExpandExp;
 import ElementSource;
-import Flags;
 import Prefixes = NFPrefixes;
 import UnorderedMap;
 import ErrorExt;
@@ -368,7 +367,7 @@ algorithm
   exp := match cref
     case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
       guard not ComponentRef.isIterator(cref) and
-            ComponentRef.nodeVariability(cref) <= Variability.NON_STRUCTURAL_PARAMETER
+            ComponentRef.nodeVariability(cref) < Variability.NON_STRUCTURAL_PARAMETER
       then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts, liftExp);
 
     else defaultExp;
@@ -981,7 +980,7 @@ algorithm
     case Op.SUB then evalBinarySub(exp1, exp2);
     case Op.MUL then evalBinaryMul(exp1, exp2);
     case Op.DIV then evalBinaryDiv(exp1, exp2, target);
-    case Op.POW then evalBinaryPow(exp1, exp2);
+    case Op.POW then evalBinaryPow(exp1, exp2, target);
     case Op.ADD_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryAdd);
     case Op.ADD_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryAdd);
     case Op.SUB_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinarySub);
@@ -996,8 +995,8 @@ algorithm
       then evalBinaryScalarArray(exp1, exp2, function evalBinaryDiv(target = target));
     case Op.DIV_ARRAY_SCALAR
       then evalBinaryArrayScalar(exp1, exp2, function evalBinaryDiv(target = target));
-    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryPow);
-    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryPow);
+    case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, function evalBinaryPow(target = target));
+    case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, function evalBinaryPow(target = target));
     case Op.POW_MATRIX then evalBinaryPowMatrix(exp1, exp2);
     else
       algorithm
@@ -1022,6 +1021,15 @@ algorithm
 
     case (Expression.STRING(), Expression.STRING())
       then Expression.STRING(exp1.value + exp2.value);
+
+    case (Expression.STRING(), Expression.FILENAME())
+      then Expression.STRING(exp1.value + exp2.filename);
+
+    case (Expression.FILENAME(), Expression.STRING())
+      then Expression.STRING(exp1.filename + exp2.value);
+
+    case (Expression.FILENAME(), Expression.FILENAME())
+      then Expression.STRING(exp1.filename + exp2.filename);
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
@@ -1132,16 +1140,28 @@ end evalBinaryDiv;
 function evalBinaryPow
   input Expression exp1;
   input Expression exp2;
+  input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    case (Expression.REAL(), Expression.REAL())
+      guard exp1.value < 0 and realInt(exp2.value) <> exp2.value
+      algorithm
+        if EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.INVALID_NEGATIVE_POW,
+            {Expression.toString(exp1), Expression.toString(exp2)}, EvalTarget.getInfo(target));
+          fail();
+        end if;
+      then
+        Expression.BINARY(exp1, Operator.makePow(Type.REAL()), exp2);
+
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value ^ exp2.value);
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
-        Array.threadMap(exp1.elements, exp2.elements, evalBinaryPow),
+        Array.threadMap(exp1.elements, exp2.elements, function evalBinaryPow(target = target)),
         literal = true);
 
     else
@@ -1619,6 +1639,12 @@ algorithm
       then exp1.value < exp2.value;
     case (Expression.STRING(), Expression.STRING())
       then stringCompare(exp1.value, exp2.value) < 0;
+    case (Expression.STRING(), Expression.FILENAME())
+      then stringCompare(exp1.value, exp2.filename) < 0;
+    case (Expression.FILENAME(), Expression.STRING())
+      then stringCompare(exp1.filename, exp2.value) < 0;
+    case (Expression.FILENAME(), Expression.FILENAME())
+      then stringCompare(exp1.filename, exp2.filename) < 0;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then exp1.index < exp2.index;
 
@@ -1645,6 +1671,12 @@ algorithm
       then exp1.value <= exp2.value;
     case (Expression.STRING(), Expression.STRING())
       then stringCompare(exp1.value, exp2.value) <= 0;
+    case (Expression.STRING(), Expression.FILENAME())
+      then stringCompare(exp1.value, exp2.filename) <= 0;
+    case (Expression.FILENAME(), Expression.STRING())
+      then stringCompare(exp1.filename, exp2.value) <= 0;
+    case (Expression.FILENAME(), Expression.FILENAME())
+      then stringCompare(exp1.filename, exp2.filename) <= 0;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then exp1.index <= exp2.index;
 
@@ -1671,6 +1703,12 @@ algorithm
       then exp1.value > exp2.value;
     case (Expression.STRING(), Expression.STRING())
       then stringCompare(exp1.value, exp2.value) > 0;
+    case (Expression.STRING(), Expression.FILENAME())
+      then stringCompare(exp1.value, exp2.filename) > 0;
+    case (Expression.FILENAME(), Expression.STRING())
+      then stringCompare(exp1.filename, exp2.value) > 0;
+    case (Expression.FILENAME(), Expression.FILENAME())
+      then stringCompare(exp1.filename, exp2.filename) > 0;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then exp1.index > exp2.index;
 
@@ -1697,6 +1735,12 @@ algorithm
       then exp1.value >= exp2.value;
     case (Expression.STRING(), Expression.STRING())
       then stringCompare(exp1.value, exp2.value) >= 0;
+    case (Expression.STRING(), Expression.FILENAME())
+      then stringCompare(exp1.value, exp2.filename) >= 0;
+    case (Expression.FILENAME(), Expression.STRING())
+      then stringCompare(exp1.filename, exp2.value) >= 0;
+    case (Expression.FILENAME(), Expression.FILENAME())
+      then stringCompare(exp1.filename, exp2.filename) >= 0;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then exp1.index >= exp2.index;
 
@@ -1723,6 +1767,12 @@ algorithm
       then exp1.value == exp2.value;
     case (Expression.STRING(), Expression.STRING())
       then stringCompare(exp1.value, exp2.value) == 0;
+    case (Expression.STRING(), Expression.FILENAME())
+      then stringCompare(exp1.value, exp2.filename) == 0;
+    case (Expression.FILENAME(), Expression.STRING())
+      then stringCompare(exp1.filename, exp2.value) == 0;
+    case (Expression.FILENAME(), Expression.FILENAME())
+      then stringCompare(exp1.filename, exp2.filename) == 0;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then exp1.index == exp2.index;
 
@@ -1749,6 +1799,12 @@ algorithm
       then exp1.value <> exp2.value;
     case (Expression.STRING(), Expression.STRING())
       then stringCompare(exp1.value, exp2.value) <> 0;
+    case (Expression.STRING(), Expression.FILENAME())
+      then stringCompare(exp1.value, exp2.filename) <> 0;
+    case (Expression.FILENAME(), Expression.STRING())
+      then stringCompare(exp1.filename, exp2.value) <> 0;
+    case (Expression.FILENAME(), Expression.FILENAME())
+      then stringCompare(exp1.filename, exp2.filename) <> 0;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then exp1.index <> exp2.index;
 
@@ -1937,7 +1993,7 @@ algorithm
     case "transpose" then evalBuiltinTranspose(listHead(args));
     case "vector" then evalBuiltinVector(listHead(args));
     case "zeros" then evalBuiltinZeros(args);
-    case "OpenModelica_uriToFilename" then evalUriToFilename(fn, args, target);
+    case "OpenModelica_uriToFilename" then evalUriToFilename(fn, listHead(args), target);
     case "intBitAnd" then evalIntBitAnd(args);
     case "intBitOr" then evalIntBitOr(args);
     case "intBitXor" then evalIntBitXor(args);
@@ -1949,6 +2005,7 @@ algorithm
     case "realClock" then evalRealClock(args);
     case "booleanClock" then evalBooleanClock(args);
     case "solverClock" then evalSolverClock(args);
+    case "getInstanceName" then evalGetInstanceName(listHead(args));
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -2906,25 +2963,16 @@ end evalBuiltinZeros;
 
 function evalUriToFilename
   input Function fn;
-  input list<Expression> args;
+  input Expression arg;
   input EvalTarget target;
   output Expression result;
-protected
-  Expression e, arg;
-  String s;
-  Function f;
 algorithm
-  arg := listHead(args);
   result := match arg
     case Expression.STRING()
-      algorithm
-        s := OpenModelica.Scripting.uriToFilename(arg.value);
-        e := Expression.STRING(s);
-        if Flags.getConfigBool(Flags.BUILDING_FMU) then
-          f := Function.setName(Absyn.IDENT("OpenModelica_fmuLoadResource"), fn);
-          e := Expression.CALL(Call.makeTypedCall(f, {e}, Variability.PARAMETER, Purity.IMPURE, Expression.typeOf(e)));
-        end if;
-      then e;
+      then Expression.FILENAME(OpenModelica.Scripting.uriToFilename(arg.value));
+
+    case Expression.FILENAME()
+      then Expression.FILENAME(OpenModelica.Scripting.uriToFilename(arg.filename));
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -3072,7 +3120,20 @@ algorithm
   end match;
 end evalSolverClock;
 
-function evalArrayConstructor
+public function evalGetInstanceName
+  input Expression scopeArg;
+  output Expression result;
+protected
+  ComponentRef cref;
+algorithm
+  // getInstanceName is normally evaluated by the flattening, but we might get
+  // here when getInstanceName is used in e.g. a package. In that case use the
+  // scope that was added as an argument during the typing.
+  cref := Expression.toCref(scopeArg);
+  result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(ComponentRef.node(cref))));
+end evalGetInstanceName;
+
+protected function evalArrayConstructor
   input Expression callExp;
   output Expression result;
 protected
@@ -3197,9 +3258,11 @@ algorithm
 
     // Return the size expression for the found dimension.
     outExp := Dimension.sizeExp(dim);
+    outExp := evalExp(outExp, target);
   else
     (outExp, ty) := Typing.typeExp(exp, NFInstContext.CLASS, info);
     arr := Array.mapList(Type.arrayDims(ty), Dimension.sizeExp);
+    Array.mapNoCopy(arr, function evalExp(target = target));
     dim := Dimension.fromInteger(arrayLength(arr), Variability.PARAMETER);
     outExp := Expression.makeArray(Type.ARRAY(Type.INTEGER(), {dim}), arr);
   end if;

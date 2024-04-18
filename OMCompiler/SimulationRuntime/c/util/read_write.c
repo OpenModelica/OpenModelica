@@ -134,17 +134,17 @@ void puttype(const type_description *desc)
     break;
   case TYPE_DESC_STRING_ARRAY: {
       int d;
-      fprintf(stderr, "STRING ARRAY [%d] (", desc->data.string_array.ndims);
-      for(d = 0; d < desc->data.string_array.ndims; ++d) {
-        fprintf(stderr, "%d, ", (int) desc->data.string_array.dim_size[d]);
+      fprintf(stderr, "STRING ARRAY [%d] (", desc->data.str_array.ndims);
+      for(d = 0; d < desc->data.str_array.ndims; ++d) {
+        fprintf(stderr, "%d, ", (int) desc->data.str_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
-      if(desc->data.string_array.ndims == 1) {
+      if(desc->data.str_array.ndims == 1) {
         int e;
         fprintf(stderr, "\t[");
-        for(e = 0; e < desc->data.string_array.dim_size[0]; ++e) {
+        for(e = 0; e < desc->data.str_array.dim_size[0]; ++e) {
           fprintf(stderr, "%s, ",
-                MMC_STRINGDATA(((modelica_string *) desc->data.string_array.data)[e]));
+                MMC_STRINGDATA(((modelica_string *) desc->data.str_array.data)[e]));
         }
         fprintf(stderr, "]\n");
       }
@@ -226,8 +226,8 @@ void free_type_description(type_description *desc)
     break;
   case TYPE_DESC_STRING_ARRAY:
     if(desc->retval) {
-      free(desc->data.string_array.dim_size);
-      free(desc->data.string_array.data);
+      free(desc->data.str_array.dim_size);
+      free(desc->data.str_array.data);
     }
     break;
   case TYPE_DESC_TUPLE: {
@@ -395,7 +395,7 @@ int read_string_array(type_description **descptr, string_array *arr)
   type_description *desc = (*descptr)++;
   switch (desc->type) {
   case TYPE_DESC_STRING_ARRAY:
-    *arr = desc->data.string_array;
+    *arr = desc->data.str_array;
     return 0;
   case TYPE_DESC_REAL_ARRAY:
     /* Empty arrays automaticly get to be real arrays */
@@ -403,10 +403,10 @@ int read_string_array(type_description **descptr, string_array *arr)
       int dims = desc->data.r_array.ndims;
       _index_t *dim_size = desc->data.r_array.dim_size;
       desc->type = TYPE_DESC_STRING_ARRAY;
-      desc->data.string_array.ndims = dims;
-      desc->data.string_array.dim_size = dim_size;
-      alloc_string_array_data(&(desc->data.string_array));
-      *arr = desc->data.string_array;
+      desc->data.str_array.ndims = dims;
+      desc->data.str_array.dim_size = dim_size;
+      alloc_string_array_data(&(desc->data.str_array));
+      *arr = desc->data.str_array;
       return 0;
     }
     break;
@@ -525,12 +525,12 @@ void write_string_array(type_description *desc, const string_array *arr)
     size_t i;
     size_t nr_elements;
     modelica_string *dst = NULL, *src = NULL;
-    desc->data.string_array.ndims = arr->ndims;
-    desc->data.string_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
-    memcpy(desc->data.string_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
+    desc->data.str_array.ndims = arr->ndims;
+    desc->data.str_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
+    memcpy(desc->data.str_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
     nr_elements = base_array_nr_of_elements(*arr);
-    desc->data.string_array.data = malloc(sizeof(modelica_string)* nr_elements);
-    dst = (modelica_string*)desc->data.string_array.data;
+    desc->data.str_array.data = malloc(sizeof(modelica_string)* nr_elements);
+    dst = (modelica_string*)desc->data.str_array.data;
     src = (modelica_string*)arr->data;
     for(i = 0; i < nr_elements; ++i) {
       *dst = *src;
@@ -538,7 +538,7 @@ void write_string_array(type_description *desc, const string_array *arr)
       ++dst;
     }
   } else {
-    copy_string_array(*arr, &(desc->data.string_array));
+    copy_string_array(*arr, &(desc->data.str_array));
   }
 }
 

@@ -459,7 +459,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
  *  \param [in]  [pInitFile] extra argument for initialization-method "file"
  *  \param [in]  [initTime] extra argument for initialization-method "file"
  *
- *  This function starts the initialization process of the model .
+ *  This function starts the initialization process of the model.
  */
 int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time)
@@ -555,7 +555,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
   /* Last step with terminal()=true */
-  if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION) {
+  if (solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION) {
     infoStreamPrint(LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
     data->simulationInfo->terminal = 1;
     updateDiscreteSystem(data, threadData);
@@ -569,7 +569,11 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   }
 
   if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
-    communicateStatus("Finished", 1, solverInfo->currentTime, solverInfo->currentStepSize);
+    if (simInfo->simulationSuccess) {
+      communicateStatus("Finished", 1, solverInfo->currentTime, solverInfo->currentStepSize);
+    } else {
+      communicateStatus("Simulation aborted", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime), solverInfo->currentTime, 0.0);
+    }
   }
 
   /* we have output variables in the command line -output a,b,c */

@@ -41,6 +41,7 @@ ForIterator1.mo \
 ForIterator2.mo \
 ForIterator3.mo \
 GetInstanceName.mo \
+HideResult1.mo \
 IconsRecursiveTest.mo \
 if_then_elseif_else.mo \
 IfExpCombiTable1.mo \
@@ -96,7 +97,10 @@ Switch.mo \
 ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mos \
 VectorizeExtendedType.mo \
 WillowForest.mo \
-Homotopy.mos
+Homotopy.mos \
+TestEnumAsInteger.mos \
+TestTopLevelOuter.mos \
+
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

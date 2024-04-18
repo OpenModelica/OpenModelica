@@ -7,7 +7,7 @@
 
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("IntegerNetwork1.mo"); getErrorString();
-translateModelFMU(IntegerNetwork1, version="1.0"); getErrorString();
+buildModelFMU(IntegerNetwork1, version="1.0"); getErrorString();
 
 importFMU("IntegerNetwork1.fmu"); getErrorString();
 loadFile("IntegerNetwork1_me_FMU.mo"); getErrorString();

@@ -33,18 +33,18 @@ encapsulated package NFStructural
   "Contains utility functions for handling structural parameters."
 
   import Attributes = NFAttributes;
-  import Component = NFComponent;
   import Binding = NFBinding;
+  import Call = NFCall;
+  import Component = NFComponent;
+  import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
+  import Expression = NFExpression;
+  import InstContext = NFInstContext;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
   import Subscript = NFSubscript;
-  import Expression = NFExpression;
-  import ComponentRef = NFComponentRef;
-  import Call = NFCall;
-  import Dimension = NFDimension;
 
 protected
-  import Flags;
   import Util;
 
 public
@@ -55,14 +55,19 @@ public
     input InstNode compNode;
     input Boolean compEval "If the component has an Evaluate=true annotation";
     input Boolean parentEval "If any parent has an Evaluate=true annotation";
+    input InstContext.Type context;
     output Boolean isStructural;
   protected
     Boolean is_fixed;
+    Binding binding;
   algorithm
     if compAttrs.variability <> Variability.PARAMETER then
       // Only parameters can be structural.
       isStructural := false;
     elseif compEval or parentEval then
+      binding := if Binding.isBound(compBinding) then
+        compBinding else Component.getTypeAttributeBinding(component, "start");
+
       // If the component or any of its parents has an Evaluate=true annotation
       // we should probably evaluate the parameter, which we do by marking it as
       // structural.
@@ -72,16 +77,16 @@ public
       elseif Component.isExternalObject(component) then
         // Except external objects.
         isStructural := false;
-      elseif not InstNode.hasBinding(compNode) then
+      elseif not (Binding.isBound(binding) or InstNode.hasBinding(compNode)) then
         // Except parameters with no bindings.
-        if not parentEval and not Flags.getConfigBool(Flags.CHECK_MODEL) then
+        if not parentEval and not InstContext.inRelaxed(context) then
           // Print a warning if a parameter has an Evaluate=true annotation but no binding.
           Error.addSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
             {InstNode.name(compNode)}, InstNode.info(compNode));
         end if;
 
         isStructural := false;
-      elseif isBindingNotFixed(compBinding, requireFinal = false) then
+      elseif isBindingNotFixed(binding, requireFinal = false) then
         // Except parameters that depend on non-fixed parameters.
         isStructural := false;
       else
@@ -92,7 +97,7 @@ public
     //  // If a parameter is fixed and final we might also want to evaluate it,
     //  // since its binding can't be modified. But only if all parameters it
     //  // depends on are also fixed and final.
-    //  if Binding.isUnbound(compBinding) or isBindingNotFixed(compBinding, requireFinal = true) then
+    //  if Binding.isUnbound(binding) or isBindingNotFixed(binding, requireFinal = true) then
     //    isStructural := false;
     //  else
     //    isStructural := true;
@@ -143,7 +148,8 @@ public
         if InstNode.isComponent(parent) and InstNode.isRecord(parent) then
           isNotFixed := isComponentBindingNotFixed(InstNode.component(parent), parent, requireFinal, maxDepth, true);
         else
-          isNotFixed := true;
+          binding := Component.getTypeAttributeBinding(component, "start");
+          isNotFixed := isBindingNotFixed(binding, requireFinal, maxDepth);
         end if;
       end if;
     else

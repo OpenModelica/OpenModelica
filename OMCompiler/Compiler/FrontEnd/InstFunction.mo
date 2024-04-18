@@ -343,6 +343,7 @@ algorithm
       SCode.FunctionRestriction funcRest;
       InstTypes.CallingScope cs;
       SCode.Visibility visibility;
+      Absyn.FunctionPurity purity;
 
     // normal functions
     case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd, prefixes=SCode.PREFIXES(visibility=visibility), partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info),inst_dims,_)
@@ -386,7 +387,7 @@ algorithm
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(list(e for e guard not DAEUtil.isComment(e) in daeElts))::derFuncs,ty1,visibility,partialPrefixBool,isImpure,inlineType,{},source,SOME(cmt))});
 
     // External functions should also have their type in env, but no dae.
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity))),
         classDef = cd as (parts as SCode.PARTS(externalDecl=SOME(scExtdecl))), info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
@@ -407,9 +408,10 @@ algorithm
         // (ty1,_) = Types.traverseType(ty1, -1, Types.makeExpDimensionsUnknown);
         env_1 = FGraph.mkTypeNode(cenv, n, ty1);
         vis = SCode.PUBLIC();
+        isImpure = AbsynUtil.isImpure(purity);
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
           Inst.instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre,
-            ClassInf.FUNCTION(fpath,isImpure), n,parts, restr, vis, partialPrefix,
+            ClassInf.FUNCTION(fpath, isImpure), n,parts, restr, vis, partialPrefix,
             encapsulatedPrefix, inst_dims, true, InstTypes.INNER_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet, NONE(), cmt, info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache, tempenv, ih, n, scExtdecl, daeElts, ty1, true, pre,info) "impl" ;
@@ -422,11 +424,12 @@ algorithm
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,DAE.NO_INLINE(),{},source,SOME(cmt))});
 
     // Instantiate overloaded functions
-    case (cache,env,ih,_,pre,(SCode.CLASS(name = n, prefixes=SCode.PREFIXES(visibility=visibility), restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
+    case (cache,env,ih,_,pre,(SCode.CLASS(name = n, prefixes=SCode.PREFIXES(visibility=visibility), restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(purity))),
           classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),_,_)
       equation
         (cache,env,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames,inClass.info) "Overloaded functions" ;
         (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env,n);
+        isImpure = AbsynUtil.isImpure(purity);
         resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,visibility,true,isImpure,DAE.NO_INLINE(),{},DAE.emptyElementSource,SOME(cmt))::resfns;
       then
         (cache,env,ih,resfns);

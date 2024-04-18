@@ -17,6 +17,7 @@ ArrayBounds3.mo \
 ArrayBoundsAlg1.mo \
 ArrayBoundsBinding1.mo \
 ArrayBoundsEq1.mo\
+ArrayBoundsEq2.mo\
 ArrayConnect1.mo \
 ArrayConnect2.mo \
 ArrayConnect3.mo \
@@ -25,6 +26,7 @@ ArrayConnect5.mo \
 ArrayConstructorComplex1.mo \
 ArrayConstructorRecord1.mo \
 ArrayConstructorRecord2.mo \
+ArrayEquation1.mo \
 arrfunc.mo \
 Assert1.mo \
 Assert2.mo \
@@ -49,6 +51,7 @@ BindingArray6.mo \
 BindingArray7.mo \
 BindingArray8.mo \
 BindingArray9.mo \
+BindingArray10.mo \
 BindingInvalidType1.mo \
 BindingInvalidType2.mo \
 BindingInvalidType3.mo \
@@ -60,6 +63,9 @@ bindings7.mo \
 BooleanDim.mo \
 Break1.mo \
 Break2.mo \
+BreakModifier1.mo \
+BreakModifier2.mo \
+BreakModifier3.mo \
 BuiltinAttribute1.mo \
 BuiltinAttribute2.mo \
 BuiltinAttribute3.mo \
@@ -82,6 +88,7 @@ BuiltinAttribute19.mo \
 BuiltinAttribute20.mo \
 BuiltinAttribute21.mo \
 BuiltinAttribute22.mo \
+BuiltinAttribute23.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -119,6 +126,7 @@ CevalBinding5.mo \
 CevalBinding6.mo \
 CevalBinding7.mo \
 CevalBinding8.mo \
+CevalBinding9.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -164,6 +172,7 @@ CevalLog102.mo \
 CevalLog1.mo \
 CevalLog2.mo \
 CevalLogical1.mo \
+CevalMatrix1.mo \
 CevalMatrixPow1.mo \
 CevalMatrixProduct1.mo \
 CevalMatrixVectorMul1.mo \
@@ -282,6 +291,7 @@ ConnectAlgorithm.mo \
 ConnectArrays1.mo \
 ConnectArrays2.mo \
 ConnectArrays3.mo \
+ConnectArrays4.mo \
 ConnectArraysInvalidSubscript1.mo \
 ConnectComplex1.mo \
 ConnectComplexFlow1.mo \
@@ -354,6 +364,9 @@ DimUnknown9.mo \
 DimUnknown10.mo \
 DimUnknown11.mo \
 DimUnknown12.mo \
+DimUnknown13.mo \
+DimUnknown14.mo \
+DimUnknown15.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -405,8 +418,10 @@ enum7.mo \
 enum8.mo \
 EnumConversion1.mo \
 EnumConversion2.mo \
+EnumConversion3.mo \
 EnumInvalidLiteralName1.mo \
 EnumRangeBinding1.mo \
+EnumUnspecified1.mo \
 eq1.mo \
 eq2.mo \
 eq3.mo \
@@ -432,6 +447,10 @@ ExpandableConnector6.mo \
 ExpandableConnector7.mo \
 ExpandableConnector8.mo \
 ExpandableConnector9.mo \
+ExpandableConnector10.mo \
+ExpandableConnector11.mo \
+ExpandableConnector12.mo \
+ExpandableConnector13.mo \
 ExpandableConnectorComplex1.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
@@ -486,11 +505,15 @@ ExternalObject2.mo \
 ExternalObject3.mo \
 ExternalObject4.mo \
 ExternalObject5.mo \
+ExternalObject6.mo \
 ExternalObjectInvalidElement1.mo \
 ExternalObjectInvalidStructor1.mo \
 ExternalObjectMissingStructor1.mo \
+ExternalObjectMod1.mo \
+ExternalObjectReplaceable1.mo \
 ExternalObjectStructorCall1.mo \
 ExternalObjectStructorCall2.mo \
+ExternalObjectVariability1.mo \
 Final1.mo \
 Final2.mo \
 Final3.mo \
@@ -499,6 +522,7 @@ Final5.mo \
 Final6.mo \
 Final7.mo \
 ForConnect1.mo \
+ForConnect2.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
@@ -624,7 +648,6 @@ FuncStringInvalid2.mo \
 FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
 FuncUnknownDim3.mo \
-FuncVariability.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
 FuncViaComp3.mo \
@@ -639,6 +662,7 @@ FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
+FuncWrongType2.mo \
 FunctionalArg1.mo \
 FunctionalArg2.mo \
 FunctionalArg3.mo \
@@ -666,6 +690,7 @@ FunctionMultiOutput4.mo \
 FunctionMultiOutput5.mo \
 FunctionNoOutput1.mo \
 FunctionNonInputOutputParameter.mo \
+FunctionParamVariability.mo \
 FunctionPartialDerivative1.mo \
 FunctionPartialDerivative2.mo \
 FunctionPartialDerivative3.mo \
@@ -689,6 +714,7 @@ FunctionUnitialized4.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
+IfConnect4.mo \
 IfEquation1.mo \
 IfEquation2.mo \
 IfEquation3.mo \
@@ -712,8 +738,8 @@ IfExpression8.mo \
 IfExpression10.mo \
 IfExpression11.mo \
 IfExpression12.mo \
-IfExpression13.mo \
 IfExpression14.mo \
+IfExpression15.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -725,9 +751,9 @@ ImplicitRangeEq2.mo \
 ImplicitRangeEq3.mo \
 ImplicitRangeExp1.mo \
 ImplicitRangeExp2.mo \
+ImplicitRangeExp3.mo \
 ImplicitRangeInvalid1.mo \
 ImplicitRangeInvalid2.mo \
-ImplicitRangeInvalid3.mo \
 ImplicitRangeType1.mo \
 ImplicitRangeType2.mo \
 ImportComponent1.mo \
@@ -752,6 +778,8 @@ ImpureCall1.mo \
 Inline1.mo \
 Inline2.mo \
 Inline3.mo \
+Inline4.mo \
+Inline5.mo \
 InnerOuter1.mo \
 InnerOuter2.mo \
 InnerOuter3.mo \
@@ -763,7 +791,9 @@ InnerOuter8.mo \
 InnerOuter9.mo \
 InnerOuter10.mo \
 InnerOuter11.mo \
+InnerOuter12.mo \
 InnerOuterClass1.mo \
+InnerOuterConnect1.mo \
 InnerOuterDuplicate1.mo \
 InnerOuterInvalidMod1.mo \
 InnerOuterInvalidMod2.mo \
@@ -785,6 +815,8 @@ InnerOuterNotInner1.mo \
 InnerOuterPartialOuter1.mo \
 InnerOuterPartialOuter2.mo \
 InnerOuterReplaceable1.mo \
+InnerOuterReplaceable2.mo \
+InnerOuterReplaceable3.mo \
 InstanceRestriction1.mo \
 InstanceRestriction2.mo \
 InStreamArray.mo \
@@ -853,8 +885,11 @@ NoEvent2.mo \
 NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
+NonFixedConstant1.mo \
 NoScalarize1.mo \
 NoScalarize2.mo \
+NoScalarizeConnect1.mo \
+NoScalarizeConnect2.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
@@ -871,6 +906,7 @@ OperationMul1.mo \
 OperationMulEW1.mo \
 OperationPow1.mo \
 OperationPow2.mo \
+OperationPow3.mo \
 OperationPowEW1.mo \
 OperationRelational1.mo \
 OperationSub1.mo \
@@ -955,6 +991,7 @@ RecordBinding12.mo \
 RecordBinding13.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
+RecordConstructor3.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
 RecordUnknownDim1.mo \
@@ -990,6 +1027,8 @@ RedeclareEnum1.mo \
 RedeclareEnum2.mo \
 RedeclareEnum3.mo \
 RedeclareEnum4.mo \
+RedeclareEnum5.mo \
+RedeclareEnum6.mo \
 RedeclareFunction1.mo \
 RedeclareInvalidConnectorType1.mo \
 RedeclareInvalidVariability1.mo \
@@ -1004,6 +1043,7 @@ RedeclareMod8.mo \
 RedeclareMod9.mo \
 RedeclareMod10.mo \
 RedeclareMod11.mo \
+RedeclareNonReplaceable1.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
@@ -1066,6 +1106,10 @@ SubscriptCevalIndexRange1.mo \
 SubscriptCevalSlice1.mo \
 SubscriptCevalSlice2.mo \
 SubscriptCevalWhole1.mo \
+SubscriptedExp1.mo \
+SubscriptedExp2.mo \
+SubscriptedExp3.mo \
+SubscriptedExp4.mo \
 SubscriptEnum1.mo \
 SubscriptIterator1.mo \
 SubscriptReduction1.mo \
@@ -1105,12 +1149,17 @@ TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
 TypenameInvalid3.mo \
+UnboundParameter1.mo \
+UnboundParameter2.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \
 usertype4.mo \
 usertype5.mo \
 usertype6.mo \
+VectorizeBindings1.mo \
+VectorizeBindings2.mo \
+VectorizeBindings3.mo \
 VectorTest.mo \
 Visibility1.mo \
 Visibility2.mo \
@@ -1156,6 +1205,7 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+IfExpression13.mo \
 ProtectedMod4.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \

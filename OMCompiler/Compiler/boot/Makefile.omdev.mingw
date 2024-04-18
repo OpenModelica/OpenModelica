@@ -5,13 +5,11 @@ CXX=g++
 EXE_EXT=.exe
 EXE_SUFFIX=
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
-
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	EXTRA_LD_FLAGS = -Wl,--stack,16777216,--large-address-aware -L$(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/lib/x86_win32
+	EXTRA_LD_FLAGS = -Wl,--stack,16777216,--large-address-aware
 	ISMINGW64 = false
 else
-	EXTRA_LD_FLAGS = -Wl,--stack,33554432 -L$(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/lib/x86_win32
+	EXTRA_LD_FLAGS = -Wl,--stack,33554432
 	ISMINGW64 = true
 endif
 
@@ -20,13 +18,23 @@ PREVIOUS_GCC_VERSION = "5.3.0"
 GCC_VERSION := "`gcc -dumpversion`"
 OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
 
+# Uggly hack to decied what version of msys we have.
+# If ucrt64 is set, it must be the newer version, so it's libbrotli instead of libbrotli-static
+ifeq (ucrt64,$(findstring ucrt64,$(MSYSTEM_PREFIX)))
+BROTLI_STATIC_LINKER_FLAGS = -lbrotlienc -lbrotlidec -lbrotlicommon
+IS_NEW_NEW_OMDEV = true
+else
+BROTLI_STATIC_LINKER_FLAGS = -lbrotlienc-static -lbrotlidec-static -lbrotlicommon-static
+IS_NEW_NEW_OMDEV = false
+endif
+
 ifeq "$(OLD_OMDEV)" "1"
 	IS_NEW_OMDEV = false
-	LDFLAGS_CURL = -Wl,-Bstatic -lcurl -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
+	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
 	override CFLAGS += -fno-ipa-pure-const
 else
 	IS_NEW_OMDEV = true
-	LDFLAGS_CURL = -Wl,-Bstatic -lcurl -lidn2 -lpsl  -lbrotlienc-static -lbrotlidec-static -lbrotlicommon-static -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
+	LDFLAGS_CURL = -lcurl -Wl,-Bstatic -lidn2 -lpsl $(BROTLI_STATIC_LINKER_FLAGS) -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -lbcrypt -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
 endif
 
 TOP_DIR=../../
@@ -39,9 +47,9 @@ endif
 LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lomantlr3 -lregex -lwsock32 -luuid -lole32 -lws2_32 -limagehlp \
--lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
+-lRpcrt4 -lopenblas -fopenmp -lomcgc -lryu -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
 -Wl,--enable-stdcall-fixup -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic -static-libgcc \
--lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
+-lgfortran -ltre \
 -lzmq \
 $(OMENCRYPTIONLIBS) \
 $(LDFLAGS_CURL) \
@@ -49,11 +57,15 @@ $(LDFLAGS_CURL) \
 $(EXTRA_LD_FLAGS) -Wl,--export-all-symbols
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
-CPPFLAGS=-I"$(OMHOME)/include/omc/c" -I../Util/ -DADD_METARECORD_DEFINITIONS=
+CPPFLAGS= -DOM_HAVE_PTHREADS -I"$(OMHOME)/include/omc/c" -I../Util/ -DADD_METARECORD_DEFINITIONS=
 CORBALIBS=
 ULIMIT_CMD=true
 SHREXT=.dll
+ifeq ($(WSL_OMC),)
 OMC=$(OMHOME)/bin/omc.exe
+else
+OMC=$(WSL_OMC)
+endif
 RPATH=
 #STATIC=static
 BOOTSTRAP_OMC=$(OMBUILDDIR)/bin/omc.exe
@@ -67,8 +79,8 @@ default: all
 
 ../Util/Autoconf.mo: ../Util/Autoconf.mo.omdev.mingw
 	sed "s/@ISMINGW64@/$(ISMINGW64)/" "$<" > "$@.tmp"
-	sed "s/@IS_NEW_OMDEV@/$(IS_NEW_OMDEV)/" "$@.tmp" > "$@.tmp_"
-	rm "$@.tmp"
-	mv "$@.tmp_" "$@"
+	sed -i "s/@IS_NEW_OMDEV@/$(IS_NEW_OMDEV)/" "$@.tmp"
+	sed -i "s/@IS_NEW_NEW_OMDEV@/$(IS_NEW_NEW_OMDEV)/" "$@.tmp"
+	mv "$@.tmp" "$@"
 
 include Makefile.common

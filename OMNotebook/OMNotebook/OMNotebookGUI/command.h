@@ -64,6 +64,7 @@ namespace IAEX
    class Command
    {
    public:
+      virtual ~Command() = default;
       virtual void execute() = 0;
 
       virtual QString commandName(){ return QString("NoCommandNameSet");}
@@ -104,7 +105,7 @@ namespace IAEX
 
       virtual void execute()
       {
-   vector<Command*>::iterator i = commands_.begin();
+   std::vector<Command*>::iterator i = commands_.begin();
    for(;i != commands_.end(); ++i)
    {
       (*i)->execute();
@@ -112,7 +113,7 @@ namespace IAEX
       }
 
    private:
-      vector<Command*> commands_;
+      std::vector<Command*> commands_;
    };
 };
 #endif

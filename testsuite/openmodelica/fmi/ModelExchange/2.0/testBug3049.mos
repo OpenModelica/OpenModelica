@@ -15,7 +15,7 @@ end test_Bug3049;
 ");
 getErrorString();
 
-translateModelFMU(test_Bug3049, version="2.0");
+buildModelFMU(test_Bug3049, version="2.0");
 getErrorString();
 
 // unzip to console, quiet, extra quiet
@@ -125,7 +125,7 @@ readFile("modelDescription.tmp.xml");
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable

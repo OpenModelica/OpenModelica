@@ -211,7 +211,7 @@ pseudoxml: all-dep
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
 
-latex: all-dep source/logo.pdf source/media/systemoverview.pdf
+latex: all-dep source/logo.pdf source/media/systemoverview.png
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex."
@@ -229,11 +229,11 @@ pdf: latex
 	sed -i "s,{ProfilingTest_prof[.]\([^.]*\)[.]thumb}[.]svg,{`pwd`/source/ProfilingTest_prof-\1-thumb}.pdf,g" build/latex/OpenModelicaUsersGuide.tex
 	(cd build/latex && latexmk -pdf OpenModelicaUsersGuide.tex)
 source/logo.pdf: source/logo.svg
-	inkscape -f $< -A $@
-source/media/systemoverview.pdf: source/media/systemoverview.svg
-	inkscape -f $< --export-pdf $@
+	inkscape  $< --export-filename $@
+source/media/systemoverview.png: source/media/systemoverview.svg
+	inkscape $< --export-filename $@
 %.pdf: %.svg
-	inkscape -f $< --export-pdf $@
+	inkscape $< --export-filename $@
 	FNAME=`echo $@ | sed "s/[.]/-/g" | sed "s/-pdf/.pdf/g"`; if test "$$FNAME" != "$@"; then cp -a "$@" "$$FNAME"; fi
 source/openmodelica.bib: resolve-crossref.py ../bibliography/openmodelica.bib
 	./resolve-crossref.py "../bibliography/openmodelica.bib" source/openmodelica.bib
@@ -251,19 +251,23 @@ OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG) $(OMEDIT_ICONS_PDF)
 OMOPTIM_ICONS_BASE=Add.png
 OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
-all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc source/omchelptext.rst source/githubreleases.rst source/tracreleases.inc
+all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.png source/media/mdt-build-prompt.png source/simoptions.inc source/omchelptext.rst source/githubreleases.rst source/tracreleases.inc
 
 source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEditLIB/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
 	cp -a "$<" "$@"
 
 source/media/omedit-icons/%.png: source/media/omedit-icons/%.svg
-	inkscape "$<" --export-png="$@"
+	inkscape "$<" --export-filename="$@"
 source/media/omedit-icons/%.pdf: source/media/omedit-icons/%.svg
-	inkscape "$<" --export-pdf="$@"
+	inkscape "$<" --export-filename="$@"
 source/media/omoptim-icons/%.png: $(OPENMODELICA_ROOT)/OMOptim/OMOptim/GUI/Resources/icons/%.png
 	@mkdir -p source/media/omoptim-icons
 	cp -a "$<" "$@"
+source/media/mdt-build-prompt.png: source/media/mdt-build-prompt.svg
+	inkscape "$<" --export-filename="$@"
+source/media/mdt-create-project.png: source/media/mdt-create-project.svg
+	inkscape "$<" --export-filename="$@"
 
 readme/sphinxcontribopenmodelica.py: source/sphinxcontribopenmodelica.py
 	cp -a "$<" "$@"

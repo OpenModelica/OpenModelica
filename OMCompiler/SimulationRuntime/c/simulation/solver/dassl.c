@@ -541,6 +541,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   int retVal = 0;
   int saveJumpState;
   static unsigned int dasslStepsOutputCounter = 1;
+  int return_from_small_step = 0;
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
 
@@ -600,10 +601,12 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
 
   /* Check that tout is not less than timeValue
-   * else will dassl get in trouble. If that is the case we skip the current step. */
-  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+   * else will dassl get in trouble. If that is the case we skip the current step.
+     Also check if step size is smaller than DASSL_STEP_EPS or DASSL_STEP_EPS times simulation interval */
+  if ((solverInfo->currentStepSize < DASSL_STEP_EPS) ||
+      (solverInfo->currentStepSize < DASSL_STEP_EPS*(data->simulationInfo->stopTime - data->simulationInfo->startTime)) )
   {
-    infoStreamPrint(LOG_DASSL, 0, "Desired step to small try next one");
+    infoStreamPrint(LOG_DASSL, 0, "Desired step size %e too small.", solverInfo->currentStepSize);
     infoStreamPrint(LOG_DASSL, 0, "Interpolate linear");
 
     /*euler step*/
@@ -615,92 +618,99 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     data->callback->functionODE(data, threadData);
     solverInfo->currentTime = sData->timeValue;
 
-    TRACE_POP
-    return 0;
+    return_from_small_step = 1;
   }
-
-  do
+  else
   {
-    infoStreamPrint(LOG_DASSL, 1, "new step at time = %.15g", solverInfo->currentTime);
-
-    /* rhs final flag is FALSE during for dassl evaluation */
-    RHSFinalFlag = 0;
-
-    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-    /* read input vars */
-    externalInputUpdate(data);
-    data->callback->input_function(data, threadData);
-    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-
-    DDASKR(dasslData->residualFunction, (int*) &dasslData->N,
-            &solverInfo->currentTime, states, stateDer, &tout,
-            dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
-            dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-            (double*) (void*) dasslData->rpar, dasslData->ipar, callJacobian, dummy_precondition,
-            dasslData->zeroCrossingFunction, (int*) &dasslData->ng, dasslData->jroot);
-
-    /* closing new step message */
-    messageClose(LOG_DASSL);
-
-    /* set ringbuffer time to current time */
-    sData->timeValue = solverInfo->currentTime;
-
-    /* rhs final flag is TRUE during for output evaluation */
-    RHSFinalFlag = 1;
-
-    if(dasslData->idid == -1)
+    do
     {
-      fflush(stderr);
-      fflush(stdout);
-      warningStreamPrint(LOG_DASSL, 0, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
-      infoStreamPrint(LOG_DASSL, 0, "DASSL will try again...");
-      dasslData->info[0] = 1; /* try again */
-      if (solverInfo->currentTime <= data->simulationInfo->stopTime)
-        continue;
-    }
-    else if(dasslData->idid < 0)
-    {
-      fflush(stderr);
-      fflush(stdout);
-      retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo->tolerance);
-      warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
-      TRACE_POP
-      break;
-    }
-    else if(dasslData->idid == 5)
-    {
-      threadData->currentErrorStage = ERROR_EVENTSEARCH;
-    }
+      infoStreamPrint(LOG_DASSL, 1, "new step at time = %.15g", solverInfo->currentTime);
 
-    /* emit step, if dasslsteps is selected */
-    if (dasslData->dasslSteps)
-    {
-      if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ]){
-        /* output every n-th time step */
-        if (dasslStepsOutputCounter >= dasslData->dasslStepsFreq){
-          dasslStepsOutputCounter = 1; /* next line set it to one */
-          break;
-        }
-        dasslStepsOutputCounter++;
-      } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
-        /* output when time>=k*timeValue */
-        if (solverInfo->currentTime > dasslStepsOutputCounter * dasslData->dasslStepsTime){
-          dasslStepsOutputCounter++;
-          break;
-        }
-      } else {
+      /* rhs final flag is FALSE during for dassl evaluation */
+      RHSFinalFlag = 0;
+
+      if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+      /* read input vars */
+      externalInputUpdate(data);
+      data->callback->input_function(data, threadData);
+      if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+
+      DDASKR(dasslData->residualFunction, (int*) &dasslData->N,
+              &solverInfo->currentTime, states, stateDer, &tout,
+              dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
+              dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
+              (double*) (void*) dasslData->rpar, dasslData->ipar, callJacobian, dummy_precondition,
+              dasslData->zeroCrossingFunction, (int*) &dasslData->ng, dasslData->jroot);
+
+      /* closing new step message */
+      messageClose(LOG_DASSL);
+
+      /* set ringbuffer time to current time */
+      sData->timeValue = solverInfo->currentTime;
+
+      /* rhs final flag is TRUE during for output evaluation */
+      RHSFinalFlag = 1;
+
+      if(dasslData->idid == -1)
+      {
+        fflush(stderr);
+        fflush(stdout);
+        warningStreamPrint(LOG_DASSL, 0, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
+        infoStreamPrint(LOG_DASSL, 0, "DASSL will try again...");
+        dasslData->info[0] = 1; /* try again */
+        if (solverInfo->currentTime <= data->simulationInfo->stopTime)
+          continue;
+      }
+      else if(dasslData->idid < 0)
+      {
+        fflush(stderr);
+        fflush(stdout);
+        retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo->tolerance);
+        warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
+        TRACE_POP
         break;
       }
-    }
+      else if(dasslData->idid == 5)
+      {
+        threadData->currentErrorStage = ERROR_EVENTSEARCH;
+      }
 
-  } while(dasslData->idid == 1);
+      /* emit step, if dasslsteps is selected */
+      if (dasslData->dasslSteps)
+      {
+        if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ]){
+          /* output every n-th time step */
+          if (dasslStepsOutputCounter >= dasslData->dasslStepsFreq){
+            dasslStepsOutputCounter = 1; /* next line set it to one */
+            break;
+          }
+          dasslStepsOutputCounter++;
+        } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
+          /* output when time>=k*timeValue */
+          if (solverInfo->currentTime > dasslStepsOutputCounter * dasslData->dasslStepsTime){
+            dasslStepsOutputCounter++;
+            break;
+          }
+        } else {
+          break;
+        }
+      }
 
-  states = dasslData->states;
+    } while(dasslData->idid == 1);
+
+    states = dasslData->states;
+  }
 
 #if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
   threadData->currentErrorStage = saveJumpState;
+
+  if (return_from_small_step) {
+    /* need to do this outside the try-catch macro */
+    TRACE_POP
+    return 0;
+  }
 
   /* if a state event occurs than no sample event does need to be activated  */
   if (data->simulationInfo->sampleActivated && solverInfo->currentTime < data->simulationInfo->nextSampleEvent)

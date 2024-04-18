@@ -243,6 +243,10 @@ public
     Type ty;
   end PARTIAL_FUNCTION_APPLICATION;
 
+  record FILENAME
+    String filename;
+  end FILENAME;
+
   function isArray
     input Expression exp;
     output Boolean isArray;
@@ -702,6 +706,12 @@ public
         then
           comp;
 
+      case FILENAME()
+        algorithm
+          FILENAME(filename = s) := exp2;
+        then
+          Util.stringCompare(exp1.filename, s);
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -769,6 +779,7 @@ public
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
+      case FILENAME()        then Type.STRING();
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -830,7 +841,14 @@ public
     exp := match exp
       // Integer can be cast to Real.
       case INTEGER()
-        then if Type.isReal(ety) then REAL(intReal(exp.value)) else typeCastGeneric(exp, ety);
+        then if Type.isReal(ety) then REAL(intReal(exp.value))
+             elseif Type.isEnumeration(ety) and Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration") // Integer can be cast to Enumeration with non-standard Modelica
+             then ENUM_LITERAL(ety, Type.nthEnumLiteral(ety, exp.value), exp.value)
+             else typeCastGeneric(exp, ety);
+
+      // Enumeration can be cast to Integer with non-standard Modelica
+      case ENUM_LITERAL() guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+        then if Type.isInteger(ety) then INTEGER(toInteger(exp)) else typeCastGeneric(exp, ety);
 
       // Boolean can be cast to Real (only if -d=nfAPI is on)
       // as there are annotations having expressions such as Boolean x > 0.5
@@ -923,7 +941,13 @@ public
     input Expression exp;
     output Integer value;
   algorithm
-    INTEGER(value=value) := exp;
+    try
+      INTEGER(value=value) := exp;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an integer: \n"
+        + toString(exp)});
+      fail();
+    end try;
   end integerValue;
 
   function integerValueOrDefault
@@ -945,11 +969,11 @@ public
     input Expression exp;
     output String value;
   algorithm
-    try
-      STRING(value=value) := exp;
-    else
-      value := "";
-    end try;
+    value := match exp
+      case STRING() then exp.value;
+      case FILENAME() then exp.filename;
+      else "";
+    end match;
   end stringValue;
 
   function booleanValue
@@ -1120,12 +1144,7 @@ public
 
   function rangeSize
     input Expression range  "has to be RANGE()!";
-    output Integer size;
-  protected
-    Integer start, step, stop;
-  algorithm
-    (start, step, stop) := getIntegerRange(range);
-    size := realInt((stop - start + 1) / step);
+    output Integer size = Dimension.size(Type.nthDimension(typeOf(range), 1));
   end rangeSize;
 
   function applySubscripts
@@ -1831,7 +1850,7 @@ public
 
       case BOX() then "BOX(" + toString(exp.exp) + ")";
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
-      case SUBSCRIPTED_EXP() then toString(exp.exp) + Subscript.toStringList(exp.subscripts);
+      case SUBSCRIPTED_EXP() then "(" + toString(exp.exp) + ")" + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toString(Mutable.access(exp.exp));
@@ -1840,6 +1859,7 @@ public
         then "function " + ComponentRef.toString(exp.fn) + "(" + stringDelimitList(
           list(n + " = " + toString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
+      case FILENAME() then "\"" + System.escapedString(exp.filename, false) + "\"";
       else anyString(exp);
     end match;
   end toString;
@@ -1893,16 +1913,16 @@ public
                         ) + ")";
       case END() then "end";
 
-      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryFlatString(exp.arguments, exp, exp.operator, false);
 
       case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
-                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+                     then "-" + multaryFlatString(exp.inv_arguments, exp, exp.operator);
 
-      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator);
 
-      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+      case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator) +
                           Operator.symbol(Operator.invert(exp.operator)) +
-                          multaryString(exp.inv_arguments, exp, exp.operator);
+                          multaryFlatString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1937,6 +1957,7 @@ public
         then "function " + ComponentRef.toFlatString(exp.fn) + "(" + stringDelimitList(
           list(n + " = " + toFlatString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
+      case FILENAME() then "\"" + Util.escapeModelicaStringToCString(exp.filename) + "\"";
       else anyString(exp);
     end match;
   end toFlatString;
@@ -1978,7 +1999,7 @@ public
         str := stringAppendList(strl);
       end if;
     else
-      str := toFlatString(exp) + Subscript.toFlatStringList(subscripts);
+      str := "(" + toFlatString(exp) + ")" + Subscript.toFlatStringList(subscripts);
     end if;
   end toFlatSubscriptedString;
 
@@ -2034,8 +2055,8 @@ public
       if operand_prio > operator_prio then
         parenthesize := true;
       elseif operand_prio == operator_prio then
-        parenthesize := if lhs then isNonAssociativeExp(operand) else not
-                                    isAssociativeExp(operand);
+        parenthesize := if lhs then isNonAssociativeExp(operand)
+                               else not isAssociativeExp(operand);
       end if;
     end if;
 
@@ -2048,23 +2069,27 @@ public
     input list<Expression> arguments;
     input Expression exp;
     input Operator operator;
-    input Boolean useParanthesis = true;
+    input Boolean parenthesize = true;
     output String str;
-  protected
-    Expression first;
-    list<Expression> rest;
   algorithm
-    first :: rest := arguments;
-    if listEmpty(rest) then
-      str := toString(first);
-    elseif useParanthesis then
-      str := "(" + operandString(first, exp, true) + Operator.symbol(operator) +
-        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator)) + ")";
-    else
-      str := operandString(first, exp, true) + Operator.symbol(operator) +
-        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator));
+    str := stringDelimitList(list(operandString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    if parenthesize and listLength(arguments) > 1 then
+      str := "(" + str + ")";
     end if;
   end multaryString;
+
+  function multaryFlatString
+    input list<Expression> arguments;
+    input Expression exp;
+    input Operator operator;
+    input Boolean parenthesize = true;
+    output String str;
+  algorithm
+    str := stringDelimitList(list(operandFlatString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    if parenthesize and listLength(arguments) > 1 then
+      str := "(" + str + ")";
+    end if;
+  end multaryFlatString;
 
   function priority
     input Expression exp;
@@ -2082,6 +2107,9 @@ public
       case RELATION() then 6;
       case RANGE() then 10;
       case IF() then 11;
+      case CAST() then priority(exp.exp, lhs);
+      case BOX() then priority(exp.exp, lhs);
+      case UNBOX() then priority(exp.exp, lhs);
       else 0;
     end match;
   end priority;
@@ -2189,6 +2217,7 @@ public
       case PARTIAL_FUNCTION_APPLICATION()
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
           Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
+      case FILENAME() then Absyn.Exp.STRING(exp.filename);
 
       else
         algorithm
@@ -2304,6 +2333,14 @@ public
                                list(toDAE(arg) for arg in exp.args),
                                Type.toDAE(exp.ty),
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
+
+      case MUTABLE() then toDAE(Mutable.access(exp.exp));
+      case FILENAME()
+        then if Flags.getConfigBool(Flags.BUILDING_FMU) then
+               DAE.CALL(Absyn.Path.IDENT("OpenModelica_fmuLoadResource"),
+                        {DAE.SCONST(exp.filename)}, DAE.callAttrBuiltinImpureString)
+             else
+               DAE.SCONST(exp.filename);
 
       else
         algorithm
@@ -2440,6 +2477,7 @@ public
         then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
       case ARRAY() then ValuesUtil.makeArray(list(toDAEValue(e) for e in exp.elements));
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
+      case FILENAME() then Values.STRING(exp.filename);
 
       else
         algorithm
@@ -2506,6 +2544,10 @@ public
   end dimensions;
 
   function map
+    "Applies a function recursively (depth-first, post-order) to an expression
+     and creates a new expression from the returned values.
+     NOTE: For performance reasons this function does not recurse into arrays
+           marked as literal."
     input Expression exp;
     input MapFunc func;
     output Expression outExp;
@@ -2520,7 +2562,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
+      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2682,6 +2724,10 @@ public
   end mapOpt;
 
   function mapReverse
+    "Applies a function recursively (depth-first, pre-order) to an expression
+     and creates a new expression from the returned values.
+     NOTE: For performance reasons this function does not recurse into arrays
+           marked as literal."
     input output Expression exp;
     input MapFunc func;
 
@@ -2696,7 +2742,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
+      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(mapReverse(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2839,6 +2885,10 @@ public
   end mapReverse;
 
   function mapShallow
+    "Applies a function recursively to each subexpression in an expression,
+     without recursion, and creates a new expression from the returned values.
+     NOTE: For performance reasons this function does not recurse into arrays
+           marked as literal."
     input Expression exp;
     input MapFunc func;
     output Expression outExp;
@@ -2853,7 +2903,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExpShallow(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExpShallow(exp.cref, func));
-      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, func), exp.literal);
+      case ARRAY() guard not exp.literal then makeArray(exp.ty, Array.map(exp.elements, func), exp.literal);
       case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -4215,9 +4265,10 @@ public
 
   function fromCref
     input ComponentRef cref;
+    input Boolean includeScope = false;
     output Expression exp;
   algorithm
-    exp := CREF(ComponentRef.getSubscriptedType(cref), cref);
+    exp := CREF(ComponentRef.getSubscriptedType(cref, includeScope), cref);
   end fromCref;
 
   function toCref
@@ -4361,8 +4412,8 @@ public
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0;
-      case CAST() then isNonPositive(exp.exp);
-      case UNARY() then isNonNegative(exp.exp);
+      case CAST() then isNonNegative(exp.exp);
+      case UNARY() then isNonPositive(exp.exp);
       else false;
     end match;
   end isNonNegative;
@@ -4382,6 +4433,7 @@ public
       case STRING() then true;
       case BOOLEAN() then true;
       case ENUM_LITERAL() then true;
+      case FILENAME() then true;
       else false;
     end match;
   end isScalarLiteral;
@@ -4398,12 +4450,26 @@ public
       case ENUM_LITERAL() then true;
       case ARRAY() then exp.literal or Array.all(exp.elements, isLiteral);
       case RECORD() then List.all(exp.elements, isLiteral);
-      case RANGE() then isLiteral(exp.start) and
-                        isLiteral(exp.stop) and
+      case RANGE() then isLiteral(exp.start) and isLiteral(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteral, true);
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then Call.isLiteral(exp.call);
+      case CAST() then isLiteral(exp.exp);
+      case BOX() then isLiteral(exp.exp);
+      case UNBOX() then isLiteral(exp.exp);
+      case FILENAME() then true;
       else false;
     end match;
   end isLiteral;
+
+  function isLiteralFill
+    input Expression exp;
+    output Boolean literal;
+  algorithm
+    literal := match exp
+      case CALL() then Call.isNamed(exp.call, "fill") and List.all(Call.arguments(exp.call), isLiteral);
+      else false;
+    end match;
+  end isLiteralFill;
 
   function isInteger
     input Expression exp;
@@ -4648,6 +4714,7 @@ public
       case RECORD()
         then RECORD(exp.path, Type.box(exp.ty), list(box(e) for e in exp.elements));
       case BOX() then exp;
+      case FILENAME() then exp;
       else BOX(exp);
     end match;
   end box;
@@ -4716,8 +4783,8 @@ public
     range := match range
       local
         Expression step;
-      case RANGE()                   then RANGE(range.ty, range.stop, SOME(INTEGER(-1)), range.start);
       case RANGE(step = SOME(step))  then RANGE(range.ty, range.stop, SOME(negate(step)), range.start);
+      case RANGE()                   then RANGE(range.ty, range.stop, SOME(INTEGER(-1)), range.start);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
           + toString(range)});
@@ -5039,6 +5106,7 @@ public
       case MUTABLE() then variability(Mutable.access(exp.exp));
       case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
+      case FILENAME() then Variability.CONSTANT;
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -5116,6 +5184,7 @@ public
       case MUTABLE() then purity(Mutable.access(exp.exp));
       case EMPTY() then Purity.PURE;
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
+      case FILENAME() then Purity.PURE;
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -5773,21 +5842,6 @@ public
     end match;
   end mapSplitExpressions3;
 
-  function hasNonArrayIteratorSubscript
-    "Returns true if the given iterator is only used to subscript array
-     expression in the given expression, otherwise false."
-    input Expression exp;
-    input InstNode iterator;
-    output Boolean res;
-  algorithm
-    res := match exp
-      case CREF() then containsIterator(exp, iterator);
-      case SUBSCRIPTED_EXP() then not isArray(exp.exp) and
-        Subscript.listContainsExp(exp.subscripts, function containsIterator(iterator = iterator));
-      else containsShallow(exp, function hasNonArrayIteratorSubscript(iterator = iterator));
-    end match;
-  end hasNonArrayIteratorSubscript;
-
   function mapCrefScalars
     "Takes a cref expression and applies a function to each scalar cref,
      creating a new expression with the same dimensions as the given cref.
@@ -5909,11 +5963,11 @@ public
     end dump_arg;
   algorithm
     json := match exp
-      case Expression.INTEGER() then JSON.makeInteger(exp.value);
-      case Expression.REAL() then JSON.makeNumber(exp.value);
-      case Expression.STRING() then JSON.makeString(exp.value);
-      case Expression.BOOLEAN() then JSON.makeBoolean(exp.value);
-      case Expression.ENUM_LITERAL()
+      case INTEGER() then JSON.makeInteger(exp.value);
+      case REAL() then JSON.makeNumber(exp.value);
+      case STRING() then JSON.makeString(exp.value);
+      case BOOLEAN() then JSON.makeBoolean(exp.value);
+      case ENUM_LITERAL()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("enum"), json);
@@ -5922,12 +5976,12 @@ public
         then
           json;
 
-      case Expression.CLKCONST()
+      case CLKCONST()
         then ClockKind.toJSON(exp.clk);
 
-      case Expression.CREF() then ComponentRef.toJSON(exp.cref);
+      case CREF() then ComponentRef.toJSON(exp.cref);
 
-      case Expression.TYPENAME()
+      case TYPENAME()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("typename"), json);
@@ -5935,7 +5989,7 @@ public
         then
           json;
 
-      case Expression.ARRAY()
+      case ARRAY()
         algorithm
           json := JSON.emptyArray(arrayLength(exp.elements));
           for e in exp.elements loop
@@ -5944,7 +5998,7 @@ public
         then
           json;
 
-      case Expression.RANGE()
+      case RANGE()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("range"), json);
@@ -5958,7 +6012,7 @@ public
         then
           json;
 
-      case Expression.TUPLE()
+      case TUPLE()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("tuple"), json);
@@ -5967,7 +6021,7 @@ public
         then
           json;
 
-      case Expression.RECORD()
+      case RECORD()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("record"), json);
@@ -5977,10 +6031,10 @@ public
         then
           json;
 
-      case Expression.CALL()
+      case CALL()
         then Call.toJSON(exp.call);
 
-      case Expression.SIZE()
+      case SIZE()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("call"), json);
@@ -5995,7 +6049,7 @@ public
         then
           json;
 
-      case Expression.BINARY()
+      case BINARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
@@ -6005,7 +6059,7 @@ public
         then
           json;
 
-      case Expression.UNARY()
+      case UNARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
@@ -6014,7 +6068,7 @@ public
         then
           json;
 
-      case Expression.LBINARY()
+      case LBINARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
@@ -6024,7 +6078,7 @@ public
         then
           json;
 
-      case Expression.LUNARY()
+      case LUNARY()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
@@ -6033,7 +6087,7 @@ public
         then
           json;
 
-      case Expression.RELATION()
+      case RELATION()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
@@ -6043,7 +6097,19 @@ public
         then
           json;
 
-      case Expression.IF()
+      case MULTARY()
+        algorithm
+          json := JSON.emptyObject();
+          json := JSON.addPair("$kind", JSON.makeString("multary_op"), json);
+          json := JSON.addPair("args",
+            JSON.makeArray(list(toJSON(a) for a in exp.arguments)), json);
+          json := JSON.addPair("inv_args",
+            JSON.makeArray(list(toJSON(a) for a in exp.inv_arguments)), json);
+          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+        then
+          json;
+
+      case IF()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("if"), json);
@@ -6053,11 +6119,11 @@ public
         then
           json;
 
-      case Expression.CAST() then toJSON(exp.exp);
-      case Expression.BOX() then toJSON(exp.exp);
-      case Expression.UNBOX() then toJSON(exp.exp);
+      case CAST() then toJSON(exp.exp);
+      case BOX() then toJSON(exp.exp);
+      case UNBOX() then toJSON(exp.exp);
 
-      case Expression.SUBSCRIPTED_EXP()
+      case SUBSCRIPTED_EXP()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("sub"), json);
@@ -6066,7 +6132,7 @@ public
         then
           json;
 
-      case Expression.TUPLE_ELEMENT()
+      case TUPLE_ELEMENT()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("tuple_element"), json);
@@ -6075,7 +6141,7 @@ public
         then
           json;
 
-      case Expression.RECORD_ELEMENT()
+      case RECORD_ELEMENT()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("record_element"), json);
@@ -6085,7 +6151,7 @@ public
         then
           json;
 
-      case Expression.PARTIAL_FUNCTION_APPLICATION()
+      case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("function"), json);
@@ -6094,6 +6160,8 @@ public
             list(dump_arg(name, arg) threaded for arg in exp.args, name in exp.argNames)), json);
         then
           json;
+
+      case FILENAME() then JSON.makeString(exp.filename);
 
       else JSON.makeString(toString(exp));
     end match;

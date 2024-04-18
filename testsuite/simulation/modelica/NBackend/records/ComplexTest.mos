@@ -1,0 +1,455 @@
+// name: ComplexTest
+// keywords: NewBackend
+// status: correct
+
+loadString("
+package ComplexTestNB
+  model T01
+    parameter Complex z1 = Complex(1);
+    parameter Complex z2 = Complex(0, 1);
+    parameter Complex z3 = z1 + z2;
+    Complex z4, z5;
+  equation
+    z4 = z1*z2;
+    z5 = z1/z2;
+  end T01;
+
+  model T02
+    Complex z1 = Complex(1);
+    Complex z2 = Complex(0, 1);
+    Complex z3, z4, z5;
+  equation
+    z3 = z1 + z2;
+    z4 = z1*z2;
+    z5 = z1/z2;
+  end T02;
+
+  model T03
+    Complex z1;
+    Complex z2;
+    Complex z3, z4, z5;
+  equation
+    z1 = Complex(1);
+    z2 = Complex(0, 1);
+    z3 = z1 + z2;
+    z4 = z1*z2;
+    z5 = z1/z2;
+  end T03;
+
+  model T04
+    Complex z1, z2, z3, z4, z5;
+  equation
+    z1 = Complex(time,0);
+    z2 = Complex(0,1);
+    z3 = z1 + z2;
+    z4 = z1*z2;
+    z5 = z1/z2;
+  end T04;
+
+  model T05
+    Complex z1;
+  equation
+    z1  = Complex(time,0);
+  end T05;
+
+  model T06
+    Complex z1 = Complex(time,0);
+  equation
+  end T06;
+
+  model T07
+    Complex z1 = Complex(time,0);
+    Complex z2 = Complex(0, 1);
+    Complex z3, z4, z5;
+  equation
+    z3 = z1 + z2;
+    z4 = z1*z2;
+    z5 = z1/z2;
+  end T07;
+
+  model T08
+    parameter Real v_re_start = 1;
+    parameter Real v_im_start = 0;
+    parameter Real i_re_start = 1;
+    parameter Real i_im_start = -0.3;
+    parameter Complex Z = Complex(0.03,0.1);
+    Complex v0 = Complex(1);
+    Complex v(re(start = v_re_start), im(start = v_im_start));
+    Complex i(re(start = i_re_start), im(start = i_im_start));
+  equation
+    v = v0 - Z*i;
+    v*Modelica.ComplexMath.conj(i) = Complex(1,0.2);
+  end T08;
+
+  model T09
+    parameter Real v_re_start = 1;
+    parameter Real v_im_start = 0;
+    parameter Real i_re_start = 1;
+    parameter Real i_im_start = -0.3;
+    parameter Complex Z = Complex(0.03,0.1);
+    Complex v0 = Complex(1);
+    Complex v(re(start = v_re_start), im(start = v_im_start));
+    Complex i(re(start = i_re_start), im(start = i_im_start));
+    Real P,Q;
+  equation
+    v = v0 - Z*i;
+    P = 1 + 0.1*time;
+    Q = 0.2 + 0.1*time;
+    v*Modelica.ComplexMath.conj(i) = Complex(P, Q);
+  end T09;
+
+  model T10
+    Real a = 1;
+    Real b = 1;
+    Complex z(re = a, im = b);
+  end T10;
+end ComplexTestNB;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumpBindings"); getErrorString();
+
+simulate(ComplexTestNB.T01); getErrorString();
+simulate(ComplexTestNB.T02); getErrorString();
+simulate(ComplexTestNB.T03); getErrorString();
+simulate(ComplexTestNB.T04); getErrorString();
+simulate(ComplexTestNB.T05); getErrorString();
+simulate(ComplexTestNB.T06); getErrorString();
+simulate(ComplexTestNB.T07); getErrorString();
+simulate(ComplexTestNB.T08); getErrorString();
+simulate(ComplexTestNB.T09); getErrorString();
+simulate(ComplexTestNB.T10); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (0):
+// ***************************************
+//
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (1):
+// *************************************************
+// 	[RECD] (2) z3 = Complex.'+'(z1, z2) ($RES_BND_6)
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T01_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T01', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Automatically loaded package Complex 4.0.0 due to usage.
+// "
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (2):
+// ***************************************
+// 	[RECD] (2) z2 = Complex(0.0, 1.0) ($RES_BND_4)
+// 	[RECD] (2) z1 = Complex(1.0, 0.0) ($RES_BND_3)
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T02_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T02', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (0):
+// ***************************************
+//
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T03_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T03', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (0):
+// ***************************************
+//
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T04_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T04', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (0):
+// ***************************************
+//
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T05_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T05', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (1):
+// ***************************************
+// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0) ($RES_BND_0)
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T06_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T06', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (2):
+// ***************************************
+// 	[RECD] (2) z2 = Complex(0.0, 1.0) ($RES_BND_4)
+// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0) ($RES_BND_3)
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T07_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T07', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (1):
+// ***************************************
+// 	[RECD] (2) v0 = Complex(1.0, 0.0) ($RES_BND_2)
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T08_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T08', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.0.0 due to usage.
+// "
+// Created Continuous Binding Equations (0):
+// *******************************************
+//
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (1):
+// ***************************************
+// 	[RECD] (2) v0 = Complex(1.0, 0.0) ($RES_BND_4)
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T09_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T09', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Created Continuous Binding Equations (4):
+// *******************************************
+// 	[SCAL] (1) z.re = a ($RES_BND_3)
+// 	[SCAL] (1) z.im = b ($RES_BND_2)
+// 	[SCAL] (1) b = 1.0 ($RES_BND_1)
+// 	[SCAL] (1) a = 1.0 ($RES_BND_0)
+//
+// Created Discrete Binding Equations (0):
+// *****************************************
+//
+//
+// Created Record Binding Equations (0):
+// ***************************************
+//
+//
+// Created Parameter Binding Equations (0):
+// ******************************************
+//
+//
+// Created Record Parameter Binding Equations (0):
+// *************************************************
+//
+//
+// Created External Object Parameter Binding Equations (0):
+// **********************************************************
+//
+//
+// record SimulationResult
+//     resultFile = "ComplexTestNB.T10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

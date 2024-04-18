@@ -1,0 +1,127 @@
+// name: simple_tuple
+// keywords: NewBackend
+// status: correct
+
+loadString("
+function some_func
+  input Real a;
+  input Real b;
+  output Real x;
+  output Real y;
+algorithm
+  x := a+b;
+  y := a*b;
+end some_func;
+
+model simple_tuple
+  Real a, b, x, y, z1, z2, z3;
+equation
+  a = sin(time);
+  b = cos(time);
+  (x, y) = some_func(a, b);
+  z1 = some_func(x, y);
+  (z2, ) = some_func(x, y);
+  (, z3) = some_func(x, y);
+end simple_tuple;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumpBackendInline,dumprepl,dumpCSE"); getErrorString();
+
+simulate(simple_tuple); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// Simulation Function Alias
+// ---------------------------
+//   $FUN_1 ............. sin(time)
+//   $FUN_2 ............. cos(time)
+//   ($FUN_3, $FUN_4) ... some_func(a, b)
+//   ($FUN_5, $FUN_6) ... some_func(x, y)
+//
+// Initial Function Alias
+// ------------------------
+//
+//
+// [dumpBackendInline] Inlining operatations for: {NORMAL, BUILTIN_EARLY, EARLY, DEFAULT}
+// ****************************************************************************************
+// [NBInline.inlineTupleEquation] Inlining: [TUPL] (2) (x, y) = ($FUN_3, $FUN_4) ($RES_SIM_3)
+// -- Result: [SCAL] (1) x = $FUN_3 ($RES_$AUX_10)
+// -- Result: [SCAL] (1) y = $FUN_4 ($RES_$AUX_11)
+// [NBInline.inlineTupleEquation] Inlining: [TUPL] (2) (z2, _) = ($FUN_5, $FUN_6) ($RES_SIM_1)
+// -- Result: [SCAL] (1) z2 = $FUN_5 ($RES_$AUX_12)
+// [NBInline.inlineTupleEquation] Inlining: [TUPL] (2) (_, z3) = ($FUN_5, $FUN_6) ($RES_SIM_0)
+// -- Result: [SCAL] (1) z3 = $FUN_6 ($RES_$AUX_13)
+//
+// ==========================
+// [dumprepl] Alias Sets:
+// ==========================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) z3 = $FUN_6 ($RES_$AUX_13)
+//
+// Alias Set 2:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) y = $FUN_4 ($RES_$AUX_11)
+//
+// Alias Set 3:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) x = $FUN_3 ($RES_$AUX_10)
+//
+// Alias Set 4:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) z2 = $FUN_5 ($RES_$AUX_12)
+// 	[SCAL] (1) z1 = $FUN_5 ($RES_SIM_2)
+//
+// Alias Set 5:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) b = $FUN_2 ($RES_SIM_4)
+//
+// Alias Set 6:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) a = $FUN_1 ($RES_SIM_5)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	$FUN_6	 ==> 	z3
+// 	$FUN_4	 ==> 	y
+// 	$FUN_3	 ==> 	x
+// 	$FUN_5	 ==> 	z2
+// 	z1	 ==> 	z2
+// 	$FUN_2	 ==> 	b
+// 	$FUN_1	 ==> 	a
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// [dumpBackendInline] Inlining operatations for: {AFTER_INDEX_RED}
+// ******************************************************************
+//
+// [dumpBackendInline] Inlining operatations for: {NORMAL, BUILTIN_EARLY, EARLY, DEFAULT}
+// ****************************************************************************************
+//
+// record SimulationResult
+//     resultFile = "simple_tuple_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_tuple', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

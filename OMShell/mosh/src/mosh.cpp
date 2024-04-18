@@ -56,10 +56,8 @@
 #include <wordexp.h>
 #endif
 
-using namespace std;
-
 /* Local functios */
-void doOMCCommunication(const string *);
+void doOMCCommunication(const std::string *);
 
 
 /* Global variables */
@@ -89,12 +87,12 @@ int main(int argc, char* argv[])
 
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
 
-  const string *scriptname = getFlagValue("f",argc,argv);
+  const std::string *scriptname = getFlagValue("f",argc,argv);
   if(!scriptname) {
-    cout << "OMShell "
-         << "Copyright 1997-" << dateStr+7 << ", Open Source Modelica Consortium (OSMC)" << endl
-         << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << endl << endl
-         << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << endl;
+    std::cout << "OMShell "
+         << "Copyright 1997-" << dateStr+7 << ", Open Source Modelica Consortium (OSMC)" << std::endl
+         << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << std::endl << std::endl
+         << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << std::endl;
   }
   doOMCCommunication(scriptname);
 
@@ -102,19 +100,19 @@ int main(int argc, char* argv[])
   return EXIT_SUCCESS;
 }
 
-void doOMCCommunication(const string *scriptname)
+void doOMCCommunication(const std::string *scriptname)
 {
   OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
   env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
-  string cmdLine = env->getResult();
-  cout << "Set shortOutput flag: " << cmdLine.c_str() << std::endl;
+  std::string cmdLine = env->getResult();
+  std::cout << "Set shortOutput flag: " << cmdLine.c_str() << std::endl;
 
   if (scriptname) { // Execute script and output return value
-    cout << "executing <" << scriptname << ">" << endl;
-    const char * str=("runScript(\""+*scriptname+"\")").c_str();
-    env->evalExpression(str);
-    string res = env->getResult();
-    cout << res << endl;
+    std::cout << "executing <" << scriptname << ">" << std::endl;
+    std::string cmd = "runScript(\"" + *scriptname + "\")";
+    env->evalExpression(cmd);
+    std::string res = env->getResult();
+    std::cout << res << std::endl;
     return;
   }
 
@@ -134,11 +132,11 @@ void doOMCCommunication(const string *scriptname)
     if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) {
       if (!done) add_history(line);
       env->evalExpression(line);
-      string res = env->getResult();
-      cout << res;
-      string error = env->getError();
+      std::string res = env->getResult();
+      std::cout << res;
+      std::string error = env->getError();
       if (error.size() > 3) {
-        cout << error;
+        std::cout << error;
       }
     }
     free(line);

@@ -51,8 +51,6 @@
 //IAEX Headers
 #include "commandcompletion.h"
 
-using namespace std;
-
 namespace IAEX
 {
   /*!
@@ -88,17 +86,17 @@ namespace IAEX
     QFile file( filename );
     if(!file.open(QIODevice::ReadOnly))
     {
-      string tmp = "Could not open file: " + filename.toStdString();
-      throw runtime_error( tmp.c_str() );
+      std::string tmp = "Could not open file: " + filename.toStdString();
+      throw std::runtime_error( tmp.c_str() );
     }
 
     if( !doc_->setContent(&file) )
     {
       file.close();
-      string tmp = "Could not read content from file: " +
+      std::string tmp = "Could not read content from file: " +
         filename.toStdString() +
         " Probably some syntax error in the xml file";
-      throw runtime_error( tmp.c_str() );
+      throw std::runtime_error( tmp.c_str() );
     }
     file.close();
 
@@ -168,9 +166,9 @@ namespace IAEX
             currentList_->append( commandList_.at(i) );
         }
 
-        //cout << "Found commands (" << command.toStdString() << "):" << endl;
+        //std::cout << "Found commands (" << command.toStdString() << "):" << std::endl;
         //for( int i = 0; i < currentList_->size(); ++i )
-        //  cout << " >" << currentList_->at(i).toStdString() << endl;
+        //  std::cout << " >" << currentList_->at(i).toStdString() << std::endl;
 
         // found one or more commands that match the word
         if( currentList_->size() > 0 )
@@ -372,7 +370,7 @@ namespace IAEX
   void CommandCompletion::parseCommand( QDomNode node, CommandUnit *item ) const
   {
     if( !item )
-      throw runtime_error( "ParseCommand... No ITEM set" );
+      throw std::runtime_error( "ParseCommand... No ITEM set" );
 
     while( !node.isNull() )
     {
@@ -383,7 +381,7 @@ namespace IAEX
       else if( element.tagName() == "helptext" )
         item->setHelptext( element.text() );
       else
-        cout << "Tag not known" << element.tagName().toStdString();
+        std::cout << "Tag not known" << element.tagName().toStdString();
 
       node = node.nextSibling();
     }

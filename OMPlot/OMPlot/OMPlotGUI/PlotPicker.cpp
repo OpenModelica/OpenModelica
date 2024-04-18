@@ -9,8 +9,9 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -33,6 +34,8 @@
 
 #include "PlotPicker.h"
 #include "qwt_symbol.h"
+
+#include <QToolTip>
 
 using namespace OMPlot;
 
@@ -61,7 +64,7 @@ bool containsPoint(QPointF point, QPointF point1, QPointF point2, double xSelect
   // If point is out of bounds, no need to do further checks.
   if (point.x() + xSelectionMargin < leftPoint.x() || rightPoint.x() < point.x() - xSelectionMargin) {
     return false;
-  } else if (point.y() + ySelectionMargin < qMin(leftPoint.y(), rightPoint.y()) || qMin(leftPoint.y(), rightPoint.y()) < point.y() - ySelectionMargin) {
+  } else if (point.y() + ySelectionMargin < qMin(leftPoint.y(), rightPoint.y()) || qMax(leftPoint.y(), rightPoint.y()) < point.y() - ySelectionMargin) {
     return false;
   }
   double deltaX = rightPoint.x() - leftPoint.x();
@@ -173,7 +176,7 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
     if (mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTPARAMETRIC
         && mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTARRAYPARAMETRIC
         && !mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
-      timeUnit = QString("%1%2").arg(mpPlot->getXScaleDraw()->getUnitPrefix(), mpPlot->getParentPlotWindow()->getTimeUnit());
+      timeUnit = mpPlot->getParentPlotWindow()->getTimeUnit();
     }
     QString toolTip;
     for (int i = 0 ; i < plotCurves.size() ; i++) {
@@ -185,9 +188,6 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
 
       pPlotCurve->getPointMarker()->setValue(x, y);
       pPlotCurve->getPointMarker()->setVisible(true);
-
-      x = x / qPow(10, mpPlot->getXScaleDraw()->getExponent());
-      y = y / qPow(10, mpPlot->getYScaleDraw()->getExponent());
 
       if (i > 0) {
         toolTip += QString("<br /><br />");

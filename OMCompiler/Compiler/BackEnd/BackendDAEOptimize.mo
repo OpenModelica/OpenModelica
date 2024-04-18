@@ -2310,7 +2310,9 @@ algorithm
     case (DAE.CREF(componentRef = cr),(globalKnownVars,_))
       equation
         (v,_) = BackendVariable.getVarSingle(cr,globalKnownVars);
-        true = BackendVariable.isFinalVar(v);
+        true = BackendVariable.hasVarEvaluateAnnotationTrue(v)
+          or (Flags.getConfigBool(Flags.EVALUATE_FINAL_PARAMS) and BackendVariable.isFinalVar(v))
+          or (Flags.getConfigBool(Flags.EVALUATE_PROTECTED_PARAMS) and BackendVariable.isProtectedVar(v));
         e = BackendVariable.varBindExpStartValue(v);
       then (e,(globalKnownVars,true));
     else (inExp,tpl1);
@@ -5350,15 +5352,13 @@ protected function replaceDerCallWork
   input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared = shared;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
-  list<BackendDAE.Equation> eqnsList;
 algorithm
   osyst := match inSyst
     local
       BackendDAE.EqSystem syst;
       BackendDAE.Variables localKnowns;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
       algorithm
         (eqns, vars) :=
@@ -5366,7 +5366,8 @@ algorithm
         (localKnowns, vars) := BackendVariable.traverseBackendDAEVars(vars,
           moveStatesVariables, (oshared.localKnownVars, vars));
         oshared.localKnownVars := localKnowns;
-        syst.orderedEqs := eqns; syst.orderedVars := vars;
+        syst.orderedEqs := eqns;
+        syst.orderedVars := vars;
       then syst;
   end match;
 end replaceDerCallWork;
@@ -5379,7 +5380,6 @@ protected function traverserreplaceDerCall "
   output BackendDAE.Variables outVars = inVars;
 protected
   BackendDAE.Equation e;
-  BackendDAE.Variables vars;
   list<DAE.SymbolicOperation> ops;
 algorithm
   (e, ops) := BackendEquation.traverseExpsOfEquation(inEq, traverserreplaceDerCallExp, {});
@@ -5394,20 +5394,12 @@ protected function traverserreplaceDerCallExp "
   output list<DAE.SymbolicOperation> outTpl;
 protected
   DAE.Exp e, e1;
-  tuple<BackendDAE.Variables, Boolean> ext_arg;
-  BackendDAE.Variables vars;
-  list<DAE.SymbolicOperation> ops;
-  DAE.FunctionTree funcs;
-  Boolean b, addVars;
-  BackendDAE.Shared shared;
-  list<BackendDAE.Equation> eqnLst;
+  Boolean b;
 algorithm
   e := inExp;
-  ops := tpl;
   (e1, b) := Expression.traverseExpBottomUp(e, replaceDerCall, false);
-  ops := List.consOnTrue(b, DAE.SUBSTITUTION({e1}, e), ops);
+  outTpl := List.consOnTrue(b, DAE.SUBSTITUTION({e1}, e), tpl);
   outExp := e1;
-  outTpl := ops;
 end traverserreplaceDerCallExp;
 
 protected function replaceDerCall "
@@ -5419,19 +5411,8 @@ protected function replaceDerCall "
 algorithm
   (outExp,tpl) := matchcontinue (inExp, itpl)
     local
-      BackendDAE.Variables vars;
       DAE.ComponentRef cr,cref;
       DAE.Type ty;
-      String str;
-      BackendDAE.Shared shared;
-      list<BackendDAE.Var> varlst;
-      BackendDAE.Var v, v1;
-      Boolean b, addVar;
-      DAE.FunctionTree funcs;
-      list<BackendDAE.Equation> eqnLst;
-      Integer numVars;
-      list<DAE.Exp> expLst;
-      String str;
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)}), _) equation
       cref = ComponentReference.crefPrefixDer(cr);
@@ -5439,8 +5420,7 @@ algorithm
     then (outExp, true);
 
     case (DAE.CALL(path=Absyn.IDENT(name="der")), _) equation
-      str = "BackendDAEOptimize.replaceDerCall failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
-      Error.addMessage(Error.INTERNAL_ERROR, {str});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionDump.printExpStr(inExp) + "\n"});
     then fail();
 
     else (inExp, itpl);
@@ -5453,11 +5433,11 @@ protected function moveStatesVariables
   output BackendDAE.Var outVar = inVar;
   output tuple<BackendDAE.Variables, BackendDAE.Variables> outTpl = inTpl;
 algorithm
-  _ := match(inVar)
-  local
-    DAE.ComponentRef cref;
-    BackendDAE.Var newVar;
-    BackendDAE.Variables localKnowns, newVars;
+  () := match(inVar)
+    local
+      DAE.ComponentRef cref;
+      BackendDAE.Var newVar;
+      BackendDAE.Variables localKnowns, newVars;
     case(BackendDAE.VAR(varKind = BackendDAE.STATE(), varName=cref)) algorithm
       (localKnowns, newVars) := inTpl;
       // remove the state from variables
@@ -5472,7 +5452,7 @@ algorithm
       newVars := BackendVariable.addVar(newVar, newVars);
       outTpl := (localKnowns, newVars);
     then ();
-    else then();
+    else ();
   end match;
 end moveStatesVariables;
 

@@ -16,247 +16,66 @@ end partitioning;
 
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=bltdump"); getErrorString();
+setCommandLineOptions("--newBackend -d=dumpSynchronous"); getErrorString();
 
 simulate(partitioning); getErrorString();
+
+val(x, 1);
 
 // Result:
 // true
 // ""
 // true
 // ""
-// #################################################
+// ##############################################
 //
-// 	[ODE] Differential-Algebraic: (Causalize)
+// 	[dumpSynchronous] Partitioning result:
 //
-// #################################################
-//
-// ===========================
-// CONTINUOUS 1 ODE System
-// ===========================
-//
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real k
-// ### Equation:
-// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
-//
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real z
-// ### Equation:
-// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
-//
-// ===========================
-// CONTINUOUS 2 ODE System
-// ===========================
-//
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
-//
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real $DER.x
-// ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
-//
-// #################################################
-//
-// 	[ODE] Differential-Algebraic: (Causalize)
-//
-// #################################################
+// ##############################################
 //
 // ===========================
 // CONTINUOUS 1 ODE System
 // ===========================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real k
-// ### Equation:
-// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
+// Unknown Variables (2/2)
+// *************************
+// (1)       [ALGB] (1) Real z
+// (2)       [ALGB] (1) Real k
 //
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real z
-// ### Equation:
-// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 //
-// ===========================
-// CONTINUOUS 2 ODE System
-// ===========================
+// Equations Equations (2/2)
+// ***************************
+// (1)       [SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
+// (2)       [SCAL] (1) k = cos(time) ($RES_$AUX_5)
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real $DER.x
-// ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
-//
-// #########################################
-//
-// 	[INI] Initialization: (Causalize)
-//
-// #########################################
-//
-// ===========================
-// CONTINUOUS 1 INI System
-// ===========================
-//
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real x
-// ### Equation:
-// 	[SCAL] (1) x = $START.x ($RES_SIM_5)
-//
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
-//
-// BLOCK 3: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real k
-// ### Equation:
-// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
-//
-// BLOCK 4: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real z
-// ### Equation:
-// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
-//
-// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
-// ### Variable:
-// 	Real $DER.x
-// ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
-//
-// #############################################
-//
-// 	[ODE] Differential-Algebraic: (Solve)
-//
-// #############################################
 //
 // ===========================
 // CONTINUOUS 2 ODE System
 // ===========================
 //
-// --- Alias of INI[1 | 2] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+// Unknown Variables (3/3)
+// *************************
+// (1)       [ALGB] (1) Real y
+// (2)       [ALGB] (1) Real $FUN_2
+// (3)       [DER-] (1) Real $DER.x
 //
-// --- Alias of INI[1 | 5] ---
-// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $DER.x
-// ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
-// ################################
+// Equations Equations (3/3)
+// ***************************
+// (1)       [SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+// (2)       [SCAL] (1) $DER.x = $FUN_2 ($RES_SIM_0)
+// (3)       [SCAL] (1) $FUN_2 = sin(time) ($RES_$AUX_4)
 //
-// 	[ALG] Algebraic: (Solve)
 //
-// ################################
-//
-// ===========================
-// CONTINUOUS 1 ALG System
-// ===========================
-//
-// --- Alias of INI[1 | 3] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real k
-// ### Equation:
-// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
-//
-// --- Alias of INI[1 | 4] ---
-// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real z
-// ### Equation:
-// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
-//
-// #####################################
-//
-// 	[INI] Initialization: (Solve)
-//
-// #####################################
-//
-// ===========================
-// CONTINUOUS 1 INI System
-// ===========================
-//
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real x
-// ### Equation:
-// 	[SCAL] (1) x = $START.x ($RES_SIM_5)
-//
-// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
-//
-// BLOCK 3: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real k
-// ### Equation:
-// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
-//
-// BLOCK 4: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real z
-// ### Equation:
-// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
-//
-// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $DER.x
-// ### Equation:
-// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // record SimulationResult
 //     resultFile = "partitioning_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'partitioning', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'partitioning', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
+// 0.45969220091667
 // endResult

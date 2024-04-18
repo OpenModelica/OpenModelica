@@ -214,15 +214,16 @@ if (QWT_WITH_WIDGETS)
     qwt_wheel.cpp)
 endif ()
 
-add_library(omqwt STATIC ${QWT_HEADERS} ${QWT_SOURCES})
+add_library(omqwt SHARED ${QWT_HEADERS} ${QWT_SOURCES})
 
-## We build it as a static library now. Disable dllimport/export attributes.
-# target_compile_definitions(omqwt
-# 	PUBLIC
-# 		$<$<BOOL:MSVC>:QWT_DLL>
-# 	PRIVATE
-# 		$<$<BOOL:MSVC>:QWT_MAKEDLL>
-# )
+if(WIN32)
+  # define QWT_DLL so the headers add the dll export/import specifiers .
+  target_compile_definitions(omqwt PUBLIC QWT_DLL)
+  # When compiling omqwt itself, define QWT_MAKEDLL so the headers export the functions.
+  # Target that link to omqwt will not fet this define (private) which means they will
+  # dllimport the functions. See src/qwt_global.h:27-35
+  target_compile_definitions(omqwt PRIVATE QWT_MAKEDLL)
+endif()
 
 target_include_directories(omqwt
   PUBLIC
@@ -254,4 +255,7 @@ set_target_properties(omqwt PROPERTIES
   VERSION ${QWT_VERSION}
   SOVERSION ${QWT_VER_MAJ}
   AUTOMOC ON)
+
 target_compile_definitions(omqwt PRIVATE QWT_MOC_INCLUDE)
+
+install(TARGETS omqwt)

@@ -25,7 +25,7 @@ getErrorString();
 system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" ticket5670_init.xml >Bug5670.xml"); getErrorString();
 readFile("Bug5670.xml"); getErrorString();
 
-translateModelFMU(ticket5670,version="2.0");
+buildModelFMU(ticket5670,version="2.0");
 getErrorString();
 
 // unzip to console, quiet, extra quiet

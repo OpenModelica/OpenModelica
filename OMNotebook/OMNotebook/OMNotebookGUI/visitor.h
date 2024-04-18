@@ -36,8 +36,7 @@
 #ifndef VISITOR_H
 #define VISITOR_H
 
-//using namespace std;
-
+//
 namespace IAEX{
    class Cell;
    class CellGroup;
@@ -61,6 +60,8 @@ namespace IAEX{
    class Visitor
    {
    public:
+      virtual ~Visitor() = default;
+
       virtual void visitCellNodeBefore(Cell *node) = 0;
       virtual void visitCellNodeAfter(Cell *node) = 0;
 

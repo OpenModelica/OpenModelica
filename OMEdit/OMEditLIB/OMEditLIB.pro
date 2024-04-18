@@ -34,11 +34,13 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 
 # Set the C++ standard.
-CONFIG += c++14
+CONFIG += c++1z
 
 TARGET = OMEdit
 TEMPLATE = lib
 CONFIG += staticlib
+
+DEFINES += OM_HAVE_PTHREADS
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_es.ts \
@@ -76,13 +78,16 @@ CONFIG(release, debug|release) { # release
   QMAKE_LFLAGS_RELEASE =
 }
 
+# if OM_ENABLE_ENCRYPTION
+_OM_ENABLE_ENCRYPTION = $$(OM_ENABLE_ENCRYPTION)
+equals(_OM_ENABLE_ENCRYPTION, yes) {
+  QMAKE_CXXFLAGS += -DOM_ENABLE_ENCRYPTION
+}
+
 # On older msys the include directory for binutils is in binutils
 # On recent (November 2022) MSYS2 this is no longer needed.
-contains(QT_ARCH, i386) { # 32-bit
-  INCLUDEPATH += $$(OMDEV)/tools/msys/mingw32/include/binutils
-} else { # 64-bit
-  INCLUDEPATH += $$(OMDEV)/tools/msys/mingw64/include/binutils
-}
+  INCLUDEPATH += $$(OMDEV)/tools/msys/include/binutils
+
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
@@ -97,10 +102,12 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/include/omplot \
   $$OPENMODELICAHOME/include/omplot/qwt \
   $$OPENMODELICAHOME/include/$$host_short/omc/antlr3 \
+  $$OPENMODELICAHOME/include/omc \
   $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c \
   $$OPENMODELICAHOME/include/omc/c/util \
   $$OPENMODELICAHOME/include/omc/fmil \
+  $$OPENMODELICAHOME/../OMSimulator/include/ \
   $$OPENMODELICAHOME/../OMParser/ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
@@ -396,7 +403,6 @@ OTHER_FILES += Resources/css/stylesheet.qss \
 
 # Please read the warnings. They are like vegetables; good for you even if you hate them.
 CONFIG += warn_on
-# Only disable the unused variable/function/parameter warning
 win32 {
   # -Wno-clobbered is not recognized by clang
   !contains(_cxx, clang++) {

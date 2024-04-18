@@ -897,7 +897,7 @@ public function intMaxLit "Returns the maximum integer that can be represent usi
   external "builtin" outInt=intMaxLit();
 end intMaxLit;
 
-public function realMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
+public function realMaxLit "Returns the maximum real that can be represent using this version of the compiler"
   output Real outReal;
   external "builtin" outReal=realMaxLit();
 end realMaxLit;
@@ -1088,7 +1088,7 @@ algorithm
   try
     fullpath := system_realpath(path);
   else
-    Error.addInternalError(getInstanceName() + " failed", sourceInfo());
+    Error.addInternalError(getInstanceName() + " failed for " + path, sourceInfo());
     fail();
   end try;
 end realpath;
@@ -1326,6 +1326,12 @@ function fputs
 Outputs a string using the C function fputs.
 </html>"));
 end fputs;
+
+function waitForInput
+  external "C" SystemImpl__waitForInput() annotation(Library = "omcruntime", Documentation(info="<html>
+Waits for input, useful for e.g. pausing the compiler in order to turn valgrind instrumentation on/off.
+</html>"));
+end waitForInput;
 
 annotation(__OpenModelica_Interface="util");
 end System;

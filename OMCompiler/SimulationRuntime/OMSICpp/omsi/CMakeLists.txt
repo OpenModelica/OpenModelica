@@ -12,15 +12,15 @@ include_directories ("${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/ThirdParty/FMI/def
   MESSAGE(STATUS "${OMSIBASE_LIB}")
 #Removed this library because the omsicpp code generation is skipped at the moment which used this library
 
-	#add_library(${OSUName} STATIC src/fmi2/omsi_fmi2_me.cpp src/fmi2/detail/omsi_fmi2_log.cpp src/fmi2/detail/omsi_fmi2_wrapper.cpp  src/omsi_factory.cpp src/omsi_global_settings.cpp  )
-	#IF(WIN32)
-	#target_link_libraries(${OSUName}  ${OMCFactoryName} ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} wsock32 ws2_32)
-	#ELSE(WIN32)
-		#target_link_libraries(${OSUName} ${OMCFactoryName}  ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} 	${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
-	#ENDIF(WIN32)
+  #add_library(${OSUName} STATIC src/fmi2/omsi_fmi2_me.cpp src/fmi2/detail/omsi_fmi2_log.cpp src/fmi2/detail/omsi_fmi2_wrapper.cpp  src/omsi_factory.cpp src/omsi_global_settings.cpp  )
+  #IF(WIN32)
+  #target_link_libraries(${OSUName}  ${OMCFactoryName} ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} wsock32 ws2_32)
+  #ELSE(WIN32)
+    #target_link_libraries(${OSUName} ${OMCFactoryName}  ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName}   ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
+  #ENDIF(WIN32)
 
 
-	#install(TARGETS ${OSUName} DESTINATION ${LIBINSTALLEXT})
+  #install(TARGETS ${OSUName} DESTINATION ${LIBINSTALLEXT})
 
 
 IF(BUILD_SHARED_LIBS)
@@ -33,26 +33,36 @@ IF(BUILD_SHARED_LIBS)
     add_executable(${OSUSimName} src/omsi.cpp )
 
     IF(WIN32)
-		target_link_libraries(${OSUSimName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} wsock32 ws2_32)
+    target_link_libraries(${OSUSimName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} wsock32 ws2_32)
         #Removed this library because the omsicpp code generation is skipped at the moment which used this library
-			#target_link_libraries(${OSUName}  ${OMCFactoryName} ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} wsock32 ws2_32)
-	ELSE(WIN32)
-		target_link_libraries(${OSUSimName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
+      #target_link_libraries(${OSUName}  ${OMCFactoryName} ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} wsock32 ws2_32)
+  ELSE(WIN32)
+    target_link_libraries(${OSUSimName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
         #Removed this library because the omsicpp code generation is skipped at the moment which used this library
-			#target_link_libraries(${OSUName} ${OMCFactoryName}  ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
+      #target_link_libraries(${OSUName} ${OMCFactoryName}  ${SimControllerName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
     ENDIF(WIN32)
 #Removed this library because the omsicpp code generation is skipped at the moment which used this library
-	#set_target_properties(${OSUName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
+  #set_target_properties(${OSUName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 
 IF(MSVC)
 install(FILES $<TARGET_PDB_FILE:${OSUSimName}> DESTINATION bin OPTIONAL)
 #install(FILES $<TARGET_PDB_FILE:${OSUName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 ENDIF(MSVC)
 
-install(TARGETS ${OSUSimName} DESTINATION bin)
+if(win32)
+  # Escape the environment variable path
+  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
+    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
+  endif()
+  string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+
+  install(TARGETS ${OSUSimName}
+          RUNTIME_DEPENDENCIES
+            DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin
+            PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+            POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+          DESTINATION bin)
+else()
+  install(TARGETS ${OSUSimName} DESTINATION bin)
+endif()
 ENDIF(BUILD_SHARED_LIBS)
-
-
-
-
-

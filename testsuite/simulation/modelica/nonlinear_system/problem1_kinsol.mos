@@ -30,7 +30,6 @@ val(y,{0.0,1.0,2.0});
 // "
 // end SimulationResult;
 // "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {0.4044646785222299,0.2484857135629654,0.1512091359384059}
 // {0.1635916761720908,0.06174514984489611,0.02286420279123931}

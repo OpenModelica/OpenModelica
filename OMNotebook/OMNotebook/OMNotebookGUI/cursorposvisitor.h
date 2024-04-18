@@ -47,7 +47,6 @@
 #include "cellcursor.h"
 #include "graphcell.h"
 
-using namespace std;
 
 namespace IAEX
 {

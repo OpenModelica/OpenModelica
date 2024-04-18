@@ -29,10 +29,7 @@ test -z "$CXXFLAGS" && CXXFLAGS="$CFLAGS"
 AC_LANG([C++])
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX(17, [noext],[optional])
-if test "$ax_cv_cxx_compile_cxx17__std_cpp17" != "yes"; then
-  AX_CXX_COMPILE_STDCXX(14, [noext],[mandatory])
-fi
+AX_CXX_COMPILE_STDCXX(17, [noext],[mandatory])
 host_short=$host_cpu-$host_os
 
 m4_include([common/m4/qmake.m4])

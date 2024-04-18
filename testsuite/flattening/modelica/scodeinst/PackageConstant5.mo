@@ -17,7 +17,7 @@ end PackageConstant5;
 // Result:
 // Error processing file: PackageConstant5.mo
 // [flattening/modelica/scodeinst/PackageConstant5.mo:8:3-8:9:writable] Notification: From here:
-// [flattening/modelica/scodeinst/PackageConstant5.mo:11:5-11:15:writable] Error: Component ‘x‘ was found in an enclosing scope but is not a constant.
+// [flattening/modelica/scodeinst/PackageConstant5.mo:11:5-11:15:writable] Error: Component 'x' was found in an enclosing scope but is not a constant.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

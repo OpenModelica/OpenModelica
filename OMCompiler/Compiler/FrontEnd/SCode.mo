@@ -101,10 +101,10 @@ end Restriction;
 public
 uniontype FunctionRestriction
   record FR_NORMAL_FUNCTION "a normal function"
-    Boolean isImpure "true for impure functions, false otherwise";
+    Absyn.FunctionPurity purity;
   end FR_NORMAL_FUNCTION;
   record FR_EXTERNAL_FUNCTION "an external function"
-    Boolean isImpure "true for impure functions, false otherwise";
+    Absyn.FunctionPurity purity;
   end FR_EXTERNAL_FUNCTION;
 
   record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;

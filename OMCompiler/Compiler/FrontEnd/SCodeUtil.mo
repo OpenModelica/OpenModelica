@@ -712,9 +712,10 @@ public function funcRestrictionEqual
   output Boolean equal;
 algorithm
   equal := match(funcRestr1,funcRestr2)
-    local Boolean b1, b2;
-    case (SCode.FR_NORMAL_FUNCTION(b1),SCode.FR_NORMAL_FUNCTION(b2)) then boolEq(b1, b2);
-    case (SCode.FR_EXTERNAL_FUNCTION(b1),SCode.FR_EXTERNAL_FUNCTION(b2)) then boolEq(b1, b2);
+    case (SCode.FR_NORMAL_FUNCTION(),SCode.FR_NORMAL_FUNCTION())
+      then AbsynUtil.purityEqual(funcRestr1.purity, funcRestr2.purity);
+    case (SCode.FR_EXTERNAL_FUNCTION(),SCode.FR_EXTERNAL_FUNCTION())
+      then AbsynUtil.purityEqual(funcRestr1.purity, funcRestr2.purity);
     case (SCode.FR_OPERATOR_FUNCTION(),SCode.FR_OPERATOR_FUNCTION()) then true;
     case (SCode.FR_RECORD_CONSTRUCTOR(),SCode.FR_RECORD_CONSTRUCTOR()) then true;
     case (SCode.FR_PARALLEL_FUNCTION(),SCode.FR_PARALLEL_FUNCTION()) then true;
@@ -3085,6 +3086,16 @@ algorithm
   end match;
 end elementPrefixes;
 
+public function setElementPrefixes
+  input SCode.Prefixes prefixes;
+  input output SCode.Element element;
+algorithm
+  () := match element
+    case SCode.CLASS()     algorithm element.prefixes := prefixes; then ();
+    case SCode.COMPONENT() algorithm element.prefixes := prefixes; then ();
+  end match;
+end setElementPrefixes;
+
 public function isElementReplaceable
   input SCode.Element inElement;
   output Boolean isReplaceable;
@@ -3196,57 +3207,20 @@ algorithm
   end match;
 end isNotBuiltinClass;
 
-public function getElementNamedAnnotation
-  "Returns the annotation with the given name in the element, or fails if no
-   such annotation could be found."
+public function getElementAnnotation
   input SCode.Element element;
   input String name;
-  output Absyn.Exp exp;
-protected
-  SCode.Annotation ann;
+  output Option<SCode.Annotation> outAnnotation;
 algorithm
-  ann := match element
-    case SCode.EXTENDS(ann = SOME(ann)) then ann;
-    case SCode.CLASS(cmt = SCode.COMMENT(annotation_ = SOME(ann))) then ann;
-    case SCode.COMPONENT(comment = SCode.COMMENT(annotation_ = SOME(ann))) then ann;
+  outAnnotation := match element
+    case SCode.EXTENDS() then element.ann;
+    case SCode.CLASS() then element.cmt.annotation_;
+    case SCode.COMPONENT() then element.comment.annotation_;
+    else NONE();
   end match;
+end getElementAnnotation;
 
-  exp := getNamedAnnotation(ann, name);
-end getElementNamedAnnotation;
-
-public function getNamedAnnotation
-  "Checks if the given annotation contains an entry with the given name with the
-   value true."
-  input SCode.Annotation inAnnotation;
-  input String inName;
-  output Absyn.Exp exp;
-  output SourceInfo info;
-protected
-  list<SCode.SubMod> submods;
-algorithm
-  SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) := inAnnotation;
-  SCode.NAMEMOD(mod = SCode.MOD(info = info, binding = SOME(exp))) := List.find1(submods, hasNamedAnnotation, inName);
-end getNamedAnnotation;
-
-protected function hasNamedAnnotation
-  "Checks if a submod has the same name as the given name, and if its binding
-   in that case is true."
-  input SCode.SubMod inSubMod;
-  input String inName;
-  output Boolean outIsMatch;
-algorithm
-  outIsMatch := match(inSubMod, inName)
-    local
-      String id;
-
-    case (SCode.NAMEMOD(ident = id, mod = SCode.MOD(binding = SOME(_))), _)
-      then stringEq(id, inName);
-
-    else false;
-  end match;
-end hasNamedAnnotation;
-
-public function lookupNamedAnnotation
+public function lookupAnnotation
   "Returns the modifier with the given name if it can be found in the
    annotation, otherwise an empty modifier."
   input SCode.Annotation ann;
@@ -3271,24 +3245,17 @@ algorithm
 
     else SCode.NOMOD();
   end match;
-end lookupNamedAnnotation;
+end lookupAnnotation;
 
-public function lookupNamedAnnotationBinding
+public function lookupAnnotationBinding
   input SCode.Annotation ann;
   input String name;
   output Option<Absyn.Exp> binding;
-protected
-  SCode.Mod mod;
 algorithm
-  mod := lookupNamedAnnotation(ann, name);
+  binding := getModifierBinding(lookupAnnotation(ann, name));
+end lookupAnnotationBinding;
 
-  binding := match mod
-    case SCode.Mod.MOD() then mod.binding;
-    else NONE();
-  end match;
-end lookupNamedAnnotationBinding;
-
-public function lookupNamedBooleanAnnotation
+public function lookupBooleanAnnotation
   input SCode.Annotation ann;
   input String name;
   output Option<Boolean> value;
@@ -3296,15 +3263,15 @@ protected
   Option<Absyn.Exp> binding;
   Boolean bval;
 algorithm
-  binding := lookupNamedAnnotationBinding(ann, name);
+  binding := lookupAnnotationBinding(ann, name);
 
   value := match binding
     case SOME(Absyn.Exp.BOOL(value = bval)) then SOME(bval);
     else NONE();
   end match;
-end lookupNamedBooleanAnnotation;
+end lookupBooleanAnnotation;
 
-public function lookupNamedAnnotations
+public function lookupAnnotations
   "Returns a list of modifiers with the given name found in the annotation."
   input SCode.Annotation ann;
   input String name;
@@ -3329,7 +3296,28 @@ algorithm
 
     else {};
   end match;
-end lookupNamedAnnotations;
+end lookupAnnotations;
+
+public function lookupElementAnnotation
+  "Returns the modifier with the given name if it can be found in the annotation
+   of the given element, otherwise an empty modifier."
+  input SCode.Element element;
+  input String name;
+  output SCode.Mod mod;
+protected
+  Option<SCode.Annotation> ann;
+algorithm
+  ann := getElementAnnotation(element, name);
+  mod := if isSome(ann) then lookupAnnotation(Util.getOption(ann), name) else SCode.Mod.NOMOD();
+end lookupElementAnnotation;
+
+public function lookupElementAnnotationBinding
+  input SCode.Element element;
+  input String name;
+  output Option<Absyn.Exp> binding;
+algorithm
+  binding := getModifierBinding(lookupElementAnnotation(element, name));
+end lookupElementAnnotationBinding;
 
 public function hasBooleanNamedAnnotationInClass
   input SCode.Element inClass;
@@ -3358,6 +3346,16 @@ algorithm
     else false;
   end match;
 end hasBooleanNamedAnnotationInComponent;
+
+public function optCommentAnnotation
+  input Option<SCode.Comment> cmt;
+  output Option<SCode.Annotation> ann;
+algorithm
+  ann := match cmt
+    case SOME(SCode.COMMENT(annotation_ = ann)) then ann;
+    else NONE();
+  end match;
+end optCommentAnnotation;
 
 public function optCommentHasBooleanNamedAnnotation
 "check if the named annotation is present and has value true"
@@ -3396,29 +3394,15 @@ public function hasBooleanNamedAnnotation
   input String inName;
   output Boolean outHasEntry;
 protected
-  list<SCode.SubMod> submods;
+  Option<Absyn.Exp> binding;
 algorithm
-  SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) := inAnnotation;
-  outHasEntry := List.exist1(submods, hasBooleanNamedAnnotation2, inName);
-end hasBooleanNamedAnnotation;
+  binding := lookupAnnotationBinding(inAnnotation, inName);
 
-protected function hasBooleanNamedAnnotation2
-  "Checks if a submod has the same name as the given name, and if its binding
-   in that case is true."
-  input SCode.SubMod inSubMod;
-  input String inName;
-  output Boolean outIsMatch;
-algorithm
-  outIsMatch := match inSubMod
-    local
-      String id;
-
-    case SCode.NAMEMOD(ident = id, mod = SCode.MOD(binding = SOME(Absyn.BOOL(value = true))))
-      then stringEq(id, inName);
-
+  outHasEntry := match binding
+    case SOME(Absyn.BOOL(value = true)) then true;
     else false;
   end match;
-end hasBooleanNamedAnnotation2;
+end hasBooleanNamedAnnotation;
 
 public function getEvaluateAnnotation
   "Looks up the Evaluate annotation and returns the value if the annotation
@@ -3431,56 +3415,10 @@ protected
 algorithm
   value := match cmt
     case SOME(SCode.COMMENT(annotation_ = SOME(ann)))
-      then lookupNamedBooleanAnnotation(ann, "Evaluate");
+      then lookupBooleanAnnotation(ann, "Evaluate");
     else NONE();
   end match;
 end getEvaluateAnnotation;
-
-public function getInlineTypeAnnotationFromCmt
-  input SCode.Comment inComment;
-  output Option<SCode.Annotation> outAnnotation;
-algorithm
-  outAnnotation := match(inComment)
-    local
-      SCode.Annotation ann;
-
-    case SCode.COMMENT(annotation_ = SOME(ann)) then getInlineTypeAnnotation(ann);
-    else NONE();
-  end match;
-end getInlineTypeAnnotationFromCmt;
-
-protected function getInlineTypeAnnotation
-  input SCode.Annotation inAnnotation;
-  output Option<SCode.Annotation> outAnnotation;
-algorithm
-  outAnnotation := matchcontinue(inAnnotation)
-    local
-      list<SCode.SubMod> submods;
-      SCode.SubMod inline_mod;
-      SCode.Final fp;
-      SCode.Each ep;
-      SourceInfo info;
-
-    case SCode.ANNOTATION(SCode.MOD(fp, ep, submods, _, info))
-      equation
-        inline_mod = List.find(submods, isInlineTypeSubMod);
-      then
-        SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, {inline_mod}, NONE(), info)));
-
-    else NONE();
-  end matchcontinue;
-end getInlineTypeAnnotation;
-
-protected function isInlineTypeSubMod
-  input SCode.SubMod inSubMod;
-  output Boolean outIsInlineType;
-algorithm
-  outIsInlineType := match(inSubMod)
-    case SCode.NAMEMOD(ident = "Inline") then true;
-    case SCode.NAMEMOD(ident = "LateInline") then true;
-    case SCode.NAMEMOD(ident = "InlineAfterIndexReduction") then true;
-  end match;
-end isInlineTypeSubMod;
 
 public function appendAnnotationToCommentOption
   input SCode.Annotation inAnnotation;
@@ -3561,10 +3499,7 @@ public function getModifierBinding
   output Option<Absyn.Exp> outBinding;
 algorithm
   outBinding := match(inMod)
-    local
-      Absyn.Exp binding;
-
-    case SCode.MOD(binding = SOME(binding)) then SOME(binding);
+    case SCode.MOD() then inMod.binding;
     else NONE();
   end match;
 end getModifierBinding;
@@ -4147,6 +4082,19 @@ algorithm
   end match;
 end getClassDef;
 
+public function setClassDef
+  input SCode.ClassDef classDef;
+  input output SCode.Element cls;
+algorithm
+  () := match cls
+    case SCode.CLASS()
+      algorithm
+        cls.classDef := classDef;
+      then
+        ();
+  end match;
+end setClassDef;
+
 public function getClassBody
   "Returns the body of a class, which for a class extends is the definition it
    contains and otherwise just the immediate definition of the class."
@@ -4498,9 +4446,9 @@ public function isImpureFunctionRestriction
   input SCode.FunctionRestriction inRestr;
   output Boolean isExternal;
 algorithm
-  isExternal := match(inRestr)
-    case (SCode.FR_EXTERNAL_FUNCTION(true)) then true;
-    case (SCode.FR_NORMAL_FUNCTION(true)) then true;
+  isExternal := match inRestr
+    case SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE()) then true;
+    case SCode.FR_NORMAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE()) then true;
     else false;
   end match;
 end isImpureFunctionRestriction;
@@ -4508,12 +4456,15 @@ end isImpureFunctionRestriction;
 public function isRestrictionImpure
   input SCode.Restriction inRestr;
   input Boolean hasZeroOutputPreMSL3_2;
-  output Boolean isExternal;
+  output Boolean isImpure;
 algorithm
-  isExternal := match(inRestr,hasZeroOutputPreMSL3_2)
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(true)),_) then true;
-    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(true)),_) then true;
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(false)),false) then true;
+  isImpure := match inRestr
+    // Any function explicitly declared impure is impure.
+    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE())) then true;
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE())) then true;
+    // External functions with no pure/impure prefix are impure by default since Modelica 3.3.
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.NO_PURITY()))
+      then not hasZeroOutputPreMSL3_2;
     else false;
   end match;
 end isRestrictionImpure;
@@ -4605,6 +4556,18 @@ algorithm
     else false;
   end match;
 end isClassNamed;
+
+public function isElementNamed
+  input SCode.Ident name;
+  input SCode.Element element;
+  output Boolean res;
+algorithm
+  res := match element
+    case SCode.CLASS() then element.name == name;
+    case SCode.COMPONENT() then element.name == name;
+    else false;
+  end match;
+end isElementNamed;
 
 public function getElementComment
   "Returns the comment of an element."
@@ -6215,6 +6178,86 @@ algorithm
     else true;
   end match;
 end onlyLiteralsInMod;
+
+function transformPathedElementInProgram
+  input Absyn.Path path;
+  input Func func;
+  input output SCode.Program program;
+        output Boolean success;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+algorithm
+  (program, success) := List.findMap(program,
+    function transformPathedElementInElement(path = path, func = func));
+end transformPathedElementInProgram;
+
+function transformPathedElementInElement
+  input Absyn.Path path;
+  input Func func;
+  input output SCode.Element element;
+        output Boolean success;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  SCode.ClassDef cdef;
+algorithm
+  success := isElementNamed(AbsynUtil.pathFirstIdent(path), element);
+
+  if success then
+    if AbsynUtil.pathIsIdent(path) then
+      element := func(element);
+    elseif isClass(element) then
+      (cdef, success) := transformPathedElementInClassDef(AbsynUtil.pathRest(path), func, getClassDef(element));
+
+      if success then
+        element := setClassDef(cdef, element);
+      end if;
+    end if;
+  end if;
+end transformPathedElementInElement;
+
+function transformPathedElementInClassDef
+  input Absyn.Path path;
+  input Func func;
+  input output SCode.ClassDef cls;
+        output Boolean success;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  list<SCode.Element> elems;
+  SCode.ClassDef cdef;
+algorithm
+  success := match cls
+    case SCode.ClassDef.PARTS()
+      algorithm
+        (elems, success) := transformPathedElementInProgram(path, func, cls.elementLst);
+
+        if success then
+          cls.elementLst := elems;
+        end if;
+      then
+        success;
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      algorithm
+        (cdef, success) := transformPathedElementInClassDef(path, func, cls.composition);
+
+        if success then
+          cls.composition := cdef;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInClassDef;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;

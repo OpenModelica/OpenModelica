@@ -116,6 +116,7 @@ protected:
   double computeDistanceToOrigin();
   void openFMUSettingsDialog(VisualizationFMU *pVisualizationFMU);
   void updateControlPanelValues();
+  void updateSceneTime(double time);
 
 public slots:
   void updateScene();

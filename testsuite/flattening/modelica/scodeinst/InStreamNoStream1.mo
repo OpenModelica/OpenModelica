@@ -17,7 +17,7 @@ end InStreamNoStream1;
 
 // Result:
 // Error processing file: InStreamNoStream1.mo
-// [flattening/modelica/scodeinst/InStreamNoStream1.mo:15:3-15:26:writable] Error: Operand ‘c.f‘ to operator ‘inStream‘ is not a stream variable.
+// [flattening/modelica/scodeinst/InStreamNoStream1.mo:15:3-15:26:writable] Error: Operand 'c.f' to operator 'inStream' is not a stream variable.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

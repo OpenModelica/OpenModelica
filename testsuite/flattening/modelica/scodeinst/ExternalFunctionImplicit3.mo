@@ -19,7 +19,7 @@ algorithm
 end ExternalFunctionImplicit3;
 
 // Result:
-// function f
+// impure function f
 //   input Real[3] x;
 //   input Real[2, 4] y;
 //   output Real z;

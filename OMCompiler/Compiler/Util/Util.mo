@@ -602,7 +602,6 @@ algorithm
   outValue := match(inValue)
     local
       TI value;
-      TO res;
 
     case SOME(value) then inFunc(value);
     else inDefaultValue;
@@ -628,7 +627,6 @@ algorithm
   outValue := match(inValue)
     local
       TI value;
-      TO res;
 
     case SOME(value) then inFunc(value, inArg);
     else inDefaultValue;
@@ -656,7 +654,6 @@ algorithm
   outValue := match(inValue)
     local
       TI value;
-      TO res;
 
     case SOME(value) then inFunc(value, inArg1, inArg2);
     else inDefaultValue;
@@ -817,14 +814,6 @@ algorithm
     Print.printErrorBuf("# Cannot write to file: " + inFilename + ".");
   end try;
 end writeFileOrErrorMsg;
-
-public function stringStartsWith
-  input String inString1;
-  input String inString2;
-  output Boolean outEqual;
-algorithm
-  outEqual := (0 == System.strncmp(inString1, inString2, stringLength(inString1)));
-end stringStartsWith;
 
 public function strncmp "Compare two strings up to the nth character
   Returns true if they are equal."
@@ -1022,12 +1011,28 @@ algorithm
     local
       T1 val1;
       T2 val2;
-
     case (SOME(val1), SOME(val2)) then inFunc(val1, val2);
     case (NONE(), NONE()) then true;
     else false;
   end match;
 end optionEqual;
+
+public function optionHash<T>
+  input Option<T> inOption;
+  input HashFunc inFunc;
+  output Integer outHash;
+  partial function HashFunc
+    input T inValue;
+    output Integer outHash;
+  end HashFunc;
+algorithm
+  outHash := match inOption
+    local
+      T val;
+    case SOME(val) then inFunc(val);
+    else 0;
+  end match;
+end optionHash;
 
 public function makeValueOrDefault<TI, TO>
   "Returns the value if the function call succeeds, otherwise the default"
@@ -1260,17 +1265,6 @@ algorithm
   end if;
 end stringPadLeft;
 
-public function stringRest
-  "Returns all but the first character of a string."
-  input String inString;
-  output String outRest;
-protected
-  Integer len;
-algorithm
-  len := stringLength(inString);
-  outRest := substring(inString, 2, len);
-end stringRest;
-
 public function intProduct
   input list<Integer> lst;
   output Integer i = List.fold(lst, intMul, 1);
@@ -1398,6 +1392,8 @@ algorithm
 
     case _
       equation
+        // this is because System.dirname(".openmodelica") != ".openmodelica"
+        // System.dirname(".openmodelica") = "." on Windows!
         true = stringEqual(parentDir, System.dirname(parentDir));
         b = System.createDirectory(inString);
       then b;
@@ -1424,9 +1420,14 @@ protected
   String parentDir;
   Boolean parentDirExists;
 algorithm
-  parentDir := System.dirname(inString);
-  parentDirExists := System.directoryExists(parentDir);
-  outBool := createDirectoryTreeH(inString,parentDir,parentDirExists);
+  // if is already there, just retrun true!
+  if System.directoryExists(inString) then
+    outBool := true;
+  else
+    parentDir := System.dirname(inString);
+    parentDirExists := System.directoryExists(parentDir);
+    outBool := createDirectoryTreeH(inString,parentDir,parentDirExists);
+  end if;
 end createDirectoryTree;
 
 public function nextPowerOf2
@@ -1442,23 +1443,6 @@ algorithm
   v := intBitOr(v, intBitLShift(v, 16));
   v := v + 1;
 end nextPowerOf2;
-
-public function endsWith
-  input String inString;
-  input String inSuffix;
-  output Boolean outEndsWith;
-protected
-  Integer start, stop, str_len, suf_len;
-algorithm
-  if inString == "" then
-    outEndsWith := false;
-  else
-    str_len := stringLength(inString);
-    suf_len := stringLength(inSuffix);
-    start := if str_len > suf_len then str_len - suf_len + 1 else 1;
-    outEndsWith := inSuffix == substring(inString, start, str_len);
-  end if;
-end endsWith;
 
 public function isCIdentifier
   input String str;

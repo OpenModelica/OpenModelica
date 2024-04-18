@@ -250,7 +250,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_SLICE,
   Flags.VECTORIZE_BINDINGS,
   Flags.DUMP_EVENTS,
-  Flags.DUMP_BINDINGS
+  Flags.DUMP_BINDINGS,
+  Flags.DUMP_SORTING
 };
 
 protected
@@ -282,8 +283,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SILENT,
   Flags.CORBA_SESSION,
   Flags.NUM_PROC,
-  Flags.LATENCY,
-  Flags.BANDWIDTH,
   Flags.INST_CLASS,
   Flags.VECTORIZATION_LIMIT,
   Flags.SIMULATION_CG,
@@ -291,7 +290,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.CHECK_MODEL,
   Flags.CEVAL_EQUATION,
   Flags.UNIT_CHECKING,
-  Flags.TRANSLATE_DAE_STRING,
   Flags.GENERATE_LABELED_SIMCODE,
   Flags.REDUCE_TERMS,
   Flags.REDUCTION_METHOD,
@@ -395,7 +393,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.ZEROMQ_SERVER_ID,
   Flags.ZEROMQ_CLIENT_ID,
   Flags.FMI_VERSION,
-  Flags.FLAT_MODELICA,
+  Flags.BASE_MODELICA,
   Flags.FMI_FILTER,
   Flags.FMI_SOURCES,
   Flags.FMI_FLAGS,
@@ -869,8 +867,8 @@ algorithm
   neg1 := stringEq(stringGetStringChar(inFlag, 1), "-");
   neg2 := System.strncmp("no",inFlag,2) == 0;
   negated :=  neg1 or neg2;
-  flag_str := if negated then Util.stringRest(inFlag) else inFlag;
-  flag_str := if neg2 then Util.stringRest(flag_str) else flag_str;
+  flag_str := if negated then StringUtil.rest(inFlag) else inFlag;
+  flag_str := if neg2 then StringUtil.rest(flag_str) else flag_str;
   setDebugFlag2(flag_str, not negated, inFlags);
 end setDebugFlag;
 
@@ -1133,6 +1131,10 @@ algorithm
   // add other deprecated flags here...
 
   // CONFIG_FLAGS
+  if Flags.getConfigString(Flags.TEARING_METHOD) == "noTearing" then
+    setConfigString(Flags.TEARING_METHOD, "minimalTearing");
+    Error.addMessage(Error.DEPRECATED_FLAG, {"--tearingMethod=noTearing", "--tearingMethod=minimalTearing"});
+  end if;
   remaining_flags := {};
   for flag in Flags.getConfigStringList(Flags.PRE_OPT_MODULES) loop
     if flag == "unitChecking" then
@@ -1486,11 +1488,12 @@ protected
 algorithm
   Print.clearBuf();
   s := "OpenModelica Compiler Flags";
+  Print.printBuf("\n.. _openmodelica-compiler-flags :\n\n");
   Print.printBuf(s);
   Print.printBuf("\n");
   Print.printBuf(sum("=" for e in 1:stringLength(s)));
   Print.printBuf("\n");
-  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
+  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n\n"));
   Print.printBuf("\n.. _omcflags-options :\n\n");
   s := System.gettext("Options");
   Print.printBuf(s);

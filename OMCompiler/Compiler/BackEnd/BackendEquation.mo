@@ -611,6 +611,20 @@ algorithm
   (_, (_, outExpComponentRefLst)) := traverseExpsOfEquation(inEquation, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, {}));
 end equationCrefs;
 
+public function equationCrefsSolved "author: kabdelhak
+  From one solved equation return all occurring variables/component references from lhs and rhs."
+  input BackendDAE.Equation inEquation;
+  output list<DAE.ComponentRef> lhs_lst;
+  output list<DAE.ComponentRef> rhs_lst;
+protected
+  DAE.Exp lhs, rhs;
+algorithm
+  lhs := getEquationLHS(inEquation);
+  rhs := getEquationRHS(inEquation);
+  lhs_lst := Expression.extractCrefsFromExp(lhs);
+  rhs_lst := Expression.extractCrefsFromExp(rhs);
+end equationCrefsSolved;
+
 public function getAllCrefFromEquations
   input BackendDAE.EquationArray inEqns;
   output list<DAE.ComponentRef> cr_lst;

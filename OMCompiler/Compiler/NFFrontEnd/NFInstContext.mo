@@ -36,9 +36,14 @@ encapsulated package NFInstContext
 
   // Flag values:
   constant Type NO_CONTEXT      = 0;
+  // Global flags:
   constant Type RELAXED         = intBitLShift(1,  0); // Relaxed instantiation, used by e.g. checkModel.
   constant Type INSTANCE_API    = intBitLShift(1,  1); // Instantiation for the model instance API.
   constant Type FAST_LOOKUP     = intBitLShift(1,  2); // Only expand packages when doing lookup.
+
+  constant Type GLOBAL_FLAGS    = intBitOr(RELAXED, intBitOr(INSTANCE_API, FAST_LOOKUP));
+
+  // Scope flags:
   constant Type CLASS           = intBitLShift(1,  3); // In class.
   constant Type FUNCTION        = intBitLShift(1,  4); // In function.
   constant Type REDECLARED      = intBitLShift(1,  5); // In an element that will be replaced with a redeclare.
@@ -78,6 +83,15 @@ encapsulated package NFInstContext
     annotation(__OpenModelica_EarlyInline=true);
   end set;
 
+  function unset
+    input Type context;
+    input Type flag;
+    output Type newOrigin;
+  algorithm
+    newOrigin := intBitAnd(context, intBitNot(flag));
+    annotation(__OpenModelica_EarlyInline=true);
+  end unset;
+
   function isSet
     input Type context;
     input Type flag;
@@ -95,6 +109,13 @@ encapsulated package NFInstContext
     notSet := intBitAnd(context, flag) == 0;
     annotation(__OpenModelica_EarlyInline=true);
   end isNotSet;
+
+  function clearScopeFlags
+    input Type context;
+    output Type outContext;
+  algorithm
+    outContext := intBitAnd(context, GLOBAL_FLAGS);
+  end clearScopeFlags;
 
   function inRelaxed
     input Type context;

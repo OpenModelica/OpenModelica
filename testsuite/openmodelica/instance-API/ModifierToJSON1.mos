@@ -12,7 +12,15 @@ getErrorString();
 // "{
 //   \"a\": {
 //     \"y\": {
-//       \"$value\": \"redeclare MyReal y = 4\"
+//       \"$value\": {
+//         \"$kind\": \"component\",
+//         \"name\": \"y\",
+//         \"type\": \"MyReal\",
+//         \"modifiers\": \"4\",
+//         \"prefixes\": {
+//           \"redeclare\": true
+//         }
+//       }
 //     },
 //     \"x\": \"3\"
 //   },

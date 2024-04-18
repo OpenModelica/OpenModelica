@@ -43,6 +43,7 @@ extern "C" {
 
 class OMEditApplication : public QApplication
 {
+  Q_OBJECT
 public:
   OMEditApplication(int &argc, char**argv, threadData_t *threadData, bool testsuiteRunning = false);
 private:

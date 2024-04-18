@@ -202,6 +202,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
+    setZValue(3000);
     /* Use the linecolor of the first shape of the start element for the connection line.
      * If there is no shape then look in the inherited shapes.
      * Or use black color if no shape is found even in inheritance.
@@ -258,7 +259,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(1000);
+  setZValue(3000);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -301,7 +302,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(1000);
+  setZValue(3000);
   mpLine = pConnection->getAnnotation()->getLine();
   // set the default values
   GraphicItem::setDefaults();
@@ -648,7 +649,7 @@ void LineAnnotation::parseShapeAnnotation()
   mLineColor.evaluate(mpLine->getParentModel());
   mLinePattern = mpLine->getPattern();
   mLinePattern.evaluate(mpLine->getParentModel());
-  mLineThickness = mpLine->getLineThickness();
+  mLineThickness = mpLine->getThickness();
   mLineThickness.evaluate(mpLine->getParentModel());
   mArrow = mpLine->getArrow();
   mArrow.evaluate(mpLine->getParentModel());
@@ -660,33 +661,34 @@ void LineAnnotation::parseShapeAnnotation()
 
 QPainterPath LineAnnotation::getShape() const
 {
+  PointArrayAnnotation points = mPoints;
   QPainterPath path;
-  if (mPoints.size() > 0) {
+  if (points.size() > 0) {
     // mPoints.size() is at least 1
-    path.moveTo(mPoints.at(0));
+    path.moveTo(points.at(0));
     if (mSmooth) {
-      if (mPoints.size() == 2) {
+      if (points.size() == 2) {
         // if points are only two then spline acts as simple line
-        path.lineTo(mPoints.at(1));
+        path.lineTo(points.at(1));
       } else {
-        for (int i = 2 ; i < mPoints.size() ; i++) {
-          QPointF point3 = mPoints.at(i);
+        for (int i = 2 ; i < points.size() ; i++) {
+          QPointF point3 = points.at(i);
           // calculate middle points for bezier curves
-          QPointF point2 = mPoints.at(i - 1);
-          QPointF point1 = mPoints.at(i - 2);
+          QPointF point2 = points.at(i - 1);
+          QPointF point1 = points.at(i - 2);
           QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
           QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
           path.lineTo(point12);
           path.cubicTo(point12, point2, point23);
           // if its the last point
-          if (i == mPoints.size() - 1) {
+          if (i == points.size() - 1) {
             path.lineTo(point3);
           }
         }
       }
     } else {
-      for (int i = 1 ; i < mPoints.size() ; i++) {
-        path.lineTo(mPoints.at(i));
+      for (int i = 1 ; i < points.size() ; i++) {
+        path.lineTo(points.at(i));
       }
     }
   }
@@ -721,21 +723,95 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         painter->setOpacity(0.3);
       }
     }
-    drawLineAnnotation(painter);
+    drawAnnotation(painter);
+    /* issue #9557
+     * Redraw the connectors which collides with connection.
+     */
+    if (mLineType == LineAnnotation::ConnectionType) {
+      // redraw colliding connectors
+      foreach (Element *pElement, mCollidingConnectorElements) {
+        if (pElement) {
+          painter->save();
+          pElement->reDrawConnector(painter);
+          painter->restore();
+        }
+      }
+      // draw nodes on colliding connections
+      foreach (LineAnnotation *pConnection, mCollidingConnections) {
+        if (pConnection) {
+          PointArrayAnnotation points = pConnection->getPoints();
+          for (int i = 0; i < mPoints.size(); ++i) {
+            for (int j = 0; j < points.size(); ++j) {
+              if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
+                QLineF line1(mPoints.at(i), mPoints.at(i + 1));
+                QLineF line2(points.at(j), points.at(j + 1));
+                QPointF intersectionPoint;
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+                QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
+  #else // < Qt 5.14
+                QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
+  #endif // QT_VERSION_CHECK
+                if (type == QLineF::BoundedIntersection) {
+                  painter->save();
+                  painter->setPen(Qt::NoPen);
+                  painter->setBrush(QBrush(mLineColor));
+                  painter->drawEllipse(intersectionPoint, 0.75, 0.75);
+                  painter->restore();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 
-void LineAnnotation::drawLineAnnotation(QPainter *painter)
+/*!
+ * \brief LineAnnotation::drawAnnotation
+ * Draws the line.
+ * \param painter
+ */
+void LineAnnotation::drawAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
+
+  QPainterPath path = getShape();
+  PointArrayAnnotation points = adjustPointsForDrawing();
+
+  // draw highlight for connections
+  if (mLineType == LineAnnotation::ConnectionType) {
+    qreal strokeWidth = 1.0;
+    QColor strokeColor = Qt::white;
+    if (isSelected()) {
+      strokeWidth = 2.0;
+      strokeColor = QColor(255, 255, 128);
+    }
+
+    if (isSelected() || mSmooth != StringHandler::SmoothBezier) {
+      QPainterPathStroker stroker;
+      stroker.setWidth(strokeWidth);
+      stroker.setCapStyle(Qt::SquareCap);
+      stroker.setJoinStyle(Qt::MiterJoin);
+      QPainterPath strokedPath = stroker.createStroke(path);
+      QPen pen(strokeColor);
+      pen.setCosmetic(true);
+      painter->save();
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(QBrush(strokeColor));
+      painter->drawPath(strokedPath);
+      painter->restore();
+    }
+  }
+
   // draw start arrow
-  if (mPoints.size() > 1) {
+  if (points.size() > 1) {
     /* If line is a initial state then we need to draw filled arrow.
      * From Modelica Spec 33revision1,
      * The initialState line has a filled arrow head and a bullet at the opposite end of the initial state [ as shown above ].
      */
     if (mLineType == LineAnnotation::InitialStateType) {
-      drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, StringHandler::ArrowFilled);
+      drawArrow(painter, points.at(0), points.at(1), mArrowSize, StringHandler::ArrowFilled);
     } else {
       /* If line is a transition then we need to draw starting fork if needed.
        * From Modelica Spec 33revision1,
@@ -744,9 +820,9 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
       if (mLineType == LineAnnotation::TransitionType) {
         if (mSynchronize) {
           painter->save();
-          QPolygonF polygon1 = perpendicularLine(mPoints.at(0), mPoints.at(1), 4.0);
+          QPolygonF polygon1 = perpendicularLine(points.at(0), points.at(1), 4.0);
           QPointF midPoint = (polygon1.at(0) +  polygon1.at(1)) / 2;
-          QPolygonF polygon2 = perpendicularLine(midPoint, mPoints.at(0), 4.0);
+          QPolygonF polygon2 = perpendicularLine(midPoint, points.at(0), 4.0);
           QPolygonF polygon;
           polygon << polygon1 << polygon2 << polygon1.at(0);
           painter->drawPolygon(polygon);
@@ -759,9 +835,9 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
         painter->save();
         QPolygonF polygon;
         if (mImmediate) {
-          polygon = perpendicularLine(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), 5.0);
+          polygon = perpendicularLine(points.at(points.size() - 1), points.at(points.size() - 2), 5.0);
         } else {
-          polygon = perpendicularLine(mPoints.at(0), mPoints.at(1), 5.0);
+          polygon = perpendicularLine(points.at(0), points.at(1), 5.0);
         }
         QPen pen = painter->pen();
         pen.setWidth(2);
@@ -769,18 +845,20 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
         painter->drawLine(polygon.at(0), polygon.at(1));
         painter->restore();
       }
-      drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, mArrow.at(0));
+      drawArrow(painter, points.at(0), points.at(1), mArrowSize, mArrow.at(0));
     }
   }
-  painter->drawPath(getShape());
+
+  painter->drawPath(path);
+
   // draw end arrow
-  if (mPoints.size() > 1) {
+  if (points.size() > 1) {
     /* If line is a transition then we need to draw ending arrow in any case.
      * From Modelica Spec 33revision1,
      * If reset=true, a filled arrow head is used otherwise an open arrow head.
      */
     if (mLineType == LineAnnotation::TransitionType) {
-      drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize,
+      drawArrow(painter, points.at(points.size() - 1), points.at(points.size() - 2), mArrowSize,
                 mReset ? StringHandler::ArrowFilled : StringHandler::ArrowOpen);
     } else if (mLineType == LineAnnotation::InitialStateType) {
       /* If line is a initial state then we need to draw bullet.
@@ -789,10 +867,10 @@ void LineAnnotation::drawLineAnnotation(QPainter *painter)
        */
       painter->save();
       painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
-      painter->drawEllipse(mPoints.at(mPoints.size() - 1), 2, 2);
+      painter->drawEllipse(points.at(points.size() - 1), 2, 2);
       painter->restore();
     } else {
-      drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize, mArrow.at(1));
+      drawArrow(painter, points.at(points.size() - 1), points.at(points.size() - 2), mArrowSize, mArrow.at(1));
     }
   }
 }
@@ -1128,7 +1206,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
   prepareGeometryChange();
   if (mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType) {
     if (!mpGraphicsView->isCreatingConnection() && !mpGraphicsView->isCreatingTransition()) {
-      manhattanizeShape();
+      manhattanizeShape(false);
       removeRedundantPointsGeometriesAndCornerItems();
     }
     int lastIndex = mPoints.size() - 1;
@@ -1352,6 +1430,61 @@ QColor LineAnnotation::findLineColorForConnection(Element *pComponent)
     }
   }
   return lineColor;
+}
+
+/*!
+ * \brief LineAnnotation::clearCollidingConnections
+ * Clears the colliding connector elements and connections lists.
+ */
+void LineAnnotation::clearCollidingConnections()
+{
+  mCollidingConnectorElements.clear();
+  mCollidingConnections.clear();
+}
+
+/*!
+ * \brief LineAnnotation::handleCollidingConnections
+ * Detect the colliding connections.\n
+ * Make a list of colliding connector elements and connections.\
+ * These lists will be used in the paint event to draw connectors and connection nodes.
+ */
+void LineAnnotation::handleCollidingConnections()
+{
+  QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
+  for (int i = 0; i < items.size(); ++i) {
+    if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
+      if ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
+          || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
+        mCollidingConnectorElements.append(pElement);
+      }
+    } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
+      if (mSmooth != StringHandler::SmoothBezier && pConnectionAnnotation->getSmooth() != StringHandler::SmoothBezier && pConnectionAnnotation->isConnection()
+          && (mpStartElement == pConnectionAnnotation->getStartElement() || mpStartElement == pConnectionAnnotation->getEndElement()
+              || mpEndElement == pConnectionAnnotation->getStartElement() || mpEndElement == pConnectionAnnotation->getEndElement())) {
+        mCollidingConnections.append(pConnectionAnnotation);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief LineAnnotation::adjustPointsForDrawing
+ * Adjusts the start and end points of the connection to the center of start and end connectors.
+ * This only updates the points for drawing and does not modify the actual values for Modelica code.
+ * \return
+ */
+PointArrayAnnotation LineAnnotation::adjustPointsForDrawing() const
+{
+  PointArrayAnnotation points = mPoints;
+  if (isConnection()) {
+    if (mpStartElement && (points.size() > 0) && qFuzzyCompare(mpStartElement->sceneBoundingRect().width(), mpStartElement->sceneBoundingRect().height())) {
+      points.setPoint(0, mpStartElement->sceneBoundingRect().center());
+    }
+    if (mpEndElement && (points.size() > 1) && qFuzzyCompare(mpEndElement->sceneBoundingRect().width(), mpEndElement->sceneBoundingRect().height())) {
+      points.setPoint(points.size() - 1, mpEndElement->sceneBoundingRect().center());
+    }
+  }
+  return points;
 }
 
 QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -2301,7 +2434,7 @@ QString CreateConnectionDialog::getElementConnectionName(GraphicsView *pGraphics
      * Parent element can't be connectorSizing.
      */
     if (pElement1->getParentElement()) {
-      elementName = pElement1->getParentElement()->getName();
+      elementName = pElement1->getRootParentElement()->getName();
       if (pRootElement1->isArray()) {
         QStringList rootElementIndexes = getElementIndexes(rootElementSpinBoxList1);
         if (!rootElementIndexes.isEmpty()) {
@@ -2361,13 +2494,17 @@ void CreateConnectionDialog::startConnectorChanged(const QModelIndex &current, c
   QModelIndex currentIndex = mpStartExpandableConnectorTreeProxyModel->mapToSource(current);
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(currentIndex.internalPointer());
   if (!pExpandableConnectorTreeItem) {
-    return;
-  }
-
-  mStartConnectorsList.append(pExpandableConnectorTreeItem);
-  while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
-    pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
-    mStartConnectorsList.prepend(pExpandableConnectorTreeItem);
+    /* Issue #12150. When nothing inside expandable connector is enabled so we end up here because of invalid QModelIndex.
+     * In that case just use the connector name.
+     * The same is done in CreateConnectionDialog::endConnectorChanged for end connector.
+     */
+    mpConnectionStartHorizontalLayout->addWidget(new Label(mpGraphicsView->getConnectorName(mpStartElement)));
+  } else {
+    mStartConnectorsList.append(pExpandableConnectorTreeItem);
+    while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
+      pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
+      mStartConnectorsList.prepend(pExpandableConnectorTreeItem);
+    }
   }
 
   for (int i = 0 ; i < mStartConnectorsList.size() ; i++) {
@@ -2388,6 +2525,7 @@ void CreateConnectionDialog::startConnectorChanged(const QModelIndex &current, c
       mpConnectionStartHorizontalLayout->addWidget(new Label("."));
     }
   }
+
   mpConnectionStartHorizontalLayout->addWidget(new Label(","));
 }
 
@@ -2411,13 +2549,14 @@ void CreateConnectionDialog::endConnectorChanged(const QModelIndex &current, con
   QModelIndex currentIndex = mpEndExpandableConnectorTreeProxyModel->mapToSource(current);
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(currentIndex.internalPointer());
   if (!pExpandableConnectorTreeItem) {
-    return;
-  }
-
-  mEndConnectorsList.append(pExpandableConnectorTreeItem);
-  while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
-    pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
-    mEndConnectorsList.prepend(pExpandableConnectorTreeItem);
+    // Issue #12150. See the comment in CreateConnectionDialog::startConnectorChanged.
+    mpConnectionEndHorizontalLayout->addWidget(new Label(mpGraphicsView->getConnectorName(mpEndElement)));
+  } else {
+    mEndConnectorsList.append(pExpandableConnectorTreeItem);
+    while (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent() != mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem()) {
+      pExpandableConnectorTreeItem = pExpandableConnectorTreeItem->parent();
+      mEndConnectorsList.prepend(pExpandableConnectorTreeItem);
+    }
   }
 
   for (int i = 0 ; i < mEndConnectorsList.size() ; i++) {
@@ -2438,6 +2577,7 @@ void CreateConnectionDialog::endConnectorChanged(const QModelIndex &current, con
       mpConnectionEndHorizontalLayout->addWidget(new Label("."));
     }
   }
+
   mpConnectionEndHorizontalLayout->addWidget(new Label(");"));
 }
 

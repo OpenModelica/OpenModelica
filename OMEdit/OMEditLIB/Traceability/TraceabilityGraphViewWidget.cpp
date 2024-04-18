@@ -3,7 +3,11 @@
 TraceabilityGraphViewWidget::TraceabilityGraphViewWidget(QWidget *pParent)
   : QWidget(pParent)
 {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpTraceabilityGraphWebView = new QWebEngineView;
+#else
   mpTraceabilityGraphWebView = new QWebView;
+#endif
   mpTraceabilityGraphWebView->load(QUrl("http://localhost:7474/browser/"));
   mpTraceabilityGraphViewLabel = new QLabel(tr("Traceability Graph View"));
   QFont font;

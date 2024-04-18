@@ -569,6 +569,10 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
   int logLevel;
   LINEAR_SYSTEM_DATA* linsys = &(data->simulationInfo->linearSystemData[sysNumber]);
 
+  if (!linsys->logActive) {
+    deactivateLogging();
+  }
+
   rt_ext_tp_tick(&(linsys->totalTimeClock));
 
   /* enable to avoid division by zero */
@@ -687,6 +691,10 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
   linsys->numberOfCall++;
 
   retVal = check_linear_solution(data, 1, sysNumber);
+
+  if (!linsys->logActive) {
+    reactivateLogging();
+  }
 
   TRACE_POP
   return retVal;

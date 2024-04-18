@@ -1,4 +1,6 @@
+#include <cassert>
 #include <stdexcept>
+#include <ostream>
 
 #include "meta/meta_modelica.h"
 #include "MetaModelica.h"
@@ -21,6 +23,11 @@ void print_list(Container container, std::ostream &os)
   }
 }
 
+mmc_uint_t get_header(void *data)
+{
+  return MMC_HDR_UNMARK(MMC_GETHDR(data));
+}
+
 void* get_index(void *data, size_t index)
 {
   return MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(data), index + 1));
@@ -32,9 +39,50 @@ size_t get_slots(void *data)
   return MMC_HDRSLOTS(hdr);
 }
 
-Value::Value(void *value) noexcept
-  : _value(value)
+int get_ctor(void *data)
 {
+  return MMC_HDRCTOR(MMC_HDR_UNMARK(MMC_GETHDR(data)));
+}
+
+Value::Value(void *value) noexcept
+  : _value{value}
+{
+}
+
+Value::Value(int64_t value) noexcept
+  : _value{mmc_mk_icon(value)}
+{
+
+}
+
+Value::Value(int value) noexcept
+  : _value{mmc_mk_icon(value)}
+{
+
+}
+
+Value::Value(double value) noexcept
+  : _value{mmc_mk_rcon(value)}
+{
+
+}
+
+Value::Value(bool value) noexcept
+  : _value{mmc_mk_bcon(value)}
+{
+
+}
+
+Value::Value(std::string_view value) noexcept
+  : _value{mmc_mk_scon(value.data())}
+{
+
+}
+
+Value::Value(const char *value) noexcept
+  : Value(std::string_view{value})
+{
+
 }
 
 Value::Type Value::getType() const noexcept
@@ -60,7 +108,7 @@ Value::Type Value::getType() const noexcept
   auto slots = MMC_HDRSLOTS(hdr);
   auto ctor = MMC_HDRCTOR(hdr);
 
-  if (slots >= 0 && ctor == MMC_ARRAY_TAG) {
+  if (ctor == MMC_ARRAY_TAG) {
     return Type::array;
   }
 
@@ -94,7 +142,7 @@ bool Value::isInteger() const noexcept
 
 bool Value::isReal() const noexcept
 {
-  return getType() == Type::real;
+  return MMC_HDR_UNMARK(MMC_GETHDR(_value)) == MMC_REALHDR;
 }
 
 bool Value::isBoolean() const noexcept
@@ -111,46 +159,51 @@ bool Value::isBoolean() const noexcept
 
 bool Value::isString() const noexcept
 {
-  return getType() == Type::string;
+  return MMC_HDRISSTRING(get_header(_value));
 }
 
 bool Value::isOption() const noexcept
 {
-  return getType() == Type::option;
+  const auto hdr = get_header(_value);
+  return MMC_HDRCTOR(hdr) == 1 && MMC_HDRSLOTS(hdr) < 2;
 }
 
 bool Value::isList() const noexcept
 {
-  return getType() == Type::list;
+  const auto hdr = get_header(_value);
+  return hdr == MMC_NILHDR || (MMC_HDRCTOR(hdr) == 1 && MMC_HDRSLOTS(hdr) >= 2);
 }
 
 bool Value::isArray() const noexcept
 {
-  return getType() == Type::array;
+  return MMC_HDRCTOR(get_header(_value)) == MMC_ARRAY_TAG;
 }
 
 bool Value::isTuple() const noexcept
 {
-  return getType() == Type::tuple;
+  const auto hdr = get_header(_value);
+  return MMC_HDRCTOR(hdr) == 0 && MMC_HDRSLOTS(hdr) > 0;
 }
 
 bool Value::isRecord() const noexcept
 {
-  return getType() == Type::record;
+  const auto hdr = get_header(_value);
+  return MMC_HDRCTOR(hdr) > 1 && MMC_HDRSLOTS(hdr) > 0;
 }
 
 int64_t Value::toInt() const
 {
   if (!isInteger()) {
-    throw std::runtime_error("Value::toInt(): value is not an Integer");
+    throw std::runtime_error("Value::toInt(): expected Integer, got " + name());
   }
+
   return static_cast<int64_t>(MMC_UNTAGFIXNUM(_value));
 }
 
 double Value::toDouble() const
 {
   if (!isReal()) {
-    throw std::runtime_error("Value::toDouble(): value is not a Real");
+    throw std::runtime_error("Value::toDouble(): expected Real, got " + name());
   }
 
   return mmc_prim_get_real(_value);
@@ -159,7 +212,7 @@ double Value::toDouble() const
 bool Value::toBool() const
 {
   if (!isBoolean()) {
-    throw std::runtime_error("Value::toBool(): value is not a Boolean");
+    throw std::runtime_error("Value::toBool(): expected Boolean, got " + name());
   }
 
   return toInt() == 0 ? false : true;
@@ -168,7 +221,7 @@ bool Value::toBool() const
 std::string Value::toString() const
 {
   if (!isString()) {
-    throw std::runtime_error("Value::toString(): value is not a String");
+    throw std::runtime_error("Value::toString(): expected String, got " + name());
   }
 
   return MMC_STRINGDATA(_value);
@@ -177,46 +230,66 @@ std::string Value::toString() const
 Option Value::toOption() const
 {
   if (!isOption()) {
-    throw std::runtime_error("Value::toOption(): value is not an Option");
+    throw std::runtime_error("Value::toOption(): expected Option, got " + name());
   }
 
-  return _value;
+  return Option{_value};
 }
 
 List Value::toList() const
 {
   if (!isList()) {
-    throw std::runtime_error("Value::toList(): value is not a list");
+    throw std::runtime_error("Value::toList(): expected list, got " + name());
   }
 
-  return _value;
+  return List{_value};
 }
 
 Array Value::toArray() const
 {
   if (!isArray()) {
-    throw std::runtime_error("Value::toArray(): value is not an array");
+    throw std::runtime_error("Value::toArray(): expected array, got " + name());
   }
 
-  return _value;
+  return Array{_value};
 }
 
 Tuple Value::toTuple() const
 {
   if (!isTuple()) {
-    throw std::runtime_error("Value::toTuple(): value is not a tuple");
+    throw std::runtime_error("Value::toTuple(): expected tuple, got " + name());
   }
 
-  return _value;
+  return Tuple{_value};
 }
 
 Record Value::toRecord() const
 {
   if (!isRecord()) {
-    throw std::runtime_error("Value::toRecord(): value is not a record");
+    throw std::runtime_error("Value::toRecord(): expected record, got " + name());
   }
 
-  return _value;
+  return Record{_value};
+}
+
+Value::operator bool() const
+{
+  return toBool();
+}
+
+std::string Value::name() const noexcept
+{
+  switch (getType()) {
+    case Value::Type::integer: return "Integer";
+    case Value::Type::real:    return "Real";
+    case Value::Type::string:  return "String";
+    case Value::Type::option:  return "Option";
+    case Value::Type::list:    return "List";
+    case Value::Type::array:   return "array";
+    case Value::Type::tuple:   return "tuple";
+    case Value::Type::record:  return "uniontype " + toRecord().uniontypeName();
+    default:                   return "unknown";
+  }
 }
 
 void* Value::data() const noexcept
@@ -241,8 +314,20 @@ std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Value va
   return os;
 }
 
+Option::Option() noexcept
+  : _value{mmc_mk_none()}
+{
+
+}
+
+Option::Option(Value value) noexcept
+  : _value{value.data() ? mmc_mk_some(value.data()) : mmc_mk_none()}
+{
+
+}
+
 Option::Option(void *value) noexcept
-  : _value(value)
+  : _value{value}
 {
 
 }
@@ -254,7 +339,8 @@ Value Option::operator*() const noexcept
 
 Value::ArrowProxy Option::operator->() const noexcept
 {
-  return get_index(_value, 0);
+  assert(hasValue());
+  return Value::ArrowProxy{get_index(_value, 0)};
 }
 
 Option::operator bool() const noexcept
@@ -269,11 +355,13 @@ bool Option::hasValue() const noexcept
 
 Value Option::value() const
 {
-  if (!hasValue()) {
-    throw std::runtime_error("Option::value called on NONE()");
-  }
+  assert(hasValue());
+  return Value{get_index(_value, 0)};
+}
 
-  return get_index(_value, 0);
+void* Option::data() const noexcept
+{
+  return _value;
 }
 
 std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Option option) noexcept
@@ -288,19 +376,19 @@ std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Option o
 }
 
 List::ConstIterator::ConstIterator(void *value) noexcept
-  : _value(!value || MMC_NILTEST(value) ? nullptr : value)
+  : _value{!value || MMC_NILTEST(value) ? nullptr : value}
 {
 
 }
 
 List::ConstIterator::value_type List::ConstIterator::operator*() const noexcept
 {
-  return MMC_CAR(_value);
+  return Value{MMC_CAR(_value)};
 }
 
 Value::ArrowProxy List::ConstIterator::operator->() const noexcept
 {
-  return MMC_CAR(_value);
+  return Value::ArrowProxy{MMC_CAR(_value)};
 }
 
 List::ConstIterator& List::ConstIterator::operator++() noexcept
@@ -327,39 +415,45 @@ bool OpenModelica::MetaModelica::operator != (const List::ConstIterator &i1, con
   return i1._value != i2._value;
 }
 
+List::List() noexcept
+  : _value{mmc_mk_nil()}
+{
+
+}
+
 List::List(void *value) noexcept
-  : _value(value)
+  : _value{value}
 {
 }
 
 Value List::front() const noexcept
 {
-  return MMC_CAR(_value);
+  return Value{MMC_CAR(_value)};
 }
 
 List List::rest() const noexcept
 {
-  return MMC_CDR(_value);
+  return List{MMC_CDR(_value)};
 }
 
 List::ConstIterator List::begin() const noexcept
 {
-  return _value;
+  return List::ConstIterator{_value};
 }
 
 List::ConstIterator List::cbegin() const noexcept
 {
-  return _value;
+  return List::ConstIterator{_value};
 }
 
 List::ConstIterator List::end() const noexcept
 {
-  return nullptr;
+  return List::ConstIterator{nullptr};
 }
 
 List::ConstIterator List::cend() const noexcept
 {
-  return nullptr;
+  return List::ConstIterator{nullptr};
 }
 
 bool List::empty() const noexcept
@@ -372,6 +466,16 @@ size_t List::size() const noexcept
   return listLength(_value);
 }
 
+void List::cons(Value v) noexcept
+{
+  _value = mmc_mk_cons(v.data(), _value);
+}
+
+void* List::data() const noexcept
+{
+  return _value;
+}
+
 std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, List list) noexcept
 {
   os << '{';
@@ -381,19 +485,19 @@ std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, List lis
 }
 
 IndexedConstIterator::IndexedConstIterator(void *value, size_t index) noexcept
-  : _value(value), _index(index)
+  : _value{value}, _index{index}
 {
 
 }
 
 IndexedConstIterator::value_type IndexedConstIterator::operator*() const noexcept
 {
-  return get_index(_value, _index);
+  return Value{get_index(_value, _index)};
 }
 
 Value::ArrowProxy IndexedConstIterator::operator->() const noexcept
 {
-  return get_index(_value, _index);
+  return Value::ArrowProxy{get_index(_value, _index)};
 }
 
 IndexedConstIterator& IndexedConstIterator::operator++() noexcept
@@ -420,7 +524,7 @@ bool OpenModelica::MetaModelica::operator!= (const IndexedConstIterator &i1, con
 }
 
 Array::Array(void *value) noexcept
-  : _value(value)
+  : _value{value}
 {
 }
 
@@ -466,7 +570,7 @@ size_t Array::size() const noexcept
 
 Value Array::operator[](size_t index) const noexcept
 {
-  return get_index(_value, index);
+  return Value{get_index(_value, index)};
 }
 
 Value Array::at(size_t index) const
@@ -478,6 +582,11 @@ Value Array::at(size_t index) const
   return (*this)[index];
 }
 
+void* Array::data() const noexcept
+{
+  return _value;
+}
+
 std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Array array) noexcept
 {
   os << '[';
@@ -487,8 +596,21 @@ std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Array ar
 }
 
 Tuple::Tuple(void *value) noexcept
-  : _value(value)
+  : _value{value}
 {
+}
+
+Tuple::Tuple(std::initializer_list<Value> values) noexcept
+{
+  mmc_struct *p = static_cast<mmc_struct*>(mmc_alloc_words(values.size() + 1));
+  p->header = MMC_STRUCTHDR(values.size(), 0);
+
+  void **data = p->data;
+  for (auto v: values) {
+    *data++ = v.data();
+  }
+
+  _value = MMC_TAGPTR(p);
 }
 
 IndexedConstIterator Tuple::begin() const noexcept
@@ -518,7 +640,7 @@ size_t Tuple::size() const noexcept
 
 Value Tuple::operator[](size_t index) const noexcept
 {
-  return get_index(_value, index);
+  return Value{get_index(_value, index)};
 }
 
 Value Tuple::at(size_t index) const
@@ -530,6 +652,11 @@ Value Tuple::at(size_t index) const
   return (*this)[index];
 }
 
+void* Tuple::data() const noexcept
+{
+  return _value;
+}
+
 std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Tuple tuple) noexcept
 {
   os << '(';
@@ -539,14 +666,54 @@ std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Tuple tu
 }
 
 Record::Record(void *value) noexcept
-  : _value(value)
+  : _value{value}
 {
 }
 
-std::string Record::name() const noexcept
+Record::Record(Value value)
+  : _value{value.toRecord()._value}
+{
+
+}
+
+Record::Record(int index, record_description &desc, std::initializer_list<Value> values)
+{
+  mmc_struct *p = static_cast<mmc_struct*>(mmc_alloc_words(values.size() + 2));
+  p->header = MMC_STRUCTHDR(values.size() + 1, index + 3);
+
+  void **data = p->data;
+  *data++ = &desc;
+
+  for (auto v: values) {
+    *data++ = v.data();
+  }
+
+  _value = MMC_TAGPTR(p);
+}
+
+std::string Record::fullName() const noexcept
 {
   auto desc = static_cast<record_description*>(get_index(_value, 0));
   return desc->name;
+}
+
+std::string Record::uniontypeName() const noexcept
+{
+  auto name = fullName();
+  auto pos = name.find_last_of('.');
+  return name.substr(0, pos);
+}
+
+std::string Record::recordName() const noexcept
+{
+  auto name = fullName();
+  auto pos = name.find_last_of('.');
+  return name.substr(pos + 1, std::string::npos);
+}
+
+int Record::index() const noexcept
+{
+  return get_ctor(_value) - 3;
 }
 
 IndexedConstIterator Record::begin() const noexcept
@@ -574,14 +741,14 @@ size_t Record::size() const noexcept
   return get_slots(_value) - 1;
 }
 
-Value Record::operator[](const std::string &name) const noexcept
+Value Record::operator[](std::string_view name) const noexcept
 {
   return *find(name);
 }
 
 Value Record::operator[](size_t index) const noexcept
 {
-  return get_index(_value, index + 1);
+  return Value{get_index(_value, index + 1)};
 }
 
 Value Record::at(size_t index) const
@@ -593,7 +760,7 @@ Value Record::at(size_t index) const
   return (*this)[index];
 }
 
-IndexedConstIterator Record::find(const std::string &name) const noexcept
+IndexedConstIterator Record::find(std::string_view name) const noexcept
 {
   auto desc = static_cast<record_description*>(get_index(_value, 0));
 
@@ -606,15 +773,31 @@ IndexedConstIterator Record::find(const std::string &name) const noexcept
   return end();
 }
 
-bool Record::contains(const std::string &name) const noexcept
+bool Record::contains(std::string_view name) const noexcept
 {
   return find(name) != end();
 }
 
+void* Record::data() const noexcept
+{
+  return _value;
+}
+
 std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Record record) noexcept
 {
-  os << record.name() << '(';
+  os << record.fullName() << '(';
   print_list(record, os);
   os << ')';
   return os;
 }
+
+template<> int64_t     Value::to() const { return toInt(); }
+template<> double      Value::to() const { return toDouble(); }
+template<> bool        Value::to() const { return toBool(); }
+template<> std::string Value::to() const { return toString(); }
+template<> Option      Value::to() const { return toOption(); }
+template<> List        Value::to() const { return toList(); }
+template<> Array       Value::to() const { return toArray(); }
+template<> Tuple       Value::to() const { return toTuple(); }
+template<> Record      Value::to() const { return toRecord(); }
+

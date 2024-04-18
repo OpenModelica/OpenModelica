@@ -1,0 +1,79 @@
+// name: GetModelInstanceReplaceable5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package P
+    model A
+      replaceable Real x;
+    end A;
+
+    model M
+      A a(redeclare replaceable Real x = 1.0);
+    end M;
+  end P;
+");
+
+getModelInstance(P.M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"P.M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"P.A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": 1
+//             },
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 10
+//         }
+//       },
+//       \"modifiers\": {
+//         \"x\": {
+//           \"$value\": {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"modifiers\": \"1.0\",
+//             \"prefixes\": {
+//               \"replaceable\": true,
+//               \"redeclare\": true
+//             }
+//           }
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 7,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 10
+//   }
+// }"
+// endResult

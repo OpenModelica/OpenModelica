@@ -22,9 +22,18 @@ defaultMakefileTarget = Makefile.omdev.mingw
 REALPATH = $(realpath .)
 OMBUILDDIR=$(REALPATH)/build
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
+ifndef OMDEV
+$(error Environment variable OMDEV not set!)
+endif
+ifndef MSYSTEM_PREFIX
+$(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
+endif
+OMDEV           = $(shell cygpath $$OMDEV)
+OMDEV_MSYS      = $(shell cygpath $$OMDEV/tools/msys)
+MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
+OM_MSYS_ENV_DIR = $(MSYSTEM_PREFIX)
 
-CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake
+CMAKE = cmake
 CMAKE_TARGET = "MSYS Makefiles"
 
 builddir_build=$(OMBUILDDIR)
@@ -32,27 +41,13 @@ builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
-PKG_CONFIG_BIN = $(OMDEVMSYS)/lib/gtk+-2.24.10/bin
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-DBUS_INCLUDE_DIR = $(OMDEVMSYS)/tools/msys/mingw32/include/dbus-1.0/
-DBUS_INCLUDE_LIB_DIR = $(OMDEVMSYS)/tools/msys/mingw32/lib/dbus-1.0/include/
-DBUS_PATH = $(OMDEVMSYS)/tools/msys/mingw32/bin/
-BOOST_PATH_MSVC = $(OMDEVMSYS)/lib/3rdParty/boost-1_55/
-OSG_PATH = $(OMDEVMSYS)/tools/msys/mingw32/
-PKG_CONFIG_PATH=$(OMDEVMSYS)/tools/msys/mingw32/lib/pkgconfig
-else # mingw64
-DBUS_INCLUDE_DIR = $(OMDEVMSYS)/tools/msys/mingw64/include/dbus-1.0/
-DBUS_INCLUDE_LIB_DIR = $(OMDEVMSYS)/tools/msys/mingw64/lib/dbus-1.0/include/
-DBUS_PATH = $(OMDEVMSYS)/tools/msys/mingw64/bin/
-BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw64/include
-OSG_PATH = $(OMDEVMSYS)/tools/msys/mingw64/
-PKG_CONFIG_PATH=$(OMDEVMSYS)/tools/msys/mingw64/lib/pkgconfig
+PKG_CONFIG_PATH=$(OM_MSYS_ENV_DIR)/lib/pkgconfig
+
+ifeq ($(BUILDTYPE),)
+	BUILDTYPE=$(BuildType)
 endif
 ifeq ($(BUILDTYPE),)
-BUILDTYPE=$(BuildType)
-endif
-ifeq ($(BUILDTYPE),)
-BUILDTYPE=Debug
+	BUILDTYPE=Debug
 endif
 
 
@@ -62,6 +57,9 @@ all: omc testsuite-depends
 
 omc:
 	echo "Selected compiler: CC=$(CC), CXX=$(CXX)"
+	echo "Using OMDev from: $(OMDEV)"
+	echo "Using Msys from: $(OMDEV_MSYS)"
+	echo "MSYS2 MSYSTEM_PREFIX: $(MSYSTEM_PREFIX)"
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
 
 omc-diff:
@@ -90,7 +88,7 @@ omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omedit: omparser omplot omsimulator qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
 
 omedit-testsuite: omedit testsuite-depends
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite OMBUILDDIR=$(OMBUILDDIR)
@@ -99,9 +97,17 @@ omparser:
 	$(MAKE) -C OMParser OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omsimulator:
-	$(MAKE) -C OMSimulator config-3rdParty CC="$(CC)" CXX="$(CXX)"
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
-	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	mkdir -p OMSimulator/build
+	cd OMSimulator/build && cmake .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE=ON \
+		-DCMAKE_INSTALL_PREFIX=../install
+	$(MAKE) -C OMSimulator/build/ install
+	cp -vpPR OMSimulator/install/include/OMSimulator/ $(OMBUILDDIR)/include/omc
+	cp -vpPR OMSimulator/install/bin/* $(OMBUILDDIR)/bin
+	cp -vpPR OMSimulator/install/share/OMSimulator/ $(OMBUILDDIR)/share
+	cp -vpPR OMSimulator/install/lib/* $(OMBUILDDIR)/lib/omc/
+
 
 omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
@@ -126,107 +132,65 @@ qtclients: omplot omedit omnotebook omshell omoptim omsens_qt
 qtclientsDLLs:
 	echo Copying needed .dlls
 	mkdir -p $(builddir_bin)/
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgcc_s*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libintl-8.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libiconv-2.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Core.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Gui.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Network.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Svg.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5WebKit.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5WebKitWidgets.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Xml.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5XmlPatterns.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Widgets.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5PrintSupport.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Multimedia.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5MultimediaWidgets.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Positioning.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Qml.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Quick.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Sensors.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5WebChannel.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Sql.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5OpenGL.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libxslt-1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/liblzma-5.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libxml2-2.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libwebp-*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libsqlite3-0.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/zlib1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libszip*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libhdf5-0.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpng16-16.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libjpeg-8.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libfreetype-6.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libglib-2.0-0.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libbz2-1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuin*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuuc*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicudt*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpcre*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libharfbuzz-0.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/share/qt5/plugins/* $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libOpenThreads.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosg.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgViewer.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgDB.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgUtil.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgGA.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgText.dll $(builddir_bin)/
-	for f in $(QT_EXTRA_DLLS); do cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/$$f $(builddir_bin)/; done
-else # mingw64
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgcc_s*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libintl-8.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libiconv-2.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Core.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Gui.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Network.dll $(builddir_bin)
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Svg.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5WebKit.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5WebKitWidgets.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Xml.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5XmlPatterns.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Widgets.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5PrintSupport.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Multimedia.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5MultimediaWidgets.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Positioning.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Qml.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Quick.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Sensors.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5WebChannel.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Sql.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5OpenGL.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libxslt-1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/liblzma-5.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libxml2-2.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libwebp-*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libsqlite3-0.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/zlib1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libszip*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libhdf5-0.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpng16-16.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libjpeg-8.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libfreetype-6.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libglib-2.0-0.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libbz2-1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuin*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuuc*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicudt*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpcre*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libharfbuzz-0.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/share/qt5/plugins/* $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libOpenThreads.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosg.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgViewer.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgDB.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgUtil.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgGA.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgText.dll $(builddir_bin)/
-	for f in $(QT_EXTRA_DLLS); do cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/$$f $(builddir_bin)/; done
-endif
+
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Core.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Gui.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Network.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Svg.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5WebKit.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5WebKitWidgets.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Xml.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5XmlPatterns.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Widgets.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5PrintSupport.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Multimedia.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5MultimediaWidgets.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Positioning.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Qml.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Quick.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Sensors.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5WebChannel.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Sql.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5OpenGL.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxslt-1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/liblzma-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxml2-2.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libwebp-*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsqlite3-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpng16-16.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libjpeg-8.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libfreetype-6.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libglib-2.0-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libbz2-1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuin*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuuc*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicudt*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpcre*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libharfbuzz-0.dll $(builddir_bin)/
+	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt5/plugins/* $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libOpenThreads.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosg.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgViewer.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgDB.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgUtil.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgGA.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgText.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libmd4c.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsharpyuv-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcurl-4.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcrypto-3-x64.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libidn2-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpsl-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssh2-1.dll  $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssl-3-x64.dll  $(builddir_bin)/
+	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
 
 clean-qtclients:
 	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe
@@ -252,8 +216,6 @@ OMSICPPinstall:
 
 all-runtimes:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPmsvcinstall
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) simulationruntimecmsvc
 
 testlogwindows:
 	$(MAKE) -C testsuite -f Makefile ReferenceFiles > testsuite/testsuite-trace.txt
@@ -271,54 +233,35 @@ testlogwindows:
 
 builddir_lib=$(OMBUILDDIR)/lib
 builddir_share=$(OMBUILDDIR)/share
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-IDLPYTHON = $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
-else # mingw64
-IDLPYTHON = $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
-endif
+IDLPYTHON = $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
 IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
 IDLFILE=OMCompiler/Compiler/runtime/omc_communication.idl
 
-install-python: $(IDLPYTHONTARGET)
+install-python: script-files-python # $(IDLPYTHONTARGET)
 
 .PHONY: script-files-python
 
 script-files-python: mkbuilddirs-python
 	# copy library files neeeded by OMPython
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/omniPolicy.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/pollable_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/messaging_idl.py $(builddir_lib)/python/omniORB/)
-else # mingw64
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/omniPolicy.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/pollable_idl.py $(builddir_lib)/python/omniORB/)
-	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/messaging_idl.py $(builddir_lib)/python/omniORB/)
-endif
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omni*_rt.dll $(builddir_lib)/python)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/COS*_rt.dll $(builddir_lib)/python)
+	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/lib*.dll $(builddir_lib)/python)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/omniPolicy.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/pollable_idl.py $(builddir_lib)/python/omniORB/)
+	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/messaging_idl.py $(builddir_lib)/python/omniORB/)
 	# copy OMPython files
 	cp -rfp OMPython/setup.py $(builddir_share)/omc/scripts/PythonInterface
 	cp -rfp OMPython/OMPython/* $(builddir_share)/omc/scripts/PythonInterface/OMPython
 
-$(IDLPYTHONTARGET) : $(IDLFILE) script-files-python
+$(IDLPYTHONTARGET) : $(IDLFILE)
 	$(IDLPYTHON) -C$(builddir_share)/omc/scripts/PythonInterface $(IDLFILE)
 
 mkbuilddirs-python:
@@ -335,4 +278,4 @@ clean:
 
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
-	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch
+	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch -e .vscode/

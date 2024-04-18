@@ -11,7 +11,7 @@ end InstanceRestriction2;
 
 // Result:
 // Error processing file: InstanceRestriction2.mo
-// [flattening/modelica/scodeinst/InstanceRestriction2.mo:7:1-10:25:writable] Error: Cannot instantiate InstanceRestriction2 due to class specialization pure function.
+// [flattening/modelica/scodeinst/InstanceRestriction2.mo:7:1-10:25:writable] Error: Cannot instantiate InstanceRestriction2 due to class specialization function.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

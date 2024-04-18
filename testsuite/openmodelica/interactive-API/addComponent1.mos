@@ -1,0 +1,40 @@
+// name: addComponent1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the addComponent API.
+//
+
+loadString("model InstantiationExample
+  block MyBlock
+    extends Modelica.Blocks.Icons.Block;
+  end MyBlock;
+end InstantiationExample;");
+getErrorString();
+list(InstantiationExample);
+addComponent(myBlock, InstantiationExample.MyBlock,InstantiationExample,annotate=Placement(transformation=transformation(origin={-32,-62},extent={{-10,-10},{10,10}})));
+getErrorString();
+list(InstantiationExample);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "model InstantiationExample
+//   block MyBlock
+//     extends Modelica.Blocks.Icons.Block;
+//   end MyBlock;
+// end InstantiationExample;"
+// true
+// ""
+// "model InstantiationExample
+//   block MyBlock
+//     extends Modelica.Blocks.Icons.Block;
+//   end MyBlock;
+//
+//   MyBlock myBlock annotation(
+//     Placement(transformation(origin = {-32, -62}, extent = {{-10, -10}, {10, 10}})));
+// end InstantiationExample;"
+// ""
+// endResult

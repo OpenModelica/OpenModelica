@@ -72,7 +72,7 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
   SCode.defaultPrefixes,
   SCode.Encapsulated.ENCAPSULATED(),
   SCode.Partial.NOT_PARTIAL(),
-  SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(false)),
+  SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.NO_PURITY())),
   SCode.ClassDef.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.Comment.COMMENT(NONE(), NONE()),
   AbsynUtil.dummyInfo
@@ -81,7 +81,7 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.INTEGER(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   NONE(), Visibility.PUBLIC,
@@ -91,7 +91,7 @@ constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.REAL(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   NONE(), Visibility.PUBLIC,
@@ -101,7 +101,7 @@ constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.BOOLEAN(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   NONE(), Visibility.PUBLIC,
@@ -111,7 +111,7 @@ constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.STRING(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,
@@ -120,8 +120,8 @@ constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
 
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.ENUMERATION_ANY(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+  NFAttributes.DEFAULT_ATTR, NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   NONE(), Visibility.PUBLIC,
@@ -374,6 +374,11 @@ constant Function NO_EVENT = Function.FUNCTION(Path.IDENT("noEvent"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function PRE = Function.FUNCTION(Path.IDENT("pre"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
   InstNode.EMPTY_NODE(), {}, {}, {}, {},
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
@@ -386,7 +391,7 @@ constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path
 
 constant Component CLOCK_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode CLOCK_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,

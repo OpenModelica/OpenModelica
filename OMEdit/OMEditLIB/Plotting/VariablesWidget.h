@@ -35,11 +35,12 @@
 #ifndef VARIABLESWIDGET_H
 #define VARIABLESWIDGET_H
 
-#include <QDomDocument>
-
 #include "Simulation/SimulationOptions.h"
 #include "PlotWindow.h"
 #include "Animation/TimeManager.h"
+
+#include <QDomDocument>
+#include <QTreeView>
 
 class OMCProxy;
 class TreeSearchFilters;
@@ -160,7 +161,7 @@ public:
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList *variablesList);
-  bool removeVariableTreeItem(QString variable);
+  bool removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
   void plotAllVariables(VariablesTreeItem *pVariablesTreeItem, OMPlot::PlotWindow *pPlotWindow);
 private:
@@ -225,16 +226,17 @@ public:
   VariablesTreeView* getVariablesTreeView() {return mpVariablesTreeView;}
   void enableVisualizationControls(bool enable);
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
-  void addSelectedInteractiveVariables(const QString &modelName, const QList<QString> &selectedVariables);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
   void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
                                  QHash<QString, QHash<QString, QString> > *variables);
   void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
   void reSimulate(bool showSetup);
-  void interactiveReSimulation(QString modelName);
-  void updateInitXmlFile(SimulationOptions simulationOptions);
+  void updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions);
   void initializeVisualization();
+  void updateVisualization();
+  void updatePlotWindows();
+  void updateBrowserTime(double time);
   double readVariableValue(QString variable, double time);
   void closeResultFile();
 private:
@@ -256,21 +258,19 @@ private:
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
   QVector<PlotParametricCurve> mPlotParametricCurves;
-  QHash<QString, QList<QString>> mSelectedInteractiveVariables;
   QMdiSubWindow *mpLastActiveSubWindow;
   ModelicaMatReader mModelicaMatReader;
   csv_data *mpCSVData;
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(double &startTime, double &stopTime);
-  void updateVisualization();
   void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
 public slots:
   void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
-  void simulationTimeChanged(int timePercent);
+  void simulationTimeChanged(int value);
   void valueEntered(const QModelIndex &index);
   void timeUnitChanged(QString unit);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
@@ -282,7 +282,7 @@ public slots:
 private slots:
   void playVisualization();
   void pauseVisualization();
-  void visulizationTimeChanged();
+  void visualizationTimeChanged();
   void visualizationSpeedChanged();
   void incrementVisualization();
 signals:

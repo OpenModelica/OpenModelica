@@ -144,6 +144,7 @@ public:
   virtual QString getOMCShapeAnnotation() = 0;
   virtual QString getOMCShapeAnnotationWithShapeName() = 0;
   virtual QString getShapeAnnotation() = 0;
+  virtual void drawAnnotation(QPainter *painter) = 0;
   QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
   void applyTransformation();
   void drawCornerItems();
@@ -163,6 +164,7 @@ public:
   void updateExtent(const int index, const QPointF point);
   void setOriginItemPos(const QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  Element* getParentComponent() const {return mpParentComponent;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QVector<QPointF> points) {mPoints = points;}
   const PointArrayAnnotation &getPoints() {return mPoints;}

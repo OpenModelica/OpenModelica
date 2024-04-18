@@ -355,7 +355,7 @@ public
     Expression arg_exp;
   algorithm
     ARG_TYPED_CALL(call_scope = scope) := call;
-    matchedFunc := checkMatchingFunctions(call, info, vectorize);
+    matchedFunc := checkMatchingFunctions(call, context, info, vectorize);
 
     func := matchedFunc.func;
     typed_args := matchedFunc.args;
@@ -485,24 +485,33 @@ public
     input NFCall call2;
     output Integer comp;
   algorithm
-    comp := match (call1, call2)
-      case (UNTYPED_CALL(), UNTYPED_CALL())
-        then ComponentRef.compare(call1.ref, call2.ref);
-
-      case (TYPED_CALL(), TYPED_CALL())
-        then AbsynUtil.pathCompare(Function.name(call1.fn), Function.name(call2.fn));
-
-      case (UNTYPED_CALL(), TYPED_CALL())
-        then AbsynUtil.pathCompare(ComponentRef.toPath(call1.ref), Function.name(call2.fn));
-
-      case (TYPED_CALL(), UNTYPED_CALL())
-        then AbsynUtil.pathCompare(Function.name(call1.fn), ComponentRef.toPath(call2.ref));
-    end match;
+    comp := AbsynUtil.pathCompare(functionName(call1), functionName(call2));
 
     if comp == 0 then
       comp := Expression.compareList(arguments(call1), arguments(call2));
     end if;
+
+    if comp == 0 then
+      comp := List.compare(iterators(call1), iterators(call2), compareIterator);
+    end if;
   end compare;
+
+  function compareIterator
+    input tuple<InstNode, Expression> iter1;
+    input tuple<InstNode, Expression> iter2;
+    output Integer comp;
+  protected
+    InstNode n1, n2;
+    Expression e1, e2;
+  algorithm
+    (n1, e1) := iter1;
+    (n2, e2) := iter2;
+    comp := stringCompare(InstNode.name(n1), InstNode.name(n2));
+
+    if comp == 0 then
+      comp := Expression.compare(e1, e2);
+    end if;
+  end compareIterator;
 
   function isExternal
     input NFCall call;
@@ -551,6 +560,28 @@ public
       else false;
     end match;
   end isExternalObjectConstructor;
+
+  function isLiteral
+    input Call call;
+    output Boolean literal;
+  protected
+    function is_literal_iter
+      input tuple<InstNode, Expression> iter;
+      output Boolean literal = Expression.isLiteral(Util.tuple22(iter));
+    end is_literal_iter;
+  algorithm
+    literal := match call
+      case TYPED_CALL() then List.all(call.arguments, Expression.isLiteral);
+
+      case TYPED_REDUCTION()
+        then Expression.isLiteral(call.exp) and List.all(call.iters, is_literal_iter);
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        then Expression.isLiteral(call.exp) and List.all(call.iters, is_literal_iter);
+
+      else false;
+    end match;
+  end isLiteral;
 
   function inlineType
     input NFCall call;
@@ -626,6 +657,10 @@ public
     arguments := match call
       case UNTYPED_CALL() then call.arguments;
       case TYPED_CALL()   then call.arguments;
+      case UNTYPED_ARRAY_CONSTRUCTOR() then {call.exp};
+      case TYPED_ARRAY_CONSTRUCTOR() then {call.exp};
+      case UNTYPED_REDUCTION() then {call.exp};
+      case TYPED_REDUCTION() then {call.exp};
     end match;
   end arguments;
 
@@ -638,6 +673,19 @@ public
       case TYPED_CALL()   algorithm call.arguments := arguments; then call;
     end match;
   end setArguments;
+
+  function iterators
+    input Call call;
+    output list<tuple<InstNode, Expression>> iters;
+  algorithm
+    iters := match call
+      case UNTYPED_ARRAY_CONSTRUCTOR() then call.iters;
+      case TYPED_ARRAY_CONSTRUCTOR() then call.iters;
+      case UNTYPED_REDUCTION() then call.iters;
+      case TYPED_REDUCTION() then call.iters;
+      else {};
+    end match;
+  end iterators;
 
   function toRecordExpression
     input NFCall call;
@@ -1988,27 +2036,6 @@ public
     outIters := listReverseInPlace(outIters);
   end mapFoldIteratorsExpShallow;
 
-  function getNameAndArgs
-    input Call call;
-    output tuple<String, list<Expression>> tpl;
-  algorithm
-    tpl := match call
-      local
-        Function fn;
-        list<Expression> args;
-
-      case Call.UNTYPED_CALL(arguments = args)
-        then (ComponentRef.firstName(call.ref), args);
-
-      case Call.TYPED_CALL(fn = fn, arguments = args)
-        then (AbsynUtil.pathLastIdent(fn.path), args);
-
-      else algorithm
-        Error.assertion(false, getInstanceName() + ": unhandled case for " + toString(call), sourceInfo());
-      then fail();
-    end match;
-  end getNameAndArgs;
-
   function updateExternalRecordArgs
     input list<Expression> args;
   algorithm
@@ -2054,7 +2081,7 @@ public
           step          := NONE();
           for stop in rest loop
             iter_name   := InstNode.newIndexedIterator(index);
-            iter_range  := Expression.RANGE(Type.INTEGER(), start, step, stop);
+            iter_range  := Expression.makeRange(start, step, stop);
             iterators   := (iter_name, iter_range) :: iterators;
             index       := index + 1;
           end for;
@@ -2075,6 +2102,24 @@ public
       else false;
     end match;
   end isConnectionsOperator;
+
+  function isStreamOperator
+    input Call call;
+    output Boolean isOp;
+  protected
+    String name;
+  algorithm
+    isOp := match call
+      case TYPED_CALL()
+        guard Function.isBuiltin(call.fn)
+        algorithm
+          name := functionNameFirst(call);
+        then
+          name == "actualStream" or name == "inStream";
+
+      else false;
+    end match;
+  end isStreamOperator;
 
 protected
   function instNormalCall
@@ -2549,6 +2594,7 @@ protected
 
   function checkMatchingFunctions
     input NFCall call;
+    input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
     output MatchedFunction matchedFunc;
@@ -2571,7 +2617,7 @@ protected
             allfuncs := list(fn for fn guard not Function.isDefaultRecordConstructor(fn) in allfuncs);
           end if;
         then
-          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, info, vectorize);
+          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, context, info, vectorize);
     end match;
 
     if listEmpty(matchedFunctions) then

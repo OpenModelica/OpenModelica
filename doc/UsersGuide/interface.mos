@@ -1,5 +1,5 @@
 loadString("
-function trim
+function trim \" Trim leading whitespace\"
   input String s;
   output String o;
 protected
@@ -9,7 +9,7 @@ algorithm
   o := a[1];
 end trim;
 
-function reSTInterface
+function reSTInterface \"Generate re-structured text documentation for MetaModelica function\"
   input OpenModelica.Scripting.TypeName cl;
   output String out;
 protected
@@ -34,7 +34,14 @@ algorithm
     out := out + sum(\"  \" + l + \"\\n\" for l in OpenModelica.Scripting.strtok(s, \"\\n\")) + \"  \\n\";
   end if;
 end reSTInterface;
+
+function isDeprecatedVersion \"Return true if version of type name is deprecated.\"
+  input OpenModelica.Scripting.TypeName cl;
+  output Boolean deprecated;
+algorithm
+  deprecated := stringEq(OpenModelica.Scripting.getVersion(cl), \"Deprecated\");
+end isDeprecatedVersion;
 ");
 getErrorString();
 
-writeFile("interface.inc", sum(reSTInterface(cl) for cl guard isFunction(cl) and not isPartial(cl) and not regexBool(typeNameString(cl), "Internal") in getClassNames(OpenModelica.Scripting, sort=true, recursive=true)));getErrorString();
+writeFile("interface.inc", sum(reSTInterface(cl) for cl guard isFunction(cl) and not isPartial(cl) and not isDeprecatedVersion(cl) and not regexBool(typeNameString(cl), "Internal") in getClassNames(OpenModelica.Scripting, sort=true, recursive=true)));getErrorString();

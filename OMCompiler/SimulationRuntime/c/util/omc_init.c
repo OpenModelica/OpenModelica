@@ -32,7 +32,7 @@
 #include "omc_init.h"
 #include "../meta/meta_modelica_segv.h"
 
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 pthread_key_t mmc_thread_data_key = 0;
 pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
 #else
@@ -41,7 +41,9 @@ threadData_t *OMC_MAIN_THREADDATA_NAME = 0;
 
 void mmc_init_nogc()
 {
+#if defined(OM_HAVE_PTHREADS)
   pthread_key_create(&mmc_thread_data_key,NULL);
+#endif
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* Stack overflow detection is too expensive and fun for small targets
    * C-code is usually not generated for stack overflow detection anyway... */

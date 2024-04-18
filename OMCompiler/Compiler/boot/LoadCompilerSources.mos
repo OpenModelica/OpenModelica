@@ -190,6 +190,7 @@ if true then /* Suppress output */
     "../Util/System.mo",
     "../Util/Testsuite.mo",
     "../Util/UnorderedMap.mo",
+    "../Util/UnorderedSet.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
     "../Util/Vector.mo",
@@ -287,7 +288,6 @@ if true then /* Suppress output */
     "../NBackEnd/Classes/NBVariable.mo",
   // "NBackend Modules"
     "../NBackEnd/Modules/NBModule.mo",
-    "../NBackEnd/Modules/1_Main/NBAdjacency.mo",
     "../NBackEnd/Modules/1_Main/NBCausalize.mo",
     "../NBackEnd/Modules/1_Main/NBDAEMode.mo",
     "../NBackEnd/Modules/1_Main/NBInitialization.mo",
@@ -299,15 +299,16 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/2_Pre/NBBindings.mo",
     "../NBackEnd/Modules/2_Pre/NBDetectStates.mo",
     "../NBackEnd/Modules/2_Pre/NBEvents.mo",
+    "../NBackEnd/Modules/2_Pre/NBFunctionAlias.mo",
     "../NBackEnd/Modules/2_Pre/NBInline.mo",
     "../NBackEnd/Modules/3_Post/NBJacobian.mo",
     "../NBackEnd/Modules/3_Post/NBSolve.mo",
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
     "../NBackEnd/Modules/3_Post/NBEvaluation.mo",
   // "NBackend Util"
+    "../NBackEnd/Util/NBAdjacency.mo",
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",
-    "../NBackEnd/Util/NBGraphUtil.mo",
     "../NBackEnd/Util/NBReplacements.mo",
     "../NBackEnd/Util/NBSlice.mo",
 
@@ -526,7 +527,6 @@ if true then /* Suppress output */
     "../Util/SBSet.mo",
     "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo",
-    "../Util/UnorderedSet.mo",
     "../Util/Unzip.mo",
 
     "../../SimulationRuntime/c/RuntimeSources.mo"

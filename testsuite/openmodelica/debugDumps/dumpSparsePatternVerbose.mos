@@ -1,9 +1,9 @@
 // name: dumpSparsePatternVerbose.mos
 // keywords: omc debug dump
 // status: correct
-// 
+//
 // omc debug dump: +d=dumpSparsePatternVerbose
-// 
+//
 
 // cflags: -d=-newInst
 // TODO: change this model to test the dump +d=dumpSparsePatternVerbose
@@ -128,7 +128,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 96: x[96]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 97: x[97]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 98: x[98]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
-// 99: $pDER.x[99]:JACOBIAN_DIFF_VAR(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
+// 99: $pDER.x[99]:JACOBIAN_TMP_VAR(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 1/1 (1): $res1 = 2.0 * x[2] + 0.5 * (0.009900990099009901 * (1.01980198019802 + x[2])) ^ 2.0 - x[3]    [dynamic]
 // 2/2 (1): 0.0 = 2.0 * x[3] + 0.5 * (0.009900990099009901 * (1.02970297029703 + x[3])) ^ 2.0 + (-x[4]) - x[2]    [dynamic]
 // 3/3 (1): 0.0 = 2.0 * x[4] + 0.5 * (0.009900990099009901 * (1.03960396039604 + x[4])) ^ 2.0 + (-x[5]) - x[3]    [dynamic]
@@ -635,7 +635,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // {3:3}
 // {2:2}
 // {1:1}
-// nodesEqnsIndexs: 1 
+// nodesEqnsIndexs: 1
 //
 // analytical Jacobians[SPARSE] -> build sparse graph: 0.0
 // Print sparse pattern: 99
@@ -741,107 +741,107 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 //
 // analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: 0.7908902093
 // analytical Jacobians[SPARSE] -> build sparse graph.
-// sparse graph: 
-// Node : 1 Edges: 1 
-// Node : 2 Edges: 
-// Node : 3 Edges: 
-// Node : 4 Edges: 
-// Node : 5 Edges: 
-// Node : 6 Edges: 
-// Node : 7 Edges: 
-// Node : 8 Edges: 
-// Node : 9 Edges: 
-// Node : 10 Edges: 
-// Node : 11 Edges: 
-// Node : 12 Edges: 
-// Node : 13 Edges: 
-// Node : 14 Edges: 
-// Node : 15 Edges: 
-// Node : 16 Edges: 
-// Node : 17 Edges: 
-// Node : 18 Edges: 
-// Node : 19 Edges: 
-// Node : 20 Edges: 
-// Node : 21 Edges: 
-// Node : 22 Edges: 
-// Node : 23 Edges: 
-// Node : 24 Edges: 
-// Node : 25 Edges: 
-// Node : 26 Edges: 
-// Node : 27 Edges: 
-// Node : 28 Edges: 
-// Node : 29 Edges: 
-// Node : 30 Edges: 
-// Node : 31 Edges: 
-// Node : 32 Edges: 
-// Node : 33 Edges: 
-// Node : 34 Edges: 
-// Node : 35 Edges: 
-// Node : 36 Edges: 
-// Node : 37 Edges: 
-// Node : 38 Edges: 
-// Node : 39 Edges: 
-// Node : 40 Edges: 
-// Node : 41 Edges: 
-// Node : 42 Edges: 
-// Node : 43 Edges: 
-// Node : 44 Edges: 
-// Node : 45 Edges: 
-// Node : 46 Edges: 
-// Node : 47 Edges: 
-// Node : 48 Edges: 
-// Node : 49 Edges: 
-// Node : 50 Edges: 
-// Node : 51 Edges: 
-// Node : 52 Edges: 
-// Node : 53 Edges: 
-// Node : 54 Edges: 
-// Node : 55 Edges: 
-// Node : 56 Edges: 
-// Node : 57 Edges: 
-// Node : 58 Edges: 
-// Node : 59 Edges: 
-// Node : 60 Edges: 
-// Node : 61 Edges: 
-// Node : 62 Edges: 
-// Node : 63 Edges: 
-// Node : 64 Edges: 
-// Node : 65 Edges: 
-// Node : 66 Edges: 
-// Node : 67 Edges: 
-// Node : 68 Edges: 
-// Node : 69 Edges: 
-// Node : 70 Edges: 
-// Node : 71 Edges: 
-// Node : 72 Edges: 
-// Node : 73 Edges: 
-// Node : 74 Edges: 
-// Node : 75 Edges: 
-// Node : 76 Edges: 
-// Node : 77 Edges: 
-// Node : 78 Edges: 
-// Node : 79 Edges: 
-// Node : 80 Edges: 
-// Node : 81 Edges: 
-// Node : 82 Edges: 
-// Node : 83 Edges: 
-// Node : 84 Edges: 
-// Node : 85 Edges: 
-// Node : 86 Edges: 
-// Node : 87 Edges: 
-// Node : 88 Edges: 
-// Node : 89 Edges: 
-// Node : 90 Edges: 
-// Node : 91 Edges: 
-// Node : 92 Edges: 
-// Node : 93 Edges: 
-// Node : 94 Edges: 
-// Node : 95 Edges: 
-// Node : 96 Edges: 
-// Node : 97 Edges: 
-// Node : 98 Edges: 
-// transposed sparse graph: 
-// Node : 1 Edges: 1 
+// sparse graph:
+// Node : 1 Edges: 1
+// Node : 2 Edges:
+// Node : 3 Edges:
+// Node : 4 Edges:
+// Node : 5 Edges:
+// Node : 6 Edges:
+// Node : 7 Edges:
+// Node : 8 Edges:
+// Node : 9 Edges:
+// Node : 10 Edges:
+// Node : 11 Edges:
+// Node : 12 Edges:
+// Node : 13 Edges:
+// Node : 14 Edges:
+// Node : 15 Edges:
+// Node : 16 Edges:
+// Node : 17 Edges:
+// Node : 18 Edges:
+// Node : 19 Edges:
+// Node : 20 Edges:
+// Node : 21 Edges:
+// Node : 22 Edges:
+// Node : 23 Edges:
+// Node : 24 Edges:
+// Node : 25 Edges:
+// Node : 26 Edges:
+// Node : 27 Edges:
+// Node : 28 Edges:
+// Node : 29 Edges:
+// Node : 30 Edges:
+// Node : 31 Edges:
+// Node : 32 Edges:
+// Node : 33 Edges:
+// Node : 34 Edges:
+// Node : 35 Edges:
+// Node : 36 Edges:
+// Node : 37 Edges:
+// Node : 38 Edges:
+// Node : 39 Edges:
+// Node : 40 Edges:
+// Node : 41 Edges:
+// Node : 42 Edges:
+// Node : 43 Edges:
+// Node : 44 Edges:
+// Node : 45 Edges:
+// Node : 46 Edges:
+// Node : 47 Edges:
+// Node : 48 Edges:
+// Node : 49 Edges:
+// Node : 50 Edges:
+// Node : 51 Edges:
+// Node : 52 Edges:
+// Node : 53 Edges:
+// Node : 54 Edges:
+// Node : 55 Edges:
+// Node : 56 Edges:
+// Node : 57 Edges:
+// Node : 58 Edges:
+// Node : 59 Edges:
+// Node : 60 Edges:
+// Node : 61 Edges:
+// Node : 62 Edges:
+// Node : 63 Edges:
+// Node : 64 Edges:
+// Node : 65 Edges:
+// Node : 66 Edges:
+// Node : 67 Edges:
+// Node : 68 Edges:
+// Node : 69 Edges:
+// Node : 70 Edges:
+// Node : 71 Edges:
+// Node : 72 Edges:
+// Node : 73 Edges:
+// Node : 74 Edges:
+// Node : 75 Edges:
+// Node : 76 Edges:
+// Node : 77 Edges:
+// Node : 78 Edges:
+// Node : 79 Edges:
+// Node : 80 Edges:
+// Node : 81 Edges:
+// Node : 82 Edges:
+// Node : 83 Edges:
+// Node : 84 Edges:
+// Node : 85 Edges:
+// Node : 86 Edges:
+// Node : 87 Edges:
+// Node : 88 Edges:
+// Node : 89 Edges:
+// Node : 90 Edges:
+// Node : 91 Edges:
+// Node : 92 Edges:
+// Node : 93 Edges:
+// Node : 94 Edges:
+// Node : 95 Edges:
+// Node : 96 Edges:
+// Node : 97 Edges:
+// Node : 98 Edges:
+// transposed sparse graph:
+// Node : 1 Edges: 1
 // analytical Jacobians[SPARSE] -> builded graph for coloring.
 // analytical Jacobians[SPARSE] -> ready! 0.7910122092999999
 //  start getting sparsity pattern diff Vars : 1 diffed vars: 1
@@ -944,7 +944,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 97: x[3]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 98: x[2]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 99: $dummy:STATE(1)(fixed = true )  type: Real []
-// 100: $pDER.$dummy:JACOBIAN_DIFF_VAR(fixed = true )  type: Real []
+// 100: $pDER.$dummy:JACOBIAN_TMP_VAR(fixed = true )  type: Real []
 // 1/1 (1): der($dummy) = 0.0    [unknown]
 // 2/2 (1): 0.0 = 2.0 * x[99] + 0.5 * (0.009900990099009901 * (1.98019801980198 + x[99])) ^ 2.0 - x[98]    [dynamic]
 // 3/3 (1): 0.0 = 2.0 * x[98] + 0.5 * (0.009900990099009901 * (1.97029702970297 + x[98])) ^ 2.0 + (-x[99]) - x[97]    [dynamic]
@@ -1359,7 +1359,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // ========================================
 // {2, 3, 4, 5, 7, 8, 10, 11, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 52, 53, 55, 57, 59, 61, 62, 63, 65, 67, 69, 70, 72, 74, 75, 76, 77, 79, 81, 82, 83, 84, 85, 87, 89, 90, 91, 93, 94, 96, 97, 99, 98, 95, 92, 88, 86, 80, 78, 73, 71, 68, 66, 64, 60, 58, 56, 54, 50, 48, 46, 44, 42, 40, 38, 36, 34, 14, 12, 9, 6:4, 7, 10, 12, 32, 34, 36, 38, 40, 42, 44, 46, 48, 52, 54, 56, 58, 62, 64, 66, 69, 71, 76, 78, 84, 86, 90, 93, 96, 98, 97, 95, 94, 92, 91, 89, 88, 87, 85, 83, 82, 81, 80, 79, 77, 75, 74, 73, 72, 70, 68, 67, 65, 63, 61, 60, 59, 57, 55, 53, 51, 50, 49, 47, 45, 43, 41, 39, 37, 35, 33, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 11, 9, 8, 6, 5, 3, 2, 1} Size: 98 Jacobian Nonlinear
 // {1:99}
-// nodesEqnsIndexs: 1 
+// nodesEqnsIndexs: 1
 //
 // analytical Jacobians[SPARSE] -> build sparse graph: 0.8492152092999999
 // Print sparse pattern: 100
@@ -1466,108 +1466,108 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 //
 // analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: 0.8497322093
 // analytical Jacobians[SPARSE] -> build sparse graph.
-// sparse graph: 
-// Node : 1 Edges: 
-// Node : 2 Edges: 
-// Node : 3 Edges: 
-// Node : 4 Edges: 
-// Node : 5 Edges: 
-// Node : 6 Edges: 
-// Node : 7 Edges: 
-// Node : 8 Edges: 
-// Node : 9 Edges: 
-// Node : 10 Edges: 
-// Node : 11 Edges: 
-// Node : 12 Edges: 
-// Node : 13 Edges: 
-// Node : 14 Edges: 
-// Node : 15 Edges: 
-// Node : 16 Edges: 
-// Node : 17 Edges: 
-// Node : 18 Edges: 
-// Node : 19 Edges: 
-// Node : 20 Edges: 
-// Node : 21 Edges: 
-// Node : 22 Edges: 
-// Node : 23 Edges: 
-// Node : 24 Edges: 
-// Node : 25 Edges: 
-// Node : 26 Edges: 
-// Node : 27 Edges: 
-// Node : 28 Edges: 
-// Node : 29 Edges: 
-// Node : 30 Edges: 
-// Node : 31 Edges: 
-// Node : 32 Edges: 
-// Node : 33 Edges: 
-// Node : 34 Edges: 
-// Node : 35 Edges: 
-// Node : 36 Edges: 
-// Node : 37 Edges: 
-// Node : 38 Edges: 
-// Node : 39 Edges: 
-// Node : 40 Edges: 
-// Node : 41 Edges: 
-// Node : 42 Edges: 
-// Node : 43 Edges: 
-// Node : 44 Edges: 
-// Node : 45 Edges: 
-// Node : 46 Edges: 
-// Node : 47 Edges: 
-// Node : 48 Edges: 
-// Node : 49 Edges: 
-// Node : 50 Edges: 
-// Node : 51 Edges: 
-// Node : 52 Edges: 
-// Node : 53 Edges: 
-// Node : 54 Edges: 
-// Node : 55 Edges: 
-// Node : 56 Edges: 
-// Node : 57 Edges: 
-// Node : 58 Edges: 
-// Node : 59 Edges: 
-// Node : 60 Edges: 
-// Node : 61 Edges: 
-// Node : 62 Edges: 
-// Node : 63 Edges: 
-// Node : 64 Edges: 
-// Node : 65 Edges: 
-// Node : 66 Edges: 
-// Node : 67 Edges: 
-// Node : 68 Edges: 
-// Node : 69 Edges: 
-// Node : 70 Edges: 
-// Node : 71 Edges: 
-// Node : 72 Edges: 
-// Node : 73 Edges: 
-// Node : 74 Edges: 
-// Node : 75 Edges: 
-// Node : 76 Edges: 
-// Node : 77 Edges: 
-// Node : 78 Edges: 
-// Node : 79 Edges: 
-// Node : 80 Edges: 
-// Node : 81 Edges: 
-// Node : 82 Edges: 
-// Node : 83 Edges: 
-// Node : 84 Edges: 
-// Node : 85 Edges: 
-// Node : 86 Edges: 
-// Node : 87 Edges: 
-// Node : 88 Edges: 
-// Node : 89 Edges: 
-// Node : 90 Edges: 
-// Node : 91 Edges: 
-// Node : 92 Edges: 
-// Node : 93 Edges: 
-// Node : 94 Edges: 
-// Node : 95 Edges: 
-// Node : 96 Edges: 
-// Node : 97 Edges: 
-// Node : 98 Edges: 
-// Node : 99 Edges: 
-// transposed sparse graph: 
-// Node : 1 Edges: 
+// sparse graph:
+// Node : 1 Edges:
+// Node : 2 Edges:
+// Node : 3 Edges:
+// Node : 4 Edges:
+// Node : 5 Edges:
+// Node : 6 Edges:
+// Node : 7 Edges:
+// Node : 8 Edges:
+// Node : 9 Edges:
+// Node : 10 Edges:
+// Node : 11 Edges:
+// Node : 12 Edges:
+// Node : 13 Edges:
+// Node : 14 Edges:
+// Node : 15 Edges:
+// Node : 16 Edges:
+// Node : 17 Edges:
+// Node : 18 Edges:
+// Node : 19 Edges:
+// Node : 20 Edges:
+// Node : 21 Edges:
+// Node : 22 Edges:
+// Node : 23 Edges:
+// Node : 24 Edges:
+// Node : 25 Edges:
+// Node : 26 Edges:
+// Node : 27 Edges:
+// Node : 28 Edges:
+// Node : 29 Edges:
+// Node : 30 Edges:
+// Node : 31 Edges:
+// Node : 32 Edges:
+// Node : 33 Edges:
+// Node : 34 Edges:
+// Node : 35 Edges:
+// Node : 36 Edges:
+// Node : 37 Edges:
+// Node : 38 Edges:
+// Node : 39 Edges:
+// Node : 40 Edges:
+// Node : 41 Edges:
+// Node : 42 Edges:
+// Node : 43 Edges:
+// Node : 44 Edges:
+// Node : 45 Edges:
+// Node : 46 Edges:
+// Node : 47 Edges:
+// Node : 48 Edges:
+// Node : 49 Edges:
+// Node : 50 Edges:
+// Node : 51 Edges:
+// Node : 52 Edges:
+// Node : 53 Edges:
+// Node : 54 Edges:
+// Node : 55 Edges:
+// Node : 56 Edges:
+// Node : 57 Edges:
+// Node : 58 Edges:
+// Node : 59 Edges:
+// Node : 60 Edges:
+// Node : 61 Edges:
+// Node : 62 Edges:
+// Node : 63 Edges:
+// Node : 64 Edges:
+// Node : 65 Edges:
+// Node : 66 Edges:
+// Node : 67 Edges:
+// Node : 68 Edges:
+// Node : 69 Edges:
+// Node : 70 Edges:
+// Node : 71 Edges:
+// Node : 72 Edges:
+// Node : 73 Edges:
+// Node : 74 Edges:
+// Node : 75 Edges:
+// Node : 76 Edges:
+// Node : 77 Edges:
+// Node : 78 Edges:
+// Node : 79 Edges:
+// Node : 80 Edges:
+// Node : 81 Edges:
+// Node : 82 Edges:
+// Node : 83 Edges:
+// Node : 84 Edges:
+// Node : 85 Edges:
+// Node : 86 Edges:
+// Node : 87 Edges:
+// Node : 88 Edges:
+// Node : 89 Edges:
+// Node : 90 Edges:
+// Node : 91 Edges:
+// Node : 92 Edges:
+// Node : 93 Edges:
+// Node : 94 Edges:
+// Node : 95 Edges:
+// Node : 96 Edges:
+// Node : 97 Edges:
+// Node : 98 Edges:
+// Node : 99 Edges:
+// transposed sparse graph:
+// Node : 1 Edges:
 // analytical Jacobians[SPARSE] -> builded graph for coloring.
 // analytical Jacobians[SPARSE] -> ready! 0.8498262093
 //  start getting sparsity pattern diff Vars : 1 diffed vars: 1
@@ -1669,7 +1669,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 96: x[5]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 97: x[4]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 98: x[3]:VARIABLE(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
-// 99: $pDER.x[2]:JACOBIAN_DIFF_VAR(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
+// 99: $pDER.x[2]:JACOBIAN_TMP_VAR(start = 0.5 ) .testDumpSparsePatternVerbose, .Real type: Real [100]
 // 1/1 (1): $res1 = 2.0 * x[99] + 0.5 * (0.009900990099009901 * (1.98019801980198 + x[99])) ^ 2.0 - x[98]    [dynamic]
 // 2/2 (1): 0.0 = 2.0 * x[98] + 0.5 * (0.009900990099009901 * (1.97029702970297 + x[98])) ^ 2.0 + (-x[99]) - x[97]    [dynamic]
 // 3/3 (1): 0.0 = 2.0 * x[97] + 0.5 * (0.009900990099009901 * (1.96039603960396 + x[97])) ^ 2.0 + (-x[98]) - x[96]    [dynamic]
@@ -2176,7 +2176,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // {3:3}
 // {2:2}
 // {1:1}
-// nodesEqnsIndexs: 1 
+// nodesEqnsIndexs: 1
 //
 // analytical Jacobians[SPARSE] -> build sparse graph: 1.2052872093
 // Print sparse pattern: 99
@@ -2282,107 +2282,107 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 //
 // analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: 1.2054782093
 // analytical Jacobians[SPARSE] -> build sparse graph.
-// sparse graph: 
-// Node : 1 Edges: 1 
-// Node : 2 Edges: 
-// Node : 3 Edges: 
-// Node : 4 Edges: 
-// Node : 5 Edges: 
-// Node : 6 Edges: 
-// Node : 7 Edges: 
-// Node : 8 Edges: 
-// Node : 9 Edges: 
-// Node : 10 Edges: 
-// Node : 11 Edges: 
-// Node : 12 Edges: 
-// Node : 13 Edges: 
-// Node : 14 Edges: 
-// Node : 15 Edges: 
-// Node : 16 Edges: 
-// Node : 17 Edges: 
-// Node : 18 Edges: 
-// Node : 19 Edges: 
-// Node : 20 Edges: 
-// Node : 21 Edges: 
-// Node : 22 Edges: 
-// Node : 23 Edges: 
-// Node : 24 Edges: 
-// Node : 25 Edges: 
-// Node : 26 Edges: 
-// Node : 27 Edges: 
-// Node : 28 Edges: 
-// Node : 29 Edges: 
-// Node : 30 Edges: 
-// Node : 31 Edges: 
-// Node : 32 Edges: 
-// Node : 33 Edges: 
-// Node : 34 Edges: 
-// Node : 35 Edges: 
-// Node : 36 Edges: 
-// Node : 37 Edges: 
-// Node : 38 Edges: 
-// Node : 39 Edges: 
-// Node : 40 Edges: 
-// Node : 41 Edges: 
-// Node : 42 Edges: 
-// Node : 43 Edges: 
-// Node : 44 Edges: 
-// Node : 45 Edges: 
-// Node : 46 Edges: 
-// Node : 47 Edges: 
-// Node : 48 Edges: 
-// Node : 49 Edges: 
-// Node : 50 Edges: 
-// Node : 51 Edges: 
-// Node : 52 Edges: 
-// Node : 53 Edges: 
-// Node : 54 Edges: 
-// Node : 55 Edges: 
-// Node : 56 Edges: 
-// Node : 57 Edges: 
-// Node : 58 Edges: 
-// Node : 59 Edges: 
-// Node : 60 Edges: 
-// Node : 61 Edges: 
-// Node : 62 Edges: 
-// Node : 63 Edges: 
-// Node : 64 Edges: 
-// Node : 65 Edges: 
-// Node : 66 Edges: 
-// Node : 67 Edges: 
-// Node : 68 Edges: 
-// Node : 69 Edges: 
-// Node : 70 Edges: 
-// Node : 71 Edges: 
-// Node : 72 Edges: 
-// Node : 73 Edges: 
-// Node : 74 Edges: 
-// Node : 75 Edges: 
-// Node : 76 Edges: 
-// Node : 77 Edges: 
-// Node : 78 Edges: 
-// Node : 79 Edges: 
-// Node : 80 Edges: 
-// Node : 81 Edges: 
-// Node : 82 Edges: 
-// Node : 83 Edges: 
-// Node : 84 Edges: 
-// Node : 85 Edges: 
-// Node : 86 Edges: 
-// Node : 87 Edges: 
-// Node : 88 Edges: 
-// Node : 89 Edges: 
-// Node : 90 Edges: 
-// Node : 91 Edges: 
-// Node : 92 Edges: 
-// Node : 93 Edges: 
-// Node : 94 Edges: 
-// Node : 95 Edges: 
-// Node : 96 Edges: 
-// Node : 97 Edges: 
-// Node : 98 Edges: 
-// transposed sparse graph: 
-// Node : 1 Edges: 1 
+// sparse graph:
+// Node : 1 Edges: 1
+// Node : 2 Edges:
+// Node : 3 Edges:
+// Node : 4 Edges:
+// Node : 5 Edges:
+// Node : 6 Edges:
+// Node : 7 Edges:
+// Node : 8 Edges:
+// Node : 9 Edges:
+// Node : 10 Edges:
+// Node : 11 Edges:
+// Node : 12 Edges:
+// Node : 13 Edges:
+// Node : 14 Edges:
+// Node : 15 Edges:
+// Node : 16 Edges:
+// Node : 17 Edges:
+// Node : 18 Edges:
+// Node : 19 Edges:
+// Node : 20 Edges:
+// Node : 21 Edges:
+// Node : 22 Edges:
+// Node : 23 Edges:
+// Node : 24 Edges:
+// Node : 25 Edges:
+// Node : 26 Edges:
+// Node : 27 Edges:
+// Node : 28 Edges:
+// Node : 29 Edges:
+// Node : 30 Edges:
+// Node : 31 Edges:
+// Node : 32 Edges:
+// Node : 33 Edges:
+// Node : 34 Edges:
+// Node : 35 Edges:
+// Node : 36 Edges:
+// Node : 37 Edges:
+// Node : 38 Edges:
+// Node : 39 Edges:
+// Node : 40 Edges:
+// Node : 41 Edges:
+// Node : 42 Edges:
+// Node : 43 Edges:
+// Node : 44 Edges:
+// Node : 45 Edges:
+// Node : 46 Edges:
+// Node : 47 Edges:
+// Node : 48 Edges:
+// Node : 49 Edges:
+// Node : 50 Edges:
+// Node : 51 Edges:
+// Node : 52 Edges:
+// Node : 53 Edges:
+// Node : 54 Edges:
+// Node : 55 Edges:
+// Node : 56 Edges:
+// Node : 57 Edges:
+// Node : 58 Edges:
+// Node : 59 Edges:
+// Node : 60 Edges:
+// Node : 61 Edges:
+// Node : 62 Edges:
+// Node : 63 Edges:
+// Node : 64 Edges:
+// Node : 65 Edges:
+// Node : 66 Edges:
+// Node : 67 Edges:
+// Node : 68 Edges:
+// Node : 69 Edges:
+// Node : 70 Edges:
+// Node : 71 Edges:
+// Node : 72 Edges:
+// Node : 73 Edges:
+// Node : 74 Edges:
+// Node : 75 Edges:
+// Node : 76 Edges:
+// Node : 77 Edges:
+// Node : 78 Edges:
+// Node : 79 Edges:
+// Node : 80 Edges:
+// Node : 81 Edges:
+// Node : 82 Edges:
+// Node : 83 Edges:
+// Node : 84 Edges:
+// Node : 85 Edges:
+// Node : 86 Edges:
+// Node : 87 Edges:
+// Node : 88 Edges:
+// Node : 89 Edges:
+// Node : 90 Edges:
+// Node : 91 Edges:
+// Node : 92 Edges:
+// Node : 93 Edges:
+// Node : 94 Edges:
+// Node : 95 Edges:
+// Node : 96 Edges:
+// Node : 97 Edges:
+// Node : 98 Edges:
+// transposed sparse graph:
+// Node : 1 Edges: 1
 // analytical Jacobians[SPARSE] -> builded graph for coloring.
 // analytical Jacobians[SPARSE] -> ready! 1.2055602093
 // {"testDumpSparsePatternVerbose","testDumpSparsePatternVerbose_init.xml"}

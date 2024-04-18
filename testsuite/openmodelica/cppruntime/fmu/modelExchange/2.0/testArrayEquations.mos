@@ -51,7 +51,7 @@ equation
 end ArrayEquationsTest;
 "); getErrorString();
 
-translateModelFMU(ArrayEquationsTest, version = "2.0"); getErrorString();
+buildModelFMU(ArrayEquationsTest, version = "2.0"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq ArrayEquationsTest.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
@@ -101,7 +101,7 @@ readFile("modelDescription.tmp.xml");
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
@@ -945,12 +945,16 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"105\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"106\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"107\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"108\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"101\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"102\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"103\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"104\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
 //     <DiscreteStates>
+//       <Unknown index=\"61\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"62\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"63\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"64\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"65\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"66\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"67\" dependencies=\"\" dependenciesKind=\"\" />
@@ -987,10 +991,6 @@ readFile("modelDescription.tmp.xml");
 //       <Unknown index=\"98\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"99\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"100\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"101\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"102\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"103\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"104\" dependencies=\"\" dependenciesKind=\"\" />
 //     </DiscreteStates>
 //   </ModelStructure>
 // </fmiModelDescription>

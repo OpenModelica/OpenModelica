@@ -101,6 +101,7 @@ import Testsuite;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 constant InstContext.Type ANNOTATION_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
+constant InstContext.Type FAST_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP);
 
 public
 function evaluateAnnotation
@@ -212,7 +213,7 @@ algorithm
           NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
 
           // Mark structural parameters.
-          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
+          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM), ANNOTATION_CONTEXT);
 
           dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -253,7 +254,7 @@ algorithm
           NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
 
           // Mark structural parameters.
-          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
+          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM), ANNOTATION_CONTEXT);
 
           dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -671,7 +672,7 @@ algorithm
   NFInst.instExpressions(inst_cls, context = NFInstContext.RELAXED);
 
   // Mark structural parameters.
-  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
+  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM), NFInstContext.RELAXED);
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndFront_dispatch(" + name + ")");
@@ -711,7 +712,7 @@ algorithm
   Typing.typeClass(inst_cls, NFInstContext.RELAXED);
 
   // Flatten and simplify the model.
-  flat_model := Flatten.flatten(inst_cls, name);
+  flat_model := Flatten.flatten(inst_cls, Absyn.Path.IDENT(name));
   flat_model := EvalConstants.evaluate(flat_model, NFInstContext.RELAXED);
   flat_model := UnitCheck.checkUnits(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
@@ -814,6 +815,11 @@ protected
   InstNode cls_node;
   Class cls;
 algorithm
+  if not Flags.isSet(Flags.SCODE_INST) then
+    extendsPaths := {};
+    return;
+  end if;
+
   (_, _, cls_node) := frontEndLookup(program, classPath);
 
   if not InstNode.isClass(cls_node) then
@@ -842,9 +848,15 @@ uniontype InstanceTree
     Boolean isExtends;
   end CLASS;
 
+  record BUILTIN_BASE_CLASS
+    String name;
+  end BUILTIN_BASE_CLASS;
+
   record EMPTY
   end EMPTY;
 end InstanceTree;
+
+constant InstanceTree ENUM_BASE = InstanceTree.BUILTIN_BASE_CLASS("enumeration");
 
 function getModelInstance
   input Absyn.Path classPath;
@@ -867,12 +879,18 @@ algorithm
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
   mod := parseModifier(modifier, top);
   cls_node := Inst.lookupRootClass(classPath, top, context);
+
+  if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
+    context := InstContext.unset(context, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.FUNCTION);
+  end if;
+
   cls_node := Inst.instantiateRootClass(cls_node, context, mod);
   execStat("Inst.instantiateRootClass");
   inst_tree := buildInstanceTree(cls_node);
   execStat("NFApi.buildInstanceTree");
   Inst.instExpressions(cls_node, context = context, settings = inst_settings);
-  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM));
+  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
   execStat("Inst.instExpressions");
 
   Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
@@ -888,8 +906,9 @@ algorithm
   Inst.clearCaches();
 end getModelInstance;
 
-function getModelInstanceIcon
+function getModelInstanceAnnotation
   input Absyn.Path classPath;
+  input list<String> filter;
   input Boolean prettyPrint;
   output Values.Value res;
 protected
@@ -904,10 +923,10 @@ algorithm
   cls_node := Inst.lookupRootClass(classPath, top, context);
   cls_node := InstNode.resolveInner(cls_node);
 
-  json := dumpJSONInstanceIcon(cls_node);
+  json := dumpJSONInstanceAnnotation(cls_node, filter);
   res := Values.STRING(JSON.toString(json, prettyPrint));
   Inst.clearCaches();
-end getModelInstanceIcon;
+end getModelInstanceAnnotation;
 
 function parseModifier
   input String modifierValue;
@@ -948,7 +967,7 @@ algorithm
   cls_node := InstNode.resolveInner(node);
   cls := InstNode.getClass(cls_node);
 
-  if not isDerived and Class.isOnlyBuiltin(cls) then
+  if not isDerived and Class.isOnlyBuiltin(cls) and not Class.isEnumeration(cls) then
     tree := InstanceTree.EMPTY();
     return;
   end if;
@@ -969,7 +988,7 @@ algorithm
         InstanceTree.CLASS(node, elems, isDerived);
 
     case (_, ClassTree.FLAT_TREE())
-      then InstanceTree.CLASS(node, {}, isDerived);
+      then InstanceTree.CLASS(node, if InstNode.isEnumerationType(cls_node) then {ENUM_BASE} else {}, isDerived);
 
     else
       algorithm
@@ -1092,7 +1111,7 @@ algorithm
 
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
-    JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
+    JSON.makeString(SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(def))), json);
 
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, InstNode.parent(node)), json);
 
@@ -1108,8 +1127,9 @@ algorithm
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
 
-function dumpJSONInstanceIcon
+function dumpJSONInstanceAnnotation
   input InstNode node;
+  input list<String> filter;
   output JSON json = JSON.makeNull();
 protected
   Option<SCode.Comment> cmt;
@@ -1136,7 +1156,7 @@ algorithm
     j := JSON.emptyArray();
 
     for ext in exts loop
-      j := JSON.addElement(dumpJSONInstanceIconExtends(ext), j);
+      j := JSON.addElement(dumpJSONInstanceAnnotationExtends(ext, filter), j);
     end for;
 
     json := JSON.addPair("elements", j, json);
@@ -1147,8 +1167,11 @@ algorithm
   cmt := match cmt
     case SOME(SCode.Comment.COMMENT(annotation_ = SOME(ann as SCode.Annotation.ANNOTATION())))
       algorithm
-        ann.modification := SCodeUtil.filterSubMods(ann.modification,
-          function SCodeUtil.filterGivenSubModNames(namesToKeep = {"Icon", "IconMap"}));
+        if not listEmpty(filter) then
+          ann.modification := SCodeUtil.filterSubMods(ann.modification,
+            function SCodeUtil.filterGivenSubModNames(namesToKeep = filter));
+        end if;
+
         annotation_is_literal := SCodeUtil.onlyLiteralsInMod(ann.modification);
       then
         if SCodeUtil.isEmptyMod(ann.modification) then NONE() else SOME(SCode.Comment.COMMENT(SOME(ann), NONE()));
@@ -1172,19 +1195,20 @@ algorithm
   end if;
 
   json := dumpJSONCommentOpt(cmt, scope, json, failOnError = true);
-end dumpJSONInstanceIcon;
+end dumpJSONInstanceAnnotation;
 
-function dumpJSONInstanceIconExtends
+function dumpJSONInstanceAnnotationExtends
   input InstNode ext;
+  input list<String> filter;
   output JSON json = JSON.makeNull();
 algorithm
   json := JSON.addPair("$kind", JSON.makeString("extends"), json);
-  json := JSON.addPair("baseClass", dumpJSONInstanceIcon(ext), json);
-end dumpJSONInstanceIconExtends;
+  json := JSON.addPair("baseClass", dumpJSONInstanceAnnotation(ext, filter), json);
+end dumpJSONInstanceAnnotationExtends;
 
 function dumpJSONNodePath
   input InstNode node;
-  output JSON json = dumpJSONPath(InstNode.scopePath(node, ignoreBaseClass = true));
+  output JSON json = dumpJSONPath(InstNode.fullPath(node, ignoreBaseClass = true));
 end dumpJSONNodePath;
 
 function dumpJSONNodeEnclosingPath
@@ -1220,6 +1244,7 @@ algorithm
         case InstanceTree.CLASS(isExtends = true) then dumpJSONExtends(e, isDeleted);
         case InstanceTree.CLASS() then dumpJSONReplaceableClass(e.node, scope);
         case InstanceTree.COMPONENT() then dumpJSONComponent(e.node, e.binding, e.cls);
+        case InstanceTree.BUILTIN_BASE_CLASS() then dumpJSONBuiltinBaseClass(e.name);
         else JSON.makeNull();
       end match;
 
@@ -1234,6 +1259,7 @@ function dumpJSONExtends
   output JSON json = JSON.makeNull();
 protected
   InstNode node;
+  Class cls;
   SCode.Element cls_def, ext_def;
   SCode.Mod mod;
 algorithm
@@ -1245,12 +1271,21 @@ algorithm
   json := dumpJSONSCodeMod(getExtendsModifier(ext_def, node), node, json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
 
-  if Class.isOnlyBuiltin(InstNode.getClass(node)) then
+  cls := InstNode.getClass(node);
+  if Class.isOnlyBuiltin(cls) and not Class.isEnumeration(cls) then
     json := JSON.addPair("baseClass", JSON.makeString(InstNode.name(node)), json);
   else
     json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, node, root = false, isDeleted = isDeleted), json);
   end if;
 end dumpJSONExtends;
+
+function dumpJSONBuiltinBaseClass
+  input String name;
+  output JSON json = JSON.makeNull();
+algorithm
+  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
+  json := JSON.addPair("baseClass", JSON.makeString(name), json);
+end dumpJSONBuiltinBaseClass;
 
 function getExtendsModifier
   input SCode.Element definition;
@@ -1278,43 +1313,7 @@ protected
 algorithm
   node := InstNode.getRedeclaredNode(cls);
   elem := InstNode.definition(node);
-
-  json := JSON.addPair("$kind", JSON.makeString("class"), json);
-  json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
-  json := JSON.addPair("restriction",
-    JSON.makeString(SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(elem))), json);
-  json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(elem, scope), json);
-
-  SCode.Element.CLASS(classDef = cdef, cmt = cmt) := elem;
-
-  () := match cdef
-    case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = odims))
-      algorithm
-        try
-          derivedNode := Lookup.lookupName(path, scope, NFInstContext.RELAXED, false);
-          json := JSON.addPair("baseClass", dumpJSONNodeEnclosingPath(derivedNode), json);
-        else
-        end try;
-
-        if isSome(odims) then
-          json := JSON.addPairNotNull("dims", dumpJSONDims(Util.getOption(odims), {}), json);
-        end if;
-
-        json := dumpJSONSCodeMod(cdef.modifications, scope, json);
-      then
-        ();
-
-    case SCode.ClassDef.CLASS_EXTENDS()
-      algorithm
-        json := dumpJSONSCodeMod(cdef.modifications, scope, json);
-      then
-        ();
-
-    else ();
-  end match;
-
-  json := dumpJSONCommentAnnotation(SOME(cmt), scope, json,
-    {"Dialog", "choices", "choicesAllMatching"});
+  json := dumpJSONSCodeClass(elem, scope, true, json);
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONReplaceableClass;
 
@@ -1357,8 +1356,20 @@ algorithm
       then
         ();
 
-    case (Component.COMPONENT(), SCode.Element.COMPONENT())
+    case (Component.INVALID_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
+        json := JSON.addPair("$kind", JSON.makeString("component"), json);
+        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
+        json := JSON.addPair("type", dumpJSONComponentType(cls, node, Component.getType(comp)), json);
+        json := dumpJSONSCodeMod(elem.modifications, scope, json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
+        json := dumpJSONCommentOpt(SOME(elem.comment), scope, json);
+        json := JSON.addPair("$error", JSON.makeString(comp.errors), json);
+      then
+        ();
+
+    case (Component.COMPONENT(), SCode.Element.COMPONENT())
+algorithm
         json := JSON.addPair("$kind", JSON.makeString("component"), json);
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty), json);
@@ -1401,7 +1412,7 @@ function dumpJSONComponentType
   output JSON json;
 algorithm
   json := match (cls, Type.arrayElementType(ty))
-    case (_, Type.ENUMERATION()) then dumpJSONEnumType(node);
+    case (_, Type.ENUMERATION()) then dumpJSONEnumType(cls, node);
     case (_, Type.UNKNOWN()) then dumpJSONSCodeElementType(InstNode.definition(node));
     case (InstanceTree.CLASS(), _) then dumpJSONInstanceTree(cls, node, isDeleted = isDeleted);
     else dumpJSONTypeName(ty);
@@ -1425,23 +1436,31 @@ algorithm
 end dumpJSONSCodeElementType;
 
 function dumpJSONEnumType
+  input InstanceTree tree;
   input InstNode enumNode;
   output JSON json;
 protected
   InstNode node = InstNode.resolveInner(InstNode.classScope(enumNode));
   SCode.Element def;
   array<InstNode> comps;
+  JSON json_elems, json_ext;
+  list<InstanceTree> elems;
 algorithm
   def := InstNode.definition(node);
 
   json := JSON.makeNull();
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
-  json := JSON.addPair("restriction", JSON.makeString("enumeration"), json);
+  json := JSON.addPair("restriction",
+    JSON.makeString(SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(def))), json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(def), node, json);
 
+  InstanceTree.CLASS(elements = elems) := tree;
+  json_elems := dumpJSONElements(elems, node, false);
+
   comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(node)));
-  json := JSON.addPair("elements", dumpJSONEnumTypeLiterals(comps, InstNode.parent(node)), json);
+  json_elems := dumpJSONEnumTypeLiterals(comps, InstNode.parent(node), json_elems);
+  json := JSON.addPair("elements", json_elems, json);
 
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONEnumType;
@@ -1449,7 +1468,7 @@ end dumpJSONEnumType;
 function dumpJSONEnumTypeLiterals
   input array<InstNode> literals;
   input InstNode scope;
-  output JSON json = JSON.emptyArray();
+  input output JSON json = JSON.emptyArray();
 algorithm
   for i in 6:arrayLength(literals) loop
     json := JSON.addElement(dumpJSONEnumTypeLiteral(literals[i], scope), json);
@@ -1541,20 +1560,24 @@ function dumpJSONDims
 protected
   JSON ty_json, absyn_json;
 algorithm
-  absyn_json := JSON.emptyArray();
-  for d in absynDims loop
-    absyn_json := JSON.addElement(JSON.makeString(Dump.printSubscriptStr(d)), absyn_json);
-  end for;
+  json := JSON.addPairNotNull("absyn", dumpJSONAbsynDims(absynDims), json);
 
-  json := JSON.addPairNotNull("absyn", absyn_json, json);
-
-  ty_json := JSON.emptyArray();
+  ty_json := JSON.makeNull();
   for d in typedDims loop
     ty_json := JSON.addElement(JSON.makeString(Dimension.toString(d)), ty_json);
   end for;
 
   json := JSON.addPairNotNull("typed", ty_json, json);
 end dumpJSONDims;
+
+function dumpJSONAbsynDims
+  input list<Absyn.Subscript> dims;
+  output JSON json = JSON.makeNull();
+algorithm
+  for d in dims loop
+    json := JSON.addElement(JSON.makeString(Dump.printSubscriptStr(d)), json);
+  end for;
+end dumpJSONAbsynDims;
 
 function dumpJSONAttributes
   input SCode.Attributes attrs;
@@ -1909,7 +1932,7 @@ protected
   JSON j;
   InstContext.Type context;
 algorithm
-  (connections, transitions, initial_states) := sortEquations(sections);
+  (connections, transitions, initial_states) := sortEquations(Sections.equations(sections));
   context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
   transitions := list(Typing.typeEquation(e, context) for e in transitions);
   initial_states := list(Typing.typeEquation(e, context) for e in initial_states);
@@ -1925,47 +1948,56 @@ algorithm
 end dumpJSONEquations;
 
 function sortEquations
-  input Sections sections;
-  output list<Equation> connections = {};
-  output list<Equation> transitions = {};
-  output list<Equation> initialStates = {};
-  output list<Equation> others = {};
+  input list<Equation> equations;
+  input output list<Equation> connections = {};
+  input output list<Equation> transitions = {};
+  input output list<Equation> initialStates = {};
 algorithm
-  () := match sections
-    case Sections.SECTIONS()
-      algorithm
-        for eq in listReverse(sections.equations) loop
-          () := match eq
-            case Equation.CONNECT()
-              algorithm
-                connections := eq :: connections;
-              then
-                ();
+  for eq in listReverse(equations) loop
+    () := match eq
+      case Equation.CONNECT()
+        algorithm
+          connections := eq :: connections;
+        then
+          ();
 
-            case Equation.NORETCALL()
-              algorithm
-                if Expression.isCallNamed(eq.exp, "transition") then
-                  transitions := eq :: transitions;
-                elseif Expression.isCallNamed(eq.exp, "initialState") then
-                  initialStates := eq :: initialStates;
-                else
-                  others := eq :: others;
-                end if;
-              then
-                ();
+      case Equation.FOR()
+        algorithm
+          (connections, transitions, initialStates) :=
+            sortEquations(eq.body, connections, transitions, initialStates);
+        then
+          ();
 
-            else
-              algorithm
-                others := eq :: others;
-              then
-                ();
-          end match;
-        end for;
-      then
-        ();
+      case Equation.IF()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Equation.Branch.BRANCH()
+                algorithm
+                  (connections, transitions, initialStates) :=
+                    sortEquations(b.body, connections, transitions, initialStates);
+                then
+                  ();
 
-    else ();
-  end match;
+              else ();
+            end match;
+          end for;
+        then
+          ();
+
+      case Equation.NORETCALL()
+        algorithm
+          if Expression.isCallNamed(eq.exp, "transition") then
+            transitions := eq :: transitions;
+          elseif Expression.isCallNamed(eq.exp, "initialState") then
+            initialStates := eq :: initialStates;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
 end sortEquations;
 
 function dumpJSONConnections
@@ -2109,12 +2141,7 @@ algorithm
           json := JSON.addPair("each", JSON.makeBoolean(true), json);
         end if;
 
-        binding_json := JSON.makeString(SCodeDump.unparseElementStr(mod.element));
-        json := JSON.addPair("$value", binding_json, json);
-
-        if isChoices then
-          json := dumpJSONRedeclareType(mod.element, scope, json);
-        end if;
+        json := JSON.addPair("$value", dumpJSONSCodeElement(mod.element, scope), json);
       then
         ();
 
@@ -2144,6 +2171,105 @@ algorithm
     else ();
   end matchcontinue;
 end dumpJSONRedeclareType;
+
+function dumpJSONSCodeElement
+  input SCode.Element element;
+  input InstNode scope;
+  input output JSON json = JSON.makeNull();
+algorithm
+  json := match element
+    case SCode.Element.COMPONENT()
+      algorithm
+        json := JSON.addPair("$kind", JSON.makeString("component"), json);
+        json := JSON.addPair("name", JSON.makeString(element.name), json);
+        json := JSON.addPair("type", dumpJSONPath(AbsynUtil.typeSpecPath(element.typeSpec)), json);
+        json := JSON.addPairNotNull("dims", dumpJSONDims(element.attributes.arrayDims, {}), json);
+        json := dumpJSONSCodeMod(element.modifications, scope, json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(element.attributes, element.prefixes, scope), json);
+
+        if isSome(element.condition) then
+          json := JSON.addPair("condition", dumpJSONAbsynExpression(Util.getOption(element.condition)), json);
+        end if;
+
+        json := dumpJSONCommentOpt(SOME(element.comment), scope, json);
+      then
+        json;
+
+    case SCode.Element.CLASS()
+      then dumpJSONSCodeClass(element, scope, false, json);
+
+    else json;
+  end match;
+end dumpJSONSCodeElement;
+
+function dumpJSONSCodeClass
+  input SCode.Element element;
+  input InstNode scope;
+  input Boolean isRedeclare;
+  input output JSON json = JSON.makeNull();
+protected
+  Option<list<Absyn.Subscript>> odims;
+algorithm
+  () := match element
+    case SCode.CLASS()
+      algorithm
+        json := JSON.addPair("$kind", JSON.makeString("class"), json);
+        json := JSON.addPair("name", JSON.makeString(element.name), json);
+        json := JSON.addPair("restriction",
+          JSON.makeString(SCodeDump.restrictionStringPP(element.restriction)), json);
+        json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(element, scope), json);
+        json := dumpJSONSCodeClassDef(element.classDef, scope, isRedeclare, json);
+        json := dumpJSONCommentOpt(SOME(element.cmt), scope, json, dumpAnnotation = not isRedeclare);
+
+        if isRedeclare then
+          json := dumpJSONCommentAnnotation(SOME(element.cmt), scope, json,
+            {"Dialog", "choices", "choicesAllMatching"});
+        end if;
+      then
+        ();
+  end match;
+end dumpJSONSCodeClass;
+
+function dumpJSONSCodeClassDef
+  input SCode.ClassDef classDef;
+  input InstNode scope;
+  input Boolean qualifyPath;
+  input output JSON json;
+protected
+  Absyn.Path path;
+  Option<list<Absyn.Subscript>> odims;
+  InstNode derivedNode;
+algorithm
+  () := match classDef
+    case SCode.ClassDef.DERIVED(typeSpec = Absyn.TypeSpec.TPATH(path = path, arrayDim = odims))
+      algorithm
+        if qualifyPath then
+          try
+            derivedNode := Lookup.lookupName(path, scope, NFInstContext.RELAXED, false);
+            json := JSON.addPair("baseClass", dumpJSONNodeEnclosingPath(derivedNode), json);
+          else
+          end try;
+        else
+          json := JSON.addPair("baseClass", dumpJSONPath(path), json);
+        end if;
+
+        if isSome(odims) then
+          json := JSON.addPairNotNull("dims", dumpJSONDims(Util.getOption(odims), {}), json);
+        end if;
+
+        json := dumpJSONSCodeMod(classDef.modifications, scope, json);
+      then
+        ();
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      algorithm
+        json := dumpJSONSCodeMod(classDef.modifications, scope, json);
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONSCodeClassDef;
 
 function dumpJSONChoicesAnnotation
   input list<SCode.SubMod> mods;
@@ -2196,6 +2322,510 @@ algorithm
   json := dumpJSONSCodeMod_impl(smod, InstNode.EMPTY_NODE());
   jsonString := Values.STRING(JSON.toString(json, prettyPrint));
 end modifierToJSON;
+
+uniontype MoveEnv
+  record MOVE_ENV
+    InstNode scope;
+    Absyn.Path destinationPath;
+  end MOVE_ENV;
+end MoveEnv;
+
+function updateMovedClassPaths
+  "Updates all the paths inside of a class that is being moved such that the
+   paths are still valid in the new location."
+  input output Absyn.Class cls "The class definition";
+  input Absyn.Path clsPath "The fully qualified path of the class";
+  input Absyn.Within destination "The destination package (or top scope)";
+protected
+  InstContext.Type context;
+  InstNode top, cls_node;
+  MoveEnv env;
+  Absyn.Path dest_path;
+algorithm
+  // Make a top node and look up the class in it.
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(clsPath));
+  cls_node := Inst.lookupRootClass(clsPath, top, FAST_CONTEXT);
+  Inst.expand(cls_node);
+
+  // Get the destination path including the class name.
+  dest_path := match destination
+    case Absyn.Within.WITHIN() then AbsynUtil.suffixPath(destination.path, InstNode.name(cls_node));
+    else Absyn.Path.IDENT(InstNode.name(cls_node));
+  end match;
+
+  env := MOVE_ENV(cls_node, dest_path);
+  cls.body := updateMovedClassDef(cls.body, env);
+end updateMovedClassPaths;
+
+function updateMovedClass
+  input output Absyn.Class cls;
+  input MoveEnv env;
+protected
+  InstNode cls_node;
+  MoveEnv cls_env;
+algorithm
+  if classHasScope(cls) then
+    // Change the scope in the environment to this class, if the class has its
+    // own scope (i.e. is a long class definition).
+    cls_node := Lookup.lookupLocalSimpleName(cls.name, env.scope);
+    Inst.expand(cls_node);
+    cls_env := MoveEnv.MOVE_ENV(cls_node, AbsynUtil.suffixPath(env.destinationPath, cls.name));
+  else
+    cls_env := env;
+  end if;
+
+  cls.body := updateMovedClassDef(cls.body, cls_env);
+end updateMovedClass;
+
+function classHasScope
+  input Absyn.Class cls;
+  output Boolean hasScope;
+algorithm
+  hasScope := match cls.body
+    case Absyn.ClassDef.PARTS() then true;
+    case Absyn.ClassDef.CLASS_EXTENDS() then true;
+    else false;
+  end match;
+end classHasScope;
+
+function updateMovedClassDef
+  input output Absyn.ClassDef cdef;
+  input MoveEnv env;
+algorithm
+  () := match cdef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        cdef.classParts := list(updateMovedClassPart(p, env) for p in cdef.classParts);
+        cdef.ann := list(updateMovedAnnotation(a, env) for a in cdef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        cdef.typeSpec := updateMovedTypeSpec(cdef.typeSpec, env);
+        cdef.attributes := updateMovedElementAttributes(cdef.attributes, env);
+        cdef.arguments := list(updateMovedElementArg(a, env) for a in cdef.arguments);
+        cdef.comment := updateMovedCommentOpt(cdef.comment, env);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        cdef.modifications := list(updateMovedElementArg(a, env) for a in cdef.modifications);
+        cdef.parts := list(updateMovedClassPart(p, env) for p in cdef.parts);
+        cdef.ann := list(updateMovedAnnotation(a, env) for a in cdef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.PDER()
+      algorithm
+        cdef.functionName := updateMovedPath(cdef.functionName, env);
+        cdef.comment := updateMovedCommentOpt(cdef.comment, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedClassDef;
+
+function updateMovedClassPart
+  input output Absyn.ClassPart part;
+  input MoveEnv env;
+algorithm
+  () := match part
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        part.contents := list(updateMovedElementItem(i, env) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        part.contents := list(updateMovedElementItem(i, env) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.EQUATIONS()
+      algorithm
+        part.contents := updateMovedEquationItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALEQUATIONS()
+      algorithm
+        part.contents := updateMovedEquationItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.ALGORITHMS()
+      algorithm
+        part.contents := updateMovedAlgorithmItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALALGORITHMS()
+      algorithm
+        part.contents := updateMovedAlgorithmItems(part.contents, env);
+      then
+        ();
+
+    case Absyn.ClassPart.EXTERNAL()
+      algorithm
+        part.annotation_ := updateMovedAnnotationOpt(part.annotation_, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedClassPart;
+
+function updateMovedElementItem
+  input output Absyn.ElementItem item;
+  input MoveEnv env;
+algorithm
+  () := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        item.element := updateMovedElement(item.element, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElementItem;
+
+function updateMovedElement
+  input output Absyn.Element element;
+  input MoveEnv env;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := updateMovedElementSpec(element.specification, env);
+
+        if isSome(element.constrainClass) then
+          element.constrainClass :=
+            SOME(updateMovedConstrainClass(Util.getOption(element.constrainClass), env));
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElement;
+
+function updateMovedConstrainClass
+  input output Absyn.ConstrainClass cc;
+  input MoveEnv env;
+algorithm
+  cc.elementSpec := updateMovedElementSpec(cc.elementSpec, env);
+  cc.comment := updateMovedCommentOpt(cc.comment, env);
+end updateMovedConstrainClass;
+
+function updateMovedElementSpec
+  input output Absyn.ElementSpec spec;
+  input MoveEnv env;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        spec.class_ := updateMovedClass(spec.class_, env);
+      then
+        ();
+
+    case Absyn.ElementSpec.EXTENDS()
+      algorithm
+        spec.path := updateMovedPath(spec.path, env);
+        spec.elementArg := list(updateMovedElementArg(a, env) for a in spec.elementArg);
+        spec.annotationOpt := updateMovedAnnotationOpt(spec.annotationOpt, env);
+      then
+        ();
+
+    case Absyn.ElementSpec.COMPONENTS()
+      algorithm
+        spec.attributes := updateMovedElementAttributes(spec.attributes, env);
+        spec.typeSpec := updateMovedTypeSpec(spec.typeSpec, env);
+        spec.components := list(updateMovedComponentItem(c, env) for c in spec.components);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElementSpec;
+
+function updateMovedElementAttributes
+  input output Absyn.ElementAttributes attr;
+  input MoveEnv env;
+algorithm
+  if not listEmpty(attr.arrayDim) then
+    attr.arrayDim := list(updateMovedSubscript(s, env) for s in attr.arrayDim);
+  end if;
+end updateMovedElementAttributes;
+
+function updateMovedElementArg
+  input output Absyn.ElementArg arg;
+  input MoveEnv env;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION()
+      algorithm
+        if isSome(arg.modification) then
+          arg.modification := SOME(updateMovedModification(Util.getOption(arg.modification), env));
+        end if;
+      then
+        ();
+
+    case Absyn.ElementArg.REDECLARATION()
+      algorithm
+        arg.elementSpec := updateMovedElementSpec(arg.elementSpec, env);
+
+        if isSome(arg.constrainClass) then
+          arg.constrainClass := SOME(updateMovedConstrainClass(Util.getOption(arg.constrainClass), env));
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedElementArg;
+
+function updateMovedModification
+  input output Absyn.Modification mod;
+  input MoveEnv env;
+protected
+  Absyn.EqMod eq_mod;
+algorithm
+  mod.elementArgLst := list(updateMovedElementArg(a, env) for a in mod.elementArgLst);
+
+  eq_mod := mod.eqMod;
+  () := match eq_mod
+    case Absyn.EqMod.EQMOD()
+      algorithm
+        eq_mod.exp := updateMovedExp(eq_mod.exp, env);
+        mod.eqMod := eq_mod;
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedModification;
+
+function updateMovedComponentItem
+  input output Absyn.ComponentItem item;
+  input MoveEnv env;
+algorithm
+  item.component := updateMovedComponent(item.component, env);
+
+  if isSome(item.condition) then
+    item.condition := SOME(updateMovedExp(Util.getOption(item.condition), env));
+  end if;
+end updateMovedComponentItem;
+
+function updateMovedComponent
+  input output Absyn.Component component;
+  input MoveEnv env;
+algorithm
+  if not listEmpty(component.arrayDim) then
+    component.arrayDim := list(updateMovedSubscript(d, env) for d in component.arrayDim);
+  end if;
+
+  if isSome(component.modification) then
+    component.modification := SOME(updateMovedModification(Util.getOption(component.modification), env));
+  end if;
+end updateMovedComponent;
+
+function updateMovedEquationItems
+  input output list<Absyn.EquationItem> items;
+  input MoveEnv env;
+algorithm
+  items := AbsynUtil.traverseEquationItemListBidir(items,
+    updateMovedExp_traverser, AbsynUtil.dummyTraverseExp, env);
+end updateMovedEquationItems;
+
+function updateMovedAlgorithmItems
+  input output list<Absyn.AlgorithmItem> items;
+  input MoveEnv env;
+algorithm
+  items := AbsynUtil.traverseAlgorithmItemListBidir(items,
+    updateMovedExp_traverser, AbsynUtil.dummyTraverseExp, env);
+end updateMovedAlgorithmItems;
+
+function updateMovedTypeSpec
+  input output Absyn.TypeSpec ty;
+  input MoveEnv env;
+algorithm
+  () := match ty
+    case Absyn.TypeSpec.TPATH()
+      algorithm
+        ty.path := updateMovedPath(ty.path, env);
+
+        if isSome(ty.arrayDim) then
+          ty.arrayDim := SOME(list(updateMovedSubscript(s, env) for s in Util.getOption(ty.arrayDim)));
+        end if;
+      then
+        ();
+
+    case Absyn.TypeSpec.TCOMPLEX()
+      algorithm
+        ty.path := updateMovedPath(ty.path, env);
+
+        if isSome(ty.arrayDim) then
+          ty.arrayDim := SOME(list(updateMovedSubscript(s, env) for s in Util.getOption(ty.arrayDim)));
+        end if;
+      then
+        ();
+
+  end match;
+end updateMovedTypeSpec;
+
+function updateMovedPath
+  input output Absyn.Path path;
+  input MoveEnv env;
+protected
+  Absyn.Path qualified_path;
+algorithm
+  // Try to look up the qualified path needed to be able to find the name in
+  // this scope even if the root class that contains the scope is moved elsewhere.
+  try
+    qualified_path :=
+      Lookup.lookupSimpleNameRootPath(AbsynUtil.pathFirstIdent(path), env.scope, FAST_CONTEXT);
+  else
+    // Lookup failed, leave the path unchanged.
+    return;
+  end try;
+
+  // If the path we found is fully qualified it means we need to update the original path.
+  if AbsynUtil.pathIsFullyQualified(qualified_path) then
+    qualified_path := AbsynUtil.makeNotFullyQualified(qualified_path);
+
+    if AbsynUtil.pathIsQual(qualified_path) then
+      // If the path is qualified it needs to be joined with the original path,
+      // but we remove any part of the path that's the same as the destination.
+      qualified_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
+
+      if AbsynUtil.pathIsQual(qualified_path) then
+        path := AbsynUtil.joinPaths(AbsynUtil.pathPrefix(qualified_path), path);
+      end if;
+    elseif AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
+      // Special case, the path refers to the destination package, e.g. moving path A.B.C into A.
+      path := AbsynUtil.pathRest(path);
+    end if;
+  end if;
+end updateMovedPath;
+
+function updateMovedCommentOpt
+  input output Option<Absyn.Comment> cmt;
+  input MoveEnv env;
+algorithm
+  if isSome(cmt) then
+    cmt := SOME(updateMovedComment(Util.getOption(cmt), env));
+  end if;
+end updateMovedCommentOpt;
+
+function updateMovedComment
+  input output Absyn.Comment cmt;
+  input MoveEnv env;
+algorithm
+  cmt.annotation_ := updateMovedAnnotationOpt(cmt.annotation_, env);
+end updateMovedComment;
+
+function updateMovedAnnotationOpt
+  input output Option<Absyn.Annotation> ann;
+  input MoveEnv env;
+algorithm
+  if isSome(ann) then
+    ann := SOME(updateMovedAnnotation(Util.getOption(ann), env));
+  end if;
+end updateMovedAnnotationOpt;
+
+function updateMovedAnnotation
+  input output Absyn.Annotation ann;
+  input MoveEnv env;
+algorithm
+  ann.elementArgs := list(updateMovedElementArg(a, env) for a in ann.elementArgs);
+end updateMovedAnnotation;
+
+function updateMovedSubscript
+  input output Absyn.Subscript sub;
+  input MoveEnv env;
+algorithm
+  () := match sub
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        sub.subscript := updateMovedExp(sub.subscript, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedSubscript;
+
+function updateMovedExp
+  input output Absyn.Exp exp;
+  input MoveEnv env;
+algorithm
+  exp := AbsynUtil.traverseExp(exp, updateMovedExp_traverser, env);
+end updateMovedExp;
+
+function updateMovedExp_traverser
+  input output Absyn.Exp exp;
+  input output MoveEnv env;
+algorithm
+  () := match exp
+    case Absyn.Exp.CREF()
+      algorithm
+        exp.componentRef := updateMovedCref(exp.componentRef, env);
+      then
+        ();
+
+    case Absyn.Exp.CALL()
+      algorithm
+        exp.function_ := updateMovedCref(exp.function_, env);
+      then
+        ();
+
+    else ();
+  end match;
+end updateMovedExp_traverser;
+
+function updateMovedCref
+  input output Absyn.ComponentRef cref;
+  input MoveEnv env;
+protected
+  Absyn.Path qualified_path;
+algorithm
+  if AbsynUtil.crefIsFullyQualified(cref) or AbsynUtil.crefIsWild(cref) then
+    return;
+  end if;
+
+  // Try to look up the qualified path needed to be able to find the name in
+  // this scope even if the root class that contains the scope is moved elsewhere.
+  try
+    qualified_path :=
+      Lookup.lookupSimpleNameRootPath(AbsynUtil.crefFirstIdent(cref), env.scope, FAST_CONTEXT);
+  else
+    // Lookup failed, leave the path unchanged.
+    return;
+  end try;
+
+  // If the path we found is fully qualified it means we need to update the original cref.
+  if AbsynUtil.pathIsFullyQualified(qualified_path) then
+    qualified_path := AbsynUtil.makeNotFullyQualified(qualified_path);
+
+    if AbsynUtil.pathIsQual(qualified_path) then
+      // If the path is qualified it needs to be joined with the original cref,
+      // but we remove any part of the path that's the same as the destination.
+      qualified_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
+
+      if AbsynUtil.pathIsQual(qualified_path) then
+        cref := AbsynUtil.joinCrefs(AbsynUtil.pathToCref(AbsynUtil.pathPrefix(qualified_path)), cref);
+      end if;
+    elseif AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
+      // Special case, the cref refers to the destination package, e.g. moving path A.B.C into A.
+      cref := AbsynUtil.crefStripFirst(cref);
+    end if;
+  end if;
+end updateMovedCref;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

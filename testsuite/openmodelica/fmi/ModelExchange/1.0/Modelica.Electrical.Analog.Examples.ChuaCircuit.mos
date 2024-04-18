@@ -8,7 +8,7 @@
 //
 
 loadModel(Modelica,{"3.1"});
-translateModelFMU(Modelica.Electrical.Analog.Examples.ChuaCircuit, version="1.0");
+buildModelFMU(Modelica.Electrical.Analog.Examples.ChuaCircuit, version="1.0");
 getErrorString();
 
 importFMU("Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu"); getErrorString();

@@ -3444,18 +3444,16 @@ algorithm
 end setVarKindForStates;
 
 protected function findDerVarCrefs "traverses all the sub expressions and searches for der(var)"
-  input DAE.Exp inExp;
+  input output DAE.Exp exp;
   input list<DAE.ComponentRef> inCrefs;
-  output DAE.Exp outExp;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
-  (outExp,outCrefs) := match(inExp,inCrefs)
+  outCrefs := match exp
     local
       DAE.ComponentRef cr;
-      tuple<DAE.Exp,list<DAE.ComponentRef>> tpl;
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),_)
-       then (inExp,cr::inCrefs);
-    else (inExp,inCrefs);
+    case DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})
+      then cr :: inCrefs;
+    else inCrefs;
   end match;
 end findDerVarCrefs;
 

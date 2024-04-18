@@ -36,6 +36,7 @@ protected
   import List;
   import Class = NFClass;
   import IOStream;
+  import StringUtil;
   import Util;
   import NFClassTree.ClassTree;
 
@@ -80,8 +81,10 @@ public
     list<String> literals;
   end ENUMERATION;
 
-  record ENUMERATION_ANY "enumeration(:)"
-  end ENUMERATION_ANY;
+  // TODO: Remove this, which requires updating the bootstrapping sources to
+  //       avoid breaking the ffi interface.
+  record __ENUMERATION_ANY_NOT_USED__
+  end __ENUMERATION_ANY_NOT_USED__;
 
   record ARRAY
     Type elementType;
@@ -347,6 +350,18 @@ public
     outType := CONDITIONAL_ARRAY(trueType, falseType, matched_branch);
   end setConditionalArrayTypes;
 
+  function removeSizeOneArrays
+    "only to be used for backend. removes size one arrays from type"
+    input output Type ty;
+  algorithm
+    ty := match ty
+      case ARRAY() algorithm
+        ty.dimensions := list(dim for dim guard(not Dimension.isOne(dim)) in ty.dimensions);
+      then if listEmpty(ty.dimensions) then ty.elementType else ty;
+      else ty;
+    end match;
+  end removeSizeOneArrays;
+
   function isMatchedBranch
     input Boolean condition;
     input Type condType;
@@ -447,10 +462,19 @@ public
   algorithm
     isEnum := match ty
       case ENUMERATION() then true;
-      case ENUMERATION_ANY() then true;
       else false;
     end match;
   end isEnumeration;
+
+  function isUnspecifiedEnumeration
+    input Type ty;
+    output Boolean res;
+  algorithm
+    res := match ty
+      case ENUMERATION(literals = {}) then true;
+      else false;
+    end match;
+  end isUnspecifiedEnumeration;
 
   function isComplex
     input Type ty;
@@ -576,7 +600,6 @@ public
       case BOOLEAN() then true;
       case CLOCK() then true;
       case ENUMERATION() then true;
-      case ENUMERATION_ANY() then true;
       case FUNCTION() then isScalarBuiltin(Function.returnType(ty.fn));
       else false;
     end match;
@@ -666,6 +689,7 @@ public
     elementTy := match ty
       case ARRAY() then ty.elementType;
       case CONDITIONAL_ARRAY() then arrayElementType(ty.trueType);
+      case UNTYPED() guard not arrayEmpty(ty.dimensions) then UNTYPED(ty.typeNode, listArray({}));
       else ty;
     end match;
   end arrayElementType;
@@ -884,18 +908,17 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
-      case Type.ENUMERATION() then "enumeration " + AbsynUtil.pathString(ty.typePath) +
+      case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else "enumeration " + AbsynUtil.pathString(ty.typePath) +
         "(" + stringDelimitList(ty.literals, ", ") + ")";
-      case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.ARRAY() then List.toString(ty.dimensions, Dimension.toString, toString(ty.elementType), "[", ", ", "]", false);
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then AbsynUtil.pathString(InstNode.scopePath(ty.cls));
       case Type.FUNCTION() then Function.typeString(ty.fn);
-      case Type.METABOXED() then "#" + toString(ty.ty);
+      case Type.METABOXED() then toString(ty.ty);
       case Type.POLYMORPHIC()
-        then if Util.stringStartsWith("__", ty.name) then
+        then if StringUtil.startsWith(ty.name, "__") then
           substring(ty.name, 3, stringLength(ty.name)) else "<" + ty.name + ">";
 
       case Type.ANY() then "$ANY$";
@@ -919,8 +942,7 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
-      case Type.ENUMERATION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
-      case Type.ENUMERATION_ANY() then "enumeration(:)";
+      case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
       case Type.ARRAY() then List.toString(ty.dimensions, Dimension.toFlatString, toFlatString(ty.elementType), "[", ", ", "]", false);
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toFlatString), ", ") + ")";
       case Type.NORETCALL() then "()";
@@ -956,6 +978,7 @@ public
 
   function toFlatDeclarationStream
     input Type ty;
+    input String indent;
     input output IOStream.IOStream s;
   algorithm
     s := match ty
@@ -969,6 +992,7 @@ public
 
       case ENUMERATION()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "type ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath)));
           s := IOStream.append(s, " = enumeration(");
@@ -987,36 +1011,40 @@ public
           s;
 
       case COMPLEX(complexTy = ComplexType.RECORD())
-        then InstNode.toFlatStream(ty.cls, s);
+        then Record.toFlatDeclarationStream(ty.cls, indent, s);
 
       case COMPLEX(complexTy = complexTy as ComplexType.EXTERNAL_OBJECT())
         algorithm
           path := InstNode.scopePath(ty.cls);
           name := Util.makeQuotedIdentifier(AbsynUtil.pathString(path));
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "class ");
           s := IOStream.append(s, name);
           s := IOStream.append(s, "\n  extends ExternalObject;\n\n");
           {f} := Function.typeNodeCache(complexTy.constructor);
-          s := Function.toFlatStream(f, s, overrideName="constructor");
+          s := Function.toFlatStream(f, indent + "  ", s, overrideName="constructor");
           s := IOStream.append(s, ";\n\n");
           {f} := Function.typeNodeCache(complexTy.destructor);
-          s := Function.toFlatStream(f, s, overrideName="destructor");
+          s := Function.toFlatStream(f, indent + "  ", s, overrideName="destructor");
           s := IOStream.append(s, ";\n\nend ");
           s := IOStream.append(s, name);
         then s;
 
       case SUBSCRIPTED()
         algorithm
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "function ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
           s := IOStream.append(s, "\n");
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "  input ");
           s := IOStream.append(s, toString(ty.ty));
           s := IOStream.append(s, " exp;\n");
 
           index := 1;
           for sub in ty.subs loop
+            s := IOStream.append(s, indent);
             s := IOStream.append(s, "  input ");
             s := IOStream.append(s, toString(sub));
             s := IOStream.append(s, " s");
@@ -1025,6 +1053,7 @@ public
             index := index + 1;
           end for;
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "  output ");
           s := IOStream.append(s, toString(ty.subscriptedTy));
           s := IOStream.append(s, " result = exp[");
@@ -1032,6 +1061,7 @@ public
             stringDelimitList(list("s" + String(i) for i in 1:listLength(ty.subs)), ","));
           s := IOStream.append(s, "];\n");
 
+          s := IOStream.append(s, indent);
           s := IOStream.append(s, "end ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
         then
@@ -1188,7 +1218,7 @@ public
       case (COMPLEX(), COMPLEX()) then InstNode.isSame(ty1.cls, ty2.cls);
 
       case (UNTYPED(), UNTYPED())
-        then InstNode.refEqual(ty1.typeNode, ty2.typeNode) and
+        then InstNode.isSame(ty1.typeNode, ty2.typeNode) and
              Array.isEqualOnTrue(ty1.dimensions, ty2.dimensions, Dimension.isEqualKnown);
 
       else true;
@@ -1381,6 +1411,7 @@ public
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions);
       case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
+      case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
       case COMPLEX()
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
       else 0;

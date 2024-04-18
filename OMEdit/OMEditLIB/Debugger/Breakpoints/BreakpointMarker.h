@@ -37,13 +37,8 @@
 #include <QIcon>
 #include <QFileInfo>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QTextBlockUserData>
 #include <QPlainTextDocumentLayout>
-#else
-#include <QtGui/QTextBlockUserData>
-#include <QtGui/QPlainTextDocumentLayout>
-#endif
 
 class BreakpointsTreeModel;
 class ITextMark : public QObject

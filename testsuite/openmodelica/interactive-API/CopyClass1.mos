@@ -1,0 +1,40 @@
+// name:     CopyClass1
+// keywords:
+// status:   correct
+// cflags:   -d=newInst
+//
+
+loadString("
+  package P
+    model A
+      Real x;
+    end A;
+
+    model B
+      A a;
+    end B;
+  end P;
+");
+
+copyClass(P.B, "C", P);
+getErrorString();
+list(P);
+
+// Result:
+// true
+// true
+// ""
+// "package P
+//   model A
+//     Real x;
+//   end A;
+//
+//   model B
+//     A a;
+//   end B;
+//
+//   model C
+//     A a;
+//   end C;
+// end P;"
+// endResult

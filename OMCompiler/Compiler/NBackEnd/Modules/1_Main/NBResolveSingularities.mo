@@ -56,6 +56,7 @@ protected
   // util imports
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
+  import StringUtil;
   import UnorderedSet;
 
 public
@@ -98,8 +99,8 @@ public
         - add new variables in correct arrays
       "
   extends Module.resolveSingularitiesInterface;
-    input list<list<Integer>> marked_eqns_lst;
   protected
+    UnorderedSet<Integer> marked_eqns_set;
     list<Integer> marked_eqns;
     SlicingStatus status;
     Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
@@ -111,14 +112,22 @@ public
     Pointer<Differentiate.DifferentiationArguments> diffArguments_ptr;
     VariablePointers candidate_ptrs;
     EquationPointers constraint_ptrs;
-    Adjacency.Matrix set_adj;
+    Adjacency.Matrix set_adj, full_local;
     Matching set_matching;
+    list<list<Integer>> marked_eqns_lst = {}; // todo: fill!
 
     Boolean debug = false;
   algorithm
     if not listEmpty(marked_eqns_lst) then
       changed := true;
-      marked_eqns := List.unique(List.flatten(marked_eqns_lst));
+      // marked_eqns_lst to flat uniqie list (via UnorderedSet)
+      marked_eqns_set := UnorderedSet.new(Util.id, intEq, Util.nextPrime(sum(listLength(l) for l in marked_eqns_lst)));
+      for lst in marked_eqns_lst loop
+        for e in lst loop
+          UnorderedSet.add(e, marked_eqns_set);
+        end for;
+      end for;
+      marked_eqns := UnorderedSet.toList(marked_eqns_set);
       // --------------------------------------------------------
       //      1. BASIC INDEX REDUCTION
       // --------------------------------------------------------
@@ -168,7 +177,10 @@ public
       constraint_ptrs := EquationPointers.fromList(sliced_constraints);
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
-      set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, matrixType, NBAdjacency.MatrixStrictness.LINEAR);
+      // create full matrix
+      full_local := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
+      // create solvable adjacency matrix for matching
+      set_adj := Adjacency.Matrix.fromFull(full_local, candidate_ptrs.map, constraint_ptrs.map, constraint_ptrs, NBAdjacency.MatrixStrictness.LINEAR);
       set_matching := Matching.regular(NBMatching.EMPTY_MATCHING, set_adj, true, true);
 
       if debug then
@@ -235,7 +247,7 @@ public
       // some derivatives -> dummy derivatives (to algebraics)
       varData := VarData.addTypedList(varData, dummy_derivatives, NBVariable.VarData.VarType.ALGEBRAIC);
       // new equations
-      eqData := EqData.addTypedList(eqData, new_eqns, NBEquation.EqData.EqType.CONTINUOUS);
+      eqData := EqData.addTypedList(eqData, new_eqns, EqData.EqType.CONTINUOUS);
 
       // add all new differentiated variables
       variables := VariablePointers.addList(diffArguments.new_vars, variables);
@@ -251,25 +263,46 @@ public
   function noIndexReduction
     "fails if the system has unmatched variables"
     extends Module.resolveSingularitiesInterface;
-    input Matching matching;
   protected
-    list<Slice<VariablePointer>> unmatched_vars;
-    list<Slice<EquationPointer>> unmatched_eqns;
+    list<Slice<VariablePointer>> unmatched_vars, matched_vars;
+    list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
+    String err_str;
+    Adjacency.Mapping mapping;
+    Option<array<tuple<Integer, Integer>>> var_opt, eqn_opt;
   algorithm
-    (_, unmatched_vars, _, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
+    (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if not listEmpty(unmatched_vars) then
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-        + " failed because following variables could not be solved:\n"
-        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=0), "", "\t", "\n\t", "\n", true)
-        + "\n  Furthermore following equations are unmatched:\n"
-        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=0), "", "\t", "\n\t", "\n", true)});
+      err_str := getInstanceName()
+        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + "|"
+        + intString(sum(Slice.size(v, BVariable.size) for v in unmatched_vars)) + ") Unmatched Variables")
+        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
+        + intString(sum(Slice.size(e, Equation.size) for e in unmatched_eqns)) + ") Unmatched Equations")
+        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
+      if Flags.isSet(Flags.BLT_DUMP) then
+        if Util.isSome(mapping_opt) then
+          mapping := Util.getOption(mapping_opt);
+          var_opt := SOME(mapping.var_AtS);
+          eqn_opt := SOME(mapping.eqn_AtS);
+        else
+          var_opt := NONE();
+          eqn_opt := NONE();
+        end if;
+        err_str := err_str + " \n" + StringUtil.headline_4("(" + intString(listLength(matched_vars)) + ") Matched Variables")
+          + List.toString(matched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+          + StringUtil.headline_4("(" + intString(listLength(matched_eqns)) + ") Matched Equations")
+          + List.toString(matched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+          + VariablePointers.toString(variables, "All ", var_opt) + "\n" + EquationPointers.toString(equations, "All ", eqn_opt) + "\n"
+          + Matching.toString(matching);
+      end if;
+      Error.addMessage(Error.INTERNAL_ERROR,{err_str});
       fail();
     end if;
+    changed := false;
   end noIndexReduction;
 
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
-    input Matching matching;
   protected
     list<Slice<VariablePointer>> unmatched_vars;
     list<Slice<EquationPointer>> unmatched_eqns;
@@ -279,6 +312,8 @@ public
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
     Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqns = Pointer.create({});
     Pointer<Integer> idx;
+    String error_msg;
+    UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
   algorithm
     (_, unmatched_vars, _, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if Flags.isSet(Flags.INITIALIZATION) then
@@ -295,12 +330,17 @@ public
       // simplify equation and check for 0 = 0
       if not listEmpty(unmatched_eqns) then
         Error.addMessage(Error.COMPILER_WARNING, {getInstanceName()
-        + " reports an overdetermined initialization!\nChecking for consistency is not yet supported, following equations had to be removed:\n"
-        + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = ""))});
+          + " reports an overdetermined initialization!\nChecking for consistency is not yet supported, following equations had to be removed:\n"
+          + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = ""))});
         // update this for potential arrays!
+        // copy old map to update adjacency matrix correctly
+        eo          := UnorderedMap.copy(equations.map);
+        // get all unmatched equations and remove them from the system and overall equations
         sliced_eqns := list(Slice.getT(eqn) for eqn in unmatched_eqns);
-        eqData := EqData.removeList(sliced_eqns, eqData);
-        equations := EquationPointers.removeList(sliced_eqns, equations);
+        eqData      := EqData.removeList(sliced_eqns, eqData);
+        equations   := EquationPointers.removeList(sliced_eqns, equations);
+        // also update adjacency matrices
+        (adj, full) := Adjacency.Matrix.compress(adj, full, equations, variables, eo);
       end if;
 
       // --------------------------------------------------------
@@ -310,35 +350,56 @@ public
       for var in unmatched_vars loop
         var_ptr := Slice.getT(var);
         if BVariable.isFixable(var_ptr) then
-          if BVariable.isDiscreteState(var_ptr) then
-            // create previous equations for discrete states
-            // d = $PRE.d
-            Initialization.createPreEquationSlice(var, ptr_start_eqns, idx);
-          else
-            // create start equations for everything else
-            // var = $START.var ($PRE.d = $START.d for previous vars)
-            var_ptr := BVariable.setFixed(var_ptr);
-            Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
-          end if;
+          // var = $START.var ($PRE.d = $START.d for previous vars)
+          // DO NOT SET VARIABLE TO FIXED! we might have to fix it again for Lambda=0 system
+          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
         else
           failed_vars := var_ptr :: failed_vars;
         end if;
       end for;
 
       if listEmpty(failed_vars) then
-        start_vars := Pointer.access(ptr_start_vars);
-        start_eqns := Pointer.access(ptr_start_eqns);
+        start_vars  := Pointer.access(ptr_start_vars);
+        start_eqns  := Pointer.access(ptr_start_eqns);
+
+        // copy old equation map to update adjacency matrices correctly
+        vo          := variables.map;
+        eo          := UnorderedMap.copy(equations.map);
 
         // add new vars and equations to overall data
-        varData := VarData.addTypedList(varData, start_vars, NBVariable.VarData.VarType.START);
-        eqData := EqData.addTypedList(eqData, start_eqns, NBEquation.EqData.EqType.INITIAL);
+        varData := VarData.addTypedList(varData, start_vars, VarData.VarType.START);
+        eqData := EqData.addTypedList(eqData, start_eqns, EqData.EqType.INITIAL);
 
         // add new equations to system pointer arrays
         equations := EquationPointers.addList(start_eqns, equations);
+
+        // update adjacency matrices
+        vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        en := UnorderedMap.subSet(equations.map, list(Equation.getEqnName(eqn) for eqn in start_eqns));
+        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations);
+
+        if Flags.isSet(Flags.INITIALIZATION) then
+          print(List.toString(start_eqns, function Equation.pointerToString(str = ""),
+            StringUtil.headline_4("Created Start Equations for balancing the Initialization (" + intString(listLength(start_eqns)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+        end if;
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        error_msg := getInstanceName()
           + " failed because following non-fixable variables could not be solved:\n"
-          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true)});
+          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true);
+        if Flags.isSet(Flags.INITIALIZATION) then
+          error_msg := error_msg + "\nFollowing equations were created by fixing variables:\n"
+            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), "", "", "\n", "\n", true);
+        else
+          error_msg := error_msg + "\nUse -d=initialization for more debug output.";
+        end if;
+        if Flags.isSet(Flags.BLT_DUMP) then
+          error_msg := error_msg + "\n" + VariablePointers.toString(variables, "All") + EquationPointers.toString(equations, "All")
+            + Adjacency.Mapping.toString(Util.getOptionOrDefault(mapping_opt, Adjacency.Mapping.empty()))
+            + Adjacency.Matrix.toString(adj) + "\n" + Matching.toString(matching);
+        else
+          error_msg := error_msg + "\nUse -d=bltdump for more verbose debug output.";
+        end if;
+        Error.addMessage(Error.INTERNAL_ERROR,{error_msg});
         fail();
       end if;
     else
@@ -391,13 +452,13 @@ protected
 
   function getStateCandidate
     input output ComponentRef cref          "the cref to check";
-    input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
+    input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
   protected
     Pointer<Variable> var;
   algorithm
     var := BVariable.getVarPointer(cref);
     if (BVariable.isContinuous(var) and not BVariable.isTime(var)) then
-      Pointer.update(acc, cref :: Pointer.access(acc));
+      UnorderedSet.add(cref, acc);
     end if;
   end getStateCandidate;
 
@@ -468,15 +529,24 @@ protected
   protected
     String s1, s2, s3, s4;
   algorithm
-    s1 := if listEmpty(unmatched_vars) then "Not underdetermined.\n" else "Stage " + intString(listLength(unmatched_vars)) + " underdetermined.\n";
-    s2 := if listEmpty(unmatched_eqns) then "Not overdetermined.\n" else "Stage " + intString(listLength(unmatched_eqns)) + " overdetermined.\n";
-    s3 := StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched variables:")
-          + Slice.lstToString(unmatched_vars, BVariable.pointerToString) + "\n";
-    s4 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
+    if listEmpty(unmatched_vars) then
+      s1 := StringUtil.headline_4("Not underdetermined.");
+      s3 := "";
+    else
+      s1 := "Stage " + intString(listLength(unmatched_vars)) + " underdetermined.\n";
+      s3 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched variables:")
+            + Slice.lstToString(unmatched_vars, BVariable.pointerToString) + "\n";
+    end if;
+    if listEmpty(unmatched_eqns) then
+      s2 := StringUtil.headline_4("Not overdetermined.");
+      s4 := "";
+    else
+      s2 := "Stage " + intString(listLength(unmatched_eqns)) + " overdetermined.\n";
+      s4 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
           + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = "")) + "\n";
+    end if;
     str := s1 + s2 + s3 + s4;
   end toStringUnmatched;
 
   annotation(__OpenModelica_Interface="backend");
 end NBResolveSingularities;
-

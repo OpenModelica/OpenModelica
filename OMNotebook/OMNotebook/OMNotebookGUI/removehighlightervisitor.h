@@ -47,7 +47,6 @@
 #include "cellcursor.h"
 #include "graphcell.h"
 
-using namespace std;
 namespace IAEX
 {
   class RemoveHighlighterVisitor : public Visitor

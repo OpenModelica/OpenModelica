@@ -23,6 +23,7 @@ getClassComment(P.M2);
 getClassComment(P.M3);
 getClassComment(P.M);
 getClassComment(P.ME);
+getClassComment(OpenModelica.Scripting.loadFile);
 
 // Result:
 // true
@@ -32,4 +33,5 @@ getClassComment(P.ME);
 // "After constraint"
 // "M comment"
 // "ME comment"
+// "load file (*.mo) and merge it with the loaded AST."
 // endResult

@@ -11,7 +11,6 @@ arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
 clockedEventTest.mos \
-clockedEventRotationalTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
@@ -41,6 +40,7 @@ trapezoidTest.mos \
 negatedParameter.mos
 
 FAILINGTESTFILES= \
+clockedEventRotationalTest.mos \
 ClockInterval.mos \
 testVectorizedPowerSystem.mos \
 

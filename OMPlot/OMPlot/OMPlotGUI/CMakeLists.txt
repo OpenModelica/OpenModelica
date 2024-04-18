@@ -12,6 +12,7 @@ set(OMPLOTLIB_SOURCES Plot.cpp
                       PlotWindowContainer.cpp
                       PlotMainWindow.cpp
                       ScaleDraw.cpp
+                      LogScaleEngine.cpp
                       LinearScaleEngine.cpp
                       resource_omplot.qrc)
 
@@ -27,6 +28,7 @@ set(OMPLOTLIB_HEADERS OMPlot.h
                       PlotWindowContainer.h
                       PlotMainWindow.h
                       ScaleDraw.h
+                      LogScaleEngine.h
                       LinearScaleEngine.h)
 
 add_library(OMPlotLib SHARED ${OMPLOTLIB_SOURCES} ${OMPLOTLIB_HEADERS})

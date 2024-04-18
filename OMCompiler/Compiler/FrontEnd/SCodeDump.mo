@@ -171,14 +171,18 @@ algorithm
     case SCode.R_CONNECTOR(false) then "connector";
     case SCode.R_CONNECTOR(true) then "expandable connector";
     case SCode.R_OPERATOR() then "operator";
-    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)) then "pure function";
-    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(true)) then "impure function";
-    case SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()) then "operator function";
-    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(false)) then "pure external function";
-    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(true)) then "impure external function";
-    case SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()) then "record constructor";
-    case SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()) then "parallel function";
-    case SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION()) then "kernel function";
+    case SCode.R_FUNCTION()
+      then match inRestriction.functionRestriction
+        case SCode.FR_NORMAL_FUNCTION(purity = Absyn.FunctionPurity.PURE()) then "pure function";
+        case SCode.FR_NORMAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE()) then "impure function";
+        case SCode.FR_OPERATOR_FUNCTION() then "operator function";
+        case SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.PURE()) then "pure external function";
+        case SCode.FR_EXTERNAL_FUNCTION(purity = Absyn.FunctionPurity.IMPURE()) then "impure external function";
+        case SCode.FR_RECORD_CONSTRUCTOR() then "record constructor";
+        case SCode.FR_PARALLEL_FUNCTION() then "parallel function";
+        case SCode.FR_KERNEL_FUNCTION() then "kernel function";
+        else "function";
+      end match;
     case SCode.R_TYPE() then "type";
     case SCode.R_PACKAGE() then "package";
     case SCode.R_ENUMERATION() then "enumeration";

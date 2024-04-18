@@ -37,46 +37,56 @@ encapsulated uniontype NBackendDAE
 public
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, EquationKind, IfEquationBody, Iterator};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
   import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
+  import NBStrongComponent.CountCollector;
   import NBSystem;
   import NBSystem.System;
-
 protected
+  // Old Frontend imports
+  import Absyn.Path;
+  import AbsynUtil;
+
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
   import Call = NFCall;
+  import Class = NFClass;
+  import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import FEquation = NFEquation;
   import FlatModel = NFFlatModel;
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
   // New Backend imports
+  import Alias = NBAlias;
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
   import Causalize = NBCausalize;
-  import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
+  import DetectStates = NBDetectStates;
+  import Differentiate = NBDifferentiate;
+  import FunctionAlias = NBFunctionAlias;
   import Initialization = NBInitialization;
   import Inline = NBInline;
   import NBJacobian.JacobianType;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
-  import Alias = NBAlias;
   import Solve = NBSolve;
   import Tearing = NBTearing;
 
@@ -205,11 +215,11 @@ public
     VarData variableData;
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
+    UnorderedMap<Path, Function> functions;
   algorithm
-    // expand records to its children. Put behind flag?
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
+    bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, lowerFunctions(funcTree));
   end lower;
 
   function main
@@ -226,6 +236,7 @@ public
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
+      (FunctionAlias.main, "FunctionAlias"),
       (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
       (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
@@ -270,6 +281,8 @@ public
         print(stringDelimitList(list(Module.moduleClockString(clck) for clck in postOptClocks), "\n") + "\n\n");
       end if;
     end if;
+
+    backenddaeinfo(bdae);
   end main;
 
   function applyModules
@@ -377,12 +390,13 @@ protected
     list<Variable> vars;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
-    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
-    list<Pointer<Variable>> parameters_lst = {}, constants_lst = {}, records_lst = {}, artificials_lst = {};
+    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, previous_lst = {};
+    list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
-    VariablePointers states, derivatives, algebraics, discretes, previous;
-    VariablePointers parameters, constants, records, artificials;
-    Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
+    VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous;
+    VariablePointers inputs, parameters, constants, records, external_objects, artificials;
+    UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+    list<Pointer<Variable>> binding_iter_lst;
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
     vars := List.flatten(list(Variable.expandChildren(v) for v in varList));
@@ -405,13 +419,13 @@ protected
       variables := VariablePointers.add(lowVar_ptr, variables);
       () := match lowVar.backendinfo.varKind
 
-        case BackendExtension.ALGEBRAIC() guard(Variable.isTopLevelInput(var)) algorithm
-          algebraics_lst := lowVar_ptr :: algebraics_lst;
-          knowns_lst := lowVar_ptr :: knowns_lst;
-        then ();
+        // do nothing for size 0 variables, they get removed
+        // Note: record elements need to exist in the full
+        //   variable array even if they are of size 0
+        case _ guard(Variable.size(var) == 0) then ();
 
-        case BackendExtension.DISCRETE() guard(Variable.isTopLevelInput(var)) algorithm
-          discretes_lst := lowVar_ptr :: discretes_lst;
+        case _ guard(Variable.isTopLevelInput(var)) algorithm
+          inputs_lst := lowVar_ptr :: inputs_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
@@ -455,8 +469,15 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
+        // always consider records known since their attributes are in the unknown section (if they are unknown)
         case BackendExtension.RECORD() algorithm
           records_lst := lowVar_ptr :: records_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
+        case BackendExtension.EXTOBJ() algorithm
+          lowVar_ptr := BVariable.setFixed(lowVar_ptr);
+          external_objects_lst := lowVar_ptr :: external_objects_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
@@ -480,45 +501,51 @@ protected
     derivatives     := VariablePointers.fromList(derivatives_lst, scalarized);
     algebraics      := VariablePointers.fromList(algebraics_lst, scalarized);
     discretes       := VariablePointers.fromList(discretes_lst, scalarized);
+    discrete_states := VariablePointers.fromList(discrete_states_lst, scalarized);
     previous        := VariablePointers.fromList(previous_lst, scalarized);
 
+    inputs          := VariablePointers.fromList(inputs_lst, scalarized);
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
     records         := VariablePointers.fromList(records_lst, scalarized);
+    external_objects:= VariablePointers.fromList(external_objects_lst, scalarized);
     artificials     := VariablePointers.fromList(artificials_lst, scalarized);
 
     /* lower the variable bindings and add binding iterators */
-    variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-    variables       := VariablePointers.addList(Pointer.access(binding_iter_lst), variables);
-    knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
-    artificials     := VariablePointers.addList(Pointer.access(binding_iter_lst), artificials);
+    variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, set = binding_iter_set));
+    binding_iter_lst:= UnorderedSet.toList(binding_iter_set);
+    variables       := VariablePointers.addList(binding_iter_lst, variables);
+    knowns          := VariablePointers.addList(binding_iter_lst, knowns);
+    artificials     := VariablePointers.addList(binding_iter_lst, artificials);
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
 
     /* lower the records to add children */
-    records         := VariablePointers.map(records, function lowerRecordChildren(variables = variables));
+    records         := VariablePointers.mapPtr(records, function lowerRecordChildren(variables = variables));
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                    derivatives, algebraics, discretes, previous, states, parameters, constants, records, artificials);
+                      derivatives, algebraics, discretes, discrete_states, previous,
+                      states, inputs, parameters, constants, records, external_objects, artificials);
   end lowerVariableData;
 
   function lowerVariable
     input Variable var;
     output Pointer<Variable> var_ptr;
   protected
-    BackendExtension.VariableAttributes attributes;
     BackendExtension.VariableKind varKind;
+    BackendExtension.VariableAttributes attributes;
+    BackendExtension.Annotations annotations;
   algorithm
-    // ToDo! extract tearing select option
     try
       attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
+      annotations := BackendExtension.Annotations.create(var.comment);
 
       // only change varKind if unset (Iterators are set before)
       var.backendinfo := match var.backendinfo
         case BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-        then BackendExtension.BACKEND_INFO(varKind, attributes);
-        else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes);
+        then BackendExtension.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE());
+        else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 
       // Remove old type attribute information since it has been converted.
@@ -543,6 +570,7 @@ protected
   algorithm
     varKind := match(variability, attributes, ty)
       local
+        Type elemTy;
         list<Pointer<Variable>> children = {};
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
@@ -550,9 +578,15 @@ protected
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then BackendExtension.STATE(1, NONE(), false);
 
-      // add children pointers for records afterwards
-      case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({});
-      case (_, _, _) guard(Type.isComplexArray(ty))                   then BackendExtension.RECORD({});
+      // get external object class
+      case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
+      then BackendExtension.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
+      then BackendExtension.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
+
+      // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
+      case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
+      case (_, _, Type.ARRAY(elementType = Type.COMPLEX()))           then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
 
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();
@@ -582,40 +616,41 @@ protected
   function collectVariableBindingIterators
     input output Variable var;
     input VariablePointers variables;
-    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+    input UnorderedSet<VariablePointer> set;
+  protected
+    Option<Expression> exp_opt;
   algorithm
-    var := match var
-      local
-        Binding binding;
-      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
-        // collect all iterators (only locally known) so that they have a respective variable
-        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-        Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-      then var;
-      else algorithm
-        BackendExtension.BackendInfo.map(var.backendinfo, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
-      then var;
-    end match;
+    BackendExtension.BackendInfo.map(var.backendinfo, function collectIterators(variables = variables, set = set));
+    exp_opt := Binding.typedExp(var.binding);
+    if isSome(exp_opt) then
+      Expression.map(Util.getOption(exp_opt), function collectIterators(variables = variables, set = set));
+    end if;
   end collectVariableBindingIterators;
 
-  function lowerRecordChildren
-    input output Variable var;
+  public function lowerRecordChildren
+    input Pointer<Variable> var_ptr;
     input VariablePointers variables;
+  protected
+    Variable var = Pointer.access(var_ptr);
   algorithm
     var := match var
       local
         BackendExtension.BackendInfo binfo;
         BackendExtension.VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children);
+        // kabdelhak: why is this list reversed in the frontend? doesnt match input order
+        varKind.children := listReverse(list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children));
+        // set parent for all children
+        varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
         binfo.varKind := varKind;
         var.backendinfo := binfo;
       then var;
       else var;
     end match;
+    Pointer.update(var_ptr, var);
   end lowerRecordChildren;
 
-  function lowerEquationData
+  protected function lowerEquationData
     "Lowers all equations to backend structure.
     kabdelhak: Splitting up the creation of the equation array and the equation
     pointer arrays in two steps is slightly less effective, but way more readable
@@ -627,7 +662,7 @@ protected
     output EqData eqData;
     input output VarData varData;
   protected
-    list<ComponentRef> iterators = {};
+    UnorderedSet<VariablePointer> set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Equation>> equation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     EquationPointers equations;
     Pointer<Equation> eq;
@@ -635,11 +670,13 @@ protected
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
+      // uniquely name the equation
       Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
-      iterators := listAppend(Equation.getForIteratorCrefs(Pointer.access(eqn_ptr)), iterators);
+      // make all iterators the same and lower them
+      Equation.renameIterators(eqn_ptr, "$i");
+      lowerEquationIterators(Pointer.access(eqn_ptr), VarData.getVariables(varData), set);
     end for;
-    iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
-    varData := VarData.addTypedList(varData, list(lowerIterator(iter) for iter in iterators), NBVariable.VarData.VarType.ITERATOR);
+    varData   := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, VarData.getVariables(varData));
 
@@ -715,32 +752,23 @@ protected
         list<FEquation.Branch> branches;
         EquationAttributes attr;
         Integer rec_size;
+        Statement stmt;
+        Algorithm alg;
+        list<IfEquationBody> bodies;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty)) algorithm
         attr := lowerEquationAttributes(ty, init);
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
 
-      // sometimes regular equalities are array equations aswell. Need to update frontend?
-      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        guard(Type.isArray(ty)) algorithm
-        attr := lowerEquationAttributes(ty, init);
-      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
-
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
         attr := lowerEquationAttributes(ty, init);
-        if Type.isComplex(ty) then
-          try
-            SOME(rec_size) := Type.complexSize(ty);
-          else
-            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
-              + ": could not determine complex type size of \n" + FEquation.toString(frontend_equation)});
-            fail();
-          end try;
-          result := {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, rec_size))};
-        else
-          result := {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
-        end if;
+        result := match ty
+          case Type.ARRAY()   then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
+          case Type.COMPLEX() then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
+          case Type.TUPLE()   then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
+                              else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
+        end match;
       then result;
 
       case FEquation.FOR(range = SOME(range)) algorithm
@@ -749,12 +777,23 @@ protected
           // E.g.: DISCRETE, EvalStages
           iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
           for eq in frontend_equation.body loop
-            new_body := listAppend(lowerEquation(eq, init), new_body);
+            for body_elem_ptr in lowerEquation(eq, init) loop
+              body_elem := Pointer.access(body_elem_ptr);
+              new_body := match body_elem
+                case Equation.IF_EQUATION() algorithm
+                  bodies := IfEquationBody.split(body_elem.body);
+                  for body in bodies loop
+                    new_body := Pointer.create(BEquation.IF_EQUATION(IfEquationBody.size(body), body, body_elem.source, body_elem.attr)) :: new_body;
+                  end for;
+                then new_body;
+                else body_elem_ptr :: new_body;
+              end match;
+            end for;
           end for;
           for body_elem_ptr in new_body loop
             body_elem := Pointer.access(body_elem_ptr);
             body_elem := BEquation.FOR_EQUATION(
-              ty      = Type.liftArrayLeftList(Equation.getType(body_elem), {Dimension.fromRange(range)}),
+              size    = Expression.rangeSize(range) * Equation.size(body_elem_ptr),
               iter    = Iterator.SINGLE(iterator, range),
               body    = {body_elem},
               source  = frontend_equation.source,
@@ -778,11 +817,18 @@ protected
       then result;
 
       // if equation
-      case FEquation.IF()     then {Pointer.create(lowerIfEquation(frontend_equation, init))};
+      case FEquation.IF() then {Pointer.create(lowerIfEquation(frontend_equation, init))};
 
       // When equation cases
       case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
       case FEquation.ASSERT() then lowerWhenEquation(frontend_equation, init);
+
+      // wrap no return call in algorithm
+      case FEquation.NORETCALL() algorithm
+        stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.setInputsOutputs(alg);
+      then {lowerAlgorithm(alg, init)};
 
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
@@ -791,9 +837,6 @@ protected
       then fail();
       case FEquation.REINIT() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for REINIT expression without condition:\n" + FEquation.toString(frontend_equation)});
-      then fail();
-      case FEquation.NORETCALL() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for NORETCALL expression without condition:\n" + FEquation.toString(frontend_equation)});
       then fail();
 
       else algorithm
@@ -816,7 +859,7 @@ protected
 
       case FEquation.IF(branches = branches, source = source)
         algorithm
-          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
+          attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
           SOME(ifEqBody) := lowerIfEquationBody(branches, init);
           // ToDo: compute correct size
       then BEquation.IF_EQUATION(IfEquationBody.size(ifEqBody), ifEqBody, source, attr);
@@ -862,7 +905,8 @@ protected
       // We should never get an empty list here since the last condition has to
       // be TRUE. If-Equations have to have a plain else case for consistency!
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n"
+          + List.toString(branches, function FEquation.Branch.toString(indent = ""), "", "\t", "\n", "\n")});
       then fail();
 
     end match;
@@ -931,14 +975,18 @@ protected
       case FEquation.WHEN(branches = branches, source = source)
         algorithm
           // When equation inside initial actually not allowed. Throw error?
-          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
           bodies := BEquation.WhenEquationBody.split(whenEqBody);
-      then list(Pointer.create(BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(b), b, source, attr)) for b in bodies);
+      then list(Pointer.create(BEquation.WHEN_EQUATION(
+        size    = BEquation.WhenEquationBody.size(b),
+        body    = b,
+        source  = source,
+        attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
+      )) for b in bodies);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
-          attr := NBEquation.EQ_ATTR_EMPTY_DISCRETE;
+          attr := EquationAttributes.default(EquationKind.EMPTY, init);
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
       then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
 
@@ -1059,7 +1107,7 @@ protected
     end match;
   end lowerWhenBranchStatement;
 
-  function lowerAlgorithm
+  public function lowerAlgorithm
     input Algorithm alg;
     input Boolean init;
     output Pointer<Equation> eq;
@@ -1071,20 +1119,28 @@ protected
     // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! export inputs
     size := sum(ComponentRef.size(out) for out in alg.outputs);
-    attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
-            elseif ComponentRef.listHasDiscrete(alg.outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
-            else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
+
+    // can an algorithm output even be discrete?
+    if listEmpty(alg.outputs) then
+      attr := EquationAttributes.default(EquationKind.EMPTY, init);
+    elseif ComponentRef.listHasDiscrete(alg.outputs) then
+      attr := EquationAttributes.default(EquationKind.DISCRETE, init);
+    else
+      attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
+    end if;
     eq := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
   end lowerAlgorithm;
 
-  function lowerEquationAttributes
+  protected function lowerEquationAttributes
     input Type ty;
     input Boolean init;
     output EquationAttributes attr;
   algorithm
-    attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
-            elseif Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
-            else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
+    if Type.isDiscrete(ty) then
+      attr := EquationAttributes.default(EquationKind.DISCRETE, init);
+    else
+      attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
+    end if;
   end lowerEquationAttributes;
 
   function lowerComponentReferences
@@ -1100,14 +1156,16 @@ protected
   algorithm
     exp := match exp
       local
-        Type ty;
-        ComponentRef cref;
         Call call;
-      case Expression.CREF(ty = ty, cref = cref) then Expression.CREF(ty, lowerComponentReference(cref, variables));
+
+      case Expression.CREF() guard(not ComponentRef.isNameNode(exp.cref))
+      then Expression.CREF(exp.ty, lowerComponentReference(exp.cref, variables));
+
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
       then exp;
+
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
@@ -1136,49 +1194,54 @@ protected
     end try;
   end lowerComponentReference;
 
-  function collectBindingIterators
-    "collects all iterators in bindings and creates variables for them.
+  function collectIterators
+    "collects all iterators in expressions and creates variables for them.
     in bindings they are only known locally but they still need a respective variable"
     input output Expression exp;
     input VariablePointers variables;
-    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+    input UnorderedSet<VariablePointer> set;
   algorithm
+    try
     () := match exp
       local
-        ComponentRef cref;
         Call call;
 
-      case Expression.CREF(cref = cref) guard(not VariablePointers.containsCref(cref, variables)) algorithm
-        Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables)
+        or ComponentRef.isNameNode(exp.cref) or ComponentRef.isWild(exp.cref))) algorithm
+        UnorderedSet.add(lowerIterator(exp.cref), set);
       then ();
 
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
         for tpl in call.iters loop
-          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+          collectIterator(Util.tuple21(tpl), variables, set);
         end for;
       then ();
 
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         for tpl in call.iters loop
-          collectIterator(Util.tuple21(tpl), variables, binding_iter_lst);
+          collectIterator(Util.tuple21(tpl), variables, set);
         end for;
       then ();
       else ();
     end match;
-  end collectBindingIterators;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Expression.toString(exp)});
+      fail();
+    end try;
+  end collectIterators;
 
   function collectIterator
     "collects all iterators in bindings and creates variables for them.
     in bindings they are only known locally but they still need a respective variable"
     input InstNode iterator;
     input VariablePointers variables;
-    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+    input UnorderedSet<VariablePointer> set;
   protected
     ComponentRef cref;
   algorithm
     cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
     if not VariablePointers.containsCref(cref, variables) then
-      Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      UnorderedSet.add(lowerIterator(cref), set);
     end if;
   end collectIterator;
 
@@ -1214,6 +1277,25 @@ public
     end match;
   end lowerComponentReferenceInstNode;
 
+  function lowerEquationIterators
+    "lowers all iterators that occur in this equation and
+    add the generated variables to a set"
+    input output Equation eqn;
+    input VariablePointers variables;
+    input UnorderedSet<VariablePointer> set;
+  protected
+    Iterator iter = Equation.getForIterator(eqn);
+    list<ComponentRef> iterators;
+  algorithm
+    // get all iterators from the for-loop-frames (if there are any)
+    (iterators, _) := Iterator.getFrames(iter);
+    for iter in iterators loop
+      UnorderedSet.add(lowerIterator(iter), set);
+    end for;
+    // get all iterators from the equation body
+    Equation.map(eqn, function collectIterators(variables = variables, set = set));
+  end lowerEquationIterators;
+
   function lowerIterator
     input ComponentRef iterator;
     output Pointer<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
@@ -1235,5 +1317,130 @@ public
       else exp;
     end match;
   end lowerIteratorExp;
+
+  function lowerFunctions
+    input output FunctionTree funcTree;
+  protected
+    // ToDo: replace all function trees with this UnorderedMap
+    UnorderedMap<Path, Function> functions = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
+  protected
+    Path path;
+    Function fn;
+  algorithm
+    for tpl in FunctionTree.toList(funcTree) loop
+      (path, fn) := tpl;
+      (fn, funcTree) := Differentiate.resolvePartialDerivatives(fn, funcTree);
+      UnorderedMap.add(path, fn, functions);
+    end for;
+  end lowerFunctions;
+
+  function backenddaeinfo
+    input BackendDAE bdae;
+  algorithm
+    if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
+      _ := match bdae
+        local
+          VarData varData;
+          EqData eqData;
+          String p_ode, p_alg, p_ode_e, p_alg_e, p_clk, p_ini, p_ini_0;
+          String states, discretes, discrete_states, clocked_states, inputs;
+
+        case MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+          // collect partition size info
+          p_ode   := intString(listLength(bdae.ode));
+          p_alg   := intString(listLength(bdae.algebraic));
+          p_ode_e := intString(listLength(bdae.ode_event));
+          p_alg_e := intString(listLength(bdae.alg_event));
+          p_clk   := "0";
+          p_ini   := intString(listLength(bdae.init));
+          p_ini_0 := if isSome(bdae.init_0) then intString(listLength(Util.getOption(bdae.init_0))) else "0";
+
+          // collect variable info
+          states          := intString(VariablePointers.scalarSize(varData.states)) + " (" + intString(VariablePointers.size(varData.states)) + ")";
+          discretes       := intString(VariablePointers.scalarSize(varData.discretes)) + " (" + intString(VariablePointers.size(varData.discretes)) + ")";
+          discrete_states := intString(VariablePointers.scalarSize(varData.discrete_states)) + " (" + intString(VariablePointers.size(varData.discrete_states)) + ")";
+          clocked_states  := "0 (0)";
+          inputs          := intString(VariablePointers.scalarSize(varData.top_level_inputs)) + " (" + intString(VariablePointers.size(varData.top_level_inputs)) + ")";
+
+          if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
+            states := states + " " + List.toString(VariablePointers.toList(varData.states), BVariable.nameString);
+          else
+            states := states + " ('-d=stateselection' for list of states)";
+          end if;
+
+          if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
+            discretes := discretes + " " + List.toString(VariablePointers.toList(varData.discretes), BVariable.nameString);
+            inputs := inputs + " " + List.toString(VariablePointers.toList(varData.top_level_inputs), BVariable.nameString);
+          else
+            discretes := discretes + " ('-d=discreteinfo' for list of discrete variables)";
+            inputs := inputs + " ('-d=discreteinfo' for list of top level inputs)";
+          end if;
+
+          if  Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
+            discrete_states := discrete_states + " " + List.toString(VariablePointers.toList(varData.discrete_states), BVariable.nameString);
+            clocked_states := clocked_states + " {NOT YET AVAILABLE}";
+          else
+            discrete_states := discrete_states + " ('-d=discreteinfo' or '-d=stateselection' for list of discrete states)";
+            clocked_states := clocked_states + " ('-d=discreteinfo' or '-d=stateselection' for list of clocked states)";
+          end if;
+
+          Error.addCompilerNotification(
+            "Partition statistics after passing the back-end:\n"
+            + " * Number of ODE partitions: ..................... " + p_ode + "\n"
+            + " * Number of algebraic partitions: ............... " + p_alg + "\n"
+            + " * Number of ODE event partitions: ............... " + p_ode_e + "\n"
+            + " * Number of algebraic event partitions: ......... " + p_alg_e + "\n"
+            + " * Number of clocked partitions: ................. " + p_clk + "\n"
+            + " * Number of initial partitions: ................. " + p_ini + "\n"
+            + " * Number of initial(lambda=0) partitions: ....... " + p_ini_0);
+
+          Error.addCompilerNotification(
+            "Variable statistics after passing the back-end:\n"
+            + " * Number of states: ............................. " + states + "\n"
+            + " * Number of discrete states: .................... " + discrete_states + "\n"
+            + " * Number of clocked states: ..................... " + clocked_states + "\n"
+            + " * Number of discrete variables: ................. " + discretes + "\n"
+            + " * Number of top-level inputs: ................... " + inputs);
+
+          // collect strong component info simulation
+          strongcomponentinfo("Simulation", {bdae.ode, bdae.algebraic, bdae.ode_event, bdae.alg_event});
+          // collect strong component info initialization
+          strongcomponentinfo("Initialization", {bdae.init});
+          if Util.isSome(bdae.init_0) then
+            strongcomponentinfo("Initialization (lambda=0)", {Util.getOption(bdae.init_0)});
+          end if;
+
+        then ();
+      end match;
+    end if;
+  end backenddaeinfo;
+
+  function strongcomponentinfo
+    input String phase;
+    input list<list<System>> systems;
+  protected
+    CountCollector c = CountCollector.COUNT_COLLECTOR(0,0,0,0,0,0,0,0,0,0,0);
+    Pointer<CountCollector> collector_ptr = Pointer.create(c);
+    String single_sc, multi_sc, for_sc, alg_sc;
+  algorithm
+    for lst in systems loop
+      for system in lst loop
+        System.mapStrongComponents(system, function StrongComponent.strongComponentInfo(collector_ptr = collector_ptr));
+      end for;
+    end for;
+    c := Pointer.access(collector_ptr);
+    single_sc := intString(c.single_scalar + c.single_array + c.single_record) + " (scalar:" + intString(c.single_scalar) + ", array:" + intString(c.single_array) + ", record:" + intString(c.single_record) + ")";
+    multi_sc := intString(c.multi_algorithm + c.multi_when + c.multi_if) + " (algorithm:" + intString(c.multi_algorithm) + ", when:" + intString(c.multi_when) + ", if:" + intString(c.multi_if) + ", tuple:" + intString(c.multi_tpl) + ")";
+    for_sc := intString(c.generic_for + c.entwined_for) + " (generic: " + intString(c.generic_for) + ", entwined:" + intString(c.entwined_for) + ")";
+    alg_sc := intString(c.loop_lin + c.loop_nlin) + " (linear: " + intString(c.loop_lin) + ", nonlinear:" + intString(c.loop_nlin) + ")";
+
+    Error.addCompilerNotification(
+      "[" + phase + "] Strong Component statistics after passing the back-end:\n"
+      + " * Number of single strong components: ........... " + single_sc + "\n"
+      + " * Number of multi strong components: ............ " + multi_sc + "\n"
+      + " * Number of for-loop strong components: ......... " + for_sc + "\n"
+      + " * Number of algebraic-loop strong components: ... " + alg_sc);
+  end strongcomponentinfo;
+
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

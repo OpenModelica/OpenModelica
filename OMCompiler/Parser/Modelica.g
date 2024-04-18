@@ -234,7 +234,7 @@ stored_definition returns [void* ast]
 #endif
         }
       }
-      if (!listEmpty(commentAfter) && !listEmpty(cl)) {
+      if (!listEmpty(commentAfter) && cl && !listEmpty(cl)) {
         void *last = cl;
         while (!listEmpty(MMC_CDR(last))) {
           last = MMC_CDR(last);
@@ -564,11 +564,10 @@ element_list [ void **ann] returns [void* ast]
 
 element returns [void* ast]
 @declarations { void *final = 0, *innerouter = 0; }
-@init { f = 0; i = 0; o = 0; r = 0; void *redecl; OM_PUSHZ10(cc, $ast, cdef.ast, constr, final, innerouter, ic, ec, du, redecl); }
+@init { f = 0; i = 0; o = 0; r = 0; void *redecl; OM_PUSHZ9(cc, $ast, cdef.ast, constr, final, innerouter, ic, ec, redecl); }
   :
     ic=import_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ic, PARSER_INFO($start), mmc_mk_none()); }
   | ec=extends_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ec, PARSER_INFO($start),mmc_mk_none()); }
-  | du=defineunit_clause { $ast = du; }
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mmc_mk_bcon(f); innerouter = make_inner_outer(i,o); }
     ( ( cdef=class_definition[f != NULL] | cc=component_clause )
         {
@@ -614,15 +613,6 @@ import_clause returns [void* ast]
     }
   ;
   finally{ OM_POP(2); }
-
-defineunit_clause returns [void* ast]
-@init { id = 0; OM_PUSHZ1(na); } :
-  DEFINEUNIT id=IDENT (LPAR na=named_arguments RPAR)?
-    {
-      ast = Absyn__DEFINEUNIT(token_to_scon(id),or_nil(na), PARSER_INFO($id));
-    }
-  ;
-  finally{ OM_POP(1); }
 
 explicit_import_name returns [void* ast]
 @init { id = 0; OM_PUSHZ1(p); } :
@@ -775,6 +765,21 @@ type_specifier returns [void* ast]
   ;
   finally{ OM_POP(3); }
 
+type_specifier_no_dims returns [void* ast]
+@init { OM_PUSHZ2(np, ts); } :
+  np=name_path (lt=LESS ts=type_specifier_list gt=GREATER)?
+    {
+      if (ts != NULL) {
+        modelicaParserAssert(metamodelica_enabled(),"Algebraic data types are only available in MetaModelica", type_specifier_no_dims, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
+
+        $ast = Absyn__TCOMPLEX(np,ts,mmc_mk_none());
+      } else {
+        $ast = Absyn__TPATH(np,mmc_mk_none());
+      }
+    }
+  ;
+  finally{ OM_POP(2); }
+
 type_specifier_list returns [void* ast]
 @init { OM_PUSHZ3($np1.ast, np2, ast); } :
   np1=type_specifier ( COMMA np2=type_specifier_list )? { ast = mmc_mk_cons_typed(Absyn_TypeSpec, $np1.ast, or_nil(np2)); }
@@ -819,18 +824,25 @@ declaration returns [void* ast]
  */
 
 modification returns [void* ast]
-@init { OM_PUSHZ2(e.ast, cm); eq = 0; } :
-  ( cm=class_modification ( eq=EQUALS e=expression[metamodelica_enabled()] )?
-  | eq=EQUALS e=expression[metamodelica_enabled()]
-  | eq=ASSIGN e=expression[metamodelica_enabled()] {c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, ":= in modifiers has been deprecated",
+@init { OM_PUSHZ2(e, cm); eq = 0; } :
+  ( cm=class_modification ( eq=EQUALS e=modification_expression )?
+  | eq=EQUALS e=modification_expression
+  | eq=ASSIGN e=modification_expression {c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, ":= in modifiers has been deprecated",
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);}
   )
     {
-      $ast = Absyn__CLASSMOD(or_nil(cm), e.ast ? Absyn__EQMOD(e.ast,PARSER_INFO($eq)) : Absyn__NOMOD);
+      $ast = Absyn__CLASSMOD(or_nil(cm), e ? Absyn__EQMOD(e,PARSER_INFO($eq)) : Absyn__NOMOD);
     }
   ;
   finally{ OM_POP(2); }
+
+modification_expression returns [void* ast]
+@init { OM_PUSHZ1(e.ast); } :
+    e=expression[metamodelica_enabled()] { ast = e.ast; }
+  | BREAK        { ast = Absyn__BREAK; }
+  ;
+  finally{ OM_POP(1); }
 
 class_modification returns [void* ast]
 @init { OM_PUSHZ2(as, ast); } :
@@ -943,7 +955,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast]
 
 component_clause1 returns [void* ast]
 @init { OM_PUSHZ3(attr, ts.ast, comp_decl); } :
-  attr=base_prefix ts=type_specifier comp_decl=component_declaration1
+  attr=base_prefix ts=type_specifier_no_dims comp_decl=component_declaration1
     {
       ast = Absyn__COMPONENTS(attr, $ts.ast, mmc_mk_cons_typed(Absyn_ComponentItem, comp_decl, mmc_mk_nil()));
     }
@@ -1696,7 +1708,7 @@ factor returns [void* ast]
 
 primary returns [void* ast]
 @declarations { int tupleExpressionIsTuple = 0; }
-@init { v = 0; for_or_el.isFor = 0; OM_PUSHZ3(ptr.ast, el, for_or_el.ast) } :
+@init { v = 0; for_or_el.isFor = 0; OM_PUSHZ4(ptr.ast, el, subs, for_or_el.ast) } :
   ( v=UNSIGNED_INTEGER
     {
       char* chars = (char*)$v.text->chars;
@@ -1785,14 +1797,25 @@ primary returns [void* ast]
   | ptr=component_reference__function_call { $ast = ptr.ast; }
   | DER el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("der"), mmc_mk_nil()),el,mmc_mk_nil()); }
   | PURE el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("pure"), mmc_mk_nil()),el,mmc_mk_nil()); }
-  | LPAR el=output_expression_list[&tupleExpressionIsTuple]
+  | LPAR el=output_expression_list[&tupleExpressionIsTuple] subs=array_subscripts?
     {
-      $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
+      if (subs) {
+        if (tupleExpressionIsTuple) {
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Tuple expression can not be subscripted.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        } else {
+          $ast = Absyn__SUBSCRIPTED_5fEXP(el, subs);
+        }
+      } else {
+        $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
 #if defined(OMC_BOOTSTRAPPING)
-      el;
+        el;
 #else
-      Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
+        Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
 #endif
+      }
     }
   | LBRACK el=matrix_expression_list RBRACK { $ast = Absyn__MATRIX(el); }
   | LBRACE for_or_el=for_or_expression_list RBRACE
@@ -1811,7 +1834,7 @@ primary returns [void* ast]
   | T_END { $ast = Absyn__END; }
   )
   ;
-  finally{ OM_POP(3); }
+  finally{ OM_POP(4); }
 
 matrix_expression_list returns [void* ast]
 @init{ OM_PUSHZ2(e1, e2); } :

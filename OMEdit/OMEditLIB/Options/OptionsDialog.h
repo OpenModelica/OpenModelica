@@ -87,11 +87,11 @@ private:
 
   static OptionsDialog *mpInstance;
 public:
+  static bool isCreated() {return mpInstance != 0;}
   static OptionsDialog* instance() {
     create();
     return mpInstance;
   }
-  ~OptionsDialog() { mpInstance = nullptr; }
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();
@@ -291,7 +291,7 @@ public:
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
   QSpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
-  QCheckBox* getEnableInstanceAPICheckBox() {return mpEnableInstanceAPICheckBox;}
+  QCheckBox* getDisableInstanceAPICheckBox() {return mpDisableInstanceAPICheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -313,7 +313,7 @@ private:
   QComboBox *mpActivateAccessAnnotationsComboBox;
   QCheckBox *mpCreateBackupFileCheckbox;
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
-  QGroupBox *mpLibrariesBrowserGroupBox;
+  QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
   Label *mpLibraryIconTextLengthLabel;
@@ -331,7 +331,7 @@ private:
   QCheckBox *mpShowLatestNewsCheckBox;
   QSpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
   QGroupBox *mpOptionalFeaturesGroupBox;
-  QCheckBox *mpEnableInstanceAPICheckBox;
+  QCheckBox *mpDisableInstanceAPICheckBox;
 public slots:
   void selectWorkingDirectory();
   void selectTerminalCommand();
@@ -717,6 +717,7 @@ public:
   QSpinBox* getOutputSizeSpinBox() {return mpOutputSizeSpinBox;}
   QCheckBox* getResetMessagesNumberBeforeSimulationCheckBox() {return mpResetMessagesNumberBeforeSimulationCheckBox;}
   QCheckBox* getClearMessagesBrowserBeforeSimulationCheckBox() {return mpClearMessagesBrowserBeforeSimulationCheckBox;}
+  QCheckBox* getEnlargeMessageBrowserCheckBox() {return mpEnlargeMessageBrowserCheckBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
@@ -736,6 +737,7 @@ private:
   QSpinBox *mpOutputSizeSpinBox;
   QCheckBox *mpResetMessagesNumberBeforeSimulationCheckBox;
   QCheckBox *mpClearMessagesBrowserBeforeSimulationCheckBox;
+  QCheckBox *mpEnlargeMessageBrowserCheckBox;
   QGroupBox *mpFontColorsGroupBox;
   Label *mpFontFamilyLabel;
   QFontComboBox *mpFontFamilyComboBox;

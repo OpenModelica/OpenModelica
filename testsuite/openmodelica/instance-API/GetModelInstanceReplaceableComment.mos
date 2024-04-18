@@ -1,0 +1,119 @@
+// name: GetModelInstanceReplaceableComment
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package ReplaceableRecordDescription
+    model ClassWithReplaceables
+
+    replaceable record replRecord = ReplaceableRecordDescription.RecordToBeReplaced \"Description string for replaceable record\";
+
+    replaceable model replModel = ReplaceableRecordDescription.ModelToBeReplaced \"Description string for replaceable model\";
+
+    replaceable model replModelConstraint = ReplaceableRecordDescription.ModelToBeReplaced constrainedby ReplaceableRecordDescription.ModelToBeReplaced \"Description string for replaceable model with constraint\";
+
+    end ClassWithReplaceables;
+
+    model ModelToBeReplaced
+    end ModelToBeReplaced;
+
+    record RecordToBeReplaced
+    end RecordToBeReplaced;
+
+    model View
+      ReplaceableRecordDescription.ClassWithReplaceables classWithReplaceables;
+    end View;
+  end ReplaceableRecordDescription;
+");
+
+getModelInstance(ReplaceableRecordDescription.View, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"ReplaceableRecordDescription.View\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"classWithReplaceables\",
+//       \"type\": {
+//         \"name\": \"ReplaceableRecordDescription.ClassWithReplaceables\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"replRecord\",
+//             \"restriction\": \"record\",
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             },
+//             \"baseClass\": \"ReplaceableRecordDescription.RecordToBeReplaced\",
+//             \"comment\": \"Description string for replaceable record\",
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 5,
+//               \"columnStart\": 17,
+//               \"lineEnd\": 5,
+//               \"columnEnd\": 128
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"replModel\",
+//             \"restriction\": \"model\",
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             },
+//             \"baseClass\": \"ReplaceableRecordDescription.ModelToBeReplaced\",
+//             \"comment\": \"Description string for replaceable model\",
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 7,
+//               \"columnStart\": 17,
+//               \"lineEnd\": 7,
+//               \"columnEnd\": 124
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"replModelConstraint\",
+//             \"restriction\": \"model\",
+//             \"prefixes\": {
+//               \"replaceable\": {
+//                 \"constrainedby\": \"ReplaceableRecordDescription.ModelToBeReplaced\",
+//                 \"comment\": \"Description string for replaceable model with constraint\"
+//               }
+//             },
+//             \"baseClass\": \"ReplaceableRecordDescription.ModelToBeReplaced\",
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 9,
+//               \"columnStart\": 17,
+//               \"lineEnd\": 9,
+//               \"columnEnd\": 92
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 11,
+//           \"columnEnd\": 30
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 19,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 21,
+//     \"columnEnd\": 13
+//   }
+// }"
+// endResult

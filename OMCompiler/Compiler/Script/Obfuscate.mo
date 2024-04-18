@@ -36,6 +36,7 @@ encapsulated package Obfuscate
   import FBuiltin;
   import SCode;
   import SCodeUtil;
+  import StringUtil;
   import System;
   import UnorderedMap;
   import Util;
@@ -518,13 +519,17 @@ encapsulated package Obfuscate
     input output SCode.Mod mod;
     input Env env;
     input Boolean obfuscateName = false;
+    input Boolean obfuscateBinding = true;
   algorithm
     () := match mod
       case SCode.Mod.MOD()
         algorithm
           mod.subModLst := list(obfuscateAnnotationSubMod(s, env, obfuscateName)
             for s guard isAllowedAnnotation(s) in mod.subModLst);
-          mod.binding := obfuscateExpOpt(mod.binding, env);
+
+          if obfuscateBinding then
+            mod.binding := obfuscateExpOpt(mod.binding, env);
+          end if;
         then
           ();
 
@@ -552,7 +557,8 @@ encapsulated package Obfuscate
       case "unassignedMessage" then false;
       case "Protection" then false;
       case "Authorization" then false;
-      else not Util.stringStartsWith("__", mod.ident);
+      else StringUtil.startsWith(mod.ident, "__OpenModelica") or
+           not StringUtil.startsWith(mod.ident, "__");
     end match;
   end isAllowedAnnotation;
 
@@ -561,7 +567,7 @@ encapsulated package Obfuscate
     input Env env;
     input Boolean obfuscateName;
   protected
-    Boolean obfuscate_name;
+    Boolean obfuscate_name, obfuscate_binding;
   algorithm
     if obfuscateName then
       mod.ident := obfuscateIdentifier(mod.ident, env, ElementType.OTHER);
@@ -572,7 +578,12 @@ encapsulated package Obfuscate
       else false;
     end match;
 
-    mod.mod := obfuscateAnnotationMod(mod.mod, env, obfuscate_name);
+    obfuscate_binding := match mod.ident
+      case "__OpenModelica_tearingSelect" then false;
+      else true;
+    end match;
+
+    mod.mod := obfuscateAnnotationMod(mod.mod, env, obfuscate_name, obfuscate_binding);
   end obfuscateAnnotationSubMod;
 
   function obfuscateExpOpt

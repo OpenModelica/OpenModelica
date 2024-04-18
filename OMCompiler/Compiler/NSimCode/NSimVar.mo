@@ -57,12 +57,15 @@ protected
 
   // Backend imports
   import BVariable = NBVariable;
+  import NBEvents.{EventInfo, Condition};
 
   // Old Simcode imports
+  import OldSimCode = SimCode;
   import OldSimCodeVar = SimCodeVar;
 
   // SimCode imports
   import SimCode = NSimCode;
+  import NSimCode.SimCodeIndices;
 
   // Util imports
   import Error;
@@ -183,7 +186,7 @@ public
             numArrayElement     = {},
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
-            hideResult          = false,
+            hideResult          = var.backendinfo.annotations.hideResult,
             inputIndex          = NONE(),
             matrixName          = NONE(),
             variability         = NONE(),
@@ -212,25 +215,31 @@ public
         case VarType.SIMULATION algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.realVarIndex) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.realVarIndex := simCodeIndices.realVarIndex +1;
+          simCodeIndices.realVarIndex := simCodeIndices.realVarIndex + 1;
         then ();
 
         case VarType.PARAMETER algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.realParamIndex) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.realParamIndex := simCodeIndices.realParamIndex +1;
+          simCodeIndices.realParamIndex := simCodeIndices.realParamIndex + 1;
         then ();
 
         case VarType.ALIAS algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.realAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.realAliasIndex := simCodeIndices.realAliasIndex +1;
+          simCodeIndices.realAliasIndex := simCodeIndices.realAliasIndex + 1;
         then ();
 
         case VarType.RESIDUAL algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.residualIndex) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.residualIndex := simCodeIndices.residualIndex +1;
+          simCodeIndices.residualIndex := simCodeIndices.residualIndex + 1;
+        then ();
+
+        case VarType.EXTERNAL_OBJECT algorithm
+          Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.extObjIndex) :: Pointer.access(acc));
+          simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
+          simCodeIndices.extObjIndex := simCodeIndices.extObjIndex + 1;
         then ();
 
         else algorithm
@@ -252,8 +261,19 @@ public
     end getName;
 
     function getIndex
-      input SimVar var;
-      output Integer index = var.index;
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, SimVar> sim_map;
+      output Integer index;
+    protected
+      SimVar var;
+    algorithm
+      try
+        var := UnorderedMap.getSafe(cref, sim_map, sourceInfo());
+        index := var.index;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
+        fail();
+      end try;
     end getIndex;
 
     function convert
@@ -450,45 +470,40 @@ public
     algorithm
       oldVarKind := match varKind
         local
-          BackendExtension.VariableKind qual;
           Variable var;
           Option<DAE.ComponentRef> oldCrefOpt;
           DAE.ComponentRef oldCref;
 
         case BackendExtension.ALGEBRAIC()               then OldBackendDAE.VARIABLE();
-        case qual as BackendExtension.STATE()
+        case BackendExtension.STATE()
           algorithm
-            if isSome(qual.derivative) then
-              var := Pointer.access(Util.getOption(qual.derivative));
+            if isSome(varKind.derivative) then
+              var := Pointer.access(Util.getOption(varKind.derivative));
               oldCrefOpt := SOME(ComponentRef.toDAE(var.name));
             else
               oldCrefOpt := NONE();
             end if;
-        then OldBackendDAE.STATE(qual.index, oldCrefOpt, qual.natural);
+        then OldBackendDAE.STATE(varKind.index, oldCrefOpt, varKind.natural);
         case BackendExtension.STATE_DER()               then OldBackendDAE.STATE_DER();
         case BackendExtension.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case BackendExtension.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case BackendExtension.DISCRETE()                then OldBackendDAE.DISCRETE();
-        case qual as BackendExtension.DISCRETE_STATE()
-          algorithm
-            var := Pointer.access(qual.previous);
-            oldCref := ComponentRef.toDAE(var.name);
-        then OldBackendDAE.CLOCKED_STATE(oldCref, qual.fixed);
+        case BackendExtension.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we dont differ between discrete states and discretes in the old backend. is this correct?
         case BackendExtension.PREVIOUS()                then OldBackendDAE.DISCRETE();
         case BackendExtension.PARAMETER()               then OldBackendDAE.PARAM();
         case BackendExtension.CONSTANT()                then OldBackendDAE.CONST();
         //ToDo: check this! is this correct? need typechecking?
         case BackendExtension.START()                   then OldBackendDAE.VARIABLE();
-        case qual as BackendExtension.EXTOBJ()          then OldBackendDAE.EXTOBJ(qual.fullClassName);
+        case BackendExtension.EXTOBJ()                  then OldBackendDAE.EXTOBJ(varKind.fullClassName);
         case BackendExtension.JAC_VAR()                 then OldBackendDAE.JAC_VAR();
-        case BackendExtension.JAC_DIFF_VAR()            then OldBackendDAE.JAC_DIFF_VAR();
+        case BackendExtension.JAC_TMP_VAR()             then OldBackendDAE.JAC_TMP_VAR();
         case BackendExtension.SEED_VAR()                then OldBackendDAE.SEED_VAR();
         case BackendExtension.OPT_CONSTR()              then OldBackendDAE.OPT_CONSTR();
         case BackendExtension.OPT_FCONSTR()             then OldBackendDAE.OPT_FCONSTR();
         case BackendExtension.OPT_INPUT_WITH_DER()      then OldBackendDAE.OPT_INPUT_WITH_DER();
         case BackendExtension.OPT_INPUT_DER()           then OldBackendDAE.OPT_INPUT_DER();
         case BackendExtension.OPT_TGRID()               then OldBackendDAE.OPT_TGRID();
-        case qual as BackendExtension.OPT_LOOP_INPUT()  then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(qual.replaceCref));
+        case BackendExtension.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
         // ToDo maybe deprecated:
         case BackendExtension.ALG_STATE()               then OldBackendDAE.ALG_STATE();
         case BackendExtension.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
@@ -722,10 +737,12 @@ public
       str := str + SimVar.listToString(vars.stateVars, "States");
       str := str + SimVar.listToString(vars.derivativeVars, "Derivatives");
       str := str + SimVar.listToString(vars.algVars, "Algebraic Variables");
+      str := str + SimVar.listToString(vars.discreteAlgVars, "Discrete Algebraic Variables");
       str := str + SimVar.listToString(vars.intAlgVars, "Integer Algebraic Variables");
       str := str + SimVar.listToString(vars.boolAlgVars, "Boolean Algebraic Variables");
       str := str + SimVar.listToString(vars.paramVars, "Real Parameters");
       str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters");
+      str := str + SimVar.listToString(vars.boolParamVars, "Boolean Parameters");
       str := str + SimVar.listToString(vars.residualVars, "Residual Variables");
       str := str + SimVar.listToString(vars.aliasVars, "Real Alias", true);
       // ToDo: all the other stuff
@@ -739,6 +756,7 @@ public
     protected
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {};
+      list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
       list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {};
@@ -756,24 +774,21 @@ public
       list<SimVar> dataReconSetBVars = {};
     algorithm
       _ := match varData
-        local
-          BVariable.VarData qual;
-
-        case qual as BVariable.VAR_DATA_SIM()
-          algorithm
-            ({stateVars}, simCodeIndices)                                               := createSimVarLists(qual.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({derivativeVars}, simCodeIndices)                                          := createSimVarLists(qual.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({algVars}, simCodeIndices)                                                 := createSimVarLists(qual.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({nonTrivialAlias}, simCodeIndices)                                         := createSimVarLists(qual.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices) := createSimVarLists(qual.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices) := createSimVarLists(qual.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
-            ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices) := createSimVarLists(qual.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
-            ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices) := createSimVarLists(qual.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-            ({residualVars}, simCodeIndices)                                            := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
+        case BVariable.VAR_DATA_SIM() algorithm
+          ({stateVars}, simCodeIndices)                                                   := createSimVarLists(varData.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({derivativeVars}, simCodeIndices)                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({algVars}, simCodeIndices)                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({nonTrivialAlias}, simCodeIndices)                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices)     := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2}, simCodeIndices) := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices)     := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
+          ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices)     := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
+          ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices)     := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({inputVars}, simCodeIndices)                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({residualVars}, simCodeIndices)                                                := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
         then ();
-
-        case qual as BVariable.VAR_DATA_JAC() then ();
-        case qual as BVariable.VAR_DATA_HES() then ();
+        case BVariable.VAR_DATA_JAC() then ();
+        case BVariable.VAR_DATA_HES() then ();
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
@@ -784,9 +799,9 @@ public
         stateVars                           = stateVars,
         derivativeVars                      = derivativeVars,
         algVars                             = listAppend(algVars, nonTrivialAlias),
-        discreteAlgVars                     = discreteAlgVars,
-        intAlgVars                          = intAlgVars,
-        boolAlgVars                         = boolAlgVars,
+        discreteAlgVars                     = listAppend(discreteAlgVars, discreteAlgVars2),
+        intAlgVars                          = listAppend(intAlgVars, intAlgVars2),
+        boolAlgVars                         = listAppend(boolAlgVars, boolAlgVars2),
         inputVars                           = inputVars,
         outputVars                          = outputVars,
         aliasVars                           = aliasVars,
@@ -795,7 +810,7 @@ public
         paramVars                           = paramVars,
         intParamVars                        = intParamVars,
         boolParamVars                       = boolParamVars,
-        stringAlgVars                       = stringAlgVars,
+        stringAlgVars                       = listAppend(stringAlgVars, stringAlgVars2),
         stringParamVars                     = stringParamVars,
         stringAliasVars                     = stringAliasVars,
         extObjVars                          = extObjVars,
@@ -1077,7 +1092,172 @@ public
    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
   type SplitType  = enumeration(NONE, TYPE);
-  type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL); // ToDo: PRE, OLD, RELATIONS...
+  type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL, EXTERNAL_OBJECT); // ToDo: PRE, OLD, RELATIONS...
+
+  uniontype VarInfo
+    record VAR_INFO
+      Integer numZeroCrossings;
+      Integer numTimeEvents;
+      Integer numRelations;
+      Integer numMathEventFunctions;
+      Integer numStateVars;
+      Integer numAlgVars;
+      Integer numDiscreteReal;
+      Integer numIntAlgVars;
+      Integer numBoolAlgVars;
+      Integer numAlgAliasVars;
+      Integer numIntAliasVars;
+      Integer numBoolAliasVars;
+      Integer numParams;
+      Integer numIntParams;
+      Integer numBoolParams;
+      Integer numOutVars;
+      Integer numInVars;
+      Integer numExternalObjects;
+      Integer numStringAlgVars;
+      Integer numStringParamVars;
+      Integer numStringAliasVars;
+      Integer numEquations;
+      Integer numLinearSystems;
+      Integer numNonLinearSystems;
+      Integer numMixedSystems;
+      Integer numStateSets;
+      Integer numJacobians;
+      Integer numOptimizeConstraints;
+      Integer numOptimizeFinalConstraints;
+      Integer numSensitivityParameters;
+      Integer numSetcVars;
+      Integer numDataReconVars;
+      Integer numRealIntputVars;
+      Integer numSetbVars;
+      Integer numRelatedBoundaryConditions;
+    end VAR_INFO;
+
+    function create
+      input SimVars vars;
+      input EventInfo eventInfo;
+      input SimCodeIndices simCodeIndices;
+      output VarInfo varInfo;
+    algorithm
+      varInfo := VAR_INFO(
+        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numTimeEvents                = listLength(UnorderedSet.toList(eventInfo.time_set)),
+        numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numMathEventFunctions        = eventInfo.numberMathEvents,
+        numStateVars                 = listLength(vars.stateVars),
+        numAlgVars                   = listLength(vars.algVars),
+        numDiscreteReal              = listLength(vars.discreteAlgVars),
+        numIntAlgVars                = listLength(vars.intAlgVars),
+        numBoolAlgVars               = listLength(vars.boolAlgVars),
+        numAlgAliasVars              = listLength(vars.aliasVars),
+        numIntAliasVars              = listLength(vars.intAliasVars),
+        numBoolAliasVars             = listLength(vars.boolAliasVars),
+        numParams                    = listLength(vars.paramVars),
+        numIntParams                 = listLength(vars.intParamVars),
+        numBoolParams                = listLength(vars.boolParamVars),
+        numOutVars                   = listLength(vars.outputVars),
+        numInVars                    = listLength(vars.inputVars),
+        numExternalObjects           = listLength(vars.extObjVars),
+        numStringAlgVars             = listLength(vars.stringAlgVars),
+        numStringParamVars           = listLength(vars.stringParamVars),
+        numStringAliasVars           = listLength(vars.stringAliasVars),
+        numEquations                 = simCodeIndices.equationIndex,
+        numLinearSystems             = simCodeIndices.linearSystemIndex,
+        numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
+        numMixedSystems              = 0,
+        numStateSets                 = 0,
+        numJacobians                 = simCodeIndices.nonlinearSystemIndex + 5, // #nonlinSystems + 5 simulation jacs (add state sets later!)
+        numOptimizeConstraints       = 0,
+        numOptimizeFinalConstraints  = 0,
+        numSensitivityParameters     = 0,
+        numSetcVars                  = 0,
+        numDataReconVars             = 0,
+        numRealIntputVars            = 0,
+        numSetbVars                  = 0,
+        numRelatedBoundaryConditions = 0);
+    end create;
+
+    function convert
+      input VarInfo varInfo;
+      output OldSimCode.VarInfo oldVarInfo;
+    algorithm
+      oldVarInfo := OldSimCode.VARINFO(
+        numZeroCrossings             = varInfo.numZeroCrossings,
+        numTimeEvents                = varInfo.numTimeEvents,
+        numRelations                 = varInfo.numRelations,
+        numMathEventFunctions        = varInfo.numMathEventFunctions,
+        numStateVars                 = varInfo.numStateVars,
+        numAlgVars                   = varInfo.numAlgVars,
+        numDiscreteReal              = varInfo.numDiscreteReal,
+        numIntAlgVars                = varInfo.numIntAlgVars,
+        numBoolAlgVars               = varInfo.numBoolAlgVars,
+        numAlgAliasVars              = varInfo.numAlgAliasVars,
+        numIntAliasVars              = varInfo.numIntAliasVars,
+        numBoolAliasVars             = varInfo.numBoolAliasVars,
+        numParams                    = varInfo.numParams,
+        numIntParams                 = varInfo.numIntParams,
+        numBoolParams                = varInfo.numBoolParams,
+        numOutVars                   = varInfo.numOutVars,
+        numInVars                    = varInfo.numInVars,
+        numExternalObjects           = varInfo.numExternalObjects,
+        numStringAlgVars             = varInfo.numStringAlgVars,
+        numStringParamVars           = varInfo.numStringParamVars,
+        numStringAliasVars           = varInfo.numStringAliasVars,
+        numEquations                 = varInfo.numEquations,
+        numLinearSystems             = varInfo.numLinearSystems,
+        numNonLinearSystems          = varInfo.numNonLinearSystems,
+        numMixedSystems              = varInfo.numMixedSystems,
+        numStateSets                 = varInfo.numStateSets,
+        numJacobians                 = varInfo.numJacobians,
+        numOptimizeConstraints       = varInfo.numOptimizeConstraints,
+        numOptimizeFinalConstraints  = varInfo.numOptimizeFinalConstraints,
+        numSensitivityParameters     = varInfo.numSensitivityParameters,
+        numSetcVars                  = varInfo.numSetcVars,
+        numDataReconVars             = varInfo.numDataReconVars,
+        numRealInputVars             = varInfo.numRealIntputVars,
+        numSetbVars                  = varInfo.numSetbVars,
+        numRelatedBoundaryConditions = varInfo.numRelatedBoundaryConditions);
+    end convert;
+  end VarInfo;
+
+  uniontype ExtObjInfo
+    record EXT_OBJ_INFO
+      list<SimVar> objects;
+      list<tuple<ComponentRef, ComponentRef>> aliases;
+    end EXT_OBJ_INFO;
+
+
+    function toString
+      input ExtObjInfo info;
+      output String str = SimVar.listToString(info.objects, "External Objects");
+    end toString;
+
+    function create
+      input VariablePointers external_objects;
+      output ExtObjInfo info;
+      input output SimVars vars;
+      input output SimCodeIndices simCodeIndices;
+    protected
+      Pointer<SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
+      Pointer<list<SimVar>> acc = Pointer.create({});
+      VarType varType = VarType.EXTERNAL_OBJECT;
+      list<SimVar> var_lst;
+    algorithm
+      VariablePointers.map(external_objects, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
+      simCodeIndices := Pointer.access(indices_ptr);
+      var_lst := listReverse(Pointer.access(acc));
+      vars.extObjVars := var_lst;
+      // todo: alias
+      info := EXT_OBJ_INFO(var_lst, {});
+    end create;
+
+    function convert
+      input ExtObjInfo info;
+      output OldSimCode.ExtObjInfo oldInfo;
+    algorithm
+      oldInfo := OldSimCode.EXTOBJINFO(SimVar.convertList(info.objects), {});
+    end convert;
+  end ExtObjInfo;
 
   annotation(__OpenModelica_Interface="backend");
 end NSimVar;

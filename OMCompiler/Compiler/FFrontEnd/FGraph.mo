@@ -851,7 +851,7 @@ public function scopeTypeToRestriction
 algorithm
   outRestriction := match inScopeType
     case FCore.PARALLEL_SCOPE() then SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION());
-    case FCore.FUNCTION_SCOPE() then SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false));
+    case FCore.FUNCTION_SCOPE() then SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.NO_PURITY()));
     else SCode.R_CLASS();
   end match;
 end scopeTypeToRestriction;

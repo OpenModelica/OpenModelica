@@ -303,7 +303,7 @@ typedef struct NLS_USERDATA NLS_USERDATA;
 typedef enum {
   NLS_FAILED = 0,                   /* NLS Solver failed to solve system */
   NLS_SOLVED = 1,                   /* NLS Solver solved system successfully */
-  NLS_SOLVED_LESS_ACCURACY = 2     /* NLS Solver found a solution with low accuracy */
+  NLS_SOLVED_LESS_ACCURACY = 2      /* NLS Solver found a solution with low accuracy */
 } NLS_SOLVER_STATUS;
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -338,6 +338,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
   void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
+  void (*freeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys);
   int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
   void (*getIterationVars)(DATA* data, double* array);
   int (*checkConstraints)(DATA* data, threadData_t *threadData);
@@ -355,6 +356,9 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   NLS_SOLVER_STATUS solved;            /* Specifiex if the NLS could be solved (with less accuracy) or failed */
   modelica_real lastTimeSolved;        /* save last successful solved point in time */
+
+  modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
+                                          false if `-lv_system` is specified but equationIndex is not in the list, else true */
 
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
@@ -431,6 +435,9 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_boolean solved;             /* true if solved in current step */
   modelica_boolean failed;             /* true if failed while last try with lapack */
 
+  modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
+                                          false if `-lv_system` is specified but equationIndex is not in the list, else true */
+
   // ToDo: Gather information from all threads if in parallel region
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
@@ -462,6 +469,9 @@ typedef struct MIXED_SYSTEM_DATA
 
   modelica_integer method;             /* not used yet */
   modelica_boolean solved;             /* true if solved in current step */
+
+  modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
+                                          false if `-lv_system` is specified but equationIndex is not in the list, else true */
 } MIXED_SYSTEM_DATA;
 #else
 typedef void* MIXED_SYSTEM_DATA;
@@ -553,6 +563,7 @@ typedef struct MODEL_DATA
   char* resultFileName;                /* default is <modelFilePrefix>_res.mat, but it can be overriden using -r=<resultFilename> */
   const char* modelDir;
   const char* modelGUID;
+  modelica_boolean encrypted;
   const char* initXMLData;
   char* resourcesDir;                   /* Resources directory, only set for FMUs */
   modelica_boolean runTestsuite;       /* true if this model was generated during testing */
@@ -687,7 +698,7 @@ typedef struct SIMULATION_INFO
   modelica_real stopTime;              /* Stop time of the simulation */
   int useStopTime;
   modelica_integer numSteps;
-  modelica_real stepSize;
+  modelica_real stepSize;              /* FIXME what is this? The integrator's current step size */
   modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;

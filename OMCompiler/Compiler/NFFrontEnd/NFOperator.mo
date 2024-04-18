@@ -682,6 +682,51 @@ public
     end match;
   end mathSymbol;
 
+  function classificationString
+    input Classification cla;
+    output String str;
+  protected
+    MathClassification mcl;
+    SizeClassification scl;
+  algorithm
+    (mcl, scl) := cla;
+    str := mathClassificationString(mcl) + sizeClassificationString(scl);
+  end classificationString;
+
+  function mathClassificationString
+    input MathClassification mcl;
+    output String str;
+  algorithm
+    str := match mcl
+      case MathClassification.ADDITION        then "[ADD]";
+      case MathClassification.SUBTRACTION     then "[SUB]";
+      case MathClassification.MULTIPLICATION  then "[MUL]";
+      case MathClassification.DIVISION        then "[DIV]";
+      case MathClassification.POWER           then "[POW]";
+      case MathClassification.LOGICAL         then "[LOG]";
+      case MathClassification.RELATION        then "[REL]";
+                                              else fail();
+    end match;
+  end mathClassificationString;
+
+  function sizeClassificationString
+    input SizeClassification scl;
+    output String str;
+  algorithm
+    str := match scl
+      case SizeClassification.SCALAR          then "[SCALAR]";
+      case SizeClassification.ELEMENT_WISE    then "[ELMWIS]";
+      case SizeClassification.ARRAY_SCALAR    then "[ARR-SC]";
+      case SizeClassification.SCALAR_ARRAY    then "[SC-ARR]";
+      case SizeClassification.MATRIX          then "[MATRIX]";
+      case SizeClassification.VECTOR_MATRIX   then "[VEC-MA]";
+      case SizeClassification.MATRIX_VECTOR   then "[MA-VEC]";
+      case SizeClassification.LOGICAL         then "[LOGICL]";
+      case SizeClassification.RELATION        then "[RELATN]";
+                                              else fail();
+    end match;
+  end sizeClassificationString;
+
   function classify
     input Operator op;
     output Classification cl;
@@ -739,27 +784,36 @@ public
       case (MathClassification.ADDITION,        SizeClassification.SCALAR)                  then Op.ADD;
       case (MathClassification.SUBTRACTION,     SizeClassification.SCALAR)                  then Op.SUB;
       case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR)                  then Op.MUL;
+      // this has to be done correctly. use type of the expressions?
+      //case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR)                  then Op.SCALAR_PRODUCT;
       case (MathClassification.DIVISION,        SizeClassification.SCALAR)                  then Op.DIV;
       case (MathClassification.POWER,           SizeClassification.SCALAR)                  then Op.POW;
+
       case (MathClassification.ADDITION,        SizeClassification.ELEMENT_WISE)            then Op.ADD_EW;
       case (MathClassification.SUBTRACTION,     SizeClassification.ELEMENT_WISE)            then Op.SUB_EW;
       case (MathClassification.MULTIPLICATION,  SizeClassification.ELEMENT_WISE)            then Op.MUL_EW;
       case (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE)            then Op.DIV_EW;
       case (MathClassification.POWER,           SizeClassification.ELEMENT_WISE)            then Op.POW_EW;
       case (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR)            then Op.MUL_ARRAY_SCALAR;
+
       case (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR)            then Op.ADD_ARRAY_SCALAR;
+      case (MathClassification.SUBTRACTION,     SizeClassification.ARRAY_SCALAR)            then Op.SUB_ARRAY_SCALAR;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR)            then Op.MUL_ARRAY_SCALAR;
+      case (MathClassification.DIVISION,        SizeClassification.ARRAY_SCALAR)            then Op.DIV_ARRAY_SCALAR;
+      case (MathClassification.POWER,           SizeClassification.ARRAY_SCALAR)            then Op.POW_ARRAY_SCALAR;
+
+      case (MathClassification.ADDITION,        SizeClassification.SCALAR_ARRAY)            then Op.ADD_SCALAR_ARRAY;
       case (MathClassification.SUBTRACTION,     SizeClassification.SCALAR_ARRAY)            then Op.SUB_SCALAR_ARRAY;
-      case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR)                  then Op.SCALAR_PRODUCT;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR_ARRAY)            then Op.MUL_SCALAR_ARRAY;
+      case (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY)            then Op.DIV_SCALAR_ARRAY;
+      case (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY)            then Op.POW_SCALAR_ARRAY;
+
+      case (MathClassification.POWER,           SizeClassification.MATRIX)                  then Op.POW_MATRIX;
       case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX)                  then Op.MATRIX_PRODUCT;
       case (MathClassification.MULTIPLICATION,  SizeClassification.VECTOR_MATRIX)           then Op.MUL_VECTOR_MATRIX;
       case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX_VECTOR)           then Op.MUL_MATRIX_VECTOR;
-      case (MathClassification.DIVISION,        SizeClassification.ARRAY_SCALAR)            then Op.DIV_ARRAY_SCALAR;
-      case (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY)            then Op.DIV_SCALAR_ARRAY;
-      case (MathClassification.POWER,           SizeClassification.ARRAY_SCALAR)            then Op.POW_ARRAY_SCALAR;
-      case (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY)            then Op.POW_SCALAR_ARRAY;
-      case (MathClassification.POWER,           SizeClassification.MATRIX)                  then Op.POW_MATRIX;
       else algorithm
-        Error.addInternalError(getInstanceName() + ": Don't know how to handle math class and size class combination.", sourceInfo());
+        Error.addInternalError(getInstanceName() + ": Don't know how to handle math class and size class combination: " + classificationString(cl), sourceInfo());
       then fail();
     end match;
     result := OPERATOR(ty, op);
@@ -795,6 +849,14 @@ public
     input Operator operator;
     output Boolean b;
   algorithm
+    b := match Type.arrayElementType(operator.ty)
+      case Type.INTEGER() then true;
+      case Type.REAL()    then true;
+      case Type.BOOLEAN() then true;
+                          else false;
+    end match;
+    if not b then return; end if;
+
     b := match operator.op
       case Op.ADD               then true;
       case Op.MUL               then true;
@@ -808,7 +870,6 @@ public
       case Op.MUL_ARRAY_SCALAR  then true;
       else false;
     end match;
-
   end isCommutative;
 
   function isSoftCommutative
@@ -827,9 +888,37 @@ public
       case Op.SUB_ARRAY_SCALAR  then true;
       case Op.DIV_SCALAR_ARRAY  then true;
       case Op.DIV_ARRAY_SCALAR  then true;
-      else false;
+                                else false;
     end match;
   end isSoftCommutative;
+
+  function repetition
+    input Operator operator;
+    output tuple<Boolean, Boolean> b;
+  algorithm
+    b := match operator.op
+      case Op.ADD_SCALAR_ARRAY  then (true, false);
+      case Op.ADD_ARRAY_SCALAR  then (false, true);
+      case Op.MUL_SCALAR_ARRAY  then (true, false);
+      case Op.MUL_ARRAY_SCALAR  then (false, true);
+      case Op.MUL_VECTOR_MATRIX then (true, true);
+      case Op.MUL_MATRIX_VECTOR then (true, true);
+      case Op.MATRIX_PRODUCT    then (true, true);
+                                else (false, false);
+    end match;
+  end repetition;
+
+  function reduction
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.MUL_MATRIX_VECTOR then true;
+      case Op.MUL_VECTOR_MATRIX then true;
+      case Op.MATRIX_PRODUCT    then true;
+                                else false;
+    end match;
+  end reduction;
 
   function isCombineable
     input Operator op1;

@@ -41,6 +41,8 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 
+#include "Util/StringHandler.h"
+
 #include <QtGlobal>
 #if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
 #error "OMEdit requires Qt 5.0.0 or newer"
@@ -58,6 +60,7 @@ extern "C" {
 #include <QMdiArea>
 #include <QShortcut>
 #include <QRadioButton>
+#include <QTimer>
 
 class OMCProxy;
 class TransformationsWidget;
@@ -78,8 +81,8 @@ class SimulationDialog;
 class TLMCoSimulationDialog;
 class OMSSimulationDialog;
 class ModelWidgetContainer;
+class ModelWidget;
 class WelcomePageWidget;
-class InfoBar;
 class AboutOMEditDialog;
 class Label;
 class FileDataNotifier;
@@ -90,6 +93,7 @@ class TraceabilityInformationURI;
 class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
+class MessageTab;
 
 class MainWindow : public QMainWindow
 {
@@ -116,6 +120,7 @@ public:
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
   int getNumberOfProcessors() {return mNumberOfProcessors;}
+  QDockWidget* getMessagesDockWidget() {return mpMessagesDockWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
@@ -129,7 +134,6 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
-
 #if !defined(WITHOUT_OSG)
   bool isThreeDViewerInitialized();
   ThreeDViewer* getThreeDViewer();
@@ -143,6 +147,7 @@ public:
   GitCommands* getGitCommands() {return mpGitCommands;}
   CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
   TraceabilityInformationURI* getTraceabilityInformationURI() {return mpTraceabilityInformationURI;}
+  QTabWidget* getMessagesTabWidget() {return mpMessagesTabWidget;}
   StatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -180,8 +185,8 @@ public:
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCalculateDataReconciliationAction() {return mpCalculateDataReconciliationAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
+  QAction* getExportReadonlyPackageAction() {return mpExportReadonlyPackageAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
-  QAction* getExportRealonlyPackageAction() {return mpExportReadonlyPackageAction;}
   QAction* getExportXMLAction() {return mpExportXMLAction;}
   QAction* getExportFigaroAction() {return mpExportFigaroAction;}
   QAction* getLineShapeAction() {return mpLineShapeAction;}
@@ -222,7 +227,9 @@ public:
   QToolBar* getCheckToolBar() const {return mpCheckToolBar;}
   QToolBar* getSimulationToolBar() const {return mpSimulationToolBar;}
   QToolBar* getTLMSimulationToolbar() const {return mpTLMSimulationToolbar;}
-  QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToobar;}
+  QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToolbar;}
+  void showModelingPerspectiveToolBars(ModelWidget *pModelWidget);
+  void showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget);
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActionsAndList();
   void createRecentFileActions();
@@ -262,6 +269,7 @@ public:
   void addSystemLibraries();
   QString getLibraryIndexFilePath() const;
   void writeNewApiProfiling(const QString &str);
+  void markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenModelicaErrors errorType);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -311,6 +319,7 @@ private:
   CommitChangesDialog *mpCommitChangesDialog;
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
+  QTabWidget *mpMessagesTabWidget;
   QProgressBar *mpProgressBar;
   Label *mpPositionLabel;
   QTabBar *mpPerspectiveTabbar;
@@ -463,6 +472,7 @@ private:
   QMenu *mpNewModelMenu;
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
+  bool mRestoringState = false;
   QToolBar *mpFileToolBar;
   QToolBar *mpEditToolBar;
   QToolBar *mpViewToolBar;
@@ -478,10 +488,12 @@ private:
   QMenu *mpDebugConfigurationMenu;
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpTLMSimulationToolbar;
-  QToolBar *mpOMSimulatorToobar;
+  QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+signals:
+  void resetMessagesTabWidgetNames();
 public slots:
-  void showMessagesBrowser();
+  void showMessageBrowser();
   void switchToWelcomePerspectiveSlot();
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
@@ -563,6 +575,17 @@ public slots:
   void openOpenModelicaTLMSimulatorDocumentation();
   void openAboutOMEdit();
   void toggleShapesButton();
+  void editToolBarVisibilityChanged(bool visible);
+  void viewToolBarVisibilityChanged(bool visible);
+  void shapesToolBarVisibilityChanged(bool visible);
+  void modelSwitcherToolBarVisibilityChanged(bool visible);
+  void checkToolBarVisibilityChanged(bool visible);
+  void simulationToolBarVisibilityChanged(bool visible);
+  void reSimulationToolBarVisibilityChanged(bool visible);
+  void plotToolBarVisibilityChanged(bool visible);
+  void debuggerToolBarVisibilityChanged(bool visible);
+  void TLMSimulationToolBarVisibilityChanged(bool visible);
+  void OMSimulatorToolBarVisibilityChanged(bool visible);
   void openRecentModelWidget();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void runDebugConfiguration();
@@ -574,6 +597,10 @@ private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
   void threeDViewerDockWidgetVisibilityChanged(bool visible);
+  void messagesTabBarClicked(int index);
+  void messagesDockWidgetVisibilityChanged(bool visible);
+  void messageTabAdded(QWidget *pSimulationOutputTab, const QString &name);
+  void messageTabClosed(int index);
   void autoSave();
   void showDataReconciliationDialog();
   void showDebugConfigurationsDialog();
@@ -597,6 +624,8 @@ private:
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel = QString());
+  void toolBarVisibilityChanged(const QString &toolbar, bool visible);
+  MessageTab* createMessageTab(const QString &name, bool fixedTab);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event) override;
   virtual void dragMoveEvent(QDragMoveEvent *event) override;
@@ -613,8 +642,32 @@ private:
   Label *mpOMContributorsLabel;
 public slots:
   void showReportIssue();
+  void crashTest();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
+};
+
+class MessageTab : public QWidget
+{
+  Q_OBJECT
+public:
+  MessageTab(const QString &name, bool fixedTab);
+  void setIndex(int index) {mIndex = index;}
+  void markTabChanged();
+private:
+  int mIndex = -1;
+  QString mName;
+  Label *mpProgressLabel;
+  QProgressBar *mpProgressBar;
+public slots:
+  void updateText(const QString &text);
+  void updateProgress(QProgressBar *pProgressBar);
+  void resetTabText();
+signals:
+  void clicked(int index);
+  // QObject interface
+public:
+  virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 };
 
 #endif // MAINWINDOW_H

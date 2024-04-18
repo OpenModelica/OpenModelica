@@ -42,6 +42,7 @@ RealDivEw.mo \
 RealMul.mo \
 RealMulEw.mo \
 RealPow.mo \
+RealPow2.mo \
 RealPowEw.mo \
 RealSub.mo \
 RealSubEw.mo \

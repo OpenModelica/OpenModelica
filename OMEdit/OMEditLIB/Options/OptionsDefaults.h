@@ -64,7 +64,7 @@ namespace OptionsDefaults
     int welcomePageView = 1;
     bool showLatestNews = true;
     int recentFilesAndLatestNewsSize = 15;
-    bool enableInstanceAPI = false;
+    bool disableInstanceAPI = false;
   }
 
   namespace Libraries {
@@ -175,6 +175,7 @@ namespace OptionsDefaults
     int outputSize = 0;
     bool resetMessagesNumberBeforeSimulation = true;
     bool clearMessagesBrowserBeforeSimulation = false;
+    bool enlargeMessageBrowserCheckBox = false;
     QColor notificationColor = Qt::black;
     QColor warningColor = QColor(255, 170, 0);
     QColor errorColor = Qt::red;

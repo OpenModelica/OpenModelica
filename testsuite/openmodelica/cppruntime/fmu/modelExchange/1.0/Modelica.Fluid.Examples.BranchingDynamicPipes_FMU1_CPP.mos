@@ -9,7 +9,7 @@
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-translateModelFMU(Modelica.Fluid.Examples.BranchingDynamicPipes, version="1.0"); getErrorString();
+buildModelFMU(Modelica.Fluid.Examples.BranchingDynamicPipes, version="1.0"); getErrorString();
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 importFMU("Modelica_Fluid_Examples_BranchingDynamicPipes.fmu"); getErrorString();

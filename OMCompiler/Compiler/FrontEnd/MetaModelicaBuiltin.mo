@@ -617,7 +617,7 @@ function stringHashSdbm
 external "builtin";
 end stringHashSdbm;
 
-function substring "Returns substring, does not fail for bogus inputs."
+function substring "Fails for bogus start/stop"
   input String str;
   input Integer start "start index, first character is 1";
   input Integer stop "stop index, first character is 1";

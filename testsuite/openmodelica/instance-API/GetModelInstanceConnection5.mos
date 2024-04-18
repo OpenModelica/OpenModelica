@@ -1,0 +1,169 @@
+// name: GetModelInstanceConnection4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+model M
+  connector C
+    Real e;
+    flow Real f;
+  end C;
+
+  parameter Integer N = 3;
+  C c1[N], c2[N];
+equation
+  for i loop
+    connect(c1[i], c2[i]);
+  end for;
+end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"N\",
+//       \"type\": \"Integer\",
+//       \"modifiers\": \"3\",
+//       \"value\": {
+//         \"binding\": 3
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"c1\",
+//       \"type\": {
+//         \"name\": \"M.C\",
+//         \"restriction\": \"connector\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"e\",
+//             \"type\": \"Real\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"f\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"connector\": \"flow\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 6,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"dims\": {
+//         \"absyn\": [
+//           \"N\"
+//         ],
+//         \"typed\": [
+//           \"3\"
+//         ]
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"c2\",
+//       \"type\": {
+//         \"name\": \"M.C\",
+//         \"restriction\": \"connector\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"e\",
+//             \"type\": \"Real\"
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"f\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"connector\": \"flow\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 6,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"dims\": {
+//         \"absyn\": [
+//           \"N\"
+//         ],
+//         \"typed\": [
+//           \"3\"
+//         ]
+//       }
+//     }
+//   ],
+//   \"connections\": [
+//     {
+//       \"lhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c1\",
+//             \"subscripts\": [
+//               {
+//                 \"$kind\": \"cref\",
+//                 \"parts\": [
+//                   {
+//                     \"name\": \"i\"
+//                   }
+//                 ]
+//               }
+//             ]
+//           }
+//         ]
+//       },
+//       \"rhs\": {
+//         \"$kind\": \"cref\",
+//         \"parts\": [
+//           {
+//             \"name\": \"c2\",
+//             \"subscripts\": [
+//               {
+//                 \"$kind\": \"cref\",
+//                 \"parts\": [
+//                   {
+//                     \"name\": \"i\"
+//                   }
+//                 ]
+//               }
+//             ]
+//           }
+//         ]
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 1,
+//     \"lineEnd\": 14,
+//     \"columnEnd\": 6
+//   }
+// }"
+// endResult

@@ -733,34 +733,22 @@ public function getAtIndexLst<T>
   input list<T> lst;
   input list<Integer> positions;
   input Boolean zeroBased = false;
-  output list<T> olst = {};
+  output list<T> olst;
 protected
   array<T> arr = listArray(lst);
   Integer shift = if zeroBased then 1 else 0;
 algorithm
-  for pos in listReverse(positions) loop
-    olst := arr[pos+shift] :: olst;
-  end for;
+  olst := list(arr[pos+shift] for pos in positions);
 end getAtIndexLst;
 
 public function firstN<T>
   "Returns the first N elements of a list, or fails if there are not enough
    elements in the list."
   input list<T> inList;
-  input Integer inN;
-  output list<T> outList = {};
-protected
-  T e;
-  list<T> rest;
+  input Integer N;
+  output list<T> outList;
 algorithm
-  true := (inN >= 0);
-  rest := inList;
-
-  for i in 1:inN loop
-    e :: rest := rest;
-    outList := e :: outList;
-  end for;
-
+  outList := firstN_reverse(inList, N);
   outList := listReverseInPlace(outList);
 end firstN;
 
@@ -774,7 +762,7 @@ protected
   T e;
   list<T> rest;
 algorithm
-  true := (N >= 0);
+  true := N >= 0;
   rest := inList;
 
   for i in 1:N loop
@@ -6606,8 +6594,8 @@ protected
   String endStr = inEndStr;
 algorithm
   if maxLength > 0 and listLength(lst) > maxLength then
-    lst := List.firstN(lst, maxLength);
-    endStr := ", ..." + endStr;
+    lst := firstN(lst, maxLength);
+    endStr := stringAppendList({inDelimitStr, "...", endStr});
   end if;
 
   outString := match(lst, inPrintEmpty)
@@ -6982,57 +6970,66 @@ algorithm
   outList := append_reverse(outList, rest);
 end findMap3;
 
+public function findAndMap<T>
+  "Applies a function to the first element in the list for which the predicate
+   function returns true, and returns the new list as well as whether the
+   element was found or not."
+  input list<T> inList;
+  input PredFunc pred;
+  input Func func;
+  output list<T> outList = {};
+  output Boolean found = false;
+
+  partial function PredFunc
+    input T e;
+    output Boolean result;
+  end PredFunc;
+
+  partial function Func
+    input output T e;
+  end Func;
+protected
+  T e;
+  list<T> rest = inList;
+algorithm
+  while not listEmpty(rest) and not found loop
+    e :: rest := rest;
+
+    if pred(e) then
+      e := func(e);
+      found := true;
+    end if;
+
+    outList := e :: outList;
+  end while;
+
+  if found then
+    outList := append_reverse(outList, rest);
+  else
+    outList := inList;
+  end if;
+end findAndMap;
+
 public function findSome<T1,T2>
-  "Applies the given function over the list and returns first returned value that is not NONE()."
+  "Applies the given function over the list and returns either the first SOME()
+   value the function returns or NONE() if no SOME() is returned."
   input list<T1> inList;
   input FuncType inFunc;
-  output T2 outVal;
+  output Option<T2> outVal = NONE();
 
   partial function FuncType
     input T1 inElement;
     output Option<T2> outValOpt;
   end FuncType;
-protected
-  Option<T2> retOpt = NONE();
-  T1 e;
-  list<T1> rest = inList;
 algorithm
-  while isNone(retOpt)/*not listEmpty(rest) and not outFound*/ loop
-    e :: rest := rest;
-    retOpt := inFunc(e);
-  end while;
-  outVal := match retOpt
-    case SOME(outVal)
-      then outVal;
-    end match;
+  for e in inList loop
+    outVal := inFunc(e);
+
+    if isSome(outVal) then
+      return;
+    end if;
+  end for;
 end findSome;
-
-public function findSome1<T1,T2,Arg>
-  "Applies the given function with one extra argument over the list and returns first returned value that is not NONE()."
-  input list<T1> inList;
-  input FuncType inFunc;
-  input Arg inArg;
-  output T2 outVal;
-
-  partial function FuncType
-    input T1 inElement;
-    input Arg inArg;
-    output Option<T2> outValOpt;
-  end FuncType;
-protected
-  Option<T2> retOpt = NONE();
-  T1 e;
-  list<T1> rest = inList;
-algorithm
-  while isNone(retOpt)/*not listEmpty(rest) and not outFound*/ loop
-    e :: rest := rest;
-    retOpt := inFunc(e,inArg);
-  end while;
-  outVal := match retOpt
-    case SOME(outVal)
-      then outVal;
-    end match;
-end findSome1;
 
 public function splitEqualPrefix<T1, T2>
   input list<T1> inFullList;

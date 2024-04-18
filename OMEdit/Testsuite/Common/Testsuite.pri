@@ -53,7 +53,8 @@ INCLUDEPATH += $$OMEDIT_ROOT \
   $$OPENMODELICAHOME/include/omplot \
   $$OPENMODELICAHOME/include/omplot/qwt \
   $$OPENMODELICAHOME/include/omc/c \
-  $$OPENMODELICAHOME/include/omc/scripting-API
+  $$OPENMODELICAHOME/include/omc/scripting-API \
+  $$OPENMODELICAHOME/../OMSimulator/include/
 
 # Don't show the warnings from included headers.
 # Don't add a space between for and open parenthesis below. Qt4 complains about it.
@@ -65,3 +66,4 @@ DESTDIR = $$OMEDIT_ROOT/bin/tests
 
 MOC_DIR = generatedfiles/moc
 
+DEFINES += OM_HAVE_PTHREADS

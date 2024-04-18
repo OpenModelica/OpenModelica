@@ -82,6 +82,8 @@ import StringUtil;
 import SymbolTable;
 import System;
 import UnitAbsyn;
+import UnorderedSet;
+import UnorderedMap;
 import Util;
 
 import MetaModelica.Dangerous;
@@ -603,7 +605,7 @@ protected
   Boolean found;
 algorithm
   if listEmpty(inOldArgs) then
-    outArgs := inNewArgs;
+    outArgs := removeEmptySubMods(inNewArgs);
   elseif listEmpty(inNewArgs) then
     outArgs := inOldArgs;
   else
@@ -616,9 +618,35 @@ algorithm
       end if;
     end for;
 
-    outArgs := list(arg for arg guard not AbsynUtil.isEmptySubMod(arg) in outArgs);
+    outArgs := removeEmptySubMods(outArgs);
   end if;
 end mergeElementArgs;
+
+function removeEmptySubMods
+  input list<Absyn.ElementArg> subMods;
+  output list<Absyn.ElementArg> outSubMods = {};
+protected
+  Absyn.Modification mod;
+algorithm
+  for m in subMods loop
+    () := match m
+      case Absyn.ElementArg.MODIFICATION(modification = SOME(mod))
+        algorithm
+          mod.elementArgLst := removeEmptySubMods(mod.elementArgLst);
+          m.modification := if AbsynUtil.isEmptyMod(mod) then NONE() else SOME(mod);
+        then
+          ();
+
+      else ();
+    end match;
+
+    if not AbsynUtil.isEmptySubMod(m) then
+      outSubMods := m :: outSubMods;
+    end if;
+  end for;
+
+  outSubMods := Dangerous.listReverseInPlace(outSubMods);
+end removeEmptySubMods;
 
 protected function propagateMod2
   input Absyn.Path inComponentName;
@@ -668,7 +696,7 @@ algorithm
         end match;
 
         outSubMods := List.append_reverse(outSubMods, rest_submods);
-        return;
+return;
       end if;
 
       if AbsynUtil.pathIsIdent(comp_name) then
@@ -3620,7 +3648,7 @@ algorithm
     else
       equation
         Print.printBuf("InteractiveUtil.recordConstructorToModification failed, exp=");
-        Dump.printExp(inExp);
+        Print.printBuf(Dump.printExpStr(inExp));
         Print.printBuf("\n");
       then
         fail();
@@ -4154,6 +4182,11 @@ algorithm
     end if;
   end for;
 
+  // Also add the class itself if it's a candidate.
+  if List.contains(acc, fqpath, AbsynUtil.pathEqual) then
+    paths := fqpath :: paths;
+  end if;
+
   paths := List.unique(listAppend(local_paths, paths));
 end getAllSubtypeOf;
 
@@ -4628,7 +4661,11 @@ public function getPathedElementInProgram
 protected
   Absyn.Class cls;
 algorithm
-  cls := getClassInProgram(AbsynUtil.pathFirstIdent(path), program);
+  try
+    cls := getClassInProgram(AbsynUtil.pathFirstIdent(path), program);
+  else
+    cls := getClassInProgram(AbsynUtil.pathFirstIdent(path), FBuiltin.getInitialFunctions());
+  end try;
 
   if AbsynUtil.pathIsIdent(path) then
     // Since the program only stores classes instead of elements we have to
@@ -4690,6 +4727,272 @@ algorithm
   end match;
 end getPathedElementInElement;
 
+public function transformPathedElementInList<T>
+  input list<T> inList;
+  input FuncType inFunc;
+  output list<T> outList = {};
+  output Option<Absyn.Element> outElement = NONE();
+  output Boolean outFound = false;
+
+  partial function FuncType
+    input output T t;
+          output Option<Absyn.Element> outElement;
+          output Boolean outFound;
+  end FuncType;
+protected
+  T e;
+  list<T> rest = inList;
+algorithm
+  while not listEmpty(rest) and not outFound loop
+    e :: rest := rest;
+    (e, outElement, outFound) := inFunc(e);
+    outList := e :: outList;
+  end while;
+
+  outList := List.append_reverse(outList, rest);
+end transformPathedElementInList;
+
+public function transformPathedElementInProgram
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.Program program;
+        output Option<Absyn.Element> element;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  list<Absyn.Class> clss;
+
+  function transform_class
+    input Absyn.Path path;
+    input Func func;
+    input output Absyn.Class cls;
+          output Option<Absyn.Element> outElement;
+          output Boolean found;
+  protected
+    Absyn.Element elem;
+  algorithm
+    // Is this the class we're looking for?
+    found := AbsynUtil.pathFirstIdent(path) == cls.name;
+
+    if found then
+      if AbsynUtil.pathIsIdent(path) then
+        // The path points to a top-level class, temporarily transform it to an
+        // element and call the function on it.
+        elem := Absyn.Element.ELEMENT(false, NONE(), Absyn.InnerOuter.NOT_INNER_OUTER(),
+          Absyn.ElementSpec.CLASSDEF(false, cls), cls.info, NONE());
+        elem := func(elem);
+        outElement := SOME(elem);
+        Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.CLASSDEF(class_ = cls)) := elem;
+      else
+        // The path points to an element inside the class.
+        (cls, outElement, found) := transformPathedElementInClass(AbsynUtil.pathRest(path), func, cls);
+      end if;
+    else
+      outElement := NONE();
+    end if;
+  end transform_class;
+algorithm
+  (clss, element, success) := transformPathedElementInList(program.classes, function transform_class(path = path, func = func));
+
+  if success then
+    program.classes := clss;
+  end if;
+end transformPathedElementInProgram;
+
+protected function transformPathedElementInClass
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.Class cls;
+        output Option<Absyn.Element> element;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.ClassDef def;
+algorithm
+  (def, element, success) := transformPathedElementInClassDef(path, func, cls.body);
+
+  if success then
+    cls.body := def;
+  end if;
+end transformPathedElementInClass;
+
+protected function transformPathedElementInClassDef
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ClassDef def;
+        output Option<Absyn.Element> element;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  list<Absyn.ClassPart> parts;
+algorithm
+  success := match def
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        (parts, element, success) := transformPathedElementInList(def.classParts,
+          function transformPathedElementInClassPart(path = path, func = func));
+
+        if success then
+          def.classParts := parts;
+        end if;
+      then
+        success;
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        (parts, element, success) := transformPathedElementInList(def.parts,
+          function transformPathedElementInClassPart(path = path, func = func));
+
+        if success then
+          def.parts := parts;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInClassDef;
+
+protected function transformPathedElementInClassPart
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ClassPart part;
+        output Option<Absyn.Element> element;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  list<Absyn.ElementItem> items;
+algorithm
+  success := match part
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        (items, element, success) := transformPathedElementInList(part.contents,
+          function transformPathedElementInElementItem(path = path, func = func));
+
+        if success then
+          part.contents := items;
+        end if;
+      then
+        success;
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        (items, element, success) := transformPathedElementInList(part.contents,
+          function transformPathedElementInElementItem(path = path, func = func));
+
+        if success then
+          part.contents := items;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInClassPart;
+
+protected function transformPathedElementInElementItem
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ElementItem item;
+        output Option<Absyn.Element> outElement;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.Element element;
+algorithm
+  success := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      guard AbsynUtil.isElementItemNamed(AbsynUtil.pathFirstIdent(path), item)
+      algorithm
+        if AbsynUtil.pathIsIdent(path) then
+          item.element := func(item.element);
+          outElement := SOME(item.element);
+          success := true;
+        else
+          (element, outElement, success) := transformPathedElementInElement(AbsynUtil.pathRest(path), func, item.element);
+
+          if success then
+            item.element := element;
+          end if;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInElementItem;
+
+protected function transformPathedElementInElement
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.Element element;
+        output Option<Absyn.Element> outElement;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.ElementSpec spec;
+algorithm
+  success := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        (spec, outElement, success) := transformPathedElementInElementSpec(path, func, element.specification);
+
+        if success then
+          element.specification := spec;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInElement;
+
+protected function transformPathedElementInElementSpec
+  input Absyn.Path path;
+  input Func func;
+  input output Absyn.ElementSpec spec;
+        output Option<Absyn.Element> element;
+        output Boolean success;
+
+  partial function Func
+    input output Absyn.Element element;
+  end Func;
+protected
+  Absyn.Class cls;
+algorithm
+  success := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        (cls, element, success) := transformPathedElementInClass(path, func, spec.class_);
+
+        if success then
+          spec.class_ := cls;
+        end if;
+      then
+        success;
+
+    else false;
+  end match;
+end transformPathedElementInElementSpec;
+
 public function getPathedClassRestriction
   input Absyn.Path path;
   input Absyn.Program program;
@@ -4701,6 +5004,1105 @@ algorithm
     restriction := Absyn.Restriction.R_UNKNOWN();
   end try;
 end getPathedClassRestriction;
+
+public function getPathedSCodeElementInProgram
+  input Absyn.Path path;
+  input SCode.Program program;
+  output SCode.Element element;
+protected
+  String name;
+algorithm
+  name := AbsynUtil.pathFirstIdent(path);
+  element := List.find(program, function SCodeUtil.isElementNamed(name = name));
+
+  if not AbsynUtil.pathIsIdent(path) then
+    element := getPathedSCodeElementInProgram(AbsynUtil.pathRest(path), SCodeUtil.getClassElements(element));
+  end if;
+end getPathedSCodeElementInProgram;
+
+public function getElementAnnotation
+  input Absyn.Path elementPath;
+  input Absyn.Program program;
+  output String annotationString;
+protected
+  Absyn.Class cls;
+  Absyn.Element elem;
+  Option<Absyn.Annotation> ann;
+  list<Absyn.ElementArg> eargs;
+algorithm
+  try
+    elem := getPathedElementInProgram(elementPath, program);
+    ann := AbsynUtil.getElementAnnotation(elem, AbsynUtil.pathLastIdent(elementPath));
+
+    if isSome(ann) then
+      SOME(Absyn.Annotation.ANNOTATION(elementArgs = eargs)) := ann;
+      annotationString := List.toString(eargs, Dump.unparseElementArgStr, "", "(", ", ", ")");
+    else
+      annotationString := "()";
+    end if;
+  else
+    annotationString := "";
+  end try;
+end getElementAnnotation;
+
+public function setElementAnnotation
+  input Absyn.Path elementPath;
+  input Absyn.Modification annotationMod;
+  input output Absyn.Program program;
+        output Boolean success = true;
+protected
+  Option<Absyn.Annotation> ann;
+  String name;
+  Option<Absyn.Element> elem_opt;
+algorithm
+  try
+    if listEmpty(annotationMod.elementArgLst) then
+      ann := NONE();
+    else
+      ann := SOME(Absyn.Annotation.ANNOTATION(annotationMod.elementArgLst));
+    end if;
+
+    name := AbsynUtil.pathLastIdent(elementPath);
+    (program, elem_opt, success) := transformPathedElementInProgram(elementPath,
+      function AbsynUtil.setElementAnnotation(name = name, inAnnotation = ann), program);
+
+    if success then
+      SymbolTable.setAbsynElement(program, Util.getOption(elem_opt), elementPath);
+    end if;
+  else
+    success := false;
+  end try;
+end setElementAnnotation;
+
+public function loadClassContentString
+  input String content;
+  input Absyn.Path classPath;
+  input output Absyn.Program program;
+        output Boolean success = true;
+protected
+  Absyn.ClassDef parsed_body;
+algorithm
+  try
+    Absyn.Program.PROGRAM(classes = {Absyn.Class.CLASS(body = parsed_body)}) :=
+      Parser.parsestring(stringAppendList({"model dummy\n", content, "end dummy;\n"}));
+
+    (program, _, success) := transformPathedElementInProgram(classPath,
+      function mergeClassContents(newContent = parsed_body), program);
+  else
+    success := false;
+  end try;
+end loadClassContentString;
+
+public function mergeClassContents
+  input output Absyn.Element element;
+  input Absyn.ClassDef newContent;
+protected
+  Absyn.ElementSpec spec;
+  Absyn.Class cls;
+  Absyn.ClassDef old_content, new_content;
+algorithm
+  new_content := resolveMergeContentsConflicts(element, newContent);
+
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as
+           Absyn.ElementSpec.CLASSDEF(class_ = cls as
+             Absyn.Class.CLASS(body = old_content)))
+      algorithm
+        () := match (old_content, new_content)
+          case (Absyn.ClassDef.PARTS(), Absyn.ClassDef.PARTS())
+            algorithm
+              old_content.classParts := mergeClassParts(new_content.classParts, old_content.classParts);
+              old_content.ann := mergeAnnotationLists(new_content.ann, old_content.ann);
+            then
+              ();
+
+          case (Absyn.ClassDef.CLASS_EXTENDS(), Absyn.ClassDef.PARTS())
+            algorithm
+              old_content.parts := mergeClassParts(new_content.classParts, old_content.parts);
+              old_content.ann := mergeAnnotationLists(new_content.ann, old_content.ann);
+            then
+              ();
+
+        end match;
+
+        cls.body := old_content;
+        spec.class_ := cls;
+        element.specification := spec;
+      then
+        ();
+  end match;
+end mergeClassContents;
+
+protected function mergeClassParts
+  "Merges a list of new class parts with a list of old parts."
+  input list<Absyn.ClassPart> newParts;
+  input list<Absyn.ClassPart> oldParts;
+  output list<Absyn.ClassPart> outParts;
+protected
+  Vector<Absyn.ClassPart> parts;
+  Option<Absyn.ClassPart> op;
+  Absyn.ClassPart p;
+  Integer index;
+algorithm
+  parts := Vector.fromList(oldParts);
+
+  for part in newParts loop
+    () := match part
+      case Absyn.ClassPart.PUBLIC()
+        algorithm
+          // Try to find the last public/protected element section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+
+          () := match op
+            // Compatible public section, append the new elements to the old.
+            case SOME(p as Absyn.ClassPart.PUBLIC())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the section after any existing element sections.
+            else
+              algorithm
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      case Absyn.ClassPart.PROTECTED()
+        algorithm
+          // Try to find the last public/protected element section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+
+          () := match op
+            // Compatible protected section, append the new elements to the old.
+            case SOME(p as Absyn.ClassPart.PROTECTED())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the section after any existing element sections.
+            else
+              algorithm
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      case Absyn.ClassPart.EQUATIONS()
+        algorithm
+          // Try to find the last normal/initial equation section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isEquationSection);
+
+          () := match op
+            // Compatible normal equation section, append the new contents to the old.
+            case SOME(p as Absyn.ClassPart.EQUATIONS())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the new section after any existing element and equation sections.
+            else
+              algorithm
+                if index == -1 then
+                  (_, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+                end if;
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      case Absyn.ClassPart.INITIALEQUATIONS()
+        algorithm
+          // Try to find the last normal/initial equation section.
+          (op, index) := Vector.findLast(parts, AbsynUtil.isEquationSection);
+
+          () := match op
+            // Compatible initial equation section, append the new contents to the old.
+            case SOME(p as Absyn.ClassPart.INITIALEQUATIONS())
+              algorithm
+                part.contents := listAppend(p.contents, part.contents);
+                Vector.updateNoBounds(parts, index, part);
+              then
+                ();
+
+            // Otherwise insert the new section after any existing element and equation sections.
+            else
+              algorithm
+                if index == -1 then
+                  (_, index) := Vector.findLast(parts, AbsynUtil.isElementSection);
+                end if;
+                Vector.insert(parts, part, max(index + 1, 1));
+              then
+                ();
+
+          end match;
+        then
+          ();
+
+      // external section, replace the existing one or add it at the end of the
+      // class if none exists.
+      case Absyn.ClassPart.EXTERNAL()
+        algorithm
+          (_, index) := Vector.findLast(parts, AbsynUtil.isExternalPart);
+
+          if index <> -1 then
+            Vector.updateNoBounds(parts, index, part);
+          else
+            Vector.push(parts, part);
+          end if;
+        then
+          ();
+
+      // Anything else, add to the end of the class without merging.
+      else
+        algorithm
+          Vector.push(parts, part);
+        then
+          ();
+    end match;
+  end for;
+
+  outParts := Vector.toList(parts);
+end mergeClassParts;
+
+function mergeAnnotationLists
+  input list<Absyn.Annotation> newAnnotations;
+  input list<Absyn.Annotation> oldAnnotations;
+  output list<Absyn.Annotation> outAnnotations;
+protected
+  Absyn.Annotation old_ann;
+algorithm
+  if listEmpty(oldAnnotations) then
+    outAnnotations := newAnnotations;
+  else
+    old_ann := listHead(oldAnnotations);
+    for new_ann in newAnnotations loop
+      old_ann := AbsynUtil.mergeAnnotations(old_ann, new_ann);
+    end for;
+    outAnnotations := old_ann :: listRest(oldAnnotations);
+  end if;
+end mergeAnnotationLists;
+
+function resolveMergeContentsConflicts
+  input Absyn.Element oldElement;
+  input output Absyn.ClassDef newContent;
+protected
+  UnorderedSet<String> old_names;
+  UnorderedMap<String, String> rename_map;
+  String new_name;
+  Integer index;
+  list<String> conflicting_names = {};
+algorithm
+  // Collect the existing names in a hash set.
+  old_names := UnorderedSet.new(stringHashDjb2, stringEq);
+  for e in AbsynUtil.getElementItemsInElement(oldElement) loop
+    for name in AbsynUtil.elementItemNames(e) loop
+      UnorderedSet.add(name, old_names);
+    end for;
+  end for;
+
+  // Go through the names in the new content.
+  rename_map := UnorderedMap.new<String>(stringHashDjb2, stringEq);
+  for e in AbsynUtil.getElementItemsInClassDef(newContent) loop
+    for name in AbsynUtil.elementItemNames(e) loop
+      if UnorderedSet.contains(name, old_names) then
+        // If the name conflicts with an existing name, save it for later.
+        conflicting_names := name :: conflicting_names;
+      else
+        // If the name doesn't conflict, add it to the set of existing names to
+        // take it into account when generating new names for conflicting names.
+        UnorderedSet.add(name, old_names);
+      end if;
+    end for;
+  end for;
+
+  if listEmpty(conflicting_names) then
+    return;
+  end if;
+
+  // Go through the conflicting names and find a non-conflicting name for them.
+  for name in listReverse(conflicting_names) loop
+    // Try name1, name2, etc. until a non-conflicting name is found.
+    index := 1;
+    new_name := name + String(index);
+    while UnorderedSet.contains(new_name, old_names) loop
+      index := index + 1;
+      new_name := name + String(index);
+    end while;
+
+    // Save the mapping for name->new_name to apply to the class.
+    UnorderedMap.add(name, new_name, rename_map);
+
+    // Add the new name to the set of existing names.
+    UnorderedSet.add(new_name, old_names);
+  end for;
+
+  // Apply the new names to the class definition.
+  if not UnorderedMap.isEmpty(rename_map) then
+    newContent := renameElementsInClassDef(newContent, rename_map);
+  end if;
+end resolveMergeContentsConflicts;
+
+function renameElementsInElement
+  input output Absyn.Element element;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := renameElementsInElementSpec(element.specification, nameMap, renameElement = true);
+        element.constrainClass := renameElementsInConstrainClassOpt(element.constrainClass, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElement;
+
+function renameElementsInElementSpec
+  input output Absyn.ElementSpec spec;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        spec.class_ := renameElementsInClass(spec.class_, nameMap, renameElement);
+      then
+        ();
+
+    case Absyn.ElementSpec.EXTENDS()
+      algorithm
+        spec.elementArg := list(renameElementsInElementArg(a, nameMap) for a in spec.elementArg);
+        spec.annotationOpt := renameElementsInAnnotationOpt(spec.annotationOpt, nameMap);
+      then
+        ();
+
+    case Absyn.ElementSpec.COMPONENTS()
+      algorithm
+        spec.attributes := renameElementsInAttributes(spec.attributes, nameMap);
+        spec.typeSpec := renameElementsInTypeSpec(spec.typeSpec, nameMap);
+        spec.components := list(renameElementsInComponentItem(c, nameMap, renameElement) for c in spec.components);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElementSpec;
+
+function renameElementsInClass
+  input output Absyn.Class cls;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+algorithm
+  if renameElement then
+    cls.name := renameElementsInIdent(cls.name, nameMap);
+  end if;
+
+  cls.body := renameElementsInClassDef(cls.body, nameMap);
+end renameElementsInClass;
+
+function renameElementsInClassDef
+  input output Absyn.ClassDef classDef;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match classDef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        classDef.classParts := list(renameElementsInClassPart(p, nameMap) for p in classDef.classParts);
+        classDef.ann := list(renameElementsInAnnotation(a, nameMap) for a in classDef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        classDef.typeSpec := renameElementsInTypeSpec(classDef.typeSpec, nameMap);
+        classDef.attributes := renameElementsInAttributes(classDef.attributes, nameMap);
+        classDef.arguments := list(renameElementsInElementArg(a, nameMap) for a in classDef.arguments);
+        classDef.comment := renameElementsInCommentOpt(classDef.comment, nameMap);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        classDef.modifications := list(renameElementsInElementArg(a, nameMap) for a in classDef.modifications);
+        classDef.parts := list(renameElementsInClassPart(p, nameMap) for p in classDef.parts);
+        classDef.ann := list(renameElementsInAnnotation(a, nameMap) for a in classDef.ann);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInClassDef;
+
+function renameElementsInClassPart
+  input output Absyn.ClassPart part;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match part
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        part.contents := list(renameElementsInElementItem(i, nameMap) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        part.contents := list(renameElementsInElementItem(i, nameMap) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.CONSTRAINTS()
+      algorithm
+        part.contents := list(renameElementsInExp(e, nameMap) for e in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.EQUATIONS()
+      algorithm
+        part.contents := renameElementsInEquationItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALEQUATIONS()
+      algorithm
+        part.contents := renameElementsInEquationItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.ALGORITHMS()
+      algorithm
+        part.contents := renameElementsInAlgorithmItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.INITIALALGORITHMS()
+      algorithm
+        part.contents := renameElementsInAlgorithmItems(part.contents, nameMap);
+      then
+        ();
+
+    case Absyn.ClassPart.EXTERNAL()
+      algorithm
+        part.externalDecl := renameElementsInExternalDecl(part.externalDecl, nameMap);
+        part.annotation_ := renameElementsInAnnotationOpt(part.annotation_, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInClassPart;
+
+function renameElementsInElementItem
+  input output Absyn.ElementItem item;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        item.element := renameElementsInElement(item.element, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElementItem;
+
+function renameElementsInEquationItems
+  input output list<Absyn.EquationItem> items;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  items := list(renameElementsInEquationItem(i, nameMap) for i in items);
+end renameElementsInEquationItems;
+
+function renameElementsInEquationItem
+  input output Absyn.EquationItem item;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match item
+    case Absyn.EquationItem.EQUATIONITEM()
+      algorithm
+        item.equation_ := renameElementsInEquation(item.equation_, nameMap);
+        item.comment := renameElementsInCommentOpt(item.comment, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInEquationItem;
+
+function renameElementsInEquation
+  input output Absyn.Equation eq;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match eq
+    case Absyn.Equation.EQ_IF()
+      algorithm
+        eq.ifExp := AbsynUtil.traverseExp(eq.ifExp, renameElementsInExp, nameMap);
+        eq.equationTrueItems := renameElementsInEquationItems(eq.equationTrueItems, nameMap);
+        eq.elseIfBranches := list(renameElementsInEquationBranch(b, nameMap) for b in eq.elseIfBranches);
+        eq.equationElseItems := renameElementsInEquationItems(eq.equationElseItems, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_EQUALS()
+      algorithm
+        eq.leftSide := AbsynUtil.traverseExp(eq.leftSide, renameElementsInExp, nameMap);
+        eq.rightSide := AbsynUtil.traverseExp(eq.rightSide, renameElementsInExp, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_PDE()
+      algorithm
+        eq.leftSide := AbsynUtil.traverseExp(eq.leftSide, renameElementsInExp, nameMap);
+        eq.rightSide := AbsynUtil.traverseExp(eq.rightSide, renameElementsInExp, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_CONNECT()
+      algorithm
+        eq.connector1 := renameElementsInCref(eq.connector1, nameMap);
+        eq.connector2 := renameElementsInCref(eq.connector2, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_FOR()
+      algorithm
+        eq.iterators := list(renameElementsInIterator(i, nameMap) for i in eq.iterators);
+        eq.forEquations := renameElementsInEquationItems(eq.forEquations, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_WHEN_E()
+      algorithm
+        eq.whenExp := AbsynUtil.traverseExp(eq.whenExp, renameElementsInExp, nameMap);
+        eq.whenEquations := renameElementsInEquationItems(eq.whenEquations, nameMap);
+        eq.elseWhenEquations := list(renameElementsInEquationBranch(b, nameMap) for b in eq.elseWhenEquations);
+      then
+        ();
+
+    case Absyn.Equation.EQ_NORETCALL()
+      algorithm
+        eq.functionName := renameElementsInCref(eq.functionName, nameMap);
+        eq.functionArgs := AbsynUtil.traverseExpBidirFunctionArgs(eq.functionArgs, renameElementsInExp,
+          AbsynUtil.dummyTraverseExp, nameMap);
+      then
+        ();
+
+    case Absyn.Equation.EQ_FAILURE()
+      algorithm
+        eq.equ := renameElementsInEquationItem(eq.equ, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInEquation;
+
+function renameElementsInEquationBranch
+  input output tuple<Absyn.Exp, list<Absyn.EquationItem>> branch;
+  input UnorderedMap<String, String> nameMap;
+protected
+  Absyn.Exp cond;
+  list<Absyn.EquationItem> body;
+algorithm
+  (cond, body) := branch;
+  cond := AbsynUtil.traverseExp(cond, renameElementsInExp, nameMap);
+  body := renameElementsInEquationItems(body, nameMap);
+  branch := (cond, body);
+end renameElementsInEquationBranch;
+
+function renameElementsInIterator
+  input output Absyn.ForIterator iter;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  if isSome(iter.range) then
+    iter.range := SOME(AbsynUtil.traverseExp(Util.getOption(iter.range), renameElementsInExp, nameMap));
+  end if;
+end renameElementsInIterator;
+
+function renameElementsInAlgorithmItems
+  input output list<Absyn.AlgorithmItem> items;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  items := list(renameElementsInAlgorithmItem(i, nameMap) for i in items);
+end renameElementsInAlgorithmItems;
+
+function renameElementsInAlgorithmItem
+  input output Absyn.AlgorithmItem item;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match item
+    case Absyn.AlgorithmItem.ALGORITHMITEM()
+      algorithm
+        item.algorithm_ := renameElementsInAlgorithm(item.algorithm_, nameMap);
+        item.comment := renameElementsInCommentOpt(item.comment, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInAlgorithmItem;
+
+function renameElementsInAlgorithm
+  input output Absyn.Algorithm alg;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match alg
+    case Absyn.Algorithm.ALG_ASSIGN()
+      algorithm
+        alg.assignComponent := AbsynUtil.traverseExp(alg.assignComponent, renameElementsInExp, nameMap);
+        alg.value := AbsynUtil.traverseExp(alg.value, renameElementsInExp, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_IF()
+      algorithm
+        alg.ifExp := AbsynUtil.traverseExp(alg.ifExp, renameElementsInExp, nameMap);
+        alg.trueBranch := renameElementsInAlgorithmItems(alg.trueBranch, nameMap);
+        alg.elseIfAlgorithmBranch := list(renameElementsInAlgorithmBranch(b, nameMap) for b in alg.elseIfAlgorithmBranch);
+        alg.elseBranch := renameElementsInAlgorithmItems(alg.elseBranch, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_FOR()
+      algorithm
+        alg.iterators := list(renameElementsInIterator(i, nameMap) for i in alg.iterators);
+        alg.forBody := renameElementsInAlgorithmItems(alg.forBody, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_PARFOR()
+      algorithm
+        alg.iterators := list(renameElementsInIterator(i, nameMap) for i in alg.iterators);
+        alg.parforBody := renameElementsInAlgorithmItems(alg.parforBody, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_WHILE()
+      algorithm
+        alg.boolExpr := AbsynUtil.traverseExp(alg.boolExpr, renameElementsInExp, nameMap);
+        alg.whileBody := renameElementsInAlgorithmItems(alg.whileBody, nameMap);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_WHEN_A()
+      algorithm
+        alg.boolExpr := AbsynUtil.traverseExp(alg.boolExpr, renameElementsInExp, nameMap);
+        alg.whenBody := renameElementsInAlgorithmItems(alg.whenBody, nameMap);
+        alg.elseWhenAlgorithmBranch := list(renameElementsInAlgorithmBranch(b, nameMap) for b in alg.elseWhenAlgorithmBranch);
+      then
+        ();
+
+    case Absyn.Algorithm.ALG_NORETCALL()
+      algorithm
+        alg.functionCall := renameElementsInCref(alg.functionCall, nameMap);
+        alg.functionArgs := AbsynUtil.traverseExpBidirFunctionArgs(alg.functionArgs, renameElementsInExp,
+          AbsynUtil.dummyTraverseExp, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInAlgorithm;
+
+function renameElementsInAlgorithmBranch
+  input output tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> branch;
+  input UnorderedMap<String, String> nameMap;
+protected
+  Absyn.Exp cond;
+  list<Absyn.AlgorithmItem> body;
+algorithm
+  (cond, body) := branch;
+  cond := AbsynUtil.traverseExp(cond, renameElementsInExp, nameMap);
+  body := renameElementsInAlgorithmItems(body, nameMap);
+  branch := (cond, body);
+end renameElementsInAlgorithmBranch;
+
+function renameElementsInElementArg
+  input output Absyn.ElementArg arg;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION()
+      algorithm
+        arg.modification := renameElementsInModificationOpt(arg.modification, nameMap);
+      then
+        ();
+
+    case Absyn.ElementArg.REDECLARATION()
+      algorithm
+        arg.elementSpec := renameElementsInElementSpec(arg.elementSpec, nameMap, renameElement = false);
+        arg.constrainClass := renameElementsInConstrainClassOpt(arg.constrainClass, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInElementArg;
+
+function renameElementsInConstrainClassOpt
+  input output Option<Absyn.ConstrainClass> cc;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  cc := Util.applyOption(cc, function renameElementsInConstrainClass(nameMap = nameMap));
+end renameElementsInConstrainClassOpt;
+
+function renameElementsInConstrainClass
+  input output Absyn.ConstrainClass cc;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  cc.elementSpec := renameElementsInElementSpec(cc.elementSpec, nameMap, renameElement = true);
+  cc.comment := renameElementsInCommentOpt(cc.comment, nameMap);
+end renameElementsInConstrainClass;
+
+function renameElementsInCommentOpt
+  input output Option<Absyn.Comment> comment;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  comment := Util.applyOption(comment, function renameElementsInComment(nameMap = nameMap));
+end renameElementsInCommentOpt;
+
+function renameElementsInComment
+  input output Absyn.Comment comment;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  comment.annotation_ := Util.applyOption(comment.annotation_, function renameElementsInAnnotation(nameMap = nameMap));
+end renameElementsInComment;
+
+function renameElementsInAnnotationOpt
+  input output Option<Absyn.Annotation> ann;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  ann := Util.applyOption(ann, function renameElementsInAnnotation(nameMap = nameMap));
+end renameElementsInAnnotationOpt;
+
+function renameElementsInAnnotation
+  input output Absyn.Annotation ann;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  ann.elementArgs := list(renameElementsInElementArg(a, nameMap) for a in ann.elementArgs);
+end renameElementsInAnnotation;
+
+function renameElementsInModificationOpt
+  input output Option<Absyn.Modification> mod;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  mod := Util.applyOption(mod, function renameElementsInModification(nameMap = nameMap));
+end renameElementsInModificationOpt;
+
+function renameElementsInModification
+  input output Absyn.Modification mod;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  mod.elementArgLst := list(renameElementsInElementArg(a, nameMap) for a in mod.elementArgLst);
+  mod.eqMod := renameElementsInEqMod(mod.eqMod, nameMap);
+end renameElementsInModification;
+
+function renameElementsInEqMod
+  input output Absyn.EqMod eqMod;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match eqMod
+    case Absyn.EqMod.EQMOD()
+      algorithm
+        eqMod.exp := AbsynUtil.traverseExp(eqMod.exp, renameElementsInExp, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInEqMod;
+
+function renameElementsInExp
+  input output Absyn.Exp exp;
+  input output UnorderedMap<String, String> nameMap;
+algorithm
+  () := match exp
+    case Absyn.Exp.CREF()
+      algorithm
+        exp.componentRef := renameElementsInCref(exp.componentRef, nameMap);
+      then
+        ();
+
+    case Absyn.Exp.CALL()
+      algorithm
+        exp.function_ := renameElementsInCref(exp.function_, nameMap);
+      then
+        ();
+
+    case Absyn.Exp.PARTEVALFUNCTION()
+      algorithm
+        exp.function_ := renameElementsInCref(exp.function_, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInExp;
+
+function renameElementsInCref
+  input output Absyn.ComponentRef cref;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean onlySubs = false;
+algorithm
+  () := match cref
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        if not onlySubs then
+          cref.name := renameElementsInIdent(cref.name, nameMap);
+        end if;
+
+        cref.subscripts := list(renameElementsInSubscript(s, nameMap) for s in cref.subscripts);
+        cref.componentRef := renameElementsInCref(cref.componentRef, nameMap, onlySubs = true);
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        if not onlySubs then
+          cref.name := renameElementsInIdent(cref.name, nameMap);
+        end if;
+
+        cref.subscripts := list(renameElementsInSubscript(s, nameMap) for s in cref.subscripts);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInCref;
+
+function renameElementsInPath
+  input output Absyn.Path path;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match path
+    case Absyn.Path.QUALIFIED()
+      algorithm
+        path.name := renameElementsInIdent(path.name, nameMap);
+      then
+        ();
+
+    case Absyn.Path.IDENT()
+      algorithm
+        path.name := renameElementsInIdent(path.name, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInPath;
+
+function renameElementsInIdent
+  input output String ident;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  ident := UnorderedMap.getOrDefault(ident, nameMap, ident);
+end renameElementsInIdent;
+
+function renameElementsInSubscripts
+  input output list<Absyn.Subscript> subs;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  subs := list(renameElementsInSubscript(s, nameMap) for s in subs);
+end renameElementsInSubscripts;
+
+function renameElementsInSubscript
+  input output Absyn.Subscript sub;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match sub
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        sub.subscript := AbsynUtil.traverseExp(sub.subscript, renameElementsInExp, nameMap);
+      then
+        ();
+
+    else ();
+  end match;
+end renameElementsInSubscript;
+
+function renameElementsInExternalDecl
+  input output Absyn.ExternalDecl extDecl;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  extDecl.args := list(renameElementsInExp(a, nameMap) for a in extDecl.args);
+  extDecl.annotation_ := renameElementsInAnnotationOpt(extDecl.annotation_, nameMap);
+end renameElementsInExternalDecl;
+
+function renameElementsInTypeSpec
+  input output Absyn.TypeSpec spec;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  () := match spec
+    case Absyn.TypeSpec.TPATH()
+      algorithm
+        spec.path := renameElementsInPath(spec.path, nameMap);
+        spec.arrayDim := Util.applyOption(spec.arrayDim, function renameElementsInSubscripts(nameMap = nameMap));
+      then
+        ();
+
+    case Absyn.TypeSpec.TCOMPLEX()
+      algorithm
+        spec.path := renameElementsInPath(spec.path, nameMap);
+        spec.arrayDim := Util.applyOption(spec.arrayDim, function renameElementsInSubscripts(nameMap = nameMap));
+      then
+        ();
+  end match;
+end renameElementsInTypeSpec;
+
+function renameElementsInAttributes
+  input output Absyn.ElementAttributes attrs;
+  input UnorderedMap<String, String> nameMap;
+algorithm
+  attrs.arrayDim := renameElementsInSubscripts(attrs.arrayDim, nameMap);
+end renameElementsInAttributes;
+
+function renameElementsInComponentItem
+  input output Absyn.ComponentItem component;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+protected
+  Absyn.Exp exp;
+algorithm
+  component.component := renameElementsInComponent(component.component, nameMap, renameElement);
+
+  if isSome(component.condition) then
+    SOME(exp) := component.condition;
+    exp := AbsynUtil.traverseExp(exp, renameElementsInExp, nameMap);
+    component.condition := SOME(exp);
+  end if;
+
+  component.comment := renameElementsInCommentOpt(component.comment, nameMap);
+end renameElementsInComponentItem;
+
+function renameElementsInComponent
+  input output Absyn.Component component;
+  input UnorderedMap<String, String> nameMap;
+  input Boolean renameElement;
+algorithm
+  if renameElement then
+    component.name := renameElementsInIdent(component.name, nameMap);
+  end if;
+
+  component.arrayDim := renameElementsInSubscripts(component.arrayDim, nameMap);
+  component.modification := renameElementsInModificationOpt(component.modification, nameMap);
+end renameElementsInComponent;
+
+public function getInheritedAnnotation
+  "Returns the modification for a specific annotation in a class, while also
+   recursively looking up and merging annotations inherited from extends.
+   If there are multiple non-identical inherited annotation only the first one
+   is used, and a warning message is optionally emitted."
+  input Absyn.Path modelPath;
+  input String annotationName;
+  input Absyn.Program program;
+  input Boolean printConflictWarning = true "Prints a warning if inherited annotations conflict.";
+  output Option<Absyn.Modification> outAnnotation = NONE();
+protected
+  Absyn.Class cls;
+  list<Absyn.Path> extends_paths;
+  list<Option<Absyn.Modification>> extends_oannl;
+  Absyn.Modification cls_ann, extends_ann, extends_ann2;
+  Absyn.Path extends_path;
+algorithm
+  // Look up the annotation in the given model.
+  cls := getPathedClassInProgram(modelPath, program);
+  outAnnotation := AbsynUtil.lookupClassAnnotation(cls, annotationName);
+
+  // Fetch the named annotation from all inherited classes.
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    extends_paths := NFApi.getInheritedClasses(modelPath, program);
+  else
+    extends_paths := {};
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+
+  if listEmpty(extends_paths) then
+    // No extends.
+    return;
+  end if;
+
+  extends_oannl := list(getInheritedAnnotation(ep, annotationName, program) for ep in extends_paths);
+
+  while not listEmpty(extends_oannl) loop
+    if isSome(listHead(extends_oannl)) then
+      // Found an inherited annotation, merge it with the class' annotation if
+      // it has one or just return it as it is.
+      extends_ann := Util.getOption(listHead(extends_oannl));
+
+      if isSome(outAnnotation) then
+        outAnnotation := SOME(AbsynUtil.mergeModifiers(Util.getOption(outAnnotation), extends_ann));
+      else
+        outAnnotation := SOME(extends_ann);
+      end if;
+
+      if printConflictWarning then
+        // Check if we have any more inherited annotations.
+        extends_path :: extends_paths := extends_paths;
+        for a in listRest(extends_oannl) loop
+          SOME(extends_ann2) := a;
+          if not valueEq(extends_ann, extends_ann2) then
+            // Found an inherited annotation that's not equal to the first one, print a warning.
+            Error.addMessage(Error.CONFLICTING_INHERITED_ANNOTATIONS,
+              {annotationName, AbsynUtil.pathString(modelPath),
+               Dump.unparseModificationStr(extends_ann), AbsynUtil.pathString(extends_path),
+               Dump.unparseModificationStr(extends_ann2), AbsynUtil.pathString(listHead(extends_paths))});
+            break;
+          end if;
+
+          extends_paths := listRest(extends_paths);
+        end for;
+      end if;
+
+      // Return the merged annotation.
+      return;
+    end if;
+
+    extends_oannl := listRest(extends_oannl);
+    extends_paths := listRest(extends_paths);
+  end while;
+end getInheritedAnnotation;
+
+public function setElementType
+  input Absyn.Path elementPath;
+  input Absyn.ComponentRef className;
+  input output Absyn.Program program;
+        output Boolean success = true;
+protected
+  Option<Absyn.Annotation> ann;
+  String name;
+  Option<Absyn.Element> elem_opt;
+  Absyn.TypeSpec ty;
+algorithm
+  try
+    ty := AbsynUtil.crefToTypeSpec(className);
+    (program, elem_opt, success) := transformPathedElementInProgram(elementPath,
+      function AbsynUtil.setElementType(typeSpec = ty, allowMultipleComponents = false), program);
+
+    if success then
+      SymbolTable.setAbsynElement(program, Util.getOption(elem_opt), elementPath);
+    end if;
+  else
+    success := false;
+  end try;
+end setElementType;
 
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

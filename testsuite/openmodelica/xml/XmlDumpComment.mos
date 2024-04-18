@@ -23,8 +23,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // true
 // true
 // "class XmlDumpComment
-//   parameter Real A \"test & in xml\";
-//   parameter Real B;
+//   parameter Real A = 0.0 \"test & in xml\";
+//   parameter Real B = 1.0;
 //   Real x(start = 0.0) \"evaluated to 0 if A < B\";
 //   Real y(start = 0.0);
 //   Real z;
@@ -71,6 +71,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"3\" name=\"A\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"test &amp; in xml\">
+// <bindExpression string=\"0.0\">
+// </bindExpression>
 // <classesNames>
 // <element>
 // XmlDumpComment
@@ -78,6 +80,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"4\" name=\"B\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <bindExpression string=\"1.0\">
+// </bindExpression>
 // <classesNames>
 // <element>
 // XmlDumpComment
@@ -8285,7 +8289,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"318\" name=\"world.x_label.cylinders[2].length\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of visual object\">
-// <bindExpression string=\"1.414213562373095 * abs(world.scaledLabel)\">
+// <bindExpression string=\"1.4142135623730951 * abs(world.scaledLabel)\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -8309,7 +8313,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"319\" name=\"world.x_label.cylinders[1].length\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of visual object\">
-// <bindExpression string=\"1.414213562373095 * abs(world.scaledLabel)\">
+// <bindExpression string=\"1.4142135623730951 * abs(world.scaledLabel)\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -9722,7 +9726,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"392\" name=\"world.z_label.cylinders[3].length\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of visual object\">
-// <bindExpression string=\"1.414213562373095 * abs(world.scaledLabel)\">
+// <bindExpression string=\"1.4142135623730951 * abs(world.scaledLabel)\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -10925,7 +10929,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"453\" name=\"body.cylinder.length\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of visual object\">
-// <bindExpression string=\"if sqrt(body.r_CM * body.r_CM) &gt; 0.05555555555555555 then sqrt(body.r_CM * body.r_CM) - (if body.cylinderDiameter &gt; 0.1222222222222222 then 0.05555555555555555 else 0.0) else 0.0\">
+// <bindExpression string=\"if sqrt(body.r_CM * body.r_CM) &gt; 0.05555555555555555 then sqrt(body.r_CM * body.r_CM) - (if body.cylinderDiameter &gt; 0.12222222222222223 then 0.05555555555555555 else 0.0) else 0.0\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -11183,7 +11187,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"469\" name=\"world.mue\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Gravity field constant (default = field constant of earth)\">
-// <bindExpression string=\"398600000000000.0\">
+// <bindExpression string=\"3.986e14\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -11357,7 +11361,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"479\" name=\"world.gravitySphereDiameter\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Diameter of sphere representing gravity center (default = mean diameter of earth)\">
-// <bindExpression string=\"12742000.0\">
+// <bindExpression string=\"1.2742e7\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -12322,7 +12326,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"537\" name=\"damper.phi_nominal\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Nominal value of phi_rel (used for scaling)\">
-// <bindExpression string=\"0.0001\">
+// <bindExpression string=\"1e-4\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -12565,7 +12569,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-9.999999999999999e+59\">
+// <minValue string=\"-1e60\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -12585,7 +12589,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-9.999999999999999e+59\">
+// <minValue string=\"-1e60\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -12605,7 +12609,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-9.999999999999999e+59\">
+// <minValue string=\"-1e60\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -12888,7 +12892,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"568\" name=\"body.cylinderDiameter\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Diameter of cylinder\">
-// <bindExpression string=\"0.03703703703703703\">
+// <bindExpression string=\"0.037037037037037035\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -21557,7 +21561,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[3] r(quantity = {&quot;Length&quot;, &quot;Length&quot;, &quot;Length&quot;}, unit = {&quot;m&quot;, &quot;m&quot;, &quot;m&quot;}) &quot;Position vector from world frame to actual point, resolved in world frame&quot;;
 //   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity &quot;Type of gravity field&quot;;
 //   input Real[3] g(quantity = {&quot;Acceleration&quot;, &quot;Acceleration&quot;, &quot;Acceleration&quot;}, unit = {&quot;m/s2&quot;, &quot;m/s2&quot;, &quot;m/s2&quot;}) = {0.0, -9.81, 0.0} &quot;Constant gravity acceleration, resolved in world frame, if gravityType=UniformGravity&quot;;
-//   input Real mue(unit = &quot;m3/s2&quot;) = 398600000000000.0 &quot;Field constant of point gravity field, if gravityType=PointGravity&quot;;
+//   input Real mue(unit = &quot;m3/s2&quot;) = 3.986e14 &quot;Field constant of point gravity field, if gravityType=PointGravity&quot;;
 //   output Real[3] gravity(quantity = {&quot;Acceleration&quot;, &quot;Acceleration&quot;, &quot;Acceleration&quot;}, unit = {&quot;m/s2&quot;, &quot;m/s2&quot;, &quot;m/s2&quot;}) &quot;Gravity acceleration at position r, resolved in world frame&quot;;
 // algorithm
 //   gravity := if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity then g else if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity then {-mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[1] / Modelica.Math.Vectors.length(r), -mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[2] / Modelica.Math.Vectors.length(r), -mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[3] / Modelica.Math.Vectors.length(r)} else {0.0, 0.0, 0.0};
@@ -21737,7 +21741,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   protected Real abs_n_x = sqrt(n_x[1] * n_x[1] + n_x[2] * n_x[2] + n_x[3] * n_x[3]);
 //   protected Real[3] e_x(unit = &quot;1&quot;) = if abs_n_x &lt; 1e-10 then {1.0, 0.0, 0.0} else {n_x[1] / abs_n_x, n_x[2] / abs_n_x, n_x[3] / abs_n_x};
 //   protected Real[3] n_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y[3] - e_x[3] * n_y[2], e_x[3] * n_y[1] - e_x[1] * n_y[3], e_x[1] * n_y[2] - e_x[2] * n_y[1]};
-//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] * n_z_aux[1] + n_z_aux[2] * n_z_aux[2] + n_z_aux[3] * n_z_aux[3] &gt; 1e-06 then n_y else if abs(e_x[1]) &gt; 1e-06 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
+//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] * n_z_aux[1] + n_z_aux[2] * n_z_aux[2] + n_z_aux[3] * n_z_aux[3] &gt; 1e-6 then n_y else if abs(e_x[1]) &gt; 1e-6 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
 //   protected Real[3] e_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y_aux[3] - e_x[3] * n_y_aux[2], e_x[3] * n_y_aux[1] - e_x[1] * n_y_aux[3], e_x[1] * n_y_aux[2] - e_x[2] * n_y_aux[1]};
 //   protected Real[3] e_z(unit = &quot;1&quot;) = {e_z_aux[1] / sqrt(e_z_aux[1] * e_z_aux[1] + e_z_aux[2] * e_z_aux[2] + e_z_aux[3] * e_z_aux[3]), e_z_aux[2] / sqrt(e_z_aux[1] * e_z_aux[1] + e_z_aux[2] * e_z_aux[2] + e_z_aux[3] * e_z_aux[3]), e_z_aux[3] / sqrt(e_z_aux[1] * e_z_aux[1] + e_z_aux[2] * e_z_aux[2] + e_z_aux[3] * e_z_aux[3])};
 // algorithm

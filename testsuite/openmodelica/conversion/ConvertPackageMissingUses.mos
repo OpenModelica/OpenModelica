@@ -15,6 +15,6 @@ getErrorString();
 // Result:
 // true
 // false
-// "Error: Cannot convert ‘ConvertPackageMissingUses‘ since it has no uses-annotation for ‘testlib‘.
+// "Error: Cannot convert 'ConvertPackageMissingUses' since it has no uses-annotation for 'testlib'.
 // "
 // endResult

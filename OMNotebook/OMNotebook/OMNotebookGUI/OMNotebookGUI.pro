@@ -10,12 +10,14 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 
 # Set the C++ standard.
-CONFIG += c++14
+CONFIG += c++1z
 
 TRANSLATIONS = Resources/nls/OMNotebook_de_DE.ts
 
 TARGET = OMNotebook
 TEMPLATE = app
+
+DEFINES += OM_HAVE_PTHREADS
 
 SOURCES += \
     cellapplication.cpp \

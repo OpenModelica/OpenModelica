@@ -49,9 +49,20 @@
 #include <QStylePainter>
 #include <QPainter>
 #include <QColorDialog>
+#include <QDir>
+#include <QRegExp>
+#ifdef OM_OMEDIT_ENABLE_LIBXML2
+#include <libxml/parser.h>
+#include <libxml/valid.h>
+#else
 #include <QXmlSchema>
 #include <QXmlSchemaValidator>
-#include <QDir>
+#endif
+
+
+extern "C" {
+extern const char* System_openModelicaPlatform();
+}
 
 SplashScreen *SplashScreen::mpInstance = 0;
 
@@ -286,7 +297,13 @@ void Label::setText(const QString &text)
 {
   mText = text;
   setToolTip(text);
-  QLabel::setText(elidedText());
+  const QString text1 = elidedText();
+  // if text is empty OR if we get "..." i.e., QChar(0x2026) as text
+  if (text1.isEmpty() || text1.compare(QChar(0x2026)) == 0) {
+    QLabel::setText(mText);
+  } else {
+    QLabel::setText(text1);
+  }
 }
 
 QString Label::elidedText() const
@@ -606,6 +623,38 @@ void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString
   schemaFile.close();
   const QByteArray schemaData = schemaText.toUtf8();
 
+#ifdef OM_OMEDIT_ENABLE_LIBXML2
+  xmlDocPtr doc;
+  QByteArray contentsArray(contents.toLocal8Bit());
+  doc = xmlParseDoc((const xmlChar *)contentsArray.data());
+  if (doc)
+  {
+    xmlParserInputBufferPtr buf = xmlParserInputBufferCreateMem(schemaData.data(), schemaData.size(), XML_CHAR_ENCODING_UTF8);
+    xmlDtdPtr dtd = xmlIOParseDTD(NULL, buf, XML_CHAR_ENCODING_UTF8);
+    xmlFreeParserInputBuffer(buf);
+    if (dtd)
+    {
+      xmlValidCtxtPtr vctxt;
+      vctxt = xmlNewValidCtxt();
+      if (vctxt)
+      {
+        int ok = xmlValidateDtd(vctxt, doc, dtd);
+        if (!ok)
+          pMessageHandler->setFailed(true);
+        xmlFreeValidCtxt(vctxt);
+      }
+      else
+        pMessageHandler->setFailed(true);
+      xmlFreeDtd(dtd);
+    }
+    else
+      pMessageHandler->setFailed(true);
+    xmlFreeDoc(doc);
+  }
+  else
+      pMessageHandler->setFailed(true);
+
+#else
   QXmlSchema schema;
   schema.setMessageHandler(pMessageHandler);
   schema.load(schemaData);
@@ -617,6 +666,7 @@ void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString
       pMessageHandler->setFailed(true);
     }
   }
+#endif
 }
 
 /*!
@@ -639,15 +689,12 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
  */
 bool Utilities::isValueLiteralConstant(QString value)
 {
-  bool ok = true;
-  value.toDouble(&ok);
-  if (ok) return true;
-
-  QStringList valuesArray = StringHandler::removeFirstLastCurlBrackets(value).split(",");
-  foreach (QString valueElement, valuesArray) {
-    valueElement.toDouble(&ok);
-  }
-  return ok;
+  /* Issue #11795. Allow setting negative values for parameters.
+   * Issue #11840. Allow setting array of values.
+   * The following regular expression allows decimal values and array of decimal values. The values can be negative.
+   */
+  QRegExp rx("\\{?\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?(?:\\s*,\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?)*\\s*\\}?");
+  return rx.exactMatch(value);
 }
 
 /*!
@@ -976,19 +1023,24 @@ QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,doub
 QString Utilities::getGDBPath()
 {
 #if defined(_WIN32)
-#if defined(__MINGW32__) && !defined(__MINGW64__)
-  const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
-#endif
-#if defined(__MINGW64__)
-  const char *sgdb = "/tools/msys/mingw64/bin/gdb.exe";
-#endif
   const char *OMDEV = getenv("OMDEV");
-  if (QString(OMDEV).isEmpty()) {
-    return QString(Helper::OpenModelicaHome).append(sgdb);
-  } else {
-    QString qOMDEV = QString(OMDEV).replace("\\", "/");
-    return QString(qOMDEV).append(sgdb);
+  const char *MSYSTEM_PREFIX = getenv("MSYSTEM_PREFIX");
+  const char* msysEnv = System_openModelicaPlatform(); /* "ucrt64" or "mingw64" */
+
+  // MSYSTEM_PREFIX is set: <MSYSTEM_PREFIX>/bin/gdb.exe
+  if (!QString(MSYSTEM_PREFIX).isEmpty()) {
+    QString qMSYSTEM_PREFIX = QString(MSYSTEM_PREFIX).replace("\\", "/");
+    return QString(qMSYSTEM_PREFIX) + QString("/bin/gdb.exe");
   }
+
+  // OMDEV is set: <OMDEV>/tools/msys/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
+  if (!QString(OMDEV).isEmpty()) {
+    QString qOMDEV = QString(OMDEV).replace("\\", "/");
+    return QString(qOMDEV) + QString("/tools/msys/") + QString(msysEnv) + QString("/bin/gdb.exe");
+  }
+
+  // Default: <OPENMODELICAHOME>/tools/msys/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
+  return QString(Helper::OpenModelicaHome) + QString("/tools/msys/") + QString(msysEnv) + QString("bin/gdb.exe");
 #else
   return "gdb";
 #endif
@@ -1060,23 +1112,6 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
     return true;
   }
   return false;
-}
-
-/*!
- * \brief Utilities::convertMMToPixel
- * Converts the value from mm to pixels
- * pixel = (dpi * mm / 1 inch)
- * 1 inch is 25.4
- * \param value
- * \return
- */
-qreal Utilities::convertMMToPixel(qreal value)
-{
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-  return (QApplication::primaryScreen()->logicalDotsPerInchX() * value) / 25.4;
-#else // QT_VERSION_CHECK
-  return (QApplication::desktop()->screen()->logicalDpiX() * value) / 25.4;
-#endif // QT_VERSION_CHECK
 }
 
 /*!
@@ -1332,4 +1367,15 @@ void Utilities::setToolTip(QComboBox *pComboBox, const QString &description, con
     }
   }
   pComboBox->setToolTip(QString("<html><head/><body><p>%1</p><ul>%2</ul></body></html>").arg(description, itemsToolTip));
+}
+
+/*!
+ * \brief Utilities::isMultiline
+ * Returns true if the text containts \n.
+ * \param text
+ * \return
+ */
+bool Utilities::isMultiline(const QString &text)
+{
+  return text.indexOf('\n') >= 0;
 }

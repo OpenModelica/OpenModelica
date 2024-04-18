@@ -1008,7 +1008,11 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   for(i=0; i<SIZERINGBUFFER; i++)
   {
     /* set time value */
-    tmpSimData.timeValue = 0;
+    /*
+    * fix issue #11855, always take the startTime provided in modeldescription.xml
+    * to handle models that have startTime > 0 (e.g) startTime = 0.2
+    */
+    tmpSimData.timeValue = data->simulationInfo->startTime;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*) calloc(data->modelData->nVariablesReal, sizeof(modelica_real));
     assertStreamPrint(threadData, 0 == data->modelData->nVariablesReal || 0 != tmpSimData.realVars, "out of memory");
@@ -1218,6 +1222,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nDelayExpressions; i++)
   {
     // TODO: Calculate how big ringbuffer should be for each delay expression
+    // can be estimated by lower bound delayMax/stepSize
     data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
   }
 #endif
@@ -1416,27 +1421,27 @@ void setZCtol(double relativeTol)
 }
 
 /* TODO: fix this */
-modelica_boolean LessZC(double a, double b, modelica_boolean direction)
+modelica_boolean LessZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  double eps = tolZC * fmax(fabs(a), fabs(b)) + tolZC;
+  double eps = tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
   return direction ? (a - b <= eps) : (a - b <= -eps);
 }
 
-modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
+modelica_boolean LessEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  return !GreaterZC(a, b, !direction);
+  return !GreaterZC(a, b, a_nominal, b_nominal, !direction);
 }
 
 /* TODO: fix this */
-modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
+modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  double eps = tolZC * fmax(fabs(a), fabs(b)) + tolZC;
+  double eps = tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
   return direction ? (a - b >= -eps ) : (a - b >= eps);
 }
 
-modelica_boolean GreaterEqZC(double a, double b, modelica_boolean direction)
+modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
-  return !LessZC(a, b, !direction);
+  return !LessZC(a, b, a_nominal, b_nominal, !direction);
 }
 
 modelica_boolean Less(double a, double b)

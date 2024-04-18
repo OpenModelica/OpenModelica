@@ -31,6 +31,7 @@
 
 encapsulated package NFInstNode
 
+import Binding = NFBinding;
 import Component = NFComponent;
 import Class = NFClass;
 import SCode;
@@ -43,6 +44,7 @@ import Pointer;
 import Error;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
+import AccessLevel = NFPrefixes.AccessLevel;
 import NFModifier.Modifier;
 import SCodeDump;
 import DAE;
@@ -687,6 +689,10 @@ uniontype InstNode
         guard ignoreRedeclare
         then parentScope(orig_node);
 
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+        guard ignoreRedeclare
+        then scope;
+
       case CLASS_NODE() then node.parentScope;
       case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;
@@ -892,6 +898,7 @@ uniontype InstNode
     component := match node
       case COMPONENT_NODE() then Pointer.access(node.component);
       case VAR_NODE()       then Component.WILD();
+      case NAME_NODE()      then Component.WILD();
     end match;
   end component;
 
@@ -1149,31 +1156,27 @@ uniontype InstNode
   function getAnnotation
     input String name;
     input InstNode node;
-    output Option<SCode.SubMod> mod = NONE();
+    output SCode.Mod mod;
+    output InstNode scope = node;
+  protected
+    Option<SCode.Annotation> ann;
   algorithm
+    while InstNode.isComponent(scope) loop
+      ann := SCodeUtil.optCommentAnnotation(Component.comment(InstNode.component(scope)));
 
-    if InstNode.isComponent(node) then
-      mod := match Component.comment(InstNode.component(node))
-        local
-          list<SCode.SubMod> subModLst;
-          Boolean done = false;
+      if isSome(ann) then
+        mod := SCodeUtil.lookupAnnotation(Util.getOption(ann), name);
 
-        case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification = SCode.MOD(subModLst = subModLst)))))
-        algorithm
-          for sm in subModLst loop
-            if sm.ident == name then
-              mod := SOME(sm);
-              done := true;
-              break;
-            end if;
-          end for;
-          if not done then
-            mod := getAnnotation(name, parent(node));
-          end if;
-        then mod;
-        else getAnnotation(name, parent(node));
-      end match;
-    end if;
+        if not SCodeUtil.isEmptyMod(mod) then
+          scope := instanceParent(scope);
+          return;
+        end if;
+      end if;
+
+      scope := instanceParent(scope);
+    end while;
+
+    mod := SCode.Mod.NOMOD();
   end getAnnotation;
 
   type ScopeType = enumeration(
@@ -1480,6 +1483,8 @@ uniontype InstNode
         then referenceEq(Pointer.access(node1.cls), Pointer.access(node2.cls));
       case (COMPONENT_NODE(), COMPONENT_NODE())
         then referenceEq(Pointer.access(node1.component), Pointer.access(node2.component));
+      case (VAR_NODE(), VAR_NODE())
+        then referenceEq(Pointer.access(node1.varPointer), Pointer.access(node2.varPointer));
       // Other nodes like ref nodes might be equal, but we neither know nor care.
       else false;
     end match;
@@ -1519,10 +1524,18 @@ uniontype InstNode
     if referenceEq(n1, n2) then
       same := true;
       return;
-    // TODO: This is not enough. We need a better way.
-    elseif stringEqual(name(n1), name(n2)) then
-      same := true;
-      return;
+    end if;
+
+    try
+      same := referenceEq(definition(node1), definition(node2));
+    else
+      same := false;
+    end try;
+
+    // TODO: This is wrong, but removing it breakes some expandable connectors
+    //       at the moment.
+    if not same then
+      same := name(node1) == name(node2);
     end if;
   end isSame;
 
@@ -1565,23 +1578,25 @@ uniontype InstNode
 
   function toFlatString
     input InstNode node;
+    input String indent;
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component));
-      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node);
+      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), indent);
+      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, indent);
       else name(node);
     end match;
   end toFlatString;
 
   function toFlatStream
     input InstNode node;
+    input String indent;
     input output IOStream.IOStream s;
   algorithm
     s := match node
-      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), s);
-      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, s);
-      else IOStream.append(s, toFlatString(node));
+      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), indent, s);
+      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, indent, s);
+      else IOStream.append(s, toFlatString(node, indent));
     end match;
   end toFlatStream;
 
@@ -1697,6 +1712,26 @@ uniontype InstNode
       else ();
     end match;
   end protectComponent;
+
+  function protect
+      input output InstNode node;
+  algorithm
+    () := match node
+      case COMPONENT_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          node.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      case CLASS_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          node.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      else ();
+    end match;
+  end protect;
 
   function isEncapsulated
     input InstNode node;
@@ -1972,6 +2007,19 @@ uniontype InstNode
     end match;
   end hasBinding;
 
+  function getBindingExpOpt
+    input InstNode node;
+    output Option<Expression> binding_exp;
+  algorithm
+    binding_exp := match node
+      case COMPONENT_NODE() guard(Component.hasBinding(Pointer.access(node.component)))
+        then Binding.typedExp(Component.getBinding(Pointer.access(node.component)));
+      case COMPONENT_NODE()
+        then getBindingExpOpt(instanceParent(node));
+      else NONE();
+    end match;
+  end getBindingExpOpt;
+
   function getSections
     input InstNode node;
     output Sections sections;
@@ -2070,6 +2118,33 @@ uniontype InstNode
     InstNodeType.TOP_SCOPE(generatedInners = inners) := nodeType(InstNode.topScope(node));
     UnorderedMap.clear(inners);
   end clearGeneratedInners;
+
+  function getAccessLevel
+    input InstNode node;
+    output Option<AccessLevel> access = NONE();
+  protected
+    InstNode scope;
+    SCode.Mod access_mod;
+    Option<Absyn.Exp> access_exp;
+  algorithm
+    scope := classScope(parent(resolveInner(node)));
+
+    while isClass(scope) loop
+      access_mod := SCodeUtil.lookupElementAnnotation(definition(scope), "Protection");
+      access_mod := SCodeUtil.lookupModInMod("access", access_mod);
+      access_exp := SCodeUtil.getModifierBinding(access_mod);
+
+      if isSome(access_exp) then
+        access := Prefixes.accessLevelFromAbsyn(Util.getOption(access_exp));
+
+        if isSome(access) then
+          return;
+        end if;
+      end if;
+
+      scope := parent(scope);
+    end while;
+  end getAccessLevel;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

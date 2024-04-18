@@ -26,7 +26,7 @@ equation
   y1 = sum(x1);
 end ArrayEquationsTest;");
 
-translateModelFMU(ArrayEquationsTest, version = "2.0"); getErrorString();
+buildModelFMU(ArrayEquationsTest, version = "2.0"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq ArrayEquationsTest.fmu modelDescription.xml > ArrayEquationsTest_tmp.xml"); getErrorString();

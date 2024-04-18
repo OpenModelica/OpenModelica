@@ -2072,6 +2072,26 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1, "2.0")
   let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2, "2.0")
   let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3, "2.0")
+  /* Get event input Real varibales and their value references */
+  let nRealEventInputVariables = listLength(filterModelVariables(fmiModelVariablesList, "real", "input"))
+  let realEventInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1, "2.0")
+  let realEventInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2, "2.0")
+  let realEventInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3, "2.0")
+  /* Get event input Integer varibales and their value references */
+  let nIntegerEventInputVariables = listLength(filterModelVariables(fmiModelVariablesList, "integer", "input"))
+  let integerEventInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1, "2.0")
+  let integerEventInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2, "2.0")
+  let integerEventInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3, "2.0")
+  /* Get event input Boolean varibales and their value references */
+  let nBooleanEventInputVariables = listLength(filterModelVariables(fmiModelVariablesList, "boolean", "input"))
+  let booleanEventInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1, "2.0")
+  let booleanEventInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2, "2.0")
+  let booleanEventInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3, "2.0")
+  /* Get event input String varibales and their value references */
+  let nStringEventInputVariables = listLength(filterModelVariables(fmiModelVariablesList, "string", "input"))
+  let stringEventInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1, "2.0")
+  let stringEventStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2, "2.0")
+  let stringEventInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3, "2.0")
   /* Get output Real varibales and their value references */
   let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1, "2.0")
   let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2, "2.0")
@@ -2114,6 +2134,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanInputVariablesVRs, "") then "Boolean "+booleanInputVariablesReturnNames+";"%>
     <%if not stringEq(stringInputVariablesVRs, "") then "String stringInputVariables["+nStringInputVariables+"];"%>
     <%if not stringEq(stringInputVariablesVRs, "") then "String "+stringInputVariablesReturnNames+";"%>
+    <%if not stringEq(realEventInputVariablesVRs, "") then "Real realEventInputVariables["+nRealEventInputVariables+"](each fixed=true);"%>
+    <%if not stringEq(integerEventInputVariablesVRs, "") then "Integer integerEventInputVariables["+nIntegerEventInputVariables+"](each fixed=true);"%>
+    <%if not stringEq(booleanEventInputVariablesVRs, "") then "Boolean booleanEventInputVariables["+nBooleanEventInputVariables+"](each fixed=true);"%>
+    <%if not stringEq(stringEventInputVariablesVRs, "") then "String stringEventInputVariables["+nStringEventInputVariables+"](each fixed=true);"%>
     Boolean callEventUpdate;
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
@@ -2176,7 +2200,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     when {triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
   >>
   %>
-      newStatesAvailable := fmi2Functions.fmi2EventUpdate(fmi2me);
+      fmi2Functions.fmi2StartEventUpdate(fmi2me);
+      <%if not stringEq(realEventInputVariablesVRs, "") then "realEventInputVariables := fmi2Functions.fmi2SetReal(fmi2me, {"+realEventInputVariablesVRs+"}, {"+realEventInputVariablesNames+"});"%>
+      <%if not stringEq(integerEventInputVariablesVRs, "") then "integerEventInputVariables := fmi2Functions.fmi2SetInteger(fmi2me, {"+integerEventInputVariablesVRs+"}, {"+integerEventInputVariablesNames+"});"%>
+      <%if not stringEq(booleanEventInputVariablesVRs, "") then "booleanEventInputVariables := fmi2Functions.fmi2SetBoolean(fmi2me, {"+booleanEventInputVariablesVRs+"}, {"+booleanEventInputVariablesNames+"});"%>
+      <%if not stringEq(stringEventInputVariablesVRs, "") then "stringEventInputVariables := fmi2Functions.fmi2SetString(fmi2me, {"+stringEventInputVariablesVRs+"}, {"+stringEventStartVariablesNames+"});"%>
+      newStatesAvailable := fmi2Functions.fmi2EndEventUpdate(fmi2me);
       nextEventTime := fmi2Functions.fmi2nextEventTime(fmi2me, flowStatesInputs);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
@@ -2388,11 +2417,16 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" fmi2SetString_OMC(fmi2me, size(stringValueReferences, 1), stringValueReferences, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetStringParameter;
 
-      function fmi2EventUpdate
+      function fmi2StartEventUpdate
+        input FMI2ModelExchange fmi2me;
+        external "C" fmi2StartEventUpdate_OMC(fmi2me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+      end fmi2StartEventUpdate;
+
+      function fmi2EndEventUpdate
         input FMI2ModelExchange fmi2me;
         output Boolean outNewStatesAvailable;
-        external "C" outNewStatesAvailable = fmi2EventUpdate_OMC(fmi2me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi2EventUpdate;
+        external "C" outNewStatesAvailable = fmi2EndEventUpdate_OMC(fmi2me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+      end fmi2EndEventUpdate;
 
       function fmi2nextEventTime
         input FMI2ModelExchange fmi2me;
@@ -3169,7 +3203,8 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   #include "simulation_data.h"
 
   OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
-  void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
+
+  void <%symbolName(modelNamePrefix(simCode),"read_simulation_info")%>(SIMULATION_INFO* simulationInfo)
   {
     simulationInfo->startTime = <%s.startTime%>;
     simulationInfo->stopTime = <%s.stopTime%>;
@@ -3179,6 +3214,10 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     simulationInfo->outputFormat = "<%s.outputFormat%>";
     simulationInfo->variableFilter = "<%s.variableFilter%>";
     simulationInfo->OPENMODELICAHOME = "<%makefileParams.omhome%>";
+  }
+
+  void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData)
+  {
     <%System.tmpTickReset(1000)%>
     <%System.tmpTickResetIndex(0,2)%>
     <%vars.stateVars       |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>

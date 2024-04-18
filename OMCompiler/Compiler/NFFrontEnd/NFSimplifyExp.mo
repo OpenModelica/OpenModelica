@@ -62,12 +62,12 @@ public
 function simplifyDump
   "wrapper function for simplification to allow dumping before and afterwards"
   input Expression exp;
-  input Boolean backend;
+  input Boolean includeScope;
   output Expression res;
   input String name = "";
   input String indent = "";
 algorithm
-  res := simplify(exp, backend);
+  res := simplify(exp, includeScope);
   if Flags.isSet(Flags.DUMP_SIMPLIFY) and not Expression.isEqual(exp, res) then
     print(indent + "### dumpSimplify | " + name + " ###\n");
     print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
@@ -77,19 +77,20 @@ end simplifyDump;
 
 function simplify
   input output Expression exp;
-  input Boolean backend = false;
+  input Boolean includeScope = false;
 algorithm
   exp := match exp
     case Expression.CREF()
       algorithm
         exp.cref := ComponentRef.simplifySubscripts(exp.cref);
-        exp.ty := ComponentRef.getSubscriptedType(exp.cref, backend);
+        exp.ty := ComponentRef.getSubscriptedType(exp.cref, includeScope);
       then
         exp;
 
     case Expression.ARRAY()
+      guard not exp.literal
       algorithm
-        exp.elements := Array.map(exp.elements, function simplify(backend = false));
+        exp.elements := Array.map(exp.elements, function simplify(includeScope = false));
       then
         exp;
 
@@ -250,22 +251,46 @@ algorithm
       then
         exp;
 
-    case "delay"     then simplifyDelay(args, call);
-    case "der"       then simplifyDer(listHead(args), call);
-    case "fill"      then simplifyFill(listHead(args), listRest(args), call, expand);
-    case "homotopy"  then simplifyHomotopy(args, call);
-    case "max"       then simplifyMinMax(args, call, isMin = false);
-    case "min"       then simplifyMinMax(args, call, isMin = true);
-    case "ones"      then simplifyFill(Expression.INTEGER(1), args, call, expand);
-    case "product"   then simplifySumProduct(listHead(args), call, expand, isSum = false);
-    case "sum"       then simplifySumProduct(listHead(args), call, expand, isSum = true);
-    case "transpose" then simplifyTranspose(listHead(args), call, expand);
-    case "vector"    then simplifyVector(listHead(args), call);
-    case "zeros"     then simplifyFill(Expression.INTEGER(0), args, call, expand);
+    case "delay"           then simplifyDelay(args, call);
+    case "der"             then simplifyDer(listHead(args), call);
+    case "fill"            then simplifyFill(listHead(args), listRest(args), call, expand);
+    case "homotopy"        then simplifyHomotopy(args, call);
+    case "max"             then simplifyMinMax(args, call, isMin = false);
+    case "min"             then simplifyMinMax(args, call, isMin = true);
+    case "ones"            then simplifyFill(Expression.INTEGER(1), args, call, expand);
+    case "product"         then simplifySumProduct(listHead(args), call, expand, isSum = false);
+    case "sum"             then simplifySumProduct(listHead(args), call, expand, isSum = true);
+    case "transpose"       then simplifyTranspose(listHead(args), call, expand);
+    case "vector"          then simplifyVector(listHead(args), call);
+    case "zeros"           then simplifyFill(Expression.INTEGER(0), args, call, expand);
+    case "semiLinear"      then simplifySemiLinear(args, call);
+    case "getInstanceName" then Ceval.evalGetInstanceName(listHead(args));
 
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;
+
+function simplifySemiLinear
+  input list<Expression> args;
+  input Call call;
+  output Expression exp;
+protected
+  Expression x, m1, m2;
+  Type ty;
+algorithm
+  {x, m1, m2} := args;
+  ty := Expression.typeOf(x);
+  if Expression.isZero(x) or (Expression.isZero(m1) and Expression.isZero(m2)) then
+    // both slopes x*m1, x*m2 return 0
+    exp := Expression.makeZero(ty);
+  elseif Expression.isEqual(m1, m2) then
+    // both slopes x*m1, x*m2 are equal
+    exp := Expression.BINARY(x, Operator.makeMul(ty), m1);
+  else
+    // no simplification, just return
+    exp := Expression.CALL(call);
+  end if;
+end simplifySemiLinear;
 
 function simplifyMinMax
   input list<Expression> args;
@@ -490,9 +515,9 @@ algorithm
           exp := Expression.replaceIterator(exp, iter, e);
           exp := Expression.makeArray(ty, listArray({exp}));
           outExp := simplify(exp);
-        elseif Expression.isLiteral(e) and not Expression.hasNonArrayIteratorSubscript(exp, iter) then
+        elseif Expression.isLiteral(e) and isIteratorSubscriptedArray(exp, iter) then
           // If the iterator is only used to subscript array expressions like
-          // {{1, 2, 3}[i] in i 1:3}, then we might as well expand it.
+          // {{1, 2, 3}[i] for i in 1:3}, then we might as well expand it.
           (outExp, expanded) := ExpandExp.expandArrayConstructor(exp, ty, iters);
 
           if expanded then
@@ -512,6 +537,19 @@ algorithm
         Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters));
   end matchcontinue;
 end simplifyArrayConstructor;
+
+function isIteratorSubscriptedArray
+  input Expression exp;
+  input InstNode iterator;
+  output Boolean res;
+algorithm
+  res := match exp
+    case Expression.SUBSCRIPTED_EXP()
+      then Expression.isArray(exp.exp) and
+           List.all(exp.subscripts, function Subscript.equalsIterator(iterator = iterator));
+    else false;
+  end match;
+end isIteratorSubscriptedArray;
 
 function simplifyReduction
   input Call call;
@@ -598,7 +636,7 @@ algorithm
   end for;
 
   outExp := Expression.foldReduction(simplify(exp), listReverseInPlace(iters),
-    default_exp, function simplify(backend = false), function simplifyBinaryOp(op = op));
+    default_exp, function simplify(includeScope = false), function simplifyBinaryOp(op = op));
 end simplifyReduction2;
 
 function simplifySize
@@ -683,7 +721,7 @@ algorithm
       (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isConstNumber);
 
       // combine the constants
-      new_const := combineConstantNumbers(const_args, inv_const_args, mcl);
+      new_const := combineConstantNumbers(const_args, inv_const_args, mcl, Operator.typeOf(operator));
 
       // return combined multary expression and check for trivial replacements
 
@@ -733,6 +771,7 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for expression: " + Expression.toString(exp)});
     then fail();
   end match;
+
 end simplifyMultary;
 
 function simplifyMultarySigns
@@ -817,6 +856,17 @@ function simplifyBinaryOp
 algorithm
   if Expression.isLiteral(exp1) and Expression.isLiteral(exp2) then
     outExp := Ceval.evalBinaryOp(ExpandExp.expand(exp1), op, ExpandExp.expand(exp2));
+  elseif Expression.isArray(exp1) and Expression.isArray(exp2) then
+    outExp := match op.op
+      case Op.ADD then simplifyBinaryEW(exp1, op, exp2);
+      case Op.SUB then simplifyBinaryEW(exp1, op, exp2);
+      case Op.ADD_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.SUB_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.MUL_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.DIV_EW then simplifyBinaryEW(exp1, op, exp2);
+      case Op.POW_EW then simplifyBinaryEW(exp1, op, exp2);
+      else Expression.BINARY(exp1, op, exp2);
+    end match;
   else
     outExp := match op.op
       case Op.ADD then simplifyBinaryAdd(exp1, op, exp2);
@@ -841,9 +891,17 @@ algorithm
   elseif Expression.isZero(exp2) then
     // e + 0 = e
     outExp := exp1;
+  elseif Expression.isNegated(exp1) then
+    if Expression.isNegated(exp2) then
+      // (-e1) + (-e2) = -(e1 + e2)
+      outExp := Expression.negate(Expression.BINARY(Expression.negate(exp1), op, Expression.negate(exp2)));
+    else
+      // (-e1) + e2 = e2 - e1
+      outExp := simplifyBinarySub(exp2, Operator.invert(op), Expression.negate(exp1));
+    end if;
   elseif Expression.isNegated(exp2) then
-    // e1 + -(e2) = e1 - e2
-    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
+    // e1 + (-e2) = e1 - e2
+    outExp := simplifyBinarySub(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -857,13 +915,24 @@ function simplifyBinarySub
 algorithm
   if Expression.isZero(exp1) then
     // 0 - e = -e
-    outExp := Expression.UNARY(Operator.makeUMinus(Operator.typeOf(op)), exp2);
+    outExp := Expression.negate(exp2);
   elseif Expression.isZero(exp2) then
     // e - 0 = e
     outExp := exp1;
+  elseif Expression.isEqual(exp1, exp2) then
+    // e - e = 0
+    outExp := Expression.makeZero(Operator.typeOf(op));
+  elseif Expression.isNegated(exp1) then
+    if Expression.isNegated(exp2) then
+      // (-e1) - (-e2) = e2 - e1
+      outExp := Expression.BINARY(Expression.negate(exp2), op, Expression.negate(exp1));
+    else
+      // (-e1) - e2 = -(e1 + e2)
+      outExp := Expression.negate(simplifyBinaryAdd(Expression.negate(exp1), Operator.invert(op), exp2));
+    end if;
   elseif Expression.isNegated(exp2) then
-    // e1 - -(e2) = e1 + e2
-    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
+    // e1 - (-e2) = e1 + e2
+    outExp := simplifyBinaryAdd(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -934,6 +1003,17 @@ algorithm
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
 end simplifyBinaryPow;
+
+function simplifyBinaryEW
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+algorithm
+  outExp := Expression.makeArray(Operator.typeOf(op),
+    Array.threadMap(Expression.arrayElements(exp1), Expression.arrayElements(exp2),
+                    function simplifyBinaryOp(op = Operator.unlift(op))));
+end simplifyBinaryEW;
 
 function simplifyUnary
   input output Expression unaryExp;
@@ -1166,10 +1246,12 @@ protected
 algorithm
   Expression.SUBSCRIPTED_EXP(e, subs, ty, split) := subscriptedExp;
   subscriptedExp := simplify(e);
+  subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
 
-  if not split then
+  if not split and not List.all(subs, Subscript.isLiteral) then
     // Select the first element as long as the subscripted expression is an
-    // array where all elements are equal.
+    // array where all elements are equal, unless all the subscripts are literal
+    // in which case it's cheaper to just apply them.
     while not listEmpty(subs) and Expression.isArray(subscriptedExp) and not Expression.isEmptyArray(subscriptedExp) and
           Array.allEqual(Expression.arrayElements(subscriptedExp), Expression.isEqual) loop
       subs := listRest(subs);
@@ -1181,7 +1263,6 @@ algorithm
     end if;
   end if;
 
-  subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
 
   if split then
     subscriptedExp := Expression.SUBSCRIPTED_EXP(subscriptedExp, subs, ty, split);
@@ -1221,10 +1302,10 @@ public function combineConstantNumbers
   input list<Expression> const      "has to be a list of REAL(), INTEGER() and/or CAST()";
   input list<Expression> inv_const  "has to be a list of REAL(), INTEGER() and/or CAST()";
   input Operator.MathClassification mcl;
+  input Type ty;
   output Expression res;
 protected
   Real tmp, result;
-  Boolean anyReal = false         "true if any element in the list is of type REAL() (or cast to one)";
 algorithm
   result := match mcl
 
@@ -1232,12 +1313,12 @@ algorithm
       result := 0.0;
       // sum all constants
       for exp in const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result + tmp;
       end for;
       // subtract all inverse constants
       for exp in inv_const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result - tmp;
       end for;
     then result;
@@ -1246,12 +1327,12 @@ algorithm
       result := 1.0;
       // multiply all constants
       for exp in const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result * tmp;
       end for;
-      // devide all inverse constants
+      // divide all inverse constants
       for exp in inv_const loop
-        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        tmp := getConstantValue(exp);
         result := result / tmp;
       end for;
     then result;
@@ -1265,29 +1346,19 @@ algorithm
 
   end match;
 
-  res := if anyReal then Expression.REAL(result) else Expression.INTEGER(realInt(result));
+  res := if Type.isInteger(ty) then Expression.INTEGER(realInt(result)) else Expression.REAL(result);
 end combineConstantNumbers;
 
 protected function getConstantValue
   input Expression exp "REAL(), INTEGER(), CAST(), UNARY()";
   output Real value;
-  input output Boolean anyReal;
 algorithm
-  (value, anyReal) := match exp
-    local
-      Real r;
-      Integer i;
-      Boolean b;
-    case Expression.REAL(value = r)    then (r, true);
-    case Expression.INTEGER(value = i) then (intReal(i), anyReal);
-    case Expression.CAST() algorithm
-      (r, b) := getConstantValue(exp.exp, anyReal);
-      // negate b because it has been cast
-    then (r, anyReal or (not b));
-    case Expression.UNARY(operator = Operator.OPERATOR(op = NFOperator.Op.UMINUS)) algorithm
-      (r, b) := getConstantValue(exp.exp, anyReal);
-      // negate r because it has a minus sign
-    then (-r, anyReal or b);
+  value := match exp
+    case Expression.REAL()                                                          then exp.value;
+    case Expression.INTEGER()                                                       then intReal(exp.value);
+    case Expression.CAST()                                                          then getConstantValue(exp.exp);
+    // negate r because it has a minus sign
+    case Expression.UNARY(operator = Operator.OPERATOR(op = NFOperator.Op.UMINUS))  then -getConstantValue(exp.exp);
     else algorithm
       Error.assertion(false, getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
     then fail();
@@ -1300,6 +1371,63 @@ public function combineBinaries
 algorithm
   exp := combineBinariesExp(exp);
 end combineBinaries;
+
+public function splitMultary
+  "inverse functionality to combineBinaries.
+  returns a multary to its original binary representation."
+  input output Expression exp;
+algorithm
+  exp := match exp
+    local
+      Expression new_exp;
+      list<Expression> args, inv_args;
+      Operator inv_op, fixed_op;
+
+    case Expression.MULTARY() algorithm
+      if listLength(exp.arguments) > 0 then
+        // it has arguments, take the first one and start with it
+        new_exp :: args := exp.arguments;
+        inv_args    := exp.inv_arguments;
+      elseif listLength(exp.inv_arguments) > 0 then
+        // it has no arguments but inverse arguments
+        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
+          // take the first one out and negate it
+          new_exp :: inv_args := exp.inv_arguments;
+          args      := exp.arguments;
+          new_exp   := Expression.negate(new_exp);
+        else
+          // create an artificial 1 to divide by the inverse arguments
+          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
+          args      := exp.arguments;
+          inv_args  := exp.inv_arguments;
+        end if;
+      else
+        // empty, make either 0 or 1 depending on math classification
+        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
+          new_exp   := Expression.makeZero(Operator.typeOf(exp.operator));
+        else
+          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
+        end if;
+        args        := exp.arguments;
+        inv_args    := exp.inv_arguments;
+      end if;
+
+      inv_op := Operator.invert(exp.operator);
+      // chain all arguments
+      for arg in args loop
+        fixed_op := Operator.repairBinary(exp.operator, Expression.typeOf(new_exp), Expression.typeOf(arg));
+        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
+      end for;
+      // chain all inverse arguments
+      for arg in inv_args loop
+        fixed_op := Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(arg));
+        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
+      end for;
+    then new_exp;
+
+    else exp;
+  end match;
+end splitMultary;
 
 protected function combineBinariesExp
   "author: kabdelhak 09-2020
@@ -1405,9 +1533,11 @@ algorithm
     then addArgument(result, exp, inverse);
 
     case (_, Expression.ARRAY()) algorithm
-      exp.elements := Array.map(exp.elements,
-        function combineBinariesExp(optOperator = NONE(),
-          result = Expression.EMPTY(Expression.typeOf(exp)), inverse = false));
+      if not exp.literal then
+        exp.elements := Array.map(exp.elements,
+          function combineBinariesExp(optOperator = NONE(),
+            result = Expression.EMPTY(Expression.typeOf(exp)), inverse = false));
+      end if;
     then addArgument(result, exp, inverse);
 
     case (_, Expression.RANGE()) algorithm

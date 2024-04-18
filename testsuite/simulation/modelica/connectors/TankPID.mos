@@ -3,17 +3,17 @@
 // cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -rf TankPID_* TankPID TankPID.exe TankPID.cpp TankPID.makefile TankPID.libs TankPID.log output.log
-// 
+//
 //  <insert description here>
 //
 // Drmodelica: 12.1 Object Oriented Component-based (p. 386)
-// 
+//
 loadFile("TankPID.mo");
 simulate(TankPID,stopTime=250,numberOfIntervals=250,tolerance=1e-5,outputFormat="mat",variableFilter="tank\\.h"); // 2 intervals == 3 values
 readSimulationResultVars("TankPID_res.mat");
-echo(false); // turns of output 
+echo(false); // turns of output
 
-//res:=readSimulationResult("TankPID_res.mat",{x,y,z},3); 
+//res:=readSimulationResult("TankPID_res.mat",{x,y,z},3);
 x:=val(tank.h,25.0);
 y:=val(tank.h,100.0);
 z:=val(tank.h,150.0);

@@ -268,7 +268,7 @@ void setGlobalLoggingTime(SIMULATION_INFO *simulationInfo)
   /* Check if lv_time flag is given */
   if (flagStr==NULL || *flagStr=='\0')
   {
-    /* default activated --> Log everything*/
+    /* default activated --> Log everything */
     simulationInfo->useLoggingTime = 0;
     return;
   }
@@ -829,6 +829,91 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   return retVal;
 }
 
+/**
+ * @brief Set log activation from equationIndex and list from lv_system.
+ *
+ * Requires `nonlinsys[i].equationIndex` to be set already!
+ *
+ * @param data  Data object
+ */
+static void setLVSystems(DATA *data, threadData_t *threadData)
+{
+  int i;
+  int N = 0; /* largest equationIndex */
+  modelica_boolean* isSystemActive = NULL;
+  const char* p;
+  char* endptr;
+
+  MIXED_SYSTEM_DATA *mixedsys = data->simulationInfo->mixedSystemData;
+  LINEAR_SYSTEM_DATA *linsys = data->simulationInfo->linearSystemData;
+  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
+
+  if (omc_flag[FLAG_LV_SYSTEM]) {
+    /* get largest equationIndex */
+    for (i = 0; i < data->modelData->nMixedSystems; ++i)
+      if (mixedsys[i].equationIndex > N)
+        N = mixedsys[i].equationIndex;
+    for (i = 0; i < data->modelData->nLinearSystems; ++i)
+      if (linsys[i].equationIndex > N)
+        N = linsys[i].equationIndex;
+    for (i = 0; i < data->modelData->nNonLinearSystems; ++i)
+      if (nonlinsys[i].equationIndex > N)
+        N = nonlinsys[i].equationIndex;
+
+    /* initialize isSystemActive with FALSE */
+    isSystemActive = (modelica_boolean*) calloc(N+1, sizeof(modelica_boolean));
+    assertStreamPrint(threadData, NULL != isSystemActive, "setLVSystems: Out of memory.");
+
+    /* set isSystemActive[i] to true for all i in lv_system */
+    p = omc_flagValue[FLAG_LV_SYSTEM];
+    do {
+      errno = 0;
+      i = strtol(p, &endptr, 10);
+      if (errno == ERANGE) {
+        throwStreamPrint(threadData,
+          "setLVSystems: %s takes equation indices (got '%s')",
+          endptr, omc_flagValue[FLAG_LV_SYSTEM]);
+      }
+      if (i > N) {
+        throwStreamPrint(threadData,
+          "setLVSystems: %d is not a valid equation index", i);
+      }
+      isSystemActive[i] = TRUE;
+      p = endptr;
+    } while(*(p++) == ',');
+
+    /* activate corresponding system */
+    for (i = 0; i < data->modelData->nMixedSystems; ++i) {
+      mixedsys[i].logActive = isSystemActive[mixedsys[i].equationIndex];
+      isSystemActive[mixedsys[i].equationIndex] = FALSE;
+    }
+    for (i = 0; i < data->modelData->nLinearSystems; ++i) {
+      linsys[i].logActive = isSystemActive[linsys[i].equationIndex];
+      isSystemActive[linsys[i].equationIndex] = FALSE;
+    }
+    for (i = 0; i < data->modelData->nNonLinearSystems; ++i) {
+      nonlinsys[i].logActive = isSystemActive[nonlinsys[i].equationIndex];
+      isSystemActive[nonlinsys[i].equationIndex] = FALSE;
+    }
+
+    for (i = 0; i <= N; ++i){
+      if (isSystemActive[i]) {
+        throwStreamPrint(threadData,
+          "setLVSystems: %d is not a valid equation index.", i);
+      }
+    }
+    /* done */
+    free(isSystemActive);
+  } else {
+    /* if no list is given then all systems are active */
+    for (i = 0; i < data->modelData->nMixedSystems; ++i)
+      mixedsys[i].logActive = TRUE;
+    for (i = 0; i < data->modelData->nLinearSystems; ++i)
+      linsys[i].logActive = TRUE;
+    for (i = 0; i < data->modelData->nNonLinearSystems; ++i)
+      nonlinsys[i].logActive = TRUE;
+  }
+}
 
 /**
  * Initialization is the same for interactive or non-interactive simulation
@@ -1129,6 +1214,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   }
 #endif
 
+  /* set log activation from equationIndex and lv_system */
+  setLVSystems(data, threadData);
+
   /* initialize static data of mixed/linear/non-linear system solvers */
   initializeMixedSystems(data, threadData);
   initializeLinearSystems(data, threadData);
@@ -1403,7 +1491,15 @@ void setStreamPrintXML(int isXML)
   }
 }
 
-void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/, double currentTime, double currentStepSize)
+/**
+ * @brief Send status via XMLTCP or TCP.
+ *
+ * @param phase               Simulation phase.
+ * @param completionPercent   Percentage of simulation progress: 0.0 to 1.0
+ * @param currentTime         Current simulation time.
+ * @param currentStepSize     Current solver step size.
+ */
+void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize)
 {
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if (sim_communication_port_open && isXMLTCP) {

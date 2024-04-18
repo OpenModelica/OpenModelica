@@ -5,90 +5,30 @@
 
 loadFile("hybridSys.mo"); getErrorString();
 
-setCommandLineOptions("--newBackend -d=stateselection,initialization"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
 
-simulate(hybridSys); getErrorString();
+simulate(hybridSys, stopTime=2); getErrorString();
+
+val(x2, 0.0);
+val(x2, 2.0);
+val(phase_Start, 0.9);
+val(phase_Start, 1.1);
 
 // Result:
 // true
 // ""
 // true
 // ""
-// [stateselection] Natural states before index reduction:
-// *********************************************************
-// 	[STAT] (1) Real x1 (start = 10.0)
-//
-// [stateselection] Natural discrete states:
-// *******************************************
-// 	[DISS] (1) Boolean phase_Start (start = true)
-// 	[DISS] (1) Boolean phase_Loop1 (start = false)
-// 	[DISS] (1) Boolean phase_Loop2 (start = false)
-// 	[DISS] (1) Boolean phase_Loop3 (start = false)
-// 	[DISS] (1) Real x_End (start = 0.0)
-// 	[DISS] (1) Real x_Loop3 (start = 0.0)
-// 	[DISS] (1) Real x_Loop2 (start = 0.0)
-// 	[DISS] (1) Real x_Loop1 (start = 0.0)
-// 	[DISS] (1) Real x_Start (start = 0.0)
-//
-// ##############################
-//
-// 	Balance Initialization
-//
-// ##############################
-//
-// Stage 15 underdetermined.
-// Not overdetermined.
-// (15) Unmatched variables:
-// ***************************
-// 	[DISS] (1) Real x_Start (start = 0.0)
-// 	 slice: {};
-// 	[DISS] (1) Real x_Loop1 (start = 0.0)
-// 	 slice: {};
-// 	[DISS] (1) Real x_Loop2 (start = 0.0)
-// 	 slice: {};
-// 	[DISS] (1) Real x_Loop3 (start = 0.0)
-// 	 slice: {};
-// 	[DISS] (1) Real x_End (start = 0.0)
-// 	 slice: {};
-// 	[STAT] (1) Real x1 (start = 10.0)
-// 	 slice: {};
-// 	[PRE-] (1) Boolean $PRE.phase_Start
-// 	 slice: {};
-// 	[PRE-] (1) Boolean $PRE.phase_Loop1
-// 	 slice: {};
-// 	[PRE-] (1) Boolean $PRE.phase_Loop2
-// 	 slice: {};
-// 	[PRE-] (1) Boolean $PRE.phase_Loop3
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_End
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Loop3
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Loop2
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Loop1
-// 	 slice: {};
-// 	[PRE-] (1) Real $PRE.x_Start
-// 	 slice: {};
-//
-// (0) Unmatched equations:
-// **************************
-//
-// Not underdetermined.
-// Not overdetermined.
-// (0) Unmatched variables:
-// **************************
-//
-//
-// (0) Unmatched equations:
-// **************************
-//
 // record SimulationResult
 //     resultFile = "hybridSys_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'hybridSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'hybridSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
+// 10.0
+// 2.353351017981785
+// 1.0
+// 0.0
 // endResult

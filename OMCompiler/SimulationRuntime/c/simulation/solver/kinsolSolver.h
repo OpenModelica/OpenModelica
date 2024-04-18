@@ -88,8 +88,8 @@ typedef struct NLS_KINSOL_DATA {
 
   /* ### work arrays ### */
   N_Vector initialGuess;
-  N_Vector xScale;
-  N_Vector fScale;
+  N_Vector xScale;                      /* x scaling vector */
+  N_Vector fScale;                      /* f(x) scaling vector */
   N_Vector fRes;
   N_Vector fTmp;
 
@@ -101,19 +101,22 @@ typedef struct NLS_KINSOL_DATA {
   NLS_USERDATA* userData;        /* User data provided to KINSOL */
 
   /* linear solver data */
-  SUNLinearSolver linSol;              /* Linear solver object used by KINSOL */
-  N_Vector y;                          /* Template for cloning vectors needed
+  SUNLinearSolver linSol;               /* Linear solver object used by KINSOL */
+  N_Vector y;                           /* Template for cloning vectors needed
                                           inside linear solver */
-  SUNMatrix J;                         /* (Non-)Sparse matrix template for cloning
+  SUNMatrix J;                          /* (Non-)Sparse matrix template for cloning
                                           matrices needed within linear solver */
 
+  N_Vector tmp1, tmp2;                  /* Work arrays for nlsSparseJac */
+  SUNMatrix scaledJ;                    /* Scaled jacobian used for sparse Jacobian */
+
   /* Properties of non-linear system */
-  int size;                            /* Size of non-linear problem */
-  int nnz;                             /* Number of non-zero elements */
+  int size;                             /* Size of non-linear problem */
+  int nnz;                              /* Number of non-zero elements */
 
 } NLS_KINSOL_DATA;
 
-NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry);
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable);
 void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 

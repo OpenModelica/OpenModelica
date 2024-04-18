@@ -186,7 +186,7 @@ end OperatorOverloadArrayOp4;
 //   input Complex c2 "Complex number 2";
 //   output Complex c3 "= c1/c2";
 // algorithm
-//   c3 := Complex.'constructor'.fromReal((c1.re * c2.re + c1.im * c2.im) / (c2.re * c2.re + c2.im * c2.im), ((-c1.re * c2.im) + c1.im * c2.re) / (c2.re * c2.re + c2.im * c2.im));
+//   c3 := Complex.'constructor'.fromReal((c1.re * c2.re + c1.im * c2.im) / (c2.re * c2.re + c2.im * c2.im), (c1.im * c2.re - c1.re * c2.im) / (c2.re * c2.re + c2.im * c2.im));
 // end Complex.'/';
 //
 // function Complex.'constructor'.fromReal "Construct Complex from Real"

@@ -51,6 +51,7 @@ protected
   import NFComponentRef.ComponentRef;
   import DAE.ElementSource;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import StringUtil;
   import Util;
   import Prefixes = NFPrefixes;
   import NFPrefixes.Visibility;
@@ -67,7 +68,7 @@ protected
 
 public
   record FLAT_MODEL
-    String name;
+    Absyn.Path name;
     list<Variable> variables;
     list<Equation> equations;
     list<Equation> initialEquations;
@@ -115,6 +116,16 @@ public
     flatModel.initialAlgorithms := list(fn(alg) for alg in flatModel.initialAlgorithms);
   end mapAlgorithms;
 
+  function fullName
+    input FlatModel flatModel;
+    output String name = AbsynUtil.pathString(flatModel.name);
+  end fullName;
+
+  function className
+    input FlatModel flatModel;
+    output String name = AbsynUtil.pathLastIdent(flatModel.name);
+  end className;
+
   function toString
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
@@ -144,8 +155,10 @@ public
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
+  protected
+    String name = className(flatModel);
   algorithm
-    s := IOStream.append(s, "class " + flatModel.name + "\n");
+    s := IOStream.append(s, "class " + name + "\n");
 
     for v in flatModel.variables loop
       s := Variable.toStream(v, "  ", printBindingTypes, s);
@@ -176,7 +189,7 @@ public
       end if;
     end for;
 
-    s := IOStream.append(s, "end " + flatModel.name + ";\n");
+    s := IOStream.append(s, "end " + name + ";\n");
   end appendStream;
 
   function toFlatString
@@ -206,7 +219,7 @@ public
     input Boolean printBindingTypes = false;
     output IOStream.IOStream s;
   algorithm
-    s := IOStream.create(flatModel.name, IOStream.IOStreamType.LIST());
+    s := IOStream.create(className(flatModel), IOStream.IOStreamType.LIST());
     s := appendFlatStream(flatModel, functions, printBindingTypes, s);
   end toFlatStream;
 
@@ -218,63 +231,59 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
-    Visibility visibility = Visibility.PUBLIC;
+    String name = className(flatModel);
   algorithm
-    s := IOStream.append(s, "model '" + flat_model.name + "'");
-    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
-    s := IOStream.append(s, "\n");
-
+    s := IOStream.append(s, "package '" + name + "'\n");
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
-        s := Function.toFlatStream(fn, s);
+        s := Function.toFlatStream(fn, "  ", s);
         s := IOStream.append(s, ";\n\n");
       end if;
     end for;
 
     for ty in collectFlatTypes(flat_model, functions) loop
-      s := Type.toFlatDeclarationStream(ty, s);
+      s := Type.toFlatDeclarationStream(ty, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
 
-    for v in flat_model.variables loop
-      if visibility <> Variable.visibility(v) then
-        visibility := Variable.visibility(v);
-        s := IOStream.append(s, Prefixes.visibilityString(visibility));
-        s := IOStream.append(s, "\n");
-      end if;
+    s := IOStream.append(s, "  model '" + name + "'");
+    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
+    s := IOStream.append(s, "\n");
 
-      s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
+    for v in flat_model.variables loop
+      s := Variable.toFlatStream(v, "    ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 
     if not listEmpty(flat_model.initialEquations) then
-      s := IOStream.append(s, "initial equation\n");
-      s := Equation.toFlatStreamList(flat_model.initialEquations, "  ", s);
+      s := IOStream.append(s, "  initial equation\n");
+      s := Equation.toFlatStreamList(flat_model.initialEquations, "    ", s);
     end if;
 
     if not listEmpty(flat_model.equations) then
-      s := IOStream.append(s, "equation\n");
-      s := Equation.toFlatStreamList(flat_model.equations, "  ", s);
+      s := IOStream.append(s, "  equation\n");
+      s := Equation.toFlatStreamList(flat_model.equations, "    ", s);
     end if;
 
     for alg in flat_model.initialAlgorithms loop
       if not listEmpty(alg.statements) then
-        s := IOStream.append(s, "initial algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+        s := IOStream.append(s, "  initial algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "    ", s);
       end if;
     end for;
 
     for alg in flat_model.algorithms loop
       if not listEmpty(alg.statements) then
-        s := IOStream.append(s, "algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+        s := IOStream.append(s, "  algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "    ", s);
       end if;
     end for;
 
-    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "  ", ";\n", s);
-    s := IOStream.append(s, "end '" + flat_model.name + "';\n");
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "    ", ";\n", s);
+    s := IOStream.append(s, "  end '" + name + "';\n");
+    s := IOStream.append(s, "end '" + name + "';\n");
   end appendFlatStream;
 
   function collectFlatTypes
@@ -707,10 +716,6 @@ public
       addObfuscatedVariable(v, only_encrypted, obfuscation_map);
     end for;
 
-    if UnorderedMap.isEmpty(obfuscation_map) then
-      return;
-    end if;
-
     flatModel.variables := list(obfuscateVariable(v, obfuscation_map) for v in flatModel.variables);
     flatModel := mapEquations(flatModel, function obfuscateEquation(obfuscationMap = obfuscation_map));
     flatModel := mapAlgorithms(flatModel, function obfuscateAlgorithm(obfuscationMap = obfuscation_map));
@@ -740,24 +745,37 @@ public
     input ObfuscationMap obfuscationMap;
   algorithm
     var.name := obfuscateCref(var.name, obfuscationMap);
-    var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name), obfuscationMap);
+    var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name),
+      obfuscationMap, stripComment = not Variable.isAccessible(var));
     var := Variable.mapExpShallow(var, function obfuscateExp(obfuscationMap = obfuscationMap));
   end obfuscateVariable;
 
   function obfuscateCref
     input output ComponentRef cref;
     input ObfuscationMap obfuscationMap;
+    output Boolean insideRecord = false;
   protected
     Option<String> name;
+    ComponentRef rest_cref;
   algorithm
     () := match cref
       case ComponentRef.CREF()
         algorithm
-          name := UnorderedMap.get(cref.node, obfuscationMap);
+          (rest_cref, insideRecord) := obfuscateCref(cref.restCref, obfuscationMap);
+          cref.restCref := rest_cref;
 
-          if isSome(name) then
-            cref.node := InstNode.rename(Util.getOption(name), cref.node);
+          // Only obfuscate variables that do not belong to a record instance,
+          // record field names need to be kept to keep them consistent with the
+          // record constructors.
+          if not insideRecord then
+            name := UnorderedMap.get(cref.node, obfuscationMap);
+
+            if isSome(name) then
+              cref.node := InstNode.rename(Util.getOption(name), cref.node);
+            end if;
           end if;
+
+          insideRecord := InstNode.isRecord(cref.node);
 
           cref.subscripts := list(Subscript.mapShallowExp(s,
             function obfuscateExp(obfuscationMap = obfuscationMap)) for s in cref.subscripts);
@@ -839,18 +857,23 @@ public
     input output Option<SCode.Comment> comment;
     input InstNode scope;
     input ObfuscationMap obfuscationMap;
+    input Boolean stripComment = true;
   algorithm
     comment := Util.applyOption(comment,
-      function obfuscateComment(scope = scope, obfuscationMap = obfuscationMap));
+      function obfuscateComment(scope = scope, obfuscationMap = obfuscationMap, stripComment = stripComment));
   end obfuscateCommentOpt;
 
   function obfuscateComment
     input output SCode.Comment comment;
     input InstNode scope;
     input ObfuscationMap obfuscationMap;
+    input Boolean stripComment = true;
   algorithm
     comment.annotation_ := obfuscateAnnotationOpt(comment.annotation_, scope, obfuscationMap);
-    comment.comment := NONE();
+
+    if stripComment then
+      comment.comment := NONE();
+    end if;
   end obfuscateComment;
 
   function obfuscateAnnotationOpt
@@ -908,7 +931,7 @@ public
       case "unassignedMessage" then false;
       case "Protection" then false;
       case "Authorization" then false;
-      else not Util.stringStartsWith("__", mod.ident);
+      else not StringUtil.startsWith(mod.ident, "__");
     end match;
   end isAllowedAnnotation;
 
@@ -1019,6 +1042,20 @@ public
       end if;
     end for;
   end hasArrayConnections;
+
+  function removeNonTopLevelDirections
+    input output FlatModel flatModel;
+  protected
+    Integer expose_local_ios;
+  algorithm
+    // Keep the declared directions if --useLocalDirection=true has been set.
+    if Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION) then
+      return;
+    end if;
+
+    expose_local_ios := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
+    flatModel.variables := list(Variable.removeNonTopLevelDirection(v, expose_local_ios) for v in flatModel.variables);
+  end removeNonTopLevelDirections;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

@@ -25,7 +25,7 @@ getModelInstance(M, prettyPrint = true); getErrorString();
 //       \"$kind\": \"component\",
 //       \"name\": \"T_ref\",
 //       \"type\": {
-//         \"name\": \"Temperature\",
+//         \"name\": \"M.Temperature\",
 //         \"restriction\": \"type\",
 //         \"elements\": [
 //           {
@@ -34,7 +34,7 @@ getModelInstance(M, prettyPrint = true); getErrorString();
 //               \"start\": \"1\"
 //             },
 //             \"baseClass\": {
-//               \"name\": \"ThermodynamicTemperature\",
+//               \"name\": \"M.ThermodynamicTemperature\",
 //               \"restriction\": \"type\",
 //               \"elements\": [
 //                 {

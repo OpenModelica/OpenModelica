@@ -16,7 +16,7 @@ public:
   OpcUaClient(SimulationOptions simulationOptions);
   ~OpcUaClient();
 
-  bool connectToServer();
+  bool connectToServer(QString *pErrorString);
   QStringList fetchVariableNamesFromServer();
   QMap<QString, Variable*> *getVariables() {return &mVariables;}
   UA_Client* getClient() {return mpClient;}
@@ -96,7 +96,7 @@ private:
   UA_UInt32 mSubscriptionId;
 signals:
   void sendUpdateCurves();
-  void sendUpdateYAxis(double, double);
+  void sendUpdateYAxis(QPair<double, double> minMaxValues);
   void sendAddMonitoredItem(int, QString);
   void sendRemoveMonitoredItem(QString);
 };

@@ -36,7 +36,6 @@
 #include <QMutex>
 #include "inputcelldelegate.h"
 #include <QString>
-using namespace std;
 using namespace IAEX;
 
 extern QMutex evalMutex; // adrpo 2009-01-19

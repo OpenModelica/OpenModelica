@@ -21,8 +21,10 @@ Generated on |date| at |time|
   packagemanager
   omedit
   plotting
+  compiler
   solving
   debugger
+  basemodelica
   porting
   graphs
   fmitlm

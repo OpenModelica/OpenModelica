@@ -45,6 +45,7 @@ protected
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
+  import Call = NFCall;
 
 public
   uniontype Branch
@@ -139,6 +140,19 @@ public
           then toFlatStream(branch.branch, indent, s);
       end match;
     end toFlatStream;
+
+    function toString
+      input Branch branch;
+      input String indent;
+      output String str;
+    protected
+      IOStream.IOStream s;
+    algorithm
+      s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+      s := toStream(branch, indent, s);
+      str := IOStream.string(s);
+      IOStream.delete(s);
+    end toString;
 
     function triggerErrors
       input Branch branch;
@@ -564,6 +578,107 @@ public
       else ();
     end match;
   end applyExp;
+
+  function applyExpShallow
+    input Equation eq;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match eq
+      case Equation.EQUALITY()
+        algorithm
+          func(eq.lhs);
+          func(eq.rhs);
+        then
+          ();
+
+      case Equation.ARRAY_EQUALITY()
+        algorithm
+          func(eq.lhs);
+          func(eq.rhs);
+        then
+          ();
+
+      case Equation.CONNECT()
+        algorithm
+          func(eq.lhs);
+          func(eq.rhs);
+        then
+          ();
+
+      case Equation.FOR()
+        algorithm
+          if isSome(eq.range) then
+            func(Util.getOption(eq.range));
+          end if;
+        then
+          ();
+
+      case Equation.IF()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  func(b.condition);
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          ();
+
+      case Equation.WHEN()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  func(b.condition);
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          ();
+
+      case Equation.ASSERT()
+        algorithm
+          func(eq.condition);
+          func(eq.message);
+          func(eq.level);
+        then
+          ();
+
+      case Equation.TERMINATE()
+        algorithm
+          func(eq.message);
+        then
+          ();
+
+      case Equation.REINIT()
+        algorithm
+          func(eq.cref);
+          func(eq.reinitExp);
+        then
+          ();
+
+      case Equation.NORETCALL()
+        algorithm
+          func(eq.exp);
+        then
+          ();
+
+      else ();
+    end match;
+  end applyExpShallow;
 
   partial function MapExpFn
     input output Expression MapExpFn;
@@ -1066,6 +1181,7 @@ public
   end replaceIteratorList;
 
   function isConnect
+    "Checks if an equation is a connect equation."
     input Equation eq;
     output Boolean isConnect;
   algorithm
@@ -1074,6 +1190,21 @@ public
       else false;
     end match;
   end isConnect;
+
+  function isConnection
+    "Checks if an equation is a connect equation or a Connections.* call."
+    input Equation eq;
+    output Boolean res;
+  protected
+    Call call;
+  algorithm
+    res := match eq
+      case Equation.CONNECT() then true;
+      case Equation.NORETCALL(exp = Expression.CALL(call = call))
+        then Call.functionNameFirst(call) == "Connections";
+      else false;
+    end match;
+  end isConnection;
 
   function sizeOfList
     input list<Equation> eqs;

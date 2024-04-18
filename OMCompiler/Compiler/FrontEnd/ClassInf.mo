@@ -55,6 +55,7 @@ protected import Error;
 protected import Flags;
 protected import Print;
 protected import SCodeDump;
+protected import SCodeUtil;
 
 public
 uniontype State "- Machine states, the string contains the classname."
@@ -421,10 +422,7 @@ algorithm
     case (SCode.R_CONNECTOR(isExpandable),p) then CONNECTOR(p,isExpandable);
     case (SCode.R_TYPE(),p) then TYPE(p);
     case (SCode.R_PACKAGE(),p) then PACKAGE(p);
-    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
-    case (SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),p) then FUNCTION(p, false);
-    case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false);
+    case (SCode.R_FUNCTION(),p) then FUNCTION(p, SCodeUtil.isRestrictionImpure(inRestriction, true));
     case (SCode.R_OPERATOR(),p) then FUNCTION(p, false);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
     case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);

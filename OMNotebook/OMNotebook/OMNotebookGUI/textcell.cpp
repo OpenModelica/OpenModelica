@@ -47,22 +47,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QString>
-#include <QtGui/QAbstractTextDocumentLayout>
-#include <QtGui/QBrush>
-#include <QtGui/QApplication>
-#include <QtGui/QStatusBar>
-#include <QtGui/QFrame>
-#include <QtGui/QLabel>
-#include <QtGui/QTextDocumentFragment>
-#include <QtGui/QTextFrame>
-#include <QtGui/QResizeEvent>
-#include <QMessageBox>
-#include <QVariant>
-#endif
 
 
 //IAEX Headers
@@ -741,7 +726,7 @@ namespace IAEX
   {
     int height = text_->document()->documentLayout()->documentSize().toSize().height();
 
-    //cout << "Height: " << height << endl;
+    //std::cout << "Height: " << height << std::endl;
 
     if( height < 0 )
       height = 30;

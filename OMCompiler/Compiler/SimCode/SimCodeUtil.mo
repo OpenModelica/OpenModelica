@@ -111,6 +111,7 @@ import SimCodeDump;
 import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.varName;
 import Static;
+import StringUtil;
 import SymbolicJacobian;
 import System;
 import Util;
@@ -119,6 +120,8 @@ import VisualXML;
 import ZeroCrossings;
 import ReduceDAE;
 import Settings;
+import UnorderedSet;
+import InteractiveUtil;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -4802,7 +4805,7 @@ algorithm
         ((allVars, _)) = BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(BackendVariable.equationSystemsVarsLst(systs)), getFurtherVars , ({}, x));
         systvars = BackendVariable.listVar1(allVars);
         ((columnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
-        columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+        columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_TMP_VAR());
         columnVars = List.map1(columnVars, setSimVarMatrixName, SOME(name));
         columnVars = rewriteIndex(columnVars, 0);
 
@@ -5151,7 +5154,7 @@ algorithm
         ((allVars, _)) = BackendVariable.traverseBackendDAEVars(BackendVariable.listVar1(BackendVariable.equationSystemsVarsLst(systs)), getFurtherVars , ({}, x));
         systvars = BackendVariable.listVar1(allVars);
         ((otherColumnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
-        otherColumnVars = List.map1(otherColumnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+        otherColumnVars = List.map1(otherColumnVars, setSimVarKind, BackendDAE.JAC_TMP_VAR());
         otherColumnVars = List.map1(otherColumnVars, setSimVarMatrixName, SOME(name));
         otherColumnVars = rewriteIndex(otherColumnVars, 0);
 
@@ -5335,7 +5338,7 @@ algorithm
         end match;
         derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, inCref, inMatrixName);
         v1 := BackendVariable.copyVarNewName(derivedCref, v);
-        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_DIFF_VAR());
+        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_TMP_VAR());
         simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
         simVar.index := inTmpIndex;
         simVar.matrixName := SOME(inMatrixName);
@@ -5714,7 +5717,7 @@ algorithm
       ((allVars, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, getFurtherVars , ({}, x));
       systvars = BackendVariable.listVar1(allVars);
       ((columnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
-      columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+      columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_TMP_VAR());
       columnVars = List.map1(columnVars, setSimVarMatrixName, SOME(name));
       innerVars = rewriteIndex(columnVars, 0);
 
@@ -7674,7 +7677,7 @@ public function createModelInfo
   input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description, directory;
+  String fileName, description, directory;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
@@ -7719,7 +7722,8 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
-    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
+    Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(class_, program);
+    modelInfo := SimCode.MODELINFO(class_, fileName, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
@@ -8442,28 +8446,36 @@ algorithm
   end match;
 end getDefaultFmiInitialAttribute;
 
-protected function clearUpDefaultFmiAttributes
-  "Replaces default values of the following attributes with NONE(): initial, causality, variability"
-  input output SimCodeVar.SimVar simVar;
+public function getFmiInitialAttributeStr
+  "This function is called from CodegenFMUCommon.tpl. It compares a variable's initial_ fmi attriute
+  with the default expected (based on teh variability and causality of the variable). If it turns out
+  to be the same as the default then it will return an empty string so that the value is not
+  printed to the modelDescription.xml file. However, if the flag DUMP_FORCE_FMI_ATTRIBUTES is set,
+  it will always print the attrbute whether it is equal to the defaul or not."
+  input SimCodeVar.SimVar simVar;
+  output String out_string = "";
 protected
-  SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
-  SimCodeVar.Variability default_variability = SimCodeVar.CONTINUOUS();
-  SimCodeVar.Initial default_initial;
+  SimCodeVar.Initial var_initial, default_initial;
 algorithm
-  default_initial := getDefaultFmiInitialAttribute(Util.getOptionOrDefault(simVar.variability, default_variability), Util.getOptionOrDefault(simVar.causality, default_causality));
-
-  if isSome(simVar.initial_) and valueEq(Util.getOption(simVar.initial_), default_initial) then
-    simVar.initial_ := NONE();
+  if isNone(simVar.initial_) then
+    return;
   end if;
 
-  if isSome(simVar.causality) and valueEq(Util.getOption(simVar.causality), default_causality) then
-    simVar.causality := NONE();
+  SOME(var_initial) := simVar.initial_;
+  default_initial := getDefaultFmiInitialAttribute(Util.getOptionOrDefault(simVar.variability, SimCodeVar.CONTINUOUS())
+                                                  , Util.getOptionOrDefault(simVar.causality, SimCodeVar.LOCAL()));
+
+  if valueEq(var_initial, default_initial) and not Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then
+    var_initial := SimCodeVar.NONE_INITIAL(); // Set it to NONE_INITIAL here so the case below turns it to ""
   end if;
 
-  if isSome(simVar.variability) and valueEq(Util.getOption(simVar.variability), default_variability) then
-    simVar.variability := NONE();
-  end if;
-end clearUpDefaultFmiAttributes;
+  out_string := match var_initial
+    case SimCodeVar.EXACT(__) then "exact";
+    case SimCodeVar.APPROX(__) then "approx";
+    case SimCodeVar.CALCULATED(__) then "calculated";
+    case SimCodeVar.NONE_INITIAL(__) then "";
+  end match;
+end getFmiInitialAttributeStr;
 
 // one dlow var can result in multiple simvars: input and output are a subset
 // of algvars for example
@@ -8587,12 +8599,6 @@ algorithm
     Mutable.update(hs, BaseHashSet.add(derivSimvar.name, Mutable.access(hs)));
   else
     derivSimvar := simVar; // Just in case
-  end if;
-
-  // clear up default values to improve readability of modelDescription.xml
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then
-    simVar := clearUpDefaultFmiAttributes(simVar);
-    derivSimvar := clearUpDefaultFmiAttributes(derivSimvar) "just in case";
   end if;
 
   //print("\n name :" + ComponentReference.printComponentRefStr(simVar.name) + "===>" + anyString(simVar.varKind) + "\n");
@@ -9971,7 +9977,7 @@ algorithm
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
         // check if the variable has changeable value
         // parameter which has final = true or evaluate annotation are not changeable
-        isValueChangeable = ((not BackendVariable.hasVarEvaluateTrueAnnotationOrFinalOrProtected(dlowVar)
+        isValueChangeable = ((not BackendVariable.hasVarEvaluateAnnotationTrueOrFinalOrProtected(dlowVar)
                             and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar))))
                             and isFixed;
         caus = getCausality(dlowVar, vars, isValueChangeable);
@@ -10243,7 +10249,9 @@ protected function startValueIsConstOrDefault
   input DAE.Type type_;
   output Option<DAE.Exp> outstart_value;
 algorithm
-  if Expression.isConstValue(Util.getOption(start_value)) then
+  if Util.isNone(start_value) then
+     outstart_value := NONE();
+  elseif Expression.isConstValue(Util.getOption(start_value)) then
     outstart_value := start_value;
   else
     outstart_value := setDefaultStartValue(type_);
@@ -10265,7 +10273,7 @@ algorithm
       case (NONE()) guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
       case (SOME(_)) guard isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
       case (NONE()) guard isCausalityInput(causality) then setDefaultStartValue(var.varType);
-      else NONE();
+      else startValueIsConstOrDefault(startValue, var.varType);
     end match;
   end if;
 end updateStartValue;
@@ -14059,17 +14067,17 @@ else
   // create empty model structure
   try
     // create empty derivatives dependencies
-    derivatives := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+    derivatives := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                         for v in getScalarVars(inModelInfo.vars.derivativeVars));
 
     // create empty output dependencies
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    outputs := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+    outputs := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                     for v in getScalarVars(varsA));
 
     // create empty clockedStates dependencies
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    discreteStates := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+    discreteStates := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                            for v in getScalarVars(clockedStates));
 
     contPartSimDer := NONE();
@@ -14184,8 +14192,12 @@ protected
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   array<Integer> match1,match2;
   Boolean debug = false;
+  UnorderedSet<DAE.ComponentRef> initialUnknowns;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
+  initialUnknowns := UnorderedSet.fromList(initialUnknownCrefs,
+    ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+
   if debug then
     print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
   end if;
@@ -14241,9 +14253,9 @@ algorithm
   indepVars := {}; // vars with causality = input and initial = approx or calculated, causality = calculatedParameter, states and derivative vars with initial = approx or calculated
   depVars := {}; // vars with causality = input and initial = exact
 
-  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknowns, crefSimVarHT);
   // search in globalKnownVars as they contains inputs and parameters with inital = exact
-  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknowns, crefSimVarHT);
 
   if debug then
     BackendDump.dumpVarList(depVars, "depVars");
@@ -14284,8 +14296,8 @@ algorithm
 
   // generate Partial derivative for initDAE here, as we have the list of all depVars and inDepVars
   if not Flags.isSet(Flags.FMI20_DEPENDENCIES) and not stringEq(Config.simCodeTarget(), "Cpp") then
-    fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(depVars), crefSimVarHT);
-    fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(indepVars), crefSimVarHT);
+    fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(orderedVars), crefSimVarHT);
+    fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(orderedVars), crefSimVarHT);
     if debug then
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
@@ -14315,12 +14327,18 @@ protected
   SimCodeVar.SimVar simVar;
 algorithm
   for cr in crefs loop
-    var := BackendVariable.getVarSingle(cr, orderedVars);
-    simVar := BaseHashTable.get(cr, crefSimVarHT);
-    // Filter only Real vars that match the --fmiFilter flag
-    if BackendVariable.isRealVar(var) and isSome(simVar.exportVar) then
-      outVar := var :: outVar;
-    end if;
+    // check if var exist otherwise don't generate derivatives for those vars, it is possible sometimes
+    // internal variables pops up in this list
+    try
+      var := BackendVariable.getVarSingle(cr, orderedVars);
+      simVar := BaseHashTable.get(cr, crefSimVarHT);
+      // Filter only Real vars that match the --fmiFilter flag
+      if BackendVariable.isRealVar(var) and isSome(simVar.exportVar) then
+        outVar := var :: outVar;
+      end if;
+    else
+      outVar := {};
+    end try;
   end for;
 end getDependentAndIndepentVarsForJacobian;
 
@@ -14338,7 +14356,7 @@ protected function getDepAndIndepVarsForInitialUnknowns
   input list<BackendDAE.Var> inVar;
   input list<BackendDAE.Var> depVars;
   input list<BackendDAE.Var> indepVars;
-  input list<DAE.ComponentRef> initialUnknownCrefs;
+  input UnorderedSet<DAE.ComponentRef> initialUnknowns;
   input SimCode.HashTableCrefToSimVar crefSimVarHT;
   output list<BackendDAE.Var> outdepVars = depVars;
   output list<BackendDAE.Var> outindepVars = indepVars;
@@ -14351,7 +14369,7 @@ algorithm
   for var in inVar loop
     cref := BackendVariable.varCref(var);
     // get depVars, which is basically list of InitialUnknowns extracted according to FMI-2.0 specification from SimVar,
-    if listMember(cref, initialUnknownCrefs) then
+    if UnorderedSet.contains(cref, initialUnknowns) then
       outdepVars := var::outdepVars;
     end if;
     // get indepVars, which is bascially list of vars with causality = input or initial = exact
@@ -15415,13 +15433,6 @@ algorithm
   end match;
 end getNumContinuousEquationsSingleEq;
 
-public function sortCrefBasedOnSimCodeIndex
-  input output list<DAE.ComponentRef> crs;
-  input SimCode.SimCode simCode;
-algorithm
-  crs := List.sort(crs, function crefSimCodeIndexGreaterThan(simCode=simCode));
-end sortCrefBasedOnSimCodeIndex;
-
 protected function crefSimCodeIndexGreaterThan
   input DAE.ComponentRef cr1, cr2;
   input SimCode.SimCode simCode;
@@ -15702,9 +15713,9 @@ function getDirectoriesForDLLsFromLinkLibs
   output list<String> outLibs = {};
 algorithm
   for str in libsAndLinkDirs loop
-    if Util.stringStartsWith("\"-L", str) then
+    if StringUtil.startsWith(str, "\"-L") then
       outLocations := listAppend({System.trim(str, "\"-L")}, outLocations);
-    elseif Util.stringStartsWith("-l", str) then
+    elseif StringUtil.startsWith(str, "-l") then
       outLibs := listAppend({System.trim(str, "-l")}, outLibs);
     end if;
   end for;
@@ -15734,7 +15745,8 @@ algorithm
                  "             NAMES " + lib + "\n" +
                  "             PATHS ${EXTERNAL_LIBDIRECTORIES})\n" +
                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n";
+                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n" +
+                 "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
   end for;
 end getCmakeLinkLibrariesCode;
 
@@ -15870,15 +15882,30 @@ public function getCMakeVersion
 protected
   Integer retVal;
   String cmakeVersionLogFile = "systemCall_cmakeVersion.log";
+  list<String> regexOut;
+  Integer numMatches;
   String cmakeVersionString;
 algorithm
-  // Regex magic to read major.minor.patch version from cmake --version
-  retVal := System.systemCall(pathToCMake + " --version 2>&1 | grep \"^.*cmake version\" | sed -e 's/^.*cmake version *//' | sed -e 's/-.*//'", cmakeVersionLogFile);
+  retVal := System.systemCall(pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     System.removeFile(cmakeVersionLogFile);
     Error.addInternalError("Failed to get version from " + pathToCMake, sourceInfo());
+    fail();
   end if;
-  cmakeVersionString := System.trimWhitespace(System.readFile(cmakeVersionLogFile));
+  // Regex magic to read major.minor.patch version from cmake --version
+  // regex \d doesn't work on Linux, using [0-9] instead
+  (numMatches, regexOut) := System.regex(
+    System.trimWhitespace(System.readFile(cmakeVersionLogFile)),
+    "[0-9]+\\.[0-9]+\\.[0-9]+",
+    maxMatches=1,
+    extended=true
+  );
+  if numMatches == 0 then
+    System.removeFile(cmakeVersionLogFile);
+    Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
+    fail();
+  end if;
+  cmakeVersionString := List.first(regexOut);
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
@@ -15891,6 +15918,213 @@ algorithm
     size := size * iter.size;
   end for;
 end getSimIteratorSize;
+
+public function getExpNominal
+  "Returns the nominal value of an expression.
+  Used to scale zero-crossings like `a > b`."
+  input DAE.Exp expr;
+  output DAE.Exp nominal;
+algorithm
+  nominal := match expr
+    local
+      DAE.ComponentRef cr;
+      SimCodeVar.SimVar v;
+      Real r1, r2;
+      DAE.Exp e1, e2;
+      DAE.Type t;
+
+    // for const 0 use zero nominal to not saturate the rest of the expression
+    case DAE.ICONST() then DAE.RCONST(abs(intReal(expr.integer)));
+    case DAE.RCONST() then DAE.RCONST(abs(expr.real));
+
+    case DAE.CREF(componentRef = cr, ty = t) algorithm
+      v := cref2simvar(cr, getSimCode());
+    then match v.nominalValue
+      case SOME(DAE.RCONST(r1)) then DAE.RCONST(abs(r1));
+      case SOME(e1) then Expression.makePureBuiltinCall("abs", {e1}, t);
+      case NONE() then match v.varKind
+        // for parameters use their actual value
+        case BackendDAE.PARAM() then Expression.makePureBuiltinCall("abs", {expr}, t);
+        else DAE.RCONST(1.0);
+        // TODO use min/max to deduce better nominal value than 1.
+      end match;
+    end match;
+
+    // a + b = (A*as) + (B*bs) = (A+B)*(A/(A+B)*as + B/(A+B)*bs)
+    // FIXME if A = B and a and b have opposite signs then the nominal value of
+    //   a+b may be arbitrarily small, but it's definitely smaller than A+B
+    case DAE.BINARY(operator = DAE.ADD(ty = t))
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1 + r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
+
+    // similar to DAE.ADD
+    case DAE.BINARY(operator = DAE.SUB(ty = t))
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1 + r2);
+      case (e1, e2) then DAE.BINARY(e1, DAE.ADD(t), e2);
+    end match;
+
+    // a*b = (A*as)*(B*bs) = (A*B)*(as*bs)
+    case DAE.BINARY(operator = DAE.MUL())
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1*r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
+
+    // a/b = (A*as)/(B*bs) = (A/B)*(as/bs)
+    case DAE.BINARY(operator = DAE.DIV())
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1/r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
+
+    // a^b = (A*as)^(B*bs) = (A^B)^bs * (as)^(B*bs)
+    case DAE.BINARY(operator = DAE.POW())
+    then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1^r2);
+      case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);
+    end match;
+
+    // -a = -(A*as) = A*(-as)
+    case DAE.UNARY(operator = DAE.UMINUS())
+    then getExpNominal(expr.exp);
+
+    // if cond then a else b = if cond then A*as else B*bs
+    case DAE.IFEXP()
+    then DAE.IFEXP(expr.expCond, getExpNominal(expr.expThen), getExpNominal(expr.expElse));
+
+    // |a| = |A*as| = A*|as|
+    case DAE.CALL(path = Absyn.IDENT(name = "abs"), expLst = {e1})
+    then getExpNominal(e1);
+
+    // sign has values {-1,0,1}
+    case DAE.CALL(path = Absyn.IDENT(name = "sign"))
+    then DAE.RCONST(1.0);
+
+    // sqrt(a) = sqrt(A*as) = sqrt(A)*sqrt(as)
+    case DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(sqrt(r1));
+      case e2 then Expression.makePureBuiltinCall("sqrt", {e2}, t);
+    end match;
+
+    // div(a, b) is approximately a/b as long as a >> b
+    case DAE.CALL(path = Absyn.IDENT(name = "div"), expLst = {e1, e2})
+    then match (getExpNominal(e1), getExpNominal(e2))
+      case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(max(1.0, abs(r1 / r2)));
+      else DAE.RCONST(1.0);
+    end match;
+
+    // mod(a, b) has values in [0, b]
+    case DAE.CALL(path = Absyn.IDENT(name = "mod"), expLst = {_, e2})
+    then match getExpNominal(e2)
+      case DAE.RCONST(r2) then DAE.RCONST(r2);
+      else DAE.RCONST(1.0);
+    end match;
+
+    // rem(a, b) has values in [-b, b]
+    case DAE.CALL(path = Absyn.IDENT(name = "rem"), expLst = {_, e2})
+    then match getExpNominal(e2)
+      case DAE.RCONST(r2) then DAE.RCONST(r2);
+      else DAE.RCONST(1.0);
+    end match;
+
+    // ceil(a) is approximately a as long as a >> 0
+    case DAE.CALL(path = Absyn.IDENT(name = "ceil"), expLst = {e1})
+    then getExpNominal(e1);
+
+    // floor(a) is approximately a as long as a >> 0
+    case DAE.CALL(path = Absyn.IDENT(name = "floor"), expLst = {e1})
+    then getExpNominal(e1);
+
+    // sin(a) has values in [-1, 1]
+    // TODO for a << 1, sin(a) is approximately a
+    case DAE.CALL(path = Absyn.IDENT(name = "sin"))
+    then DAE.RCONST(1.0);
+
+    // cos(a) has values in [-1, 1]
+    case DAE.CALL(path = Absyn.IDENT(name = "cos"))
+    then DAE.RCONST(1.0);
+
+    // NOTE: tan(a) is all over the place and proper scaling can be very hard
+    // for a << 1, tan(a) is approximately a
+    case DAE.CALL(path = Absyn.IDENT(name = "tan"), expLst = {e1})
+    then getExpNominal(e1);
+
+    // for a << 1, asin(a) is approximately a
+    case DAE.CALL(path = Absyn.IDENT(name = "asin"), expLst = {e1})
+    then getExpNominal(e1);
+
+    // acos(a) has values in [0, pi]
+    case DAE.CALL(path = Absyn.IDENT(name = "acos"))
+    then DAE.RCONST(1.0);
+
+    // atan(a) has values in [-pi/2, pi/2]
+    // TODO for a << 1, atan(a) is approximately a
+    case DAE.CALL(path = Absyn.IDENT(name = "atan"))
+    then DAE.RCONST(1.0);
+
+    // atan2(a,b) has values in [-pi, pi]
+    case DAE.CALL(path = Absyn.IDENT(name = "atan"))
+    then DAE.RCONST(1.0);
+
+    // for these just calculate the value
+    // f(a) = f(A*as) = f(A + A*(as-1)) = f(A) + o(A*(as-1))
+    case DAE.CALL(path = Absyn.IDENT(name = "sinh"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(sinh(r1));
+      case e2 then Expression.makePureBuiltinCall("sinh", {e2}, t);
+    end match;
+
+    case DAE.CALL(path = Absyn.IDENT(name = "cosh"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(cosh(r1));
+      case e2 then Expression.makePureBuiltinCall("cosh", {e2}, t);
+    end match;
+
+    case DAE.CALL(path = Absyn.IDENT(name = "tanh"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(tanh(r1));
+      case e2 then Expression.makePureBuiltinCall("tanh", {e2}, t);
+    end match;
+
+    // exp(a) = exp(A*as) = exp(A)^as
+    case DAE.CALL(path = Absyn.IDENT(name = "exp"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(exp(r1));
+      case e2 then Expression.makePureBuiltinCall("exp", {e2}, t);
+    end match;
+
+    // log(a) = log(A*as) = log(A) + log(as)
+    case DAE.CALL(path = Absyn.IDENT(name = "log"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(log(r1));
+      case e2 then Expression.makePureBuiltinCall("log", {e2}, t);
+    end match;
+
+    // log10(a) = log10(A*as) = log10(A) + log10(as)
+    case DAE.CALL(path = Absyn.IDENT(name = "log10"), expLst = {e1}, attr = DAE.CALL_ATTR(ty = t))
+    then match getExpNominal(e1)
+      case DAE.RCONST(r1) then DAE.RCONST(log10(r1));
+      case e2 then Expression.makePureBuiltinCall("log10", {e2}, t);
+    end match;
+
+    else DAE.RCONST(1.0);
+  end match;
+end getExpNominal;
+
+public function isMocFile
+  input String fileName;
+  output Integer result;
+algorithm
+  if (StringUtil.endsWith(fileName, ".moc")) then
+    result := 1;
+  else
+    result := 0;
+  end if;
+end isMocFile;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

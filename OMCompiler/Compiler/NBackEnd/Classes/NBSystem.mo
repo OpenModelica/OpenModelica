@@ -235,6 +235,24 @@ public
       system.equations := EquationPointers.mapExp(system.equations, func);
     end mapExp;
 
+    function mapStrongComponents
+      input output System system;
+      input MapFunc func;
+      partial function MapFunc
+        input output StrongComponent comp;
+      end MapFunc;
+    protected
+      array<StrongComponent> comps;
+    algorithm
+      if Util.isSome(system.strongComponents) then
+        SOME(comps) := system.strongComponents;
+        for i in 1:arrayLength(comps) loop
+          comps[i] := func(comps[i]);
+        end for;
+        system.strongComponents := SOME(comps);
+      end if;
+    end mapStrongComponents;
+
     function systemTypeString
       input SystemType systemType;
       output String str = "";
@@ -285,6 +303,22 @@ public
         sys.jacobian          := NONE();
       end if;
     end clone;
+
+    function removeAlias
+      "removes alias strong components and replaces it with their original strong components.
+      used before differentiating for jacobians."
+      input output System sys;
+    protected
+      array<StrongComponent> comps;
+    algorithm
+      if Util.isSome(sys.strongComponents) then
+        // no need to override comps afterwards since arrays are mutable
+        comps := Util.getOption(sys.strongComponents);
+        for i in 1:arrayLength(comps) loop
+          comps[i] := StrongComponent.removeAlias(comps[i]);
+        end for;
+      end if;
+    end removeAlias;
 
   protected
     function partitionKindString

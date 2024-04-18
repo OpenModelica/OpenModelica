@@ -37,11 +37,6 @@ encapsulated uniontype NBMatching
   import Matching = NBMatching;
   import GCExt;
 
-  // SetBased Graph imports
-  import NBAdjacency.BipartiteGraph;
-  import SBGraph.BipartiteIncidenceList;
-  import NBGraphUtil.{SetVertex, SetEdge};
-
 protected
   // NF import
   import NFFlatten.FunctionTree;
@@ -63,6 +58,7 @@ protected
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
   import NBSlice.IntLst;
+  import StringUtil;
 public
   // =======================================
   //                MATCHING
@@ -95,7 +91,7 @@ public
   protected
     list<list<Integer>> marked_eqns;
   algorithm
-    (matching, marked_eqns, _, _, _) := continue_(matching, adj, transposed, clear);
+    (matching, marked_eqns, _, _) := continue_(matching, adj, transposed, clear);
     if not partially and not listEmpty(List.flatten(marked_eqns)) then
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is structurally singular."});
       fail();
@@ -118,6 +114,7 @@ public
     "
     input output Matching matching;
     input output Adjacency.Matrix adj;
+    input output Adjacency.Matrix full;
     input output VariablePointers vars;
     input output EquationPointers eqns;
     input output FunctionTree funcTree;
@@ -130,32 +127,40 @@ public
   protected
     list<list<Integer>> marked_eqns;
     Option<Adjacency.Mapping> mapping;
-    Adjacency.MatrixType matrixType;
     Adjacency.MatrixStrictness matrixStrictness;
     Boolean changed;
   algorithm
     // 1. match the system
-    (matching, marked_eqns, mapping, matrixType, matrixStrictness) := continue_(matching, adj, transposed, clear);
+    try
+      (matching, marked_eqns, mapping, matrixStrictness) := continue_(matching, adj, transposed, clear);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to match system:\n"
+        + VariablePointers.toString(vars, "system vars") + "\n"
+        + EquationPointers.toString(eqns, "system eqns") + "\n"
+        + Adjacency.Matrix.toString(adj)});
+      fail();
+    end try;
 
     // 2. Resolve singular systems if necessary
     changed := match systemType
       case NBSystem.SystemType.INI algorithm
         // ####### BALANCE INITIALIZATION #######
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
+        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
       then changed;
 
       else algorithm
         // ####### INDEX REDUCTION ######
         // for now no index reduction
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
+        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
       then changed;
     end match;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
-      adj := Adjacency.Matrix.create(vars, eqns, matrixType, matrixStrictness);
-      (matching, adj, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, vars, eqns, funcTree, varData, eqData, systemType, false, true);
+      adj := Adjacency.Matrix.createFull(vars, eqns);
+      adj := Adjacency.Matrix.fromFull(adj, vars.map, eqns.map, eqns, matrixStrictness);
+      (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, systemType, false, true);
     end if;
   end singular;
 
@@ -166,28 +171,22 @@ public
     input Boolean clear;
     output list<list<Integer>> marked_eqns;
     output Option<Adjacency.Mapping> mapping;
-    output Adjacency.MatrixType matrixType;
     output Adjacency.MatrixStrictness matrixStrictness;
   protected
     array<Integer> var_to_eqn, eqn_to_var;
   algorithm
     // 1. Match the system
-    (matching, marked_eqns, mapping, matrixType, matrixStrictness) := match adj
+    (matching, marked_eqns, mapping, matrixStrictness) := match adj
       // PSEUDO ARRAY
-      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+      case Adjacency.Matrix.FINAL() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
         (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
         matching := MATCHING(var_to_eqn, eqn_to_var);
-      then (matching, marked_eqns, SOME(adj.mapping), NBAdjacency.MatrixType.PSEUDO, adj.st);
-
-      // ARRAY
-      case Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
-      then fail();
+      then (matching, marked_eqns, SOME(adj.mapping), adj.st);
 
       // EMPTY
-      case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX()
-      then (EMPTY_MATCHING, {}, NONE(), NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.FULL);
+      case Adjacency.Matrix.EMPTY()
+      then (EMPTY_MATCHING, {}, NONE(), NBAdjacency.MatrixStrictness.FULL);
 
       // FAIL
       else algorithm

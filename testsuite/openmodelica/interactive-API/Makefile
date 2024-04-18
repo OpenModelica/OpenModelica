@@ -2,6 +2,7 @@ TEST = ../../rtest -v
 
 TESTFILES = \
 AddClassAnnotation.mos \
+addComponent1.mos \
 ArraySlicing.mos \
 Bug2871.mos \
 Bug2882.mos \
@@ -17,11 +18,19 @@ Bug4209.mos \
 Bug4248.mos \
 Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
+CheckModelExtObj1.mos \
 choicesAllMatching.mos \
 ConnectionList.mos \
 ConversionVersions.mos \
 ConvertUnits.mos \
 CopyClass.mos \
+CopyClass1.mos \
+CopyClass2.mos \
+CopyClass3.mos \
+CopyClass4.mos \
+CopyClass5.mos \
+CopyClassInvalid1.mos \
+CopyClassRedeclare1.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
 DialogAnnotation.mos \
@@ -35,6 +44,7 @@ ForStatement6.mos \
 ForStatement7.mos \
 ForStatement8.mos \
 GetAllSubtypeOf1.mos \
+GetAllSubtypeOf2.mos \
 getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
@@ -43,7 +53,10 @@ getComponentsTestNF.mos \
 getComponentsTestOF.mos \
 getDefinitions.mos \
 getDialogAnnotation.mos \
+getElementAnnotation.mos \
 getIconAnnotation.mos \
+getSimulationOptions1.mos \
+getSimulationOptions2.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 IllegalGraphics.mos\
@@ -65,6 +78,7 @@ ListAnnotation.mos \
 ListExpressions.mos \
 ListImport.mos \
 ListMultilineComment.mos \
+loadClassContentString1.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
@@ -72,6 +86,9 @@ MoveClass2.mos \
 MoveClass.mos \
 Obfuscation1.mos \
 Obfuscation2.mos \
+Obfuscation3.mos \
+Obfuscation4.mos \
+Obfuscation5.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
 refactorGraphAnn1.mos \
@@ -83,6 +100,8 @@ saveShort.mos \
 saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
+setElementAnnotation.mos \
+setElementType.mos \
 setElementModifierValue.mos \
 setExtendsModifierValue.mos \
 setSourceFileListFile.mos \

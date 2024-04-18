@@ -148,17 +148,18 @@ function checkBinaryOperation
   input Expression exp2;
   input Type type2;
   input Variability var2;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression binaryExp;
   output Type resultType;
 algorithm
   if Type.isConditionalArray(type1) or Type.isConditionalArray(type2) then
-    (binaryExp, resultType) := checkConditionalBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (binaryExp, resultType) := checkConditionalBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, context, info);
   elseif Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (binaryExp, resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (binaryExp, resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, context, info);
   elseif Type.isBoxed(type1) and Type.isBoxed(type2) then
-    (binaryExp, resultType) := checkBinaryOperationBoxed(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (binaryExp, resultType) := checkBinaryOperationBoxed(exp1, type1, var1, operator, exp2, type2, var2, context, info);
   else
     (binaryExp, resultType) := match operator.op
       case Op.ADD then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
@@ -200,6 +201,7 @@ public function checkOverloadedBinaryOperator
   input Expression exp2;
   input Type type2;
   input Variability var2;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -226,10 +228,10 @@ algorithm
 
   if Operator.isElementWise(op) then
     (outExp, outType) := checkOverloadedBinaryArrayEW(
-      exp1, type1, var1, Operator.stripEW(op), exp2, type2, var2, candidates, info);
+      exp1, type1, var1, Operator.stripEW(op), exp2, type2, var2, candidates, context, info);
   else
     (outExp, outType) := matchOverloadedBinaryOperator(
-      exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+      exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
   end if;
 
   outExp := Inline.inlineCallExp(outExp);
@@ -244,6 +246,7 @@ function matchOverloadedBinaryOperator
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   input Boolean showErrors = true;
   output Expression outExp;
@@ -260,7 +263,7 @@ algorithm
     TypedArg.TYPED_ARG(NONE(), exp1, type1, var1, Purity.PURE),
     TypedArg.TYPED_ARG(NONE(), exp2, type2, var2, Purity.PURE)
   };
-  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
+  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, context, info);
   // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
   exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
 
@@ -280,10 +283,10 @@ algorithm
 
       if Type.isArray(type1) or Type.isArray(type2) then
         (outExp, outType) := match op.op
-          case Op.ADD then checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
-          case Op.SUB then checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
-          case Op.MUL then checkOverloadedBinaryArrayMul(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
-          case Op.DIV then checkOverloadedBinaryArrayDiv(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+          case Op.ADD then checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
+          case Op.SUB then checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
+          case Op.MUL then checkOverloadedBinaryArrayMul(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
+          case Op.DIV then checkOverloadedBinaryArrayDiv(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
           else
             algorithm
               printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
@@ -323,6 +326,7 @@ public function checkBinaryOperationBoxed
   input Expression exp2;
   input Type type2;
   input Variability var2;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -332,7 +336,7 @@ protected
 algorithm
   (e1, ty1) := matchTypes(type1, Type.unbox(type1), exp1);
   (e2, ty2) := matchTypes(type2, Type.unbox(type2), exp2);
-  (outExp, outType) := checkBinaryOperation(e1, ty1, var1, op, e2, ty2, var2, info);
+  (outExp, outType) := checkBinaryOperation(e1, ty1, var1, op, e2, ty2, var2, context, info);
 end checkBinaryOperationBoxed;
 
 protected
@@ -344,6 +348,7 @@ function checkConditionalBinaryOperator
   input Expression exp2;
   input Type type2;
   input Variability var2;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -362,14 +367,14 @@ algorithm
 
   ErrorExt.setCheckpoint(getInstanceName());
   try
-    (e1, ty1) := checkBinaryOperation(exp1, tty1, var1, op, exp2, tty2, var2, info);
+    (e1, ty1) := checkBinaryOperation(exp1, tty1, var1, op, exp2, tty2, var2, context, info);
     valid1 := true;
   else
     valid1 := false;
   end try;
 
   try
-    (e2, ty2) := checkBinaryOperation(exp1, fty1, var1, op, exp2, fty2, var2, info);
+    (e2, ty2) := checkBinaryOperation(exp1, fty1, var1, op, exp2, fty2, var2, context, info);
     valid2 := true;
   else
     valid2 := false;
@@ -401,6 +406,7 @@ function checkOverloadedBinaryArrayAddSub
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -419,7 +425,7 @@ algorithm
   e2 := ExpandExp.expand(e2);
 
   (outExp, outType) :=
-    checkOverloadedBinaryArrayAddSub2(e1, type1, var1, op, e2, type2, var2, candidates, info);
+    checkOverloadedBinaryArrayAddSub2(e1, type1, var1, op, e2, type2, var2, candidates, context, info);
 end checkOverloadedBinaryArrayAddSub;
 
 function checkOverloadedBinaryArrayAddSub2
@@ -431,6 +437,7 @@ function checkOverloadedBinaryArrayAddSub2
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -451,7 +458,7 @@ algorithm
 
           try
             (_, ty) := matchOverloadedBinaryOperator(
-              Expression.EMPTY(ty1), ty1, var1, op, Expression.EMPTY(ty2), ty2, var2, candidates, info, showErrors = false);
+              Expression.EMPTY(ty1), ty1, var1, op, Expression.EMPTY(ty2), ty2, var2, candidates, context, info, showErrors = false);
           else
             printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
           end try;
@@ -463,7 +470,7 @@ algorithm
           for i in 1:arrayLength(arr1) loop
             e1 := arrayGetNoBoundsChecking(arr1, i);
             e2 := arrayGetNoBoundsChecking(arr2, i);
-            (e, ty) := checkOverloadedBinaryArrayAddSub2(e1, ty1, var1, op, e2, ty2, var2, candidates, info);
+            (e, ty) := checkOverloadedBinaryArrayAddSub2(e1, ty1, var1, op, e2, ty2, var2, candidates, context, info);
             arrayUpdateNoBoundsChecking(arr, i, e);
           end for;
         end if;
@@ -473,7 +480,7 @@ algorithm
       then
         (outExp, outType);
 
-    else matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+    else matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
   end match;
 end checkOverloadedBinaryArrayAddSub2;
 
@@ -486,6 +493,7 @@ function checkOverloadedBinaryArrayMul
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -501,13 +509,13 @@ algorithm
     // scalar * array = array
     case ({}, {_})
       algorithm
-        outExp := checkOverloadedBinaryScalarArray(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+        outExp := checkOverloadedBinaryScalarArray(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
       then
         (true, outExp);
     // array * scalar = array
     case ({_}, {})
       algorithm
-        outExp := checkOverloadedBinaryArrayScalar(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+        outExp := checkOverloadedBinaryArrayScalar(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
       then
         (true, outExp);
     // matrix[n, m] * vector[m] = vector[n]
@@ -549,12 +557,13 @@ function checkOverloadedBinaryScalarArray
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
 algorithm
   (outExp, outType) := checkOverloadedBinaryScalarArray2(
-    exp1, type1, var1, op, ExpandExp.expand(exp2), type2, var2, candidates, info);
+    exp1, type1, var1, op, ExpandExp.expand(exp2), type2, var2, candidates, context, info);
 end checkOverloadedBinaryScalarArray;
 
 function checkOverloadedBinaryScalarArray2
@@ -566,6 +575,7 @@ function checkOverloadedBinaryScalarArray2
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -582,7 +592,7 @@ algorithm
         try
           ty := Type.unliftArray(type2);
           (_, outType) := matchOverloadedBinaryOperator(
-            exp1, type1, var1, op, Expression.EMPTY(type2), ty, var2, candidates, info, showErrors = false);
+            exp1, type1, var1, op, Expression.EMPTY(type2), ty, var2, candidates, context, info, showErrors = false);
         else
           printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, exp2.ty}, info);
         end try;
@@ -599,14 +609,14 @@ algorithm
         for i in 1:arrayLength(arr) loop
           e2 := arrayGetNoBoundsChecking(exp2.elements, i);
           arrayUpdateNoBoundsChecking(arr, i,
-            checkOverloadedBinaryScalarArray2(exp1, type1, var1, op, e2, ty, var2, candidates, info));
+            checkOverloadedBinaryScalarArray2(exp1, type1, var1, op, e2, ty, var2, candidates, context, info));
         end for;
 
         outType := Type.setArrayElementType(exp2.ty, Expression.typeOf(arr[1]));
       then
         (Expression.makeArray(outType, arr), outType);
 
-    else matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+    else matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
   end match;
 end checkOverloadedBinaryScalarArray2;
 
@@ -619,12 +629,13 @@ function checkOverloadedBinaryArrayScalar
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
 algorithm
   (outExp, outType) := checkOverloadedBinaryArrayScalar2(
-    ExpandExp.expand(exp1), type1, var1, op, exp2, type2, var2, candidates, info);
+    ExpandExp.expand(exp1), type1, var1, op, exp2, type2, var2, candidates, context, info);
 end checkOverloadedBinaryArrayScalar;
 
 function checkOverloadedBinaryArrayScalar2
@@ -636,6 +647,7 @@ function checkOverloadedBinaryArrayScalar2
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -652,7 +664,7 @@ algorithm
         try
           ty := Type.unliftArray(type1);
           (_, outType) := matchOverloadedBinaryOperator(
-            Expression.EMPTY(type1), ty, var1, op, exp2, type2, var2, candidates, info, showErrors = false);
+            Expression.EMPTY(type1), ty, var1, op, exp2, type2, var2, candidates, context, info, showErrors = false);
         else
           printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, exp1.ty}, info);
         end try;
@@ -669,14 +681,14 @@ algorithm
         for i in 1:arrayLength(arr) loop
           e1 := arrayGetNoBoundsChecking(exp1.elements, i);
           arrayUpdateNoBoundsChecking(arr, i,
-            checkOverloadedBinaryArrayScalar2(e1, ty, var1, op, exp2, type2, var2, candidates, info));
+            checkOverloadedBinaryArrayScalar2(e1, ty, var1, op, exp2, type2, var2, candidates, context, info));
         end for;
 
         outType := Type.setArrayElementType(exp1.ty, Expression.typeOf(arr[1]));
       then
         (Expression.makeArray(outType, arr), outType);
 
-    else matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+    else matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
   end match;
 end checkOverloadedBinaryArrayScalar2;
 
@@ -689,12 +701,13 @@ function checkOverloadedBinaryArrayDiv
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
 algorithm
   if Type.isArray(type1) and Type.isScalar(type2) then
-    (outExp, outType) := checkOverloadedBinaryArrayScalar(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+    (outExp, outType) := checkOverloadedBinaryArrayScalar(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
   else
     printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
   end if;
@@ -709,6 +722,7 @@ function checkOverloadedBinaryArrayEW
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -732,7 +746,7 @@ algorithm
   e2 := ExpandExp.expand(exp2);
 
   (outExp, outType) := checkOverloadedBinaryArrayEW2(
-    e1, type1, var1, op, e2, type2, var2, candidates, info);
+    e1, type1, var1, op, e2, type2, var2, candidates, context, info);
 end checkOverloadedBinaryArrayEW;
 
 function checkOverloadedBinaryArrayEW2
@@ -744,6 +758,7 @@ function checkOverloadedBinaryArrayEW2
   input Type type2;
   input Variability var2;
   input list<Function> candidates;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -767,7 +782,7 @@ algorithm
       try
         (_, ty) := matchOverloadedBinaryOperator(
           Expression.EMPTY(ty1), ty1, var1, op,
-          Expression.EMPTY(ty2), ty2, var2, candidates, info);
+          Expression.EMPTY(ty2), ty2, var2, candidates, context, info);
       else
         printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
       end try;
@@ -784,7 +799,7 @@ algorithm
       for i in 1:arrayLength(expl1) loop
         e1 := arrayGetNoBoundsChecking(expl1, i);
         e2 := arrayGetNoBoundsChecking(expl2, i);
-        (e1, ty) := checkOverloadedBinaryArrayEW2(e1, ty1, var1, op, e2, ty2, var2, candidates, info);
+        (e1, ty) := checkOverloadedBinaryArrayEW2(e1, ty1, var1, op, e2, ty2, var2, candidates, context, info);
         expl := e1 :: expl;
       end for;
     elseif is_array1 then
@@ -792,7 +807,7 @@ algorithm
       expl1 := Expression.arrayElements(exp1);
 
       for e in expl1 loop
-        (e, ty) := checkOverloadedBinaryArrayEW2(e, ty1, var1, op, exp2, type2, var2, candidates, info);
+        (e, ty) := checkOverloadedBinaryArrayEW2(e, ty1, var1, op, exp2, type2, var2, candidates, context, info);
         expl := e :: expl;
       end for;
     elseif is_array2 then
@@ -800,7 +815,7 @@ algorithm
       expl2 := Expression.arrayElements(exp2);
 
       for e in expl2 loop
-        (e, ty) := checkOverloadedBinaryArrayEW2(exp1, type1, var1, op, e, ty2, var2, candidates, info);
+        (e, ty) := checkOverloadedBinaryArrayEW2(exp1, type1, var1, op, e, ty2, var2, candidates, context, info);
         expl := e :: expl;
       end for;
     end if;
@@ -810,7 +825,7 @@ algorithm
   else
     (outExp, outType) := matchOverloadedBinaryOperator(
       exp1, type1, var1, op,
-      exp2, type2, var2, candidates, info);
+      exp2, type2, var2, candidates, context, info);
   end if;
 end checkOverloadedBinaryArrayEW2;
 
@@ -1136,6 +1151,7 @@ algorithm
     // Real[n, n] ^ Integer
     valid := valid and Type.isSquareMatrix(resultType);
     valid := valid and Type.isInteger(type2);
+    valid := valid and not Expression.isNegative(exp2);
     op := Operator.OPERATOR(resultType, Op.POW_MATRIX);
     e2 := exp2;
   else
@@ -1270,6 +1286,7 @@ public function checkUnaryOperation
   input Type type1;
   input Variability var1;
   input Operator operator;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression unaryExp;
   output Type unaryType;
@@ -1278,7 +1295,7 @@ protected
   Operator op;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
-  (unaryExp,unaryType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, info);
+  (unaryExp,unaryType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, context, info);
     return;
   end if;
 
@@ -1300,6 +1317,7 @@ public function checkOverloadedUnaryOperator
   input Type inType1;
   input Variability var;
   input Operator inOp;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -1323,7 +1341,7 @@ algorithm
   //end for;
 
   args := {TypedArg.TYPED_ARG(NONE(), inExp1, inType1, var, Purity.PURE)};
-  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info, vectorize = false);
+  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, context, info, vectorize = false);
 
   // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
   exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
@@ -1360,6 +1378,7 @@ function checkLogicalBinaryOperation
   input Expression exp2;
   input Type type2;
   input Variability var2;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type resultType;
@@ -1369,7 +1388,7 @@ protected
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (outExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (outExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, context, info);
     return;
   end if;
 
@@ -1388,6 +1407,7 @@ function checkLogicalUnaryOperation
   input Type type1;
   input Variability var1;
   input Operator operator;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type resultType = type1;
@@ -1396,7 +1416,7 @@ protected
   MatchKind mk;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
-    (outExp,resultType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, info);
+    (outExp,resultType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, context, info);
     return;
   end if;
 
@@ -1429,7 +1449,7 @@ algorithm
 
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (outExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (outExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, context, info);
     return;
   end if;
 
@@ -1519,8 +1539,6 @@ algorithm
       then
         type1;
 
-    case Type.ENUMERATION_ANY() then type1;
-
     case Type.ARRAY()
       algorithm
         (exp1, exp2, compatibleType, matchKind) :=
@@ -1602,11 +1620,13 @@ algorithm
 
     case Type.ENUMERATION()
       algorithm
-        matchKind := matchEnumerationTypes(actualType, expectedType);
+        if Type.isUnspecifiedEnumeration(expectedType) then
+          matchKind := MatchKind.EXACT;
+        else
+          matchKind := matchEnumerationTypes(actualType, expectedType);
+        end if;
       then
         actualType;
-
-    case Type.ENUMERATION_ANY() then actualType;
 
     case Type.ARRAY()
       algorithm
@@ -1675,12 +1695,29 @@ function matchExpressions_cast
   input Boolean allowUnknown;
         output Type compatibleType;
         output MatchKind matchKind;
+protected
+  Expression before = exp1;
 algorithm
   (compatibleType, matchKind) := match (type1, type2)
     // Integer can be cast to Real.
     case (Type.INTEGER(), Type.REAL())
       algorithm
         exp1 := Expression.typeCast(exp1, type2);
+      then
+        (type2, MatchKind.CAST);
+
+    // Integer can be cast to Enum on certain occasions
+    case (Type.ENUMERATION(), Type.INTEGER()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
+      algorithm
+        exp1 := Expression.typeCast(exp1, type2);
+        Error.addCompilerWarning("Allowing casting of enumeration expression: " + Expression.toString(before) + " to Integer: "+ Expression.toString(exp1) +". This is non-standard Modelica, use Integer(" +  Expression.toString(before) + ") instead!");
+      then
+        (type2, MatchKind.CAST);
+
+    case (Type.INTEGER(), Type.ENUMERATION()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration")
+      algorithm
+        exp1 := Expression.typeCast(exp1, type2);
+        Error.addCompilerWarning("Allowing casting of Integer expression: " + Expression.toString(before) + " to enumeration: " + Expression.toString(exp1) + ". This is non-standard Modelica, use the actual enumeration instead!");
       then
         (type2, MatchKind.CAST);
 
@@ -1694,14 +1731,14 @@ algorithm
     // as there are annotations having expressions such as Boolean x > 0.5
     case (Type.BOOLEAN(), Type.REAL()) guard Flags.isSet(Flags.NF_API)
       algorithm
-        Error.addCompilerWarning("Allowing casting of boolean expression: " + Expression.toString(exp1) + " to Real.");
+        Error.addCompilerWarning("Allowing casting of Boolean expression: " + Expression.toString(exp1) + " to Real.");
         exp1 := Expression.typeCast(exp1, type2);
       then
         (type2, MatchKind.CAST);
 
     case (Type.REAL(), Type.BOOLEAN()) guard Flags.isSet(Flags.NF_API)
       algorithm
-        Error.addCompilerWarning("Allowing casting of boolean expression: " + Expression.toString(exp2) + " to Real.");
+        Error.addCompilerWarning("Allowing casting of Boolean expression: " + Expression.toString(exp2) + " to Real.");
         exp2 := Expression.typeCast(exp2, type1);
       then
         (type1, MatchKind.CAST);
@@ -1816,6 +1853,11 @@ algorithm
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
+            if InstNode.name(comps1[i]) <> InstNode.name(comps2[i]) then
+              matchKind := MatchKind.NOT_COMPATIBLE;
+              break;
+            end if;
+
             comp2 := InstNode.component(comps2[i]);
 
             if Component.isTyped(comp2) then
@@ -1871,6 +1913,11 @@ algorithm
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
+            if InstNode.name(comps1[i]) <> InstNode.name(comps2[i]) then
+              matchKind := MatchKind.NOT_COMPATIBLE;
+              break;
+            end if;
+
             comp2 := InstNode.component(comps2[i]);
 
             if Component.isTyped(comp2) then
@@ -2386,6 +2433,8 @@ function matchTypes_cast
   input Boolean allowUnknown = false;
         output Type compatibleType;
         output MatchKind matchKind;
+protected
+  Expression before = expression;
 algorithm
   (compatibleType, matchKind) := match(actualType, expectedType)
     // Integer can be cast to Real.
@@ -2395,12 +2444,21 @@ algorithm
       then
         (expectedType, MatchKind.CAST);
 
-    // Any enumeration is compatible with enumeration(:).
-    case (Type.ENUMERATION(), Type.ENUMERATION_ANY())
+    // Allow using enumeration as Integer without the explicit cast
+    case (Type.ENUMERATION(), Type.INTEGER()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdEnumerationAsIntegers")
       algorithm
-        // TODO: FIXME: Maybe this should be generic match
+        expression := Expression.typeCast(expression, expectedType);
+        Error.addCompilerWarning("Allowing usage of enumeration expression: " + Expression.toString(before) + " as Integer: "+ Expression.toString(expression) +". This is non-standard Modelica, use Integer(" + Expression.toString(before) + ") instead!");
       then
-        (actualType, MatchKind.CAST);
+        (expectedType, MatchKind.CAST);
+
+    // Allow using enumeration as Integer without the explicit cast
+    case (Type.INTEGER(), Type.ENUMERATION()) guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdIntegersAsEnumeration")
+      algorithm
+        expression := Expression.typeCast(expression, expectedType);
+        Error.addCompilerWarning("Allowing usage of Integer expression: " + Expression.toString(before) + " as enumeration: " + Expression.toString(expression) + ". This is non-standard Modelica, use the actual enumeration instead!");
+      then
+        (expectedType, MatchKind.CAST);
 
     // If the actual type is a tuple but the expected type isn't,
     // try to use the first type in the tuple.
@@ -2805,7 +2863,10 @@ algorithm
         if not isValidAssignmentMatch(ty_match) then
           binding.bindingExp := Expression.expandSplitIndices(exp);
           printBindingTypeError(name, binding, comp_ty, bind_ty, component, context);
-          fail();
+
+          if not InstContext.inInstanceAPI(context) then
+            fail();
+          end if;
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType,
             binding.evalState, binding.isFlattened, binding.source, binding.info);

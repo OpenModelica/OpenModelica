@@ -5,7 +5,7 @@
 
 loadFile("ParametricInitialArrayEquationBug.mo"); getErrorString();
 buildModel(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2); getErrorString();
-translateModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2, fileNamePrefix="PEM"); getErrorString();
+buildModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2, fileNamePrefix="PEM"); getErrorString();
 
 // Result:
 // true
@@ -13,7 +13,7 @@ translateModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L
 // "
 // {"TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2","TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L2_init.xml"}
 // "[simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:28578:17-28582:23:writable] Warning: In relation EM.i_dens_a == 0.0, == on Real numbers is only allowed inside functions.
-// [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:19607:9-19689:22:writable] Warning: Pure function ‘TransiEnt.Basics.Functions.GasProperties.verboseXi‘ contains a call to impure function ‘Modelica.Utilities.Streams.print‘.
+// [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:19607:9-19689:22:writable] Warning: Pure function 'TransiEnt.Basics.Functions.GasProperties.verboseXi' contains a call to impure function 'Modelica.Utilities.Streams.print'.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:23942:9-23947:15:writable] Warning: In relation sink_0thOrder.realGasNCV_xi.NCVIn <> 0.0, <> on Real numbers is only allowed inside functions.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:23861:9-23866:15:writable] Warning: In relation sink_0thOrder.realGasGCV_xi.GCVIn <> 0.0, <> on Real numbers is only allowed inside functions.
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: modelStatistics.heatingPower.E[6] = 0.0 ($START.modelStatistics.heatingPower.E[6] = 0.0)
@@ -96,7 +96,7 @@ translateModelFMU(TransiEnt.Producer.Gas.Electrolyzer.Check.Test_400A_Espinosa_L
 // "
 // "PEM.fmu"
 // "[simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:28578:17-28582:23:writable] Warning: In relation EM.i_dens_a == 0.0, == on Real numbers is only allowed inside functions.
-// [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:19607:9-19689:22:writable] Warning: Pure function ‘TransiEnt.Basics.Functions.GasProperties.verboseXi‘ contains a call to impure function ‘Modelica.Utilities.Streams.print‘.
+// [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:19607:9-19689:22:writable] Warning: Pure function 'TransiEnt.Basics.Functions.GasProperties.verboseXi' contains a call to impure function 'Modelica.Utilities.Streams.print'.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:23942:9-23947:15:writable] Warning: In relation sink_0thOrder.realGasNCV_xi.NCVIn <> 0.0, <> on Real numbers is only allowed inside functions.
 // [simulation/modelica/arrays/ParametricInitialArrayEquationBug.mo:23861:9-23866:15:writable] Warning: In relation sink_0thOrder.realGasGCV_xi.GCVIn <> 0.0, <> on Real numbers is only allowed inside functions.
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: modelStatistics.heatingPower.E[6] = 0.0 ($START.modelStatistics.heatingPower.E[6] = 0.0)

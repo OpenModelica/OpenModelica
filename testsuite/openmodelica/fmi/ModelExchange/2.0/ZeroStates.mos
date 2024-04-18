@@ -15,7 +15,7 @@ equation
 end ZeroStates20;
 ");
 getErrorString();
-translateModelFMU(ZeroStates20, version="2.0");
+buildModelFMU(ZeroStates20, version="2.0");
 getErrorString();
 importFMU("ZeroStates20.fmu");
 loadFile("ZeroStates20_me_FMU.mo");

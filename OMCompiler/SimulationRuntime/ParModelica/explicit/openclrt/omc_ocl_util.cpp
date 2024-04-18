@@ -299,11 +299,11 @@ void ocl_build_p_from_src(){
     printf("--- Building OpenCL program \n");
 #endif
 
-    char options[100];
-    const char* flags = "-I\"";
-    const char* OMEXT = "/include/omc/c/\"";
+    char options[1000];
+    const char* flags = "-Werror -I";
+    const char* OMEXT = "/include/omc/c/";
 
-
+    // TODO: Make sure to remove spaces from OMHOME
     strcpy(options, flags);
     strcat(options, OMHOME);
     strcat(options, OMEXT);

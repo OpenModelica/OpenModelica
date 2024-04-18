@@ -17,6 +17,8 @@ ifeq ($(CMAKE),)
 	CMAKE=cmake
 endif
 
+$(info "Selected CMAKE from configure (OpenModelica): $(CMAKE)")
+
 all: @ALL_TARGETS@
 
 .PRECIOUS: Makefile
@@ -41,11 +43,26 @@ omparser.skip:
 	test -f $@ || $(MAKE) -C OMParser OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
 omsimulator: omsimulator.skip
 omsimulator.skip:
-	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@ OMSYSIDENT=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
-	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
-omsimulator-debug:
-	$(MAKE) omsimulator BUILD_TYPE=Debug
+	mkdir -p OMSimulator/build
+	cd OMSimulator/build && $(CMAKE) .. \
+		-DCMAKE_VERBOSE_MAKEFILE=ON \
+		-DCMAKE_C_COMPILER="@CC@" \
+		-DCMAKE_CXX_COMPILER="@CXX@" \
+		-DCMAKE_C_FLAGS="@CFLAGS@" \
+		-DCMAKE_CXX_FLAGS="@CXXFLAGS@" \
+		-DCMAKE_INSTALL_PREFIX=../install
+	$(MAKE) -C OMSimulator/build/ install
+	cp -vpPR OMSimulator/install/include/OMSimulator/ @OMBUILDDIR@/include/omc
+	cp -vpPR OMSimulator/install/bin/OMSimulator* @OMBUILDDIR@/bin
+	cp -vpPR OMSimulator/install/share/OMSimulator/ @OMBUILDDIR@/share
+#	copy the libraries from lib/@host_short@/ OR lib64/. Fails if it can not find at least one of them.
+#	This is needed because the autoconf configuration adds the '@host_short@' (e.g. 'x86_64-linux-gnu') even
+#	on systems that do not use it to signify library architecture differences. For example, on fedora
+#	linux one is supposed to use 'lib64/' instead of 'lib/x86_64-linux-gnu/'. The OMSimulator CMake build will
+#	use the lib64 but OpenModelica wants to install to lib/x86_64-linux-gnu/. So try both locations and take
+#	the one that exists. If we find other systems with different setups this will need to be extended.
+	cp -vpPR OMSimulator/install/lib/@host_short@/* @OMBUILDDIR@/lib/@host_short@/omc/ || \
+	cp -vpPR OMSimulator/install/lib64/* @OMBUILDDIR@/lib/@host_short@/omc/
 omnotebook: omnotebook.skip
 omnotebook.skip: omc omplot
 	$(MAKE) -C OMNotebook
@@ -130,7 +147,7 @@ clean:
 
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
-	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch
+	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch -e .vscode
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -204,4 +221,4 @@ Makefile: Makefile.in config.status
 config.status: configure
 	./config.status -recheck
 configure: configure.ac
-	autoconf
+	autoreconf --install

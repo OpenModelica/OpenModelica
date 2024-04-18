@@ -9,6 +9,7 @@
 loadString("
   model M
     ClasswithReplaceable classwithReplaceable;
+    Class c;
   end M;
 ");
 
@@ -32,31 +33,76 @@ setElementModifierValue(M, classwithReplaceable, $Code((A = 1, B = 2)));
 getErrorString();
 list(M);
 
+setElementModifierValue(M, classwithReplaceable, $Code((final A, B = 2)));
+getErrorString();
+list(M);
+
+setElementModifierValue(M, classwithReplaceable, $Code((A(fixed = true))));
+getErrorString();
+list(M);
+
+setElementModifierValue(M, classwithReplaceable, $Code((A(fixed))));
+getErrorString();
+list(M);
+
+setElementModifierValue(M, c, $Code((x(start, each fixed = true))));
+getErrorString();
+list(M);
+
 // Result:
 // true
 // true
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"A\"));
+//   Class c;
 // end M;"
 // true
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"B\"));
+//   Class c;
 // end M;"
 // true
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(otherClass(testClass = 12));
+//   Class c;
 // end M;"
 // true
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"));
+//   Class c;
 // end M;"
 // true
 // ""
 // "model M
 //   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), A = 1, B = 2);
+//   Class c;
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), final A, B = 2);
+//   Class c;
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), A(fixed = true), B = 2);
+//   Class c;
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), B = 2);
+//   Class c;
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), B = 2);
+//   Class c(x(each fixed = true));
 // end M;"
 // endResult

@@ -31,7 +31,7 @@ end MergeComponents8;
 //   parameter Real[2] $Real2 = {1.0, 2.0};
 // equation
 //   for $i1 in 1:2 loop
-//     der($A1[$i1].x) = (-$A1[$i1].p * $A1[$i1].x) + $A1[$i1].u;
+//     der($A1[$i1].x) = $A1[$i1].u - $A1[$i1].p * $A1[$i1].x;
 //   end for;
 //   for $i1 in 1:2 loop
 //     $A1[$i1].y = 2.0 * $A1[$i1].p * $A1[$i1].x;

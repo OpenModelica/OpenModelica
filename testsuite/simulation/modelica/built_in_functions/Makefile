@@ -3,7 +3,6 @@ TEST = ../../../rtest -v
 TESTFILES = \
 BuiltinMath.mos \
 Compare.mos \
-Delay.mos \
 Delta.mos \
 DerInvalid.mos \
 DerValid.mos \

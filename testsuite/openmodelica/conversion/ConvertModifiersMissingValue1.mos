@@ -19,7 +19,7 @@ list(ConvertModifiersMissingValue1);
 // true
 // false
 // "[<internal>:1:1-1:0:writable] Notification: From here:
-// [scripts/ConvertModifiers3.mos:1:1-2:72:writable] Warning: No replacement value for placeholder ‘%forceDiameter%‘ could be found.
+// [scripts/ConvertModifiers3.mos:1:1-2:72:writable] Warning: No replacement value for placeholder '%forceDiameter%' could be found.
 // "
 // "package ConvertModifiersMissingValue1
 //   model M

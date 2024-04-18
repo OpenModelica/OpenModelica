@@ -795,15 +795,24 @@ function getProgramFromStrategy
   input String filename;
   input LoadFileStrategy strategy;
   output Absyn.Program program;
+protected
+  String f = filename;
 algorithm
   program := match strategy
     case STRATEGY_HASHTABLE()
       algorithm
         if not BaseHashTable.hasKey(filename, strategy.ht) then
-          Error.addInternalError("HashTable missing file " + filename + " - all entries include:\n" + stringDelimitList(BaseHashTable.hashTableKeyList(strategy.ht), "\n"), sourceInfo());
-          fail();
+          // it might NOT be in the hashtable because of case issues, check that!
+          try
+            f := List.getMemberOnTrue(filename, BaseHashTable.hashTableKeyList(strategy.ht), Util.stringEqCaseInsensitive);
+            // adrpo: not needed, a warning is given earlier about the case of the file vs the class
+            //        Error.addSourceMessage(Error.COMPILER_WARNING, {"HashTable has entry for file:\n" + filename + "\nwith a different case:\n" + f + "\ncontinue ...\n"}, sourceInfo());
+          else
+            Error.addInternalError("HashTable missing file: " + filename + " - all entries include:\n" + stringDelimitList(BaseHashTable.hashTableKeyList(strategy.ht), "\n"), sourceInfo());
+            fail();
+          end try;
         end if;
-      then BaseHashTable.get(filename, strategy.ht);
+      then BaseHashTable.get(f, strategy.ht);
     case STRATEGY_ON_DEMAND() then Parser.parse(filename, strategy.encoding);
   end match;
 end getProgramFromStrategy;

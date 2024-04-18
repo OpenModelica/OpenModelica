@@ -1,20 +1,21 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linkoping University,
- * Department of Computer and Information Science,
- * SE-58183 Linkoping, Sweden.
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkoping University, either from the above address,
+ * from OSMC, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -22,12 +23,9 @@
  * This program is distributed WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
- *
- * Main Author 2011: Adeel Asghar
  *
  */
 
@@ -62,9 +60,9 @@ Plot::Plot(PlotWindow *pParent)
   setAxisScaleEngine(QwtPlot::yLeft, pYLinearScaleEngine);
   setAxisAutoScale(QwtPlot::yLeft);
   // create the scale draw
-  mpXScaleDraw = new ScaleDraw(QwtPlot::xBottom, this);
+  mpXScaleDraw = new ScaleDraw(this);
   setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
-  mpYScaleDraw = new ScaleDraw(QwtPlot::yLeft, this);
+  mpYScaleDraw = new ScaleDraw(this);
   setAxisScaleDraw(QwtPlot::yLeft, mpYScaleDraw);
   // create an instance of zoomer
   mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
@@ -281,25 +279,6 @@ bool Plot::prefixableUnit(const QString &unit)
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
-  bool canUseXPrefixUnits = true;
-  bool canUseYPrefixUnits = true;
-
-  // we need to loop through curves to find the prefix for units
-  for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
-    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
-        && canUseXPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getXDisplayUnit())) {
-      canUseXPrefixUnits = false;
-    }
-    if (canUseYPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getYDisplayUnit())) {
-      canUseYPrefixUnits = false;
-    }
-  }
-
-  mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
-  mpXScaleDraw->invalidateCache();
-  mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
-  mpYScaleDraw->invalidateCache();
-
   QwtPlot::replot();
 
   // Now we need to again loop through curves to set the color and title.
@@ -318,11 +297,7 @@ void Plot::replot()
     if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOT
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
-      if (mpXScaleDraw->getUnitPrefix().isEmpty()) {
-        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
-      } else {
-        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getUnitPrefix(), timeUnit));
-      }
+      setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
     } else if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
       setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXLabel());
     } else {

@@ -2456,7 +2456,7 @@ algorithm
         len1 = stringLength(i);
         len2 = stringLength(idx);
         // either one of them is a substring of the other
-        true = boolOr(0 == System.strncmp(i, idx, len1), 0 == System.strncmp(idx, i, len2));
+        true = (0 == System.strncmp(i, idx, intMin(len1, len2)));
       then true;
     else false;
   end matchcontinue;

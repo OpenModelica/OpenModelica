@@ -44,7 +44,7 @@ cd OpenModelica
 git checkout master
 git pull
 # To checkout the latest master on each submodule run
-# >ou will need to merge each submodule, but your changes will remain
+# you will need to merge each submodule, but your changes will remain
 git submodule foreach --recursive "git checkout master && git pull"
 
 # Running master on all submodules might lead to build errors
@@ -97,6 +97,12 @@ git submodule update --init --recursive libraries
 
 * [Linux/WSL/OSX Instructions](OMCompiler/README.Linux.md)
 * [Windows Instructions](OMCompiler/README.Windows.md)
+
+We automatically generate nightly builds for
+[Windows](https://openmodelica.org/download/download-windows/) and for various flavours of
+[Linux](https://openmodelica.org/download/download-linux/). You can download and install
+them directly if you just want to run the latest development version of OpenModelica without
+the effort of compiling the sources yourself.
 
 ## How to run
 
@@ -181,6 +187,8 @@ See [OSMC-License.txt](OSMC-License.txt).
 
 See the [CITATIONS](CITATION.cff) file for information on how to cite OpenModelica in
 any publications reporting work done using OpenModelica.
+For a complete list of all publications related to OpenModelica see
+[doc/bibliography/openmodelica.bib](./doc/bibliography/openmodelica.bib).
 
 ------------
-Last updated: 2023-05-26
+Last updated: 2023-06-21

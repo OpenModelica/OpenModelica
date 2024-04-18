@@ -42,7 +42,6 @@
 #include "cell.h"
 #include "xmlnodename.h"
 
-using namespace std;
 
 namespace IAEX
 {
@@ -57,14 +56,15 @@ namespace IAEX
    class Application
    {
    public:
+      virtual ~Application() = default;
       virtual CommandCenter *commandCenter() = 0;
       virtual void setCommandCenter(CommandCenter *) = 0;
       virtual void addToPasteboard(Cell *cell) = 0;
       virtual void clearPasteboard() = 0;
-      virtual vector<Cell *> pasteboard() = 0;
+      virtual std::vector<Cell *> pasteboard() = 0;
       virtual void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica = 0) = 0;
     virtual void removeTempFiles(QString filename) = 0;    // Added 2006-01-16 AF
-    virtual vector<DocumentView *> documentViewList() = 0;  // Added 2006-01-27 AF
+    virtual std::vector<DocumentView *> documentViewList() = 0;  // Added 2006-01-27 AF
     virtual void removeDocumentView(DocumentView *view) = 0;  // Added 2006-01-27 AF
    };
 }

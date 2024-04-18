@@ -46,7 +46,6 @@
 class QFile;
 class QTextStream;
 
-using namespace std;
 
 namespace IAEX
 {

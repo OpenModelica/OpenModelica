@@ -1,7 +1,7 @@
 // name:      CopyClass
 // keywords:  copyClass
 // status:    correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 //
 // Tests the copyClass API.
 //

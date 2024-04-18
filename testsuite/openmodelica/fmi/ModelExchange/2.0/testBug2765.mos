@@ -24,7 +24,7 @@ equation
 end test_Bug2765;
 "); getErrorString();
 
-translateModelFMU(test_Bug2765, version="2.0"); getErrorString();
+buildModelFMU(test_Bug2765, version="2.0"); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq test_Bug2765.fmu modelDescription.xml > testBug2765_tmp.xml"); getErrorString();

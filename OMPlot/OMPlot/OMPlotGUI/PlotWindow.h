@@ -1,15 +1,31 @@
 /*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
- *
- * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
  *
  */
 
@@ -23,14 +39,20 @@
 #define PLOTWINDOW_H
 
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#include <QtWidgets>
-#include <QPrinter>
-#include <QPrintDialog>
-#else
-#include <QtGui>
-#endif
-#include <QtCore>
+#include <QMainWindow>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QToolButton>
+#include <QLabel>
+#include <QFile>
+#include <QMdiSubWindow>
+#include <QGroupBox>
+#include <QPushButton>
+#include <QListWidget>
+#include <QDoubleSpinBox>
+#include <QDialog>
+#include <QStackedWidget>
+#include <QDialogButtonBox>
 
 #include <qwt_plot.h>
 #include <qwt_text.h>
@@ -101,8 +123,6 @@ private:
   QwtSeriesData<QPointF>* mpInteractiveData;
   QString mInteractiveModelName;
   bool mPrefixUnits;
-  bool mCanUseXPrefixUnits;
-  bool mCanUseYPrefixUnits;
   QMdiSubWindow *mpSubWindow;
 public:
   PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
@@ -175,35 +195,36 @@ public:
   QString getFooter();
   bool getPrefixUnits() const;
   void setPrefixUnits(bool prefixUnits);
-  bool canUseXPrefixUnits() const;
-  void setCanUseXPrefixUnits(bool canUseXPrefixUnits);
-  bool canUseYPrefixUnits() const;
-  void setCanUseYPrefixUnits(bool canUseYPrefixUnits);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
   void closeEvent(QCloseEvent *event);
   void setTime(double time){mTime = time;}
   double getTime() {return mTime;}
-  void updateTimeText(QString unit);
-  void updateCurves();
-  void updateYAxis(QPair<double, double> minMaxValues);
+  void updateTimeText();
   void updatePlot();
+private:
+  void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
+private slots:
+  void fitInView();
 public slots:
+  void updateCurves();
+  void updateYAxis(QPair<double, double> minMaxValues);
   void enableZoomMode(bool on);
   void enablePanMode(bool on);
   void exportDocument();
   void printPlot();
   void setGrid(int index);
-  void fitInView();
   void setLogX(bool on);
   void setLogY(bool on);
   void setAutoScale(bool on);
   bool toggleSign(PlotCurve *pPlotCurve, bool checked);
   void showSetupDialog();
   void showSetupDialog(QString variable);
+  void interactiveSimulationStarted();
+  void interactiveSimulationPaused();
 };
 
 //Exception classes
@@ -327,7 +348,7 @@ private:
 public:
   SetupDialog(PlotWindow *pPlotWindow);
   void selectVariable(QString variable);
-  bool setupPlotCurve(VariablePageWidget *pVariablePageWidget);
+  void setupPlotCurve(VariablePageWidget *pVariablePageWidget);
 public slots:
   void variableSelected(QListWidgetItem *current, QListWidgetItem *previous);
   void autoScaleChecked(bool checked);

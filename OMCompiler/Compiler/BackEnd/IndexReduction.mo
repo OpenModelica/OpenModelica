@@ -3703,6 +3703,8 @@ algorithm
         /* Dummy variables are algebraic variables without start value, min/max, .., hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
+        // inherit the isProtected attribute. ticket #12110
+        odattr = DAEUtil.setProtectedAttr(odattr, DAEUtil.getProtectedAttr(inVar.values));
         kind = if intGt(diffCount,0) then BackendDAE.STATE(diffCount,NONE(),true) else BackendDAE.DUMMY_DER();
         var = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
         (vlst,ht,n) = makeHigherStatesRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,var::iVarLst,ht,iN+1);
@@ -3881,6 +3883,8 @@ algorithm
         /* Dummy variables are algebraic variables without start value, min/max, .., hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
+        // inherit the isProtected attribute. ticket #12110
+        odattr = DAEUtil.setProtectedAttr(odattr, DAEUtil.getProtectedAttr(inVar.values));
         var = BackendDAE.VAR(name,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
         (vlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,so,var::iVarLst,ht);
       then (vlst,ht);
@@ -3963,6 +3967,8 @@ algorithm
         /* Dummy variables are algebraic variables, hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
+        // inherit the isProtected attribute. ticket #12110
+        odattr = DAEUtil.setProtectedAttr(odattr, DAEUtil.getProtectedAttr(inVar.values));
         dummy_derstate = BackendDAE.VAR(dummyderName,BackendDAE.DUMMY_DER(),DAE.BIDIR(),prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
         kind = if intEq(dn,0) then BackendDAE.DUMMY_STATE() else BackendDAE.DUMMY_DER();
         dummy_state = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);

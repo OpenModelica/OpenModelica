@@ -7209,9 +7209,11 @@ algorithm
       DAE.InlineType inlineType;
       String name;
       list<DAE.Var> inVars,outVars;
+      Absyn.FunctionPurity purity;
 
-    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)))
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity)))
       equation
+        isImpure = AbsynUtil.isImpure(purity);
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
         name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
@@ -8460,7 +8462,7 @@ algorithm
       then getNDcr(cr1);
     case DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst))
       equation
-        N = List.findSome(varLst,findN);
+        SOME(N) = List.findSome(varLst,findN);
       then (N,dcr);
   end match;
 end getNDcr;
@@ -8670,7 +8672,7 @@ protected function getDomNFields
   output List<Absyn.ComponentRef> outFieldLst = {};
 algorithm
   try
-    (outN,outFieldLst) := List.findSome1(inDomFieldLst,domNFieldsFindFun,inDomainCr);
+    SOME((outN,outFieldLst)) := List.findSome(inDomFieldLst, function domNFieldsFindFun(inDomainCr = inDomainCr));
   else
     Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"There are no fields defined within the domain of this equation."}, info);
   end try;
@@ -8691,7 +8693,7 @@ algorithm
       equation
       true = absynDAECrefEqualName(inDomainCr,domainCr);
       DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst)) = domainCr;
-      N = List.findSome(varLst,findN);
+      SOME(N) = List.findSome(varLst,findN);
     then
       SOME((N,fieldCrLst));
     else

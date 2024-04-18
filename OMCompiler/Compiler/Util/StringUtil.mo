@@ -379,33 +379,24 @@ algorithm
   end for;
 end stringHashDjb2Work;
 
-function stringAppend9
-  input String str1,str2,str3,str4="",str5="",str6="",str7="",str8="",str9="";
-  output String str;
+function startsWith
+  input String str;
+  input String prefix;
+  output Boolean startsWith = (0 == System.strncmp(str, prefix, stringLength(prefix)));
+end startsWith;
+
+function endsWith
+  input String str;
+  input String suffix;
+  output Boolean endsWith = false;
 protected
-  System.StringAllocator sb=System.StringAllocator(stringLength(str1)+stringLength(str2)+stringLength(str3)+stringLength(str4)+stringLength(str5)+stringLength(str6)+stringLength(str7)+stringLength(str8)+stringLength(str9));
-  Integer c=0;
+  Integer str_len = stringLength(str);
+  Integer suf_len = stringLength(suffix);
 algorithm
-  System.stringAllocatorStringCopy(sb, str1, c);
-  c := c + stringLength(str1);
-  System.stringAllocatorStringCopy(sb, str2, c);
-  c := c + stringLength(str2);
-  System.stringAllocatorStringCopy(sb, str3, c);
-  c := c + stringLength(str3);
-  System.stringAllocatorStringCopy(sb, str4, c);
-  c := c + stringLength(str4);
-  System.stringAllocatorStringCopy(sb, str5, c);
-  c := c + stringLength(str5);
-  System.stringAllocatorStringCopy(sb, str6, c);
-  c := c + stringLength(str6);
-  System.stringAllocatorStringCopy(sb, str7, c);
-  c := c + stringLength(str7);
-  System.stringAllocatorStringCopy(sb, str8, c);
-  c := c + stringLength(str8);
-  System.stringAllocatorStringCopy(sb, str9, c);
-  c := c + stringLength(str9);
-  str := System.stringAllocatorResult(sb,str1);
-end stringAppend9;
+  if str_len >= suf_len then
+    endsWith := 0 == System.strcmp_offset(str, str_len - suf_len + 1, str_len, suffix, 1, suf_len);
+  end if;
+end endsWith;
 
 function endsWithNewline
   input String str;
@@ -453,6 +444,12 @@ algorithm
     filename := substring(filename, 1, pos-1);
   end if;
 end stripFileExtension;
+
+public function rest
+  "Returns all but the first character of a string."
+  input String str;
+  output String rest = substring(str, 2, stringLength(str));
+end rest;
 
 annotation(__OpenModelica_Interface="util");
 end StringUtil;

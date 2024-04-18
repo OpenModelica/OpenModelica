@@ -2615,7 +2615,7 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls, Text &auxFunction)
 end extFunCallVardeclF77;
 
 template boolStrC(Boolean v)
-::= if v then '1' else '0'
+::= if v then '1 /* true */' else '0 /* false */'
 end boolStrC;
 
 template typeDefaultValue(DAE.Type ty)
@@ -4075,7 +4075,7 @@ template crefToOMSICStr(ComponentRef cref, HashTableCrefSimVar.HashTable hashTab
 
       // For jacobian variables and seed variables only local vars exist
       case v as SIMVAR(varKind=JAC_VAR(__))
-      case v as SIMVAR(varKind=JAC_DIFF_VAR(__))
+      case v as SIMVAR(varKind=JAC_TMP_VAR(__))
       case v as SIMVAR(varKind=SEED_VAR(__)) then
         let c_comment = CodegenUtil.crefCCommentWithVariability(v)
         <<
@@ -4752,7 +4752,7 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix)
    case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
      match simVarFromHT(cr, jacHT)
      case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then 'jacobian->resultVars[<%index%>]<%crefCCommentWithVariability(v)%>'
-     case v as SIMVAR(varKind=BackendDAE.JAC_DIFF_VAR()) then 'jacobian->tmpVars[<%index%>]<%crefCCommentWithVariability(v)%>'
+     case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then 'jacobian->tmpVars[<%index%>]<%crefCCommentWithVariability(v)%>'
      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
      case SIMVAR(index=-2) then crefOld(cr, ix)
 end jacCrefs;
@@ -4868,7 +4868,7 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
     case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
     case v as SIMVAR(varKind=JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=JAC_DIFF_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind=JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind=SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind=DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
     case v as SIMVAR(varKind=DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
@@ -5571,9 +5571,8 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
       let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&((&<%nosubname%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
-    else
-        error(sourceInfo(),'daeExpCrefLhsSimContext: This should have been handled in indexed assign and should not have gotten here <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
-
+  else
+    error(sourceInfo(),'daeExpCrefLhsSimContext: This should have been handled in indexed assign and should not have gotten here <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
@@ -5736,7 +5735,11 @@ case BINARY(__) then
       let &preExp +=
         <<
         <%tmp%> = <%e1%>;
-        <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) was %g should be >= 0", <%tmp%>', context, &varDecls, dummyInfo)%>
+        if(<%tmp%> < 0.0) {
+          <%if acceptMetaModelicaGrammar()
+            then '<%generateThrow()%>;<%\n%>'
+            else 'throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp%>, 0.5);<%\n%>'%>
+        }
         >>
       'sqrt(<%tmp%>)'
     else match realExpIntLit(exp2)
@@ -6020,7 +6023,7 @@ case rel as RELATION(__) then
     case GREATEREQ(ty = T_REAL(__))        then '(<%e1%> >= <%e2%>)'
     case GREATEREQ(ty = T_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
 
-    case EQUAL(ty = T_BOOL(__))            then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
+    case EQUAL(ty = T_BOOL(__))            then '(!<%e1%> == !<%e2%>)' /* the ! converts to bool if not already */
     case EQUAL(ty = T_STRING(__))          then '(stringEqual(<%e1%>, <%e2%>))'
     case EQUAL(ty = T_INTEGER(__))         then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_REAL(__))            then '(<%e1%> == <%e2%>)'
@@ -6028,7 +6031,7 @@ case rel as RELATION(__) then
     //case EQUAL(ty = T_ARRAY(__))           then '<%e2%>' /* Used for Boolean array. Called from daeExpLunary. */
     case EQUAL(ty = T_ARRAY(__))           then '(<%e1%> == <%e2%>)'
 
-    case NEQUAL(ty = T_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
+    case NEQUAL(ty = T_BOOL(__))           then '(!<%e1%> != !<%e2%>)' /* the ! converts to bool if not already */
     case NEQUAL(ty = T_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'
     case NEQUAL(ty = T_INTEGER(__))        then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
@@ -6049,194 +6052,127 @@ match exp
 case rel as RELATION(__) then
   match context
   case OMSI_CONTEXT(__) then
-      let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
-      let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
-      let res = tempDecl("omsi_bool", &varDecls)
-      let _ = match rel.operator
-        case LESS(__) then
-          let &preExp += '<%res%> = <%e1%> < <%e2%>;<%\n%>'
-          <<>>
-        case LESSEQ(__) then
-          let &preExp += '<%res%> = <%e1%> <= <%e2%>;<%\n%>'
-          <<>>
-        case GREATER(__) then
-          let &preExp += '<%res%> = <%e1%> > <%e2%>;<%\n%>'
-          <<>>
-        case GREATEREQ(__) then
-          let &preExp += '<%res%> = <%e1%> >= <%e2%>;<%\n%>'
-          <<>>
-        end match
-      if intEq(rel.index,-1) then
-        res
-      else
-        match  Config.simCodeTarget()
-          case "omsic" then
-            'omsi_function_zero_crossings(this_function, <%res%>, <%rel.index%>, omsic_get_model_state())'
-           /*deactivated case "omsicpp" then
-            'omsi_function_zero_crossings(this_function, <%res%>, <%rel.index%>, omsic_get_model_state())'*/
-        end match
+    let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
+    let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
+    let res = tempDecl("omsi_bool", &varDecls)
+    let _ = match rel.operator
+      case LESS(__) then
+        let &preExp += '<%res%> = <%e1%> < <%e2%>;<%\n%>'
+        <<>>
+      case LESSEQ(__) then
+        let &preExp += '<%res%> = <%e1%> <= <%e2%>;<%\n%>'
+        <<>>
+      case GREATER(__) then
+        let &preExp += '<%res%> = <%e1%> > <%e2%>;<%\n%>'
+        <<>>
+      case GREATEREQ(__) then
+        let &preExp += '<%res%> = <%e1%> >= <%e2%>;<%\n%>'
+        <<>>
+    end match
+    if intEq(rel.index,-1) then
+      res
+    else
+      match  Config.simCodeTarget()
+        case "omsic" then
+          'omsi_function_zero_crossings(this_function, <%res%>, <%rel.index%>, omsic_get_model_state())'
+          /*deactivated case "omsicpp" then
+          'omsi_function_zero_crossings(this_function, <%res%>, <%rel.index%>, omsic_get_model_state())'*/
+      end match
   case JACOBIAN_CONTEXT(__)
   case DAE_MODE_CONTEXT(__)
   case SIMULATION_CONTEXT(__) then
-    match rel.optionExpisASUB
-    case NONE() then
-      let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
-      let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
-      let res = tempDecl("modelica_boolean", &varDecls)
-      if intEq(rel.index,-1) then
-        match rel.operator
-        case LESS(__) then
-          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case LESSEQ(__) then
-          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATER(__) then
-          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        end match
-      else
-        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-        let hysteresisfunction = if isReal then 'relationhysteresis' else 'relation'
-        match rel.operator
-        case LESS(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Less<% if isReal then ', LessZC' else ''%>);<%\n%>'
-          res
-        case LESSEQ(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, LessEq<% if isReal then ', LessEqZC' else ''%>);<%\n%>'
-          res
-        case GREATER(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Greater<% if isReal then ', GreaterZC' else ''%>);<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, GreaterEq<% if isReal then ', GreaterEqZC' else ''%>);<%\n%>'
-          res
-        end match
-    case SOME((exp,i,j)) then
-      let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
-      let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
-      let iterator = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-      let res = tempDecl("modelica_boolean", &varDecls)
-      if intEq(rel.index,-1) then
-        match rel.operator
-        case LESS(__) then
-          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case LESSEQ(__) then
-          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATER(__) then
-          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        end match
-      else
-        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-        let hysteresisfunction = if isReal then 'relationhysteresis' else 'relation'
-        match rel.operator
-        case LESS(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Less<% if isReal then ', LessZC' else ''%>);<%\n%>'
-          res
-        case LESSEQ(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, LessEq<% if isReal then ', LessEqZC' else ''%>);<%\n%>'
-          res
-        case GREATER(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Greater<% if isReal then ', GreaterZC' else ''%>);<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, GreaterEq<% if isReal then ', GreaterEqZC' else ''%>);<%\n%>'
-          res
-        end match
+    let rel_f = match rel.operator
+    case LESS(__) then 'Less'
+    case LESSEQ(__) then 'LessEq'
+    case GREATER(__) then 'Greater'
+    case GREATEREQ(__) then 'GreaterEq'
     end match
+    if rel_f then
+      let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
+      let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
+      let res = tempDecl("modelica_boolean", &varDecls)
+      if intEq(rel.index,-1) then
+        let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+        res
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        match rel.optionExpisASUB
+        case NONE() then
+          if isReal then
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += 'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
+            res
+          else
+            let &preExp += 'relation(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, <%rel_f%>);<%\n%>'
+            res
+        case SOME((exp,i,j)) then
+          let iterator = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+          if isReal then
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += 'relationhysteresis(data, &<%res%>, <%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>, <%rel_f%>ZC);<%\n%>'
+            res
+          else
+            let &preExp += 'relation(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, <%rel_f%>);<%\n%>'
+            res
+      end match
   case ZEROCROSSINGS_CONTEXT(__) then
-    match rel.optionExpisASUB
-    case NONE() then
-      let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
-      let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
-      let res = tempDecl("modelica_boolean", &varDecls)
-      if intEq(rel.index,-1) then
-        match rel.operator
-        case LESS(__) then
-          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case LESSEQ(__) then
-          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATER(__) then
-          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        end match
-      else
-        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-        match rel.operator
-        case LESS(__) then
-          let hysteresisfunction = if isReal then 'LessZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        case LESSEQ(__) then
-          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        case GREATER(__) then
-          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        end match
-    case SOME((exp,i,j)) then
-      let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
-      let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
-      let res = tempDecl("modelica_boolean", &varDecls)
-      if intEq(rel.index,-1) then
-        match rel.operator
-        case LESS(__) then
-          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case LESSEQ(__) then
-          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATER(__) then
-          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
-          res
-        end match
-      else
-        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-        match rel.operator
-        case LESS(__) then
-          let hysteresisfunction = if isReal then 'LessZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        case LESSEQ(__) then
-          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        case GREATER(__) then
-          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        case GREATEREQ(__) then
-          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>, <%e2%>, data->simulationInfo->storedRelations[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
-          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
-          res
-        end match
+    let rel_f = match rel.operator
+    case LESS(__) then 'Less'
+    case LESSEQ(__) then 'LessEq'
+    case GREATER(__) then 'Greater'
+    case GREATEREQ(__) then 'GreaterEq'
     end match
+    if rel_f then
+      let e1 = daeExp(rel.exp1, context, &preExp, &varDecls, &auxFunction)
+      let e2 = daeExp(rel.exp2, context, &preExp, &varDecls, &auxFunction)
+      let res = tempDecl("modelica_boolean", &varDecls)
+      if intEq(rel.index,-1) then
+        let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+        res
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        match rel.optionExpisASUB
+        case NONE() then
+          if isReal then
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
+            res
+          else
+            let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+            res
+        case SOME((exp,i,j)) then
+          if isReal then
+            let tmp1 = tempDecl("modelica_real", &varDecls)
+            let tmp2 = tempDecl("modelica_real", &varDecls)
+            let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &auxFunction)
+            let &preExp += '<%nominalTmp%><%\n%>'
+            let &preExp += '<%res%> = <%rel_f%>ZC(<%e1%>, <%e2%>, <%tmp1%>, <%tmp2%>, data->simulationInfo->storedRelations[<%rel.index%>]);<%\n%>'
+            res
+          else
+            let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
+            res
+        end match
   end match
 end match
 end daeExpRelationSim;
+
+template daeExpNominalTmp(String tmp1, String tmp2, Exp exp1, Exp exp2, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+ "Generates assignments for nominal values of expression into tmp var"
+::=
+<<
+<%tmp1%> = <%daeExp(getExpNominal(exp1), context, &preExp, &varDecls, &auxFunction)%>;
+<%tmp2%> = <%daeExp(getExpNominal(exp2), context, &preExp, &varDecls, &auxFunction)%>;
+>>
+end daeExpNominalTmp;
 
 template daeExpIf(Exp exp, Context context, Text &preExp,
                   Text &varDecls, Text &auxFunction)
@@ -6251,8 +6187,8 @@ case IFEXP(__) then
   let eElse = daeExp(expElse, context, &preExpElse, &varDecls, &auxFunction)
   let shortIfExp = if preExpThen then "" else if preExpElse then "" else if isArrayType(typeof(exp)) then "" else if isRecordType(typeof(exp)) then "" else "x"
   (if shortIfExp then
-      // Safe to do if eThen and eElse don't emit pre-expressions
-      '(<%condExp%>?<%eThen%>:<%eElse%>)'
+    // Safe to do if eThen and eElse don't emit pre-expressions
+    '(<%condExp%>?<%eThen%>:<%eElse%>)'
   else
     let condVar = tempDecl("modelica_boolean", &varDecls)
     let resVar = tempDeclTuple(typeof(exp), &varDecls)
@@ -6509,28 +6445,52 @@ let &sub = buffer ""
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '_event_mod_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '<%expTypeModelica(ty)%>_mod(<%var1%>, <%var2%>)'
+    else
+      '_event_mod_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '_event_div_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      match ty
+      case T_INTEGER(__) then
+        'modelica_div_integer(<%var1%>,<%var2%>).quot'
+      else
+        'trunc((<%var1%>) / (<%var2%>))'
+    else
+      '_event_div_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data, threadData)'
 
   case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '(_event_integer(<%exp%>, <%constIndex%>, data))'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '((modelica_integer)floor(<%exp%>))'
+    else
+      '(_event_integer(<%exp%>, <%constIndex%>, data))'
 
   case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '((modelica_<%expTypeShort(ty)%>)_event_floor(<%exp%>, <%constIndex%>, data))'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '((<%expTypeModelica(ty)%>)floor(<%exp%>))'
+    else
+      '((<%expTypeModelica(ty)%>)_event_floor(<%exp%>, <%constIndex%>, data))'
 
   case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp, &varDecls, &auxFunction)
     let constIndex = daeExp(index, context, &preExp, &varDecls, &auxFunction)
-    '((modelica_<%expTypeShort(ty)%>)_event_ceil(<%exp%>, <%constIndex%>, data))'
+    match context
+    case ZEROCROSSINGS_CONTEXT(__) then
+      '((<%expTypeModelica(ty)%>)ceil(<%exp%>))'
+    else
+      '((<%expTypeModelica(ty)%>)_event_ceil(<%exp%>, <%constIndex%>, data))'
 
   /* end codegeneration of event triggering math functions */
 
@@ -6753,7 +6713,7 @@ let &sub = buffer ""
     let var1 = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(d, context, &preExp, &varDecls, &auxFunction)
     let var3 = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
-    let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, data->localData[0]->timeValue, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, <%var2%>, <%var3%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, posVelo}) then
@@ -6795,11 +6755,9 @@ let &sub = buffer ""
         'data->simulationInfo->samples[<%intSub(index, 1)%>]'
     end match
 
-  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), e, delay, delayMax}) then
-    let e_T = daeExp(e, context, &preExp, &varDecls, &auxFunction)
+  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), delay}) then
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &auxFunction)
-    let delayMax_T = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
-    'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%e_T%>, <%delay_T%>, <%delayMax_T%>)'
+    'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%delay_T%>)'
 
   case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &auxFunction)
@@ -7894,6 +7852,30 @@ template crefVarInfo(ComponentRef cr)
   case var as SIMVAR(__) then
   'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
 end crefVarInfo;
+
+template initializeStaticLSVars(list<SimVar> vars, Integer index)
+::=
+  let len = listLength(vars)
+  let indices = (vars |> var => varIndexWithComment(var) ;separator=", ")
+  <<
+  void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
+  {
+    const int indices[<%len%>] = {<%indices%>};
+    for (int i = 0; i < <%len%>; ++i) {
+      linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
+      linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
+      linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+    }
+  }
+  >>
+end initializeStaticLSVars;
+
+template varIndexWithComment(SimVar var)
+::=
+  match var
+  case SIMVAR(index=-1) then varIndexWithComment(cref2simvar(crefRemovePrePrefix(name), getSimCode()))
+  case SIMVAR(__) then '<%index%>/* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+end varIndexWithComment;
 
 template varAttributes(SimVar var, Text &sub)
 ::=

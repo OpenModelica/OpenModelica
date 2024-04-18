@@ -6337,14 +6337,14 @@ match  Config.simCodeTarget()
                          //Write head line
                          if (command & IWriteOutput::HEAD_LINE)
                          {
-                           const all_names_t outputVarNames = make_tuple(outputRealVars.ourputVarNames,outputIntVars.ourputVarNames,outputBoolVars.ourputVarNames,outputDerVars.ourputVarNames,outputResVars.ourputVarNames);
-                           const all_description_t outputVarDescription = make_tuple(outputRealVars.ourputVarDescription,outputIntVars.ourputVarDescription,outputBoolVars.ourputVarDescription,outputDerVars.ourputVarDescription,outputResVars.ourputVarDescription);
+                           const all_names_t outputVarNames = make_tuple(outputRealVars.outputVarNames,outputIntVars.outputVarNames,outputBoolVars.outputVarNames,outputDerVars.outputVarNames,outputResVars.outputVarNames);
+                           const all_description_t outputVarDescription = make_tuple(outputRealVars.outputVarDescription,outputIntVars.outputVarDescription,outputBoolVars.outputVarDescription,outputDerVars.outputVarDescription,outputResVars.outputVarDescription);
                            <%
                            match   settings.outputFormat
                               case "mat" then
                               <<
-                               const all_names_t parameterVarNames =  make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames,outputDerVars.ourputVarNames,outputResVars.ourputVarNames);
-                               const all_description_t parameterVarDescription =  make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription,outputDerVars.ourputVarDescription,outputResVars.ourputVarDescription);
+                               const all_names_t parameterVarNames =  make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames,outputDerVars.outputVarNames,outputResVars.outputVarNames);
+                               const all_description_t parameterVarDescription =  make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription,outputDerVars.outputVarDescription,outputResVars.outputVarDescription);
                               >>
                             else
                             <<
@@ -10754,7 +10754,7 @@ case CREF(componentRef = c, ty = ty) then
       memcpy(&<%lhsStr%>, <%arr%>.getData(), <%arr%>.getNumElems()*sizeof(double));
       >>
     case JAC_VAR()
-    case JAC_DIFF_VAR()
+    case JAC_TMP_VAR()
     case SEED_VAR() then
       <<
       <%assignJacArray(lhsStr, arr, ty)%>
@@ -12949,7 +12949,7 @@ match simVar
     let jacobianVar = '_<%crefToCStr(name, false)%>'
     let typeName = match varKind
                      case BackendDAE.JAC_VAR() then 'jac_y(<%index%>)'
-                     case BackendDAE.JAC_DIFF_VAR() then 'jac_tmp(<%index%>)'
+                     case BackendDAE.JAC_TMP_VAR() then 'jac_tmp(<%index%>)'
                      case BackendDAE.SEED_VAR() then 'jac_x(<%index0%>)'
                      else 'UNKNOWN KIND'
     let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%><%typeName%>)<%\n%>'

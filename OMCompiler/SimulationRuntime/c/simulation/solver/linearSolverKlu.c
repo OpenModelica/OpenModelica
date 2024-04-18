@@ -194,9 +194,9 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   double tmpJacEvalTime;
   int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
-  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Klu Solver",
-   eqSystemNumber, (int) systemData->size,
-   data->localData[0]->timeValue);
+  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes,
+    "Start solving Linear System %d (size %d) at time %g with Klu Solver",
+    eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method)

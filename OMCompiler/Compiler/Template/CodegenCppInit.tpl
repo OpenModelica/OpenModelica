@@ -19,7 +19,7 @@ template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars
       let descriptionTag = if generateFMUModelDescription then "fmiModelDescription" else "ModelDescription"
       let fmiDescriptionAttributes = if generateFMUModelDescription then fmiDescriptionAttributes(simCode, FMUVersion, FMUType, FMUGuid) else 'modelName="<%dotPath(modelInfo.name)%>"'
       let fmiTypeDefinitions = if generateFMUModelDescription then CodegenFMUCommon.fmiTypeDefinitions(simCode, FMUVersion)
-      let fmiDefaultExperiment = if generateFMUModelDescription then CodegenFMUCommon.DefaultExperiment(simulationSettingsOpt)
+      let fmiDefaultExperiment = if generateFMUModelDescription then CodegenFMUCommon.DefaultExperiment(simulationSettingsOpt, FMUVersion)
       <<
       <?xml version="1.0" encoding="UTF-8"?>
       <!--Generated with the modifications: <%generatorComments%> -->

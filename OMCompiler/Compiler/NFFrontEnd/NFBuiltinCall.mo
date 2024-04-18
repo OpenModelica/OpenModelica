@@ -70,6 +70,8 @@ protected
 
 public
   function needSpecialHandling
+    "Returns whether or not a call refers to a builtin function that doesn't
+     follow normal Modelica rules and instead needs special handling."
     input Call call;
     output Boolean special;
   algorithm
@@ -122,7 +124,7 @@ public
       case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, next_context, info);
       case "edge" then typeEdgeCall(call, next_context, info);
       case "fill" then typeFillCall(call, next_context, info);
-      case "getInstanceName" then typeGetInstanceName(call);
+      case "getInstanceName" then typeGetInstanceName(call, next_context, info);
       //case "initialState" then typeInitialStateCall(call, next_context, info);
       case "initial" then typeDiscreteCall(call, next_context, info);
       case "inStream" then typeActualInStreamCall("inStream", call, next_context, info);
@@ -421,7 +423,7 @@ protected
     //  TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
     //end for;
 
-    matchedFunctions := Function.matchFunctionsSilent(candidates, args, namedArgs, info);
+    matchedFunctions := Function.matchFunctionsSilent(candidates, args, namedArgs, context, info);
     exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
     if listEmpty(exactMatches) then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
@@ -1839,15 +1841,25 @@ protected
 
   function typeGetInstanceName
     input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
     output Expression result;
     output Type ty = Type.STRING();
     output Variability var = Variability.CONSTANT;
     output Purity purity = Purity.PURE;
   protected
     InstNode scope;
+    Call ty_call;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
-    result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(scope)));
+    ty_call := Call.typeMatchNormalCall(call, context, info);
+    // getInstanceName is normally derived from the prefix during the flattening,
+    // but sometimes the call is constant evaluated instead (e.g. when it's used
+    // in a package). So we add the scope as an argument here to have it
+    // available later if needed.
+    ty_call := Call.setArguments(ty_call,
+      {Expression.fromCref(ComponentRef.fromNode(scope, Type.UNKNOWN()))});
+    result := Expression.CALL(ty_call);
   end typeGetInstanceName;
 
   function typeClockCall

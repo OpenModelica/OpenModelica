@@ -649,6 +649,12 @@ package Absyn
       list<String> commentsAfter;
     end EXPRESSIONCOMMENT;
 
+    record SUBSCRIPTED_EXP
+      Exp exp;
+      list<Subscript> subscripts;
+    end SUBSCRIPTED_EXP;
+
+    record BREAK end BREAK;
   end Exp;
 
   uniontype Case

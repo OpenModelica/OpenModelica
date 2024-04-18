@@ -13,7 +13,7 @@ instantiateModel(Derived.Foo); getErrorString();
 // true
 // ""
 // ""
-// "[openmodelica/interactive-API/instantiateFunction.mo:2:3-4:10:writable] Error: Cannot instantiate Derived.Foo due to class specialization pure function.
+// "[openmodelica/interactive-API/instantiateFunction.mo:2:3-4:10:writable] Error: Cannot instantiate Derived.Foo due to class specialization function.
 // Error: Error occurred while flattening model Derived.Foo
 // "
 // endResult

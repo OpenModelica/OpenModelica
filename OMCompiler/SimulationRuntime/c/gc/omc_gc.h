@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 #include <pthread.h>
 #endif
 #include <setjmp.h>
@@ -135,7 +135,7 @@ typedef struct threadData_s {
   jmp_buf *simulationJumpBuffer;
   errorStage currentErrorStage;
   struct threadData_s *parent;
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
   pthread_mutex_t parentMutex; /* Prevent children from all manipulating the parent at the same time */
 #endif
   void *plotClassPointer;
@@ -175,8 +175,8 @@ static inline void* mmc_check_out_of_memory(void *ptr)
 #define GC_free                           omc_alloc_interface_pooled.free_uncollectable
 #define nofree                            omc_alloc_interface_pooled.free_string_persist
 #define GC_malloc_atomic_ignore_off_page  omc_alloc_interface_pooled.malloc_atomic
-#define GC_register_displacement          /* nothing */
-#define GC_set_force_unmap_on_gcollect    /* nothing */
+#define GC_register_displacement(X)       /* nothing */
+#define GC_set_force_unmap_on_gcollect(X) /* nothing */
 #define omc_GC_set_max_heap_size(X)       /* nothing */
 #define omc_GC_get_max_heap_size()        0
 #endif
@@ -190,7 +190,7 @@ static inline void* mmc_check_out_of_memory(void *ptr)
 // compiler command line so that everything is picked up consistently by all headers.
 
 /* gc.h doesn't include this by default; and the actual header redirects dlopen, which does not have an implementation */
-// #if !defined(OMC_NO_THREADS)
+// #if defined(OM_HAVE_PTHREADS)
 // int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
 // int GC_pthread_join(pthread_t, void **);
 // #endif

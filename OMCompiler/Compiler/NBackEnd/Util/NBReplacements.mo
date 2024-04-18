@@ -57,6 +57,8 @@ protected
   import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
+  import Type = NFType;
   import Variable = NFVariable;
 
   // Backend imports
@@ -65,6 +67,9 @@ protected
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
+
+  // Util
+  import StringUtil;
 
 public
 // =========================================================================
@@ -119,7 +124,7 @@ public
           replace_exp := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           // add the new replacement rule
-          UnorderedMap.add(varName, SimplifyExp.simplify(replace_exp, true), replacements);
+          UnorderedMap.add(varName, SimplifyExp.simplifyDump(replace_exp, true, getInstanceName()), replacements);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
           fail();
@@ -182,7 +187,28 @@ public
     input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
   algorithm
     exp := match exp
-      case Expression.CREF() then UnorderedMap.getOrDefault(exp.cref, replacements, exp);
+      local
+        Expression res;
+        ComponentRef stripped;
+        list<Subscript> subs;
+
+      case Expression.CREF() algorithm
+        if UnorderedMap.contains(exp.cref, replacements) then
+          // the cref (with subscripts) is found in replacements
+          res := UnorderedMap.getOrFail(exp.cref, replacements);
+        else
+          // try to strip the subscripts and see if that cref occurs
+          stripped := ComponentRef.stripSubscriptsAll(exp.cref);
+          if UnorderedMap.contains(stripped, replacements) then
+            subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
+            res   := UnorderedMap.getOrFail(stripped, replacements);
+            res   := Expression.applySubscripts(subs, res);
+          else
+            // do nothing
+            res := exp;
+          end if;
+        end if;
+      then res;
       else exp;
     end match;
   end applySimpleExp;
@@ -257,17 +283,34 @@ public
         Function fn;
         UnorderedMap<ComponentRef, Expression> local_replacements;
         list<ComponentRef> input_crefs;
-        Expression body_exp;
+        ComponentRef local_cref;
+        Option<Expression> binding_exp_opt;
+        Expression binding_exp, body_exp;
 
       case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) guard(UnorderedMap.contains(fn.path, replacements)) algorithm
         // use the function from the tree, in case it was changed
-        fn := UnorderedMap.getSafe(fn.path, replacements, sourceInfo());
+        fn := UnorderedMap.getOrFail(fn.path, replacements);
 
         // map all the inputs to the arguments and add to local replacement map
         local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
+        // ToDo: rather use the function slots for this?
         for tpl in List.zip(input_crefs, call.arguments) loop
           addInputArgTpl(tpl, local_replacements);
+        end for;
+
+        // add replacement rules for local (protected) variables
+        for local_node in fn.locals loop
+          local_cref    := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
+          binding_exp_opt := InstNode.getBindingExpOpt(local_node);
+          if Util.isSome(binding_exp_opt) then
+            // replace binding expression with already gathered input replacements
+            binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
+          else
+            // add a "wild" binding. This will result in unused outputs being ignored.
+            binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
+          end if;
+          addInputArgTpl((local_cref, binding_exp), local_replacements);
         end for;
 
         // get the expression from function body (fails if its not a single replacable assignment)
@@ -275,9 +318,12 @@ public
 
         // replace input withs arguments in expression
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+        body_exp := SimplifyExp.combineBinaries(body_exp);
+        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
+
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
-          print("-- Result: " + Expression.toString(body_exp) + "\n");
+          print("-- Result: " + Expression.toString(body_exp) + "\n\n");
         end if;
       then body_exp;
 
@@ -358,7 +404,7 @@ public
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
           + " failed because the body of the function is not a single assignment:\n"
-          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n")});
+          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
       then fail();
     end match;
   end getFunctionBody;

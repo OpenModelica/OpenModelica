@@ -2,6 +2,8 @@
 use Cwd;
 use File::Temp qw/ tempfile /;
 
+my $OPENMODELICAHOME = "";
+
 #delete($ENV{'OPENMODELICALIBRARY'});
 if (defined $ENV{"RTEST_OMCFLAGS"}) {
     $omcflags=$ENV{"RTEST_OMCFLAGS"} . " --alarm=900";
@@ -9,20 +11,37 @@ if (defined $ENV{"RTEST_OMCFLAGS"}) {
     $omcflags="--alarm=900";
 }
 
-(undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 1, SUFFIX => ".tmp", UNLINK => 1);
+(undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 0, SUFFIX => ".tmp", UNLINK => 1);
 $cwd = getcwd;
+if (defined $ENV{'WSLENV'}) {
+  $OMCEXE = "omc.exe";
+} else {
+  $OMCEXE = "omc";
+}
+
 if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
-  # See if we have the the CMake config's common install dirs.
-  if (-e "$1build/install_cmake/bin/omc") {
-    $OPENMODELICAHOME = "$1build/install_cmake";
+  my @omcExe = qw( omc omc.exe );
+  foreach (@omcExe) {
+    $OMCEXE = $_;
+    # See if we have the the CMake config's common install dirs.
+    if (-e "$1build/install_cmake/bin/$OMCEXE") {
+      $OPENMODELICAHOME = "$1build/install_cmake";
+      last;
+    }
+    # See if we have the the CMake config's common install dirs.
+    elsif (-e "$1build_cmake/install_cmake/bin/$OMCEXE") {
+      $OPENMODELICAHOME = "$1build_cmake/install_cmake";
+      last;
+    }
+    # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
+    elsif (-e "$1build/bin/$OMCEXE") {
+      $OPENMODELICAHOME = "$1build";
+      last;
+    }
   }
-  # See if we have the the CMake config's common install dirs.
-  elsif (-e "$1build_cmake/install_cmake/bin/omc") {
-    $OPENMODELICAHOME = "$1build_cmake/install_cmake";
-  }
-  # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
-  else {
-    $OPENMODELICAHOME = "$1build";
+  if (!$OPENMODELICAHOME) {
+    print "Couldn't find omc executable\n";
+    exit 0;
   }
   $dirname=$2;
   $ENV{'HOME'} = "$1/libraries";
@@ -31,6 +50,11 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   $ENV{'REFERENCEFILES'} = "$1testsuite/ReferenceFiles";
   $ENV{'OMLIBRARYCOMMON'} = "$1testsuite/simulation/libraries/common";
   $ENV{'OMCOMPILERSOURCES'} = "$1OMCompiler/Compiler";
+  $ENV{'OPENMODELICALIBRARY'} = "$1/libraries/.openmodelica/libraries";
+  # In WSL, we need to mark the environment variable as one we pass from WSL to WIN32
+  if (defined $ENV{'WSLENV'}) {
+    $ENV{'WSLENV'} = "$ENV{'WSLENV'}:OPENMODELICALIBRARY/p";
+  }
 } else {
   print "You must run rtest from the testsuite (was run from $cwd)\n";
   exit 0;
@@ -58,7 +82,13 @@ $pager="cat";
 $diffcmd="diff -U 5 -w";
 $dwdiffcmd="dwdiff '-d()' -l -C 3 -c -L";
 $log="";
-$tmpdir = "/tmp/omc-rtest-".(getpwuid($<)||getlogin()||"unknown")."/$dirname";
+my $username = ( $^O ne 'MSWin32' ? getpwuid($<) : undef )
+          || getlogin()
+          || $ENV{'USER'}
+          || 'omtmpuser';
+$tmpvar=( $^O ne 'MSWin32' ? '/tmp' : $ENV{'TEMP'} );
+$tmpdir = $tmpvar . "/omc-rtest-".$username."/$dirname";
+# print("Directory: ", $tmpdir, "\n");
 $tmpdir =~ s/\s/_/g;
 system "mkdir -p $tmpdir";
 $got = "$tmpdir/equations-got";
@@ -76,7 +106,24 @@ $eps_mo = 1.0e-7;
 $eps_mos = 5e-3;
 $set_modelica_lib = 1;
 $nodelete = 0;
-$OMCEXE = "omc";
+
+sub isMinGW_UCRT {
+  my $temp = $ENV{'MSYSTEM'};
+  if (defined $temp) {
+    return ($^O eq 'MSWin32') && ($temp eq 'UCRT64');
+  } else {
+    return 0;
+  }
+}
+
+sub isMinGW_MSYS {
+  my $temp = $ENV{'MSYSTEM'};
+  if (defined $temp) {
+    return ($^O eq 'msys') && ($temp eq 'MSYS');
+  } else {
+    return 0;
+  }
+}
 
 sub ulimit_cmd
 {
@@ -253,7 +300,7 @@ sub runone
       s/[ \t]+/ /;
       $str = $_;
       # fix generated files on windows
-      if ($^O =~ /^msys/) {
+      if (isMinGW_UCRT() || isMinGW_UCRT()) {
         # replace /X.mo?_tempNNNN/: -> /
         $str =~ s/\/[^\/]+\.mos?_temp[\d]+\//\//g;
       }
@@ -309,8 +356,10 @@ sub dofile
     $log = "$tmpdir/log-$f";
     $tc_err = 1;
     # Find the expected result
-    open(OUT,">$expected");
-    open(IN,"<$f");
+	# print("Expected: ", $expected, "\n");
+	# print("In: ", $f, "\n");
+    open(OUT,">$expected") or die "$0: open $expected: $!";
+    open(IN,"<$f") or die "$0: open $f: $!";
     while(<IN>) {
     # @adrpo - uncomment for debugging
     # print ($_);

@@ -80,7 +80,7 @@ System Overview
 The OpenModelica environment consists of several interconnected
 subsystems, as depicted in :numref:`systemoverview`.
 
-.. figure :: media/systemoverview.*
+.. figure :: media/systemoverview.png
   :name: systemoverview
   :width: 100%
 

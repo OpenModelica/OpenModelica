@@ -98,7 +98,6 @@ If you are new or unsure what to pick, choose the new CMake build.
 On OSX only the CMake build is supported.
 But most of our CI is still using the old Makefiles build, so use those if you need to
 reproduce some issue showing in the CI.
-Also OMEdit compiled with CMake seems to be slower for some reason.
 
 ## 2.1 CMake build
 

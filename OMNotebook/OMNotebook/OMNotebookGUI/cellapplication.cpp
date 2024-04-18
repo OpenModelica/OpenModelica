@@ -182,7 +182,7 @@ namespace IAEX
 
       Stylesheet::instance( stylesheetfile );
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       QMessageBox::warning( 0, tr("Error"), e.what(), "OK" );
       exit(-1);
@@ -200,7 +200,7 @@ namespace IAEX
 
       CommandCompletion::instance( commandfile );
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       QString msg = e.what();
       msg += "\nCould not create command completion class, exiting OMNotebook";
@@ -227,7 +227,7 @@ namespace IAEX
         }
         else
         {
-          cout << "File not found: " << fileToOpen.toStdString() << endl;
+          std::cout << "File not found: " << fileToOpen.toStdString() << std::endl;
           open(QString());
         }
       }
@@ -255,8 +255,8 @@ namespace IAEX
             open( "DrModelica/DrModelica.onb", READMODE_NORMAL, 1);
           else
           {
-            cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
-            cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
+            std::cout << "Unable to find (1): " << drmodelica.toStdString() << std::endl;
+            std::cout << "Unable to find (2): DrModelica/DrModelica.onb" << std::endl;
             open(QString());
           }
         }
@@ -342,9 +342,9 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson
    *
-   * \brief returns a vector with all content of the pasteboard.
+   * \brief returns a std::vector with all content of the pasteboard.
    */
-  vector<Cell*> CellApplication::pasteboard()
+  std::vector<Cell*> CellApplication::pasteboard()
   {
     return pasteboard_;
   }
@@ -423,8 +423,8 @@ namespace IAEX
       v->raise();  // for MacOS
       v->activateWindow(); // for Windows
 
-      vector<DocumentView *> windowViews = documentViewList();
-      vector<DocumentView *>::iterator v_iter = windowViews.begin();
+      std::vector<DocumentView *> windowViews = documentViewList();
+      std::vector<DocumentView *>::iterator v_iter = windowViews.begin();
       while( v_iter != windowViews.end() )
       {
         ((NotebookWindow *)*v_iter)->updateWindowMenu();
@@ -440,7 +440,7 @@ namespace IAEX
       UpdateGroupcellVisitor visitor;
       v->document()->runVisitor( visitor );
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -464,7 +464,7 @@ namespace IAEX
   *
   * \brief returns list of all current document views
   */
-  vector<DocumentView *> CellApplication::documentViewList()
+  std::vector<DocumentView *> CellApplication::documentViewList()
   {
     return views_;
   }
@@ -478,7 +478,7 @@ namespace IAEX
   */
   void CellApplication::removeDocumentView( DocumentView *view )
   {
-    vector<Document *>::iterator d_iter = documents_.begin();
+    std::vector<Document *>::iterator d_iter = documents_.begin();
     while( d_iter != documents_.end() )
     {
       if( (*d_iter) == view->document() )
@@ -490,7 +490,7 @@ namespace IAEX
         ++d_iter;
     }
 
-    vector<DocumentView *>::iterator dv_iter = views_.begin();
+    std::vector<DocumentView *>::iterator dv_iter = views_.begin();
     while( dv_iter != views_.end() )
     {
       if( (*dv_iter) == view )
@@ -525,8 +525,8 @@ namespace IAEX
   */
   void CellApplication::convertDrModelica()
   {
-    cout << "CONVERTING DRMODELICA" << endl;
-    cout << "---------------------" << endl << endl;
+    std::cout << "CONVERTING DRMODELICA" << std::endl;
+    std::cout << "---------------------" << std::endl << std::endl;
 
     // load from
     QString path = "C:/OpenModelica132/DrModelicaConv";
@@ -552,8 +552,8 @@ namespace IAEX
         // loop through all files
         for( int j = 0; j < fileList.size(); ++j )
         {
-          cout << "Loading: " << fileDir.absolutePath().toStdString() +
-            string( "/" ) + fileList.at(j).toStdString() << endl;
+          std::cout << "Loading: " << fileDir.absolutePath().toStdString() +
+            std::string( "/" ) + fileList.at(j).toStdString() << std::endl;
 
           Document *d = new CellDocument( this, fileDir.absolutePath() +
             QString( "/" ) + fileList.at(j), READMODE_CONVERTING_ONB );
@@ -562,15 +562,15 @@ namespace IAEX
           QString filename = fileList.at(j);
           filename.replace( ".nb", ".onb" );
 
-          cout << "Saving: " << dir.absolutePath().toStdString() +
-            string( "/" ) + dirList.at(i).toStdString() + string( "/" ) +
-            filename.toStdString() << endl;
+          std::cout << "Saving: " << dir.absolutePath().toStdString() +
+            std::string( "/" ) + dirList.at(i).toStdString() + std::string( "/" ) +
+            filename.toStdString() << std::endl;
 
           SaveDocumentCommand command( d, dir.absolutePath() +
             QString( "/" ) + dirList.at(i) + QString( "/" ) + filename );
           this->commandCenter()->executeCommand( &command );
 
-          cout << "DONE!" << endl << endl;
+          std::cout << "DONE!" << std::endl << std::endl;
 
           // delete file
           delete d;
@@ -579,7 +579,7 @@ namespace IAEX
       }
      }
 
-    cout << "CONVERTION DONE !!!" << endl;
+    std::cout << "CONVERTION DONE !!!" << std::endl;
   }
 
 }

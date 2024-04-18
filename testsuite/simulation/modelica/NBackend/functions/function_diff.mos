@@ -35,11 +35,11 @@ simulate(function_diff); getErrorString();
 // true
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) y = sin(x) ($RES_SIM_2)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_SIM_2)
+// [BEFORE] [SCAL] (1) y = sin(x) ($RES_$AUX_5)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_$AUX_5)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.z = f(x) ($RES_SIM_0)
+// [BEFORE] [SCAL] (1) $FUN_3 = f(x) ($RES_$AUX_3)
 //
 // [BEFORE] function 'f'
 //   input Real 'a';
@@ -57,11 +57,10 @@ simulate(function_diff); getErrorString();
 //   input Real 'a';
 //   input Real '$fDER_a';
 //   output Real '$fDER_b';
-// protected
 //   Real 'b';
 // algorithm
 //   if 'a' >= 0.0 then
-//     '$fDER_b' := 2.0 * a * $fDER_a;
+//     '$fDER_b' := 2.0 * 'a' * '$fDER_a';
 //     'b' := 'a' ^ 2.0;
 //   elseif true then
 //     '$fDER_b' := '$fDER0.f'(-'a', -'$fDER_a');
@@ -70,15 +69,23 @@ simulate(function_diff); getErrorString();
 //   annotation(Inline = false);
 // end '$fDER0.f'
 //
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.z = $fDER0.f(x, $SEED_ODE_JAC.x) ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_3 = $fDER0.f(x, $SEED_ODE_JAC.x) ($RES_$AUX_3)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.x = f(y) ($RES_SIM_1)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.x = $fDER0.f(y, $pDER_ODE_JAC.y) ($RES_SIM_1)
+// [BEFORE] [SCAL] (1) $FUN_2 = f(y) ($RES_$AUX_4)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_2 = $fDER0.f(y, $pDER_ODE_JAC.y) ($RES_$AUX_4)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.z = $FUN_3 ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.z = $pDER_ODE_JAC.$FUN_3 ($RES_SIM_0)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.x = $FUN_2 ($RES_SIM_1)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.x = $pDER_ODE_JAC.$FUN_2 ($RES_SIM_1)
 //
 // record SimulationResult
 //     resultFile = "function_diff_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'function_diff', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'function_diff', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

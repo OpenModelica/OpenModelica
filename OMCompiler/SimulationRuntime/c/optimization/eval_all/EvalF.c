@@ -36,7 +36,6 @@
 
 
 /* eval object function
- * author: Vitalij Ruge
  */
 Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData){
 

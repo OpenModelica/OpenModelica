@@ -77,6 +77,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_JAC",
   "LOG_LS",
   "LOG_LS_V",
+  "LOG_MIXED",
   "LOG_NLS",
   "LOG_NLS_V",
   "LOG_NLS_HOMOTOPY",
@@ -135,6 +136,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "outputs the jacobian matrix used by ODE solvers",                            /* LOG_JAC */
   "logging for linear systems",                                                 /* LOG_LS */
   "verbose logging of linear systems",                                          /* LOG_LS_V */
+  "logging for mixed systems",                                                  /* LOG_MIXED */
   "logging for nonlinear systems",                                              /* LOG_NLS */
   "verbose logging of nonlinear systems",                                       /* LOG_NLS_V */
   "logging of homotopy solver for nonlinear systems",                           /* LOG_NLS_HOMOTOPY */

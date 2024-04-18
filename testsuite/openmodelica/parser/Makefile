@@ -50,7 +50,8 @@ ReloadClass.mos \
 SimpleIntegrator4.mo \
 WildLexerModelica.mo \
 WildLexerMetaModelica.mo \
-ParseModel.mos
+ParseModel.mos \
+WithinComment1.mo
 
 FAILINGTESTFILES= \
 

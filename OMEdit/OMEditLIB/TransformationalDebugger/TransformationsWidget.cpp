@@ -564,8 +564,8 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pStatusBar->addPermanentWidget(pReloadToolButton, 0);
   pStatusBar->addPermanentWidget(pInfoXMLFilePathLabel, 1);
   /* Variables Heading */
-  Label *pVariablesBrowserLabel = new Label(Helper::variablesBrowser);
-  pVariablesBrowserLabel->setObjectName("LabelWithBorder");
+  Label *pVariableBrowserLabel = new Label(Helper::variableBrowser);
+  pVariableBrowserLabel->setObjectName("LabelWithBorder");
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
@@ -587,7 +587,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   QGridLayout *pVariablesGridLayout = new QGridLayout;
   pVariablesGridLayout->setSpacing(1);
   pVariablesGridLayout->setContentsMargins(0, 0, 0, 0);
-  pVariablesGridLayout->addWidget(pVariablesBrowserLabel, 0, 0);
+  pVariablesGridLayout->addWidget(pVariableBrowserLabel, 0, 0);
   pVariablesGridLayout->addWidget(mpTreeSearchFilters, 1, 0);
   pVariablesGridLayout->addWidget(mpTVariablesTreeView, 2, 0);
   QFrame *pVariablesFrame = new QFrame;
@@ -631,15 +631,15 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   QFrame *pVariableOperationsFrame = new QFrame;
   pVariableOperationsFrame->setLayout(pVariableOperationsGridLayout);
   /* Equations Heading */
-  Label *pEquationsBrowserLabel = new Label(tr("Equations Browser"));
-  pEquationsBrowserLabel->setObjectName("LabelWithBorder");
+  Label *pEquationBrowserLabel = new Label(tr("Equations"));
+  pEquationBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree widget */
   mpEquationsTreeWidget = new EquationTreeWidget(this);
   mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
-  pEquationsGridLayout->addWidget(pEquationsBrowserLabel, 0, 0);
+  pEquationsGridLayout->addWidget(pEquationBrowserLabel, 0, 0);
   pEquationsGridLayout->addWidget(mpEquationsTreeWidget, 1, 0);
   QFrame *pEquationsFrame = new QFrame;
   pEquationsFrame->setLayout(pEquationsGridLayout);
@@ -902,15 +902,15 @@ void TransformationsWidget::loadTransformations()
     QVariantList eqs = result["equations"].toList();
     for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
       QVariantMap value = iter.value().toMap();
-      OMVariable *var = new OMVariable();
-      var->name = iter.key();
-      var->comment = value["comment"].toString();
+      OMVariable var;
+      var.name = iter.key();
+      var.comment = value["comment"].toString();
       QVariantMap sourceMap = value["source"].toMap();
-      variantToSource(value["source"].toMap(), var->info, var->types, var->ops);
+      variantToSource(value["source"].toMap(), var.info, var.types, var.ops);
       if (!hasOperationsEnabled && sourceMap.contains("operations")) {
         hasOperationsEnabled = true;
       }
-      mVariables[iter.key()] = *var;
+      mVariables[iter.key()] = var;
     }
     mpTVariablesTreeView->setSortingEnabled(false);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
@@ -1060,11 +1060,7 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
   pEquationTreeItem->setToolTip(0, values[0]);
   pEquationTreeItem->setToolTip(1, values[1]);
   pEquationTreeItem->setToolTip(2, "<html><div style=\"margin:3px;\">" +
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QString(values[2]).toHtmlEscaped()
-#else /* Qt4 */
-  Qt::escape(values[2])
-#endif
   + "</div></html>");
   pEquationTreeItem->setToolTip(4, "Maximum execution time in a single step");
   pEquationTreeItem->setToolTip(5, "Total time excluding the overhead of measuring.");
@@ -1310,7 +1306,7 @@ void TransformationsWidget::reloadTransformations()
 
 /*!
  * \brief TransformationsWidget::findVariables
- * Finds the variables in the TransformationsWidget Variables Browser.
+ * Finds the variables in the TransformationsWidget Variable Browser.
  */
 void TransformationsWidget::findVariables()
 {
@@ -1402,6 +1398,8 @@ void TransformationsWidget::filterEquationOperations(int index)
 void TransformationsWidget::parseProfiling(QString fileName)
 {
   JsonDocument jsonDocument;
+  bool index_error = false;
+
   if (jsonDocument.parse(fileName)) {
     QVariantMap result = jsonDocument.result.toMap();
     double totalStepsTime = result["totalTimeProfileBlocks"].toDouble();
@@ -1411,6 +1409,18 @@ void TransformationsWidget::parseProfiling(QString fileName)
     for (int i=0; i<list.size(); i++) {
       QVariantMap eq = list[i].toMap();
       long id = eq["id"].toInt();
+
+      // Ignore the entry if the index is out of bounds.
+      if (id < 0 || id >= mEquations.size()) {
+        // Print an error only once.
+        if (!index_error) {
+          index_error = true;
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+            QStringLiteral("Out of bounds equation index %1").arg(id), Helper::scriptingKind, Helper::errorLevel));
+        }
+        continue;
+      }
+
       double time = eq["time"].toDouble();
       mEquations[id]->ncall = eq["ncall"].toInt();
       mEquations[id]->maxTime = eq["maxTime"].toDouble();

@@ -1,0 +1,24 @@
+// name: Obfuscation4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+setCommandLineOptions("--obfuscate=full --showAnnotations");
+loadString("
+  model M
+    Real x annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  end M;
+");
+
+instantiateModel(M); getErrorString();
+
+// Result:
+// true
+// true
+// "class n0
+//   Real n1 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+// end n0;
+// "
+// ""
+// endResult

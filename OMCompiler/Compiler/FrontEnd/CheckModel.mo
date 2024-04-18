@@ -228,10 +228,6 @@ algorithm
     case DAE.IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})
        then inArg;
 
-    // if equation that cannot be translated to if expression but have initial() as condition
-    case DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))})
-      then inArg;
-
     // if equation
     case DAE.IF_EQUATION(equations2 = daeElts::_)
       equation

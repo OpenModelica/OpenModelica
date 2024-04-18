@@ -57,7 +57,6 @@
 #include "document.h"
 
 
-using namespace std;
 
 namespace IAEX
 {
@@ -92,7 +91,7 @@ namespace IAEX
   private:
     void saveImages( QDomElement &current, QString &text );
 
-    stack<QDomElement> parents_;
+    std::stack<QDomElement> parents_;
     QDomElement currentElement_;
     QDomDocument domdoc_;
     Document* doc_;

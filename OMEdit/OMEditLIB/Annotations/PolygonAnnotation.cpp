@@ -224,11 +224,16 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible) {
-    drawPolygonAnnotation(painter);
+    drawAnnotation(painter);
   }
 }
 
-void PolygonAnnotation::drawPolygonAnnotation(QPainter *painter)
+/*!
+ * \brief PolygonAnnotation::drawAnnotation
+ * Draws the polygon.
+ * \param painter
+ */
+void PolygonAnnotation::drawAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);

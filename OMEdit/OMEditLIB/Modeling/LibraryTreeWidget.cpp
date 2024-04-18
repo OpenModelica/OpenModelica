@@ -50,6 +50,12 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 
+#include <QClipboard>
+#include <QDockWidget>
+#include <QDrag>
+#include <QMessageBox>
+#include <QMenu>
+
 /*!
  * \class LibraryTreeItem
  * \brief Contains the information about the Modelica class.
@@ -147,16 +153,10 @@ void LibraryTreeItem::updateClassInformation()
       // if item has file name as package.mo and is top level then its save folder structure
       if (isTopLevel() && (fileInfo.fileName().compare("package.mo") == 0)) {
         setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-      } else if (isTopLevel()) {
-        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+      } else if ((fileInfo.fileName().compare("package.mo") == 0) && (mpParentLibraryTreeItem->getFileName().compare(getFileName()) != 0)) {
+        setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
       } else {
-        if (mpParentLibraryTreeItem->getFileName().compare(getFileName()) == 0) {
-          setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-        } else if (fileInfo.fileName().compare("package.mo") == 0) {
-          setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-        } else {
-          setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-        }
+        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
       }
     }
     // handle the Access annotation
@@ -287,9 +287,7 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
   /* Activate the access annotations if the class is encrypted
    * OR if the LibraryTreeItem's mAccessAnnotations is marked true based on the activate access annotation setting.
    */
-  bool isEncryptedClass = mFileName.endsWith(".moc");
-
-  if (isEncryptedClass || isAccessAnnotationsEnabled()) {
+  if (isEncryptedClass() || isAccessAnnotationsEnabled()) {
     if (mClassInformation.access.compare("Access.hide") == 0) {
       return LibraryTreeItem::hide;
     } else if (mClassInformation.access.compare("Access.icon") == 0) {
@@ -309,7 +307,7 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
     } else if (mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {   // if there is no override for Access annotation then look in the parent class.
       return mpParentLibraryTreeItem->getAccess();
     } else {
-      if (isEncryptedClass) { // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
+      if (isEncryptedClass()) { // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
         return LibraryTreeItem::documentation;
       } else {
         return LibraryTreeItem::all;
@@ -683,6 +681,52 @@ void LibraryTreeItem::removeInheritedClasses()
   mInheritedClasses.clear();
 }
 
+const QList<LibraryTreeItem*> &LibraryTreeItem::getInheritedClasses()
+{
+  // This section is used by autocompletion when instance API is enabled.
+  /*! @todo We should use the Language Server Protocol. */
+  if (MainWindow::instance()->isNewApi()) {
+    if (mpModelWidget && mpModelWidget->isDiagramViewLoaded()) {
+      QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+      // reuse the mInheritedClasses list
+      mInheritedClasses.clear();
+      foreach (auto pElement, elements) {
+        if (pElement->isExtend()) {
+          LibraryTreeItem *pInheritedLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pElement->getType());
+          if (pInheritedLibraryTreeItem) {
+            mInheritedClasses.append(pInheritedLibraryTreeItem);
+          }
+        }
+      }
+      return mInheritedClasses;
+    } else {
+      if (!mInheritedClassesLoaded) {
+        mInheritedClasses.clear();
+        if (!isRootItem()) {
+          // get the inherited classes of the class
+          QList<QString> inheritedClasses = MainWindow::instance()->getOMCProxy()->getInheritedClasses(getNameStructure());
+          foreach (QString inheritedClass, inheritedClasses) {
+            /* If the inherited class is one of the builtin type such as Real we can
+             * stop here, because the class cannot contain any classes, etc.
+             * Also check for cyclic loops.
+             */
+            if (!(MainWindow::instance()->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(getNameStructure()) == 0)) {
+              LibraryTreeItem *pInheritedLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(inheritedClass);
+              if (pInheritedLibraryTreeItem) {
+                mInheritedClasses.append(pInheritedLibraryTreeItem);
+              }
+            }
+          }
+        }
+        mInheritedClassesLoaded = true;
+      }
+      return mInheritedClasses;
+    }
+  } else {
+    return mInheritedClasses;
+  }
+}
+
 QList<LibraryTreeItem*> LibraryTreeItem::getInheritedClassesDeepList()
 {
   QList<LibraryTreeItem*> result;
@@ -700,15 +744,43 @@ void LibraryTreeItem::setModelWidget(ModelWidget *pModelWidget)
   mComponentsLoaded = false;
 }
 
+#define FETCH_COMPONENTS() \
+  if (!mComponentsLoaded) { \
+    mComponents = MainWindow::instance()->getOMCProxy()->getElements(getNameStructure()); \
+    mComponentsLoaded = true; \
+  }
+
 const QList<ElementInfo*> &LibraryTreeItem::getComponentsList()
 {
   if (mpModelWidget) {
-    return mpModelWidget->getComponentsList();
-  } else {
-    if (!mComponentsLoaded) {
-      mComponents = MainWindow::instance()->getOMCProxy()->getElements(getNameStructure());
-      mComponentsLoaded = true;
+    if (mpModelWidget->isNewApi()) {
+      if (mpModelWidget->isDiagramViewLoaded()) {
+        QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+        // reuse the mComponents list
+        mComponents.clear();
+        foreach (auto pElement, elements) {
+          if (pElement->isComponent()) {
+            /* construct the ElementInfo from the new instance API Element
+             * We only need the name, type and comment.
+             */
+            ElementInfo *pElementInfo = new ElementInfo();
+            pElementInfo->setParentClassName(getNameStructure());
+            pElementInfo->setName(pElement->getName());
+            pElementInfo->setClassName(pElement->getType());
+            pElementInfo->setComment(pElement->getComment());
+            mComponents.append(pElementInfo);
+          }
+        }
+        return mComponents;
+      } else {
+        FETCH_COMPONENTS();
+        return mComponents;
+      }
+    } else {
+      return mpModelWidget->getComponentsList();
     }
+  } else {
+    FETCH_COMPONENTS();
     return mComponents;
   }
 }
@@ -966,7 +1038,7 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
     }
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-    // update the icon in the libraries browser view.
+    // update the icon in the library browser view.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   }
   emit loaded(this);
@@ -988,7 +1060,7 @@ void LibraryTreeItem::handleUnloaded()
     MainWindow *pMainWindow = MainWindow::instance();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-    // update the icon in the libraries browser view.
+    // update the icon in the library browser view.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   }
   emit unLoaded();
@@ -1063,7 +1135,7 @@ void LibraryTreeItem::handleIconUpdated()
   MainWindow *pMainWindow = MainWindow::instance();
   // load new icon for the class.
   pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-  // update the icon in the libraries browser view.
+  // update the icon in the library browser view.
   pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
   emit iconUpdated();
 }
@@ -1082,7 +1154,7 @@ void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
 
 /*!
  * \class LibraryTreeProxyModel
- * \brief A sort filter proxy model for Libraries Browser.
+ * \brief A sort filter proxy model for Library Browser.
  */
 /*!
  * \brief LibraryTreeProxyModel::LibraryTreeProxyModel
@@ -1118,7 +1190,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     }
 
     bool hide = ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide
-                  && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowHiddenClasses())
+                  && !(OptionsDialog::instance()->getGeneralSettingsPage()->getShowHiddenClasses() && !pLibraryTreeItem->isEncryptedClass()))
                  || (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses()));
 
     // if any of children matches the filter, then current index matches the filter as well
@@ -1141,7 +1213,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
 
 /*!
  * \class LibraryTreeModel
- * \brief A model for Libraries Browser.
+ * \brief A model for Library Browser.
  */
 /*!
  * \brief LibraryTreeModel::LibraryTreeModel
@@ -1298,8 +1370,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
 {
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
-  }
-  if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
+  } else if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
     return pLibraryTreeItem;
   }
   for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
@@ -1478,7 +1549,7 @@ LibraryTreeItem* LibraryTreeModel::createNonExistingLibraryTreeItem(QString name
 
 /*!
  * \brief LibraryTreeModel::createLibraryTreeItem
- * Creates a LibraryTreeItem and add it to the Libraries Browser.
+ * Creates a LibraryTreeItem and add it to the Library Browser.
  * \param type
  * \param name
  * \param nameStructure
@@ -1503,7 +1574,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
 
 /*!
  * \brief LibraryTreeModel::createLibraryTreeItem
- * Creates a OMS LibraryTreeItem and add it to the Libraries Browser.
+ * Creates a OMS LibraryTreeItem and add it to the Library Browser.
  * \param name
  * \param nameStructure
  * \param path
@@ -1569,7 +1640,7 @@ void LibraryTreeModel::checkIfAnyNonExistingClassLoaded()
 
 /*!
  * \brief LibraryTreeModel::updateLibraryTreeItem
- * Triggers a view update for the LibraryTreeItem in the Libraries Browser.
+ * Triggers a view update for the LibraryTreeItem in the Library Browser.
  * \param pLibraryTreeItem
  */
 void LibraryTreeModel::updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
@@ -1735,26 +1806,24 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     libraryPainter.scale(1.0, -1.0);
     libraryPainter.translate(0, ((-source.top()) - source.bottom()));
     libraryPainter.setWindow(source.toRect());
+    // render library pixmap
+    pGraphicsView->setRenderingLibraryPixmap(true);
+    pGraphicsView->scene()->render(&libraryPainter, source, source);
+    libraryPainter.end();
+    pLibraryTreeItem->setPixmap(libraryPixmap);
     // drag pixmap
-    QPixmap dragPixmap(QSize(50, 50));
+    QPixmap dragPixmap(source.size().toSize());
     dragPixmap.fill(QColor(Qt::transparent));
     QPainter dragPainter(&dragPixmap);
     dragPainter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     dragPainter.scale(1.0, -1.0);
     dragPainter.translate(0, ((-source.top()) - source.bottom()));
     dragPainter.setWindow(source.toRect());
-    pGraphicsView->setRenderingLibraryPixmap(true);
-    pGraphicsView->setSharpLibraryPixmap(true);
-    // render library pixmap
-    pGraphicsView->scene()->render(&libraryPainter, source, source);
-    libraryPainter.end();
-    pGraphicsView->setSharpLibraryPixmap(false);
     // render drag pixmap
     pGraphicsView->scene()->render(&dragPainter, source, source);
     dragPainter.end();
+    pLibraryTreeItem->setDragPixmap(dragPixmap.scaled(QSize(50, 50), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     pGraphicsView->setRenderingLibraryPixmap(false);
-    pLibraryTreeItem->setPixmap(libraryPixmap);
-    pLibraryTreeItem->setDragPixmap(dragPixmap);
   } else {
     pLibraryTreeItem->setPixmap(QPixmap());
     pLibraryTreeItem->setDragPixmap(pLibraryTreeItem->getLibraryTreeItemIcon().pixmap(QSize(50, 50)));
@@ -2052,7 +2121,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   if (!sameModelAndEditedCref && pEditedLibraryTreeItem) {
     pEditedLibraryTreeItem->setModelWidget(0);
   }
-  // Get the position of LibraryTreeItem in the Libraries Browser.
+  // Get the position of LibraryTreeItem in the Library Browser.
   const int row = pModelLibraryTreeItem->row();
   // unload the LibraryTreeItems and close the ModelWidgets
   unloadOMSModel(pModelLibraryTreeItem, false, false);
@@ -2093,7 +2162,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
    */
   if (!doDeleteClass || MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     int row = pLibraryTreeItem->row();
-    // remove the LibraryTreeItem from Libraries Browser
+    // remove the LibraryTreeItem from Library Browser
     row = pLibraryTreeItem->row();
     beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem->parent()), row, row);
     int i = 0;
@@ -2133,7 +2202,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
  */
 bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
-  // remove the LibraryTreeItem from Libraries Browser
+  // remove the LibraryTreeItem from Library Browser
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem->parent()), row, row);
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -2178,7 +2247,7 @@ bool LibraryTreeModel::deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
     }
   }
   int row = pLibraryTreeItem->row();
-  // remove the LibraryTreeItem from Libraries Browser
+  // remove the LibraryTreeItem from Library Browser
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem->parent()), row, row);
   // Deletes the LibraryTreeItem children if any and then deletes the LibraryTreeItem.
   deleteFileChildren(pLibraryTreeItem);
@@ -2601,7 +2670,9 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
       // load the LibraryTreeItem pixmap
       loadLibraryTreeItemPixmap(pLibraryTreeItem);
     }
-    emit modelStateChanged(nameStructure);
+    if (!isCreatingAutoLoadedLibrary()) {
+      emit modelStateChanged(nameStructure);
+    }
   }
   return pLibraryTreeItem;
 }
@@ -2812,6 +2883,8 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->deleteLater();
       pLibraryTreeItem->getModelWidget()->setIconGraphicsView(0);
     }
+    pLibraryTreeItem->getModelWidget()->clearDependsOnModels();
+    QObject::disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), pLibraryTreeItem->getModelWidget(), SLOT(updateModelIfDependsOn(QString)));
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }
@@ -2940,6 +3013,7 @@ LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
   setUniformRowHeights(true);
+  setHeaderHidden(true);
   createActions();
   connect(this, SIGNAL(expanded(QModelIndex)), SLOT(libraryTreeItemExpanded(QModelIndex)));
   connect(this, SIGNAL(doubleClicked(QModelIndex)), SLOT(libraryTreeItemDoubleClicked(QModelIndex)));
@@ -3187,7 +3261,24 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeView::copyClassPathHelper(const QString &classPath)
 {
-  QApplication::clipboard()->setText(classPath);
+  QClipboard *pClipboard = QApplication::clipboard();
+  if (!pClipboard) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Unable to get the clipboard using QApplication::clipboard().",
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    pClipboard = qApp->clipboard();
+    if (!pClipboard) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Unable to get the clipboard using qApp->clipboard().",
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      pClipboard = QGuiApplication::clipboard();
+      if (!pClipboard) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Unable to get the clipboard using QGuiApplication::clipboard().",
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+    }
+  }
+  if (pClipboard) {
+    pClipboard->setText(classPath);
+  }
 }
 
 /*!
@@ -4040,7 +4131,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
 
 /*!
  * \class LibraryWidget
- * \brief A widget for Libraries Browser.
+ * \brief A widget for Library Browser.
  */
 /*!
  * \brief LibraryWidget::LibraryWidget
@@ -4072,7 +4163,7 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpLibraryTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   connect(mpLibraryTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   mpTreeSearchFilters->getExpandAllButton()->setEnabled(false);
-  mpTreeSearchFilters->getExpandAllButton()->setToolTip(tr("Expanding the Libraries Browser is a time consuming and non-responsive operation so this button is disabled intentionally."));
+  mpTreeSearchFilters->getExpandAllButton()->setToolTip(tr("Expanding the Library Browser is a time consuming and non-responsive operation so this button is disabled intentionally."));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
   // create a dummy librarytreeItem
   mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "All", "OMEdit.Search.Feature", "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
@@ -4626,6 +4717,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
  */
 bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   bool result = false;
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
@@ -4679,6 +4771,7 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
     return;
@@ -4713,6 +4806,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
+  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
   saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
@@ -4730,6 +4824,10 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
   LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem) {
     mpLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+  } else {
+    // show error message
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to find the class <b>%1</b>.").arg(nameStructure),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -5319,8 +5417,10 @@ void LibraryWidget::handleAutoLoadedLibrary()
   if (isLoadingLibraries()) {
     mAutoLoadedLibrariesTimer.start();
   } else {
+    mpLibraryTreeModel->setCreatingAutoLoadedLibrary(true);
     mpLibraryTreeModel->loadDependentLibraries(mAutoLoadedLibrariesList);
     mAutoLoadedLibrariesList.clear();
+    mpLibraryTreeModel->setCreatingAutoLoadedLibrary(false);
   }
 }
 
@@ -5412,7 +5512,7 @@ void LibraryWidget::scrollToActiveLibraryTreeItem()
 
 /*!
  * \brief LibraryWidget::searchClasses
- * Searches the classes in the Libraries Browser.
+ * Searches the classes in the Library Browser.
  */
 void LibraryWidget::searchClasses()
 {

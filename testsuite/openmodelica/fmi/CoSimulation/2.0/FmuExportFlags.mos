@@ -28,20 +28,20 @@ end BouncingBallFMI20;
 
 // Don't generate simulation settings file
 setCommandLineOptions("--fmiFlags=none"); getErrorString();
-translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+buildModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
 
 system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
 
 // Generate default simulation settings file
 setCommandLineOptions("--fmiFlags=default"); getErrorString();
-translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+buildModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
 
 system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
 readFile("BouncingBallFMI20_flags.json"); getErrorString();
 
 // Comandline options for simflags
 setCommandLineOptions("--fmiFlags=s:cvode,nls:homotopy,yourFlagName:here"); getErrorString();
-translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+buildModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
 
 system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
 readFile("BouncingBallFMI20_flags.json"); getErrorString();
@@ -54,14 +54,14 @@ writeFile("exampleFlags.json",
 }"); getErrorString();
 
 setCommandLineOptions("--fmiFlags=exampleFlags.json"); getErrorString();
-translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+buildModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
 
 system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
 readFile("BouncingBallFMI20_flags.json"); getErrorString();
 
 // Give file with simflags as absolute path
 setCommandLineOptions("--fmiFlags=" + realpath(".") + "/exampleFlags.json"); getErrorString();
-translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+buildModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
 
 system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
 readFile("BouncingBallFMI20_flags.json"); getErrorString();
@@ -161,8 +161,8 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // ""
 // 0.0
 // ""
-// 0.2323155070000016
+// 0.23877146800000526
 // ""
-// -2.255319000000001
+// -2.238641999999977
 // ""
 // endResult

@@ -262,8 +262,7 @@ void AddComponentCommand::redoInternal()
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // Connector type components exists on icon view as well
     if (mpIconComponent->mTransformation.isValid() && mpIconComponent->mTransformation.getVisible()) {
-      mpIconGraphicsView->addItem(mpIconComponent);
-      mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
+      mpIconGraphicsView->addElementItem(mpIconComponent);
     }
     mpIconGraphicsView->addElementToList(mpIconComponent);
     mpIconGraphicsView->deleteElementFromOutOfSceneList(mpIconComponent);
@@ -272,8 +271,7 @@ void AddComponentCommand::redoInternal()
     mpIconComponent->setVisible(!mpComponentInfo->getProtected());
   }
   if (mpDiagramComponent->mTransformation.isValid() && mpDiagramComponent->mTransformation.getVisible()) {
-    mpDiagramGraphicsView->addItem(mpDiagramComponent);
-    mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->addElementItem(mpDiagramComponent);
   }
   mpDiagramGraphicsView->addElementToList(mpDiagramComponent);
   mpDiagramGraphicsView->deleteElementFromOutOfSceneList(mpDiagramComponent);
@@ -304,14 +302,12 @@ void AddComponentCommand::undo()
   // if component is of connector type && containing class is Modelica type.
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // Connector type components exists on icon view as well
-    mpIconGraphicsView->removeItem(mpIconComponent);
-    mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
+    mpIconGraphicsView->removeElementItem(mpIconComponent);
     mpIconGraphicsView->deleteElementFromList(mpIconComponent);
     mpIconGraphicsView->addElementToOutOfSceneList(mpIconComponent);
     mpIconComponent->emitDeleted();
   }
-  mpDiagramGraphicsView->removeItem(mpDiagramComponent);
-  mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
+  mpDiagramGraphicsView->removeElementItem(mpDiagramComponent);
   mpDiagramGraphicsView->deleteElementFromList(mpDiagramComponent);
   mpDiagramGraphicsView->addElementToOutOfSceneList(mpDiagramComponent);
   mpDiagramComponent->emitDeleted();
@@ -337,8 +333,9 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Ele
 void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && mMoveConnectorsTogether &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+      && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
+          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -366,6 +363,9 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
+  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && pModelWidget->isNewApi()) {
+    pModelWidget->setHandleCollidingConnectionsNeeded(true);
+  }
 }
 
 /*!
@@ -375,8 +375,9 @@ void UpdateComponentTransformationsCommand::redoInternal()
 void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && mMoveConnectorsTogether &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+      && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
+          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -404,6 +405,9 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
+  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && pModelWidget->isNewApi()) {
+    pModelWidget->setHandleCollidingConnectionsNeeded(true);
+  }
 }
 
 UpdateElementAttributesCommand::UpdateElementAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo, UndoCommand *pParent)
@@ -562,7 +566,7 @@ void UpdateElementAttributesCommand::updateComponentModifiers(Element *pComponen
   for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
     QString modifierName = QString(pComponent->getName()).append(".").append(modifiersIterator.key());
     QString modifierValue = modifiersIterator.value();
-    if (MainWindow::instance()->getOMCProxy()->setElementModifierValue(modelName, modifierName, modifierValue)) {
+    if (MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(modelName, modifierName, modifierValue)) {
       modifierValueChanged = true;
     }
   }
@@ -602,7 +606,7 @@ void UpdateElementParametersCommand::redoInternal()
     for (componentModifier = mNewComponentModifiersMap.begin(); componentModifier != mNewComponentModifiersMap.end(); ++componentModifier) {
       QString modifierValue = componentModifier.value();
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
+      pOMCProxy->setElementModifierValueOld(className, modifierKey, modifierValue);
     }
     // we want to load modifiers even if they are loaded already
     mpComponent->getElementInfo()->setModifiersLoaded(false);
@@ -614,7 +618,7 @@ void UpdateElementParametersCommand::redoInternal()
     QMap<QString, QString>::iterator componentExtendsModifier;
     for (componentExtendsModifier = mNewComponentExtendsModifiersMap.begin(); componentExtendsModifier != mNewComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
       QString modifierValue = componentExtendsModifier.value();
-      pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
+      pOMCProxy->setExtendsModifierValueOld(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
     }
     mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
   }
@@ -637,7 +641,7 @@ void UpdateElementParametersCommand::undo()
     for (componentModifier = mOldComponentModifiersMap.begin(); componentModifier != mOldComponentModifiersMap.end(); ++componentModifier) {
       QString modifierValue = componentModifier.value();
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setElementModifierValue(className, modifierKey, modifierValue);
+      pOMCProxy->setElementModifierValueOld(className, modifierKey, modifierValue);
     }
     // we want to load modifiers even if they are loaded already
     mpComponent->getElementInfo()->setModifiersLoaded(false);
@@ -651,7 +655,7 @@ void UpdateElementParametersCommand::undo()
     QMap<QString, QString>::iterator componentExtendsModifier;
     for (componentExtendsModifier = mOldComponentExtendsModifiersMap.begin(); componentExtendsModifier != mOldComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
       QString modifierValue = componentExtendsModifier.value();
-      pOMCProxy->setExtendsModifierValue(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
+      pOMCProxy->setExtendsModifierValueOld(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
     }
     mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
   }
@@ -697,15 +701,13 @@ void DeleteComponentCommand::redoInternal()
     }
     Element *pComponent = pGraphicsView->getElementObject(mpComponent->getName());
     if (pComponent) {
-      pGraphicsView->removeItem(pComponent);
-      pGraphicsView->removeItem(pComponent->getOriginItem());
+      pGraphicsView->removeElementItem(pComponent);
       pGraphicsView->deleteElementFromList(pComponent);
       pGraphicsView->addElementToOutOfSceneList(pComponent);
       pComponent->emitDeleted();
     }
   }
-  mpGraphicsView->removeItem(mpComponent);
-  mpGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpGraphicsView->removeElementItem(mpComponent);
   mpGraphicsView->deleteElementFromList(mpComponent);
   mpGraphicsView->addElementToOutOfSceneList(mpComponent);
   mpComponent->emitDeleted();
@@ -730,15 +732,13 @@ void DeleteComponentCommand::undo()
     }
     Element *pComponent = pGraphicsView->getElementObject(mpComponent->getName());
     if (pComponent) {
-      pGraphicsView->addItem(pComponent);
-      pGraphicsView->addItem(pComponent->getOriginItem());
+      pGraphicsView->addElementItem(pComponent);
       pGraphicsView->addElementToList(pComponent);
       pGraphicsView->deleteElementFromOutOfSceneList(pComponent);
       pComponent->emitAdded();
     }
   }
-  mpGraphicsView->addItem(mpComponent);
-  mpGraphicsView->addItem(mpComponent->getOriginItem());
+  mpGraphicsView->addElementItem(mpComponent);
   mpGraphicsView->addElementToList(mpComponent);
   mpGraphicsView->deleteElementFromOutOfSceneList(mpComponent);
   mpComponent->emitAdded();
@@ -1645,29 +1645,45 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
   }
 }
 
+/*!
+ * \brief OMCUndoCommand::OMCUndoCommand
+ * Undo command used with the instance API.
+ * \param pLibraryTreeItem
+ * \param oldModelInfo
+ * \param newModelInfo
+ * \param commandText
+ * \param pParent
+ */
 OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
-  mOldModelText = mpLibraryTreeItem->getModelWidget()->getModelTextForOMCUndoCommand();
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  // get the containing parent LibraryTreeItem
+  mpParentContainingLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
+  mOldModelText = mpParentContainingLibraryTreeItem->getClassText(pLibraryTreeModel);
   mOldModelInfo = oldModelInfo;
-  mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure());
+  mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(mpParentContainingLibraryTreeItem->getNameStructure());
   mNewModelInfo = newModelInfo;
-  mUndoDoneOnce = false;
   setText(commandText);
 }
 
+/*!
+ * \brief OMCUndoCommand::redoInternal
+ * Loads the new model text and redraws the model.
+ */
 void OMCUndoCommand::redoInternal()
 {
-  if (mUndoDoneOnce) {
-    MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpLibraryTreeItem->getFileName());
-  }
+  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
 }
 
+/*!
+ * \brief OMCUndoCommand::undo
+ * Loads the old model text and redraws the model.
+ */
 void OMCUndoCommand::undo()
 {
-  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpLibraryTreeItem->getFileName());
-  mUndoDoneOnce = true;
+  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }

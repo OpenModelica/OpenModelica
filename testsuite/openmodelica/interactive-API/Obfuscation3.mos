@@ -1,0 +1,64 @@
+// name: Obfuscation3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+setCommandLineOptions("--obfuscate=protected");
+loadString("
+  package P1
+    annotation(Protection(access = Access.hide));
+
+    model A
+      Real x \"x\";
+    end A;
+  end P1;
+
+  package P2
+    model A
+      Real x \"x2\";
+    end A;
+
+    model B
+      Real y \"y\";
+    protected
+      Real z \"z\";
+      annotation(Protection(access = Access.icon));
+    end B;
+
+    model C
+      extends B;
+      Real w \"w\";
+    protected
+      Real u \"u\";
+      annotation(Protection(access = Access.packageText));
+    end C;
+  end P2;
+
+  model M
+    P1.A a1;
+    P2.A a2;
+  protected
+    P2.B b1;
+    P2.C c1;
+  end M;
+");
+
+instantiateModel(M); getErrorString();
+
+// Result:
+// true
+// true
+// "class M
+//   Real a1.x;
+//   Real a2.x \"x2\";
+//   protected Real n1.n2;
+//   protected Real n1.n3;
+//   protected Real n4.n5;
+//   protected Real n4.n6;
+//   protected Real n4.n7 \"w\";
+//   protected Real n4.n8 \"u\";
+// end M;
+// "
+// ""
+// endResult

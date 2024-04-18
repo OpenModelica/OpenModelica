@@ -5,7 +5,20 @@ OpenModelica Encryption
 
 The encryption module allows the library developers to encrypt their libraries
 for different platforms. Note that you need a special version of OpenModelica
-with encryption support. Contact us if you want one.
+with encryption support to do that, which is only released in binary form. This
+version contains an OpenModelica-specific private key that is used internally
+to decrypt the encrypted libraries for code generation only, not for display
+purposes.
+
+If you are a library developer and are interested in distributing your library
+in encrypted form for use with OpenModelica, please contact us for further
+information. Please note that distributing the special version of OpenModelica
+with encryption support to the users of your library requires you to be a Level
+2 member of the Open Source Modelica Consortium.
+
+If you are a user of an encrypted library that is supported by OpenModelica,
+please contact your library supplier for information on how to get the special
+version of OpenModelica that runs it.
 
 Encrypting the Library
 ----------------------
@@ -29,12 +42,19 @@ from the mos script or from **OMEdit** `File > Load Encrypted Package`.
 Notes
 -----
 
-- There is no license management and obfuscation of the generated code and
-  files. However just a basic encryption and decryption is supported along with
-  full support for protection access annotation as defined in
-  Modelica specification 18.9. This means that anyone who has an OpenModelica
-  version with encryption support can encrypt or decrypt files.
-
-- OpenModelica encryption is based on
+- Encryption support in OpenModelica does not include any license management,
+  i.e., restricting the usage of a certain libraries based on some conditions,
+  e.g., having paid a fee. It is only meant to prevent end users from seeing
+  the Modelica source code of the encrypted parts of the libraries, for reasons
+  of confidentiality or IP protection.
+- The parts of the library that are protected by encryption are specified
+  by the access control annotations defined by the Modelica Language Specification,
+  `Section 18.9 <https://specification.modelica.org/maint/3.6/annotations.html#access-control-to-protect-intellectual-property>`_.
+- The generated C code corresponding to the encrypted parts of the library is
+  obfuscated: all comments are removed, and all component names are replaced by
+  generic names such as n1, n2, n3, etc. This prevents easy reverse-engineering
+  of the encrypted library starting from generated simulation code.
+- Encryption in OpenModelica is based on the
   `SEMLA (Standardized Encryption of Modelica Libraries and Artifacts) <https://github.com/modelon-community/SEMLA>`_
-  module from Modelon AB.
+  module from Modelon AB, which provides a tool-independent framework for Modelica
+  library encryption.

@@ -73,8 +73,8 @@ namespace IAEX
 
     if( !oldDir_.exists() || !newDir_.exists() )
     {
-      string msg = "UpdateLink, old or new dir don't exists.";
-      throw runtime_error( msg.c_str() );
+      std::string msg = "UpdateLink, old or new dir don't exists.";
+      throw std::runtime_error( msg.c_str() );
     }
   }
 
@@ -121,8 +121,8 @@ namespace IAEX
           QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
           html.replace( startPos, endPos - startPos, newLink );
 
-          //cout << "OLD LINK: " << oldLink.toStdString() << endl;
-          //cout << "NEW LINK: " << newLink.toStdString() << endl;
+          //std::cout << "OLD LINK: " << oldLink.toStdString() << std::endl;
+          //std::cout << "NEW LINK: " << newLink.toStdString() << std::endl;
 
           // set pos to the end of the link
           pos = startPos + newLink.length();
@@ -130,8 +130,8 @@ namespace IAEX
         else
         {
           // this should never happen!
-          string msg = "Error, found no end of linkpath";
-                    throw runtime_error( msg.c_str() );
+          std::string msg = "Error, found no end of linkpath";
+                    throw std::runtime_error( msg.c_str() );
           break;
         }
       }

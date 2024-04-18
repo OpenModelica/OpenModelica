@@ -36,7 +36,7 @@
 #define LINEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "OMSimulator.h"
+#include "OMSimulator/OMSimulator.h"
 
 #include <QTreeView>
 #include <QSortFilterProxyModel>
@@ -89,7 +89,7 @@ public:
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
-  void drawLineAnnotation(QPainter *painter);
+  virtual void drawAnnotation(QPainter *painter) override;
   void drawArrow(QPainter *painter, QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QPolygonF perpendicularLine(QPointF startPos, QPointF endPos, qreal size) const;
   QString getOMCShapeAnnotation() override;
@@ -107,6 +107,10 @@ public:
   ModelInstance::Line* getLine() {return mpLine;}
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
+  bool isConnection() const {return mLineType == LineAnnotation::ConnectionType;}
+  bool isTransition() const {return mLineType == LineAnnotation::TransitionType;}
+  bool isInitialState() const {return mLineType == LineAnnotation::InitialStateType;}
+  bool isLineShape() const {return mLineType == LineAnnotation::ShapeType;}
   void setStartElement(Element *pStartElement) {mpStartElement = pStartElement;}
   Element* getStartElement() {return mpStartElement;}
   void setStartElementName(QString name) {mStartElementName = name;}
@@ -152,8 +156,12 @@ public:
   void updateLine();
 
   static QColor findLineColorForConnection(Element *pComponent);
+  void clearCollidingConnections();
+  void handleCollidingConnections();
 private:
   ModelInstance::Line *mpLine;
+
+  PointArrayAnnotation adjustPointsForDrawing() const;
 protected:
   QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
@@ -179,6 +187,8 @@ protected:
   QString mAlpha;
   oms_connection_type_enu_t mOMSConnectionType;
   bool mActiveState;
+  QVector<Element*> mCollidingConnectorElements;
+  QVector<LineAnnotation*> mCollidingConnections;
 public slots:
   void handleComponentMoved(bool positionChanged);
   void updateConnectionAnnotation();

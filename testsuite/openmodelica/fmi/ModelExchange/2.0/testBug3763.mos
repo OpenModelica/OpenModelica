@@ -7,7 +7,7 @@ model DrumBoiler
   extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs=false);
 end DrumBoiler;
 ");
-translateModelFMU(DrumBoiler);getErrorString();
+buildModelFMU(DrumBoiler);getErrorString();
 
 // Result:
 // true

@@ -121,6 +121,7 @@ import SCodeUtil;
 import SemanticVersion;
 import Settings;
 import SimCodeMain;
+import SimCodeFunctionUtil;
 import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
@@ -401,21 +402,19 @@ algorithm
       GlobalScript.SimulationOptions defaults, simOpt;
       String experimentAnnotationStr;
       list<Absyn.NamedArg> named;
+      Option<Absyn.Modification> experiment_ann;
 
     // search inside annotation(experiment(...))
     case (_, _, _)
       equation
         defaults = Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
 
-        experimentAnnotationStr =
-          Interactive.getNamedAnnotation(
-            inModelPath,
-            SymbolTable.getAbsyn(),
-            Absyn.IDENT("experiment"),
-            SOME("{}"),
-            Interactive.getExperimentAnnotationString);
-                // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
+        experiment_ann = InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
 
+        // TODO: Get the values from the modifier directly instead of this mess.
+        experimentAnnotationStr = Interactive.getExperimentAnnotationString(experiment_ann);
+
+        // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
         // jump to next case if the annotation is empty
         false = stringEq(experimentAnnotationStr, "{}");
 
@@ -499,107 +498,55 @@ algorithm
 end getConst;
 
 protected function populateSimulationOptions
-"@auhtor: adrpo
-  populate simulation options"
-  input GlobalScript.SimulationOptions inSimOpt;
-  input list<Absyn.NamedArg> inExperimentSettings;
-  output GlobalScript.SimulationOptions outSimOpt;
+  input output GlobalScript.SimulationOptions options;
+  input list<Absyn.NamedArg> args;
+protected
+  String name;
+  Absyn.Exp value;
+  Option<DAE.Exp> interval = NONE();
 algorithm
-  outSimOpt := matchcontinue(inSimOpt, inExperimentSettings)
-    local
-      Absyn.Exp exp;
-      list<Absyn.NamedArg> rest;
-      GlobalScript.SimulationOptions simOpt;
-      DAE.Exp startTime;
-      DAE.Exp stopTime;
-      DAE.Exp numberOfIntervals;
-      DAE.Exp stepSize;
-      DAE.Exp tolerance;
-      DAE.Exp method;
-      DAE.Exp fileNamePrefix;
-      DAE.Exp options;
-      DAE.Exp outputFormat;
-      DAE.Exp variableFilter, cflags, simflags;
-      Real rStepSize, rStopTime, rStartTime;
-      Integer iNumberOfIntervals;
-      String name,msg;
+  for arg in args loop
+    Absyn.NAMEDARG(argName = name, argValue = value) := arg;
 
-    case (_, {}) then inSimOpt;
+    () := match name
+      case "Tolerance"         algorithm options.tolerance := getConst(value, DAE.T_REAL_DEFAULT);            then ();
+      case "StartTime"         algorithm options.startTime := getConst(value, DAE.T_REAL_DEFAULT);            then ();
+      case "StopTime"          algorithm options.stopTime := getConst(value, DAE.T_REAL_DEFAULT);             then ();
+      case "NumberOfIntervals" algorithm options.numberOfIntervals := getConst(value, DAE.T_INTEGER_DEFAULT); then ();
+      case "Interval"          algorithm interval := SOME(getConst(value, DAE.T_REAL_DEFAULT));               then ();
+      else
+        algorithm
+          if not StringUtil.startsWith(name, "__") then
+            Error.addCompilerWarning("Ignoring unknown experiment annotation option: " +
+              name + " = " + Dump.printExpStr(value));
+          end if;
+        then
+          ();
+    end match;
+  end for;
 
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix,  options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
-      equation
-        tolerance = getConst(exp, DAE.T_REAL_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
-      equation
-        startTime = getConst(exp, DAE.T_REAL_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
-      equation
-        stopTime = getConst(exp, DAE.T_REAL_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
-      equation
-        numberOfIntervals = getConst(exp, DAE.T_INTEGER_DEFAULT);
-        simOpt = populateSimulationOptions(
-          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags),
-             rest);
-      then
-        simOpt;
-
-    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags),
-          Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
-      equation
-        DAE.RCONST(rStepSize) = getConst(exp, DAE.T_REAL_DEFAULT);
-        // a bit different for Interval, handle it LAST!!!!
-        GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                           fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags) =
-          populateSimulationOptions(inSimOpt, rest);
-
-       DAE.RCONST(rStartTime) = startTime;
-       DAE.RCONST(rStopTime) = stopTime;
-       iNumberOfIntervals = realInt(realDiv(realSub(rStopTime, rStartTime), rStepSize));
-
-       numberOfIntervals = DAE.ICONST(iNumberOfIntervals);
-       stepSize = DAE.RCONST(rStepSize);
-
-       simOpt = GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                                   fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags);
-      then
-        simOpt;
-
-    case (_,Absyn.NAMEDARG(argName = name, argValue = exp)::rest)
-      equation
-        msg = "Ignoring unknown experiment annotation option: " + name + " = " + Dump.printExpStr(exp);
-        Error.addCompilerWarning(msg);
-        simOpt = populateSimulationOptions(inSimOpt, rest);
-      then
-        simOpt;
-  end matchcontinue;
+  // Interval needs to be handled last since it depends on the start and stop time.
+  if isSome(interval) then
+    options := setSimulationOptionsInterval(options, Expression.toReal(Util.getOption(interval)));
+  else
+    /*fix issue 12070, set proper default value of stepSize when Interval annotation is not provided
+      stepSize = (StopTime-StartTime)/500
+    */
+    options.stepSize := DAE.RCONST((Expression.toReal(options.stopTime) - Expression.toReal(options.startTime)) / 500);
+  end if;
 end populateSimulationOptions;
+
+function setSimulationOptionsInterval
+  input output GlobalScript.SimulationOptions options;
+  input Real interval;
+protected
+  Real start_time, stop_time;
+algorithm
+  start_time := Expression.toReal(options.startTime);
+  stop_time := Expression.toReal(options.stopTime);
+  options.stepSize := DAE.RCONST(interval);
+  options.numberOfIntervals := DAE.ICONST(realInt((stop_time - start_time) / interval));
+end setSimulationOptionsInterval;
 
 protected function simOptionsAsString
 "@author: adrpo
@@ -1251,6 +1198,7 @@ algorithm
 
     case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::_)
       algorithm
+        Error.addMessage(Error.DEPRECATED_API_CALL, {"translateModelFMU", "buildModelFMU"});
         (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true);
       then
         ret_val;
@@ -1552,7 +1500,7 @@ algorithm
 
     case ("moveClassToBottom", _) then Values.BOOL(false);
 
-    case ("copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("TopLevel")))})
+    case ("copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("__OpenModelica_TopLevel")))})
       equation
         p = SymbolTable.getAbsyn();
         absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
@@ -1943,11 +1891,12 @@ algorithm
                             Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
       then Values.BOOL(false);
 
-    case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))})
+    case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
+                                 Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
       equation
         Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if (access >= 9) then // i.e., Access.documentation
-          saveTotalModelDebug(filename, classpath);
+          saveTotalModelDebug(filename, classpath, b1, b2, b3);
           b = true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
@@ -2423,8 +2372,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = Autoconf.pathDelimiter;
-        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename = if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkTaskGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
       then
@@ -2437,8 +2386,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = Autoconf.pathDelimiter;
-        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename = if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkCodeGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
       then
@@ -2768,7 +2717,7 @@ algorithm
         absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
         absynClass := InteractiveUtil.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(annlst));
         p := InteractiveUtil.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
-        SymbolTable.setAbsyn(p);
+        SymbolTable.setAbsynClass(p, absynClass, classpath);
       then
         Values.BOOL(true);
 
@@ -3116,8 +3065,8 @@ algorithm
     case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.BOOL(b)})
       then NFApi.getModelInstance(classpath, str, b);
 
-    case ("getModelInstanceIcon", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
-      then NFApi.getModelInstanceIcon(classpath, b);
+    case ("getModelInstanceAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), v as Values.ARRAY(), Values.BOOL(b)})
+      then NFApi.getModelInstanceAnnotation(classpath, ValuesUtil.arrayValueStrings(v), b);
 
     case ("modifierToJSON", {Values.STRING(str), Values.BOOL(b)})
       then NFApi.modifierToJSON(str, b);
@@ -3130,6 +3079,33 @@ algorithm
 
     case ("qualifyPath", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       then ValuesUtil.makeCodeTypeName(NFApi.mkFullyQual(SymbolTable.getAbsyn(), classpath, path));
+
+    case ("getElementAnnotation", {Values.CODE(Absyn.C_TYPENAME(path))})
+      then Values.STRING(InteractiveUtil.getElementAnnotation(path, SymbolTable.getAbsyn()));
+
+    case ("setElementAnnotation",
+          {Values.CODE(Absyn.C_TYPENAME(path)),
+           Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
+      algorithm
+        (p, b) := InteractiveUtil.setElementAnnotation(path, mod, SymbolTable.getAbsyn());
+      then
+        Values.BOOL(b);
+
+    case ("loadClassContentString",
+          {Values.STRING(str), Values.CODE(Absyn.C_TYPENAME(classpath))})
+      algorithm
+        (p, b) := InteractiveUtil.loadClassContentString(str, classpath, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        Values.BOOL(b);
+
+    case ("setElementType",
+          {Values.CODE(Absyn.C_TYPENAME(path)),
+           Values.CODE(Absyn.C_VARIABLENAME(cr))})
+      algorithm
+        (p, b) := InteractiveUtil.setElementType(path, cr, SymbolTable.getAbsyn());
+      then
+        Values.BOOL(b);
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
@@ -3443,15 +3419,15 @@ algorithm
       list<String> args;
       Boolean haveAnnotation;
       SimCode.SimulationSettings simSettings;
-      GlobalScript.SimulationOptions defaulSimOpt;
+      GlobalScript.SimulationOptions defaultSimOpt;
 
     case (cache,env,_,fileNamePrefix,_)
       algorithm
         if isSome(inSimSettingsOpt)  then
           SOME(simSettings) := inSimSettingsOpt;
         else
-          defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
-          simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+          defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
+          simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
         end if;
 
         if Config.ignoreCommandLineOptionsAnnotation() then
@@ -3503,11 +3479,26 @@ protected function callTranslateModel
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-
   (success, outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
       className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
 end callTranslateModel;
+
+protected function getProcsStr
+  input Boolean isMake = false;
+  output String s;
+protected
+  Integer n;
+  String sn;
+algorithm
+  n := Flags.getConfigInt(Flags.NUM_PROC);
+  sn := intString(n);
+  s := if (n == 0)
+       then ""
+       else (if isMake
+             then sn
+             else stringAppend("-j", sn));
+end getProcsStr;
 
 protected function configureFMU_cmake
 "Configure and build binaries with CMake for target platform"
@@ -3521,10 +3512,15 @@ protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
   String quote, dquote, defaultFmiIncludeDirectoy;
+  String CC, CXX;
+  SimCodeFunction.MakefileParams makefileParams;
 algorithm
+  makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
   quote := "'";
   dquote := if isWindows then "\"" else "'";
+  CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+  CXX := "-DCMAKE_CXX_COMPILER=" + dquote + System.basename(makefileParams.cxxcompiler) + dquote;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
@@ -3558,15 +3554,15 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
-               Autoconf.cmake + " --build . --target install && " +
+               Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
         then();
@@ -3577,15 +3573,15 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE +
+                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
-               Autoconf.cmake + " --build . --target install && " +
+               Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
         then();
@@ -3657,7 +3653,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "cmake --build . &&  make  install && " +
+                  "cmake --build . &&  make " + getProcsStr(true) + " install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
@@ -3985,7 +3981,7 @@ protected
   Boolean staticSourceCodeFMU, success;
   String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
-  GlobalScript.SimulationOptions defaulSimOpt;
+  GlobalScript.SimulationOptions defaultSimOpt;
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
@@ -4015,13 +4011,13 @@ algorithm
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
-  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix, ".", "_");
-  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix);
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
+  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix);
   if isSome(inSimSettings)  then
     SOME(simSettings) := inSimSettings;
   else
-    defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
-    simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+    defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
+    simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
@@ -4161,7 +4157,7 @@ algorithm
       cdCommand := "cd \"" +  dirPath + "\"";
       mvCommand := "mv \"" + molName +"\" \"" + System.pwd() + "\"";
 
-      if (Util.endsWith(fileName, "package.mo")) then
+      if (StringUtil.endsWith(fileName, "package.mo")) then
         dirOrFileName := System.basename(dirPath);
         zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
         command := stringAppendList({rmCommand, " && ", cdCommand, " && cd .. && ", zipCommand});
@@ -4201,11 +4197,9 @@ protected function translateModelXML " author: Alachew
 protected
   Boolean success;
 algorithm
-  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className,
-                    fileNamePrefix, true, false, true, inSimSettingsOpt);
+  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
   outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
-
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
   input Absyn.Path className;
@@ -5095,8 +5089,12 @@ algorithm
 
   end match;
 
+  // Update the paths in the class to reflect the new location.
+  cls := NFApi.updateMovedClassPaths(inClass, inClassPath, inWithin);
+
   // Replace the filename of each element with the new path.
-  cls := moveClassInfo(inClass, dst_path);
+  cls := moveClassInfo(cls, dst_path);
+
   // Change the name of the class and put it in as a copy in the program.
   cls := AbsynUtil.setClassName(cls, inName);
   outProg := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, inWithin), inProg);
@@ -7499,20 +7497,39 @@ end saveTotalModel;
 protected function saveTotalModelDebug
   input String filename;
   input Absyn.Path classPath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+  input Boolean obfuscate;
 protected
   SCode.Program prog;
-  String str, name_str, cls_str;
+  String str, name_str, cls_str, str1, str2, str3;
+  Absyn.Path cls_path = classPath;
+  Option<SCode.Comment> ocmt;
+  SCode.Comment cmt;
 algorithm
-  runFrontEndLoadProgram(classPath);
+  runFrontEndLoadProgram(cls_path);
   prog := SymbolTable.getSCode();
-  prog := TotalModelDebug.getTotalModel(prog, classPath);
+  prog := TotalModelDebug.getTotalModel(prog, cls_path);
   prog := SCodeUtil.removeBuiltinsFromTopScope(prog);
-  prog := SCodeUtil.stripCommentsFromProgram(prog, stripAnnotations = false, stripComments = true);
+  ocmt := SCodeUtil.getElementComment(InteractiveUtil.getPathedSCodeElementInProgram(cls_path, prog));
+  cmt := if isSome(ocmt) then Util.getOption(ocmt) else SCode.noComment;
+
+  if stripAnnotations or stripComments then
+    prog := SCodeUtil.stripCommentsFromProgram(prog, stripAnnotations, stripComments);
+  end if;
+
+  if obfuscate then
+    (prog, cls_path, cmt, _) := Obfuscate.obfuscateProgram(prog, cls_path, cmt);
+  end if;
 
   str := SCodeDump.programStr(prog, SCodeDump.defaultOptions);
-  name_str := AbsynUtil.pathLastIdent(classPath) + "_total";
-  cls_str := "\nmodel " + name_str + "\n  extends " + AbsynUtil.pathString(classPath) + ";\nend " + name_str + ";\n";
-  System.writeFile(filename, str + cls_str);
+  str1 := AbsynUtil.pathLastIdent(cls_path) + "_total";
+  str2 := if stripComments then "" else SCodeDump.printCommentStr(cmt);
+  str2 := if stringEq(str2,"") then "" else (" " + str2);
+  str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
+  str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
+  str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
+  System.writeFile(filename, str + str1);
 end saveTotalModelDebug;
 
 protected function getDymolaStateAnnotation

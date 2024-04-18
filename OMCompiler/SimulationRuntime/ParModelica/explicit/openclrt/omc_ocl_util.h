@@ -52,13 +52,13 @@
 #ifndef _OMC_OCL_UTIL_H
 #define _OMC_OCL_UTIL_H
 
-#include <omc_ocl_common_header.h>
 
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <sys/stat.h>
 
+#include "omc_ocl_common_header.h"
 
 // The compiled OpenCL program containing kerenls generated for a simulation
 cl_program omc_ocl_program = NULL;

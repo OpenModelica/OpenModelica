@@ -25,13 +25,13 @@ model ExternalObject2
 end ExternalObject2;
 
 // Result:
-// function ExtObj.constructor
+// impure function ExtObj.constructor
 //   output ExtObj obj;
 //
 //   external "C" obj = initObject();
 // end ExtObj.constructor;
 //
-// function ExtObj.destructor
+// impure function ExtObj.destructor
 //   input ExtObj obj;
 //
 //   external "C" destroyObject(obj);

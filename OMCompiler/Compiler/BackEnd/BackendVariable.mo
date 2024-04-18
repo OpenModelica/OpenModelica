@@ -63,6 +63,7 @@ import List;
 import MetaModelica.Dangerous;
 import Mutable;
 import SCodeUtil;
+import StringUtil;
 import System;
 import Types;
 import Util;
@@ -1441,13 +1442,11 @@ public function isRESVar
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inVar.varName)
+  outBoolean := match inVar.varName
     local
       String s;
-    case(DAE.CREF_IDENT(ident=s))
-     then (stringLength(s) > 3 and substring(s, 1, 4) == "$res");
-    case(DAE.CREF_QUAL(ident=s))
-     then (stringLength(s) > 3 and substring(s, 1, 4) == "$res");
+    case DAE.CREF_IDENT(ident=s)  then StringUtil.startsWith(s, "$res");
+    case DAE.CREF_QUAL(ident=s)   then StringUtil.startsWith(s, "$res");
     else false;
   end match;
 end isRESVar;
@@ -1631,33 +1630,26 @@ algorithm
   end match;
 end isProtected;
 
-public function hasVarEvaluateAnnotationOrFinal
+public function hasVarEvaluateAnnotationTrueOrFinal
   input BackendDAE.Var inVar;
   output Boolean select;
 algorithm
-  select := isFinalVar(inVar) or hasVarEvaluateAnnotation(inVar);
-end hasVarEvaluateAnnotationOrFinal;
+  select := isFinalVar(inVar) or hasVarEvaluateAnnotationTrue(inVar);
+end hasVarEvaluateAnnotationTrueOrFinal;
 
-public function hasVarEvaluateAnnotationOrProtected
+public function hasVarEvaluateAnnotationTrueOrProtected
   input BackendDAE.Var inVar;
   output Boolean select;
 algorithm
-  select := isProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
-end hasVarEvaluateAnnotationOrProtected;
+  select := isProtectedVar(inVar) or hasVarEvaluateAnnotationTrue(inVar);
+end hasVarEvaluateAnnotationTrueOrProtected;
 
-public function hasVarEvaluateAnnotationOrFinalOrProtected
-  input BackendDAE.Var inVar;
-  output Boolean select;
-algorithm
-  select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
-end hasVarEvaluateAnnotationOrFinalOrProtected;
-
-public function hasVarEvaluateTrueAnnotationOrFinalOrProtected
+public function hasVarEvaluateAnnotationTrueOrFinalOrProtected
   input BackendDAE.Var inVar;
   output Boolean select;
 algorithm
   select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotationTrue(inVar);
-end hasVarEvaluateTrueAnnotationOrFinalOrProtected;
+end hasVarEvaluateAnnotationTrueOrFinalOrProtected;
 
 public function hasVarEvaluateAnnotation
   input BackendDAE.Var inVar;
@@ -1683,7 +1675,7 @@ protected
 algorithm
   try
     BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-    (val,_) := SCodeUtil.getNamedAnnotation(ann, "Evaluate");
+    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "Evaluate");
     isTrue := stringEqual(Dump.printExpStr(val), "true");
   else
     isTrue := false;
@@ -1701,7 +1693,7 @@ protected
 algorithm
   try
     BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-    (val,_) := SCodeUtil.getNamedAnnotation(ann, "Evaluate");
+    SOME(val) := SCodeUtil.lookupAnnotationBinding(ann, "Evaluate");
     isFalse := stringEqual(Dump.printExpStr(val), "false");
   else
     isFalse := false;
@@ -1728,7 +1720,7 @@ protected
   SCode.Annotation ann;
 algorithm
   BackendDAE.VAR(comment = SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-  outValue := SCodeUtil.getNamedAnnotation(ann, inName);
+  SOME(outValue) := SCodeUtil.lookupAnnotationBinding(ann, inName);
 end getNamedAnnotation;
 
 public function getAnnotationComment"gets the annotation comment, if there is one"
@@ -1754,7 +1746,7 @@ algorithm
   cr := varCref(inVar);
   cr := ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
   outVar := copyVarNewName(cr,inVar);
-  outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
+  outVar := setVarKind(outVar,BackendDAE.JAC_TMP_VAR());
 end createpDerVar;
 
 public function createClockedState
@@ -1766,7 +1758,7 @@ protected
 algorithm
   cr := ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, inVar.varName);
   outVar := copyVarNewName(cr,inVar);
-  outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
+  outVar := setVarKind(outVar,BackendDAE.JAC_TMP_VAR());
 
   // HACK hide previous(v) in results because it's not calculated right
   outVar := setHideResult(outVar, SOME(DAE.BCONST(true)));
@@ -2013,22 +2005,13 @@ end getVarDirection;
 public function getVarNominalValue "
   Returns the DAE.NominalValue or default value of a variable."
   input BackendDAE.Var InVar;
-  output DAE.Exp nom;
-algorithm
-  nom := match(InVar)
-         local Option<DAE.VariableAttributes> attr;
-           case(BackendDAE.VAR(values = attr)) then DAEUtil.getNominalAttr(attr);
-         end match;
+  output DAE.Exp nom = DAEUtil.getNominalAttr(InVar.values);
 end getVarNominalValue;
 
 public function getVarKind "
   Get the DAE.VarKind of a variable"
   input BackendDAE.Var inVar;
-  output BackendDAE.VarKind varKind;
-algorithm
-  varKind := match (inVar)
-    case (BackendDAE.VAR(varKind = varKind)) then  varKind;
-  end match;
+  output BackendDAE.VarKind varKind = inVar.varKind;
 end getVarKind;
 
 public function getVarKindForVar"fetch the varkind for an indexed var inside the variable-array."
@@ -4454,9 +4437,7 @@ end calcAliasKey;
 
 public function selfGeneratedVar
   input DAE.ComponentRef inCref;
-  output Boolean b;
-algorithm
-  b := substring(ComponentReference.crefStr(inCref), 1, 1) == "$";
+  output Boolean b = StringUtil.startsWith(ComponentReference.crefStr(inCref), "$");
 end selfGeneratedVar;
 
 public function varStateSelectPrioAlias "Helper function to calculateVarPriorities.

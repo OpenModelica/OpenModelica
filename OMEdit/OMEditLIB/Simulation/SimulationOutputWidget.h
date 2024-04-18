@@ -86,6 +86,7 @@ public:
   };
   SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
   ~SimulationOutputWidget();
+  void start();
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
@@ -107,6 +108,8 @@ public:
   void addGeneratedFileTab(QString fileName);
   void writeSimulationMessage(SimulationMessage *pSimulationMessage);
   void embeddedServerInitialized();
+  void updateMessageTab(const QString &text);
+  void updateMessageTabProgress();
 private:
   SimulationOptions mSimulationOptions;
   Label *mpProgressLabel;
@@ -150,7 +153,6 @@ private:
   void simulationProcessFinishedHelper();
   QString getPathsFromBatFile(QString fileName);
 private slots:
-  void cancelCompilationOrSimulation();
   void openTransformationalDebugger();
   void openSimulationLogFile();
   void createSimulationProgressSocket();
@@ -172,9 +174,12 @@ private slots:
   void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 public slots:
+  void cancelCompilationOrSimulation();
   void openTransformationBrowser(QUrl url);
 signals:
   void simulationFinished();
+  void updateText(const QString &text);
+  void updateProgressBar(QProgressBar *pProgressBar);
 };
 
 #endif // SIMULATIONOUTPUTWIDGET_H

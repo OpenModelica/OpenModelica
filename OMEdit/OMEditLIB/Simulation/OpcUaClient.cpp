@@ -83,18 +83,28 @@ OpcUaClient::~OpcUaClient()
 /*!
   Connect to an OPC UA server.
   */
-bool OpcUaClient::connectToServer()
+bool OpcUaClient::connectToServer(QString *pErrorString)
 {
   std::string endPoint = "opc.tcp://localhost:" + std::to_string(mSimulationOptions.getInteractiveSimulationPortNumber());
   mpClient = UA_Client_new(UA_ClientConfig_standard);
   UA_StatusCode returnValue;
+  int tries = 0;
   do {
     Sleep::msleep(100);
-    // QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
     returnValue = UA_Client_connect(mpClient, endPoint.c_str());
+    ++tries;
+    if (tries > 50) { // Do not go in infinte loop. Try 50 times i.e., 5 secs max and then give up.
+      break;
+    }
   } while (returnValue != UA_STATUSCODE_GOOD);
   // qDebug() << "Connected to OPC-UA server " << endPoint;
-  return true;
+  if (returnValue != UA_STATUSCODE_GOOD) {
+    *pErrorString = tr("Could not connect to the embedded server. Status code %1.").arg(QString(UA_StatusCode_name(returnValue)));
+    return false;
+  } else {
+    *pErrorString = QString(UA_StatusCode_name(returnValue));
+    return true;
+  }
 }
 
 /*!
@@ -454,10 +464,10 @@ void OpcUaWorker::checkMinMaxValues(const double& value)
 {
   if (value < mMinMaxValues.first) {
     mMinMaxValues.first = value;
-    emit sendUpdateYAxis(mMinMaxValues.first, mMinMaxValues.second);
+    emit sendUpdateYAxis(qMakePair(mMinMaxValues.first, mMinMaxValues.second));
   } else if ( value > mMinMaxValues.second ) {
     mMinMaxValues.second = value;
-    emit sendUpdateYAxis(mMinMaxValues.first, mMinMaxValues.second);
+    emit sendUpdateYAxis(qMakePair(mMinMaxValues.first, mMinMaxValues.second));
   }
 }
 

@@ -205,10 +205,14 @@ public:
   Element(Element *pElement, GraphicsView *pGraphicsView);
   // used for interface point
   Element(ElementInfo *pElementInfo, Element *pParentElement);
+  bool isRoot() const {return mElementType == Element::Root;}
+  bool isExtend() const {return mElementType == Element::Extend;}
+  bool isPort() const {return mElementType == Element::Port;}
   bool isInheritedElement() {return mIsInheritedElement;}
   bool hasShapeAnnotation(Element *pElement);
   bool hasNonExistingClass();
   QRectF boundingRect() const override;
+  QPainterPath shape() const override;
   QRectF itemsBoundingRect();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   ModelInstance::Model *getModel() const {return mpModel;}
@@ -221,9 +225,8 @@ public:
   bool isCondition() const;
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   Element *getReferenceElement() {return mpReferenceElement;}
-  Element* getParentElement() {return mpParentElement;}
+  Element* getParentElement() const {return mpParentElement;}
   Element* getRootParentElement();
-  ElementType getElementType() {return mElementType;}
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
@@ -236,6 +239,10 @@ public:
   bool hasChoices() {return (mChoices.size() > 0);}
   CoOrdinateSystem getCoOrdinateSystem() const;
   ModelInstance::CoordinateSystem getCoOrdinateSystemNew() const;
+  ResizerItem* getBottomLeftResizerItem() {return mpBottomLeftResizerItem;}
+  ResizerItem* getTopLeftResizerItem() {return mpTopLeftResizerItem;}
+  ResizerItem* getTopRightResizerItem() {return mpTopRightResizerItem;}
+  ResizerItem* getBottomRightResizerItem() {return mpBottomRightResizerItem;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
@@ -287,8 +294,8 @@ public:
   void emitChanged();
   void emitDeleted();
   void componentParameterHasChanged();
-  QString getParameterDisplayString(QString parameterName);
-  QString getParameterModifierValue(const QString &parameterName, const QString &modifier);
+  QPair<QString, bool> getParameterDisplayString(QString parameterName);
+  QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
   QString getDerivedClassModifierValue(QString modifierName);
   QString getInheritedDerivedClassModifierValue(Element *pElement, QString modifierName);
   void shapeAdded();
@@ -305,6 +312,7 @@ public:
   Element* getBusComponent() {return mpBusComponent;}
   Element* getElementByName(const QString &elementName);
   static ModelInstance::Component *getModelComponentByName(ModelInstance::Model *pModel, const QString &name);
+  void reDrawConnector(QPainter *painter);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
@@ -343,12 +351,9 @@ private:
   ResizerItem *mpBottomRightResizerItem;
   ResizerItem *mpSelectedResizerItem;
   OriginItem *mpOriginItem;
-  QTransform mTransform;
   QRectF mSceneBoundingRect;
   QPointF mTransformationStartPosition;
   QPointF mPivotPoint;
-  qreal mXFactor;
-  qreal mYFactor;
   QList<Element*> mInheritedElementsList;
   QList<ShapeAnnotation*> mShapesList;
   QList<Element*> mElementsList;
@@ -359,7 +364,9 @@ private:
   bool mActiveState;
   Element *mpBusComponent;
   void createNonExistingElement();
+  void deleteNonExistingElement();
   void createDefaultElement();
+  void deleteDefaultElement();
   void createStateElement();
   void drawInterfacePoints();
   void drawElement();
@@ -377,12 +384,12 @@ private:
   void hideResizerItems();
   void getScale(qreal *sx, qreal *sy);
   void updateConnections();
-  QString getParameterDisplayStringFromExtendsModifiers(QString parameterName);
-  QString getParameterDisplayStringFromExtendsParameters(QString parameterName, QString modifierString);
-  static QString getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QString modifierString);
+  QPair<QString, bool> getParameterDisplayStringFromExtendsModifiers(QString parameterName);
+  QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(QString parameterName, QPair<QString, bool> modifierString);
+  static QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QPair<QString, bool> modifierString);
   static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
-  bool canUseDiagramAnnotation();
+  bool canUseDiagramAnnotation() const;
 signals:
   void added();
   void transformChange(bool positionChanged);
@@ -438,6 +445,7 @@ public slots:
   void showReplaceSubModelDialog();
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
+  // QGraphicsItem interface
 protected:
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };

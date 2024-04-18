@@ -303,12 +303,8 @@ void MessageWidget::openErrorMessageClass(QUrl url)
     return;
   }
   QString className = url.path();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QUrlQuery query(url);
   int lineNumber = query.queryItemValue("lineNumber").toInt();
-#else /* Qt4 */
-  int lineNumber = url.queryItemValue("lineNumber").toInt();
-#endif
   if (className.startsWith("/")) {
     className.remove(0, 1);
   }
@@ -385,6 +381,7 @@ void MessageWidget::clearAllTabsMessages()
 MessagesTabWidget::MessagesTabWidget(QWidget *pParent)
   : QTabWidget(pParent)
 {
+  setDocumentMode(true);
   setTabsClosable(true);
 }
 
@@ -527,8 +524,8 @@ void MessagesWidget::addSimulationOutputTab(QWidget *pSimulationOutputTab, const
   // add the tab if it doesn't already exist
   if (!tabFound) {
     mpMessagesTabWidget->setCurrentIndex(mpMessagesTabWidget->addTab(pSimulationOutputTab, name));
+    emit messageTabAdded(pSimulationOutputTab, name);
   }
-  emit MessageAdded();
 }
 
 /*!
@@ -566,17 +563,21 @@ SimulationOutputWidget* MessagesWidget::getSimulationOutputWidget(const QString 
  */
 bool MessagesWidget::closeTab(int index)
 {
+  // Close SimulationOutputWidget
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
-  if (pSimulationOutputWidget && !pSimulationOutputWidget->isCompilationProcessRunning() && !pSimulationOutputWidget->isSimulationProcessRunning()) {
+  if (pSimulationOutputWidget
+      && !pSimulationOutputWidget->isCompilationProcessRunning()
+      && !pSimulationOutputWidget->isPostCompilationProcessRunning()
+      && !pSimulationOutputWidget->isSimulationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
-    if (pSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
-      MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(pSimulationOutputWidget);
-    }
+    emit messageTabClosed(index);
     return true;
   }
+  // Close OMSSimulationOutputWidget
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
     return true;
   }
   return false;
@@ -620,7 +621,15 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
       break;
   }
   mpMessagesTabWidget->setCurrentWidget(mpAllMessageWidget);
-  emit MessageAdded();
+  if (OptionsDialog::isCreated()) {
+    if (!OptionsDialog::instance()->getMessagesPage()->getEnlargeMessageBrowserCheckBox()->isChecked()) {
+      emit messageAdded();
+    } else {
+      MainWindow::instance()->markMessagesTabWidgetChangedForNewMessage(messageItem.getErrorType());
+    }
+  } else { // this block is called when some message appear during the startup. See #11985.
+    emit messageAdded();
+  }
 }
 
 /*!

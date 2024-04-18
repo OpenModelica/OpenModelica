@@ -1,0 +1,30 @@
+// name:     TestTopLevelOuter.mos
+// keywords: non-standard Modelica extensions
+// status:   correct
+//
+// Test non-standard Modelica flags that allow usage of integer as enums and enums as integers
+//
+//
+
+loadFile("TestTopLevelOuter.mo"); getErrorString();
+instantiateModel(TestNonStandardExtensions.TestTopLevelOuter); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=nonStdTopLevelOuter"); getErrorString();
+instantiateModel(TestNonStandardExtensions.TestTopLevelOuter); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "[flattening/modelica/others/TestTopLevelOuter.mo:8:3-8:26:writable] Error: The model can't be instantiated due to top-level outer element 'o', it may only be used as part of a simulation model.
+// "
+// true
+// ""
+// "class TestNonStandardExtensions.TestTopLevelOuter
+//   parameter Real y = 2.0;
+//   parameter Real o.x = 1.0;
+// end TestNonStandardExtensions.TestTopLevelOuter;
+// "
+// "[flattening/modelica/others/TestTopLevelOuter.mo:8:3-8:26:writable] Warning: The model can't be instantiated due to top-level outer element 'o', it may only be used as part of a simulation model.
+// [flattening/modelica/others/TestTopLevelOuter.mo:8:3-8:26:writable] Warning: An inner declaration for outer component o could not be found and was automatically generated.
+// "
+// endResult

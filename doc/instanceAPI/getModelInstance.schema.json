@@ -208,7 +208,7 @@
                   "$ref": "#"
                 },
                 {
-                  "description": "Builtin type",
+                  "description": "A builtin or Absyn type",
                   "type": "string"
                 },
                 {
@@ -322,6 +322,10 @@
           "description": "Modifier from the SCode (on short class definitions or class extends)",
           "$ref": "#/definitions/scodeModifier"
         },
+        "comment": {
+          "description": "The class' comment",
+          "$ref": "#/definitions/comment"
+        },
         "annotation": {
           "description": "The annotation on the replaceble class definition",
           "$ref": "#/definitions/annotation"
@@ -420,6 +424,19 @@
       },
       "required": ["binding"]
     },
+    "scodeElement": {
+      "description": "An SCode element",
+      "oneOf": [
+        {
+          "description": "A component declaration",
+          "$ref": "#/definitions/component"
+        },
+        {
+          "description": "A class declaration",
+          "$ref": "#/definitions/replaceableClass"
+        }
+      ]
+    },
     "scodeModifier": {
       "description": "An SCode modifier",
       "oneOf": [
@@ -431,13 +448,9 @@
           "type": "object",
           "description": "A modifier with submodifiers",
           "properties": {
-            "$value": {
-              "type": "string",
-              "description": "The string representation of the binding equation"
-            },
             "$type": {
               "type": "string",
-              "description": "The fully qualified type name of a redeclare element"
+              "description": "The fully qualified type name of a redeclare element in a choices annotation"
             }
             "final": {
               "type": "boolean",
@@ -446,6 +459,18 @@
             "each": {
               "type": "boolean",
               "description": "Whether the modifier is each or not"
+            },
+            "$value": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "description": "The binding equation of a modifier"
+                },
+                {
+                  "description": "The element declaration of a redeclare",
+                  "$ref": "#/definitions/scodeElement"
+                }
+              ]
             }
           },
           "additionalProperties": {

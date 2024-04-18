@@ -853,7 +853,7 @@ extern struct record_description BackendDAE_VarKind_JAC__VAR__desc;
 ADD_METARECORD_DEFINITIONS const char* BackendDAE_VarKind_JAC__DIFF__VAR__desc__fields[1] = {"no fields"};
 ADD_METARECORD_DEFINITIONS struct record_description BackendDAE_VarKind_JAC__DIFF__VAR__desc = {
 "BackendDAE_VarKind_JAC__DIFF__VAR",
-"BackendDAE.VarKind.JAC_DIFF_VAR",
+"BackendDAE.VarKind.JAC_TMP_VAR",
 BackendDAE_VarKind_JAC__DIFF__VAR__desc__fields
 };
 #endif
@@ -1204,7 +1204,7 @@ extern struct record_description BackendDAE_VarKind_SEED__VAR__desc;
 ADD_METARECORD_DEFINITIONS const char* BackendDAE_VarKind_JAC__DIFF__VAR__desc__fields[1] = {"no fields"};
 ADD_METARECORD_DEFINITIONS struct record_description BackendDAE_VarKind_JAC__DIFF__VAR__desc = {
 "BackendDAE_VarKind_JAC__DIFF__VAR",
-"BackendDAE.VarKind.JAC_DIFF_VAR",
+"BackendDAE.VarKind.JAC_TMP_VAR",
 BackendDAE_VarKind_JAC__DIFF__VAR__desc__fields
 };
 #endif

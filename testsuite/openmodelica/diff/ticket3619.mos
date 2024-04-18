@@ -6,7 +6,7 @@
 echo(false);
 s1 := readFile("ticket3619.mo");
 
-loadString(s1);
+loadString(s1, uses=false);
 
 deleteClass(withFolder.OLD);
 

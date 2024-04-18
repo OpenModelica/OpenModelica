@@ -17,7 +17,7 @@ end FunctionPartialDerivative3;
 
 // Result:
 // Error processing file: FunctionPartialDerivative3.mo
-// [flattening/modelica/scodeinst/FunctionPartialDerivative3.mo:13:3-13:26:writable] Error: ‘x‘ in partial derivative of ‘FunctionPartialDerivative3.f‘ is not a scalar Real input parameter of the function.
+// [flattening/modelica/scodeinst/FunctionPartialDerivative3.mo:13:3-13:26:writable] Error: 'x' in partial derivative of 'FunctionPartialDerivative3.f' is not a scalar Real input parameter of the function.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

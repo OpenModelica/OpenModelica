@@ -28,7 +28,7 @@ end fmi_attributes_14;
 "); getErrorString();
 
 setCommandLineOptions("--fmiFilter=internal"); getErrorString();
-translateModelFMU(fmi_attributes_14); getErrorString();
+buildModelFMU(fmi_attributes_14); getErrorString();
 
 // unzip to console, quiet, extra quiet
 system("unzip -cqq fmi_attributes_14.fmu modelDescription.xml > fmi_attributes_14_tmp.xml"); getErrorString();

@@ -1101,6 +1101,13 @@ algorithm
   end matchcontinue;
 end valueReals;
 
+public function valueString
+  input Values.Value value;
+  output String str;
+algorithm
+  Values.Value.STRING(string = str) := value;
+end valueString;
+
 public function arrayValueInts
   "Returns the integer values of a Values array."
   input Values.Value inValue;
@@ -1148,6 +1155,13 @@ algorithm
 
   end matchcontinue;
 end matrixValueReals;
+
+public function arrayValueStrings
+  input Values.Value value;
+  output list<String> strings;
+algorithm
+  strings := list(valueString(v) for v in arrayValues(value));
+end arrayValueStrings;
 
 public function valueNeg "author: PA
 

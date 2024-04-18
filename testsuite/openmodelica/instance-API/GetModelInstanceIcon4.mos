@@ -31,7 +31,7 @@ loadString("
   end M;
 ");
 
-getModelInstanceIcon(M, prettyPrint=true);
+getModelInstanceAnnotation(M, prettyPrint=true);
 getErrorString();
 
 // Result:

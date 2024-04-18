@@ -486,7 +486,4 @@ end Ticket4062;
 //   serialReceive.pkgOut.userPkgBitSize = unpackInt.pkgIn.userPkgBitSize;
 //   integerToReal.u = unpackInt.y;
 // end Ticket4062;
-// Warning: Ignoring unknown experiment annotation option: __Dymola_fixedstepsize = 0.001
-// Warning: Ignoring unknown experiment annotation option: __Dymola_Algorithm = "Euler"
-//
 // endResult

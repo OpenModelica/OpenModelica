@@ -33,7 +33,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The program contains a declaration of a class called &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">HelloWorld&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> with two fields and one equation. The first field is the variable x which is initialized to a start value  1 at the time when the simulation starts. The second field is the variable a, which is a constant that is initialized to 1 at the beginning of the simulation. Such a constant is prefixed by the keyword parameter in order to indicate that it is constant during simulation but is a model parameter that can be changed between simulations.&lt;br />&lt;br />The Modelica program solves a trivial differential equation:    &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">x' = - a * x. &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The variable x is a state variable that can change value over time. The x ' is the time derivative of x.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
       <GraphCell style="Graph" closed="false">
-        <Input>class HelloWorld
+        <Input>model HelloWorld
   Real x(start = 1,fixed=true);
   parameter Real a = 1;
 equation

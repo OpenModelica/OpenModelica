@@ -33,8 +33,9 @@ encapsulated package SemanticVersion
 
 protected
 
-import Util;
+import StringUtil;
 import System;
+import Util;
 
 public
 
@@ -212,7 +213,7 @@ algorithm
   end if;
 
   if stringGetStringChar(s, 1) == "+" then
-    metaLst := if stringLength(s) > 1 then Util.stringSplitAtChar(Util.stringRest(s), ".") else {};
+    metaLst := if stringLength(s) > 1 then Util.stringSplitAtChar(StringUtil.rest(s), ".") else {};
     return;
   end if;
 
@@ -220,7 +221,7 @@ algorithm
   prerelease::split := split;
   meta := if listEmpty(split) then "" else listGet(split, 1);
   if stringGetStringChar(prerelease, 1) == "-" then
-    prerelease := Util.stringRest(prerelease);
+    prerelease := StringUtil.rest(prerelease);
   end if;
   prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(prerelease, ".") else {};
   metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(meta, ".") else {};

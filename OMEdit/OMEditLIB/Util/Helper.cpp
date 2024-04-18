@@ -105,9 +105,9 @@ const char * const Helper::fmuPlatformNamePropertyId = "fmu-platform-name";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
 #ifdef Q_OS_MAC
-QString Helper::toolsOptionsPath = "OMEdit->Preferences";
+QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
 #else
-QString Helper::toolsOptionsPath = "Tools->Options";
+QString Helper::toolsOptionsPath = tr("Tools->Options");
 #endif
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
 /* Meta Modelica Types */
@@ -319,7 +319,7 @@ QString Helper::viewDocumentationTip;
 QString Helper::dontShowThisMessageAgain;
 QString Helper::clickAndDragToResize;
 QString Helper::variables;
-QString Helper::variablesBrowser;
+QString Helper::variableBrowser;
 QString Helper::description;
 QString Helper::previous;
 QString Helper::next;
@@ -354,6 +354,7 @@ QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
 QString Helper::attachToRunningProcessTip;
 QString Helper::reportIssue;
+QString Helper::crashTest;
 QString Helper::parsingFailedJson;
 QString Helper::expandAll;
 QString Helper::collapseAll;
@@ -627,7 +628,7 @@ void Helper::initHelperVariables()
   Helper::dontShowThisMessageAgain = tr("Don't show this message again");
   Helper::clickAndDragToResize = tr("Click and drag to resize");
   Helper::variables = tr("Variables");
-  Helper::variablesBrowser = tr("Variables Browser");
+  Helper::variableBrowser = tr("Variables");
   Helper::description = tr("Description");
   Helper::previous = tr("Previous");
   Helper::next = tr("Next");
@@ -662,6 +663,7 @@ void Helper::initHelperVariables()
   Helper::attachToRunningProcess = tr("Attach to Running Process");
   Helper::attachToRunningProcessTip = tr("Attach the debugger to running process");
   Helper::reportIssue = tr("Report Issue");
+  Helper::crashTest = tr("Crash Test");
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");
@@ -750,12 +752,12 @@ QString GUIMessages::getMessage(int type)
 {
   switch (type)
   {
-    case CHECK_MESSAGES_BROWSER:
-      return tr("Please check the Messages Browser for more error specific details.");
+    case CHECK_MESSAGE_BROWSER:
+      return tr("Please check the message browser for more error specific details.");
     case SAME_COMPONENT_NAME:
       return tr("A component with the name <b>%1</b> already exists or is a Modelica keyword. Please choose another name.");
     case MISMATCHED_CONNECTORS_IN_CONNECT:
-      return tr("Connectors %1 and %2 are not compatible.");
+      return tr("Connectors <b>%1</b> and <b>%2</b> are not compatible.");
     case SAME_COMPONENT_CONNECT:
       return tr("You cannot connect a component to itself.");
     case NO_MODELICA_CLASS_OPEN:
@@ -821,7 +823,7 @@ QString GUIMessages::getMessage(int type)
     case ITEM_DROPPED_ON_ITSELF:
       return tr("You cannot drop an item on itself.");
     case MAKE_REPLACEABLE_IF_PARTIAL:
-      return tr("The <b>%1</b> <i>%2</i> is defined as <b>partial</b>.<br />The component will be added as a <b>replaceable</b> component.");
+      return tr("<b>%1</b> is defined as <b>partial</b>.<br />The component will be added as a <b>replaceable</b> component.");
     case INNER_MODEL_NAME_CHANGED:
       return tr("A component with the name <b>%1</b> already exists. The name is changed from <b>%1</b> to <b>%2</b>.<br /><br />This is probably wrong because the component is declared as <b>inner</b>.");
     case FMU_GENERATED:
@@ -835,7 +837,7 @@ QString GUIMessages::getMessage(int type)
     case FIGARO_GENERATED:
       return tr("The FIGARO is generated.");
     case ENCRYPTED_PACKAGE_GENERATED:
-      return tr("The encrytped package is generated at <b>%1</b>.");
+      return tr("The encrypted package is generated at <b>%1</b>.");
     case READONLY_PACKAGE_GENERATED:
       return tr("The read-only package is generated at <b>%1</b>.");
     case UNLOAD_CLASS_MSG:
@@ -902,6 +904,9 @@ QString GUIMessages::getMessage(int type)
       return tr("Please enter a script file.");
     case LIBRARY_INDEX_FILE_NOT_FOUND:
       return tr("Library index file <b>%1</b> doesn't exist.");
+    case VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH:
+      return tr("Automatically-adjusted vector length scales zoomed out the scene too much. "
+                "Home position will be reset as if adjustable-length vectors were not drawn.");
     default:
       return "";
   }

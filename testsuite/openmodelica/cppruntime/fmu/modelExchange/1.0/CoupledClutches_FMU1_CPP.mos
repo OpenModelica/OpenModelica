@@ -8,7 +8,7 @@
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("CoupledClutches.mo"); getErrorString();
-translateModelFMU(CoupledClutches, version="1.0"); getErrorString();
+buildModelFMU(CoupledClutches, version="1.0"); getErrorString();
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 importFMU("CoupledClutches.fmu"); getErrorString();

@@ -49,6 +49,9 @@
 #include <limits>
 
 #include <QStringBuilder>
+#include <QMessageBox>
+#include <QColorDialog>
+#include <QButtonGroup>
 
 /*!
  * \class OptionsDialog
@@ -216,7 +219,7 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->setTerminalCommandArguments(OptionsDefaults::GeneralSettings::terminalCommandArguments);
   }
-  // read hide variables browser
+  // read hide variable browser
   if (mpSettings->contains("hideVariablesBrowser")) {
     mpGeneralSettingsPage->getHideVariablesBrowserCheckBox()->setChecked(mpSettings->value("hideVariablesBrowser").toBool());
   } else {
@@ -305,13 +308,13 @@ void OptionsDialog::readGeneralSettings()
     mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->setValue(OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize);
   }
   // read instance API
-  if (mpSettings->contains("simulation/instanceAPI")) {
-    mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->setChecked(mpSettings->value("simulation/instanceAPI").toBool());
+  if (mpSettings->contains("optionalFeatures/disableInstanceAPI")) {
+    mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->setChecked(mpSettings->value("optionalFeatures/disableInstanceAPI").toBool());
   } else {
-    mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableInstanceAPI);
+    mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->setChecked(OptionsDefaults::GeneralSettings::disableInstanceAPI);
   }
   if (!MainWindow::instance()->isNewApiCommandLine()) {
-    MainWindow::instance()->setNewApi(mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->isChecked());
+    MainWindow::instance()->setNewApi(!mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->isChecked());
   }
 }
 
@@ -1010,11 +1013,17 @@ void OptionsDialog::readMessagesSettings()
   } else {
     mpMessagesPage->getResetMessagesNumberBeforeSimulationCheckBox()->setChecked(OptionsDefaults::Messages::resetMessagesNumberBeforeSimulation);
   }
-  // read clear messages browser
+  // read clear message browser
   if (mpSettings->contains("messages/clearMessagesBrowser")) {
     mpMessagesPage->getClearMessagesBrowserBeforeSimulationCheckBox()->setChecked(mpSettings->value("messages/clearMessagesBrowser").toBool());
   } else {
     mpMessagesPage->getClearMessagesBrowserBeforeSimulationCheckBox()->setChecked(OptionsDefaults::Messages::clearMessagesBrowserBeforeSimulation);
+  }
+  // read enlarge message browser
+  if (mpSettings->contains("messages/enlargeMessagesBrowser")) {
+    mpMessagesPage->getEnlargeMessageBrowserCheckBox()->setChecked(mpSettings->value("messages/enlargeMessagesBrowser").toBool());
+  } else {
+    mpMessagesPage->getEnlargeMessageBrowserCheckBox()->setChecked(OptionsDefaults::Messages::enlargeMessageBrowserCheckBox);
   }
   // read font family
   QTextBrowser textBrowser;
@@ -1584,7 +1593,7 @@ void OptionsDialog::saveGeneralSettings()
   } else {
     mpSettings->setValue("terminalCommandArgs", terminalCommandArguments);
   }
-  // save hide variables browser
+  // save hide variable browser
   bool hideVariablesBrowser = mpGeneralSettingsPage->getHideVariablesBrowserCheckBox()->isChecked();
   if (hideVariablesBrowser == OptionsDefaults::GeneralSettings::hideVariablesBrowser) {
     mpSettings->remove("hideVariablesBrowser");
@@ -1696,11 +1705,11 @@ void OptionsDialog::saveGeneralSettings()
   }
   MainWindow::instance()->updateRecentFileActionsAndList();
   // save instance API
-  bool enableInstanceAPI = mpGeneralSettingsPage->getEnableInstanceAPICheckBox()->isChecked();
-  if (enableInstanceAPI == OptionsDefaults::GeneralSettings::enableInstanceAPI) {
-    mpSettings->remove("simulation/instanceAPI");
+  bool disableInstanceAPI = mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->isChecked();
+  if (disableInstanceAPI == OptionsDefaults::GeneralSettings::disableInstanceAPI) {
+    mpSettings->remove("optionalFeatures/disableInstanceAPI");
   } else {
-    mpSettings->setValue("simulation/instanceAPI", enableInstanceAPI);
+    mpSettings->setValue("optionalFeatures/disableInstanceAPI", disableInstanceAPI);
   }
 }
 
@@ -2555,12 +2564,19 @@ void OptionsDialog::saveMessagesSettings()
   } else {
     mpSettings->setValue("messages/resetMessagesNumber", resetMessagesNumberBeforeSimulation);
   }
-  // save clear messages browser
+  // save clear message browser
   bool clearMessagesBrowserBeforeSimulation = mpMessagesPage->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked();
   if (clearMessagesBrowserBeforeSimulation == OptionsDefaults::Messages::clearMessagesBrowserBeforeSimulation) {
     mpSettings->remove("messages/clearMessagesBrowser");
   } else {
     mpSettings->setValue("messages/clearMessagesBrowser", clearMessagesBrowserBeforeSimulation);
+  }
+  // save enlarge message browser
+  bool enlargeMessagesBrowserBeforeSimulation = mpMessagesPage->getEnlargeMessageBrowserCheckBox()->isChecked();
+  if (enlargeMessagesBrowserBeforeSimulation == OptionsDefaults::Messages::enlargeMessageBrowserCheckBox) {
+    mpSettings->remove("messages/enlargeMessagesBrowser");
+  } else {
+    mpSettings->setValue("messages/enlargeMessagesBrowser", enlargeMessagesBrowserBeforeSimulation);
   }
   // save font
   QTextBrowser textBrowser;
@@ -3581,9 +3597,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // terminal command args
   mpTerminalCommandArgumentsLabel = new Label(tr("Terminal Command Arguments:"));
   mpTerminalCommandArgumentsTextBox = new QLineEdit;
-  // hide variables browser checkbox
-  mpHideVariablesBrowserCheckBox = new QCheckBox(tr("Hide Variables Browser"));
-  mpHideVariablesBrowserCheckBox->setToolTip(tr("Hides the variable browser when switching away from plotting perspective."));
+  // autohide variable browser checkbox
+  mpHideVariablesBrowserCheckBox = new QCheckBox(tr("Autohide Variable Browser"));
+  mpHideVariablesBrowserCheckBox->setToolTip(tr("Automatically hide the variable browser when switching away from plotting perspective."));
   mpHideVariablesBrowserCheckBox->setChecked(OptionsDefaults::GeneralSettings::hideVariablesBrowser);
   // activate access annotation
   mpActivateAccessAnnotationsLabel = new Label(tr("Activate Access Annotations *"));
@@ -3625,8 +3641,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
-  // Libraries Browser group box
-  mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
+  // Library Browser group box
+  mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));
   // library icon size
   mpLibraryIconSizeLabel = new Label(tr("Library Icon Size: *"));
   mpLibraryIconSizeSpinBox = new QSpinBox;
@@ -3642,22 +3658,22 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // show protected classes
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // show hidden classes
-  mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes (Ignores the annotation(Protection(access = Access.hide)))"));
-  // synchronize Libraries Browser with ModelWidget
+  mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes if not encrypted"));
+  // synchronize library browser with ModelWidget
   mpSynchronizeWithModelWidgetCheckBox = new QCheckBox(tr("Synchronize with Model Widget"));
   mpSynchronizeWithModelWidgetCheckBox->setChecked(OptionsDefaults::GeneralSettings::synchronizeWithModelWidget);
-  // Libraries Browser group box layout
-  QGridLayout *pLibrariesBrowserLayout = new QGridLayout;
-  pLibrariesBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pLibrariesBrowserLayout->setColumnStretch(1, 1);
-  pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeLabel, 0, 0);
-  pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeSpinBox, 0, 1);
-  pLibrariesBrowserLayout->addWidget(mpLibraryIconTextLengthLabel, 1, 0);
-  pLibrariesBrowserLayout->addWidget(mpLibraryIconTextLengthSpinBox, 1, 1);
-  pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
-  pLibrariesBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
-  pLibrariesBrowserLayout->addWidget(mpSynchronizeWithModelWidgetCheckBox, 4, 0, 1, 2);
-  mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
+  // Library browser group box layout
+  QGridLayout *pLibraryBrowserLayout = new QGridLayout;
+  pLibraryBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pLibraryBrowserLayout->setColumnStretch(1, 1);
+  pLibraryBrowserLayout->addWidget(mpLibraryIconSizeLabel, 0, 0);
+  pLibraryBrowserLayout->addWidget(mpLibraryIconSizeSpinBox, 0, 1);
+  pLibraryBrowserLayout->addWidget(mpLibraryIconTextLengthLabel, 1, 0);
+  pLibraryBrowserLayout->addWidget(mpLibraryIconTextLengthSpinBox, 1, 1);
+  pLibraryBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
+  pLibraryBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
+  pLibraryBrowserLayout->addWidget(mpSynchronizeWithModelWidgetCheckBox, 4, 0, 1, 2);
+  mpLibraryBrowserGroupBox->setLayout(pLibraryBrowserLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
   mpEnableAutoSaveGroupBox->setToolTip("Auto save feature is experimental. If you encounter unexpected crashes then disable it.");
@@ -3712,23 +3728,23 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpWelcomePageGroupBox->setLayout(pWelcomePageGridLayout);
   // Optional Features Box
   mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
-  // Enable instance api
-  mpEnableInstanceAPICheckBox = new QCheckBox(tr("Enable instance API *"));
+  // Disable instance api
+  mpDisableInstanceAPICheckBox = new QCheckBox(tr("Disable new instance-based graphical editing of models *"));
   const QString newAPI = MainWindow::instance()->isNewApi() ? "true" : "false";
   if (MainWindow::instance()->isNewApiCommandLine()) {
-    mpEnableInstanceAPICheckBox->setText(mpEnableInstanceAPICheckBox->text() % " (You are using command line option --NAPI=" % newAPI % " so this option will be ignored.)");
+    mpDisableInstanceAPICheckBox->setText(mpDisableInstanceAPICheckBox->text() % " (You are using command line option --NAPI=" % newAPI % " so this option will be ignored.)");
   }
-  mpEnableInstanceAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::enableInstanceAPI);
+  mpDisableInstanceAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::disableInstanceAPI);
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
   pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pOptionalFeaturesLayout->addWidget(mpEnableInstanceAPICheckBox, 0, 0);
+  pOptionalFeaturesLayout->addWidget(mpDisableInstanceAPICheckBox, 0, 0);
   mpOptionalFeaturesGroupBox->setLayout(pOptionalFeaturesLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpGeneralSettingsGroupBox);
-  pMainLayout->addWidget(mpLibrariesBrowserGroupBox);
+  pMainLayout->addWidget(mpLibraryBrowserGroupBox);
   pMainLayout->addWidget(mpEnableAutoSaveGroupBox);
   pMainLayout->addWidget(mpWelcomePageGroupBox);
   pMainLayout->addWidget(mpOptionalFeaturesGroupBox);
@@ -4113,12 +4129,12 @@ void AddSystemLibraryDialog::addSystemLibrary()
 {
   // if name text box is empty show error and return
   if (mpNameComboBox->currentText().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("a")), Helper::ok);
     return;
   }
   // if value text box is empty show error and return
   if (mpVersionsComboBox->lineEdit()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("the value for a")), Helper::ok);
     return;
   }
   // if user is adding a new library
@@ -5722,7 +5738,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   // output size
   mpOutputSizeLabel = new Label(tr("Output size:"));
-  mpOutputSizeLabel->setToolTip(tr("Specifies the maximum number of rows the Messages Browser may have. "
+  mpOutputSizeLabel->setToolTip(tr("Specifies the maximum number of rows the message browser may have. "
                                    "If there are more rows then the rows are removed from the beginning."));
   mpOutputSizeSpinBox = new QSpinBox;
   mpOutputSizeSpinBox->setRange(0, std::numeric_limits<int>::max());
@@ -5731,10 +5747,12 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpOutputSizeSpinBox->setSpecialValueText(Helper::unlimited);
   mpOutputSizeSpinBox->installEventFilter(mpOptionsDialog);
   // reset messages number before simulation
-  mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before checking, instantiation && simulation"));
+  mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before checking, instantiation, and simulation"));
   mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(OptionsDefaults::Messages::resetMessagesNumberBeforeSimulation);
-  // clear messages browser before simulation
-  mpClearMessagesBrowserBeforeSimulationCheckBox = new QCheckBox(tr("Clear messages browser before checking, instantiation && simulation"));
+  // clear message browser before simulation
+  mpClearMessagesBrowserBeforeSimulationCheckBox = new QCheckBox(tr("Clear message browser before checking, instantiation, and simulation"));
+  // enlarge message browser on a new message
+  mpEnlargeMessageBrowserCheckBox = new QCheckBox(tr("Do not automatically enlarge message browser when a new message is available"));
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setColumnStretch(1, 1);
@@ -5742,6 +5760,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   pGeneralGroupBoxLayout->addWidget(mpOutputSizeSpinBox, 0, 1);
   pGeneralGroupBoxLayout->addWidget(mpResetMessagesNumberBeforeSimulationCheckBox, 1, 0, 1, 2);
   pGeneralGroupBoxLayout->addWidget(mpClearMessagesBrowserBeforeSimulationCheckBox, 2, 0, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpEnlargeMessageBrowserCheckBox, 3, 0, 1, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // Font and Colors
   mpFontColorsGroupBox = new QGroupBox(Helper::Colors);

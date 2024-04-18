@@ -116,10 +116,10 @@ protected
 
       case SCode.Element.CLASS(classDef = SCode.ClassDef.PARTS(
           externalDecl = SOME(SCode.ExternalDecl.EXTERNALDECL(annotation_ = SOME(ann)))))
-        then SCodeUtil.lookupNamedAnnotations(ann, "inverse");
+        then SCodeUtil.lookupAnnotations(ann, "inverse");
 
       case SCode.Element.CLASS(cmt = SCode.Comment.COMMENT(annotation_ = SOME(ann)))
-        then SCodeUtil.lookupNamedAnnotations(ann, "inverse");
+        then SCodeUtil.lookupAnnotations(ann, "inverse");
 
       else {};
     end match;

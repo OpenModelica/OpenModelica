@@ -12,14 +12,14 @@ model testAlgLoop6
   Real y2(start = 0,min=-1,max=1);
   Real y3(start = 0,min=-0.3,max=0.3);
   Real x1(start=1,min=0);
-  Real x2(start=1,min=-1,max=1) annotation(tearingSelect = always);
+  Real x2(start=1,min=-1,max=1) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
   input Real u(min=-1,max=1,start=0);
   input Real u1(min=-1,max=1,start=0);
   input Real u2(min=-5,max=5,start=0);
   input Real u3(min=-1,max=1,start=1);
   Real cost annotation(isLagrange = true);
   Real con(min=-0.9,max=0.9,start=1) = y1 + u;
-  Real conDer(min=-1,max=1) = der(y1) annotation(tearingSelect = always);
+  Real conDer(min=-1,max=1) = der(y1) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
 equation
   sin(der(y1)) = con;
   der(y2) = asin(con);

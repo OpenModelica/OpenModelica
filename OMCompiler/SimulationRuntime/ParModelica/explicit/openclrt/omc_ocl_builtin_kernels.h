@@ -53,12 +53,12 @@
 #ifndef _OMC_OCL_BUILTIN_KERNELS_H
 #define _OMC_OCL_BUILTIN_KERNELS_H
 
+#include <time.h>
 // Don't need this. Avoid unneccesary header inclusions,
 // obey the dependencies.
 // #include <omc_ocl_common_header.h>
 // This include will bring the omc_ocl_common_header.h
-#include <omc_ocl_memory_ops.h>
-#include <time.h>
+#include "omc_ocl_memory_ops.h"
 
 
 

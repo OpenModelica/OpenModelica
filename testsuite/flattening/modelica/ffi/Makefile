@@ -7,6 +7,7 @@ Boolean2.mos \
 Enum1.mos \
 Enum2.mos \
 Enum3.mos \
+Exception1.mos \
 Integer1.mos \
 Integer2.mos \
 MissingFunction1.mos \
@@ -32,6 +33,7 @@ StringArray1.mos \
 # Run make testfailing
 FAILINGTESTFILES=\
 Record5.mos \
+Crash1.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

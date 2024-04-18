@@ -27,7 +27,7 @@ getErrorString();
 loadModel(Modelica, {"3.2.3"});
 
 
-translateModelFMU(test_ChangeParam, version="2.0");
+buildModelFMU(test_ChangeParam, version="2.0");
 getErrorString();
 importFMU("test_ChangeParam.fmu");
 

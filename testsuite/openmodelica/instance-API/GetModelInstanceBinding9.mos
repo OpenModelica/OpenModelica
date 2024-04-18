@@ -1,0 +1,44 @@
+// name: GetModelInstanceBinding9
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    parameter Real p annotation(Evaluate=true);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"p\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       },
+//       \"annotation\": {
+//         \"Evaluate\": true
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

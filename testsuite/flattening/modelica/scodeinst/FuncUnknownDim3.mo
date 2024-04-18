@@ -19,7 +19,7 @@ end FuncUnknownDim3;
 // function f
 //   input Real[n] v;
 //   output Real[n] result = fill(1.0, n);
-//   protected parameter Integer n = n;
+//   protected parameter Integer n = size(v, 1);
 // end f;
 //
 // class FuncUnknownDim3

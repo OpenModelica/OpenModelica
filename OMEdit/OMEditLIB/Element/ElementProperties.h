@@ -39,6 +39,27 @@
 
 #include <QRadioButton>
 
+class FinalEachToolButton : public QToolButton
+{
+  Q_OBJECT
+public:
+  FinalEachToolButton(bool canHaveEach, QWidget *parent = nullptr);
+
+  void setFinal(bool final);
+  bool isFinal() const {return mpFinalAction->isChecked();}
+  void setEach(bool each);
+  bool isEach() const {return mpEachAction->isChecked();}
+  bool isModified() const;
+private:
+  QMenu *mpFinalEachMenu;
+  QAction *mpFinalAction;
+  bool mFinalDefault = false;
+  QAction *mpEachAction;
+  bool mEachDefault = false;
+public slots:
+  void showParameterMenu();
+};
+
 class ElementParametersOld;
 class ElementParameters;
 class Parameter : public QObject
@@ -56,10 +77,11 @@ public:
     ChoicesAllMatching
   };
   Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox, ElementParametersOld *pElementParametersOld);
-  Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
+  Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   bool isParameter() const;
+  bool isInput() const;
   void setTab(QString tab) {mTab = tab;}
   const StringAnnotation &getTab() {return mTab;}
   void setGroup(QString group) {mGroup = group;}
@@ -72,9 +94,13 @@ public:
   bool isShowStartAndFixed() const {return mShowStartAndFixed;}
   const StringAnnotation &getGroupImage() const {return mGroupImage;}
   void updateNameLabel();
+  QString getName() const {return mName;}
+  QString getExtendName() const {return mExtendName;}
+  bool isInherited() const {return mInherited;}
   Label* getNameLabel() {return mpNameLabel;}
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
-  QString getOriginalFixedValue() {return mOriginalFixedValue;}
+  QString getOriginalFixedValue() const {return mOriginalFixedValue;}
+  FinalEachToolButton *getFixedFinalEachMenu() const {return mpFixedFinalEachMenuButton;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
   void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool adjustSize = true, bool unitComboBoxChanged = false);
   ValueType getValueType() {return mValueType;}
@@ -82,6 +108,7 @@ public:
   bool isValueModified();
   QString getValue();
   QToolButton *getEditRedeclareClassButton() const {return mpEditRedeclareClassButton;}
+  FinalEachToolButton *getFinalEachMenu() const {return mpFinalEachMenuButton;}
   QToolButton* getFileSelectorButton() {return mpFileSelectorButton;}
   void setLoadSelectorFilter(QString loadSelectorFilter) {mLoadSelectorFilter = loadSelectorFilter;}
   QString getLoadSelectorFilter() {return mLoadSelectorFilter;}
@@ -91,10 +118,13 @@ public:
   QString getSaveSelectorFilter() {return mSaveSelectorFilter;}
   void setSaveSelectorCaption(QString saveSelectorCaption) {mSaveSelectorCaption = saveSelectorCaption;}
   QString getSaveSelectorCaption() {return mSaveSelectorCaption;}
+  void setHasDisplayUnit(bool hasDisplayUnit) {mHasDisplayUnit = hasDisplayUnit;}
+  bool hasDisplayUnit() const {return mHasDisplayUnit;}
   QString getUnit() {return mUnit;}
   void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
   QComboBox* getUnitComboBox() {return mpUnitComboBox;}
+  FinalEachToolButton *getDisplayUnitFinalEachMenu() const {return mpDisplayUnitFinalEachMenuButton;}
   Label* getCommentLabel() {return mpCommentLabel;}
   void setFixedState(QString fixed, bool defaultValue);
   QString getFixedState() const;
@@ -119,9 +149,13 @@ private:
   StringAnnotation mGroupImage;
   BooleanAnnotation mConnectorSizing;
 
+  QString mName;
+  QString mExtendName;
+  bool mInherited;
   Label *mpNameLabel;
   FixedCheckBox *mpFixedCheckBox;
   QString mOriginalFixedValue;
+  FinalEachToolButton *mpFixedFinalEachMenuButton = 0;
   ValueType mValueType;
   bool mValueCheckBoxModified;
   QString mDefaultValue;
@@ -129,27 +163,33 @@ private:
   QLineEdit *mpValueTextBox;
   QCheckBox *mpValueCheckBox;
   QToolButton *mpEditRedeclareClassButton = 0;
+  FinalEachToolButton *mpFinalEachMenuButton = 0;
   QToolButton *mpFileSelectorButton;
+  bool mHasDisplayUnit = false;
   QString mUnit;
   QString mDisplayUnit;
   QString mPreviousUnit;
   QComboBox *mpUnitComboBox;
+  FinalEachToolButton *mpDisplayUnitFinalEachMenuButton = 0;
   Label *mpCommentLabel;
 
   void createValueWidget();
   void enableDisableUnitComboBox(const QString &value);
   void updateValueBinding(const FlatModelica::Expression expression);
+  bool isValueModifiedHelper() const;
 public slots:
   void editRedeclareClassButtonClicked();
   void fileSelectorButtonClicked();
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
-  void valueTextBoxEdited(const QString &text);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();
   void inheritedFixedClicked();
+  // QObject interface
+public:
+  virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) override;
 };
 
 class GroupBox : public QGroupBox
@@ -186,20 +226,27 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, const ModelInstance::Modifier elementModifier, QWidget *pParent = 0);
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, ModelInstance::Modifier *pDefaultElementModifier,
+                    ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementParentClassName() const;
+  QString getComponentClassName() const;
+  QString getComponentClassComment() const;
+  ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  bool hasElement() const {return mpElement ? true : false;}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}
-  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, const ModelInstance::Modifier &modifier, bool defaultValue);
+  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification, bool checkFinal);
   void updateParameters();
 private:
   ModelInstance::Element *mpElement;
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;
-  ModelInstance::Modifier mElementModifier;
+  ModelInstance::Modifier *mpDefaultElementModifier;
+  ModelInstance::Modifier *mpReplaceableConstrainedByModifier;
+  ModelInstance::Modifier *mpElementModifier;
   QString mModification;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;
@@ -223,11 +270,11 @@ private:
   QDialogButtonBox *mpButtonBox;
 
   void setUpDialog();
-  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
-  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
+  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance, bool defaultValue);
+  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
   void fetchElementModifiers();
-  void fetchClassExtendsModifiers();
-  void applyRedeclareElementModifiers();
+  void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
+  void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:

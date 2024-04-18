@@ -56,7 +56,12 @@ simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
 simulationdaemode.log \
-simulationnewbackend.log \
+simulationnewbackend-arrayhandling.log \
+simulationnewbackend-basics.log \
+simulationnewbackend-event_handling.log \
+simulationnewbackend-functions.log \
+simulationnewbackend-records.log \
+simulationnewbackend-ScalableTestsuite.log \
 simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
@@ -77,7 +82,8 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
-simulationspartialDistribution.log \
+simulationBuiltin_delay.log \
+simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
 simulationmodelicamsl22.log \
 msl31mediasimulation.log \
@@ -129,7 +135,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
-simulationspartialDistribution.log \
+simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
 modelicaasserts.log \
 modelicaalgorithms-functions.log \
@@ -175,7 +181,7 @@ scodeinst.log \
 xml.log \
 xogeny.log \
 openmodelicadiff.log \
-flatmodelica.log
+basemodelica.log
 
 .PHONY : all omc-diff ReferenceFiles failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
 
@@ -339,6 +345,9 @@ simulationnewbackend-functions.log: omc-diff
 simulationnewbackend-records.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/records/ -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-ScalableTestsuite.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/ScalableTestsuite/ -f Makefile test > $@
+	@echo $@ done
 simulationdeclarations.log: omc-diff
 	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
 	@echo $@ done
@@ -402,8 +411,11 @@ simulationrecords.log: omc-diff
 simulationsolver.log: omc-diff
 	$(MAKE) -C simulation/modelica/solver -f Makefile test > $@
 	@echo $@ done
-simulationspartialDistribution.log: omc-diff
-	$(MAKE) -C simulation/modelica/spatialDistribution -f Makefile test > $@
+simulationBuiltin_delay.log: omc-diff
+	$(MAKE) -C simulation/modelica/built_in_functions/delay -f Makefile test > $@
+	@echo $@ done
+simulationBuiltin_spatialDistribution.log: omc-diff
+	$(MAKE) -C simulation/modelica/built_in_functions/spatialDistribution -f Makefile test > $@
 	@echo $@ done
 simulationtypes.log: omc-diff
 	$(MAKE) -C simulation/modelica/types -f Makefile test > $@
@@ -646,8 +658,8 @@ requirements.log: omc-diff
 device.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/Modelica_DeviceDrivers -f Makefile test > $@
 	@echo $@ done
-flatmodelica.log: omc-diff
-	$(MAKE) -C openmodelica/flatmodelica -f Makefile test > $@
+basemodelica.log: omc-diff
+	$(MAKE) -C openmodelica/basemodelica -f Makefile test > $@
 	@echo $@ done
 ffi.log: omc-diff
 	$(MAKE) -C flattening/modelica/ffi -f Makefile test > $@

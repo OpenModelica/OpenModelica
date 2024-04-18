@@ -47,7 +47,8 @@ instantiateModel('0.8.1');getErrorString();
 // true
 // ""
 // true
-// ""
+// "Warning: '2.2.2' requested package Modelica of version 2.2.2. Modelica 3.2.3 is used instead which states that it is only compatible with a conversion script. Use convertPackageToLibrary('2.2.2', Modelica, \"3.2.3\") to run the conversion script or proceed with potential issues as a result.
+// "
 // "class '2.2.2'
 // end '2.2.2';
 // "
@@ -57,7 +58,8 @@ instantiateModel('0.8.1');getErrorString();
 // true
 // ""
 // true
-// ""
+// "Warning: Requested package Modelica of version 5.0.0, but this package was already loaded with version 3.2.3. There are no conversion annotations for this version but 5.0.0 is newer than 3.2.3. There is a possibility that 3.2.3 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// "
 // "class '5.0.0'
 // end '5.0.0';
 // "
@@ -67,7 +69,8 @@ instantiateModel('0.8.1');getErrorString();
 // true
 // ""
 // true
-// ""
+// "Warning: Requested package Modelica of version 0.8.1, but this package was already loaded with version 4.0.0. There are no conversion annotations and 0.8.1 is older than 4.0.0, so the libraries are probably incompatible.
+// "
 // "class '0.8.1'
 // end '0.8.1';
 // "

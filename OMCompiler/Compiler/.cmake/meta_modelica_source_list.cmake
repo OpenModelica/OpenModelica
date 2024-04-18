@@ -283,7 +283,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBVariable.mo
     # "NBackend Modules";
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/NBModule.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBAdjacency.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBCausalize.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBDAEMode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBInitialization.mo
@@ -295,15 +294,16 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBBindings.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBDetectStates.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBEvents.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBFunctionAlias.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBInline.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBJacobian.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBSolve.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBTearing.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBEvaluation.mo
     # "NBackend Util";
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBAdjacency.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBBackendUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBDifferentiate.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBGraphUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBReplacements.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBSlice.mo
 

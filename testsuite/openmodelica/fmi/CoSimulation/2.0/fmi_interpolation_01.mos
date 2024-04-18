@@ -14,7 +14,7 @@ equation
 end fmi_interpolation_01;
 "); getErrorString();
 
-translateModelFMU(fmi_interpolation_01, fmuType="cs"); getErrorString();
+buildModelFMU(fmi_interpolation_01, fmuType="cs"); getErrorString();
 
 //unzip to console, quiet, extra quiet
 system("unzip -cqq fmi_interpolation_01.fmu modelDescription.xml > fmi_interpolation_01_tmp.xml"); getErrorString();

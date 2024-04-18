@@ -56,7 +56,7 @@
 #include "cellgroup.h"
 
 
-typedef vector<Rule *> rules_t;
+typedef std::vector<Rule *> rules_t;
 
 namespace IAEX
 {
@@ -125,11 +125,11 @@ namespace IAEX
       //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
     }
-    catch(exception &e)
+    catch(std::exception &e)
     {
       // 2006-01-30 AF, add exception
-      string str = string("AddCellCommand(), Exception: \n") + e.what();
-      throw runtime_error( str.c_str() );
+      std::string str = std::string("AddCellCommand(), Exception: \n") + e.what();
+      throw std::runtime_error( str.c_str() );
     }
   }
 
@@ -181,11 +181,11 @@ namespace IAEX
     //2006-01-18 AF, set docuement changed
     document()->setChanged( true );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
       // 2006-01-30 AF, add exception
-      string str = string("CreateNewCommand(), Exception: \n") + e.what();
-      throw runtime_error( str.c_str() );
+      std::string str = std::string("CreateNewCommand(), Exception: \n") + e.what();
+      throw std::runtime_error( str.c_str() );
       }
    }
 
@@ -207,7 +207,7 @@ namespace IAEX
    void CopySelectedCellsCommand::execute()
    {
       CellCursor *c = document()->getCursor();
-      vector<Cell *> cells = document()->getSelection();
+      std::vector<Cell *> cells = document()->getSelection();
 
       if(cells.empty())
       {
@@ -221,7 +221,7 @@ namespace IAEX
         document()->clearSelection(); //Notice
         application()->clearPasteboard();
 
-        vector<Cell *>::iterator i = cells.begin();
+        std::vector<Cell *>::iterator i = cells.begin();
         for(;i != cells.end();++i)
         {
           application()->addToPasteboard((*i));
@@ -236,7 +236,7 @@ namespace IAEX
       try
       {
    CellCursor *c = document()->getCursor();
-   vector<Cell *> cells = document()->getSelection();
+   std::vector<Cell *> cells = document()->getSelection();
 
    if(cells.empty())
    {
@@ -247,7 +247,7 @@ namespace IAEX
       document()->clearSelection(); //Notice
       application()->clearPasteboard();
 
-      vector<Cell *>::iterator i = cells.begin();
+      std::vector<Cell *>::iterator i = cells.begin();
       for(;i != cells.end();++i)
       {
          c->moveAfter((*i));
@@ -263,11 +263,11 @@ namespace IAEX
    //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
       // 2006-01-30 AF, add message box
-      string str = string("DeleteCurrentCellsCommand(), Exception: \n") + e.what();
-    throw runtime_error( str.c_str() );
+      std::string str = std::string("DeleteCurrentCellsCommand(), Exception: \n") + e.what();
+    throw std::runtime_error( str.c_str() );
       }
    }
 
@@ -283,7 +283,7 @@ namespace IAEX
   {
     try
       {
-      vector<Cell *> cells = application()->pasteboard();
+      std::vector<Cell *> cells = application()->pasteboard();
 
       // Insert new cells before this position.
       if(!cells.empty())
@@ -292,14 +292,14 @@ namespace IAEX
         //vector<Cell *>::reverse_iterator i = cells.rbegin();
         //for(;i != cells.rend();++i)
         // AF, Not reverse
-        vector<Cell *>::iterator i = cells.begin();
+        std::vector<Cell *>::iterator i = cells.begin();
         for(;i != cells.end();++i)
         {
           try
           {
             pasteCell( (*i) );
           }
-          catch(exception &e)
+          catch(std::exception &e)
           {
             throw e;
           }
@@ -313,11 +313,11 @@ namespace IAEX
       //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
     }
-    catch(exception &e)
+    catch(std::exception &e)
     {
       // 2006-01-30 AF, add exception
-      string str = string("PasteCellsCommand(), Exception: \n") + e.what();
-      throw runtime_error( str.c_str() );
+      std::string str = std::string("PasteCellsCommand(), Exception: \n") + e.what();
+      throw std::runtime_error( str.c_str() );
     }
   }
 
@@ -451,7 +451,7 @@ namespace IAEX
     else
     {
       // Error
-      throw runtime_error("pasteCell(): Unknown celltype.");
+      throw std::runtime_error("pasteCell(): Unknown celltype.");
     }
     // *************************************************************************
 
@@ -498,7 +498,7 @@ namespace IAEX
    {
       try
       {
-   vector<Cell *> cells = document()->getSelection();
+   std::vector<Cell *> cells = document()->getSelection();
    if(cells.empty())
    {
       application()->clearPasteboard(); // HACK: clear pasteboard as this cell might be referenced in it
@@ -509,7 +509,7 @@ namespace IAEX
       document()->clearSelection(); //Notice
       application()->clearPasteboard(); // HACK: clear pasteboard as this cell might be referenced in it
 
-      vector<Cell *>::iterator i = cells.begin();
+      std::vector<Cell *>::iterator i = cells.begin();
       for(;i != cells.end();++i)
       {
          (document()->getCursor())->moveAfter((*i));
@@ -520,11 +520,11 @@ namespace IAEX
    //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
       // 2006-01-30 AF, add exception
-      string str = string("DeleteSelectedCellsCommand(), Exception: \n") + e.what();
-    throw runtime_error( str.c_str() );
+      std::string str = std::string("DeleteSelectedCellsCommand(), Exception: \n") + e.what();
+    throw std::runtime_error( str.c_str() );
       }
    }
 
@@ -549,7 +549,7 @@ namespace IAEX
   {
     try
     {
-      vector<Cell *> cells = document()->getSelection();
+      std::vector<Cell *> cells = document()->getSelection();
 
       if(cells.empty())
       {
@@ -557,7 +557,7 @@ namespace IAEX
       }
       else
       {;
-        vector<Cell *>::iterator i = cells.begin();
+        std::vector<Cell *>::iterator i = cells.begin();
 
         for(;i != cells.end() ;++i)
         {
@@ -570,11 +570,11 @@ namespace IAEX
       //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
     }
-    catch(exception &e)
+    catch(std::exception &e)
     {
       // 2006-01-30 AF, add exception
-      string str = string("ChangeStyleOnSelectedCellsCommand(), Exception: \n") + e.what();
-      throw runtime_error( str.c_str() );
+      std::string str = std::string("ChangeStyleOnSelectedCellsCommand(), Exception: \n") + e.what();
+      throw std::runtime_error( str.c_str() );
     }
   }
 
@@ -588,11 +588,11 @@ namespace IAEX
    //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
       // 2006-01-30 AF, add exception
-      string str = string("ChangeStyleOnCurrentCellCommand(), Exception: \n") + e.what();
-    throw runtime_error( str.c_str() );
+      std::string str = std::string("ChangeStyleOnCurrentCellCommand(), Exception: \n") + e.what();
+    throw std::runtime_error( str.c_str() );
       }
    }
 
@@ -616,11 +616,11 @@ namespace IAEX
    //2006-01-18 AF, set docuement changed
       document()->setChanged( true );
       }
-      catch(exception &e)
+      catch(std::exception &e)
       {
       // 2006-01-30 AF, add exception
-      string str = string("MakeGroupCellCommand(), Exception: \n") + e.what();
-    throw runtime_error( str.c_str() );
+      std::string str = std::string("MakeGroupCellCommand(), Exception: \n") + e.what();
+    throw std::runtime_error( str.c_str() );
 
       }
    }
@@ -636,27 +636,26 @@ namespace IAEX
   {
     try
     {
-      vector<Cell *> cells = document()->getSelection();
+      std::vector<Cell *> cells = document()->getSelection();
 
       if( !cells.empty() )
       {
         // clear selection before changing cell strucure
         document()->clearSelection();
 
-        vector<Cell *>::iterator c_iter = cells.begin();
-        for(; c_iter != cells.end() ; ++c_iter )
+        for (auto cell: cells)
         {
           //check if groupcell
-          if( typeid( *(*c_iter) ) == typeid( CellGroup ))
+          if( dynamic_cast<CellGroup*>(cell) )
           {
-            if( !(*c_iter)->hasChilds() )
-              throw runtime_error( "No children" );
+            if( !cell->hasChilds() )
+              throw std::runtime_error( "No children" );
 
             // get child
-            Cell* child = (*c_iter)->child();
-            Cell* deletedCellsParent = (*c_iter)->parentCell();
-            Cell* deletedCellsPrevious = (*c_iter)->previous();
-            Cell* deletedCellsNext = (*c_iter)->next();
+            Cell* child = cell->child();
+            Cell* deletedCellsParent = cell->parentCell();
+            Cell* deletedCellsPrevious = cell->previous();
+            Cell* deletedCellsNext = cell->next();
 
             // if previous is 0 = first in cell
             child->setPrevious( deletedCellsPrevious );
@@ -693,8 +692,8 @@ namespace IAEX
               }
             }
 
-            (*c_iter)->setChild( 0 );
-            (*c_iter)->hide();
+            cell->setChild( 0 );
+            cell->hide();
 
             // must update groupcells parents layout
             deletedCellsParent->removeCellWidgets();
@@ -703,7 +702,7 @@ namespace IAEX
             // delete groupcell
             //(document()->getCursor())->moveAfter( (*c_iter) );
             //(document()->getCursor())->deleteCurrentCell();
-            delete (*c_iter);
+            delete cell;
 
             // update document
             document()->setChanged( true );
@@ -711,10 +710,10 @@ namespace IAEX
         }
       }
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
-      string str = string("UngroupCellCommand(), Exception: ") + e.what();
-      throw runtime_error( str.c_str() );
+      std::string str = std::string("UngroupCellCommand(), Exception: ") + e.what();
+      throw std::runtime_error( str.c_str() );
     }
   }
 
@@ -731,11 +730,11 @@ namespace IAEX
     {
       if( document()->getCursor()->currentCell() )
       {
-        if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) ||
-          typeid( *document()->getCursor()->currentCell() ) == typeid( InputCell ) )
+        auto cell = document()->getCursor()->currentCell();
+        if( dynamic_cast<TextCell*>(cell) || dynamic_cast<InputCell*>(cell) )
         {
           // extraxt text
-          QTextEdit* editor = document()->getCursor()->currentCell()->textEdit();
+          QTextEdit* editor = cell->textEdit();
           if( editor )
           {
             QTextCursor cursor = editor->textCursor();
@@ -744,7 +743,7 @@ namespace IAEX
             cursor.removeSelectedText();
 
             // add new cell
-            if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) )
+            if( dynamic_cast<TextCell*>(cell) )
             {
               AddCellCommand addcellCommand;
               addcellCommand.setApplication( application() );
@@ -773,10 +772,10 @@ namespace IAEX
         }
       }
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
-      string str = string("SplitCellCommand(), Exception: ") + e.what();
-      throw runtime_error( str.c_str() );
+      std::string str = std::string("SplitCellCommand(), Exception: ") + e.what();
+      throw std::runtime_error( str.c_str() );
     }
   }
 

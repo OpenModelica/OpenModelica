@@ -91,7 +91,7 @@ public:
   void setName(QString name) {mName = name;}
   const QString& getName() const {return mName;}
   void setNameStructure(QString nameStructure) {mNameStructure = nameStructure;}
-  const QString& getNameStructure() {return mNameStructure;}
+  const QString& getNameStructure() const {return mNameStructure;}
   QString getWhereToMoveFMU();
   void updateClassInformation();
   void setFileName(QString fileName) {mFileName = fileName;}
@@ -129,6 +129,7 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
+  bool isEncryptedClass() const {return mFileName.endsWith(".moc");}
   bool isAccessAnnotationsEnabled() const {return mAccessAnnotations;}
   void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
@@ -168,7 +169,7 @@ public:
   void moveChild(int from, int to);
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClasses();
-  QList<LibraryTreeItem*> getInheritedClasses() const {return mInheritedClasses;}
+  const QList<LibraryTreeItem*> &getInheritedClasses();
   QList<LibraryTreeItem*> getInheritedClassesDeepList();
   LibraryTreeItem *getDirectComponentsClass(const QString &name);
   LibraryTreeItem *getComponentsClass(const QString &name);
@@ -193,11 +194,12 @@ public:
 
   OMCInterface::getClassInformation_res mClassInformation;
   SimulationOptions mSimulationOptions;
-  const QList<ElementInfo *> &getComponentsList();
+  const QList<ElementInfo*> &getComponentsList();
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem = 0;
   QList<LibraryTreeItem*> mChildren;
+  bool mInheritedClassesLoaded = false;
   QList<LibraryTreeItem*> mInheritedClasses;
   QList<ElementInfo*> mComponents;
   bool mComponentsLoaded = false;
@@ -332,10 +334,14 @@ public:
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
   void emitModelStateChanged(const QString &name) {emit modelStateChanged(name);}
+  bool isCreatingAutoLoadedLibrary() const {return mCreatingAutoLoadedLibrary;}
+  void setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary) {mCreatingAutoLoadedLibrary = creatingAutoLoadedLibrary;}
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
   QList<LibraryTreeItem*> mNonExistingLibraryTreeItemsList;
+  bool mCreatingAutoLoadedLibrary = false;
+
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem, const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);

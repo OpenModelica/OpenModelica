@@ -44,9 +44,11 @@ public
 
   // NF imports
   import Algorithm = NFAlgorithm;
+  import Binding = NFBinding;
   import BuiltinFuncs = NFBuiltinFuncs;
   import Call = NFCall;
   import Class = NFClass;
+  import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFInstNode.{InstNode, CachedData};
@@ -66,6 +68,7 @@ public
   import NBEquation.{Equation, EquationAttributes, EquationPointer, EquationPointers, IfEquationBody, WhenEquationBody, WhenStatement};
   import NBVariable.{VariablePointer};
   import BVariable = NBVariable;
+  import Replacements = NBReplacements;
   import StrongComponent = NBStrongComponent;
 
   // Util imports
@@ -287,7 +290,7 @@ public
           forBody := body_eqn :: forBody;
         end for;
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.FOR_EQUATION(eq.ty, eq.iter, listReverse(forBody), eq.source, attr), diffArguments);
+      then (Equation.FOR_EQUATION(eq.size, eq.iter, listReverse(forBody), eq.source, attr), diffArguments);
 
       case Equation.WHEN_EQUATION() algorithm
         (whenBody, diffArguments) := differentiateWhenEquationBody(eq.body, diffArguments);
@@ -554,7 +557,6 @@ public
       local
         Expression res;
         UnorderedMap<ComponentRef,ComponentRef> jacobianHT;
-
 
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
@@ -828,7 +830,7 @@ public
 
   end differentiateCall;
 
-  protected function differentiateBuiltinCall
+  function differentiateBuiltinCall
     "This function differentiates built-in call expressions with respect to a given variable.
     Also creates and multiplies inner derivatives."
     input String name;
@@ -843,8 +845,33 @@ public
     exp := match (exp)
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3;
         list<Expression> rest;
+        Type ty;
+        DifferentiationType diffType;
+
+      // DELAY
+      // d/dz delay(x, delta) = (dt/dz - d delta/dz) * delay(der(x), delta)
+      case (Expression.CALL()) guard(name == "delay")
+      algorithm
+        {arg1, arg2, arg3} := Call.arguments(exp.call);
+        // if z = t then dt/dz = 1 else dt/dz = 0
+        ret1 := Expression.REAL(if diffArguments.diffType == DifferentiationType.TIME then 1.0 else 0.0);
+        // d delta/dz
+        (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
+        // dt/dz - d delta/dz
+        ret2 := SimplifyExp.simplifyDump(Expression.MULTARY({ret1}, {ret2}, addOp), true, getInstanceName());
+        if Expression.isZero(ret2) then
+          ret := Expression.makeZero(Expression.typeOf(arg1));
+        else
+          diffType := diffArguments.diffType;
+          diffArguments.diffType := DifferentiationType.TIME;
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+          diffArguments.diffType := diffType;
+          exp.call := Call.setArguments(exp.call, {ret1, arg2, arg3});
+          ret := Expression.MULTARY({ret2, exp}, {}, mulOp);
+        end if;
+      then ret;
 
       // SMOOTH
       case (Expression.CALL()) guard(name == "smooth")
@@ -896,6 +923,35 @@ public
         exp.call := Call.setArguments(exp.call, ret1 :: rest);
       then exp;
 
+      // SEMI LINEAR
+      // d sL(x, m1, m2)/dt = sL(x, dm1/dt, dm2/dt) + dx/dt * if (x>=0) then m1 else m2
+      case (Expression.CALL()) guard(name == "semiLinear")
+      algorithm
+        {arg1, arg2, arg3} := Call.arguments(exp.call);
+
+        // dx/dt, dm1/dt, dm2/dt
+        (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+        (diffArg3, diffArguments) := differentiateExpression(arg3, diffArguments);
+
+        // sL(x, dm1/dt, dm2/dt)
+        exp.call := Call.setArguments(exp.call, {arg1, diffArg2, diffArg3});
+        ret := exp;
+
+        // only add second part if derivative is nonzero
+        if not Expression.isZero(diffArg1) then
+          ty    := Expression.typeOf(diffArg1);
+          // x >= 0
+          ret1  := Expression.RELATION(arg1, Operator.makeGreaterEq(ty), Expression.makeZero(ty));
+          // if (x>=0) then m1 else m2
+          ret1  := Expression.IF(ty, ret1, arg2, arg3);
+          // dx/dt * if (x>=0) then m1 else m2
+          ret2  := Expression.MULTARY({diffArg1, ret1}, {}, mulOp);
+          // sL(x, dm1/dt, dm2/dt) + dx/dt * if (x>=0) then m1 else m2
+          ret   := Expression.MULTARY({ret, ret2}, {}, addOp);
+        end if;
+      then ret;
+
       // Builtin function call with one argument
       // df(y)/dx = df/dy * dy/dx
       case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
@@ -928,12 +984,14 @@ public
       case (Expression.CALL()) algorithm
         ret := match Call.functionNameLast(exp.call)
           case "sample" then Expression.BOOLEAN(false);
-          else fail();
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+          then fail();
         end match;
       then ret;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of non-call expression: " + Expression.toString(exp)});
         then fail();
     end match;
   end differentiateBuiltinCall;
@@ -1084,6 +1142,16 @@ public
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {arg, ret}, mulOp); // 1/(arg*log(10))
       then ret;
 
+      // pre(arg) -> pre(d arg)
+      case ("pre") algorithm
+        (ret, diffArguments) := differentiateExpression(arg, diffArguments);
+      then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.PRE,
+          args        = {ret},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
       then fail();
@@ -1172,22 +1240,30 @@ public
         Function dummy_func;
         CachedData cachedData;
         String der_func_name;
+        list<InstNode> local_outputs;
 
       case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
         new_cls := match Pointer.access(cls)
           case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS()) algorithm
-
-            // differentiate interface arguments
-            der_func.inputs   := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, true);
-            der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, true);
-            der_func.locals   := listAppend(der_func.locals, list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs));
-            der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, false);
+            // prepare outputs that become locals
+            local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs);
+            local_outputs     := list(InstNode.protect(node) for node in local_outputs);
 
             // prepare differentiation arguments
             funcDiffArgs              := DifferentiationArguments.default();
             funcDiffArgs.diffType     := DifferentiationType.FUNCTION;
             funcDiffArgs.funcTree     := diffArguments.funcTree;
+            createInterfaceDerivatives(der_func.inputs, interface_map, diff_map);
+            createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
+            createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
             funcDiffArgs.jacobianHT   := SOME(diff_map);
+
+            // differentiate interface arguments
+            der_func.inputs   := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, funcDiffArgs, true);
+            der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, funcDiffArgs, true);
+            der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, funcDiffArgs, false);
+
+            der_func.locals   := listAppend(der_func.locals, local_outputs);
 
             // create "fake" function with correct interface to have the interface
             // in the case of recursive differentiation (e.g. function calls itself)
@@ -1262,21 +1338,148 @@ public
     input output list<InstNode> interface_nodes;
     input UnorderedMap<String, Boolean> interface_map;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    input output DifferentiationArguments diffArgs;
     input Boolean keepOld;
   protected
     list<InstNode> new_nodes;
     ComponentRef cref, diff_cref;
+    InstNode comp_node;
+    Component comp;
+    Binding binding;
   algorithm
     new_nodes := if keepOld then listReverse(interface_nodes) else {};
     interface_nodes := list(node for node guard(not UnorderedMap.contains(InstNode.name(node), interface_map)) in interface_nodes);
     for node in interface_nodes loop
       cref := ComponentRef.fromNode(node, InstNode.getType(node));
-      diff_cref := BVariable.makeFDerVar(cref);
-      UnorderedMap.add(cref, diff_cref, diff_map);
+      diff_cref := UnorderedMap.getSafe(cref, diff_map, sourceInfo());
+      diff_cref := match diff_cref
+        case ComponentRef.CREF(node = comp_node as InstNode.COMPONENT_NODE()) algorithm
+          // differentiate bindings
+          comp := Pointer.access(comp_node.component);
+          comp := match comp
+            case comp as Component.COMPONENT() algorithm
+              (binding, diffArgs) := differentiateBinding(comp.binding, diffArgs);
+              comp.binding := binding;
+            then comp;
+            else comp;
+          end match;
+          comp_node.component := Pointer.create(comp);
+          diff_cref.node := comp_node;
+        then diff_cref;
+        else diff_cref;
+      end match;
       new_nodes := ComponentRef.node(diff_cref) :: new_nodes;
     end for;
     interface_nodes := listReverse(new_nodes);
   end differentiateFunctionInterfaceNodes;
+
+  function createInterfaceDerivatives
+    input list<InstNode> interface_nodes;
+    input UnorderedMap<String, Boolean> interface_map;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+  protected
+    ComponentRef cref, diff_cref;
+    list<InstNode> n;
+  algorithm
+    n := list(node for node guard(not UnorderedMap.contains(InstNode.name(node), interface_map)) in interface_nodes);
+    for node in n loop
+      cref := ComponentRef.fromNode(node, InstNode.getType(node));
+      diff_cref := BVariable.makeFDerVar(cref);
+      UnorderedMap.add(cref, diff_cref, diff_map);
+    end for;
+  end createInterfaceDerivatives;
+
+  function resolvePartialDerivatives
+    input output Function func;
+    input output FunctionTree funcTree;
+  protected
+    Function der_func;
+    InstNode node;
+    Pointer<Class> cls, tmp_cls;
+    Class new_cls, wrap_cls;
+    Sections sections;
+    UnorderedMap<ComponentRef, ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<String, Boolean> interface_map;
+    DifferentiationArguments diffArgs = DifferentiationArguments.default();
+    list<Algorithm> algorithms;
+    CachedData cachedData;
+    InstNode diffVar;
+    ComponentRef diffCref;
+    list<InstNode> local_outputs;
+    Boolean changed = false;
+  algorithm
+    func := match func
+      case der_func as Function.FUNCTION(node = InstNode.CLASS_NODE(cls = cls)) algorithm
+        wrap_cls := Pointer.access(cls);
+        new_cls := match wrap_cls
+          case wrap_cls as Class.TYPED_DERIVED(baseClass = node as InstNode.CLASS_NODE(cls = tmp_cls)) algorithm
+            new_cls :=  match Pointer.access(tmp_cls)
+              case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS(algorithms = algorithms)) algorithm
+                // prepare differentiation arguments
+                diffArgs.diffType     := DifferentiationType.FUNCTION;
+                diffArgs.funcTree     := funcTree;
+
+                interface_map := UnorderedMap.fromLists(list(InstNode.name(var) for var in der_func.inputs), List.fill(false, listLength(der_func.inputs)), stringHashDjb2, stringEqual);
+
+                // add all differentiated inputs to the interface map
+                for var in List.getAtIndexLst(der_func.inputs, der_func.derivedInputs) loop
+                  UnorderedMap.remove(InstNode.name(var), interface_map);
+
+                  // prepare outputs that become locals
+                  local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs);
+                  local_outputs     := list(InstNode.protect(node) for node in local_outputs);
+
+                  // differentiate interface arguments
+                  createInterfaceDerivatives({var}, interface_map, diff_map);
+                  createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
+                  createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+                  diffArgs.jacobianHT   := SOME(diff_map);
+
+                  der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, true);
+                  der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, diffArgs, false);
+
+                  diffCref          := UnorderedMap.getSafe(ComponentRef.fromNode(var, InstNode.getType(var)), diff_map, sourceInfo());
+                  der_func.locals   := listAppend(der_func.locals, local_outputs);
+
+                  // differentiate function statements
+                  (algorithms, diffArgs) := List.mapFold(algorithms, differentiateAlgorithm, diffArgs);
+                  algorithms := Algorithm.mapExpList(algorithms, function Replacements.single(old = Expression.fromCref(diffCref), new = Expression.makeOne(ComponentRef.getSubscriptedType(diffCref))));
+
+                  UnorderedMap.add(InstNode.name(var), false, interface_map);
+                end for;
+
+                // add them to new node
+                sections.algorithms     := algorithms;
+                new_cls.sections        := sections;
+                new_cls.ty              := wrap_cls.ty;
+                new_cls.restriction     := wrap_cls.restriction;
+                node.cls                := Pointer.create(new_cls);
+                cachedData              := CachedData.FUNCTION({der_func}, true, false);
+                der_func.node           := InstNode.setFuncCache(node, cachedData);
+                der_func.derivatives    := {};
+                der_func.derivedInputs  := {};
+
+                changed := true;
+              then new_cls;
+
+              else wrap_cls;
+            end match;
+          then new_cls;
+          else wrap_cls;
+        end match;
+
+        if changed then
+          if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+            print("\n[BEFORE] " + Function.toFlatString(func) + "\n");
+            print("\n[AFTER ] " + Function.toFlatString(der_func) + "\n\n");
+          end if;
+          funcTree := FunctionTreeImpl.add(funcTree, der_func.path, der_func, FunctionTreeImpl.addConflictReplace);
+        end if;
+      then der_func;
+
+      else func;
+    end match;
+  end resolvePartialDerivatives;
 
   function differentiateAlgorithm
     input output Algorithm alg;
@@ -1310,7 +1513,7 @@ public
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
-        diff_stmt.rhs := SimplifyExp.simplify(rhs, true);
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then {diff_stmt, stmt};
 
       // II. delegate differentiation to body and only return differentiated statement
@@ -1669,12 +1872,27 @@ public
         guard(UnorderedMap.contains(BVariable.getVarName(residualVar), jacobianHT))
         algorithm
           diffedResidualVar := BVariable.getVarPointer(UnorderedMap.getOrFail(BVariable.getVarName(residualVar), jacobianHT));
-      then EquationAttributes.EQUATION_ATTRIBUTES(NONE(), attr.kind, attr.evalStages, SOME(diffedResidualVar));
+          attr.residualVar := SOME(diffedResidualVar);
+      then attr;
 
       else attr;
 
     end match;
   end differentiateEquationAttributes;
+
+  function differentiateBinding
+    input output Binding binding;
+    input output DifferentiationArguments diffArgs;
+  protected
+    Option<Expression> opt_exp;
+    Expression exp;
+  algorithm
+    opt_exp := Binding.getExpOpt(binding);
+    if Util.isSome(opt_exp) then
+      (exp, diffArgs) := differentiateExpression(Util.getOption(opt_exp), diffArgs);
+      binding := Binding.setExp(exp, binding);
+    end if;
+  end differentiateBinding;
 
   protected
     function minusOne

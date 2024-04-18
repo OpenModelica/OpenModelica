@@ -47,18 +47,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QDir>
-#include <QtCore/QEvent>
-#include <QtCore/QFileInfo>
-#include <QtCore/QUrl>
-#include <QtGui/QGridLayout>
-#include <QtGui/QImageWriter>
-#include <QtGui/QScrollArea>
-#include <QtGui/QScrollBar>
-#endif
 
 //IAEX Headers
 #include "celldocument.h"
@@ -163,7 +152,7 @@ namespace IAEX
       if(!filename_.isNull())
         open( filename_, readmode );
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -224,7 +213,7 @@ namespace IAEX
       Cell *cell = parser->parse();
       setWorkspace( cell );
     }
-    catch( exception e )
+    catch( std::exception e )
     {
       delete parserFactory;
       delete parser;
@@ -343,7 +332,7 @@ namespace IAEX
       open_ = true;
       emit cursorChanged();
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -362,7 +351,7 @@ namespace IAEX
       executeCommand( new UngroupCellCommand() );
       emit cursorChanged();
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -381,7 +370,7 @@ namespace IAEX
       executeCommand( new SplitCellCommand() );
       emit cursorChanged();
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       throw e;
     }
@@ -701,7 +690,7 @@ namespace IAEX
       image = images_[name];
     else
     {
-      //cout << "Could not find image: " << name.toStdString() << endl;
+      //std::cout << "Could not find image: " << name.toStdString() << std::endl;
       image = new QImage();
     }
 
@@ -799,7 +788,7 @@ namespace IAEX
       if( cursor )
       {
         // ignore, if selected cell is a groupcell
-        if( typeid( *cursor->currentCell() ) != typeid( CellGroup ) )
+        if (!dynamic_cast<CellGroup*>(cursor->currentCell()))
         {
           // calculate the position of the cursor, by adding the height
           // of all the cells before the cellcursor, using a visitor
@@ -816,11 +805,11 @@ namespace IAEX
 
 #ifndef QT_NO_DEBUG_OUTPUT
 
-          cout << "*********************************************" << endl;
-          cout << "SCROLL TOP: " << scrollTop << endl;
-          cout << "SCROLL BOTTOM: " << scrollBottom << endl;
-          cout << "CELL CURSOR: " << pos << endl;
-          cout << "CELL HEIGHT: " << height << endl;
+          std::cout << "*********************************************" << std::endl;
+          std::cout << "SCROLL TOP: " << scrollTop << std::endl;
+          std::cout << "SCROLL BOTTOM: " << scrollBottom << std::endl;
+          std::cout << "CELL CURSOR: " << pos << std::endl;
+          std::cout << "CELL HEIGHT: " << height << std::endl;
 #endif
 
 
@@ -837,7 +826,7 @@ namespace IAEX
             scrollBottom > (scroll_->widget()->height() - 2 ) )
           {
 #ifndef QT_NO_DEBUG_OUTPUT
-            cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
+            std::cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << std::endl;
 #endif
             // 2006-03-03 AF, ignore if cursor at end of document
             return;
@@ -854,7 +843,7 @@ namespace IAEX
               pos = 0;
 
             // set new scrollvalue
-            //cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+            //std::cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << std::endl;
             scroll_->verticalScrollBar()->setValue( pos );
           }
           // DOWN
@@ -873,7 +862,7 @@ namespace IAEX
             if( pos >= scroll_->verticalScrollBar()->maximum() )
             {
 #ifndef QT_NO_DEBUG_OUTPUT
-              cout << "more then max!" << endl;
+              std::cout << "more then max!" << std::endl;
 #endif
               scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
               //pos = scroll_->verticalScrollBar()->maximum();
@@ -886,7 +875,7 @@ namespace IAEX
             {
               // set new scrollvalue
 #ifndef QT_NO_DEBUG_OUTPUT
-              cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+              std::cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << std::endl;
 #endif
               scroll_->verticalScrollBar()->setValue( pos );
             }
@@ -1275,7 +1264,7 @@ namespace IAEX
   {
     if( cell )
     {
-      vector<Cell*>::iterator found = std::find( selectedCells_.begin(),
+      std::vector<Cell*>::iterator found = std::find( selectedCells_.begin(),
         selectedCells_.end(), cell );
 
       if( found != selectedCells_.end() )
@@ -1288,7 +1277,7 @@ namespace IAEX
 
   void CellDocument::clearSelection()
   {
-    vector<Cell*>::iterator i = selectedCells_.begin();
+    std::vector<Cell*>::iterator i = selectedCells_.begin();
 
     for(;i!= selectedCells_.end();++i)
       (*i)->setSelected(false);
@@ -1404,7 +1393,7 @@ namespace IAEX
     }
   }
 
-  vector<Cell*> CellDocument::getSelection()
+  std::vector<Cell*> CellDocument::getSelection()
   {
     return selectedCells_;
   }

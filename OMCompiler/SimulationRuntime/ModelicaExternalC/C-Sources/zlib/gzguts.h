@@ -50,6 +50,10 @@
 #  define close _close
 #endif
 
+#if !defined(_MSC_VER)
+#include <unistd.h>
+#endif
+
 #ifdef NO_DEFLATE       /* for compatibility with old definition */
 #  define NO_GZCOMPRESS
 #endif

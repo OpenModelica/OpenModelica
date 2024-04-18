@@ -54,6 +54,7 @@ import InstUtil;
 import Class = NFClass;
 import Component = NFComponent;
 import Attributes = NFAttributes;
+import StringUtil;
 import Typing = NFTyping;
 import TypeCheck = NFTypeCheck;
 import Util;
@@ -82,6 +83,7 @@ import InstContext = NFInstContext;
 import UnorderedSet;
 import Graph;
 import FlatModelicaUtil = NFFlatModelicaUtil;
+import Subscript = NFSubscript;
 
 public
 
@@ -496,9 +498,10 @@ uniontype Function
   protected
     SCode.Element def;
     Integer numError = Error.getNumErrorMessages();
+    InstContext.Type fn_context = InstContext.set(context, NFInstContext.FUNCTION);
   algorithm
     try
-      fnNode := Inst.instantiate(fnNode, context = context, instPartial = true);
+      fnNode := Inst.instantiate(fnNode, context = fn_context, instPartial = true);
     else
       true := Error.getNumErrorMessages() == numError;
       def := InstNode.definition(fnNode);
@@ -625,14 +628,14 @@ uniontype Function
       SCode.defaultPrefixes,
       SCode.Encapsulated.NOT_ENCAPSULATED(),
       SCode.Partial.NOT_PARTIAL(),
-      SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(false)),
+      SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.PURE())),
       fn_def,
       SCode.Comment.COMMENT(NONE(), SOME("Automatically generated conversion operator for " + enum_name)),
       info
     );
 
     // Create a node from the SCode element.
-    fnNode := InstNode.new(fn_elem, InstNode.parent(enumNode));
+    fnNode := InstNode.new(fn_elem, InstNode.parentScope(enumNode, ignoreRedeclare=true));
   end makeEnumConversionOp;
 
   function getCachedFuncs
@@ -856,6 +859,7 @@ uniontype Function
 
   function toFlatStream
     input Function fn;
+    input String indent;
     input output IOStream.IOStream s;
     input String overrideName = "";
   protected
@@ -865,10 +869,11 @@ uniontype Function
     SCode.Mod annMod;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := IOStream.append(s, InstNode.toFlatString(fn.node));
+      s := Record.toFlatDeclarationStream(fn.node, indent, s);
     elseif isPartialDerivative(fn) then
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
+      s := IOStream.append(s, indent);
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
       s := IOStream.append(s, " = der(");
@@ -881,34 +886,30 @@ uniontype Function
       cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
+      s := IOStream.append(s, indent);
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
       s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
-        s := IOStream.append(s, "  ");
-        s := IOStream.append(s, InstNode.toFlatString(i));
+        s := IOStream.append(s, InstNode.toFlatString(i, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       for o in fn.outputs loop
-        s := IOStream.append(s, "  ");
-        s := IOStream.append(s, InstNode.toFlatString(o));
+        s := IOStream.append(s, InstNode.toFlatString(o, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       if not listEmpty(fn.locals) then
-        s := IOStream.append(s, "protected\n");
-
         for l in fn.locals loop
-          s := IOStream.append(s, "  ");
-          s := IOStream.append(s, InstNode.toFlatString(l));
+          s := IOStream.append(s, InstNode.toFlatString(l, indent + "  "));
           s := IOStream.append(s, ";\n");
         end for;
       end if;
 
-      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, s);
+      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, indent, s);
 
       if isSome(cmt.annotation_) then
         SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
@@ -929,9 +930,10 @@ uniontype Function
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
         cmt := SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)), NONE());
-        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), "  ", ";\n", s);
+        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), indent + "  ", ";\n", s);
       end if;
 
+      s := IOStream.append(s, indent);
       s := IOStream.append(s, "end ");
       s := IOStream.append(s, fn_name);
     end if;
@@ -939,12 +941,13 @@ uniontype Function
 
   function toFlatString
     input Function fn;
+    input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(fn, s);
+    s := toFlatStream(fn, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;
@@ -977,6 +980,7 @@ uniontype Function
     input list<TypedArg> posArgs;
     input list<TypedArg> namedArgs;
     input Function fn;
+    input InstContext.Type context;
     input SourceInfo info;
     output list<TypedArg> args = posArgs;
     output Boolean matching;
@@ -1026,7 +1030,7 @@ uniontype Function
       end if;
     end for;
 
-    (args, matching) := collectArgs(slots_arr, info);
+    (args, matching) := collectArgs(slots_arr, context, info);
   end fillArgs;
 
   function fillNamedArg
@@ -1091,6 +1095,7 @@ uniontype Function
   function collectArgs
     "Collects the arguments from the given slots."
     input array<Slot> slots;
+    input InstContext.Type context;
     input SourceInfo info;
     output list<TypedArg> args = {};
     output Boolean matching = true;
@@ -1108,7 +1113,7 @@ uniontype Function
         case SOME(a) then a :: args;
 
         // Otherwise, try to fill the slot with its default argument.
-        case _ then fillDefaultSlot(s, slots, info) :: args;
+        case _ then fillDefaultSlot(s, slots, context, info) :: args;
 
         else
           algorithm
@@ -1124,6 +1129,7 @@ uniontype Function
   function fillDefaultSlot
     input Slot slot;
     input array<Slot> slots;
+    input InstContext.Type context;
     input SourceInfo info;
     output TypedArg outArg;
   algorithm
@@ -1133,7 +1139,7 @@ uniontype Function
 
       // Slot not filled by function argument, but has default value.
       case SLOT(default = SOME(_))
-        then fillDefaultSlot2(slot, slots, info);
+        then fillDefaultSlot2(slot, slots, context, info);
 
       // Give an error if no argument was given and there's no default argument.
       else
@@ -1148,6 +1154,7 @@ uniontype Function
   function fillDefaultSlot2
     input Slot slot;
     input array<Slot> slots;
+    input InstContext.Type context;
     input SourceInfo info;
     output TypedArg outArg;
   algorithm
@@ -1175,8 +1182,8 @@ uniontype Function
           slot.evalStatus := SlotEvalStatus.EVALUATING;
           arrayUpdate(slots, slot.index, slot);
 
-          exp := evaluateSlotExp(Util.getOption(slot.default), slots, info);
-          (exp, ty, var, pur) := Typing.typeExp(exp, NFInstContext.FUNCTION, info);
+          exp := evaluateSlotExp(Util.getOption(slot.default), slots, context, info);
+          (exp, ty, var, pur) := Typing.typeExp(exp, context, info);
           outArg := TypedArg.TYPED_ARG(NONE(), exp, ty, var, pur);
 
           slot.arg := SOME(outArg);
@@ -1191,21 +1198,23 @@ uniontype Function
   function evaluateSlotExp
     input Expression exp;
     input array<Slot> slots;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression outExp;
   algorithm
     outExp := Expression.map(exp,
-      function evaluateSlotExp_traverser(slots = slots, info = info));
+      function evaluateSlotExp_traverser(slots = slots, context = context, info = info));
   end evaluateSlotExp;
 
   function evaluateSlotExp_traverser
     input Expression exp;
     input array<Slot> slots;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression outExp;
   algorithm
     outExp := match exp
-      case Expression.CREF() then evaluateSlotCref(exp, slots, info);
+      case Expression.CREF() then evaluateSlotCref(exp, slots, context, info);
       else exp;
     end match;
   end evaluateSlotExp_traverser;
@@ -1213,6 +1222,7 @@ uniontype Function
   function evaluateSlotCref
     input output Expression crefExp;
     input array<Slot> slots;
+    input InstContext.Type context;
     input SourceInfo info;
   protected
     ComponentRef cref;
@@ -1233,13 +1243,13 @@ uniontype Function
     slot := lookupSlotInArray(cref_node, slots);
 
     if isSome(slot) then
-      arg := fillDefaultSlot(Util.getOption(slot), slots, info);
+      arg := fillDefaultSlot(Util.getOption(slot), slots, context, info);
       crefExp := arg.value;
-      crefExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), crefExp);
+      crefExp := applyCrefSubs(cref, crefExp);
 
       for cr in cref_parts loop
         crefExp := Expression.recordElement(ComponentRef.firstName(cr), crefExp);
-        crefExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), crefExp);
+        crefExp := applyCrefSubs(cref, crefExp);
       end for;
 
       if Type.isKnown(cref_ty) then
@@ -1247,6 +1257,27 @@ uniontype Function
       end if;
     end if;
   end evaluateSlotCref;
+
+  function applyCrefSubs
+    input ComponentRef cref;
+    input output Expression exp;
+  protected
+    list<Subscript> subs;
+  algorithm
+    subs := ComponentRef.getSubscripts(cref);
+
+    if listEmpty(subs) then
+      return;
+    end if;
+
+    try
+      exp := Expression.applySubscripts(subs, exp);
+    else
+      // Applying the subscripts might not work if the expression is not typed,
+      // in that case just create a subscripted expression.
+      exp := Expression.SUBSCRIPTED_EXP(exp, subs, ComponentRef.getSubscriptedType(cref), false);
+    end try;
+  end applyCrefSubs;
 
   function lookupSlotInArray
     input InstNode node;
@@ -1409,6 +1440,7 @@ uniontype Function
     input Function func;
     input list<TypedArg> args;
     input list<TypedArg> named_args;
+    input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
     output list<TypedArg> out_args;
@@ -1416,7 +1448,7 @@ uniontype Function
   protected
     Boolean slot_matched;
   algorithm
-    (out_args, slot_matched) := fillArgs(args, named_args, func, info);
+    (out_args, slot_matched) := fillArgs(args, named_args, func, context, info);
 
     if slot_matched then
       (out_args, matchKind) := matchArgs(func, out_args, info, vectorize);
@@ -1427,6 +1459,7 @@ uniontype Function
     input list<Function> funcs;
     input list<TypedArg> args;
     input list<TypedArg> named_args;
+    input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
     output list<MatchedFunction> matchedFunctions;
@@ -1437,7 +1470,7 @@ uniontype Function
   algorithm
     matchedFunctions := {};
     for func in funcs loop
-      (m_args, matchKind) := matchFunction(func, args, named_args, info, vectorize);
+      (m_args, matchKind) := matchFunction(func, args, named_args, context, info, vectorize);
 
       if FunctionMatchKind.isValid(matchKind) then
         matchedFunctions := MatchedFunction.MATCHED_FUNC(func,m_args,matchKind)::matchedFunctions;
@@ -1449,13 +1482,14 @@ uniontype Function
     input list<Function> funcs;
     input list<TypedArg> args;
     input list<TypedArg> named_args;
+    input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
     output list<MatchedFunction> matchedFunctions;
   protected
   algorithm
     ErrorExt.setCheckpoint("NFFunction:matchFunctions");
-    matchedFunctions := matchFunctions(funcs, args, named_args, info, vectorize);
+    matchedFunctions := matchFunctions(funcs, args, named_args, context, info, vectorize);
     ErrorExt.rollBack("NFFunction:matchFunctions");
   end matchFunctionsSilent;
 
@@ -1534,18 +1568,21 @@ uniontype Function
   protected
     DAE.FunctionAttributes attr;
     InstNode node = fn.node;
+    InstContext.Type fn_context;
   algorithm
     if not isTyped(fn) then
+      fn_context := InstContext.set(context, NFInstContext.FUNCTION);
+      fn.slots := makeSlots(fn.inputs);
+
       // Type all the components in the function.
-      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, context, node);
-      Typing.typeComponents(node, context, preserveDerived = isPartialDerivative(fn));
+      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, fn_context, node);
+      Typing.typeComponents(node, fn_context, preserveDerived = isPartialDerivative(fn));
 
       if InstNode.isPartial(node) then
         ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
       end if;
 
       // Make the slots and return type for the function.
-      fn.slots := makeSlots(fn.inputs);
       checkParamTypes(fn);
       checkPartialDerivativeTypes(fn);
       fn.returnType := makeReturnType(fn);
@@ -1559,22 +1596,25 @@ uniontype Function
   protected
     Boolean pure;
     DAE.FunctionAttributes attr;
+    InstContext.Type fn_context;
   algorithm
+    fn_context := InstContext.set(context, NFInstContext.FUNCTION);
+
     // Type the bindings of components in the function.
     for c in fn.inputs loop
-      Typing.typeComponentBinding(c, context);
+      Typing.typeComponentBinding(c, fn_context);
     end for;
 
     for c in fn.outputs loop
-      Typing.typeComponentBinding(c, context);
+      Typing.typeComponentBinding(c, fn_context);
     end for;
 
     for c in fn.locals loop
-      Typing.typeComponentBinding(c, context);
+      Typing.typeComponentBinding(c, fn_context);
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeFunctionSections(fn.node, context);
+    Typing.typeFunctionSections(fn.node, fn_context);
 
     // Type any derivatives of the function.
     for fn_der in fn.derivatives loop
@@ -1596,7 +1636,7 @@ uniontype Function
       end if;
     end if;
 
-    if not InstContext.inRelaxed(context) then
+    if not InstContext.inRelaxed(fn_context) then
       checkUseBeforeAssign(fn);
     end if;
 
@@ -1744,6 +1784,8 @@ uniontype Function
   end isBuiltinAttr;
 
   function isSpecialBuiltin
+    "Returns whether or not a Function refers to a builtin function that doesn't
+     follow normal Modelica rules and instead needs special handling."
     input Function fn;
     output Boolean special;
   protected
@@ -2233,6 +2275,7 @@ protected
     Class cls;
     array<InstNode> comps;
     InstNode n;
+    Boolean check_vis;
   algorithm
     Error.assertion(InstNode.isClass(node), getInstanceName() + " got non-class node", sourceInfo());
     cls := InstNode.getClass(node);
@@ -2242,9 +2285,11 @@ protected
         algorithm
           for i in arrayLength(comps):-1:1 loop
             n := comps[i];
+            // Base Modelica does not have public/protected.
+            check_vis := not Flags.getConfigBool(Flags.BASE_MODELICA);
 
             // Sort the components based on their direction.
-            () := match paramDirection(n)
+            () := match paramDirection(n, check_vis)
               case Direction.INPUT algorithm inputs := n :: inputs; then ();
               case Direction.OUTPUT algorithm outputs := n :: outputs; then ();
               case Direction.NONE algorithm locals := n :: locals; then ();
@@ -2269,6 +2314,7 @@ protected
 
   function paramDirection
     input InstNode component;
+    input Boolean checkVisibility;
     output Direction direction;
   protected
     Component comp;
@@ -2304,19 +2350,21 @@ protected
       fail();
     end if;
 
-    // Formal parameters must be public, other function variables must be protected.
-    vis := InstNode.visibility(component);
+    if checkVisibility then
+      // Formal parameters must be public, other function variables must be protected.
+      vis := InstNode.visibility(component);
 
-    if direction <> Direction.NONE then
-      if vis == Visibility.PROTECTED then
-        Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+      if direction <> Direction.NONE then
+        if vis == Visibility.PROTECTED then
+          Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+            {InstNode.name(component)}, InstNode.info(component));
+          fail();
+        end if;
+      elseif vis == Visibility.PUBLIC then
+        Error.addSourceMessageAsError(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
           {InstNode.name(component)}, InstNode.info(component));
         fail();
       end if;
-    elseif vis == Visibility.PUBLIC then
-      Error.addSourceMessageAsError(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
-        {InstNode.name(component)}, InstNode.info(component));
-      fail();
     end if;
   end paramDirection;
 
@@ -2349,10 +2397,8 @@ protected
       name := InstNode.name(component);
 
       // Remove $in_ for OM input output arguments.
-      if stringGet(name, 1) == 36 /*$*/ then
-        if stringLength(name) > 4 and substring(name, 1, 4) == "$in_" then
-          name := substring(name, 5, stringLength(name));
-        end if;
+      if StringUtil.startsWith(name, "$in_") then
+        name := substring(name, 5, stringLength(name));
       end if;
 
       slot := SLOT(component, SlotType.GENERIC, default, NONE(), index, SlotEvalStatus.NOT_EVALUATED);
@@ -2438,15 +2484,16 @@ protected
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
         DAE.FunctionBuiltin builtin;
+        Absyn.FunctionPurity purity;
 
       // External builtin function.
-      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(is_impure)
+      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(purity)
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          is_impure := is_impure or hasImpure(cmt);
+          is_impure := AbsynUtil.isImpure(purity) or hasImpure(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
@@ -2484,8 +2531,7 @@ protected
 
           // In Modelica 3.2 and before, external functions with side-effects are not marked.
           is_impure := SCodeUtil.isRestrictionImpure(res,
-              Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') or
-              not listEmpty(outputs)) or
+              Config.languageStandardAtMost(Config.LanguageStandard.'3.2')) or
             SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
 
           if SCodeUtil.hasNamedExternalCall("ModelicaError", SCodeUtil.getClassDef(def)) then
@@ -2535,7 +2581,6 @@ protected
       case Type.BOOLEAN() then true;
       case Type.CLOCK() then true;
       case Type.ENUMERATION() then true;
-      case Type.ENUMERATION_ANY() then true;
       case Type.POLYMORPHIC() then true;
       case Type.ARRAY() then isValidParamType(ty.elementType);
       case Type.COMPLEX() then isValidParamState(ty.cls);
@@ -2622,15 +2667,20 @@ protected
 
   function hasSingleOrEmptyBody
     input Function fn;
-    output Boolean b;
+    output Boolean b = false;
   protected
     list<Algorithm> algorithms;
   algorithm
-    b := match InstNode.getSections(fn.node)
-      case Sections.SECTIONS(algorithms = algorithms) then listLength(algorithms) < 2;
-      case Sections.EMPTY() then true;
-      else false;
-    end match;
+    try
+      // InstNode.getSections can fail
+      if isBuiltin(fn) then return; end if;
+      b := match InstNode.getSections(fn.node)
+        case Sections.SECTIONS(algorithms = algorithms) then listLength(algorithms) < 2;
+        case Sections.EMPTY() then true;
+        else false;
+      end match;
+    else
+    end try;
   end hasSingleOrEmptyBody;
 
   function analyseUnusedParameters

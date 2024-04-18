@@ -133,7 +133,7 @@ struct type_desc_s {
     modelica_boolean boolean;
     boolean_array bool_array;
     modelica_string string;
-    string_array string_array;
+    string_array str_array;
     struct _tuple {
       size_t elements;
       struct type_desc_s *element;

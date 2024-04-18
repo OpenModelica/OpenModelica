@@ -47,6 +47,8 @@
 #include "VisualizationMAT.h"
 #include "VisualizationCSV.h"
 
+#include <QDockWidget>
+
 /*!
  * \class AbstractAnimationWindow
  * \brief Abstract animation class defines a QMainWindow for animation.
@@ -123,11 +125,11 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCame
       mpAnimationRepeatAction->setEnabled(true);
       mpAnimationSlider->setEnabled(true);
       bool state = mpAnimationSlider->blockSignals(true);
-      mpAnimationSlider->setValue(0);
+      mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
       mpAnimationSlider->blockSignals(state);
       mpSpeedComboBox->setEnabled(true);
       mpTimeTextBox->setEnabled(true);
-      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getStartTime()));
+      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
       /* Only use isometric view as default for csv file type.
        * Otherwise use side view as default which suits better for Modelica models.
        */
@@ -218,17 +220,17 @@ void AbstractAnimationWindow::createActions()
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
   // rotate camera left action
   mpRotateCameraLeftAction = new QAction(QIcon(":/Resources/icons/rotateCameraLeft.svg"), tr("Rotate Left"), this);
-  mpRotateCameraLeftAction->setStatusTip(tr("Rotates the camera left"));
+  mpRotateCameraLeftAction->setStatusTip(tr("Rotate the camera left"));
   connect(mpRotateCameraLeftAction, SIGNAL(triggered()), this, SLOT(rotateCameraLeft()));
   // rotate camera right action
   mpRotateCameraRightAction = new QAction(QIcon(":/Resources/icons/rotateCameraRight.svg"), tr("Rotate Right"), this);
-  mpRotateCameraRightAction->setStatusTip(tr("Rotates the camera right"));
+  mpRotateCameraRightAction->setStatusTip(tr("Rotate the camera right"));
   connect(mpRotateCameraRightAction, SIGNAL(triggered()), this, SLOT(rotateCameraRight()));
-  //interactive control action
+  // interactive control action
   mpInteractiveControlAction = mpAnimationParameterDockerWidget->toggleViewAction();
   mpInteractiveControlAction->setIcon(QIcon(":/Resources/icons/control-panel.svg"));
-  mpInteractiveControlAction->setText(tr("interactive control"));
-  mpInteractiveControlAction->setStatusTip(tr("Opens the interactive control panel"));
+  mpInteractiveControlAction->setText(tr("Interactive Control"));
+  mpInteractiveControlAction->setStatusTip(tr("Open the interactive control panel"));
   mpInteractiveControlAction->setEnabled(false);
   mpAnimationParameterDockerWidget->hide();
 }
@@ -547,23 +549,21 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualiza
 void AbstractAnimationWindow::updateScene()
 {
   if (mpVisualization) {
-    //set time label
-    if (!mpVisualization->getTimeManager()->isPaused()) {
-      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-      // set time slider
-      if (mpVisualization->getVisType() != VisType::FMU) {
-        int time = mpVisualization->getTimeManager()->getTimeFraction();
-        bool state = mpAnimationSlider->blockSignals(true);
-        mpAnimationSlider->setValue(time);
-        mpAnimationSlider->blockSignals(state);
-      }
-    }
-
-    //update the scene
+    // update scene
     mpVisualization->sceneUpdate();
     mpViewerWidget->update();
-
-    updateControlPanelValues();
+    if (!mpVisualization->getTimeManager()->isPaused()) {
+      // set time label
+      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+      // set time slider
+      bool state = mpAnimationSlider->blockSignals(true);
+      mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+      mpAnimationSlider->blockSignals(state);
+    }
+    if (mpVisualization->getVisType() == VisType::FMU) {
+      // set state labels
+      updateControlPanelValues();
+    }
   }
 }
 
@@ -588,12 +588,14 @@ void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
 void AbstractAnimationWindow::initSlotFunction()
 {
   mpVisualization->initVisualization();
+  mpViewerWidget->update();
   bool state = mpAnimationSlider->blockSignals(true);
-  mpAnimationSlider->setValue(0);
+  mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
   mpAnimationSlider->blockSignals(state);
   mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-  mpViewerWidget->update();
-  updateControlPanelValues();
+  if (mpVisualization->getVisType() == VisType::FMU) {
+    updateControlPanelValues();
+  }
 }
 
 /*!
@@ -625,18 +627,44 @@ void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
 }
 
 /*!
+ * \brief AbstractAnimationWindow::updateSceneTime
+ * Updates the scene to the provided point of time
+ * \param time The new point of time
+ */
+void AbstractAnimationWindow::updateSceneTime(double time)
+{
+  double start = mpVisualization->getTimeManager()->getStartTime();
+  double end = mpVisualization->getTimeManager()->getEndTime();
+  if (time < start) {
+    time = start;
+  } else if (time > end) {
+    time = end;
+  }
+  mpVisualization->getTimeManager()->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+  bool state = mpAnimationSlider->blockSignals(true);
+  mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+  mpAnimationSlider->blockSignals(state);
+  mpVisualization->updateScene(mpVisualization->getTimeManager()->getVisTime());
+  mpViewerWidget->update();
+}
+
+/*!
  * \brief AbstractAnimationWindow::sliderSetTimeSlotFunction
  * slot function for the time slider to jump to the adjusted point of time
  */
 void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
 {
-  float time = (mpVisualization->getTimeManager()->getEndTime()
-                - mpVisualization->getTimeManager()->getStartTime())
-      * (float) (value / (float)mSliderRange);
-  mpVisualization->getTimeManager()->setVisTime(time);
-  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-  mpVisualization->updateScene(time);
-  mpViewerWidget->update();
+  if (value >= 0) {
+    double start = mpVisualization->getTimeManager()->getStartTime();
+    double end = mpVisualization->getTimeManager()->getEndTime();
+    double time = (end - start) * (value / (double)mSliderRange) + start;
+    updateSceneTime(time);
+  } else {
+    bool state = mpAnimationSlider->blockSignals(true);
+    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+    mpAnimationSlider->blockSignals(state);
+  }
 }
 
 /*!
@@ -645,23 +673,12 @@ void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
  */
 void AbstractAnimationWindow::jumpToTimeSlotFunction()
 {
-  QString str = mpTimeTextBox->text();
-  bool isDouble = true;
-  double start = mpVisualization->getTimeManager()->getStartTime();
-  double end = mpVisualization->getTimeManager()->getEndTime();
-  double value = str.toDouble(&isDouble);
-  if (isDouble && value >= 0.0) {
-    if (value < start) {
-      value = start;
-    } else if (value > end) {
-      value = end;
-    }
-    mpVisualization->getTimeManager()->setVisTime(value);
-    bool state = mpAnimationSlider->blockSignals(true);
-    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
-    mpAnimationSlider->blockSignals(state);
-    mpVisualization->updateScene(value);
-    mpViewerWidget->update();
+  bool isDouble = false;
+  double time = mpTimeTextBox->text().toDouble(&isDouble);
+  if (isDouble && time >= 0.0) {
+    updateSceneTime(time);
+  } else {
+    mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
   }
 }
 
@@ -671,12 +688,13 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
  */
 void AbstractAnimationWindow::setSpeedSlotFunction()
 {
-  QString str = mpSpeedComboBox->lineEdit()->text();
-  bool isDouble = true;
-  double value = str.toDouble(&isDouble);
-  if (isDouble && value > 0.0) {
-    mpVisualization->getTimeManager()->setSpeedUp(value);
+  bool isDouble = false;
+  double speed = mpSpeedComboBox->lineEdit()->text().toDouble(&isDouble);
+  if (isDouble && speed > 0.0) {
+    mpVisualization->getTimeManager()->setSpeedUp(speed);
     mpViewerWidget->update();
+  } else {
+    mpSpeedComboBox->lineEdit()->setText(QString::number(mpVisualization->getTimeManager()->getSpeedUp()));
   }
 }
 

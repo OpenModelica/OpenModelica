@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 double real1_ext(double x)
 {
@@ -125,4 +126,9 @@ void record4_ext(const double *arr, struct record4 *r4)
   r4->r2.y = arr[2];
   r4->r2.z = arr[3];
   r4->y = arr[4];
+}
+
+int crash1_ext()
+{
+  abort();
 }

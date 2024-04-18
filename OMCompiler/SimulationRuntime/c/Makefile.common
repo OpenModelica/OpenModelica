@@ -15,7 +15,10 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
+CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
+
+# If we are using the Makefiles then assume we have PThreads available.
+CPPFLAGS += -DOM_HAVE_PTHREADS
 
 # On MinGW assume that we have ipopt. For linux this is actually checked and
 # configured by autoconf.
@@ -52,6 +55,7 @@ builddir = ../../build
 CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
 CMINPACKDIR=$(top_builddir)/3rdParty/CMinpack/
 LAPACKDIR=$(top_builddir)/3rdParty/dgesv/
+RYUDIR=$(top_builddir)/3rdParty/ryu/ryu/
 
 RUNTIME_HEADERS = \
 ./omc_inline.h \
@@ -177,10 +181,10 @@ all_objs : $(ALL_OBJS)
 #recompile all if a header changes!
 $(ALL_OBJS) : $(ALL_HEADERS)
 
-libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a libOpenModelicaRuntimeC.dll
+libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a $(RYUDIR)/libryu.a libOpenModelicaRuntimeC.dll
 	@rm -f $@
 	$(CXX) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -L$(OMBUILDDIR)/lib/omc \
-		-L$(CDASKRDIR) -lcdaskr \
+		-L$(CDASKRDIR) -lcdaskr -L$(RYUDIR) -lryu \
 		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
 		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
 		-lipopt -lcoinmumps -lgfortran \
@@ -210,11 +214,11 @@ libOpenModelicaRuntimeC.so: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS)
 
-libOpenModelicaRuntimeC.dll: $(BASE_OBJS) Makefile.objs
+libOpenModelicaRuntimeC.dll: $(BASE_OBJS) $(RYUDIR)/libryu.a Makefile.objs
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -L$(OMBUILDDIR)/lib/omc -lomcgc -ldbghelp -lregex -Wl,--export-all-symbols,--out-implib,$@.a
+	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -L$(OMBUILDDIR)/lib/omc -L$(RYUDIR) -lomcgc -lryu -ldbghelp -lregex -Wl,--export-all-symbols,--out-implib,$@.a
 
-libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
+libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) $(RYUDIR)/libryu.a $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
 

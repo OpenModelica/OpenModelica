@@ -614,6 +614,7 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
 fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo* eventInfo)
 {
   double nextSampleEvent=0;
+  int nextSampleEventDefined;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   threadData->currentErrorStage = ERROR_SIMULATION;
@@ -661,8 +662,8 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
     eventInfo->terminateSimulation = fmiFalse;
 
     /* Get next event time (sample calls)*/
-    nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-    if (nextSampleEvent == -1){
+    nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
+    if (nextSampleEventDefined){
       eventInfo->upcomingTimeEvent = fmiFalse;
     }else{
       eventInfo->upcomingTimeEvent = fmiTrue;
@@ -766,9 +767,10 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: intermediateResults = %d", intermediateResults);
 
     //Get Next Event Time
-    double nextSampleEvent=0;
-    nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-    if (nextSampleEvent == -1)
+    double nextSampleEvent = 0;
+    int nextSampleEventDefined;
+    nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
+    if (nextSampleEventDefined)
     {
       eventInfo->upcomingTimeEvent = fmiFalse;
     }

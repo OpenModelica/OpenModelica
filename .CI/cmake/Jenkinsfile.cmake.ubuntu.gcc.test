@@ -22,10 +22,10 @@ pipeline {
     }
     stage('build') {
       parallel {
-        stage('autoconf-bionic-gcc') {
+        stage('autoconf-jammy-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -37,11 +37,11 @@ pipeline {
             stash name: 'omc-gcc', includes: 'build/bin/OMCppOSUSimulation, build/include/omc/omsi/**, build/include/omc/omsic/**, build/lib/x86_64-linux-gnu/omc/omsi/**, build/lib/x86_64-linux-gnu/omc/omsicpp/**, **/config.status'
           }
         }
-        stage('cmake-bionic-gcc') {
+        stage('cmake-jammy-gcc') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-bionic-cmake-3.17.2'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                     "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -52,8 +52,7 @@ pipeline {
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
                                         + " -DOM_USE_CCACHE=OFF"
                                         + " -DCMAKE_INSTALL_PREFIX=build"
-                                        + " -DSUNDIALS_BUILD_SHARED_LIBS=ON"
-                                    , '/opt/cmake-3.17.2/bin/cmake')
+                                        + " -DSUNDIALS_BUILD_SHARED_LIBS=ON")
               sh "build/bin/omc --version"
             }
             stash name: 'omc-cmake-gcc', includes: 'build/**'
@@ -68,7 +67,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-bionic-cmake-3.17.2'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -93,7 +92,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-bionic-cmake-3.17.2'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -118,7 +117,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-bionic-cmake-3.17.2'
+              dir '.CI/cache'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +

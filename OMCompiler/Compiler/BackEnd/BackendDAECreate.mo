@@ -181,7 +181,10 @@ algorithm
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   BackendDAEUtil.checkAdjacencyMatrixSolvability(syst, functionTree,BackendDAEUtil.isInitializationDAE(outBackendDAE.shared));
   if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
-    Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{String(BackendEquation.equationArraySize(syst.orderedEqs)), String(BackendVariable.varsSize(syst.orderedVars))},AbsynUtil.dummyInfo);
+    Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
+    String(BackendEquation.equationArraySize(syst.orderedEqs)),
+    String(BackendVariable.varsSize(syst.orderedVars))},
+    AbsynUtil.dummyInfo);
   end if;
   execStat("Generate backend data structure");
   return;
@@ -589,8 +592,7 @@ algorithm
   extVarsOut := BackendVariable.listVar(extVarLst);
 end removeExtAliasBinding;
 
-protected function getExternalObjectAlias3 "Gets the alias var and sim var for the given alias equation and adds a replacement rule
-author: waurich TUD 2016-10"
+protected function getExternalObjectAlias3 "Gets the alias var and sim var for the given alias equation and adds a replacement rule"
   input BackendDAE.Equation eqIn;
   input BackendDAE.Variables extVars;
   input tuple<list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplIn;
@@ -598,7 +600,7 @@ author: waurich TUD 2016-10"
 protected
   BackendDAE.Equation eq;
   BackendDAE.Var v1,v2,simVar,aliasVar;
-  list<DAE.ComponentRef> crefs;
+  list<DAE.ComponentRef> crefs_lhs, crefs_rhs;
   list<BackendDAE.Var> extAliasVars;
   BackendVarTransform.VariableReplacements repl;
 algorithm
@@ -606,17 +608,63 @@ algorithm
   ({eq},_) := BackendVarTransform.replaceEquations({eqIn},repl,NONE());
   try
     //get alias and sim var
-    crefs := BackendEquation.equationCrefs(eq);
-    ({v1,v2},_) := BackendVariable.getVarLst(crefs,extVars);
-    (simVar,aliasVar) := chooseExternalAlias(v1,v2);
-    extAliasVars := aliasVar::extAliasVars;
-    //build replacement rule
-    repl := BackendVarTransform.addReplacement(repl,BackendVariable.varCref(aliasVar), Expression.crefExp(BackendVariable.varCref(simVar)), NONE());
+    (crefs_lhs, crefs_rhs) := BackendEquation.equationCrefsSolved(eq);
+    // check if there are arrays involved and expand them if needed
+    (extAliasVars,repl) := match (crefs_lhs, crefs_rhs)
+      local
+        DAE.ComponentRef lhs, rhs;
+      case ({lhs}, {rhs}) algorithm
+        // no arrays, but crefs might be arrays to expand
+        crefs_lhs := ComponentReference.expandCref(lhs, true);
+        crefs_rhs := ComponentReference.expandCref(rhs, true);
+        (extAliasVars, repl) := addExternalObjectReplacementRules(crefs_lhs, crefs_rhs, extVars, extAliasVars, repl);
+      then (extAliasVars,repl);
+      case ({lhs}, _) algorithm
+        // only expand lhs
+        crefs_lhs := ComponentReference.expandCref(lhs, true);
+        (extAliasVars, repl) := addExternalObjectReplacementRules(crefs_lhs, crefs_rhs, extVars, extAliasVars, repl);
+      then (extAliasVars,repl);
+      case (_, {rhs}) algorithm
+        // only expand rhs
+        crefs_rhs := ComponentReference.expandCref(rhs, true);
+        (extAliasVars, repl) := addExternalObjectReplacementRules(crefs_lhs, crefs_rhs, extVars, extAliasVars, repl);
+      then (extAliasVars,repl);
+      else algorithm
+        // expand nothing
+        (extAliasVars, repl) := addExternalObjectReplacementRules(crefs_lhs, crefs_rhs, extVars, extAliasVars, repl);
+      then (extAliasVars,repl);
+    end match;
     tplOut := (extAliasVars,repl);
   else
-    Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAECreate.getExternalObjectAlias3 failed for " + BackendDump.equationString(eqIn)});
+    Error.addInternalError(getInstanceName() + " failed for " + BackendDump.equationString(eqIn), sourceInfo());
+    tplOut := tplIn;
   end try;
 end getExternalObjectAlias3;
+
+function addExternalObjectReplacementRules
+  "add multiple external object replacement rules"
+  input list<DAE.ComponentRef> crefs_lhs;
+  input list<DAE.ComponentRef> crefs_rhs;
+  input BackendDAE.Variables extVars;
+  input output list<BackendDAE.Var> extAliasVars;
+  input output BackendVarTransform.VariableReplacements repl;
+protected
+  DAE.ComponentRef lhs, rhs;
+  BackendDAE.Var v1, v2, simVar, aliasVar;
+algorithm
+  if listLength(crefs_lhs) == listLength(crefs_rhs) then
+    for tpl in List.zip(crefs_lhs, crefs_rhs) loop
+      (lhs, rhs) := tpl;
+      ({v1}, _) := BackendVariable.getVar(lhs, extVars);
+      ({v2}, _) := BackendVariable.getVar(rhs, extVars);
+      (simVar,aliasVar) := chooseExternalAlias(v1,v2);
+      extAliasVars := aliasVar::extAliasVars;
+      repl := BackendVarTransform.addReplacement(repl, BackendVariable.varCref(aliasVar), Expression.crefExp(BackendVariable.varCref(simVar)), NONE());
+    end for;
+  else
+    fail();
+  end if;
+end addExternalObjectReplacementRules;
 
 protected function chooseExternalAlias "Chooses a alias variable depending on which variable has a binding
 author: waurich TUD 2016-10"
@@ -645,7 +693,7 @@ algorithm
   end if;
 end chooseExternalAlias;
 
-protected function getExternalObjectAlias2 "Traverser for equations to check if an external alias assignment an be made
+protected function getExternalObjectAlias2 "Traverser for equations to check if an external alias assignment can be made
 author: waurich TUD 2016-10"
   input BackendDAE.Equation eqIn;
   input list<DAE.ComponentRef> extCrefs;
@@ -656,16 +704,39 @@ algorithm
     local
       list<BackendDAE.Equation> noAliasEqs, aliasEqs;
       DAE.ComponentRef cr1,cr2;
+      DAE.Exp left, right;
+      DAE.Type ty1, ty2;
   case(BackendDAE.COMPLEX_EQUATION(left = DAE.CREF(componentRef=cr1), right = DAE.CREF(componentRef=cr2)),_,(noAliasEqs,aliasEqs))
     algorithm
       true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
 
-  case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef= cr1, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())),
-                           scalar = DAE.CREF(componentRef= cr2, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))),_,(noAliasEqs,aliasEqs))
+  case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr1, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())),
+                           scalar = DAE.CREF(componentRef = cr2, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))),_,(noAliasEqs,aliasEqs))
     algorithm
       true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
+
+  // Cases for array equations (cref = arr), (cref = cref), (arr = cref)
+  case(BackendDAE.ARRAY_EQUATION(_,
+                                 left as DAE.CREF(componentRef = cr1, ty = DAE.T_ARRAY(ty = ty1 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) )),
+                                 right as DAE.ARRAY()),
+       _, (noAliasEqs,aliasEqs))
+    then (noAliasEqs,eqIn::aliasEqs);
+
+  case(BackendDAE.ARRAY_EQUATION(_,
+                                 left as DAE.CREF(componentRef = cr1, ty = DAE.T_ARRAY(ty = ty1 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) )),
+                                 right as DAE.CREF(componentRef = cr2, ty = DAE.T_ARRAY(ty = ty2 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) ))),
+       _, (noAliasEqs,aliasEqs))
+    then fail();
+
+  case(BackendDAE.ARRAY_EQUATION(_,
+                                 left as DAE.ARRAY(),
+                                 right as DAE.CREF(componentRef = cr2, ty = DAE.T_ARRAY(ty = ty1 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) ))),
+       _, (noAliasEqs,aliasEqs))
+    then fail();
+
+  // Case (arr = arr) ?
 
   else
     algorithm

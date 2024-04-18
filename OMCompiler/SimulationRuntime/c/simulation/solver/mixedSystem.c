@@ -50,8 +50,8 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
   int size;
   MIXED_SYSTEM_DATA *system = data->simulationInfo->mixedSystemData;
 
-  infoStreamPrint(LOG_NLS, 1, "initialize mixed system solvers");
-  infoStreamPrint(LOG_NLS, 0, "%ld mixed systems", data->modelData->nMixedSystems);
+  infoStreamPrint(LOG_MIXED, 1, "initialize mixed system solvers");
+  infoStreamPrint(LOG_MIXED, 0, "%ld mixed systems", data->modelData->nMixedSystems);
 
   for(i=0; i<data->modelData->nMixedSystems; ++i)
   {
@@ -71,7 +71,7 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
     }
   }
 
-  messageClose(LOG_NLS);
+  messageClose(LOG_MIXED);
   return 0;
 }
 
@@ -86,7 +86,7 @@ int freeMixedSystems(DATA *data, threadData_t *threadData)
   int i;
   MIXED_SYSTEM_DATA* system = data->simulationInfo->mixedSystemData;
 
-  infoStreamPrint(LOG_NLS, 1, "free mixed system solvers");
+  infoStreamPrint(LOG_MIXED, 1, "free mixed system solvers");
 
   for(i=0;i<data->modelData->nMixedSystems;++i)
   {
@@ -107,7 +107,7 @@ int freeMixedSystems(DATA *data, threadData_t *threadData)
     free(system[i].solverData);
   }
 
-  messageClose(LOG_NLS);
+  messageClose(LOG_MIXED);
   return 0;
 }
 
@@ -123,6 +123,10 @@ int solve_mixed_system(DATA *data, threadData_t *threadData, int sysNumber)
   int success;
   MIXED_SYSTEM_DATA* system = data->simulationInfo->mixedSystemData;
 
+  if (!system->logActive) {
+    deactivateLogging();
+  }
+
   /* for now just use lapack solver as before */
   switch(data->simulationInfo->mixedMethod)
   {
@@ -133,6 +137,10 @@ int solve_mixed_system(DATA *data, threadData_t *threadData, int sysNumber)
     throwStreamPrint(threadData, "unrecognized mixed solver");
   }
   system[sysNumber].solved = success;
+
+  if (!system->logActive) {
+    reactivateLogging();
+  }
 
   return 0;
 }
@@ -155,10 +163,10 @@ int check_mixed_solutions(DATA *data, int printFailingSystems)
     if(system[i].solved == 0)
     {
       retVal = 1;
-      if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_NLS))
+      if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_MIXED))
       {
-        warningStreamPrint(LOG_NLS, 1, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData->modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
-        messageClose(LOG_NLS);
+        warningStreamPrint(LOG_MIXED, 1, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData->modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
+        messageClose(LOG_MIXED);
       }
     }
 

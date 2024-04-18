@@ -7,15 +7,23 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omedit)
 
 omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
 omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." OFF)
+omc_option(OM_OMEDIT_ENABLE_QTWEBENGINE "Enable building of OMEdit with QtWebEngine instead of QtWebkit" OFF)
+omc_option(OM_OMEDIT_ENABLE_LIBXML2 "Enable building of OMEdit with LibXml2 instead of XmlPatterns." OFF)
 
-## Set the C++ standard to use. OMEdit uses C++14
-set(CMAKE_CXX_STANDARD 14)
-set(CXX_STANDARD_REQUIRED ON)
-## Make sure we do not start relying on extensions down the road.
-set(CMAKE_CXX_EXTENSIONS OFF)
+set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml OpenGL Network Svg REQUIRED)
+if (OM_OMEDIT_ENABLE_QTWEBENGINE OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebEngineWidgets REQUIRED)
+else ()
+  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebKitWidgets REQUIRED)
+endif ()
 
+if (OM_OMEDIT_ENABLE_LIBXML2 OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  find_package(LibXml2 REQUIRED)
+else ()
+  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS XmlPatterns REQUIRED)
+endif ()
 
-find_package(Qt5 COMPONENTS Widgets PrintSupport WebKitWidgets Xml XmlPatterns OpenGL Network Svg REQUIRED)
 find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)
 find_package(OpenGL REQUIRED)
 

@@ -1,0 +1,58 @@
+// name: GetModelInstanceFunction1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  function f
+    input Integer N;
+    output Real y[N];
+  algorithm
+    y := fill(1.0, N);
+  end f;
+");
+
+getModelInstance(f, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"f\",
+//   \"restriction\": \"function\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"N\",
+//       \"type\": \"Integer\",
+//       \"prefixes\": {
+//         \"direction\": \"input\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"dims\": {
+//         \"absyn\": [
+//           \"N\"
+//         ],
+//         \"typed\": [
+//           \"N\"
+//         ]
+//       },
+//       \"prefixes\": {
+//         \"direction\": \"output\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 7,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

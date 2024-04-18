@@ -43,7 +43,6 @@ static inline void update_local_jac_struct(OptDataDim * dim, OptDataStructure *s
 static inline void copy_JacVars(OptData *optData);
 
 /* pick up jac struct
- * author: Vitalij Ruge
  */
 inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* data, OptData *optData){
   threadData_t *threadData = optData->threadData;

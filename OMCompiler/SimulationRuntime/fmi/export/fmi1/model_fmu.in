@@ -1,4 +1,4 @@
 loadModel(Modelica); getErrorString();
 loadModel(ModelicaServices); getErrorString();
 loadFile("@OMC_MODELDIR@/@OMC_MODELNAME@.mo");
-translateModelFMU(@OMC_MODELNAME@);
+buildModelFMU(@OMC_MODELNAME@);

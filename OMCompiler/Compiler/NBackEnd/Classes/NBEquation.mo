@@ -42,6 +42,7 @@ public
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
+  import BackendDAE = NBackendDAE;
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
   import Call = NFCall;
@@ -52,6 +53,7 @@ public
   import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
+  import NFPrefixes.{Variability, Purity};
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -227,6 +229,7 @@ public
       output Boolean b = true;
     algorithm
       b := match (iter1, iter2)
+        case (EMPTY(), EMPTY()) then true;
         case (SINGLE(), SINGLE()) then Expression.isEqual(iter1.range, iter2.range);
         case (NESTED(), NESTED()) algorithm
           if arrayLength(iter1.ranges) == arrayLength(iter2.ranges) then
@@ -351,12 +354,13 @@ public
 
     function size
       input Iterator iter;
-      output Integer size = 1;
-    algorithm
-      for i in sizes(iter) loop
-        size := size * i;
-      end for;
+      output Integer size = product(i for i in 1 :: sizes(iter));
     end size;
+
+    function dimensions
+      input Iterator iter;
+      output list<Dimension> dims = list(Dimension.fromInteger(s) for s in sizes(iter));
+    end dimensions;
 
     function createLocationReplacements
       "adds replacements rules for a single frame location"
@@ -502,6 +506,8 @@ public
     end extractFromCall;
 
     function normalizedSubscripts
+      "creates a normalized subscript list such that the traversed iterators result in
+      consecutive indices starting at 1."
       input Iterator iter;
       output list<Subscript> subs;
     protected
@@ -513,6 +519,8 @@ public
     end normalizedSubscripts;
 
     function normalizedSubscript
+      "returns subscripts such that traversing the range results in consecutive subscript values 1,2,3....
+      e.g: i in 10:-2:1 -> x[(i-10)/(-2) + 1] which results in 1,2,3... for i=10,8,6..."
       input tuple<ComponentRef, Expression> frame;
       output Subscript sub;
     protected
@@ -522,21 +530,29 @@ public
     algorithm
       (iter_name, range) := frame;
       sub := match range
+
+        // (iterator-start)/step + 1
         case Expression.RANGE() algorithm
           step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
-          sub_exp := Expression.MULTARY(
-          arguments = {Expression.MULTARY(
+          sub_exp := Expression.fromCref(iter_name);
+          // if start and step are equal to 1, make simple expression (simplify is not strong enough yet)
+          if not (Expression.isOne(range.start) and Expression.isOne(step)) then
+            sub_exp := Expression.MULTARY(
               arguments = {Expression.MULTARY(
-                arguments = {Expression.fromCref(iter_name)},
-                inv_arguments = {range.start},
-                operator = Operator.makeAdd(ty))},
-              inv_arguments = {step},
-              operator = Operator.makeMul(ty)),
-            Expression.INTEGER(1)},
-          inv_arguments = {},
-          operator = Operator.makeAdd(ty));
-          sub_exp := SimplifyExp.simplify(sub_exp, true);
+                arguments = {Expression.MULTARY(
+                  arguments = {sub_exp},
+                  inv_arguments = {range.start},
+                  operator = Operator.makeAdd(ty))},
+                inv_arguments = {step},
+                operator = Operator.makeMul(ty)),
+              Expression.INTEGER(1)},
+            inv_arguments = {},
+            operator = Operator.makeAdd(ty));
+            sub_exp := SimplifyExp.simplifyDump(sub_exp, true, getInstanceName());
+            sub_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {sub_exp}, Variability.DISCRETE, Purity.PURE));
+          end if;
         then Subscript.INDEX(sub_exp);
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
             + " failed because range is no range: " + Expression.toString(range)});
@@ -643,7 +659,7 @@ public
     end IF_EQUATION;
 
     record FOR_EQUATION
-      Type ty                         "equality type containing dimensions";
+      Integer size                    "size of equation";
       Iterator iter                   "list of all: <iterator, range>";
       list<Equation> body             "iterated equations (only multiples if entwined)";
       DAE.ElementSource source        "origin of equation";
@@ -674,11 +690,14 @@ public
       input output String str = "";
     protected
       String s = "(" + intString(Equation.size(Pointer.create(eq))) + ")";
+      String tupl_recd_str;
     algorithm
       str := match eq
         case SCALAR_EQUATION() then str + "[SCAL] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
         case ARRAY_EQUATION()  then str + "[ARRY] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
-        case RECORD_EQUATION() then str + "[RECD] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
+        case RECORD_EQUATION() algorithm
+          tupl_recd_str := if Type.isTuple(eq.ty) then "[TUPL] " else "[RECD] ";
+        then str + tupl_recd_str + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
         case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr, " ") + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s);
         case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr, " "));
@@ -721,21 +740,23 @@ public
 
     function size
       input Pointer<Equation> eqn_ptr;
-      output Integer size;
+      output Integer s;
     protected
       Equation eqn;
     algorithm
       eqn := Pointer.access(eqn_ptr);
-      size := match eqn
-        case SCALAR_EQUATION() then 1;
-        case ARRAY_EQUATION()  then Type.sizeOf(eqn.ty);
-        case RECORD_EQUATION() then Type.sizeOf(eqn.ty);
-        case ALGORITHM()       then eqn.size;
-        case IF_EQUATION()     then eqn.size;
-        case FOR_EQUATION()    then Type.sizeOf(eqn.ty); //probably wrong
-        case WHEN_EQUATION()   then eqn.size;
-        case AUX_EQUATION()    then Variable.size(Pointer.access(eqn.auxiliary));
-        case DUMMY_EQUATION()  then 0;
+      s := match eqn
+        local
+          Equation body;
+        case SCALAR_EQUATION()            then 1;
+        case ARRAY_EQUATION()             then Type.sizeOf(eqn.ty);
+        case RECORD_EQUATION()            then Type.sizeOf(eqn.ty);
+        case ALGORITHM()                  then eqn.size;
+        case IF_EQUATION()                then eqn.size;
+        case FOR_EQUATION(body = {body})  then eqn.size;
+        case WHEN_EQUATION()              then eqn.size;
+        case AUX_EQUATION()               then Variable.size(Pointer.access(eqn.auxiliary));
+        case DUMMY_EQUATION()             then 0;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
         then fail();
@@ -777,6 +798,53 @@ public
       output Boolean b = ComponentRef.isEqual(getEqnName(eqn1), getEqnName(eqn2));
     end equalName;
 
+    function isEqualPtrTpl
+      input tuple<EquationPointer, EquationPointer> tpl;
+      output Boolean b;
+    protected
+      EquationPointer eqn1, eqn2;
+    algorithm
+      (eqn1, eqn2) := tpl;
+      b := isEqualPtr(eqn1, eqn2);
+    end isEqualPtrTpl;
+
+    function isEqualPtr
+      input Pointer<Equation> eqn1;
+      input Pointer<Equation> eqn2;
+      output Boolean b = isEqual(Pointer.access(eqn1), Pointer.access(eqn2));
+    end isEqualPtr;
+
+    function isEqualTpl
+      input tuple<Equation, Equation> tpl;
+      output Boolean b;
+    protected
+      Equation eqn1, eqn2;
+    algorithm
+      (eqn1, eqn2) := tpl;
+      b := isEqual(eqn1, eqn2);
+    end isEqualTpl;
+
+    function isEqual
+      input Equation eqn1;
+      input Equation eqn2;
+      output Boolean b;
+    algorithm
+      b := match (eqn1, eqn2)
+        case (SCALAR_EQUATION(), SCALAR_EQUATION()) then Expression.isEqual(eqn1.lhs, eqn2.lhs) and Expression.isEqual(eqn1.rhs, eqn2.rhs);
+        case (ARRAY_EQUATION(), ARRAY_EQUATION())   then Expression.isEqual(eqn1.lhs, eqn2.lhs) and Expression.isEqual(eqn1.rhs, eqn2.rhs);
+        case (RECORD_EQUATION(), RECORD_EQUATION()) then Expression.isEqual(eqn1.lhs, eqn2.lhs) and Expression.isEqual(eqn1.rhs, eqn2.rhs);
+        // ToDo: This is wrong! implement the Algorithm.isEqual!
+        // case (ALGORITHM(), ALGORITHM()) then Algorithm.isEqual(eqn1.alg, eqn2.alg);
+        case (ALGORITHM(), ALGORITHM())            then equalName(Pointer.create(eqn1), Pointer.create(eqn2));
+        case (IF_EQUATION(), IF_EQUATION())        then IfEquationBody.isEqual(eqn1.body, eqn2.body);
+        case (FOR_EQUATION(), FOR_EQUATION())      then Iterator.isEqual(eqn1.iter, eqn2.iter) and List.all(List.zip(eqn1.body, eqn2.body), isEqualTpl);
+        case (WHEN_EQUATION(), WHEN_EQUATION())    then WhenEquationBody.isEqual(eqn1.body, eqn2.body);
+        case (AUX_EQUATION(), AUX_EQUATION())      then BVariable.equalName(eqn1.auxiliary, eqn2.auxiliary) and Util.optionEqual(eqn1.body, eqn2.body, isEqual);
+        case (DUMMY_EQUATION(), DUMMY_EQUATION())  then true;
+        else false;
+      end match;
+    end isEqual;
+
     function getEqnName
       input Pointer<Equation> eqn;
       output ComponentRef name;
@@ -814,49 +882,79 @@ public
     end getSolvedVar;
 
     function makeAssignment
-      input ComponentRef lhs;
+      input Expression lhs;
       input Expression rhs;
       input Pointer<Integer> idx;
       input String str;
-      input list<Frame> frames = {};
+      input Iterator iter;
       input EquationAttributes attr;
       output Pointer<Equation> eq;
     protected
       Equation e;
-      Type ty = ComponentRef.getSubscriptedType(lhs, true);
+      Type ty = Expression.typeOf(lhs);
     algorithm
-      if listLength(frames) == 0 then
-        if Type.isArray(ty) then
-          eq := Pointer.create(ARRAY_EQUATION(
+      // match type and create equation accordingly
+      e := match ty
+        case Type.ARRAY() then ARRAY_EQUATION(
             ty          = ty,
-            lhs         = Expression.fromCref(lhs),
+            lhs         = lhs,
             rhs         = rhs,
             source      = DAE.emptyElementSource,
             attr        = attr,
             recordSize  = NONE()
-          ));
-        else
-          eq := Pointer.create(SCALAR_EQUATION(
+          );
+        case Type.TUPLE() then RECORD_EQUATION(
+            ty          = ty,
+            lhs         = lhs,
+            rhs         = rhs,
+            source      = DAE.emptyElementSource,
+            attr        = attr,
+            recordSize  = Type.sizeOf(ty)
+          );
+        case Type.COMPLEX() then RECORD_EQUATION(
+            ty          = ty,
+            lhs         = lhs,
+            rhs         = rhs,
+            source      = DAE.emptyElementSource,
+            attr        = attr,
+            recordSize  = Type.sizeOf(ty)
+          );
+        else SCALAR_EQUATION(
             ty      = ty,
-            lhs     = Expression.fromCref(lhs),
+            lhs     = lhs,
             rhs     = rhs,
             source  = DAE.emptyElementSource,
             attr    = attr
-          ));
-        end if;
-      else
+          );
+      end match;
+
+      // create for-loop around it if there is an iterator
+      if not Iterator.isEmpty(iter) then
         e := FOR_EQUATION(
-          ty      = ComponentRef.nodeType(lhs),
-          iter    = Iterator.fromFrames(frames),
-          body    = {SCALAR_EQUATION(ty, Expression.fromCref(lhs), rhs, DAE.emptyElementSource, attr)}, // this can also be an array?
+          size    = Type.sizeOf(ty) * Iterator.size(iter),
+          iter    = iter,
+          body    = {e},
           source  = DAE.emptyElementSource,
           attr    = attr
         );
         // inline if it has size 1
-        eq := Pointer.create(Inline.inlineForEquation(e));
+        e := Inline.inlineForEquation(e);
       end if;
+      eq := Pointer.create(e);
       Equation.createName(eq, idx, str);
     end makeAssignment;
+
+    function makeAlgorithm
+      input list<Statement> stmts;
+      input Boolean init;
+      output Pointer<Equation> eqn;
+    protected
+      Algorithm alg;
+    algorithm
+      alg := Algorithm.ALGORITHM(stmts, {}, {}, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+      alg := Algorithm.setInputsOutputs(alg);
+      eqn := BackendDAE.lowerAlgorithm(alg, init);
+    end makeAlgorithm;
 
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
@@ -890,7 +988,7 @@ public
         case FOR_EQUATION()                   then eq.attr;
         case WHEN_EQUATION()                  then eq.attr;
         case AUX_EQUATION(body = SOME(body))  then getAttributes(body);
-                                              else EQ_ATTR_DEFAULT_UNKNOWN;
+                                              else EquationAttributes.default(EquationKind.UNKNOWN, false);
       end match;
     end getAttributes;
 
@@ -1000,13 +1098,9 @@ public
         case ALGORITHM() algorithm
           // pass mapFunc because the function itself does not map
           alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp));
-          if isSome(funcCrefOpt) then
-            SOME(funcCref) := funcCrefOpt;
-            // ToDo referenceEq for lists?
-            //alg.inputs := List.map(alg.inputs, funcCref);
-            alg.outputs := List.map(alg.outputs, funcCref);
+          if not referenceEq(alg, eq.alg) then
+            eq.alg := Algorithm.setInputsOutputs(alg);
           end if;
-          eq.alg := alg;
         then eq;
 
         case IF_EQUATION() algorithm
@@ -1051,37 +1145,16 @@ public
       "filters all crefs of an equation and adds them
       to a list of crefs. needs cref filter function."
       input Equation eq;
-      input filterCref filter;
+      input Slice.filterCref filter;
       output list<ComponentRef> cref_lst;
     protected
-      Pointer<list<ComponentRef>> acc = Pointer.create({});
-      list<ComponentRef> tmp;
+      UnorderedSet<ComponentRef> acc = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       // map with the expression and cref filter functions
-      _ := map(eq, function filterExp(filter = filter, acc = acc),
+      _ := map(eq, function Slice.filterExp(filter = filter, acc = acc),
               SOME(function filter(acc = acc)));
-      cref_lst := Pointer.access(acc);
+      cref_lst := UnorderedSet.toList(acc);
     end collectCrefs;
-
-    partial function filterCref
-      "partial function that needs to be provided.
-      decides if the the cref is added to the list pointer."
-      input output ComponentRef cref;
-      input Pointer<list<ComponentRef>> acc;
-    end filterCref;
-
-    function filterExp
-      "wrapper function that applies filter cref to
-      a cref expression."
-      input output Expression exp;
-      input filterCref filter;
-      input Pointer<list<ComponentRef>> acc;
-    algorithm
-      () := match exp
-        case Expression.CREF() algorithm filter(exp.cref, acc); then ();
-        else ();
-      end match;
-    end filterExp;
 
     function getLHS
       "gets the left hand side expression of an equation."
@@ -1150,31 +1223,6 @@ public
         then fail();
       end match;
     end setRHS;
-
-    function fromLHSandRHS
-      input Expression lhs;
-      input Expression rhs;
-      input Pointer<Integer> idx;
-      input String context;
-      input EquationAttributes attr = EQ_ATTR_DEFAULT_UNKNOWN;
-      input DAE.ElementSource src = DAE.emptyElementSource;
-      output Pointer<Equation> eqn_ptr;
-    protected
-      Type ty;
-      Equation eqn;
-      Option<Integer> opt_rec_size;
-      Integer rec_size;
-    algorithm
-      ty := Expression.typeOf(lhs);
-      opt_rec_size := Type.complexSize(ty);
-      eqn := match (ty, opt_rec_size)
-        case (Type.ARRAY(), _)                then ARRAY_EQUATION(ty, lhs, rhs, src, attr, opt_rec_size);
-        case (Type.COMPLEX(), SOME(rec_size)) then RECORD_EQUATION(ty, lhs, rhs, src, attr, rec_size);
-                                              else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
-      end match;
-      eqn_ptr := Pointer.create(eqn);
-      Equation.createName(eqn_ptr, idx, context);
-    end fromLHSandRHS;
 
     function updateLHSandRHS
       input output Equation eqn;
@@ -1253,7 +1301,9 @@ public
         case ALGORITHM()       then eq;
         case IF_EQUATION()     then eq;
         case FOR_EQUATION()    then eq;
-        case WHEN_EQUATION()   then eq;
+        case WHEN_EQUATION() algorithm
+          eq.body := WhenEquationBody.simplify(eq.body, name, indent);
+        then eq;
         case AUX_EQUATION()    then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Equation.toString(eq)});
@@ -1464,41 +1514,40 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
         then fail();
       end match;
-      exp := SimplifyExp.simplify(exp, true);
+      exp := SimplifyExp.simplifyDump(exp, true, getInstanceName());
     end getResidualExp;
 
     function getType
       input Equation eq;
+      input Boolean skipIterator = false;
       output Type ty;
     algorithm
       ty := match eq
         case SCALAR_EQUATION()  then eq.ty;
         case ARRAY_EQUATION()   then eq.ty;
         case RECORD_EQUATION()  then eq.ty;
-        case FOR_EQUATION()     then eq.ty;
+        case FOR_EQUATION()     algorithm
+          ty := getType(List.first(eq.body));
+          if not skipIterator then
+            ty := Type.liftArrayRightList(ty, Iterator.dimensions(eq.iter));
+          end if;
+        then ty;
+        case WHEN_EQUATION()    then WhenEquationBody.getType(eq.body);
                                 else Type.REAL(); // TODO: WRONG there should not be an else case
       end match;
     end getType;
 
+
     function getForIterator
+      "does not work for algorithms"
       input Equation eqn;
       output Iterator iterator;
     algorithm
       iterator := match eqn
-        // ToDo: algorithms!
         case FOR_EQUATION() then eqn.iter;
         else Iterator.EMPTY();
       end match;
     end getForIterator;
-
-    function getForIteratorCrefs
-      input Equation eqn;
-      output list<ComponentRef> iterators;
-    protected
-      Iterator iter = getForIterator(eqn);
-    algorithm
-      (iterators, _) := Iterator.getFrames(iter);
-    end getForIteratorCrefs;
 
     function getForFrames
       input Equation eqn;
@@ -1517,6 +1566,13 @@ public
       end match;
     end getForFrames;
 
+    function isDummy
+      input Equation eqn;
+      output Boolean b;
+    algorithm
+      b := match eqn case DUMMY_EQUATION() then true; else false; end match;
+    end isDummy;
+
     function isDiscrete
       input Pointer<Equation> eqn;
       output Boolean b;
@@ -1524,8 +1580,18 @@ public
       EquationAttributes attr;
     algorithm
       attr := getAttributes(Pointer.access(eqn));
-      b := EquationKind.isDiscrete(attr.kind);
+      b := attr.kind == EquationKind.DISCRETE;
     end isDiscrete;
+
+    function isContinuous
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    protected
+      EquationAttributes attr;
+    algorithm
+      attr := getAttributes(Pointer.access(eqn));
+      b := attr.kind == EquationKind.CONTINUOUS;
+    end isContinuous;
 
     function isInitial
       input Pointer<Equation> eqn;
@@ -1534,7 +1600,7 @@ public
       EquationAttributes attr;
     algorithm
       attr := getAttributes(Pointer.access(eqn));
-      b := EquationKind.isInitial(attr.kind);
+      b := attr.exclusively_initial;
     end isInitial;
 
     function isWhenEquation
@@ -1580,16 +1646,43 @@ public
       end match;
     end isArrayEquation;
 
+    function isRecordOrTupleEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() then true;
+        case Equation.ARRAY_EQUATION(recordSize = SOME(_)) then true;
+        else false;
+      end match;
+    end isRecordOrTupleEquation;
+
     function isRecordEquation
       input Pointer<Equation> eqn;
       output Boolean b;
     algorithm
       b := match Pointer.access(eqn)
-        case Equation.RECORD_EQUATION() then true;
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() guard(not Type.isTuple(e.ty)) then true;
         case Equation.ARRAY_EQUATION(recordSize = SOME(_)) then true;
         else false;
       end match;
     end isRecordEquation;
+
+    function isTupleEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        local
+          Equation e;
+        case e as Equation.RECORD_EQUATION() guard(Type.isTuple(e.ty)) then true;
+        else false;
+      end match;
+    end isTupleEquation;
 
     function isAlgorithm
       input Pointer<Equation> eqn;
@@ -1668,12 +1761,10 @@ public
         then fail();
       end match;
 
-      if initial_ then
-        eqnAttr := EQ_ATTR_DEFAULT_INITIAL;
-      elseif BVariable.isContinuous(var_ptr) then
-        eqnAttr := EQ_ATTR_DEFAULT_DYNAMIC;
+      if BVariable.isContinuous(var_ptr) then
+        eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_);
       else
-        eqnAttr := EQ_ATTR_DEFAULT_DISCRETE;
+        eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);
       end if;
 
       // simplify rhs and get potential iterators
@@ -1682,20 +1773,15 @@ public
 
       if Iterator.isEmpty(iter) then
         lhs := Expression.fromCref(var.name);
-        eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
+        eqn := Equation.makeAssignment(lhs, rhs, idx, context, Iterator.EMPTY(), eqnAttr);
       else
         rhs := Expression.map(rhs, Expression.repairOperator);
         (sub_crefs, _) := Iterator.getFrames(iter);
         subs := list(Subscript.fromTypedExp(Expression.fromCref(cref)) for cref in sub_crefs);
         lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name, true, true));
-        eqn := Equation.fromLHSandRHS(lhs, rhs, idx, context, eqnAttr);
-        eqn := Pointer.create(Equation.FOR_EQUATION(
-          ty = ComponentRef.getSubscriptedType(var.name),
-          iter = iter,
-          body = {Pointer.access(eqn)},
-          source = DAE.emptyElementSource,
-          attr = eqnAttr));
-        Equation.createName(eqn, idx, context);
+        eqn := Equation.makeAssignment(lhs, rhs, idx, context, iter, eqnAttr);
+        // this could lead to non existing variables, should not be a problem though
+        Equation.renameIterators(eqn, "$i");
       end if;
     end generateBindingEquation;
 
@@ -1711,7 +1797,7 @@ public
         case FOR_EQUATION() algorithm
           (body, acc) := mergeIterators(List.first(eq.body), false);
           acc := eq.iter :: acc;
-        then (if top_level then Equation.FOR_EQUATION(eq.ty, Iterator.merge(acc), {body}, eq.source, eq.attr) else body, acc);
+        then (if top_level then Equation.FOR_EQUATION(eq.size, Iterator.merge(acc), {body}, eq.source, eq.attr) else body, acc);
         else (eq, {});
       end match;
     end mergeIterators;
@@ -1729,7 +1815,7 @@ public
           iterators := Iterator.split(eqn.iter);
           body := List.first(eqn.body);
           for iter in iterators loop
-            body := Equation.FOR_EQUATION(eqn.ty, iter, {body}, eqn.source, eqn.attr);
+            body := Equation.FOR_EQUATION(eqn.size, iter, {body}, eqn.source, eqn.attr);
           end for;
         then body;
         else eqn;
@@ -1737,19 +1823,23 @@ public
     end splitIterators;
 
     function renameIterators
-      input output Equation eqn;
+      input Pointer<Equation> eqn_ptr;
       input String newBaseName;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
     algorithm
-      eqn := match eqn
+      _ := match eqn
         local
-          UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, Expression> replacements;
 
         case FOR_EQUATION() algorithm
+          replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
           eqn.iter := Iterator.rename(eqn.iter, newBaseName, replacements);
           eqn.body := list(map(body_eqn, function Replacements.applySimpleExp(replacements = replacements)) for body_eqn in eqn.body);
-        then eqn;
+          Pointer.update(eqn_ptr, eqn);
+        then ();
 
-        else eqn;
+        else ();
       end match;
     end renameIterators;
 
@@ -1782,14 +1872,14 @@ public
             (intersection, (rest1_left, rest1_right), (rest2_left, rest2_right)) := Iterator.intersect(eqn1.iter, eqn2.iter);
             tmp := {};
             if not Iterator.isEmpty(rest1_left) then
-              tmp := FOR_EQUATION(eqn1.ty, rest1_left, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn1.size, rest1_left, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
             end if;
             if not Iterator.isEmpty(rest2_left) then
-              tmp := FOR_EQUATION(eqn2.ty, rest2_left, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn2.size, rest2_left, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
             end if;
             if not Iterator.isEmpty(intersection) then
               tmp := FOR_EQUATION(
-                ty      = eqn1.ty,
+                size    = eqn1.size,
                 iter    = intersection,
                 body    = entwine(listAppend(eqn1.body, eqn2.body), nesting_level + 1),
                 source  = eqn1.source,
@@ -1797,10 +1887,10 @@ public
               ) :: tmp;
             end if;
             if not Iterator.isEmpty(rest1_right) then
-              tmp := FOR_EQUATION(eqn1.ty, rest1_right, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn1.size, rest1_right, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
             end if;
             if not Iterator.isEmpty(rest2_right) then
-              tmp := FOR_EQUATION(eqn2.ty, rest2_right, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
+              tmp := FOR_EQUATION(eqn2.size, rest2_right, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
             end if;
             // there has to be at least one equation
             next :: tmp := tmp;
@@ -1850,7 +1940,8 @@ public
           UnorderedMap<ComponentRef, Expression> replacements, removed_diagonals;
           list<tuple<ComponentRef, Expression>> removed_diagonals_linear_maps;
           Expression condition;
-          Type ty;
+          Integer size;
+          Iterator iter;
 
         // empty index list indicates no slicing and no rearranging
         case _ guard(listEmpty(indices)) then (Pointer.create(eqn), SlicingStatus.UNCHANGED, NBSolve.Status.EXPLICIT);
@@ -1896,7 +1987,7 @@ public
 
           // solve the body equation for the cref if needed
           // ToDo: act on solving status not equal to EXPLICIT ?
-          (body_lst, ty) := match cref_opt
+          body_lst := match cref_opt
             local
               ComponentRef cref;
             case SOME(cref) algorithm
@@ -1924,18 +2015,16 @@ public
                   attr    = eqn.attr
                 );
               end if;
-            then ({body}, ComponentRef.getSubscriptedType(cref, true));
+            then {body};
 
-            // might be incorrect if the frames are not the last array dimensions
-            else (eqn.body, Type.unliftArrayN(listLength(frames), eqn.ty));
+            else eqn.body;
           end match;
 
-
-          dims := list(Dimension.fromRange(Util.tuple22(frame)) for frame in frames);
-          ty := Type.liftArrayLeftList(ty, dims);
+          iter := Iterator.fromFrames(frames);
+          size := Iterator.size(iter) * sum(Equation.size(Pointer.create(eq)) for eq in body_lst);
           sliced := FOR_EQUATION(
-            ty      = ty,
-            iter    = Iterator.fromFrames(frames),
+            size    = size,
+            iter    = iter,
             body    = body_lst,
             source  = eqn.source,
             attr    = eqn.attr
@@ -1996,35 +2085,50 @@ public
       equality_exp  := Expression.RELATION(
         exp1      = Expression.fromCref(cref),
         operator  = Operator.OPERATOR(ComponentRef.nodeType(cref), NFOperator.Op.NEQUAL),
-        exp2      = SimplifyExp.simplify(exp, true)
+        exp2      = SimplifyExp.simplifyDump(exp, true, getInstanceName())
       );
     end makeInequality;
 
     public function toStatement
       "expects for loops to be split with splitIterators(eqn)"
       input Equation eqn;
-      output Statement stmt;
+      output list<Statement> stmts = {};
     algorithm
-      stmt := match eqn
+      stmts := match eqn
         local
           list<ComponentRef> iter_lst;
           list<Expression> range_lst;
-          ComponentRef iter;
+          ComponentRef iter, lhs_rec, rhs_rec;
           Expression range;
           list<Statement> body;
+          Pointer<Variable> lhs, rhs;
+          list<Pointer<Variable>> lhs_lst, rhs_lst;
 
         case SCALAR_EQUATION()
-        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
 
         case ARRAY_EQUATION()
-        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+
+        case RECORD_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec)) algorithm
+          lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec));
+          rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec));
+          if listLength(lhs_lst) == listLength(rhs_lst) then
+            for tpl in List.zip(lhs_lst, rhs_lst) loop
+              (lhs, rhs) := tpl;
+               stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
+            end for;
+          else
+            stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+          end if;
+        then stmts;
 
         case RECORD_EQUATION()
-        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
 
         case FOR_EQUATION() algorithm
           (iter_lst, range_lst) := Equation.Iterator.getFrames(eqn.iter);
-          body := list(toStatement(body_eqn) for body_eqn in eqn.body);
+          body := List.flatten(list(toStatement(body_eqn) for body_eqn in eqn.body));
           for tpl in listReverse(List.zip(iter_lst, range_lst)) loop
             (iter, range) := tpl;
             body := {Statement.FOR(
@@ -2034,11 +2138,11 @@ public
               forType   = Statement.ForType.NORMAL(),
               source    = eqn.source)};
           end for;
-        then List.first(body);
+        then body;
 
-        case IF_EQUATION() then Statement.IF(IfEquationBody.toStatement(eqn.body), eqn.source);
+        case IF_EQUATION() then {Statement.IF(IfEquationBody.toStatement(eqn.body), eqn.source)};
 
-        case WHEN_EQUATION() then Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source);
+        case WHEN_EQUATION() then {Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source)};
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for: \n" + toString(eqn)});
@@ -2086,9 +2190,24 @@ public
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
       input MapFuncExpWrapper mapFunc;
+    algorithm
+      ifBody := mapEqnExpCref(
+        ifBody      = ifBody,
+        func        = function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)),
+        funcExp     = funcExp,
+        funcCrefOpt = funcCrefOpt,
+        mapFunc     = mapFunc);
+    end map;
+
+    function mapEqnExpCref
+      input output IfEquationBody ifBody;
+      input MapFuncEqnPtr func;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
-      IfEquationBody else_if;
+      IfEquationBody else_if, old_else_if;
     algorithm
       condition := mapFunc(ifBody.condition, funcExp);
       if not referenceEq(condition, ifBody.condition) then
@@ -2096,18 +2215,30 @@ public
       end if;
 
       // referenceEq for lists?
-      ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)));
+      ifBody.then_eqns := List.map(ifBody.then_eqns, func);
 
       if Util.isSome(ifBody.else_if) then
-        else_if := map(Util.getOption(ifBody.else_if), funcExp, funcCrefOpt, mapFunc);
+        old_else_if := Util.getOption(ifBody.else_if);
+        else_if := mapEqnExpCref(old_else_if, func, funcExp, funcCrefOpt, mapFunc);
+        if not referenceEq(else_if, old_else_if) then
+          ifBody.else_if := SOME(else_if);
+        end if;
       end if;
-    end map;
+    end mapEqnExpCref;
 
     function size
       "only considers first branch"
       input IfEquationBody body;
       output Integer size = sum(Equation.size(eqn) for eqn in body.then_eqns);
     end size;
+
+    function isEqual
+      input IfEquationBody body1;
+      input IfEquationBody body2;
+      output Boolean b;
+    algorithm
+      b := List.all(List.zip(body1.then_eqns, body2.then_eqns), Equation.isEqualPtrTpl) and Util.optionEqual(body1.else_if, body2.else_if, isEqual);
+    end isEqual;
 
     function createNames
       input IfEquationBody body;
@@ -2135,18 +2266,61 @@ public
     end getResidualExp;
 
     function toStatement
+      "converts an if equation body to an algorithmic statement"
       input IfEquationBody body;
       output list<tuple<Expression, list<Statement>>> stmts;
     protected
       tuple<Expression, list<Statement>> stmt;
     algorithm
-      stmt := (body.condition, list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns));
+      stmt := (body.condition, List.flatten(list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns)));
       if Util.isSome(body.else_if) then
         stmts := stmt :: toStatement(Util.getOption(body.else_if));
       else
         stmts := {stmt};
       end if;
     end toStatement;
+
+    function split
+      "splits an if equation body with multiple equations into multiple bodies of each one equation
+      NOTE: does not care for branch matching, it combines first equation of each branch to one
+      new body and does the same for second, third, etc."
+      input IfEquationBody body;
+      output list<IfEquationBody> bodies = {};
+    protected
+      list<Expression> conditions = {};
+      array<list<Pointer<Equation>>> then_eqns = arrayCreate(listLength(body.then_eqns), {});
+      Expression condition;
+      Pointer<Equation> eqn;
+      Option<IfEquationBody> tmp;
+    algorithm
+      (conditions, then_eqns) := splitCollect(body, conditions, then_eqns);
+      for i in 1:arrayLength(then_eqns) loop
+        tmp := NONE();
+        for tpl in List.zip(conditions, then_eqns[i]) loop
+          (condition, eqn) := tpl;
+          tmp := SOME(IF_EQUATION_BODY(condition, {eqn}, tmp));
+        end for;
+        bodies := Util.getOption(tmp) :: bodies;
+      end for;
+    end split;
+
+    protected function splitCollect
+      "collects the equations of each branch to create single branch equation bodies afterwards."
+      input IfEquationBody body;
+      input output list<Expression> conditions;
+      input output array<list<Pointer<Equation>>> then_eqns;
+    protected
+      Integer i = 1;
+    algorithm
+      conditions := body.condition :: conditions;
+      for eqn in body.then_eqns loop
+        then_eqns[i] := eqn :: then_eqns[i];
+        i := i + 1;
+      end for;
+      if Util.isSome(body.else_if) then
+        (conditions, then_eqns) := splitCollect(Util.getOption(body.else_if), conditions, then_eqns);
+      end if;
+    end splitCollect;
   end IfEquationBody;
 
   uniontype WhenEquationBody
@@ -2201,6 +2375,29 @@ public
       output Integer s = sum(WhenStatement.size(stmt) for stmt in body.when_stmts);
     end size;
 
+    function getType
+      "only works if properly split up"
+      input WhenEquationBody body;
+      output Type ty;
+    algorithm
+      ty := match body.when_stmts
+        local
+          WhenStatement stmt;
+        case {stmt} then WhenStatement.getType(stmt);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of not properly split up when equation body: " + toString(body)});
+        then fail();
+      end match;
+    end getType;
+
+    function isEqual
+      input WhenEquationBody body1;
+      input WhenEquationBody body2;
+      output Boolean b;
+    algorithm
+      b := List.all(List.zip(body1.when_stmts, body2.when_stmts), WhenStatement.isEqualTpl) and Util.optionEqual(body1.else_when, body2.else_when, isEqual);
+    end isEqual;
+
     function getBodyAttributes
       "gets all conditions crefs as a list (has to be applied AFTER Event module)"
       input WhenEquationBody body;
@@ -2219,7 +2416,7 @@ public
           case Expression.ARRAY() then List.flatten(list(getConditions(elem) for elem in cond.elements));
           case Expression.CALL() guard(Call.isNamed(cond.call, "initial")) then {};
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for condition: " + Expression.toString(cond)});
           then fail();
         end match;
       end getConditions;
@@ -2256,7 +2453,28 @@ public
 
       // ToDo reference eq for lists?
       whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+
+      // map else when
+      whenBody.else_when := Util.applyOption(whenBody.else_when, function map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
     end map;
+
+    function mapCondition
+      "only maps the conditions and not the body"
+      input output WhenEquationBody whenBody;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
+    protected
+      Expression condition;
+    algorithm
+      condition := mapFunc(whenBody.condition, funcExp);
+      if not referenceEq(condition, whenBody.condition) then
+        whenBody.condition := condition;
+      end if;
+
+      // map else when
+      whenBody.else_when := Util.applyOption(whenBody.else_when, function mapCondition(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+    end mapCondition;
 
     function split
       "this function splits up when equations while respecting to keep
@@ -2360,6 +2578,46 @@ public
       bodies := listReverse(bodies);
     end split;
 
+    function simplify
+      input output WhenEquationBody body;
+      input String name = "";
+      input String indent = "";
+    algorithm
+      // simplify condition if it is an array with surplus false conditions
+      body.condition := match body.condition
+        local
+          Expression condition;
+          list<Expression> conditions;
+        case condition as Expression.ARRAY() algorithm
+          conditions := list(elem for elem guard(not Expression.isFalse(elem)) in arrayList(condition.elements));
+          body.condition := Expression.makeArrayCheckLiteral(Type.ARRAY(Type.BOOLEAN(), {Dimension.fromInteger(listLength(conditions))}), listArray(conditions));
+        then body.condition;
+        else body.condition;
+      end match;
+
+      // ToDo: add simplification of body! (WhenStatements)
+
+      body.condition := SimplifyExp.simplifyDump(body.condition, true, name, indent);
+      body.else_when := Util.applyOption(body.else_when, function simplify(name = name, indent = indent));
+    end simplify;
+
+    function getAllAssigned
+      "returns all assigned discrete variables as expressions.
+      Note: only needs to iterate first body because all need to have the same
+      variables assigned. ModelicaSpecification 3.6, Section 8.6"
+      input WhenEquationBody body;
+      output list<ComponentRef> assigned = {};
+    algorithm
+      for stmt in body.when_stmts loop
+        assigned := match stmt
+          local
+            ComponentRef lhs;
+          case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = lhs)) then lhs :: assigned;
+          else assigned;
+        end match;
+      end for;
+    end getAllAssigned;
+
   protected
     function collectForSplit
       "collects all discrete states and regular states for splitting up
@@ -2446,7 +2704,6 @@ public
         condition := Expression.LBINARY(acc_condition, Operator.makeAnd(Type.BOOLEAN()), condition);
       end if;
     end combineConditions;
-
   end WhenEquationBody;
 
   uniontype WhenStatement
@@ -2500,6 +2757,32 @@ public
       end match;
     end toString;
 
+    function isEqualTpl
+      input tuple<WhenStatement, WhenStatement> tpl;
+      output Boolean b;
+    protected
+      WhenStatement stmt1;
+      WhenStatement stmt2;
+    algorithm
+      (stmt1, stmt2) := tpl;
+      b := isEqual(stmt1, stmt2);
+    end isEqualTpl;
+
+    function isEqual
+      input WhenStatement stmt1;
+      input WhenStatement stmt2;
+      output Boolean b;
+    algorithm
+      b := match (stmt1, stmt2)
+        case (ASSIGN(), ASSIGN()) then Expression.isEqual(stmt1.lhs, stmt2.lhs) and Expression.isEqual(stmt1.rhs, stmt2.rhs);
+        case (REINIT(), REINIT()) then ComponentRef.isEqual(stmt1.stateVar, stmt2.stateVar) and Expression.isEqual(stmt1.value, stmt2.value);
+        case (ASSERT(), ASSERT()) then Expression.isEqual(stmt1.condition, stmt2.condition) and Expression.isEqual(stmt1.message, stmt2.message) and Expression.isEqual(stmt1.level, stmt2.level);
+        case (TERMINATE(), TERMINATE()) then Expression.isEqual(stmt1.message, stmt2.message);
+        case (NORETCALL(), NORETCALL()) then Expression.isEqual(stmt1.exp, stmt2.exp);
+        else false;
+      end match;
+    end isEqual;
+
     function toStatement
       input WhenStatement wstmt;
       output Statement stmt;
@@ -2536,6 +2819,16 @@ public
         else false;
       end match;
     end isAssignOrReinit;
+
+    function getType
+      input WhenStatement stmt;
+      output Type ty;
+    algorithm
+      ty := match stmt
+        case ASSIGN() then Expression.typeOf(stmt.lhs);
+        else Type.ANY();
+      end match;
+    end getType;
 
     function map
       input output WhenStatement stmt;
@@ -2641,10 +2934,12 @@ public
 
   uniontype EquationAttributes
     record EQUATION_ATTRIBUTES
-      Option<Pointer<Equation>> derivative;
-      EquationKind kind;
-      Evaluation.Stages evalStages;
+      Option<Pointer<Equation>> derivative  "if the equation has been differentiated w.r.t time already";
       Option<Pointer<Variable>> residualVar "also used to represent the equation itself";
+      Option<Integer> clock_idx             "only set if clocked eq";
+      Boolean exclusively_initial           "true if in initial equation block";
+      Evaluation.Stages evalStages          "evaluation stages (prior used for DAE mode, still necessary?)";
+      EquationKind kind                     "continuous, clocked, discrete, empty";
     end EQUATION_ATTRIBUTES;
 
     function toString
@@ -2685,68 +2980,76 @@ public
     algorithm
       oldAttributes := OldBackendDAE.EQUATION_ATTRIBUTES(
         differentiated  = Util.isSome(attributes.derivative),
-        kind            = EquationKind.convert(attributes.kind),
+        kind            = convertEquationKind(attributes.kind, attributes.clock_idx, attributes.exclusively_initial),
         evalStages      = Evaluation.Stages.convert(attributes.evalStages));
     end convert;
   end EquationAttributes;
 
-  constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(NONE(), DYNAMIC_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(NONE(), BINDING_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(NONE(), INITIAL_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_DISCRETE = EQUATION_ATTRIBUTES(NONE(), DISCRETE_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_AUX = EQUATION_ATTRIBUTES(NONE(), AUX_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_EMPTY_DISCRETE = EQUATION_ATTRIBUTES(NONE(), EMPTY_EQUATION(), NBEvaluation.DEFAULT_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(NONE(), UNKNOWN_EQUATION_KIND(), NBEvaluation.DEFAULT_STAGES, NONE());
+  function default
+    input EquationKind kind;
+    input Boolean exclusively_initial;
+    input Option<Integer> clock_idx = NONE();
+    output EquationAttributes attr;
+  algorithm
+    attr := EQUATION_ATTRIBUTES(
+      derivative          = NONE(),
+      residualVar         = NONE(),
+      clock_idx           = clock_idx,
+      exclusively_initial = exclusively_initial,
+      evalStages          = NBEvaluation.DEFAULT_STAGES,
+      kind                = kind);
+  end default;
 
-  uniontype EquationKind
-    record BINDING_EQUATION end BINDING_EQUATION;
-    record DYNAMIC_EQUATION end DYNAMIC_EQUATION;
-    record INITIAL_EQUATION end INITIAL_EQUATION;
-    record CLOCKED_EQUATION Integer clk; end CLOCKED_EQUATION;
-    record DISCRETE_EQUATION end DISCRETE_EQUATION;
-    record AUX_EQUATION "ToDo! Do we still need this?" end AUX_EQUATION;
-    record EMPTY_EQUATION end EMPTY_EQUATION;
-    record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
+  type EquationKind = enumeration(CONTINUOUS, DISCRETE, CLOCKED, EMPTY, UNKNOWN);
 
-    function convert
-      input EquationKind eqKind;
-      output OldBackendDAE.EquationKind oldEqKind;
-    algorithm
-      oldEqKind := match eqKind
-        local
-          Integer clk;
-        case BINDING_EQUATION()           then OldBackendDAE.BINDING_EQUATION();
-        case DYNAMIC_EQUATION()           then OldBackendDAE.DYNAMIC_EQUATION();
-        case INITIAL_EQUATION()           then OldBackendDAE.INITIAL_EQUATION();
-        case CLOCKED_EQUATION(clk = clk)  then OldBackendDAE.CLOCKED_EQUATION(clk);
-        case DISCRETE_EQUATION()          then OldBackendDAE.DISCRETE_EQUATION();
-        case AUX_EQUATION()               then OldBackendDAE.AUX_EQUATION();
-        case EMPTY_EQUATION()             then OldBackendDAE.AUX_EQUATION();
-        case UNKNOWN_EQUATION_KIND()      then OldBackendDAE.UNKNOWN_EQUATION_KIND();
-        else fail();
-      end match;
-    end convert;
+  function convertEquationKind
+    input EquationKind eqKind;
+    input Option<Integer> clock_idx;
+    input Boolean exclusively_initial;
+    output OldBackendDAE.EquationKind oldEqKind;
+  algorithm
+    oldEqKind := match (eqKind, clock_idx)
+      local
+        Integer clk;
+      case (_, _) guard(exclusively_initial)  then OldBackendDAE.INITIAL_EQUATION();
+      case (EquationKind.CONTINUOUS, NONE())  then OldBackendDAE.DYNAMIC_EQUATION();
+      case (EquationKind.CLOCKED, SOME(clk))  then OldBackendDAE.CLOCKED_EQUATION(clk);
+      case (EquationKind.DISCRETE, NONE())    then OldBackendDAE.DISCRETE_EQUATION();
+      case (EquationKind.EMPTY, NONE())       then OldBackendDAE.AUX_EQUATION();
+      case (EquationKind.UNKNOWN, NONE())     then OldBackendDAE.UNKNOWN_EQUATION_KIND();
+      case (_, SOME(clk)) algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the non-clock equation kind "
+          + equationKindString(eqKind, clock_idx, exclusively_initial) + " has a clock index."});
+      then fail();
+      case (EquationKind.CLOCKED, NONE()) algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no clock index was provided for clocked equation."});
+      then fail();
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " for unknown reason."});
+      then fail();
+    end match;
+  end convertEquationKind;
 
-    function isDiscrete
-      input EquationKind eqKind;
-      output Boolean b;
-    algorithm
-      b := match eqKind
-        case DISCRETE_EQUATION() then true;
-        else false;
-      end match;
-    end isDiscrete;
-
-    function isInitial
-      input EquationKind eqKind;
-      output Boolean b;
-    algorithm
-      b := match eqKind
-        case INITIAL_EQUATION() then true;
-        else false;
-      end match;
-    end isInitial;
-  end EquationKind;
+  function equationKindString
+    input EquationKind eqKind;
+    input Option<Integer> clock_idx;
+    input Boolean exclusively_initial;
+    output String str;
+  algorithm
+    str := match eqKind
+      case EquationKind.CONTINUOUS  then "[CONT";
+      case EquationKind.CLOCKED     then "[CLCK";
+      case EquationKind.DISCRETE    then "[DISC";
+      case EquationKind.EMPTY       then "[EMTY";
+                                    else "[UKWN";
+    end match;
+    str := if exclusively_initial then "[INI]" + str else "[DAE]" + str;
+    if Util.isSome(clock_idx) then
+      str := str + "(" + intString(Util.getOption(clock_idx)) + ")]";
+    else
+      str := str + "]";
+    end if;
+  end equationKindString;
 
   uniontype EquationPointers
     record EQUATION_POINTERS
@@ -2757,18 +3060,35 @@ public
     function toString
       input EquationPointers equations;
       input output String str = "";
+      input Option<array<tuple<Integer,Integer>>> mapping_opt = NONE();
       input Boolean printEmpty = true;
     protected
-      Integer numberOfElements = EquationPointers.size(equations);
-      Integer length = 10;
+      Integer luI = lastUsedIndex(equations);
+      Integer length, scal_start, current_index = 1;
       String index;
+      Boolean useMapping = Util.isSome(mapping_opt);
+      array<tuple<Integer,Integer>> mapping;
     algorithm
-      if printEmpty or numberOfElements > 0 then
-        str := StringUtil.headline_4(str + " Equations (" + intString(numberOfElements) + "/" + intString(scalarSize(equations)) + ")");
-        for i in 1:numberOfElements loop
-          index := "(" + intString(i) + ")";
-          index := index + StringUtil.repeat(" ", length - stringLength(index));
-          str := str + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), index) + "\n";
+      if useMapping then
+        length := 15;
+        mapping := Util.getOption(mapping_opt);
+      else
+        length := 10;
+      end if;
+      if printEmpty or luI > 0 then
+        str := StringUtil.headline_4(str + " Equations (" + intString(EquationPointers.size(equations)) + "/" + intString(scalarSize(equations)) + ")");
+        for i in 1:luI loop
+          if ExpandableArray.occupied(i, equations.eqArr) then
+            if useMapping then
+              (scal_start, _) := mapping[current_index];
+              index := "(" + intString(current_index) + "|" + intString(scal_start) + ")";
+            else
+              index := "(" + intString(current_index) + ")";
+            end if;
+            index := index + StringUtil.repeat(" ", length - stringLength(index));
+            str := str + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), index) + "\n";
+            current_index := current_index + 1;
+          end if;
         end for;
         str := str + "\n";
       else
@@ -2815,6 +3135,12 @@ public
         sz := sz + Equation.size(eqn_ptr);
       end for;
     end scalarSize;
+
+    function lastUsedIndex
+      "returns the last used index != size!"
+      input EquationPointers equations;
+      output Integer sz = ExpandableArray.getLastUsedIndex(equations.eqArr);
+    end lastUsedIndex;
 
     function toList
       "Creates a EquationPointer list from EquationPointers."
@@ -3195,6 +3521,28 @@ public
 
     record EQ_DATA_EMPTY end EQ_DATA_EMPTY;
 
+    function size
+      input EqData eqData;
+      output Integer s;
+    algorithm
+      s := match eqData
+        case EQ_DATA_SIM() then EquationPointers.size(eqData.simulation);
+        case EQ_DATA_JAC() then EquationPointers.size(eqData.equations);
+        case EQ_DATA_HES() then EquationPointers.size(eqData.equations);
+      end match;
+    end size;
+
+    function scalarSize
+      input EqData eqData;
+      output Integer s;
+    algorithm
+      s := match eqData
+        case EQ_DATA_SIM() then EquationPointers.scalarSize(eqData.simulation);
+        case EQ_DATA_JAC() then EquationPointers.scalarSize(eqData.equations);
+        case EQ_DATA_HES() then EquationPointers.scalarSize(eqData.equations);
+      end match;
+    end scalarSize;
+
     function map
       input output EqData eqData;
       input MapFuncEqn func;
@@ -3262,43 +3610,46 @@ public
 
         case EQ_DATA_SIM()
           algorithm
+            tmp := "Equation Data Simulation (scalar simulation equations: " + intString(EquationPointers.scalarSize(eqData.simulation)) + ")";
+            tmp := StringUtil.headline_2(tmp) + "\n";
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Simulation", false);
+              tmp :=  tmp + EquationPointers.toString(eqData.equations, "Simulation", NONE(), false);
             else
-              tmp :=  EquationPointers.toString(eqData.continuous, "Continuous", false) +
-                      EquationPointers.toString(eqData.discretes, "Discrete", false) +
-                      EquationPointers.toString(eqData.initials, "(Exclusively) Initial", false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false) +
-                      EquationPointers.toString(eqData.removed, "Removed", false);
+
+              tmp :=  tmp + EquationPointers.toString(eqData.continuous, "Continuous", NONE(), false) +
+                      EquationPointers.toString(eqData.discretes, "Discrete", NONE(), false) +
+                      EquationPointers.toString(eqData.initials, "(Exclusively) Initial", NONE(), false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false) +
+                      EquationPointers.toString(eqData.removed, "Removed", NONE(), false);
             end if;
         then tmp;
 
         case EQ_DATA_JAC()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", NONE(), false);
             else
-              tmp :=  EquationPointers.toString(eqData.results, "Residual", false) +
-                      EquationPointers.toString(eqData.temporary, "Inner", false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
+              tmp :=  EquationPointers.toString(eqData.results, "Residual", NONE(), false) +
+                      EquationPointers.toString(eqData.temporary, "Inner", NONE(), false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false);
             end if;
         then tmp;
 
         case EQ_DATA_HES()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Hessian", false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Hessian", NONE(), false);
             else
               tmp :=  StringUtil.headline_4("Result Equation") + "\n" +
                       Equation.toString(Pointer.access(eqData.result)) + "\n" +
-                      EquationPointers.toString(eqData.temporary, "Temporary Inner", false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
+                      EquationPointers.toString(eqData.temporary, "Temporary Inner", NONE(), false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false);
             end if;
         then tmp;
 
         case EQ_DATA_EMPTY() then "Empty equation Data!\n";
 
-      else getInstanceName() + " failed!\n";
+        else getInstanceName() + " failed!\n";
       end match;
     end toString;
 
@@ -3493,30 +3844,24 @@ public
   algorithm
     for eq in equations loop
     _:= match Equation.getAttributes(Pointer.access(eq))
-        case EQUATION_ATTRIBUTES(kind = DYNAMIC_EQUATION())
+        case EQUATION_ATTRIBUTES(exclusively_initial = true)
+          algorithm
+            initials_lst := eq :: initials_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = EquationKind.CONTINUOUS)
           algorithm
             continuous_lst := eq :: continuous_lst;
             simulation_lst := eq :: simulation_lst;
         then ();
 
-        case EQUATION_ATTRIBUTES(kind = DISCRETE_EQUATION())
+        case EQUATION_ATTRIBUTES(kind = EquationKind.DISCRETE)
           algorithm
             discretes_lst := eq :: discretes_lst;
             simulation_lst := eq :: simulation_lst;
         then ();
 
-        case EQUATION_ATTRIBUTES(kind = INITIAL_EQUATION())
-          algorithm
-            initials_lst := eq :: initials_lst;
-        then ();
-
-        case EQUATION_ATTRIBUTES(kind = AUX_EQUATION())
-          algorithm
-            auxiliaries_lst := eq :: auxiliaries_lst;
-            simulation_lst := eq :: simulation_lst;
-        then ();
-
-        case EQUATION_ATTRIBUTES(kind = EMPTY_EQUATION())
+        case EQUATION_ATTRIBUTES(kind = EquationKind.EMPTY)
           algorithm
             removed_lst := eq :: removed_lst;
         then ();

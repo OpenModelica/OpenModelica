@@ -27,7 +27,7 @@ getErrorString();
 // true
 // ""
 //
-// "[<interactive>:13:5-13:59:writable] Error: Too many type variables given in call to ‘.U.new‘.
+// "[<interactive>:13:5-13:59:writable] Error: Too many type variables given in call to '.U.new'.
 // [metamodelica/meta/PolymorphicCallTypeSpec2.mos:22:1-22:7:writable] Error: Class test not found in scope <global scope> (looking for a function or record).
 // "
 // endResult

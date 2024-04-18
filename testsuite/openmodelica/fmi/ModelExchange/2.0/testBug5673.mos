@@ -36,7 +36,7 @@ system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" aliasCheck.test2_in
 readFile("Bug5673.xml"); getErrorString();
 
 
-translateModelFMU(aliasCheck.test2,version="2.0");
+buildModelFMU(aliasCheck.test2,version="2.0", fileNamePrefix="aliasCheck.test2");
 getErrorString();
 
 // unzip to console, quiet, extra quiet

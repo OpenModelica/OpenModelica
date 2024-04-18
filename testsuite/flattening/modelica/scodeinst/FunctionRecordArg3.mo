@@ -32,7 +32,7 @@ end FunctionRecordArg3;
 //
 // function R "Automatically generated record constructor for R"
 //   input Integer n = 2;
-//   input Real[2] x;
+//   input Real[n] x;
 //   output R res;
 // end R;
 //

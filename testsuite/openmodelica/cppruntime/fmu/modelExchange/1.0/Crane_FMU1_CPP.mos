@@ -8,7 +8,7 @@
 loadModel(Modelica, {"3.2.2"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
-translateModelFMU(cranes.crane, version="1.0"); getErrorString();
+buildModelFMU(cranes.crane, version="1.0", fileNamePrefix="cranes.crane"); getErrorString();
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 //importFMU("cranes_crane.fmu", "<default>", 6, false, true); getErrorString();

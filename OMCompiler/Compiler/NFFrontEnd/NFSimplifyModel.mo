@@ -340,6 +340,27 @@ algorithm
       then
         stmt :: statements;
 
+    case Statement.ASSERT()
+      algorithm
+        stmt.condition := SimplifyExp.simplify(stmt.condition);
+        stmt.message := SimplifyExp.simplify(stmt.message);
+        stmt.level := SimplifyExp.simplify(stmt.level);
+      then
+        stmt :: statements;
+
+    case Statement.TERMINATE()
+      algorithm
+        stmt.message := SimplifyExp.simplify(stmt.message);
+      then
+        stmt :: statements;
+
+    case Statement.WHILE()
+      algorithm
+        stmt.condition := SimplifyExp.simplify(stmt.condition);
+        stmt.body := simplifyStatements(stmt.body);
+      then
+        stmt :: statements;
+
     case Statement.NORETCALL()
       algorithm
         e := SimplifyExp.simplify(stmt.exp);
@@ -582,7 +603,7 @@ protected
 algorithm
   if not Function.isSimplified(func) then
     Function.markSimplified(func);
-    Function.mapExp(func, function SimplifyExp.simplify(backend = false), mapBody = false);
+    Function.mapExp(func, function SimplifyExp.simplify(includeScope = false), mapBody = false);
 
     cls := InstNode.getClass(func.node);
     () := match cls
@@ -622,10 +643,10 @@ function combineBinaries
    --> MULTARY({2, 3, x}, {y^2}, *)"
   input output FlatModel flatModel;
 algorithm
-  flatModel.variables := list(Variable.mapExp(var, SimplifyExp.combineBinaries) for var in flatModel.variables);
-  flatModel.equations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
-  flatModel.initialEquations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
-  flatModel.algorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.algorithms);
+  flatModel.variables         := list(Variable.mapExp(var, SimplifyExp.combineBinaries) for var in flatModel.variables);
+  flatModel.equations         := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
+  flatModel.initialEquations  := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
+  flatModel.algorithms        := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.algorithms);
   flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.initialAlgorithms);
 end combineBinaries;
 

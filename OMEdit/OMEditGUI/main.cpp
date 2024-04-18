@@ -48,7 +48,9 @@ extern "C" {
 #include <QMessageBox>
 
 #ifdef QT_NO_DEBUG
+
 #if defined(_WIN32)
+
 #include "CrashReport/backtrace.h"
 
 static char *g_output = NULL;
@@ -60,7 +62,7 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   struct output_buffer ob;
   output_init(&ob, g_output, BUFFER_MAX);
   if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
-    output_print(&ob,"Failed to init symbol context\n");
+    output_print(&ob, "Failed to init symbol context\n");
   } else {
     bfd_init();
     struct bfd_set *set = (bfd_set*)calloc(1,sizeof(*set));
@@ -72,8 +74,11 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog(QString(g_output));
   pCrashReportDialog->exec();
   exit(1);
+  return EXCEPTION_CONTINUE_SEARCH;
 }
+
 #else // Unix
+
 #include <signal.h>
 #include <execinfo.h>
 
@@ -121,12 +126,14 @@ void signalHandler(int signalNumber)
     }
     free(symbollist);
   }
+
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog(stackTrace);
   pCrashReportDialog->exec();
   exit(signalNumber);
 }
 #endif // #if defined(_WIN32)
+
 #endif // #ifdef QT_NO_DEBUG
 
 void printOMEditUsage()
@@ -150,21 +157,6 @@ int main(int argc, char *argv[])
 {
   MMC_INIT();
   MMC_TRY_TOP()
-  /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
-#ifdef QT_NO_DEBUG
-#if defined(_WIN32)
-  SetUnhandledExceptionFilter(exceptionFilter);
-#else
-  /* Abnormal termination (abort) */
-  signal(SIGABRT, signalHandler);
-  /* Segmentation violation */
-  signal(SIGSEGV, signalHandler);
-  /* Illegal instruction */
-  signal(SIGILL, signalHandler);
-  /* Floating point error */
-  signal(SIGFPE, signalHandler);
-#endif // #ifdef WIN32
-#endif // #ifdef QT_NO_DEBUG
   // if user asks for --help
   for(int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "--help") == 0) {
@@ -177,6 +169,26 @@ int main(int argc, char *argv[])
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
   OMEditApplication a(argc, argv, threadData);
+
+// Do not use the signal handler OR exception filter if user is building a debug version.
+// Perhaps the user wants to use gdb.
+// moved the setting of the handler *after* OMEditApplication application definition
+// as otherwise it did not work with msys2-ucrt64
+#ifdef QT_NO_DEBUG
+#if defined(_WIN32)
+  LPTOP_LEVEL_EXCEPTION_FILTER top_filter = SetUnhandledExceptionFilter(exceptionFilter);
+#else
+  /* Abnormal termination (abort) */
+  signal(SIGABRT, signalHandler);
+  /* Segmentation violation */
+  signal(SIGSEGV, signalHandler);
+  /* Illegal instruction */
+  signal(SIGILL, signalHandler);
+  /* Floating point error */
+  signal(SIGFPE, signalHandler);
+#endif // #ifdef WIN32
+#endif // #ifdef QT_NO_DEBUG
+
   return a.exec();
 
   MMC_CATCH_TOP(return execution_failed());

@@ -21,7 +21,7 @@ val(revolute2.phi, 1);
 val(revolute2.phi, 2);
 val(revolute2.phi, 3);
 
-translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, version="2.0");
+buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, version="2.0");
 getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu");
 getErrorString();

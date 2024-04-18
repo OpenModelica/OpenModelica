@@ -2235,7 +2235,7 @@ namespace FlatModelica
    */
   Expression Expression::evaluate(const VariableEvaluator &var_eval, int recursion_level) const
   {
-    return Expression(_value->eval(var_eval, recursion_level));
+    return _value ? Expression(_value->eval(var_eval, recursion_level)) : Expression();
   }
 
   /*!
@@ -2420,7 +2420,13 @@ namespace FlatModelica
     if (isReal()) {
       return static_cast<int64_t>(dynamic_cast<const Real&>(*_value).value());
     } else {
-      return dynamic_cast<const Integer&>(*_value).value();
+      auto p = dynamic_cast<Integer*>(_value.get());
+
+      if (!p) {
+        throw std::runtime_error("Expression::intValue: empty expression");
+      }
+
+      return p->value();
     }
   }
 
@@ -2435,7 +2441,13 @@ namespace FlatModelica
     if (isInteger()) {
       return static_cast<double>(dynamic_cast<const Integer&>(*_value).value());
     } else {
-      return dynamic_cast<const Real&>(*_value).value();
+      auto p = dynamic_cast<Real*>(_value.get());
+
+      if (!p) {
+        throw std::runtime_error("Expression::realValue: empty expression");
+      }
+
+      return p->value();
     }
   }
 
@@ -2452,7 +2464,13 @@ namespace FlatModelica
     } else if (isReal()) {
       return dynamic_cast<const Real&>(*_value).value() != 0.0;
     } else {
-      return dynamic_cast<const Boolean&>(*_value).value();
+      auto p = dynamic_cast<Boolean*>(_value.get());
+
+      if (!p) {
+        throw std::runtime_error("Expression::boolValue: empty expression");
+      }
+
+      return p->value();
     }
   }
 
@@ -2464,7 +2482,13 @@ namespace FlatModelica
    */
   std::string Expression::stringValue() const
   {
-    return dynamic_cast<const String&>(*_value).value();
+    auto p = dynamic_cast<String*>(_value.get());
+
+    if (!p) {
+      throw std::runtime_error("Expression::stringValue: empty expression");
+    }
+
+    return p->value();
   }
 
   /*!
@@ -2475,7 +2499,13 @@ namespace FlatModelica
    */
   std::string Expression::enumValue() const
   {
-    return dynamic_cast<const Enum&>(*_value).value();
+    auto p = dynamic_cast<Enum*>(_value.get());
+
+    if (!p) {
+      throw std::runtime_error("Expression::enumValue: empty expression");
+    }
+
+    return p->value();
   }
 
   /*!
@@ -2486,7 +2516,13 @@ namespace FlatModelica
    */
   int Expression::enumIndex() const
   {
-    return dynamic_cast<const Enum&>(*_value).index();
+    auto p = dynamic_cast<Enum*>(_value.get());
+
+    if (!p) {
+      throw std::runtime_error("Expression::enumIndex: empty expression");
+    }
+
+    return p->index();
   }
 
   /*!
@@ -2497,7 +2533,7 @@ namespace FlatModelica
    */
   QString Expression::QStringValue() const
   {
-    return QString::fromStdString(dynamic_cast<const String&>(*_value).value());
+    return QString::fromStdString(stringValue());
   }
 
   /*!
@@ -2545,7 +2581,13 @@ namespace FlatModelica
    */
   const std::vector<Expression>& Expression::elements() const
   {
-    return dynamic_cast<const Array&>(*_value).elements();
+    auto p = dynamic_cast<Array*>(_value.get());
+
+    if (!p) {
+      throw std::runtime_error("Expression::elements: empty expression");
+    }
+
+    return p->elements();
   }
 
   /*!
@@ -2555,12 +2597,24 @@ namespace FlatModelica
    */
   const std::vector<Expression>& Expression::args() const
   {
-    return dynamic_cast<const Call&>(*_value).args();
+    auto p = dynamic_cast<Call*>(_value.get());
+
+    if (!p) {
+      throw std::runtime_error("Expression::args: empty expression");
+    }
+
+    return p->args();
   }
 
   void Expression::setArg(size_t index, const Expression &e)
   {
-    dynamic_cast<Call&>(*_value).setArg(index, e);
+    auto p = dynamic_cast<Call*>(_value.get());
+
+    if (!p) {
+      throw std::runtime_error("Expression::setArg: empty expression");
+    }
+
+    return p->setArg(index, e);
   }
 
   /*!
@@ -3000,7 +3054,11 @@ namespace FlatModelica
 
   std::ostream& operator<< (std::ostream &os, const Expression &e)
   {
-    e._value->print(os);
+    if (e._value) {
+      e._value->print(os);
+    } else {
+      os << "NIL";
+    }
     return os;
   }
 }

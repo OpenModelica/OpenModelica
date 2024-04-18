@@ -148,7 +148,6 @@ import Mutable;
 import PrefixUtil;
 import SCodeUtil;
 import SCodeInstUtil;
-import StringUtil;
 import Static;
 import Types;
 import UnitParserExt;
@@ -5556,9 +5555,7 @@ protected function generateCachePath
 protected
   String name;
 algorithm
-  name := StringUtil.stringAppend9(InstTypes.callingScopeStr(callScope), "$",
-          SCodeDump.restrString(SCodeUtil.getClassRestriction(cls)), "$",
-          generatePrefixStr(prefix), "$");
+  name := InstTypes.callingScopeStr(callScope) + "$" + SCodeDump.restrString(SCodeUtil.getClassRestriction(cls)) + "$" + generatePrefixStr(prefix) + "$";
   cachePath := AbsynUtil.joinPaths(Absyn.IDENT(name), FGraph.getGraphName(env));
 end generateCachePath;
 

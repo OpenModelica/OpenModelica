@@ -50,7 +50,10 @@ import Type = NFType;
 
 public
 function inlineCallExp
+  "Inlines a call if it has an EarlyInline=true annotation, or always if
+   forceInline is set to true."
   input Expression callExp;
+  input Boolean forceInline = false;
   output Expression result;
 algorithm
   result := match callExp
@@ -64,11 +67,11 @@ algorithm
           case DAE.InlineType.BUILTIN_EARLY_INLINE() then true;
           case DAE.InlineType.EARLY_INLINE()
             guard Flags.isSet(Flags.INLINE_FUNCTIONS) then true;
-          case DAE.InlineType.NORM_INLINE() then Flags.getConfigBool(Flags.FRONTEND_INLINE);
-          else false;
+          case DAE.InlineType.NORM_INLINE() then forceInline or Flags.getConfigBool(Flags.FRONTEND_INLINE);
+          else forceInline;
         end match;
       then
-        if shouldInline then inlineCall(call) else callExp;
+        if shouldInline then inlineCall(call, forceInline) else callExp;
 
     else callExp;
   end match;
@@ -76,6 +79,7 @@ end inlineCallExp;
 
 function inlineCall
   input Call call;
+  input Boolean forceInline = false;
   output Expression exp;
 algorithm
   exp := match call
@@ -86,7 +90,34 @@ algorithm
       list<InstNode> inputs, outputs, locals;
       list<Statement> body;
       Statement stmt;
+      Binding binding;
 
+    // Record constructor
+    case Call.TYPED_CALL(fn = fn, arguments = args)
+        guard InstNode.name(InstNode.parentScope(fn.node)) == "'constructor'"
+      algorithm
+        body := Function.getBody(fn);
+        true := listEmpty(body);
+        true := listEmpty(fn.locals);
+
+        binding := Component.getBinding(InstNode.component(listHead(fn.outputs)));
+
+        if Binding.hasExp(binding) then
+          exp := Binding.getExp(binding);
+          true := Expression.isRecord(exp);
+        else
+          exp := Class.makeRecordExp(listHead(fn.outputs));
+        end if;
+
+        for i in fn.inputs loop
+          arg :: args := args;
+          arg := inlineCallExp(arg, forceInline);
+          exp := Expression.map(exp, func = function replaceCrefNode(node = i, value = arg));
+        end for;
+      then
+        exp;
+
+    // Normal function
     case Call.TYPED_CALL(fn = fn as Function.FUNCTION(inputs = inputs, outputs = outputs, locals = locals),
                          arguments = args)
       algorithm
@@ -120,12 +151,13 @@ algorithm
           //       statement once.
           for i in inputs loop
             arg :: args := args;
+            arg := inlineCallExp(arg, forceInline);
             stmt := Statement.mapExp(stmt,
               function Expression.map(func = function replaceCrefNode(node = i, value = arg)));
           end for;
 
           exp := getOutputExp(stmt, listHead(outputs), call);
-          exp := inlineCallExp(exp);
+          exp := inlineCallExp(exp, forceInline);
         else
           exp := Expression.CALL(call);
         end try;
@@ -135,42 +167,6 @@ algorithm
     else Expression.CALL(call);
   end match;
 end inlineCall;
-
-function inlineRecordConstructorCall
-  input Expression exp;
-  output Expression outExp;
-protected
-  Function fn;
-  Expression arg;
-  list<Expression> args;
-  list<Statement> body;
-  Binding binding;
-algorithm
-  outExp := match exp
-    case Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args))
-        guard InstNode.name(InstNode.parentScope(fn.node)) == "'constructor'"
-      algorithm
-        body := Function.getBody(fn);
-        true := listEmpty(body);
-        true := listEmpty(fn.locals);
-
-        binding := Component.getBinding(InstNode.component(listHead(fn.outputs)));
-
-        if Binding.hasExp(binding) then
-          outExp := Binding.getExp(binding);
-          true := Expression.isRecord(outExp);
-        else
-          outExp := Class.makeRecordExp(listHead(fn.outputs));
-        end if;
-
-        for i in fn.inputs loop
-          arg :: args := args;
-          outExp := Expression.map(outExp, func = function replaceCrefNode(node = i, value = arg));
-        end for;
-      then
-        outExp;
-  end match;
-end inlineRecordConstructorCall;
 
 protected
 function replaceCrefNode

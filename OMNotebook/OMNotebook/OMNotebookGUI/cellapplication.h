@@ -35,22 +35,14 @@
 
 // QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #include <QPrinter>
 #include <QPrintDialog>
-#include <QtWebKitWidgets>
 #include <QTextCodec>
 #include <QUrlQuery>
 #include <QItemDelegate>
 #include <QMessageBox>
 #include <QImageWriter>
-#else
-#include <QtGui/QApplication>
-#include <QtGui/QImageWriter>
-#include <QtGui/QMessageBox>
-#include <QtCore/QDir>
-#endif
 #include <QTranslator>
 
 // IAEX Headers
@@ -80,7 +72,7 @@ namespace IAEX
 
     virtual void addToPasteboard(Cell *c);
     virtual void clearPasteboard();
-    vector<Cell *> pasteboard();
+    std::vector<Cell *> pasteboard();
 
     int exec();
     void add(Document *doc);
@@ -88,7 +80,7 @@ namespace IAEX
 
     void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica=0);
     void removeTempFiles(QString filename);      // Added 2006-01-16 AF
-    vector<DocumentView *> documentViewList();    // Added 2006-01-27 AF
+    std::vector<DocumentView *> documentViewList();    // Added 2006-01-27 AF
     void removeDocumentView( DocumentView *view );  // Added 2006-01-27 AF
     QApplication* getApplication() { return app_; }
     QWidget* getMainWindow() { return mainWindow; }
@@ -102,10 +94,10 @@ namespace IAEX
   private:
     QApplication *app_;
     QWidget* mainWindow;
-    vector<Document *> documents_;
-    vector<DocumentView *> views_;
+    std::vector<Document *> documents_;
+    std::vector<DocumentView *> views_;
     CommandCenter *cmdCenter_;
-    vector<Cell *> pasteboard_;
+    std::vector<Cell *> pasteboard_;
     QStringList removeList_;    // Added 2006-01-16 AF
   };
 }

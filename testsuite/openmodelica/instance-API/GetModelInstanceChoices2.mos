@@ -42,19 +42,52 @@ getErrorString();
 //         \"choices\": {
 //           \"choice\": [
 //             {
-//               \"$value\": \"redeclare Real x = 1.0 \\\"A\\\"\",
-//               \"$type\": \"Real\"
+//               \"$value\": {
+//                 \"$kind\": \"component\",
+//                 \"name\": \"x\",
+//                 \"type\": \"Real\",
+//                 \"modifiers\": \"1.0\",
+//                 \"prefixes\": {
+//                   \"redeclare\": true
+//                 },
+//                 \"comment\": \"A\"
+//               }
 //             },
 //             {
-//               \"$value\": \"redeclare Real x = 2.0 \\\"B\\\"\",
-//               \"$type\": \"Real\"
+//               \"$value\": {
+//                 \"$kind\": \"component\",
+//                 \"name\": \"x\",
+//                 \"type\": \"Real\",
+//                 \"modifiers\": \"2.0\",
+//                 \"prefixes\": {
+//                   \"redeclare\": true
+//                 },
+//                 \"comment\": \"B\"
+//               }
 //             },
 //             {
-//               \"$value\": \"redeclare P2.OtherReal x = 3.0 \\\"C\\\"\",
-//               \"$type\": \"P.P2.OtherReal\"
+//               \"$value\": {
+//                 \"$kind\": \"component\",
+//                 \"name\": \"x\",
+//                 \"type\": \"P2.OtherReal\",
+//                 \"modifiers\": \"3.0\",
+//                 \"prefixes\": {
+//                   \"redeclare\": true
+//                 },
+//                 \"comment\": \"C\"
+//               }
 //             },
 //             {
-//               \"$value\": \"redeclare MissingReal x = 4.0 \\\"D\\\"\"
+//               \"$value\": {
+//                 \"$kind\": \"component\",
+//                 \"name\": \"x\",
+//                 \"type\": \"MissingReal\",
+//                 \"modifiers\": \"4.0\",
+//                 \"prefixes\": {
+//                   \"redeclare\": true
+//                 },
+//                 \"comment\": \"D\"
+//               }
 //             }
 //           ]
 //         }

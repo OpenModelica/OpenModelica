@@ -1,5 +1,5 @@
 //
-//  Package that defines a set of  test problems
+//  Package that defines a set of test problems
 //  for nonlinear equation system solvers.
 //
 //  references:
@@ -12,7 +12,7 @@ package nonlinear_system
     parameter Integer N = 10;
     Real x[N];
     Real z;
-    Real y;
+    Real y(start = 0.0, fixed = true);
   equation
     x[1] = 1 - y - z;
     for i in 2:N loop
@@ -25,7 +25,7 @@ package nonlinear_system
   model problem2 "adapted Rosenbrock function"
     parameter Integer N = 10;
     Real x[N];
-    Real y(start=-1);
+    Real y(start = -1.0, fixed = true);
   equation
     x[N] = 1 - x[1];
     for i in 2:N loop
@@ -36,7 +36,7 @@ package nonlinear_system
 
   model problem3 "Powell singular function"
     parameter Integer N = 4;
-    Real x[N](each start=1);
+    Real x[N](each start=1.0);
   equation
     0 = x[1] + 10.0 * x[2];
     0 = sqrt(5.0) * (x[3] - x[4]);
@@ -45,8 +45,8 @@ package nonlinear_system
   end problem3;
 
   model problem4 "Powell's badly scaled problem"
-    Real x1;
-    Real x2;
+    Real x1(start=10.0);
+    Real x2(start=0.0);
   equation
     0 = 10000*x1*x2-1;
     0 = exp(-x1) + exp(-x2) - 1.0001;
@@ -57,7 +57,7 @@ package nonlinear_system
     Real x[N](start={0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.2,0.15,0.13});
     Real sum;
   algorithm
-    sum := 0;
+    sum := 0.0;
     for j in 1:N loop
       sum := sum + cos(x[j]);
     end for;

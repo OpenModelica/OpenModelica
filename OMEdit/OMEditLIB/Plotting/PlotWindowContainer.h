@@ -55,8 +55,6 @@ public:
   QString getUniqueName(QString name = QString("Plot"), int number = 1);
   OMPlot::PlotWindow* getCurrentWindow();
   OMPlot::PlotWindow* getInteractiveWindow(QString targetWindow);
-  OMPlot::PlotWindow* getTopPlotWindow();
-  void setTopPlotWindowActive();
 #if !defined(WITHOUT_OSG)
   AnimationWindow* getCurrentAnimationWindow();
 #endif
@@ -65,8 +63,12 @@ public:
   bool isPlotWindow(QObject *pObject);
   bool isAnimationWindow(QObject *pObject);
   bool isDiagramWindow(QObject *pObject);
+  bool isUniqueName(QString name);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
+  void removePlotCurves(OMPlot::PlotWindow *pPlotWindow);
+  void showDiagramWindow(ModelWidget *pModelWidget = 0);
 private:
+  void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;
 public slots:
   void addPlotWindow(bool maximized = false);
@@ -78,6 +80,7 @@ public slots:
   void addDiagramWindow(ModelWidget *pModelWidget = 0, bool maximized = false);
   void clearPlotWindow();
   void removeInteractivePlotWindow();
+  void renamePlotWindow();
   void exportVariables();
   void updatePlotWindows(QString variable);
 };

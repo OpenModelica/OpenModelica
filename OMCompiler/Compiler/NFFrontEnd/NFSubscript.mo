@@ -220,6 +220,13 @@ public
     end match;
   end isWhole;
 
+  function isSimple
+    "used for determining if its simple enough to use for an array equation
+    in the case of non scalarization (new backend)"
+    input Subscript sub;
+    output Boolean isSimple = isIndex(sub) or isWhole(sub);
+  end isSimple;
+
   function isSliced
     input Subscript sub;
     output Boolean sliced;
@@ -1314,6 +1321,19 @@ public
     SPLIT_INDEX(node = node, dimIndex = index) := sub;
     exp := Dimension.sizeExp(Type.nthDimension(InstNode.getType(node), index));
   end splitIndexDimExp;
+
+  function isLiteral
+    input Subscript sub;
+    output Boolean literal;
+  algorithm
+    literal := match sub
+      case UNTYPED() then Expression.isLiteral(sub.exp);
+      case INDEX() then Expression.isLiteral(sub.index);
+      case SLICE() then Expression.isLiteral(sub.slice);
+      case WHOLE() then true;
+      else false;
+    end match;
+  end isLiteral;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

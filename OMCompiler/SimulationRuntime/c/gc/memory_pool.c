@@ -34,7 +34,7 @@
 #endif
 #include "omc_gc.h"
 #include <string.h>
-#if !defined(OMC_NO_THREADS)
+#if defined(OM_HAVE_PTHREADS)
 #include <pthread.h>
 #endif
 #include "../util/omc_error.h"
@@ -43,115 +43,169 @@
 extern "C" {
 #endif
 
+#define OMC_MEGABYTE 1024*1024
+/// 2MB pool by default
+#define OMC_INITIAL_BLOCK_SIZE 2*OMC_MEGABYTE
+/// Error out at a 1GB block request. Something is clearly not going
+/// as intended. If we continue we will most probably overflow at the
+/// 4GB mark anyway so catch it and report it.
+#define OMC_ERROR_AT_EXPAND_REQUEST 1024*OMC_MEGABYTE
+
+
+/// This is the pointer to the current block of memory. The 'memory pool'.
+/// It changes when the program requests memory space that does not fit
+/// in the current block. In which case a new block will be created and
+/// this will be updated. Restoring a saved state (a cleanup operation)
+/// will also update this.
+OMCMemPoolBlock *memory_pools = NULL;
+
+#if defined(OM_HAVE_PTHREADS)
+static pthread_mutex_t memory_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 static int GC_collect_a_little_or_not(void)
 {
   return 0;
 }
 
-typedef struct list_s {
-  void *memory;
-  size_t used;
-  size_t size;
-  struct list_s *next;
-} list;
-
-#if !defined(OMC_NO_THREADS)
-static pthread_mutex_t memory_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
-static list *memory_pools = NULL;
-
 static void pool_init(void)
 {
-  memory_pools = (list*) omc_alloc_interface.malloc_uncollectable(sizeof(list));
-  memory_pools->used = 0;
-  memory_pools->size = 2*1024*1024; /* 2MB pool by default */
-  memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
-  memory_pools->next = NULL;
-}
-
-static size_t upper_power_of_two(size_t v)
-{
-  v--;
-  v |= v >> 1;
-  v |= v >> 2;
-  v |= v >> 4;
-  v |= v >> 8;
-  v |= v >> 16;
-  v++;
-  return v;
+  // pool_init is called unconditionally in fmi2Instantiate, so let's put the condition here
+  if (!memory_pools) {
+    memory_pools = (OMCMemPoolBlock*) omc_alloc_interface.malloc_uncollectable(sizeof(OMCMemPoolBlock));
+    memory_pools->used = 0;
+    memory_pools->size = OMC_INITIAL_BLOCK_SIZE;
+    memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
+    memory_pools->previous = NULL;
+  }
 }
 
 static inline size_t round_up(size_t num, size_t factor)
 {
-  return num + factor - 1 - (num - 1) % factor;
+  return num + factor - 1 - ((num + factor - 1) % factor);
 }
 
 static inline void pool_expand(size_t len)
 {
-  list *newlist = NULL;
-  if (0==memory_pools) {
-    pool_init();
+  OMCMemPoolBlock *newBlock = NULL;
+
+  // The new block will be 1.5x the current block's size. More if we request a very large array.
+  size_t new_size = 3*memory_pools->size / 2;
+  // Align the new size to the initial block size (2MB right now) for easier debugging.
+  new_size = round_up(new_size, OMC_INITIAL_BLOCK_SIZE);
+
+  // Report an error if the size is too big. This will error out before the size request is
+  // able to overflow the the size_t size (at 4GB)
+  if (new_size >= OMC_ERROR_AT_EXPAND_REQUEST) {
+    omc_assert_macro(0 && "Attempt to allocate an unusually large memory. The memory management does not seem to be working as intended. Please create an issue on https://github.com/OpenModelica/OpenModelica/issues.");
   }
-  /* Check if we have enough memory already */
-  if (memory_pools->size - memory_pools->used >= len) {
-    return;
-  }
-  newlist = (list*) omc_alloc_interface.malloc_uncollectable(sizeof(list));
-  newlist->next = memory_pools;
-  memory_pools = newlist;
-  memory_pools->used = 0;
-  memory_pools->size = upper_power_of_two(3*memory_pools->next->size/2 + len); /* expand by 1.5x the old memory pool. More if we request a very large array. */
-  memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
+
+  newBlock = (OMCMemPoolBlock*) omc_alloc_interface.malloc_uncollectable(sizeof(OMCMemPoolBlock));
+  newBlock->used = 0;
+  newBlock->size = new_size;
+  newBlock->memory = omc_alloc_interface.malloc_uncollectable(newBlock->size);
+  newBlock->previous = memory_pools;
+  memory_pools = newBlock;
 }
 
-static void* pool_malloc(size_t sz)
+static void* pool_malloc(size_t requested_size)
 {
   void *res;
-  sz = round_up(sz,8);
-#if !defined(OMC_NO_THREADS)
+  requested_size = round_up(requested_size, 8);
+
+#if defined(OM_HAVE_PTHREADS)
   pthread_mutex_lock(&memory_pool_mutex);
 #endif
-  pool_expand(sz);
+
+  /// If we forgot to explicitly initialize the pool, initialize it now.
+  pool_init();
+
+  /// If the current block does not have enough remaining space, expand the pool
+  /// by creating another block. The new block should, at least, be as big as
+  /// the requested size. Note that, this will update the global memory_pools pointer.
+  if (memory_pools->size - memory_pools->used < requested_size) {
+    pool_expand(requested_size);
+  }
+
   res = (void*)((char*)memory_pools->memory + memory_pools->used);
-  memory_pools->used += sz;
-#if !defined(OMC_NO_THREADS)
+  memory_pools->used += requested_size;
+
+#if defined(OM_HAVE_PTHREADS)
   pthread_mutex_unlock(&memory_pool_mutex);
 #endif
-  memset(res,0,sz);
+
+  memset(res, 0, requested_size);
   return res;
 }
 
-static int pool_free_extra_list(void)
+static int pool_collect_a_little()
 {
-  list *freelist;
-  if (NULL == memory_pools) {
-    return 0;
-  }
-
-  freelist = memory_pools->next;
-  while (freelist) {
-    list *next = freelist->next;
-    omc_alloc_interface.free_uncollectable(freelist->memory);
-    omc_alloc_interface.free_uncollectable(freelist);
-    freelist = next;
-  }
-
-  /* adropo: why on earth would you do this?!?
-   * See ticket #5431 for an error generated by this error.
-   * memory_pools->used = 0;
-   */
-  memory_pools->next = 0;
   return 0;
+}
+
+static void print_mem_pool(OMCMemPoolBlock* chunk) {
+  printf("----------------------------\n");
+  printf("%p, %ld, %ld, %p\n", chunk->memory, chunk->used, chunk->size, chunk->previous);
+  printf("----------------------------\n");
+}
+
+MemPoolState omc_util_get_pool_state() {
+  MemPoolState state;
+  /// If we forgot to explicitly initialize the pool, initialize it now.
+  pool_init();
+
+  state.block = memory_pools;
+  state.used = memory_pools->used;
+
+  return state;
+}
+
+void omc_util_restore_pool_state(MemPoolState in_state) {
+  // printf("original state:\n");
+  // print_mem_pool(memory_pools);
+
+  assert(in_state.block);
+
+  OMCMemPoolBlock* currentBlock = memory_pools;
+  /// Start from the current block and traverse the chain until we find the block
+  /// that was saved in the state.
+  /// Clean up the blocks as we go since they will no longer be reachable after updating
+  /// to the saved state.
+  while (currentBlock != in_state.block) {
+    OMCMemPoolBlock* previous = currentBlock->previous;
+    omc_alloc_interface.free_uncollectable(currentBlock->memory);
+    currentBlock->memory = NULL;
+    currentBlock->previous = NULL;
+    currentBlock->size = 0;
+    currentBlock->used = 0;
+    omc_alloc_interface.free_uncollectable(currentBlock);
+    currentBlock = previous;
+  }
+  assert(currentBlock);
+
+  currentBlock->used = in_state.used;
+  memory_pools = currentBlock;
+
+  // printf("updated state:\n");
+  // print_mem_pool(memory_pools);
 }
 
 void free_memory_pool()
 {
-  pool_free_extra_list();
-  if (memory_pools) {
-    omc_alloc_interface.free_uncollectable(memory_pools->memory);
-    omc_alloc_interface.free_uncollectable(memory_pools);
-    memory_pools = NULL;
+  OMCMemPoolBlock* currentBlock = memory_pools;
+
+  while (currentBlock) {
+    OMCMemPoolBlock* previous = currentBlock->previous;
+    omc_alloc_interface.free_uncollectable(currentBlock->memory);
+    currentBlock->memory = NULL;
+    currentBlock->previous = NULL;
+    currentBlock->size = 0;
+    currentBlock->used = 0;
+    omc_alloc_interface.free_uncollectable(currentBlock);
+    currentBlock = previous;
   }
+
+  memory_pools = NULL;
 }
 
 static void nofree(void* ptr)
@@ -179,7 +233,7 @@ omc_alloc_interface_t omc_alloc_interface_pooled = {
   pool_malloc,
   (char*(*)(size_t)) malloc,
   strdup,
-  pool_free_extra_list,
+  pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero,
   free,
   malloc,
@@ -246,7 +300,7 @@ omc_alloc_interface_t omc_alloc_interface = {
   pool_malloc,
   (char*(*)(size_t)) malloc,
   strdup,
-  pool_free_extra_list,
+  pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero /* calloc, but with malloc interface */,
   free,
   malloc,

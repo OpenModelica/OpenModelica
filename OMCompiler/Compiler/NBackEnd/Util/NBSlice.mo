@@ -38,19 +38,25 @@ protected
   import Slice = NBSlice;
 
   // NF imports
+  import Class = NFClass;
+  import NFClassTree.ClassTree;
+  import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import Variable = NFVariable;
 
   // NB imports
-  import NBAdjacency.Mapping;
+  import NBAdjacency.{Mapping, Mode, CausalizeModes, Dependency};
   import BackendUtil = NBBackendUtil;
   import NBEquation.{Equation, Iterator, Frame, FrameLocation, RecollectStatus, FrameOrderingStatus};
   import Replacements = NBReplacements;
+  import BVariable = NBVariable;
   import NBVariable.VariablePointers;
 
   // Util imports
@@ -108,6 +114,18 @@ public
     output Boolean b = listEmpty(slice.indices);
   end isFull;
 
+  function size
+    input Slice<T> slice;
+    input sizeT func;
+    output Integer s;
+  algorithm
+    if listEmpty(slice.indices) then
+      s := func(slice.t);
+    else
+      s := listLength(slice.indices);
+    end if;
+  end size;
+
   function simplify
     "only to be used for unordered purposes!
     lists of all indices are meaningful if they are not in the natural ascending order
@@ -127,11 +145,7 @@ public
     input Integer i;
     input UnorderedMap<T, IntLst> map;
   algorithm
-    if UnorderedMap.contains(t, map) then
-      UnorderedMap.add(t, i :: UnorderedMap.getSafe(t, map, sourceInfo()), map);
-    else
-      UnorderedMap.addNew(t, {i}, map);
-    end if;
+    UnorderedMap.add(t, i :: UnorderedMap.getOrDefault(t, map, {}), map);
   end addToSliceMap;
 
   function fromTpl
@@ -192,73 +206,139 @@ public
     input T t;
   end applyMutableT;
 
+  partial function filterCref
+    "partial function that needs to be provided.
+    decides if the the cref is added to the list pointer."
+    input output ComponentRef cref;
+    input UnorderedSet<ComponentRef> acc;
+  end filterCref;
+
+  partial function getDependentCrefIndices
+    input list<ComponentRef> dependencies                   "dependent var crefs";
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input Mapping mapping                                   "array <-> scalar index mapping";
+    input Integer eqn_arr_idx;
+    output array<list<Integer>> indices;
+    output array<array<Integer>> mode_to_var;
+  end getDependentCrefIndices;
+
   // ############################################################
   //                cref accumulation Functions
   // use with:
   //    Equation.collectCrefs()
-  //    StrongComponent.collectCrefs()
+  //    filterExp()
   // ############################################################
+
+  function filterExp
+    "wrapper function that applies filter cref to
+    a cref expression."
+    input output Expression exp;
+    input filterCref filter;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    () := match exp
+      case Expression.CREF() algorithm filter(exp.cref, acc); then ();
+      else ();
+    end match;
+  end filterExp;
+
+  function getSliceCandidates
+    "Used to collect all slices of a certain variable name.
+    Note: the name has to be stripped of all subscripts for this to work."
+  extends filterCref;
+    input ComponentRef name "the name of the variable";
+  algorithm
+    if ComponentRef.isEqual(name, ComponentRef.stripSubscriptsAll(cref)) then
+      UnorderedSet.add(cref, acc);
+    end if;
+  end getSliceCandidates;
 
   function getDependentCref
     "checks if crefs are relevant in the given context and collects them."
-    input output ComponentRef cref                "the cref to check";
-    input Pointer<list<ComponentRef>> acc         "accumulator for relevant crefs";
+  extends filterCref;
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input Boolean pseudo;
   protected
-    ComponentRef checkCref;
+    ComponentRef checkCref, childCref;
+    list<Pointer<Variable>> record_children;
   algorithm
     // if causalized in pseudo array mode, the variables will only have subscript-free variables
     checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
-    if UnorderedMap.contains(checkCref, map) then
-      Pointer.update(acc, cref :: Pointer.access(acc));
+    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref));
+    if listEmpty(record_children) then
+      // not a record
+      if UnorderedMap.contains(checkCref, map) then
+        UnorderedSet.add(cref, acc);
+      end if;
+    else
+      // its a record, instead parse all the children
+      for child in record_children loop
+        childCref := BVariable.getVarName(child);
+        if UnorderedMap.contains(childCref, map) then
+          UnorderedSet.add(childCref, acc);
+        end if;
+      end for;
     end if;
   end getDependentCref;
 
   function getDependentCrefCausalized
     "checks if crefs are relevant in the given context and collects them.
     previously found crefs are replaced by their dependencies! only works on causalized systems."
-    input output ComponentRef cref                              "the cref to check";
-    input Pointer<list<ComponentRef>> acc                       "accumulator for relevant crefs";
-    input UnorderedSet<ComponentRef> set                        "unordered set to check for array crefs for relevance";
+  extends filterCref;
+    input UnorderedSet<ComponentRef> set "unordered set to check for array crefs for relevance";
   protected
-    ComponentRef checkCref;
+    ComponentRef checkCref, childCref;
+    list<Pointer<Variable>> record_children;
   algorithm
     // always remove subscripts here, this analysis is for sparsity pattern -> currently always scalarized!
-    if UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set) then
-      Pointer.update(acc, cref :: Pointer.access(acc));
+    checkCref := ComponentRef.stripSubscriptsAll(cref);
+    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref));
+    if listEmpty(record_children) then
+      // not a record
+      if UnorderedSet.contains(checkCref, set) then
+        UnorderedSet.add(cref, acc);
+      end if;
+    else
+      // its a record, instead parse all the children
+      for child in record_children loop
+        childCref := BVariable.getVarName(child);
+        if UnorderedSet.contains(childCref, set) then
+          UnorderedSet.add(childCref, acc);
+        end if;
+      end for;
     end if;
   end getDependentCrefCausalized;
 
   function getUnsolvableExpCrefs
     "finds all unsolvable crefs in an expression."
     input output Expression exp                   "the exp to check for unsolvable crefs";
-    input Pointer<list<ComponentRef>> acc         "accumulator for relevant crefs";
+    input UnorderedSet<ComponentRef> acc          "accumulator for relevant crefs";
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input Boolean pseudo;
   algorithm
     // put all unsolvable logic here!
     exp := match exp
-      case Expression.RANGE()     then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
-      case Expression.LBINARY()   then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
-      case Expression.RELATION()  then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.RANGE()     then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.LBINARY()   then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.RELATION()  then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
       else exp;
     end match;
   end getUnsolvableExpCrefs;
 
   function getDependentCrefIndicesPseudoScalar
-    "[Adjacency.MatrixType.PSEUDO] Scalar equations.
+    "Scalar equations.
     Turns cref dependencies into index lists, used for adjacency."
     input list<ComponentRef> dependencies         "dependent var crefs";
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input Mapping mapping                         "array <-> scalar index mapping";
     output list<Integer> indices = {};
   protected
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
     ComponentRef stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
     list<Integer> sizes, int_subs;
   algorithm
-    for cref in dependencies loop
+    for cref in scalarized_dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
@@ -273,16 +353,12 @@ public
     end if;
   end getDependentCrefIndicesPseudoScalar;
 
-  function getDependentCrefIndicesPseudoArray
-    "[Adjacency.MatrixType.PSEUDO] Array equations.
+  function getDependentCrefIndicesPseudoFull
+    "equations that will get full dependency.
     Turns cref dependencies into index lists, used for adjacency."
-    input list<ComponentRef> dependencies                   "dependent var crefs";
-    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input Mapping mapping                                   "array <-> scalar index mapping";
-    input Integer eqn_arr_idx;
-    output array<list<Integer>> indices;
-    output array<array<Integer>> mode_to_var;
+    extends getDependentCrefIndices;
   protected
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
     ComponentRef stripped;
     Integer eqn_start, eqn_size, var_arr_idx, var_scal_idx, mode = 1;
     list<Integer> scal_lst;
@@ -297,9 +373,9 @@ public
     mode_to_var := arrayCreate(eqn_size, arrayCreate(0,0));
     // create unique array for each equation
     for i in 1:eqn_size loop
-      mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
+      mode_to_var[i] := arrayCreate(listLength(scalarized_dependencies),-1);
     end for;
-    for cref in dependencies loop
+    for cref in scalarized_dependencies loop
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
 
@@ -332,70 +408,62 @@ public
 
     // sort
     for i in 1:arrayLength(indices) loop
-      indices[i] := List.sort(List.unique(indices[i]), intLt);
+      indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
     end for;
-  end getDependentCrefIndicesPseudoArray;
+  end getDependentCrefIndicesPseudoFull;
 
   function getDependentCrefIndicesPseudoFor
-    "[Adjacency.MatrixType.PSEUDO] For-Loop equations.
+    "For-Loop equations.
     Turns cref dependencies into index lists, used for adjacency."
-    input list<ComponentRef> dependencies                   "dependent var crefs";
-    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input Mapping mapping                                   "array <-> scalar index mapping";
+    extends getDependentCrefIndices;
     input Iterator iter                                     "iterator frames";
-    input Integer eqn_arr_idx;
-    output array<list<Integer>> indices;
-    output array<array<Integer>> mode_to_var;
   protected
     list<ComponentRef> names;
     list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
-    Integer eqn_start, eqn_size, var_scal_idx, mode = 1;
-    list<Integer> scal_lst;
-    Integer idx;
-    array<Integer> mode_to_var_row;
+    Integer eqn_size, iter_size, body_size, mode = 1;
+    updateDependencies func;
   algorithm
-    // get iterator frames
+    // get iterator size and frames
+    iter_size := Iterator.size(iter);
     (names, ranges) := Iterator.getFrames(iter);
     frames := List.zip(names, ranges);
 
-    (eqn_start, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+    // get eqn size and create the adjacency matrix and causalization mode arrays
+    (_, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
     indices := arrayCreate(eqn_size, {});
     mode_to_var := arrayCreate(eqn_size, arrayCreate(0,0));
+
+    // sanity check for eqn size and get size of body equation
+    if mod(eqn_size, iter_size) == 0 then
+      body_size := realInt(eqn_size/iter_size);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        + " failed because the equation size " + intString(eqn_size)
+        + " could not be divided by the iterator size " + intString(iter_size) + " without rest."});
+    end if;
 
     // create unique array for each equation
     for i in 1:eqn_size loop
       mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
     end for;
-    for cref in dependencies loop
-      scal_lst := getCrefInFrameIndices(cref, frames, mapping, map);
 
-      if listLength(scal_lst) <> eqn_size then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because number of flattened indices " + intString(listLength(scal_lst))
-          + " differ from equation size " + intString(eqn_size) + "."});
-        fail();
-      end if;
-
-      idx := 1;
-      for var_scal_idx in listReverse(scal_lst) loop
-        mode_to_var_row := mode_to_var[idx];
-        mode_to_var_row[mode] := var_scal_idx;
-        arrayUpdate(mode_to_var_row, mode, var_scal_idx);
-        indices[idx] := var_scal_idx :: indices[idx];
-        idx := idx + 1;
-      end for;
+    // create rows
+    for dep in dependencies loop
+      func := function updateDependenciesInteger(mode = mode, mode_to_var = mode_to_var, indices = indices);
+      fillDependencyArray(dep, body_size, frames, mapping, map, func);
+      // increase mode index
       mode := mode + 1;
     end for;
 
-    // sort
+    // sort (kabdelhak: is this needed? try to FixMe)
     for i in 1:arrayLength(indices) loop
-      indices[i] := List.sort(List.unique(indices[i]), intLt);
+      indices[i] := List.sort(UnorderedSet.unique_list(indices[i], Util.id, intEq), intLt);
     end for;
   end getDependentCrefIndicesPseudoFor;
 
   function getDependentCrefsPseudoForCausalized
-    "[Adjacency.MatrixType.PSEUDO] For-Loop equations.
+    "(Jacobian) For-Loop equations.
     Turns cref dependencies into index lists, used for adjacency."
     input ComponentRef row_cref                                   "cref representing the current row";
     input list<ComponentRef> dependencies                         "dependent var crefs";
@@ -404,84 +472,169 @@ public
     input Mapping var_rep_mapping                                 "index mapping for variable representatives";
     input Mapping eqn_rep_mapping                                 "index mapping for equation representatives";
     input Iterator iter                                           "iterator frames";
+    input Integer eqn_size                                        "full equation size (not considering the slice)";
     input list<Integer> slice = {}                                "optional slice, empty list implies full slice";
     input Boolean implicit = false                                "do not compute row cref indices if implicit";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
-    ComponentRef stripped;
     list<ComponentRef> names;
-    list<Expression> ranges, subs;
-    list<list<Expression>> new_subs, new_row_cref_subs;
-    list<Subscript> evaluated_subs;
+    list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
-    list<ComponentRef> new_row_crefs = {}, new_dep_crefs;
-    list<list<ComponentRef>> scalar_dependenciesT = {};
 
-    list<Integer> row_scal_lst, dep_scal_lst;
-    Integer num_rows;
-    list<list<ComponentRef>> accum_dep_lst = {};
+    Integer num_rows, iter_size, body_size;
     list<ComponentRef> row_crefs;
+    list<Integer> row_scal_lst;
+    list<list<Integer>> accum_row_lst = {};
+    array<list<ComponentRef>> accum_dep_arr;
+    list<list<ComponentRef>> accum_dep_lst;
+    updateDependencies func_var, func_eqn;
   algorithm
-    // get iterator frames
+    // create the array of maximum equation size and slice afterwards
+    accum_dep_arr := arrayCreate(eqn_size, {});
+
+    // get iterator size and frames
+    iter_size := Iterator.size(iter);
     (names, ranges) := Iterator.getFrames(iter);
     frames := List.zip(names, ranges);
+
+    // sanity check for eqn size and get size of body equation
+    if mod(eqn_size, iter_size) == 0 then
+      body_size := realInt(eqn_size/iter_size);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        + " failed because the equation size " + intString(eqn_size)
+        + " could not be divided by the iterator size " + intString(iter_size) + " without rest."});
+    end if;
 
     // get row cref lst
     if implicit then
       row_crefs := ComponentRef.scalarizeAll(row_cref);
-      row_crefs := if listEmpty(slice) then row_crefs else List.getAtIndexLst(row_crefs, slice, true);
-      num_rows := listLength(row_crefs);
     else
-      row_scal_lst := getCrefInFrameIndices(row_cref, frames, eqn_rep_mapping, eqn_rep.map);
-      row_scal_lst := if listEmpty(slice) then row_scal_lst else List.getAtIndexLst(row_scal_lst, slice, true);
-      num_rows := listLength(row_scal_lst);
-      row_crefs := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
-    end if;
-
-    if not listEmpty(dependencies) then
-      for dep in dependencies loop
-        if UnorderedMap.contains(dep, var_rep.map) then
-          // case 1: direct dependency as var
-          dep_scal_lst := getCrefInFrameIndices(dep, frames, var_rep_mapping, var_rep.map);
-          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
-
-          if listLength(dep_scal_lst) <> num_rows then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-              + " failed because number of flattened indices " + intString(listLength(dep_scal_lst))
-              + " differ from number of rows size " + intString(num_rows) + "."});
-            fail();
-          else
-            accum_dep_lst := list(VariablePointers.varSlice(var_rep, i, var_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
-          end if;
-        elseif UnorderedMap.contains(dep, eqn_rep.map) then
-          // case 2: indirect dependency as eqn
-          dep_scal_lst := getCrefInFrameIndices(dep, frames, eqn_rep_mapping, eqn_rep.map);
-          dep_scal_lst := if listEmpty(slice) then dep_scal_lst else List.getAtIndexLst(dep_scal_lst, slice, true);
-
-          if listLength(dep_scal_lst) <> num_rows then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-              + " failed because number of flattened indices " + intString(listLength(dep_scal_lst))
-              + " differ from number of rows size " + intString(num_rows) + "."});
-            fail();
-          else
-            accum_dep_lst := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in dep_scal_lst) :: accum_dep_lst;
-          end if;
-        end if;
+      for cref in ComponentRef.scalarizeAll(row_cref) loop
+        row_scal_lst  := getCrefInFrameIndices(cref, frames, eqn_rep_mapping, eqn_rep.map);
+        accum_row_lst := row_scal_lst :: accum_row_lst;
       end for;
-      accum_dep_lst := List.transposeList(accum_dep_lst);
-    else
-      accum_dep_lst := {};
+      row_scal_lst  := List.flatten(accum_row_lst);
+      row_crefs     := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
     end if;
+    row_crefs := if listEmpty(slice) then row_crefs else List.getAtIndexLst(row_crefs, slice, true);
+    num_rows := listLength(row_crefs);
 
-    if listEmpty(accum_dep_lst) then
-      accum_dep_lst := List.fill({}, num_rows);
-    end if;
+    // prepare the functions to update dependencies
+    func_var := function updateDependenciesCref(accum_dep_arr = accum_dep_arr, vars = var_rep, mapping = var_rep_mapping);
+    func_eqn := function updateDependenciesCref(accum_dep_arr = accum_dep_arr, vars = eqn_rep, mapping = eqn_rep_mapping);
+
+    for dep in dependencies loop
+      if UnorderedMap.contains(dep, var_rep.map) then
+        fillDependencyArray(dep, body_size, frames, var_rep_mapping, var_rep.map, func_var);
+      elseif UnorderedMap.contains(dep, eqn_rep.map) then
+        fillDependencyArray(dep, body_size, frames, eqn_rep_mapping, eqn_rep.map, func_eqn);
+      end if;
+    end for;
+
+    accum_dep_lst := listReverse(arrayList(accum_dep_arr));
+    accum_dep_lst := if listEmpty(slice) then accum_dep_lst else List.getAtIndexLst(accum_dep_lst, slice, true);
 
     tpl_lst := List.zip(row_crefs, accum_dep_lst);
   end getDependentCrefsPseudoForCausalized;
 
+  function fillDependencyArray
+    "body function of getDependentCrefsPseudoFor and getDependentCrefsPseudoForCausalized
+    this generates all entries to jacobian or adjacency matrices for a specific dependency.
+    This dependency might be an array cref, part of a reduction or contain slices."
+    input ComponentRef dep;
+    input Integer body_size;
+    input list<tuple<ComponentRef, Expression>> frames;
+    input Mapping mapping;
+    input UnorderedMap<ComponentRef, Integer> map;
+    input updateDependencies func;
+  protected
+    Integer scal_length, body_repeat, eqn_idx;
+    list<Integer> scal_lst;
+    list<tuple<ComponentRef, list<Integer>>> scal_tpl_lst = {};
+  algorithm
+    // get all dependencies for each scalarized cref
+    // Note: scalarization does not remove the iterators, therefore it can still yield
+    //   multiple scalar indices when evaluated along the iterator frames
+    for scal_cref in ComponentRef.scalarizeAll(dep) loop
+      scal_lst := getCrefInFrameIndices(scal_cref, frames, mapping, map);
+      scal_tpl_lst := (scal_cref, scal_lst) :: scal_tpl_lst;
+    end for;
+
+    // check wether or not the element has to be repeated to fit the body
+    scal_length := listLength(scal_tpl_lst);
+    if mod(scal_length, body_size) == 0 then
+      body_repeat := realInt(scal_length/body_size);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+        + " failed because number of flattened indices " + intString(scal_length)
+        + " for dependency " + ComponentRef.toString(dep)
+        + " could not be divided by the body size " + intString(body_size) + " without rest."});
+      fail();
+    end if;
+
+    eqn_idx := 1;
+    for tpl in scal_tpl_lst loop
+      (_, scal_lst) := tpl;
+
+      // reverse the scalar index list to traverse it in the correct order
+      scal_lst := listReverse(scal_lst);
+
+      // check if body_repeat > 1 to set the causalization mode to -1 for unsolvable
+      if body_repeat > 1 then
+        // reset the counter to 1 if the body is supposed to be repeated
+        // ToDo: reductions are only tested for body equations of size 1!
+        eqn_idx := 1;
+      end if;
+
+      for var_idx in scal_lst loop
+        // we now know that there is a dependency of equation (eqn_idx) to variable (var_idx)
+        // call the function that adds this specific variable to the correct structure
+        eqn_idx := func(eqn_idx, var_idx);
+      end for;
+    end for;
+  end fillDependencyArray;
+
+  partial function updateDependencies
+    input output Integer eqn_idx;
+    input Integer var_idx;
+  end updateDependencies;
+
+  function updateDependenciesCref
+    "(jacobian) adds the variable of (var_idx) as a dependency to (eqn_idx)
+    jacobian depencies are stored as component references"
+    extends updateDependencies;
+    input array<list<ComponentRef>> accum_dep_arr; //mutable
+    input VariablePointers vars;
+    input Mapping mapping;
+  algorithm
+    arrayUpdate(accum_dep_arr, eqn_idx, VariablePointers.varSlice(vars, var_idx, mapping) :: accum_dep_arr[eqn_idx]);
+    eqn_idx := eqn_idx + 1;
+  end updateDependenciesCref;
+
+  function updateDependenciesInteger
+    "(adjacency) adds the variable of (var_idx) as a dependency to (eqn_idx)
+    adjacency dependencies are stored as integers
+    also updates the causalization modes"
+    extends updateDependencies;
+    input Integer mode;
+    input array<array<Integer>> mode_to_var;  //mutable
+    input array<list<Integer>> indices;       //mutable
+  protected
+    array<Integer> mode_to_var_row;
+  algorithm
+    // get the clean pointer to the scalar row to avoid double indexing (meta modelica jank)
+    mode_to_var_row := mode_to_var[eqn_idx];
+    // set the dependency mode for this scalar equation to the scalar variable
+    arrayUpdate(mode_to_var_row, mode, var_idx);
+    // this is the adjacency matrix row. each dependency cref
+    // will add exactly one integer to each row belonging to this for-equation
+    arrayUpdate(indices, eqn_idx, var_idx :: indices[eqn_idx]);
+    eqn_idx := eqn_idx + 1;
+  end updateDependenciesInteger;
+
   function getDependentCrefsPseudoArrayCausalized
-    "[Adjacency.MatrixType.PSEUDO] Array equations.
+    "Array equations.
     Turns cref dependencies into index lists, used for adjacency."
     input ComponentRef row_cref                                   "cref representing the current row";
     input list<ComponentRef> dependencies                         "dependent var crefs";
@@ -515,13 +668,11 @@ public
   protected
     Integer size, val, factor = 1;
   algorithm
-    for tpl in listReverse(size_val_tpl_lst) loop
+    for tpl in size_val_tpl_lst loop
       (size, val) := tpl;
-      //print("(" + intString(size) + "," + intString(val) + ")");
       index := index + (val-1) * factor;
       factor := factor * size;
     end for;
-    //print("=>" + intString(index) + "\n");
   end locationToIndex;
 
   function indexToLocation
@@ -868,11 +1019,387 @@ public
     diagonal := listReverse(diagonal);
   end reconstructDiagonal;
 
+  // #### KAB ### new adjacency util
+  function upgradeRowFull
+    "Scalar equations.
+    Turns cref dependencies into index lists, used for adjacency."
+    input list<ComponentRef> dependencies         "dependent var crefs";
+    input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
+    input Mapping mapping                         "array <-> scalar index mapping";
+    output list<Integer> indices = {};
+  protected
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+    ComponentRef stripped;
+    Integer var_arr_idx, var_start, var_scal_idx;
+    list<Integer> sizes, int_subs;
+  algorithm
+    for cref in scalarized_dependencies loop
+      stripped := ComponentRef.stripSubscriptsAll(cref);
+      var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
+      (var_start, _) := mapping.var_AtS[var_arr_idx];
+      sizes := ComponentRef.sizes(stripped);
+      int_subs := ComponentRef.subscriptsToInteger(cref);
+      var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
+      indices := var_scal_idx :: indices;
+    end for;
+  end upgradeRowFull;
+
+  function upgradeRow
+    "For-Loop equations.
+    Turns cref dependencies into index lists, used for adjacency."
+    input ComponentRef eqn_name;
+    input Integer eqn_arr_idx;
+    input Iterator iter                                     "iterator frames";
+    input Type ty;
+    input list<ComponentRef> dependencies                   "dependent var crefs";
+    input UnorderedMap<ComponentRef, Dependency> dep        "dependency map";
+    input UnorderedSet<ComponentRef> rep                    "repetition set";
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input array<list<Integer>> m;
+    input Mapping mapping                                   "array <-> scalar index mapping";
+    input UnorderedMap<Mode.Key, Mode> modes;
+  algorithm
+    for cref in dependencies loop
+      resolveDependency(cref, eqn_name, eqn_arr_idx, iter, ty, dep, rep, map, m, mapping, modes);
+    end for;
+  end upgradeRow;
+
   // ############################################################
   //                Protected Functions
   // ############################################################
 
 protected
+  function resolveSkips
+    input output Integer index;
+    input output Type ty;
+    input list<Integer> skips;
+  algorithm
+    (index, ty) := match (ty, skips)
+      local
+        Integer skip;
+        list<Integer> rest, tail;
+        Type sub_ty;
+        list<Type> rest_ty;
+        list<InstNode> record_fields;
+        InstNode field;
+
+      // 0 skips are full dependencies
+      case (Type.TUPLE(types = rest_ty), 0::rest) then (index, ty);
+
+      // skip to a tuple element
+      case (Type.TUPLE(types = rest_ty), skip::rest) guard(skip <= listLength(rest_ty)) algorithm
+        // skip to the desired sub type and shift the starting index accordingly
+        for i in 1:skip-1 loop
+          sub_ty :: rest_ty := rest_ty;
+          index := index + Type.sizeOf(sub_ty);
+        end for;
+        sub_ty :: rest_ty := rest_ty;
+        // see if there is nested skips
+      then resolveSkips(index, sub_ty, rest);
+
+      // skip to a record element
+      case (Type.COMPLEX(complexTy = ComplexType.RECORD()), skip::rest) algorithm
+        record_fields := ClassTree.enumerateComponents(Class.classTree(InstNode.getClass(ty.cls)));
+        for i in 1:skip-1 loop
+          field :: record_fields := record_fields;
+          index := index + Type.sizeOf(InstNode.getType(field));
+        end for;
+        field :: record_fields := record_fields;
+        // see if there is nested skips
+      then resolveSkips(index, InstNode.getType(field), rest);
+
+      // skip to an array element
+      case (Type.ARRAY(), rest) guard(listLength(rest) >= listLength(ty.dimensions)) algorithm
+        (rest, tail) := List.split(rest, listLength(ty.dimensions));
+        index := locationToIndex(List.zip(list(Dimension.size(dim) for dim in ty.dimensions), rest), index);
+      then resolveSkips(index, ty.elementType, tail);
+
+      // skip for tuple or array, but the skip is too large
+      case (_, skip::_) guard(Type.isTuple(ty) or Type.isArray(ty)) algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
+          + " for type " + Type.toString(ty) + " is too large."});
+      then fail();
+
+      // there is no skip but there is a tuple (no-skip array is fine)
+      case (Type.TUPLE(types = rest_ty), {}) algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is no skip for type "
+          + Type.toString(ty)});
+      then fail();
+
+      // invalid skip
+      case (_, skip::_) algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
+          + " for type " + Type.toString(ty) + " is invalid."});
+      then fail();
+
+      else (index, ty);
+    end match;
+  end resolveSkips;
+
+  // intermediate types and functions for resolveDependency()
+  type Key = list<Integer>;
+  type Val1 = list<ComponentRef>;
+  type Val2 = list<Integer>;
+
+  function keyString
+    input Key key;
+    output String str = List.toString(key, intString);
+  end keyString;
+
+  function keyHash
+    input Key key;
+    output Integer hash = stringHashDjb2(keyString(key));
+  end keyHash;
+
+  function keyEqual
+    input Key key1;
+    input Key key2;
+    output Boolean b = List.isEqualOnTrue(key1, key2, intEq);
+  end keyEqual;
+
+  function val1String
+    input list<ComponentRef> val;
+    output String str = List.toString(val, ComponentRef.toString);
+  end val1String;
+
+  function resolveDependency
+    "resolves the dependency of a component reference in an equation.
+    I.  Resolve skip dimensions (Tuples, Records, Array Constructors)
+    II. Resolve regular vs. reduced dimensions"
+    input ComponentRef cref;
+    input ComponentRef eqn_name;
+    input Integer eqn_arr_idx;
+    input Iterator iter;
+    input Type ty;
+    input UnorderedMap<ComponentRef, Dependency> dep        "dependency map";
+    input UnorderedSet<ComponentRef> rep                    "repetition set";
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input array<list<Integer>> m;
+    input Mapping mapping                                   "array <-> scalar index mapping";
+    input UnorderedMap<Mode.Key, Mode> modes;
+  protected
+    Dependency d;
+    Type skip_ty;
+    Integer skip_idx, start, size, body_size, iter_size, scal_size, shift = 0;
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<tuple<ComponentRef, Expression>> frames;
+    list<Boolean> regulars;
+    ComponentRef stripped;
+    list<Subscript> subs;
+    list<Dimension> dims, eq_dims;
+    array<Integer> key;
+    UnorderedMap<Key, Val1> map1;
+    UnorderedMap<Key, Val2> map2;
+    UnorderedMap<ComponentRef, Val2> map3;
+    list<ComponentRef> scalarized;
+    list<Integer> scal_lst;
+    Boolean repeated;
+    Mode mode;
+  algorithm
+    // I. resolve the skips
+    d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
+    (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
+    (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips);
+
+    // get equation and iterator sizes and frames
+    body_size       := Type.sizeOf(skip_ty);
+    iter_size       := Iterator.size(iter);
+    size            := body_size * iter_size;
+    (names, ranges) := Iterator.getFrames(iter);
+    frames          := List.zip(names, ranges);
+
+    // II. check for regular vs. reduced dimensions
+    regulars := Dependency.toBoolean(d);
+    if List.all(regulars, Util.id) then
+      // II.1 all regular - single dependency per row.
+      mode := Mode.create(eqn_name, {cref}, false);
+      scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
+      map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+      for scal in scalarized loop
+        UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+      end for;
+      scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
+      // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
+      if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
+        for i in 1:size/scal_size loop
+          for scal in scalarized loop
+            for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+              addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
+              shift := shift + 1;
+            end for;
+          end for;
+        end for;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (single dependency) failed because list of scalar variables("
+         + intString(scal_size) + ") " + List.toString(scalarized, ComponentRef.toString)
+         + ", does not fit the equation size " + intString(size) + ".\n"});
+        fail();
+      end if;
+
+    elseif List.any(regulars, Util.id) then
+      // II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key
+      // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
+      subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
+      dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
+      eq_dims := Type.arrayDims(ty);
+      if listLength(subs) == listLength(dims) and listLength(subs) == listLength(regulars) and listLength(subs) == listLength(eq_dims) then
+        // 2. create a map that maps a configuration key to the corresponding scalar crefs
+        stripped  := ComponentRef.stripSubscriptsAll(cref);
+        key       := arrayCreate(listLength(subs), 0);
+        map1      := UnorderedMap.new<Val1>(keyHash, keyEqual);
+        resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
+
+        // 3. create a map that maps a configuration key to the final variable indices
+        map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
+        for k in UnorderedMap.keyList(map1) loop
+          scalarized := UnorderedMap.getSafe(k, map1, sourceInfo());
+          scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map) for scal in scalarized));
+          UnorderedMap.add(k, scal_lst, map2);
+        end for;
+
+        // 4. iterate over all equation dimensions and use the map to get the correct dependencies
+        key := arrayCreate(listLength(subs), 0);
+        resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {cref}, false), Pointer.create(skip_idx));
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
+          + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
+          + "variable dimensions(" + intString(listLength(dims)) + "): " + List.toString(dims, Dimension.toString) + "\n"
+          + "equation dimensions(" + intString(listLength(eq_dims)) + "): " + List.toString(eq_dims, Dimension.toString) + "\n"
+          + "variable dependencies(" + intString(listLength(regulars)) + "): " + List.toString(regulars, boolString) + "\n"});
+        fail();
+      end if;
+
+    else
+      // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
+      repeated    := UnorderedSet.contains(cref, rep);
+      scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
+      map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+      for scal in scalarized loop
+        UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+      end for;
+
+      // if its repeated, use the same cref always
+      if repeated then
+        mode := Mode.create(eqn_name, {cref}, false);
+      end if;
+
+      for i in skip_idx:iter_size:skip_idx+size-iter_size loop
+        shift := 0;
+        for scal in scalarized loop
+          // if its not repeated use local cref
+          if not repeated then
+            mode := Mode.create(eqn_name, {scal}, true);
+          end if;
+          for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+            if intMod(shift, iter_size) == 0 then shift := 0; end if;
+            addMatrixEntry(m, modes, i + shift, scal_idx, mode);
+            shift := shift + 1;
+          end for;
+        end for;
+      end for;
+    end if;
+  end resolveDependency;
+
+  function resolveEquationDimensions
+    "a component reference in a list of equation dimensions. The second argument to the tuple
+    is TRUE if its a regular occurence of the cref and FALSE if its a reduced occurence.
+    The key is created from the dimensions and the additional boolean to look up the cref occurence in the map."
+    input list<tuple<Dimension, Boolean>> lst   "equation dimension and cref regularity tuple list";
+    input UnorderedMap<Key, Val2> map           "map to look up occurence";
+    input Array<Integer> key                    "mutable key";
+    input array<list<Integer>> m                "adjacency matrix";
+    input UnorderedMap<Mode.Key, Mode> modes;
+    input Mode mode;
+    input Pointer<Integer> eqn_idx_ptr          "mutable equation index";
+    input Integer index = 1                     "dimension index for the key";
+  algorithm
+    _ := match lst
+      local
+        Dimension dim;
+        list<tuple<Dimension, Boolean>> rest;
+        Integer eqn_idx;
+        list<Integer> scal_lst;
+
+      case {} algorithm
+        // no further dimensions. resolve with current key config and bump equation index
+        eqn_idx := Pointer.access(eqn_idx_ptr);
+        scal_lst := UnorderedMap.getSafe(arrayList(key), map, sourceInfo());
+        for scal_idx in scal_lst loop
+          addMatrixEntry(m, modes, eqn_idx, scal_idx, mode);
+        end for;
+        Pointer.update(eqn_idx_ptr, eqn_idx + 1);
+      then ();
+
+      case (dim, false)::rest algorithm
+        // reduced dimension, keep key index at 0 and go deeper with next dimension
+        for i in 1:Dimension.size(dim) loop
+          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+        end for;
+      then ();
+
+      case (dim, true)::rest algorithm
+        // regular dimension, update key index to corresponding dimension index
+        // and go deeper with next dimension
+        for i in 1:Dimension.size(dim) loop
+          arrayUpdate(key, index, i);
+          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+        end for;
+      then ();
+    end match;
+  end resolveEquationDimensions;
+
+  function addMatrixEntry
+    input array<list<Integer>> m                "adjacency matrix";
+    input UnorderedMap<Mode.Key, Mode> modes;
+    input Integer eqn_idx;
+    input Integer var_idx;
+    input Mode mode;
+  algorithm
+    //print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
+    arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
+    UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
+  end addMatrixEntry;
+
+  function resolveReductions
+    input list<tuple<Subscript, Dimension, Boolean>> lst;
+    input UnorderedMap<Key, Val1> map;
+    input Array<Integer> key;
+    input ComponentRef stripped;
+    input list<Subscript> acc = {};
+    input Integer index = 1;
+  algorithm
+    _ := match lst
+      local
+        list<tuple<Subscript, Dimension, Boolean>> rest;
+        Subscript sub;
+        Dimension dim;
+        ComponentRef cref;
+        Val1 val;
+        Integer sub_idx;
+
+      case {} algorithm
+        cref := ComponentRef.mergeSubscripts(listReverse(acc), stripped);
+        val := ComponentRef.scalarizeAll(cref);
+        UnorderedMap.add(arrayList(key), val, map);
+      then ();
+
+      case (sub, _, false)::rest algorithm
+        resolveReductions(rest, map, key, stripped, sub::acc, index+1);
+      then ();
+
+      case (sub, dim, true)::rest algorithm
+        sub_idx := 1;
+        for s in Subscript.scalarize(sub, dim) loop
+          arrayUpdate(key, index, sub_idx);
+          resolveReductions(rest, map, key, stripped, s::acc, index+1);
+          sub_idx := sub_idx + 1;
+        end for;
+      then ();
+
+    end match;
+  end resolveReductions;
+
   function combineFrames2Indices
     "Iterates over all elements in nested iterators represented by frames.
     Converts each of the now integer subscript lists (in combination with
@@ -893,7 +1420,9 @@ protected
         list<tuple<Integer, Integer>> ranges;
 
       // only occurs for non-for-loop equations (no frames to replace)
-      case {} then {first};
+      case {} algorithm
+        ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
+      then {locationToIndex(ranges, first)};
 
       // extract numeric information about the range
       case (iterator, range) :: rest algorithm
@@ -936,12 +1465,12 @@ protected
     list<Integer> sizes;
     list<Expression> subs;
   algorithm
-      stripped        := ComponentRef.stripSubscriptsAll(cref);
-      var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
-      (var_start, _)  := mapping.var_AtS[var_arr_idx];
-      sizes           := ComponentRef.sizes(stripped);
-      subs            := ComponentRef.subscriptsToExpression(cref, true);
-      scal_lst        := combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
+    stripped        := if listEmpty(frames) then cref else ComponentRef.stripSubscriptsAll(cref);
+    var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
+    (var_start, _)  := mapping.var_AtS[var_arr_idx];
+    sizes           := ComponentRef.sizes(stripped);
+    subs            := ComponentRef.subscriptsToExpression(cref, true);
+    scal_lst        := listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
   end getCrefInFrameIndices;
 
   function resolveDimensionsSubscripts
@@ -956,7 +1485,7 @@ protected
     list<Integer> values;
   algorithm
     replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
-    values := list(Expression.integerValue(SimplifyExp.simplify(rep, true)) for rep in replaced);
+    values := list(Expression.integerValueOrDefault(SimplifyExp.simplifyDump(rep, true, getInstanceName()), 1) for rep in replaced);
     ranges := List.zip(sizes, values);
   end resolveDimensionsSubscripts;
 

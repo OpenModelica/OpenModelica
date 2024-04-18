@@ -41,12 +41,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore>
-#include <QtGui/QMessageBox>
-#endif
 
 //IAEX Headers
 #include "notebook.h"
@@ -70,7 +65,6 @@ extern "C" {
 
 #include <locale.h>
 
-using namespace std;
 using namespace IAEX;
 
 int main(int argc, char *argv[])
@@ -95,7 +89,7 @@ int main(int argc, char *argv[])
     CellApplication a(argc, argv, threadData);
     return a.exec();
   }
-  catch(exception &e)
+  catch(std::exception &e)
   {
     // 2006-01-30 AF, add message box
     QString msg = QString("In main(), exception: \n") + e.what();

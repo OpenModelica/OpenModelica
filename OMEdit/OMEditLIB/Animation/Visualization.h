@@ -45,6 +45,7 @@
 #include <QOpenGLContext> // must be included before OSG headers
 
 #include <osg/Version>
+#include <osg/Uniform>
 #include <osg/Transform>
 #include <osg/AutoTransform>
 #include <osg/MatrixTransform>

@@ -19,7 +19,7 @@ end RedeclareModifierInvalid1;
 // Result:
 // Error processing file: RedeclareModifierInvalid1.mo
 // [flattening/modelica/redeclare/RedeclareModifierInvalid1.mo:16:3-16:40:writable] Notification: From here:
-// [flattening/modelica/redeclare/RedeclareModifierInvalid1.mo:11:3-11:9:writable] Error: Trying to redeclare component x but component not declared as replaceable.
+// [flattening/modelica/redeclare/RedeclareModifierInvalid1.mo:11:3-11:9:writable] Error: Redeclaration with a new type requires 'x' to be replaceable.
 // Error: Error occurred while flattening model RedeclareModifierInvalid1
 //
 // # Error encountered! Exiting...

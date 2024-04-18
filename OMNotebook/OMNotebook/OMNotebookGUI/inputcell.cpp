@@ -46,23 +46,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QDir>
-#include <QtCore/QEvent>
-#include <QtCore/QThread>
-#include <QtGui/QAbstractTextDocumentLayout>
-#include <QtGui/QApplication>
-#include <QtGui/QMouseEvent>
-#include <QtGui/QGridLayout>
-#include <QtGui/QKeyEvent>
-#include <QtGui/QLabel>
-#include <QtGui/QMessageBox>
-#include <QtGui/QResizeEvent>
-#include <QtGui/QFrame>
-#include <QtGui/QTextFrame>
-#endif
 
 //IAEX Headers
 #include "inputcell.h"
@@ -1114,7 +1098,7 @@ namespace IAEX
       emit textChanged(true);
     }
     else
-      cout << "Not delegate on inputcell" << endl;
+      std::cout << "Not delegate on inputcell" << std::endl;
 
     input_->blockSignals(false);
     output_->blockSignals(false);
@@ -1219,7 +1203,7 @@ namespace IAEX
   InputCellDelegate *InputCell::delegate()
   {
     if(!hasDelegate())
-      throw runtime_error("No delegate.");
+      throw std::runtime_error("No delegate.");
 
     return delegate_;
   }

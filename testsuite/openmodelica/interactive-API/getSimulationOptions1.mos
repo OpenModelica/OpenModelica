@@ -1,0 +1,31 @@
+// name: getSimulationOptions1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  model A
+    annotation(experiment(StopTime = 2.0, Tolerance = 0.004));
+  end A;
+
+  model B
+    extends A;
+    annotation(experiment(StartTime = 1.0));
+  end B;
+
+  model M
+    extends B;
+    annotation(experiment(Tolerance = 0.01));
+  end M;
+");
+getErrorString();
+
+getSimulationOptions(M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// (1.0,2.0,0.01,500,0.002)
+// ""
+// endResult

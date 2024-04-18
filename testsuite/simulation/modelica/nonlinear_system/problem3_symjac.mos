@@ -4,7 +4,7 @@
 // cflags: -d=-newInst
 
 loadFile("nlsTestPackage.mo"); getErrorString();
-OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=noTearing"); getErrorString();
+OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=minimalTearing"); getErrorString();
 OpenModelica.Scripting.setCommandLineOptions("+d=NLSanalyticJacobian"); getErrorString();
 simulate(nonlinear_system.problem3, stopTime=0); getErrorString();
 

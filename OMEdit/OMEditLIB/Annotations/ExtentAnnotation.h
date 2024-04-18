@@ -39,6 +39,7 @@ class ExtentAnnotation : public DynamicAnnotation
 {
   public:
     ExtentAnnotation();
+    ExtentAnnotation(const QVector<QPointF> &value);
 
     void clear() override;
 

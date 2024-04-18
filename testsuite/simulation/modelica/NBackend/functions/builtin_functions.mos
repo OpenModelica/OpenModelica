@@ -23,239 +23,51 @@ equation
   der(x[13]) = log10(y+1);
   der(x[14]) = atan2(y, x[1]);
 end builtin_functions;
-
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=symjacdump"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
 simulate(builtin_functions); getErrorString();
+
+val(x[1],1.0);
+val(x[2],1.0);
+val(x[3],1.0);
+val(x[4],1.0);
+val(x[5],1.0);
+val(x[6],1.0);
+val(x[7],1.0);
+val(x[8],1.0);
+val(x[9],1.0);
+val(x[10],1.0);
+val(x[11],1.0);
+val(x[12],1.0);
+val(x[13],1.0);
+val(x[14],1.0);
+
 // Result:
 // true
 // ""
 // true
 // ""
-// #################################################
-//
-// 	[symjacdump] Creating symbolic Jacobians:
-//
-// #################################################
-//
-// ===========================
-// CONTINUOUS 1 ODE System
-// ===========================
-//
-// --- Alias of INI[1 | 2] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] (1) y = abs(x[2]) ($RES_SIM_14)
-//
-// --- Alias of INI[1 | 3] ---
-// BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[1]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[1] = sqrt(y) ($RES_SIM_13)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 4] ---
-// BLOCK 3: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[2]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[2] = sin(y) ($RES_SIM_12)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 5] ---
-// BLOCK 4: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[3]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[3] = cos(y) ($RES_SIM_11)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 6] ---
-// BLOCK 5: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[4]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[4] = tan(y) ($RES_SIM_10)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 7] ---
-// BLOCK 6: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[5]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[5] = asin(y) ($RES_SIM_9)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 8] ---
-// BLOCK 7: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[6]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[6] = acos(y) ($RES_SIM_8)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 9] ---
-// BLOCK 8: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[7]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[7] = atan(y) ($RES_SIM_7)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 10] ---
-// BLOCK 9: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[8]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[8] = sinh(y) ($RES_SIM_6)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 11] ---
-// BLOCK 10: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[9]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[9] = cosh(y) ($RES_SIM_5)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 12] ---
-// BLOCK 11: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[10]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[10] = tanh(y) ($RES_SIM_4)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 13] ---
-// BLOCK 12: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[11]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[11] = exp(y) ($RES_SIM_3)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 14] ---
-// BLOCK 13: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[12]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[12] = log(1.0 + y) ($RES_SIM_2)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 15] ---
-// BLOCK 14: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[13]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[13] = log10(1.0 + y) ($RES_SIM_1)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 16] ---
-// BLOCK 15: Sliced Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[14]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[14] = atan2(y, x[1]) ($RES_SIM_0)
-// 	 slice: {}
-//
-// ###################################
-//
-// 	[SIM] Jacobian ODE_JAC: SIM
-//
-// ###################################
-//
-// Partial Derivative Variables (2/15)
-// *************************************
-// (1)       [ALGB] (1) Real y
-// (2)       [DER-] (14) Real[14] $DER.x
-//
-// Seed Variables (1/14)
-// ***********************
-// (1)       [STAT] (14) Real[14] x (fixed = {true for $i1 in 1:14}, start = {-1.0 for $i1 in 1:14})
-//
-// ==============================
-// Sparsity Pattern (nnz: 15)
-// ==============================
-//
-// ### Seeds (col vars) ###
-// --------------------------
-// {x[14], x[13], x[12], x[11], x[10], x[9], x[8], x[7], x[6], x[5], x[4], x[3], x[2], x[1]}
-//
-// ### Partials (row vars) ###
-// -----------------------------
-// {$DER.x[14], $DER.x[13], $DER.x[12], $DER.x[11], $DER.x[10], $DER.x[9], $DER.x[8], $DER.x[7], $DER.x[6], $DER.x[5], $DER.x[4], $DER.x[3], $DER.x[2], $DER.x[1]}
-//
-// ### Columns ###
-// -----------------
-// (x[1])	 affects:	{$DER.x[14]}
-// (x[2])	 affects:	{$DER.x[9],$DER.x[14],$DER.x[1],$DER.x[2],$DER.x[3],$DER.x[4],$DER.x[5],$DER.x[10],$DER.x[6],$DER.x[11],$DER.x[7],$DER.x[12],$DER.x[8],$DER.x[13]}
-// (x[3])	 affects:	{}
-// (x[4])	 affects:	{}
-// (x[5])	 affects:	{}
-// (x[6])	 affects:	{}
-// (x[7])	 affects:	{}
-// (x[8])	 affects:	{}
-// (x[9])	 affects:	{}
-// (x[10])	 affects:	{}
-// (x[11])	 affects:	{}
-// (x[12])	 affects:	{}
-// (x[13])	 affects:	{}
-// (x[14])	 affects:	{}
-//
-// ##### Rows #####
-// ------------------
-// ($DER.x[1])	 depends on:	{x[2]}
-// ($DER.x[2])	 depends on:	{x[2]}
-// ($DER.x[3])	 depends on:	{x[2]}
-// ($DER.x[4])	 depends on:	{x[2]}
-// ($DER.x[5])	 depends on:	{x[2]}
-// ($DER.x[6])	 depends on:	{x[2]}
-// ($DER.x[7])	 depends on:	{x[2]}
-// ($DER.x[8])	 depends on:	{x[2]}
-// ($DER.x[9])	 depends on:	{x[2]}
-// ($DER.x[10])	 depends on:	{x[2]}
-// ($DER.x[11])	 depends on:	{x[2]}
-// ($DER.x[12])	 depends on:	{x[2]}
-// ($DER.x[13])	 depends on:	{x[2]}
-// ($DER.x[14])	 depends on:	{x[2],x[1]}
-//
-// =====================
-// Sparsity Coloring
-// =====================
-// Color (1)
-//   - Column: {x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12],x[13],x[14]}
-//   - Row:    {}
-//
-// Color (2)
-//   - Column: {x[1]}
-//   - Row:    {}
-//
-//
 // record SimulationResult
 //     resultFile = "builtin_functions_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'builtin_functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'builtin_functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
+// -0.1949680036981218
+// -0.39666298542884787
+// -0.22157219439097658
+// -0.18129859846135266
+// -0.24442009631048392
+// -0.18478357689461986
+// -0.4264604060338793
+// -0.2804123141042697
+// 0.24442400370441986
+// -0.4334016307733458
+// 0.96401168960015
+// -0.49889818933944474
+// -0.7823742487583922
+// 1.2533133489600217
 // endResult

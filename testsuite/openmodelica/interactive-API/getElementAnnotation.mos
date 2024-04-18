@@ -1,0 +1,28 @@
+// name: getElementAnnotation
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  package P
+    model A
+      annotation(Inline = true);
+      Real x annotation(Evaluate = true);
+    end A;
+
+    annotation(Documentation(info = \"<html>test</html>\"));
+  end P;
+");
+
+getElementAnnotation(P);
+getElementAnnotation(P.A);
+getElementAnnotation(P.A.x);
+getElementAnnotation(OpenModelica);
+
+// Result:
+// true
+// "(Documentation(info = \"<html>test</html>\"))"
+// "(Inline = true)"
+// "(Evaluate = true)"
+// "(Documentation(revisions = \"<html>See <a href=\\\"modelica://OpenModelica.UsersGuide.ReleaseNotes\\\">ReleaseNotes</a></html>\", __Dymola_DocumentationClass = true), preferredView = \"text\")"
+// endResult

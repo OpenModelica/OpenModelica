@@ -57,7 +57,6 @@ class QUrl;
 
 class CellStyle;
 
-using namespace std;
 
 namespace IAEX
 {
@@ -82,6 +81,8 @@ namespace IAEX
     Q_OBJECT
 
   public:
+    virtual ~Document() = default;
+
     //Application
     virtual CellApplication *application() = 0;
 
@@ -141,7 +142,7 @@ namespace IAEX
     //Utility operations
     virtual Factory *cellFactory() = 0;
     virtual Cell* getMainCell() = 0;        // Added 2006-08-24 AF
-    virtual vector<Cell *> getSelection() = 0;
+    virtual std::vector<Cell *> getSelection() = 0;
     virtual void clearSelection() = 0;
 
     //command operations

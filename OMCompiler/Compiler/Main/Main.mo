@@ -189,7 +189,7 @@ algorithm
         prog2 = InteractiveUtil.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
-          Dump.dump(prog2);
+          Print.printBuf(Dump.unparseStr(prog2));
         end if;
         if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
           DumpGraphviz.dump(prog2);
@@ -238,14 +238,14 @@ algorithm
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
       equation
-        names = List.map(cls,AbsynUtil.className);
+        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
         names = List.map1(names,AbsynUtil.joinPaths,scope);
         res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
       equation
-        names = List.map(cls,AbsynUtil.className);
+        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
         res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
@@ -326,12 +326,14 @@ algorithm
     System.fflush();
     System.fputs(errorString, System.StreamType.STDERR);
     System.fputs("\n", System.StreamType.STDERR);
+    System.fflush();
   end if;
 
   if errorMessages <> "" then
     System.fflush();
     System.fputs(errorMessages, System.StreamType.STDERR);
     System.fputs("\n", System.StreamType.STDERR);
+    System.fflush();
   end if;
 end showErrors;
 
@@ -417,7 +419,7 @@ algorithm
 
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
-          Dump.dump(SymbolTable.getAbsyn());
+          Dump.unparseStr(SymbolTable.getAbsyn());
           print(Print.getString());
         end if;
         if Flags.isSet(Flags.DUMP_JL) then
@@ -484,7 +486,7 @@ algorithm
           print(System.gettext("File does not exist: "));
         end if;
 
-        print(f); print("\n");
+        print(f); print("\n"); System.fflush();
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then
@@ -610,15 +612,15 @@ end readSettingsFile;
 
 public function setWindowsPaths
 "@author: adrpo
- set the windows paths for MinGW.
- do some checks on where needed things are present.
+ Set the windows paths for MSYS.
+ Do some checks on where needed things are present.
  BIG WARNING: if MinGW gcc version from OMDev or OpenModelica/MinGW
               changes you will need to change here!"
   input String inOMHome;
 algorithm
   _ := match(inOMHome)
     local
-      String oldPath, newPath, omHome, omdevPath, mingwDir, binDir, libBinDir, msysBinDir;
+      String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir;
       Boolean hasBinDir, hasLibBinDir;
 
     // check if we have OMDEV set
@@ -626,16 +628,17 @@ algorithm
       equation
         System.setEnv("OPENMODELICAHOME",omHome,true);
         omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
-        mingwDir = System.openModelicaPlatform();
         // if we don't have something in OMDEV use OMHOME
         if stringEq(omdevPath, "") then
           omdevPath = omHome;
         end if;
-        msysBinDir = omdevPath + "\\tools\\msys\\usr\\bin";
-        binDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\bin";
+        msysPath = omdevPath + "\\tools\\msys";
+        mingwDir = System.openModelicaPlatform();
+        msysBinDir = msysPath + "\\usr\\bin";
+        binDir = msysPath + "\\" + mingwDir + "\\bin";
         // if compiler is gcc
         if System.getCCompiler() == "gcc" then
-          libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+          libBinDir = msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
         else // if is clang
           libBinDir = binDir;
         end if;
@@ -784,22 +787,20 @@ algorithm
     // OMC called with no arguments, print usage information and quit.
     if listEmpty(args) and Config.classToInstantiate()=="" then
       if not Config.helpRequest() then
-        print(FlagsUtil.printUsage());
+        print(FlagsUtil.printUsage()); System.fflush();
       end if;
       return;
     end if;
 
     try
       Settings.getInstallationDirectoryPath();
-      print("# Error encountered! Exiting...\n");
-      print("# Please check the error message and the flags.\n");
-      Print.printBuf("\n\n----\n\nError buffer:\n\n");
-      print(Print.getErrorString());
-      print(ErrorExt.printMessagesStr(false)); print("\n");
+      print("# Error encountered! Exiting...\n"); System.fflush();
+      print("# Please check the error message and the flags.\n"); System.fflush();
+      Print.printBuf("\n\n----\n\nError buffer:\n\n"); System.fflush();
+      print(Print.getErrorString()); System.fflush();
+      print(ErrorExt.printMessagesStr(false)); System.fflush(); print("\n"); System.fflush();
     else
-      print("Error: OPENMODELICAHOME was not set.\n");
-      print("  Read the documentation for instructions on how to set it properly.\n");
-      print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
+      print("Error: Failed to retrieve the installation directory path!\n"); System.fflush();
     end try;
     fail();
   end try;

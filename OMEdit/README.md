@@ -14,19 +14,17 @@ Follow the instructions matching your OS:
   - [OMCompiler/README.Linux.md](../OMCompiler/README.Linux.md)
   - [OMCompiler/README.Windows.md](../OMCompiler/README.Windows.md)
 
-### Windows MSYS Makefiles
+### Compile/Debug from Qt Creator
 
-If you used MSYS Makefiles to compile OpenModelica you need one additional step:
+Compile OMEdit once using the build instructions above so all dependencies of OMEdit are ready. Then follow these steps,
 
-Start a MSYS terminal `$OMDEV\tools\msys\mingw64.exe` (64 bit) or
-`$OMDEV\tools\msys\mingw32.exe` (32 bit) and run:
-
-```bash
-$ cd /path/to/OpenModelica
-make -f Makefile.omdev.mingw omedit -j<Nr. of cores>
-```
-
-Start OMEdit from `/path/to/OpenModelica/build/bin/OMEdit.exe`
+  - Load the `OMEdit.pro` file in Qt Creator.
+  - Configure the project with the compiler you used to compile OMEdit earlier.
+  - Go to project build settings in Qt Creator. Add a custom build step to copy executable `OMEdit` from `OpenModelica/OMEdit/bin` to `OpenModelica/build/bin`
+  - Add the build environment variables `CXX` and `OMBUILDDIR`. `CXX` is only needed if your default is `gcc` and you want to use `clang`. `OMBUILDDIR` should point to `OpenModelica/build`.
+  - Change the run settings to run the executable `OpenModelica/build/bin/OMEdit` instead of `OpenModelica/OMEdit/bin/OMEdit`.
+  - Compile/debug OMEdit.
+![Build Settings](build_settings.png)
 
 ## Coding Style
 

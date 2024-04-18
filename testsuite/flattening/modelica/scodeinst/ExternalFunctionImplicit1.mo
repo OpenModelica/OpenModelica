@@ -18,7 +18,7 @@ algorithm
 end ExternalFunctionImplict1;
 
 // Result:
-// function f
+// impure function f
 //   input Real x;
 //   output Real y;
 //

@@ -1,20 +1,21 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linkoping University,
- * Department of Computer and Information Science,
- * SE-58183 Linkoping, Sweden.
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkoping University, either from the above address,
+ * from OSMC, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -22,12 +23,9 @@
  * This program is distributed WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
- *
- * Main Author 2011: Adeel Asghar
  *
  */
 
@@ -50,8 +48,10 @@ private:
   bool mCustomColor;
   QString mXUnit;
   QString mXDisplayUnit;
+  QString mXUnitPrefix;
   QString mYUnit;
   QString mYDisplayUnit;
+  QString mYUnitPrefix;
   qreal mWidth;
   int mStyle;
   bool mToggleSign;
@@ -68,16 +68,18 @@ public:
   QwtArray<double> mYAxisVector;
 
   void setTitleLocal();
-  Qt::PenStyle getPenStyle(int style);
-  QwtPlotCurve::CurveStyle getCurveStyle(int style);
+  Qt::PenStyle getPenStyle(int style) const;
+  QwtPlotCurve::CurveStyle getCurveStyle(int style) const;
   void setXUnit(QString xUnit) {mXUnit = xUnit;}
-  QString getXUnit() {return mXUnit;}
+  QString getXUnit() const {return mXUnit;}
   void setXDisplayUnit(QString xDisplayUnit) {mXDisplayUnit = xDisplayUnit;}
-  QString getXDisplayUnit() {return mXDisplayUnit;}
+  QString getXDisplayUnit() const {return mXDisplayUnit;}
+  QString getXUnitPrefix() const {return mXUnitPrefix;}
   void setYUnit(QString yUnit) {mYUnit = yUnit;}
-  QString getYUnit() {return mYUnit;}
+  QString getYUnit() const {return mYUnit;}
   void setYDisplayUnit(QString yDisplayUnit) {mYDisplayUnit = yDisplayUnit;}
-  QString getYDisplayUnit() {return mYDisplayUnit;}
+  QString getYDisplayUnit() const {return mYDisplayUnit;}
+  QString getYUnitPrefix() const {return mYUnitPrefix;}
   void setCurveWidth(qreal width);
   qreal getCurveWidth() {return mWidth;}
   void setCurveStyle(int style);
@@ -89,13 +91,11 @@ public:
   void setXAxisVector(QVector<double> vector);
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);
-  const double* getXAxisVector() const;
   QPair<QVector<double>*, QVector<double>*> getAxisVectors();
   void clearXAxisVector() {mXAxisVector.clear();}
   void setYAxisVector(QVector<double> vector);
   void addYAxisValue(double value);
   void updateYAxisValue(int index, double value);
-  const double* getYAxisVector() const;
   void clearYAxisVector() {mYAxisVector.clear();}
   int getSize();
   void setFileName(QString fileName);
@@ -110,7 +110,7 @@ public:
   void setCustomColor(bool value);
   bool hasCustomColor();
   void toggleVisibility(bool visibility);
-  void setData(const double* xData, const double* yData, int size);
+  void plotData();
   QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
   QwtPlotMarker* getPointMarker() const {return mpPointMarker;}
 #if QWT_VERSION < 0x060000

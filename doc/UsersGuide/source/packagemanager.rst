@@ -95,6 +95,19 @@ Internet connection, so it also works behind firewalls or in set-ups with limite
 Standard Library is immediately available without the need of using the package manager explicitly. It is then possible
 to install and manage other libraries using the package manager, as explained previously.
 
+As a final remark, please note that the version numbers of the various Modelica packages have no relation with the version
+numbers of the OpenModelica tool itself. Since version 1.19.0, OpenModelica is no longer shipped with built-in installed
+libraries, that are instead managed independently by the user with the online Package Manager. You can install and use old and new
+versions of a certain open source Modelica library using the latest released version of OpenModelica, by using the
+Package Manager. We strive to make sure that new released versions of OpenModelica are backwards-compatible, meaning that you should
+always be able to run the same models/libraries with a new version of OpenModelica if you could with an older version of the
+tool. Hence, we strongly advise you to always use the latest released version of OpenModelica, even if you are running old
+models; by doing so, you benefit from faster performance, more robust numerical performance, new tool features, and a
+lot of bug fixes.
+
+You should never find yourself in a situation where you are forced to stick to an old version of OpenModelica to run your models.
+If that happens to you, please open a ticket on the `issue tracker <https://github.com/OpenModelica/OpenModelica/issues/new/choose>`_, so we can hopefully fix the problem and allow you to keep using the latest OpenModelica release.
+
 Package Management in OMEdit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

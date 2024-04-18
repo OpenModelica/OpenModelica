@@ -51,7 +51,7 @@ getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.Dr
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getAllSubtypeOf(DC_Drive.DriveParameters.MachineDataSets.MachineData, DC_Drive.DriveParameters.DriveData)
-// {DC_Drive.DriveParameters.MachineDataSets.M48V}
+// {DC_Drive.DriveParameters.MachineDataSets.MachineData,DC_Drive.DriveParameters.MachineDataSets.M48V}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: removeElementModifiers(DC_Drive.Examples.DCPMCurrentControlled, "driveData", false)
@@ -87,7 +87,7 @@ getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.Dr
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData, DC_Drive2.DCPM_Utilities.DriveData)
-// {DC_Drive2.DCPM_Utilities.M48V}
+// {DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.M48V}
 // Evaluating: getErrorString()
 // ""
 // endResult

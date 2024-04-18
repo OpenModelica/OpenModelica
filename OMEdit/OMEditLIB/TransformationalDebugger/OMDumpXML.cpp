@@ -46,11 +46,7 @@ QString OMOperation::toString()
 QString OMOperation::toHtml(HtmlDiff htmlDiff)
 {
   Q_UNUSED(htmlDiff);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   return QString(toString()).toHtmlEscaped();
-#else /* Qt4 */
-  return Qt::escape(toString());
-#endif
 }
 
 QString OMOperation::diffHtml(QString &before, QString &after, HtmlDiff htmlDiff)
@@ -191,6 +187,17 @@ OMVariable::OMVariable()
 
 OMVariable::OMVariable(const OMVariable &var)
 {
+  copyData(var);
+}
+
+OMVariable& OMVariable::operator=(const OMVariable &var)
+{
+  copyData(var);
+  return *this;
+}
+
+void OMVariable::copyData(const OMVariable &var)
+{
   name = var.name;
   comment = var.comment;
   info = var.info;
@@ -198,33 +205,8 @@ OMVariable::OMVariable(const OMVariable &var)
   definedIn = var.definedIn;
   usedIn = var.usedIn;
   foreach (OMOperation *op, var.ops) {
-    qDebug() << "dynamic_cast op: " << op->toString();
-    if (dynamic_cast<OMOperationSimplify*>(op))
-      ops.append(new OMOperationSimplify(*dynamic_cast<OMOperationSimplify*>(op)));
-    else if (dynamic_cast<OMOperationScalarize*>(op))
-      ops.append(new OMOperationScalarize(*dynamic_cast<OMOperationScalarize*>(op)));
-    else if (dynamic_cast<OMOperationInline*>(op))
-      ops.append(new OMOperationInline(*dynamic_cast<OMOperationInline*>(op)));
-    else if (dynamic_cast<OMOperationSubstitution*>(op))
-      ops.append(new OMOperationSubstitution(*dynamic_cast<OMOperationSubstitution*>(op)));
-    else if (dynamic_cast<OMOperationSolved*>(op))
-      ops.append(new OMOperationSolved(*dynamic_cast<OMOperationSolved*>(op)));
-    else if (dynamic_cast<OMOperationLinearSolved*>(op))
-      ops.append(new OMOperationLinearSolved(*dynamic_cast<OMOperationLinearSolved*>(op)));
-    else if (dynamic_cast<OMOperationSolve*>(op))
-      ops.append(new OMOperationSolve(*dynamic_cast<OMOperationSolve*>(op)));
-    else if (dynamic_cast<OMOperationDifferentiate*>(op))
-      ops.append(new OMOperationDifferentiate(*dynamic_cast<OMOperationDifferentiate*>(op)));
-    else if (dynamic_cast<OMOperationResidual*>(op))
-      ops.append(new OMOperationResidual(*dynamic_cast<OMOperationResidual*>(op)));
-    else if (dynamic_cast<OMOperationDummyDerivative*>(op))
-      ops.append(new OMOperationDummyDerivative(*dynamic_cast<OMOperationDummyDerivative*>(op)));
-    else if (dynamic_cast<OMOperationFlattening*>(op))
-      ops.append(new OMOperationFlattening(*dynamic_cast<OMOperationFlattening*>(op)));
-    else if (dynamic_cast<OMOperationInfo*>(op))
-      ops.append(new OMOperationInfo(*dynamic_cast<OMOperationInfo*>(op)));
-    else
-      ops.append(new OMOperation(*op));
+    //qDebug() << "dynamic_cast op: " << op->toString();
+    ops.append(op->clone());
   }
 }
 
@@ -252,8 +234,10 @@ QString OMEquation::toString()
   } else if (tag == "assign" || tag == "torn" || tag == "jacobian") {
     if (text.size()==1) {
      return QString("(%1) %2 := %3").arg(tag).arg(defines[0]).arg(text[0]);
-    } else {
+    } else if (text.size()==2) {
      return QString("(%1) %2 := %3").arg(tag).arg(text[0]).arg(text[1]);
+    } else {
+      return QString("(%1) text.size() is %2 (Unhandled case)").arg(tag).arg(text.size());
     }
   } else if (tag == "statement" || tag == "algorithm") {
     return text.join("\n");

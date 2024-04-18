@@ -78,7 +78,7 @@ protected
   import Util;
 
 public
-  type JacobianType = enumeration(SIMULATION, NONLINEAR);
+  type JacobianType = enumeration(ODE, DAE, LS, NLS);
 
   function main
     "Wrapper function for any jacobian function. This will be called during
@@ -149,10 +149,14 @@ public
     output Option<Jacobian> jacobian;
     input output FunctionTree funcTree;
     input String name;
+  protected
+    constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
+      then jacobianSymbolic
+      else jacobianNumeric;
   algorithm
-    (jacobian, funcTree) := jacobianSymbolic(
+    (jacobian, funcTree) := func(
         name              = name,
-        jacType           = JacobianType.NONLINEAR,
+        jacType           = JacobianType.NLS,
         seedCandidates    = variables,
         partialCandidates = EquationPointers.getResiduals(equations),      // these have to be updated once there are inner equations in torn systems
         equations         = equations,
@@ -276,9 +280,11 @@ public
     output String str;
   algorithm
     str := match jacType
-      case JacobianType.SIMULATION  then "[SIM]";
-      case JacobianType.NONLINEAR   then "[NLS]";
-                                    else "[ERR]";
+      case JacobianType.ODE then "[ODE]";
+      case JacobianType.DAE then "[DAE]";
+      case JacobianType.LS  then "[LS-]";
+      case JacobianType.NLS then "[NLS]";
+                            else "[ERR]";
     end match;
   end jacobianTypeString;
 
@@ -340,8 +346,8 @@ public
       Integer nnz;
     algorithm
       // get all relevant crefs
-      seed_vars           := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
-      partial_vars        := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
+      seed_vars     := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
+      partial_vars  := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
 
       // assume full dependency
       for s in listReverse(seed_vars) loop
@@ -381,7 +387,7 @@ public
 
         case SOME(comps) algorithm
           // create index mapping only for variables
-          seed_mapping := Mapping.create(EquationPointers.empty(), seedCandidates);
+          seed_mapping    := Mapping.create(EquationPointers.empty(), seedCandidates);
           partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
 
           // get all relevant crefs
@@ -409,9 +415,9 @@ public
           // create row-wise sparsity pattern
           for cref in listReverse(partial_vars) loop
             // only create rows for derivatives
-            if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isStateDerivative) then
+            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative) then
               if UnorderedMap.contains(cref, map) then
-                tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
+                tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
                 row_vars := cref :: row_vars;
                 for dep in tmp loop
@@ -424,7 +430,7 @@ public
 
           // create column-wise sparsity pattern
           for cref in listReverse(seed_vars) loop
-            if jacType == JacobianType.NONLINEAR or BVariable.checkCref(cref, BVariable.isState) then
+            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState) then
               tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
               cols := (cref, tmp) :: cols;
               col_vars := cref :: col_vars;
@@ -524,7 +530,7 @@ public
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
-      if jacType == JacobianType.NONLINEAR then
+      if jacType == JacobianType.NLS then
         partials := listArray(sparsityPattern.partial_vars);
       else
         partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative)) in sparsityPattern.partial_vars));
@@ -670,7 +676,8 @@ protected
     derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(syst.unknowns));
     state_vars := list(BVariable.getStateVar(var) for var in derivative_vars);
     seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
-    (jacobian, funcTree) := func(name, JacobianType.SIMULATION, seedCandidates, partialCandidates, syst.equations, knowns, syst.strongComponents, funcTree);
+
+    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, syst.equations, knowns, syst.strongComponents, funcTree);
     syst.jacobian := jacobian;
     if Flags.isSet(Flags.JAC_DUMP) then
       print(System.System.toString(syst, 2));
@@ -692,6 +699,7 @@ protected
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
 
+    BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     if Util.isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
@@ -701,17 +709,27 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
 
-    // create seed and pDer vars (also filters out discrete vars)
+    // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
-    VariablePointers.mapPtr(partialCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, ht = jacobianHT, makeVar = BVariable.makePDerVar));
+
+    // create pDer vars (also filters out discrete vars)
+    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
+
+    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = false)); end for;
+    res_vars := Pointer.access(pDer_vars_ptr);
+
+    pDer_vars_ptr := Pointer.create({});
+    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = true)); end for;
+    tmp_vars := Pointer.access(pDer_vars_ptr);
 
     optHT := SOME(Pointer.access(jacobianHT));
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = ComponentRef.EMPTY(),             // no explicit cref necessary, rules are set by HT
+      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by HT
       new_vars        = {},
-      jacobianHT      = optHT, // seed and temporary cref hashtable
+      jacobianHT      = optHT,                  // seed and temporary cref hashtable
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
       scalarized      = seedCandidates.scalarized
@@ -722,16 +740,13 @@ protected
     funcTree := diffArguments.funcTree;
 
     // collect var data (most of this can be removed)
-    unknown_vars  := listReverse(Pointer.access(pDer_vars_ptr));
-    all_vars      := unknown_vars; // add other vars later on
+    unknown_vars  := listAppend(res_vars, tmp_vars);
+    all_vars      := unknown_vars;  // add other vars later on
 
     seed_vars     := Pointer.access(seed_vars_ptr);
-    aux_vars      := seed_vars; // add other auxiliaries later on
+    aux_vars      := seed_vars;     // add other auxiliaries later on
     alias_vars    := {};
     depend_vars   := {};
-
-
-    (res_vars, tmp_vars) := List.splitOnTrue(unknown_vars, BVariable.isStateDerivative);
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
@@ -764,10 +779,11 @@ protected
     VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
-  protected
     list<Pointer<Variable>> res_vars, tmp_vars;
+    BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
-    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), BVariable.isStateDerivative);
+    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
@@ -781,6 +797,7 @@ protected
       tmpVars       = VariablePointers.fromList(tmp_vars),
       seedVars      = seedCandidates
     );
+
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     jacobian := SOME(Jacobian.JACOBIAN(
@@ -792,6 +809,23 @@ protected
       sparsityColoring  = sparsityColoring
     ));
   end jacobianNumeric;
+
+  function getTmpFilterFunction
+    " - ODE/DAE filter by state derivative / algebraic
+      - LS/NLS filter by residual / inner"
+    input JacobianType jacType;
+    output BVariable.checkVar func;
+  algorithm
+    func := match jacType
+      case JacobianType.ODE then BVariable.isStateDerivative;
+      case JacobianType.DAE then BVariable.isStateDerivative;
+      case JacobianType.LS  then BVariable.isDAEResidual;
+      case JacobianType.NLS then BVariable.isDAEResidual;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
+      then fail();
+    end match;
+  end getTmpFilterFunction;
 
   function makeVarTraverse
     input Pointer<Variable> var_ptr;

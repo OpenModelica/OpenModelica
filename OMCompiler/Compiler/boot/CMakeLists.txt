@@ -7,9 +7,23 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz")
 else()
 #download and unpack the sources
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
-file(DOWNLOAD https://build.openmodelica.org/omc/bootstrap/sources.tar.gz
-     ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz SHOW_PROGRESS)
-execute_process(COMMAND tar xzf sources.tar.gz
+file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/refs/heads/master.tar.gz
+     ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz
+     SHOW_PROGRESS
+     STATUS status
+     LOG log)
+# fetch the elements of the status!
+list(GET status 0 status_code)
+list(GET status 1 status_string)
+# check the download status!
+if(NOT status_code EQUAL 0)
+message(FATAL_ERROR "error: downloading 'https://github.com/OpenModelica/OMBootstrapping/archive/refs/heads/master.tar.gz' failed
+        status_code: ${status_code}
+        status_string: ${status_string}
+        log: ${log}")
+endif()
+message(STATUS "downloading bootstrapping sources ... done")
+execute_process(COMMAND tar xzf sources.tar.gz --strip-components=1
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
 endif()
 
@@ -29,6 +43,11 @@ target_compile_definitions(bomc PRIVATE ADD_METARECORD_DEFINITIONS=)
 # Silence warnings about extra parenthesized equality checks. if((a==b)).
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   target_compile_options(bomc PRIVATE -Wno-parentheses-equality)
+endif()
+
+# Silence GCC warnings about invalid reads of MetaModelica strings.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_compile_options(bomc PRIVATE -Wno-stringop-overread)
 endif()
 
 # OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.

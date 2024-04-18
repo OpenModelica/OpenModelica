@@ -7,8 +7,11 @@ unexport PREFIX
 top_builddir = $(OMBUILDDIR)
 builddir_app=$(OMBUILDDIR)/Applications/
 builddir_bin=$(OMBUILDDIR)/bin
+builddir_bin_semla=$(OMBUILDDIR)/bin/omc-semla
 builddir_lib=$(OMBUILDDIR)/lib
+builddir_lib_semla=$(OMBUILDDIR)/lib/omc-semla
 builddir_lib_omc=$(OMBUILDDIR)/$(LIB_OMC)
+builddir_inc_semla=$(OMBUILDDIR)/include/omc-semla
 builddir_inc=$(OMBUILDDIR)/include/omc
 builddir_doc=$(OMBUILDDIR)/share/doc
 builddir_share=$(OMBUILDDIR)/share/
@@ -51,7 +54,7 @@ $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
 # Silence unnecessary verbose install messages from CMAKE
-CMAKE := $(CMAKE) -DCMAKE_INSTALL_MESSAGE=LAZY
+CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
 OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
 OMC_TBB_ROOT = 3rdParty/tbb
@@ -67,7 +70,7 @@ $(info Creating dirs: $(BUILD_DIRS))
 $(info $(shell mkdir -p $(BUILD_DIRS)))
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr libryu boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
 
 ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 semla:
@@ -81,11 +84,13 @@ semla:
 	   -DLICENSE_MANAGER:String=testingdummy \
 	   -DDECRYPTOR:String=default \
 	   -DOBFUSCATOR:String=dummy \
-	   -DCMAKE_INSTALL_PREFIX="$(top_builddir)" \
-	   -DCMAKE_INSTALL_BINDIR="$(builddir_bin)" \
+	   -DCMAKE_INSTALL_BINDIR="$(builddir_bin_semla)" \
+	   -DCMAKE_INSTALL_LIBDIR="$(builddir_lib_semla)" \
+	   -DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc_semla)" \
 	   ../src -G $(CMAKE_TARGET))
 
-	$(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
+	# Put the msys perl before ucrt perl to compile openssl
+	env PATH=/usr/bin:"$(PATH)" $(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
 
 semla-clean:
 	rm -rf ../OMEncryption/3rdParty/SEMLA/build
@@ -116,7 +121,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables boehm-gc idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables boehm-gc libryu idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
@@ -182,8 +187,8 @@ ipopt-clean:
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
-	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G \
-		$(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
 		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/" \
@@ -460,6 +465,14 @@ metis-clean:
 	test ! -f 3rdParty/metis-5.1.0/Makefile || $(MAKE) -C 3rdParty/metis-5.1.0 clean
 	rm -rf 3rdParty/metis-5.1.0/CMakeCache.txt 3rdParty/metis-5.1.0/libmetis/libmetis.a 3rdParty/metis-5.1.0/CMakeFiles 3rdParty/metis-5.1.0/Makefile 3rdParty/metis-5.1.0/cmake_install.cmake 3rdParty/metis-5.1.0/include/CMakeFiles 3rdParty/metis-5.1.0/include/Makefile 3rdParty/metis-5.1.0/include/cmake_install.cmake 3rdParty/metis-5.1.0/libmetis/CMakeFiles 3rdParty/metis-5.1.0/libmetis/Makefile 3rdParty/metis-5.1.0/libmetis/cmake_install.cmake 3rdParty/metis-5.1.0/programs/CMakeFiles 3rdParty/metis-5.1.0/programs/Makefile 3rdParty/metis-5.1.0/programs/cmake_install.cmake
 
+libryu: 3rdParty/ryu/ryu/libryu.a
+3rdParty/ryu/ryu/libryu.a:
+	test -d 3rdParty/ryu/ryu
+	(cd 3rdParty/ryu/ryu && $(MAKE) -f Makefile CC="$(CC)" CFLAGS="$(CFLAGS)")
+	cp 3rdParty/ryu/ryu/ryu.h $(builddir_inc)/
+	cp 3rdParty/ryu/ryu/om_format.h $(builddir_inc)/
+	cp 3rdParty/ryu/ryu/libryu$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libryu$(STAEXT)
+
 Cdaskr: 3rdParty/Cdaskr/solver/libcdaskr.a
 3rdParty/Cdaskr/solver/libcdaskr.a:
 	test -d 3rdParty/Cdaskr/solver
@@ -678,7 +691,7 @@ clean-sundials:
 LIBFFI=3rdParty/libffi
 libffi: $(LIBFFI)
 	(cd "$(LIBFFI)" && (test -f Makefile || ./autogen.sh))
-	(cd "$(LIBFFI)" && (test -f Makefile || (./configure --prefix="`pwd`/install" --enable-shared=no --disable-docs CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
+	(cd "$(LIBFFI)" && (test -f Makefile || (./configure --prefix="`pwd`/install" "--host=$(host)" --enable-shared=no --disable-docs CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
 	$(MAKE) -C "$(LIBFFI)"
 	$(MAKE) -C "$(LIBFFI)" install
 

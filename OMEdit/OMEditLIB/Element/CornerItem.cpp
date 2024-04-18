@@ -155,9 +155,8 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
     if (pLineAnnotation) {
       QVector<QPointF> points = pLineAnnotation->getPoints();
-      LineAnnotation::LineType lineType = pLineAnnotation->getLineType();
-      if ((((lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType) && (mConnectedPointIndex == 0 || mConnectedPointIndex == points.size() - 1))
-           || (lineType == LineAnnotation::InitialStateType && mConnectedPointIndex == 0))) {
+      if ((((pLineAnnotation->isConnection() || pLineAnnotation->isTransition()) && (mConnectedPointIndex == 0 || mConnectedPointIndex == points.size() - 1))
+           || (pLineAnnotation->isInitialState() && mConnectedPointIndex == 0))) {
         QGraphicsItem::mouseMoveEvent(event);
         return;
       }
@@ -200,16 +199,19 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   \param pComponent - pointer to Component.
   */
 ResizerItem::ResizerItem(Element *pComponent)
-  : QGraphicsItem(pComponent), mIsPressed(false)
+  : mIsPressed(false)
 {
-  setZValue(2999);
+  setZValue(4000);
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize);
   mpComponent = pComponent;
   mActivePen = QPen(Qt::red);
+  mActivePen.setCosmetic(true);
   mInheritedActivePen = QPen(Qt::darkRed);
+  mInheritedActivePen.setCosmetic(true);
   mPassivePen = QPen(Qt::transparent);
+  mPassivePen.setCosmetic(true);
   mRectangle = QRectF (-3, -3, 6, 6);
   mPen = mPassivePen;
 }
@@ -238,6 +240,7 @@ ResizerItem::ResizePositions ResizerItem::getResizePosition()
   */
 void ResizerItem::setActive()
 {
+  setZValue(4000);
   if (mpComponent->isInheritedElement()
       || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
           && (mpComponent->getLibraryTreeItem()->getOMSConnector()
@@ -257,6 +260,7 @@ void ResizerItem::setActive()
   */
 void ResizerItem::setPassive()
 {
+  setZValue(-4000);
   mPen = mPassivePen;
   setToolTip("");
   setVisible(false);
@@ -376,13 +380,14 @@ OriginItem::OriginItem(ShapeAnnotation *pShapeAnnotation)
  */
 void OriginItem::initialize()
 {
-  setZValue(3000);
+  setZValue(4000);
   mActivePen = QPen(Qt::red, 2);
   mActivePen.setCosmetic(true);
   mInheritedActivePen = QPen(Qt::darkRed, 2);
   mInheritedActivePen.setCosmetic(true);
-  mPassivePen = QPen(Qt::transparent);
-  mRectangle = QRectF (-1.5, -1.5, 3, 3);
+  mPassivePen = QPen(Qt::transparent, 2);
+  mPassivePen.setCosmetic(true);
+  mRectangle = QRectF (-1, -1, 2, 2);
   mPen = mPassivePen;
 }
 
@@ -393,7 +398,7 @@ void OriginItem::initialize()
  */
 void OriginItem::setActive()
 {
-  setZValue(3000);
+  setZValue(4000);
   if ((mpShapeAnnotation && mpShapeAnnotation->isInheritedShape())
       || (mpComponent && (mpComponent->isInheritedElement()
                           || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
@@ -413,7 +418,7 @@ void OriginItem::setActive()
  */
 void OriginItem::setPassive()
 {
-  setZValue(-3000);
+  setZValue(-4000);
   mPen = mPassivePen;
 }
 

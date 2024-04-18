@@ -25,11 +25,11 @@ interface.inc
 logo.pdf
 LotkaVolterra*.*
 media/mathematica-notebooks.pdf
-media/mdt-build-prompt.pdf
-media/mdt-create-project.pdf
+media/mdt-build-prompt.png
+media/mdt-create-project.png
 media/omedit-icons
 media/omoptim-icons/
-media/systemoverview.pdf
+media/systemoverview.png
 Modelica.Mechanics.*
 nmpc-input.pdf
 nmpc-input.png

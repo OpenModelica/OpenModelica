@@ -139,6 +139,14 @@ algorithm
     fail();
   end try;
 
+  if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+    print(AbsynUtil.pathString(Function.name(fn)) + " => ");
+    print(Expression.toString(result));
+    print("\nArguments:\n");
+    print(UnorderedMap.toString(arg_map, InstNode.name, Expression.toString));
+    print("\n");
+  end if;
+
   Pointer.update(call_counter, call_count - 1);
 end evaluateNormal;
 
@@ -1118,6 +1126,7 @@ algorithm
     case "dgetri" algorithm EvalFunctionExt.Lapack_dgetri(args); then ();
     case "dgeqpf" algorithm EvalFunctionExt.Lapack_dgeqpf(args); then ();
     case "dorgqr" algorithm EvalFunctionExt.Lapack_dorgqr(args); then ();
+    case "dhseqr" algorithm EvalFunctionExt.Lapack_dhseqr(args); then ();
     else fail();
   end match;
 end evaluateExternal3;
@@ -1340,7 +1349,7 @@ protected
   list<SCode.Mod> mods;
   Absyn.Exp exp;
 algorithm
-  mods := SCodeUtil.lookupNamedAnnotations(ann, name);
+  mods := SCodeUtil.lookupAnnotations(ann, name);
 
   for m in mods loop
     strl := match m
@@ -1385,8 +1394,10 @@ protected
   Expression marg;
   FFI.ArgSpec arg_spec;
   Integer args_len, i = 1;
+  list<Expression> input_args;
 algorithm
-  arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, inputArgs,
+  input_args := list(makeExternalArg(arg) for arg in inputArgs);
+  arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, input_args,
     mutableParams = false, buildArrayBinding = false);
 
   args_len := listLength(extArgs);
@@ -1400,6 +1411,16 @@ algorithm
     i := i + 1;
   end for;
 end mapExternalArgs;
+
+function makeExternalArg
+  input Expression arg;
+  output Expression extArg;
+algorithm
+  extArg := match arg
+    case Expression.FILENAME() then Expression.STRING(arg.filename);
+    else arg;
+  end match;
+end makeExternalArg;
 
 function mapExternalArg
   input Expression extArg;

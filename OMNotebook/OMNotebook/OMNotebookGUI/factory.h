@@ -47,6 +47,7 @@ namespace IAEX
    class Factory
    {
    public:
+      virtual ~Factory() = default;
       virtual Cell *createCell(const QString &style, Cell *parent=0) = 0;
 
 

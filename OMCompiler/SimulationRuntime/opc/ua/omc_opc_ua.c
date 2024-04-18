@@ -324,6 +324,8 @@ static inline omc_opc_ua_state* addVars(omc_opc_ua_state *state, var_kind_t varK
     UA_DataSource dataSource = {0};
     UA_VariableAttributes attr;
     UA_VariableAttributes_init(&attr);
+    /* set it to scalar as some clients do not like -2 variant */
+    attr.valueRank = -1; /* scalar */
     int inputIndex;
     int isState=0;
 
@@ -420,6 +422,8 @@ static inline omc_opc_ua_state* addAliasVars(omc_opc_ua_state *state, var_kind_t
     UA_DataSource dataSource = {0};
     UA_VariableAttributes attr;
     UA_VariableAttributes_init(&attr);
+    /* set it to scalar as some clients do not like -2 variant */
+    attr.valueRank = -1; /* scalar */
     int inputIndex;
     int isState = 0;
 
@@ -537,6 +541,8 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
       .handle = state, .read = readBoolean, .write = writeBoolean};
   UA_VariableAttributes attr;
   UA_VariableAttributes_init(&attr);
+  /* set it to scalar as some clients do not like -2 variant */
+  attr.valueRank = -1; /* scalar */
   attr.description = UA_LOCALIZEDTEXT("en_US","When set to true, the simulator takes a single step");
   attr.displayName = UA_LOCALIZEDTEXT("en_US","step");
   attr.writeMask = 1;
@@ -549,8 +555,8 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
   /* add variable for simulation run */
   UA_NodeId runNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_RUN);
   UA_QualifiedName runName = UA_QUALIFIEDNAME(1, "OpenModelica.run");
-  UA_VariableAttributes runAttr;
-  UA_VariableAttributes_init(&runAttr);
+  /* set it to scalar as some clients do not like -2 variant */
+  attr.valueRank = -1; /* scalar */
   attr.description = UA_LOCALIZEDTEXT("en_US","When set to true, the simulator keeps running until run is set to false");
   attr.displayName = UA_LOCALIZEDTEXT("en_US","run");
   attr.writeMask = 1;
@@ -567,6 +573,8 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
         .handle = state, .read = readReal, .write = writeReal};
     UA_VariableAttributes attr;
     UA_VariableAttributes_init(&attr);
+    /* set it to scalar as some clients do not like -2 variant */
+    attr.valueRank = -1; /* scalar */
     attr.description = UA_LOCALIZEDTEXT("en_US","Real-time scaling factor. 1.0=real-time, 0.0=disabled");
     attr.displayName = UA_LOCALIZEDTEXT("en_US","realTimeScalingFactor");
     attr.writeMask = 1;
@@ -584,6 +592,8 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
         .handle = state, .read = readBoolean, .write = writeBoolean};
     UA_VariableAttributes attr;
     UA_VariableAttributes_init(&attr);
+    /* set it to scalar as some clients do not like -2 variant */
+    attr.valueRank = -1; /* scalar */
     attr.description = UA_LOCALIZEDTEXT("en_US","Enabled when using the stopTime to stop the simulation");
     attr.displayName = UA_LOCALIZEDTEXT("en_US","enableStopTime");
     attr.writeMask = 1;
@@ -601,6 +611,8 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
       .handle = state, .read = readReal, .write = NULL};
   UA_VariableAttributes timeAttr;
   UA_VariableAttributes_init(&timeAttr);
+  /* set it to scalar as some clients do not like -2 variant */
+  timeAttr.valueRank = -1; /* scalar */
   timeAttr.description = UA_LOCALIZEDTEXT("en_US","current simulation time");
   timeAttr.displayName = UA_LOCALIZEDTEXT("en_US","time");
   UA_Server_addDataSourceVariableNode(state->server, timeNodeId,
@@ -616,6 +628,8 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
         .handle = state, .read = readBoolean, .write = writeBoolean};
     UA_VariableAttributes attr;
     UA_VariableAttributes_init(&attr);
+    /* set it to scalar as some clients do not like -2 variant */
+    attr.valueRank = -1; /* scalar */
     attr.description = UA_LOCALIZEDTEXT("en_US", "When set to true, the simulation is terminated gracefully");
     attr.displayName = UA_LOCALIZEDTEXT("en_US", "terminate");
     attr.writeMask = 1;

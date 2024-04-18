@@ -197,16 +197,16 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible) {
-    drawBitmapAnnotation(painter);
+    drawAnnotation(painter);
   }
 }
 
 /*!
- * \brief BitmapAnnotation::drawBitmapAnnotation
+ * \brief BitmapAnnotation::drawAnnotation
  * Draws the bitmap.
  * \param painter
  */
-void BitmapAnnotation::drawBitmapAnnotation(QPainter *painter)
+void BitmapAnnotation::drawAnnotation(QPainter *painter)
 {
   QRectF rect = getBoundingRect().normalized();
   QImage image = mImage.scaled(rect.width(), rect.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);

@@ -34,7 +34,7 @@
 #ifndef ADDBUSDIALOG_H
 #define ADDBUSDIALOG_H
 
-#include "OMSimulator.h"
+#include "OMSimulator/OMSimulator.h"
 
 #include <QDialog>
 #include <QFrame>

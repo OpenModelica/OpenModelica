@@ -34,7 +34,7 @@
 #ifndef OMSPROXY_H
 #define OMSPROXY_H
 
-#include "OMSimulator.h"
+#include "OMSimulator/OMSimulator.h"
 #include "Modeling/MessagesWidget.h"
 
 #include <QObject>

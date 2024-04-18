@@ -1,6 +1,6 @@
 # How to contribute to the OpenModelica Compiler
 
-Note that your contributions are assumed to follow the [contributor license agreement](https://openmodelica.org/osmc-pl/osmc-pl-1.2.txt) (which means the [Open Source Modelica Consortium](https://openmodelica.org) holds the copyright).
+Note that your contributions are assumed to follow the [contributor license agreement](https://openmodelica.org/osmc-pl/osmc-pl-1.8.txt) (which means the [Open Source Modelica Consortium](https://openmodelica.org) holds the copyright).
 
 Contributions are primarily in the form of pull requests.
 To learn more about [collaboration, see the github articles](https://help.github.com/categories/collaborating/).
@@ -51,3 +51,7 @@ After Jenkins checks that all is OK a developer will:
 * **reset** (or restart, or **merge**, if there were other commits added to OMCompiler-3rdParty since you started) the OMCompiler-3rdParty master branch so the new HEAD contains the HEAD commit of the branch
 * merge the PR in the OpenModelica glue project
 * delete the branch in the OMCompiler-3rdParty
+
+## Bootstrapping sources
+
+Sometimes one would need to update the bootstrapping sources to add new features to the MetaModelica compiler. The bootstrapping sources are stored at: [OMBootstrapping](https://github.com/OpenModelica/OMBootstrapping.git), just make a PR for it with the contents of OMCompiler/Compiler/boot/build.

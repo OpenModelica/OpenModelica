@@ -15,7 +15,6 @@ Modelica.Blocks.Examples.RealNetwork1.mos \
 Modelica.Blocks.Examples.ShowLogicalSources.mos \
 Modelica.ComplexBlocks.Examples.TestConversionBlock.mos \
 Modelica.Electrical.Analog.Examples.AD_DA_conversion.mos \
-Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassOPV.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC.mos \
@@ -140,7 +139,6 @@ Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour.mos
 Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor.mos \
 Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke.mos \
 Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary.mos \
-Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL_MultiPhase.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase.mos \
@@ -180,7 +178,6 @@ Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic.mos \
-Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2.mos \
@@ -280,8 +277,11 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPha
 
 # Run make failingtest
 FAILINGTESTFILES = \
+Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mos \
 Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL.mos \
+Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

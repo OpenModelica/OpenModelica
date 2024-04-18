@@ -103,6 +103,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_LV */                           "lv",
   /* FLAG_LV_MAX_WARN */                  "lvMaxWarn",
   /* FLAG_LV_TIME */                      "lv_time",
+  /* FLAG_LV_SYSTEM */                    "lv_system",
   /* FLAG_MAX_BISECTION_ITERATIONS */     "mbi",
   /* FLAG_MAX_EVENT_ITERATIONS */         "mei",
   /* FLAG_MAX_ORDER */                    "maxIntegrationOrder",
@@ -237,6 +238,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LV */                           "[string list] value specifies the logging level",
   /* FLAG_LV_MAX_WARN */                  "[int (default " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ")] maximum times repeating warnings will be displayed",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
+  /* FLAG_LV_SYSTEM */                    "[int list] list of system indices for which solver logs are shown (by default logs for all systems are shown)",
   /* FLAG_MAX_BISECTION_ITERATIONS */     "[int (default 0)] value specifies the maximum number of bisection iterations for state event detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */         "[int (default 20)] value specifies the maximum number of event iterations",
   /* FLAG_MAX_ORDER */                    "value specifies maximum integration order for supported solver",
@@ -470,13 +472,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
-  /* FLAG_LV_TIME */
+  /* FLAG_LV_MAX_WARN */
   "  Maximum number of times some repeating warnings are displayed.\n"
   "  Default value " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ".",
   /* FLAG_LV_TIME */
   "  Interval (a comma-separated Double list with two elements) specifies in which\n"
   "  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\n"
   "  LOG_SUCCESS, LOG_STATS, LOG_STATS_V.",
+  /* FLAG_LV_SYSTEM */
+  "  Value is a comma-separated list of equation indices (available in the transformational debugger) for which solver logs are shown (by default logs for all systems are shown)",
   /* FLAG_MAX_BISECTION_ITERATIONS */
   "  Value specifies the maximum number of bisection iterations for state event\n"
   "  detection or zero for default behavior",
@@ -708,6 +712,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_LV */                           FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_LV_MAX_WARN */                  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_LV_TIME */                      FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_LV_SYSTEM */                    FLAG_REPEAT_POLICY_COMBINE,
   /* FLAG_MAX_BISECTION_ITERATIONS */     FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_EVENT_ITERATIONS */         FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_ORDER */                    FLAG_REPEAT_POLICY_FORBID,
@@ -841,6 +846,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_LV */                           FLAG_TYPE_OPTION,
   /* FLAG_LV_MAX_WARN */                  FLAG_TYPE_OPTION,
   /* FLAG_LV_TIME */                      FLAG_TYPE_OPTION,
+  /* FLAG_LV_SYSTEM */                    FLAG_TYPE_OPTION,
   /* FLAG_MAX_BISECTION_ITERATIONS */     FLAG_TYPE_OPTION,
   /* FLAG_MAX_EVENT_ITERATIONS */         FLAG_TYPE_OPTION,
   /* FLAG_MAX_ORDER */                    FLAG_TYPE_OPTION,

@@ -175,9 +175,8 @@ public
     input UnorderedMap<K, V> map;
   protected
     Hash hashfn = map.hashFn;
-    Integer hash;
+    Integer hash = intMod(hashfn(key), Vector.size(map.buckets));
   algorithm
-    hash := intMod(hashfn(key), Vector.size(map.buckets));
     addEntry(key, value, hash, map);
   end addNew;
 
@@ -308,9 +307,8 @@ public
     input UnorderedMap<K, V> map;
     output Option<V> value;
   protected
-    Integer index;
+    Integer index = find(key, map);
   algorithm
-    index := find(key, map);
     value := if index > 0 then SOME(Vector.getNoBounds(map.values, index)) else NONE();
   end get;
 
@@ -321,9 +319,11 @@ public
     input UnorderedMap<K, V> map;
     input SourceInfo info;
     output V value;
+  protected
+    Integer index = find(key, map);
   algorithm
-    if contains(key, map) then
-      SOME(value) := get(key, map);
+    if index > 0 then
+      value := Vector.getNoBounds(map.values, index);
     else
       Error.addInternalError(getInstanceName() + " failed because the key did not exist.", info);
       fail();
@@ -334,9 +334,7 @@ public
     "Return the value associated with the given key, or fails if no such value exists."
     input K key;
     input UnorderedMap<K, V> map;
-    output V value;
-  algorithm
-    value := Vector.get(map.values, find(key, map));
+    output V value = Vector.get(map.values, find(key, map));
   end getOrFail;
 
   function getOrDefault
@@ -345,9 +343,8 @@ public
     input V default;
     output V value;
   protected
-    Integer index;
+    Integer index = find(key, map);
   algorithm
-    index := find(key, map);
     value := if index > 0 then Vector.getNoBounds(map.values, index) else default;
   end getOrDefault;
 
@@ -357,9 +354,8 @@ public
     input UnorderedMap<K, V> map;
     output Option<K> outKey;
   protected
-    Integer index;
+    Integer index = find(key, map);
   algorithm
-    index := find(key, map);
     outKey := if index > 0 then SOME(Vector.getNoBounds(map.keys, index)) else NONE();
   end getKey;
 
@@ -367,41 +363,31 @@ public
     "Returns whether the given key exists in the map or not."
     input K key;
     input UnorderedMap<K, V> map;
-    output Boolean res;
-  algorithm
-    res := find(key, map) > 0;
+    output Boolean res = find(key, map) > 0;
   end contains;
 
   function first
     "Returns the 'first' element in the map, or fails if the map is empty."
     input UnorderedMap<K, V> map;
-    output V value;
-  algorithm
-    value := Vector.get(map.values, 1);
+    output V value = Vector.get(map.values, 1);
   end first;
 
   function firstKey
     "Returns the 'first' key in the map, or fails if the map is empty."
     input UnorderedMap<K, V> map;
-    output K key;
-  algorithm
-    key := Vector.get(map.keys, 1);
+    output K key = Vector.get(map.keys, 1);
   end firstKey;
 
   function keyAt
     input UnorderedMap<K, V> map;
     input Integer index;
-    output K key;
-  algorithm
-    key := Vector.get(map.keys, index);
+    output K key = Vector.get(map.keys, index);
   end keyAt;
 
   function valueAt
     input UnorderedMap<K, V> map;
     input Integer index;
-    output V value;
-  algorithm
-    value := Vector.get(map.values, index);
+    output V value = Vector.get(map.values, index);
   end valueAt;
 
   function toList
@@ -423,17 +409,13 @@ public
   function keyList
     "Returns the keys as a list."
     input UnorderedMap<K, V> map;
-    output list<K> keys;
-  algorithm
-    keys := Vector.toList(map.keys);
+    output list<K> keys = Vector.toList(map.keys);
   end keyList;
 
   function valueList
     "Returns the values as a list."
     input UnorderedMap<K, V> map;
-    output list<V> values;
-  algorithm
-    values := Vector.toList(map.values);
+    output list<V> values = Vector.toList(map.values);
   end valueList;
 
   function toArray
@@ -457,17 +439,13 @@ public
   function keyArray
     "Returns the keys as an array."
     input UnorderedMap<K, V> map;
-    output array<K> keys;
-  algorithm
-    keys := Vector.toArray(map.keys);
+    output array<K> keys = Vector.toArray(map.keys);
   end keyArray;
 
   function valueArray
     "Returns the values as an array."
     input UnorderedMap<K, V> map;
-    output array<V> values;
-  algorithm
-    values := Vector.toArray(map.values);
+    output array<V> values = Vector.toArray(map.values);
   end valueArray;
 
   function toVector
@@ -491,17 +469,13 @@ public
   function keyVector
     "Returns the keys as a Vector."
     input UnorderedMap<K, V> map;
-    output Vector<K> keys;
-  algorithm
-    keys := Vector.copy(map.keys);
+    output Vector<K> keys = Vector.copy(map.keys);
   end keyVector;
 
   function valueVector
     "Returns the values as a Vector."
     input UnorderedMap<K, V> map;
-    output Vector<V> values;
-  algorithm
-    values := Vector.copy(map.values);
+    output Vector<V> values = Vector.copy(map.values);
   end valueVector;
 
   function fold<FT>
@@ -555,6 +529,50 @@ public
     Vector.apply(map.values, fn);
   end apply;
 
+  function merge
+    input UnorderedMap<K, V> map1;
+    input UnorderedMap<K, V> map2;
+    input SourceInfo info;
+    output UnorderedMap<K, V> result;
+  protected
+    UnorderedMap<K, V> tmp;
+    K k;
+    V v;
+  algorithm
+    if Vector.size(map1.keys) > Vector.size(map2.keys) then
+      result  := copy(map1);
+      tmp     := map2;
+    else
+      result  := copy(map2);
+      tmp     := map1;
+    end if;
+    for tpl in toList(tmp) loop
+      (k, v) := tpl;
+      try
+        addUnique(k, v, result);
+      else
+        Error.addInternalError(getInstanceName() + " failed because both maps contain the same key.", info);
+      end try;
+    end for;
+  end merge;
+
+  function subSet
+    input UnorderedMap<K, V> map;
+    input list<K> lst;
+    output UnorderedMap<K, V> sub_set;
+  algorithm
+    sub_set := UNORDERED_MAP(
+      Vector.newFill(listLength(lst), {}),
+      Vector.new<K>(listLength(lst)),
+      Vector.new<V>(listLength(lst)),
+      map.hashFn,
+      map.eqFn
+    );
+    for k in lst loop
+      add(k, getSafe(k, map, sourceInfo()), sub_set);
+    end for;
+  end subSet;
+
   function all
     "Returns true if the given function returns true for all values in the map,
      otherwise false."
@@ -603,7 +621,7 @@ public
   function size
     "Returns the number of elements the map contains."
     input UnorderedMap<K, V> map;
-    output Integer size = Vector.size(map.keys);
+    output Integer s = Vector.size(map.keys);
   end size;
 
   function isEmpty

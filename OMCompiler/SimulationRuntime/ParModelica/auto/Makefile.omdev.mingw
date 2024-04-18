@@ -1,3 +1,9 @@
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
+
 TOP_BUILDDIR = $(realpath ../../../../)/build
 OMCOMPILER_ROOT = $(realpath ../../../)
 
@@ -12,7 +18,7 @@ INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/tbb/include 
 CC=gcc
 CXX=g++
 CFLAGS= -O0 -g -Wall
-CPPFLAGS= $(CFLAGS) -std=c++11 -DGC_THREADS
+CPPFLAGS= $(CFLAGS) -std=c++11 -DGC_THREADS -DOM_HAVE_PTHREADS
 
 OS_SRCS = pm_win_timer.cpp
 

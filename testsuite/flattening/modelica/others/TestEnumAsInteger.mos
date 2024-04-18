@@ -1,0 +1,70 @@
+// name:     TestEnumAsInteger.mos
+// keywords: non-standard Modelica extensions
+// status:   correct
+//
+// Test non-standard Modelica flags that allow usage of integer as enums and enums as integers
+//
+//
+
+loadFile("TestEnumAsInteger.mo"); getErrorString();
+instantiateModel(TestNonStandardExtensions.TestEnumAsInteger); getErrorString();
+instantiateModel(TestNonStandardExtensions.TestIntegerAsEnum); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=nonStdEnumerationAsIntegers,nonStdIntegersAsEnumeration"); getErrorString();
+instantiateModel(TestNonStandardExtensions.TestEnumAsInteger); getErrorString();
+instantiateModel(TestNonStandardExtensions.TestIntegerAsEnum); getErrorString();
+
+
+// Result:
+// true
+// ""
+// ""
+// "[flattening/modelica/others/TestEnumAsInteger.mo:10:3-10:15:writable] Error: Subscript 'E.one' has type enumeration E(one, two, three), expected type Integer.
+// "
+// ""
+// "[flattening/modelica/others/TestEnumAsInteger.mo:31:3-31:11:writable] Error: Subscript '1' has type Integer, expected type enumeration E(one, two, three).
+// "
+// true
+// ""
+// "class TestNonStandardExtensions.TestEnumAsInteger
+//   constant Integer N = 3;
+//   Integer i[1];
+//   Integer i[2];
+//   Integer i[3];
+//   Real x;
+// equation
+//   i[1] = 1;
+//   i[2] = 2;
+//   i[3] = 3;
+//   x = 1.0;
+// end TestNonStandardExtensions.TestEnumAsInteger;
+// "
+// "Warning: Allowing usage of enumeration expression: E.one as Integer: 1. This is non-standard Modelica, use Integer(E.one) instead!
+// Warning: Allowing usage of enumeration expression: E.two as Integer: 2. This is non-standard Modelica, use Integer(E.two) instead!
+// Warning: Allowing usage of enumeration expression: E.three as Integer: 3. This is non-standard Modelica, use Integer(E.three) instead!
+// Warning: Allowing casting of enumeration expression: E.three to Integer: 3. This is non-standard Modelica, use Integer(E.three) instead!
+// "
+// "function TestNonStandardExtensions.TestIntegerAsEnum.f
+//   input enumeration(one, two, three) e;
+//   output Integer i;
+// algorithm
+//   i := Integer(e);
+// end TestNonStandardExtensions.TestIntegerAsEnum.f;
+//
+// class TestNonStandardExtensions.TestIntegerAsEnum
+//   constant Integer N = 3;
+//   Integer i[E.one];
+//   Integer i[E.two];
+//   Integer i[E.three];
+//   Integer x;
+// equation
+//   i[E.one] = 1;
+//   i[E.two] = 2;
+//   i[E.three] = 3;
+//   x = TestNonStandardExtensions.TestIntegerAsEnum.f(/*E*/(i[E.three]));
+// end TestNonStandardExtensions.TestIntegerAsEnum;
+// "
+// "Warning: Allowing usage of Integer expression: 1 as enumeration: E.one. This is non-standard Modelica, use the actual enumeration instead!
+// Warning: Allowing usage of Integer expression: 2 as enumeration: E.two. This is non-standard Modelica, use the actual enumeration instead!
+// Warning: Allowing usage of Integer expression: 3 as enumeration: E.three. This is non-standard Modelica, use the actual enumeration instead!
+// "
+// endResult

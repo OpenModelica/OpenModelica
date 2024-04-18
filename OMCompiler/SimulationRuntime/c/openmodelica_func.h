@@ -357,9 +357,14 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   int (*dataReconciliationUnmeasuredVariables)(DATA* modelData, char ** names);
 
   /*
+  * FMU's have simulation settings in <DefaultExperiment> and we need to read those settings during instantiation
+  */
+  void (*read_simulation_info)(SIMULATION_INFO* simulationSettings);
+
+  /*
   * FMU's do not need the XML-file; they use this callback instead.
   */
-  void (*read_input_fmu)(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
+  void (*read_input_fmu)(MODEL_DATA* modelData);
 
   /*
   * FMU continuous partial derivative functions

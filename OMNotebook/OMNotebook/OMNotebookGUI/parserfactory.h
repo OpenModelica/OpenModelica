@@ -51,6 +51,7 @@ namespace IAEX
    class ParserFactory
    {
    public:
+      virtual ~ParserFactory() = default;
       virtual NBParser *createParser(QString filename, Factory *f, Document *document, int readmode) = 0;
    };
 

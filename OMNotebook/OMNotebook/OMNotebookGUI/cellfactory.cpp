@@ -39,12 +39,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QObject>
-#include <QtGui/QMessageBox>
-#endif
 
 #include <exception>
 #include <stdexcept>
@@ -63,7 +58,6 @@
 #include "latexcell.h"
 #include "graphcell.h"
 #include "omcinteractiveenvironment.h"
-using namespace std;
 
 namespace IAEX
 {
@@ -110,9 +104,9 @@ namespace IAEX
         if( cstyle.name() != "null" )
           text->setStyle( cstyle );
         else
-          throw runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
+          throw std::runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
-      catch( exception e )
+      catch( std::exception e )
       {
         QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
       }
@@ -121,7 +115,7 @@ namespace IAEX
       {
         text->setDelegate(OmcInteractiveEnvironment::getInstance());
       }
-      catch( exception e )
+      catch( std::exception e )
       {}
 
       QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
@@ -196,9 +190,9 @@ namespace IAEX
 
           text->setStyle( cstyle );
         else
-          throw runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
+          throw std::runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
-      catch( exception e )
+      catch( std::exception e )
       {
 
         QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
@@ -252,9 +246,9 @@ namespace IAEX
         if( cstyle.name() != "null" )
           text->setStyle( cstyle );
         else
-          throw runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
+          throw std::runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
-      catch( exception e )
+      catch( std::exception e )
       {
         QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
       }
@@ -263,7 +257,7 @@ namespace IAEX
       {
         text->setDelegate(OmcInteractiveEnvironment::getInstance());
       }
-      catch( exception e )
+      catch( std::exception e )
       {
         e.what();
       }

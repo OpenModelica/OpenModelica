@@ -46,29 +46,7 @@
 
 //QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QDir>
-#include <QtCore/QEvent>
-#include <QtCore/QThread>
-#include <QtGui/QAbstractTextDocumentLayout>
-#include <QtGui/QApplication>
-#include <QtGui/QMouseEvent>
-#include <QtGui/QGridLayout>
-#include <QtGui/QKeyEvent>
-#include <QtGui/QLabel>
-#include <QtGui/QMessageBox>
-#include <QtGui/QResizeEvent>
-#include <QtGui/QFrame>
-#include <QtGui/QTextFrame>
-#include <QAction>
-#include <QActionGroup>
-#include <QTextDocumentFragment>
-#include <QTextStream>
-#include <QRegExp>
-#include <QPushButton>
-#endif
 
 //IAEX Headers
 #include "graphcell.h"
@@ -1292,7 +1270,7 @@ namespace IAEX {
     }
     catch(...)
     {
-      // qDebug() << "setReadOnly: crash" << endl;
+      // qDebug() << "setReadOnly: crash" << Qt::endl;
     }
   }
 
@@ -1516,7 +1494,7 @@ namespace IAEX {
           Fix for bug #2047.
       */
 //      mpPlotWindow->fitInView();
-      mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+      mpPlotWindow->updatePlot();
     }
     catch (PlotException &e)
     {
@@ -1544,7 +1522,11 @@ namespace IAEX {
   * highlightning is used in the output cell.
   *
   */
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QRecursiveMutex* guard = new QRecursiveMutex();
+#else // QT_VERSION_CHECK
   QMutex* guard = new QMutex(QMutex::Recursive);
+#endif // QT_VERSION_CHECK
 
   void GraphCell::eval()
   {
@@ -1785,7 +1767,7 @@ namespace IAEX {
   InputCellDelegate *GraphCell::getDelegate()
   {
     if(!hasDelegate())
-      throw runtime_error("No delegate.");
+      throw std::runtime_error("No delegate.");
 
     return delegate_;
   }

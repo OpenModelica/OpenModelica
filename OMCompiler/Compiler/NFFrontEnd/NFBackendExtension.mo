@@ -40,6 +40,7 @@ protected
   import Absyn;
   import AbsynUtil;
   import DAE;
+  import Dump;
   import SCode;
   import SCodeUtil;
 
@@ -66,8 +67,11 @@ protected
 public
   uniontype BackendInfo
     record BACKEND_INFO
-      VariableKind varKind            "Structural kind: state, algebraic...";
-      VariableAttributes attributes   "values on built-in attributes";
+      VariableKind varKind                "Structural kind: state, algebraic...";
+      VariableAttributes attributes       "values on built-in attributes";
+      Annotations annotations             "values on annotations (vendor specific)";
+      Option<Pointer<Variable>> pre_post  "Pointer (var->pre) or (pre-> var) if existent.";
+      Option<Pointer<Variable>> parent    "record parent if it is part of a record.";
     end BACKEND_INFO;
 
     function toString
@@ -100,12 +104,43 @@ public
       binfo.varKind := varKind;
     end setVarKind;
 
+    function setParent
+      input output BackendInfo binfo;
+      input Pointer<Variable> parent;
+    algorithm
+      binfo.parent := SOME(parent);
+    end setParent;
+
+    function setPrePost
+      input output BackendInfo binfo;
+      input Option<Pointer<Variable>> pre_post;
+    algorithm
+      binfo.pre_post := pre_post;
+    end setPrePost;
+
     function setAttributes
       input output BackendInfo binfo;
       input VariableAttributes attributes;
+      input Annotations annotations;
     algorithm
       binfo.attributes := attributes;
+      binfo.annotations := annotations;
     end setAttributes;
+
+    function setHideResult
+      input output BackendInfo binfo;
+      input Boolean hideResult;
+    algorithm
+      binfo := match binfo
+        local
+          Annotations anno;
+        case BackendInfo.BACKEND_INFO(annotations = anno as ANNOTATIONS()) algorithm
+          anno.hideResult := hideResult;
+          binfo.annotations := anno;
+        then binfo;
+        else binfo;
+      end match;
+    end setHideResult;
 
     function scalarize
       input BackendInfo binfo;
@@ -118,12 +153,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.pre_post, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL);
+  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE());
 
   uniontype VariableKind
     record TIME end TIME;
@@ -142,20 +177,18 @@ public
     end DUMMY_DER;
     record DUMMY_STATE
       Pointer<Variable> dummy_der           "corresponding dummy derivative";
-    end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state seleciton in index reduction
+    end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state selection in index reduction
     record DISCRETE end DISCRETE;
     record DISCRETE_STATE
-      Pointer<Variable> previous            "Pointer to the left limit if existant.";
       Boolean fixed                         "is fixed at first clock tick";
     end DISCRETE_STATE;
-    record PREVIOUS
-      Pointer<Variable> state               "Pointer to the corresponding discrete state.";
-    end PREVIOUS;
+    record PREVIOUS end PREVIOUS;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
     record RECORD
       list<Pointer<Variable>> children;
+      Boolean known                         "true if the record is known. e.g. parameters";
     end RECORD;
     record START
       Pointer<Variable> original            "Pointer to the corresponding original variable.";
@@ -164,7 +197,7 @@ public
       Absyn.Path fullClassName;
     end EXTOBJ;
     record JAC_VAR end JAC_VAR;
-    record JAC_DIFF_VAR end JAC_DIFF_VAR;
+    record JAC_TMP_VAR end JAC_TMP_VAR;
     record SEED_VAR
       Pointer<Variable> var                 "Pointer to the variable for which the seed got created.";
     end SEED_VAR;
@@ -208,8 +241,8 @@ public
         case RECORD()             then "[RECD]";
         case START()              then "[STRT]";
         case EXTOBJ()             then "[EXTO]";
-        case JAC_VAR()            then "[JACV]";
-        case JAC_DIFF_VAR()       then "[JACD]";
+        case JAC_VAR()            then "[JVAR]";
+        case JAC_TMP_VAR()        then "[JTMP]";
         case SEED_VAR()           then "[SEED]";
         case OPT_CONSTR()         then "[OPT][CONS]";
         case OPT_FCONSTR()        then "[OPT][FCON]";
@@ -240,6 +273,23 @@ public
         else true;
       end match;
     end isTimeDependent;
+
+    function fromType
+      "only creates record, parameter, discrete or algebraic kind"
+      input Type ty;
+      input Boolean makeParam;
+      output VariableKind varKind;
+    algorithm
+      if Type.isRecord(ty) then
+        varKind := RECORD({}, makeParam); // ToDo: children!
+      elseif makeParam then
+        varKind := PARAMETER();
+      elseif Type.isDiscrete(ty) then
+        varKind := DISCRETE();
+      else
+        varKind := ALGEBRAIC();
+      end if;
+    end fromType;
   end VariableKind;
 
   uniontype VariableAttributes
@@ -890,37 +940,29 @@ public
     function stateSelectString
       input Option<StateSelect> optStateSelect;
       input output list<String> buffer;
-    protected
-      StateSelect stateSelect;
     algorithm
-      if isSome(optStateSelect) then
-        SOME(stateSelect) := optStateSelect;
-        buffer := match stateSelect
-          case StateSelect.NEVER    then "StateSelect = never" :: buffer;
-          case StateSelect.AVOID    then "StateSelect = avoid" :: buffer;
-          case StateSelect.DEFAULT  then "StateSelect = default" :: buffer;
-          case StateSelect.PREFER   then "StateSelect = prefer" :: buffer;
-          case StateSelect.ALWAYS   then "StateSelect = always" :: buffer;
-        end match;
-      end if;
+      buffer := match optStateSelect
+        case SOME(StateSelect.NEVER)    then "StateSelect = never" :: buffer;
+        case SOME(StateSelect.AVOID)    then "StateSelect = avoid" :: buffer;
+        case SOME(StateSelect.DEFAULT)  then "StateSelect = default" :: buffer;
+        case SOME(StateSelect.PREFER)   then "StateSelect = prefer" :: buffer;
+        case SOME(StateSelect.ALWAYS)   then "StateSelect = always" :: buffer;
+        else buffer;
+      end match;
     end stateSelectString;
 
     function tearingSelectString
       input Option<TearingSelect> optTearingSelect;
       input output list<String> buffer;
-    protected
-      TearingSelect tearingSelect;
     algorithm
-      if isSome(optTearingSelect) then
-        SOME(tearingSelect) := optTearingSelect;
-        buffer := match tearingSelect
-          case TearingSelect.NEVER    then "TearingSelect = never" :: buffer;
-          case TearingSelect.AVOID    then "TearingSelect = avoid" :: buffer;
-          case TearingSelect.DEFAULT  then "TearingSelect = default" :: buffer;
-          case TearingSelect.PREFER   then "TearingSelect = prefer" :: buffer;
-          case TearingSelect.ALWAYS   then "TearingSelect = always" :: buffer;
-        end match;
-      end if;
+      buffer := match optTearingSelect
+        case SOME(TearingSelect.NEVER)    then "TearingSelect = never" :: buffer;
+        case SOME(TearingSelect.AVOID)    then "TearingSelect = avoid" :: buffer;
+        case SOME(TearingSelect.DEFAULT)  then "TearingSelect = default" :: buffer;
+        case SOME(TearingSelect.PREFER)   then "TearingSelect = prefer" :: buffer;
+        case SOME(TearingSelect.ALWAYS)   then "TearingSelect = always" :: buffer;
+        else buffer;
+      end match;
     end tearingSelectString;
 
     function createReal
@@ -942,15 +984,15 @@ public
         for attr in attrs loop
           (name, b) := attr;
           () := match name
-            case "displayUnit"    algorithm displayUnit := createAttribute(b); then ();
-            case "fixed"          algorithm fixed := createAttribute(b); then ();
-            case "max"            algorithm max := createAttribute(b); then ();
-            case "min"            algorithm min := createAttribute(b); then ();
-            case "nominal"        algorithm nominal := createAttribute(b); then ();
-            case "quantity"       algorithm quantity := createAttribute(b); then ();
-            case "start"          algorithm start := createAttribute(b); then ();
-            case "stateSelect"    algorithm state_select := createStateSelect(b); then ();
-            // TODO: VAR_ATTR_REAL has no field for unbounded.
+            case "displayUnit"    algorithm displayUnit   := createAttribute(b); then ();
+            case "fixed"          algorithm fixed         := createAttribute(b); then ();
+            case "max"            algorithm max           := createAttribute(b); then ();
+            case "min"            algorithm min           := createAttribute(b); then ();
+            case "nominal"        algorithm nominal       := createAttribute(b); then ();
+            case "quantity"       algorithm quantity      := createAttribute(b); then ();
+            case "start"          algorithm start         := createAttribute(b); then ();
+            case "stateSelect"    algorithm state_select  := createStateSelect(b); then ();
+            // TODO: VAR_ATTR_REAL has no field for unbounded (which should be named unbound).
             case "unbounded"      then ();
             case "unit"           algorithm unit := createAttribute(b); then ();
 
@@ -1150,61 +1192,52 @@ public
     protected
       Expression exp = Binding.getTypedExp(binding);
       String name;
-      function getStateSelectName
-        input Expression exp;
-        output String name;
-      protected
-        Expression arg;
-        InstNode node;
-        Call call;
-      algorithm
-        name := match exp
-          case Expression.ENUM_LITERAL() then exp.name;
-          case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
-          case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) then getStateSelectName(call.exp);
-          case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
-            guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")
-          then getStateSelectName(arg);
-          else algorithm
-            Error.assertion(false, getInstanceName() +
-              " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
-          then fail();
-        end match;
-      end getStateSelectName;
     algorithm
       name := getStateSelectName(exp);
       stateSelect := SOME(lookupStateSelectMember(name));
     end createStateSelect;
 
-    function createTearingSelect
-      "tearingSelect is an annotation and has to be extracted from the comment."
-      input Option<SCode.Comment> optComment;
-      output Option<TearingSelect> tearingSelect;
+    function getStateSelectName
+      input Expression exp;
+      output String name;
     protected
-      SCode.Annotation anno;
-      Absyn.Exp val;
-      String name;
+      Expression arg;
+      InstNode node;
+      Call call;
+      list<Expression> rest;
     algorithm
-      try
-        SOME(SCode.COMMENT(annotation_=SOME(anno))) := optComment;
-        val := SCodeUtil.getNamedAnnotation(anno, "tearingSelect");
-        name := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
-        tearingSelect := SOME(lookupTearingSelectMember(name));
-      else
-        tearingSelect := NONE();
-      end try;
-    end createTearingSelect;
+      name := match exp
+        case Expression.ENUM_LITERAL() then exp.name;
+        case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+        case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) then getStateSelectName(call.exp);
+        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "fill")
+        then getStateSelectName(arg);
+        case Expression.ARRAY() algorithm
+          arg :: rest := arrayList(exp.elements);
+          if not (listEmpty(rest) or List.all(rest, function Expression.isEqual(exp2=arg))) then
+            Error.assertion(false, getInstanceName() +
+              " cannot handle array StateSelect with different values yet:" + Expression.toString(exp), sourceInfo());
+            fail();
+          end if;
+        then getStateSelectName(arg);
+        else algorithm
+          Error.assertion(false, getInstanceName() +
+            " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
+        then fail();
+      end match;
+    end getStateSelectName;
 
     function lookupStateSelectMember
       input String name;
       output StateSelect stateSelect;
     algorithm
       stateSelect := match name
-        case "never" then StateSelect.NEVER;
-        case "avoid" then StateSelect.AVOID;
-        case "default" then StateSelect.DEFAULT;
-        case "prefer" then StateSelect.PREFER;
-        case "always" then StateSelect.ALWAYS;
+        case "never"    then StateSelect.NEVER;
+        case "avoid"    then StateSelect.AVOID;
+        case "default"  then StateSelect.DEFAULT;
+        case "prefer"   then StateSelect.PREFER;
+        case "always"   then StateSelect.ALWAYS;
         else
           algorithm
             Error.assertion(false, getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
@@ -1213,21 +1246,89 @@ public
       end match;
     end lookupStateSelectMember;
 
+    function createTearingSelect
+      "__OpenModelica_tearingSelect is an annotation and has to be extracted from the comment."
+      input Option<SCode.Comment> optComment;
+      output Option<TearingSelect> tearingSelect = NONE();
+    protected
+      Option<SCode.Annotation> opt_anno;
+      SCode.Annotation anno;
+      SCode.Mod mod;
+      Option<Absyn.Exp> opt_val;
+      Absyn.Exp val;
+      String name;
+      SourceInfo info;
+    algorithm
+      opt_anno := SCodeUtil.optCommentAnnotation(optComment);
+
+      if isNone(opt_anno) then
+        // No annotation.
+        return;
+      end if;
+
+      SOME(anno) := opt_anno;
+      mod := SCodeUtil.lookupAnnotation(anno, "__OpenModelica_tearingSelect");
+
+      if SCodeUtil.isEmptyMod(mod) then
+        mod := SCodeUtil.lookupAnnotation(anno, "tearingSelect");
+
+        if not SCodeUtil.isEmptyMod(mod) then
+          Error.addSourceMessage(Error.DEPRECATED_EXPRESSION,
+            {"tearingSelect", "__OpenModelica_tearingSelect"}, SCodeUtil.getModifierInfo(mod));
+        end if;
+      end if;
+
+      opt_val := SCodeUtil.getModifierBinding(mod);
+
+      if isNone(opt_val) then
+        // Annotation exists but has no value.
+        return;
+      end if;
+
+      SOME(val) := opt_val;
+      info := SCodeUtil.getModifierInfo(mod);
+      name := getTearingSelectName(val, info);
+      tearingSelect := lookupTearingSelectMember(name);
+
+      if isNone(tearingSelect) then
+        Error.addSourceMessage(Error.UNKNOWN_ANNOTATION_VALUE, {Dump.printExpStr(val)}, info);
+      end if;
+    end createTearingSelect;
+
+    function getTearingSelectName
+      input Absyn.Exp exp;
+      input SourceInfo info;
+      output String name;
+    algorithm
+      name := match exp
+        // TearingSelect.name
+        case Absyn.Exp.CREF(componentRef =
+               Absyn.ComponentRef.CREF_QUAL(name = "TearingSelect", subscripts = {}, componentRef =
+                 Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {})))
+          then name;
+
+        // Single name without the TearingSelect prefix is deprecated but still accepted.
+        case Absyn.Exp.CREF(componentRef = Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {}))
+          algorithm
+            Error.addSourceMessage(Error.DEPRECATED_EXPRESSION, {name, "TearingSelect." + name}, info);
+          then
+            name;
+
+        else "";
+      end match;
+    end getTearingSelectName;
+
     function lookupTearingSelectMember
       input String name;
-      output StateSelect stateSelect;
+      output Option<TearingSelect> tearingSelect;
     algorithm
-      stateSelect := match name
-        case "never" then TearingSelect.NEVER;
-        case "avoid" then TearingSelect.AVOID;
-        case "default" then TearingSelect.DEFAULT;
-        case "prefer" then TearingSelect.PREFER;
-        case "always" then TearingSelect.ALWAYS;
-        else
-          algorithm
-            Error.assertion(false, getInstanceName() + " got unknown TearingSelect literal " + name, sourceInfo());
-          then
-            fail();
+      tearingSelect := match name
+        case "never"    then SOME(TearingSelect.NEVER);
+        case "avoid"    then SOME(TearingSelect.AVOID);
+        case "default"  then SOME(TearingSelect.DEFAULT);
+        case "prefer"   then SOME(TearingSelect.PREFER);
+        case "always"   then SOME(TearingSelect.ALWAYS);
+        else NONE();
       end match;
     end lookupTearingSelectMember;
   end VariableAttributes;
@@ -1251,5 +1352,36 @@ public
     end DISTRIBUTION;
   end Distribution;
 
-    annotation(__OpenModelica_Interface="frontend");
+  uniontype Annotations
+    record ANNOTATIONS
+      "all annotations that are vendor specific
+      note: doesn't include __OpenModelica_tearingSelect, this is considered a first class attribute"
+      Boolean hideResult;
+    end ANNOTATIONS;
+
+    function create
+      input Option<SCode.Comment> comment;
+      output Annotations annotations = EMPTY_ANNOTATIONS;
+    protected
+      SCode.Mod mod;
+    algorithm
+      _ := match comment
+        case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=mod as SCode.MOD())))) algorithm
+          for submod in mod.subModLst loop
+            _ := match submod
+              case SCode.NAMEMOD(ident = "HideResult", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
+                annotations.hideResult := true;
+              then ();
+              else ();
+            end match;
+          end for;
+        then ();
+        else ();
+      end match;
+    end create;
+  end Annotations;
+
+  constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false);
+
+  annotation(__OpenModelica_Interface="frontend");
 end NFBackendExtension;

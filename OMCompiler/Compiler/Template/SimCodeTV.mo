@@ -766,6 +766,7 @@ package SimCode
   uniontype ModelInfo
     record MODELINFO
       Absyn.Path name;
+      String fileName;
       String description;
       String directory;
       VarInfo varInfo;
@@ -1383,12 +1384,6 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> eqs;
   end sortSimpleAssignmentBasedOnLhs;
 
-  function sortCrefBasedOnSimCodeIndex
-    input list<DAE.ComponentRef> inCrefs;
-    input SimCode.SimCode simCode;
-    output list<DAE.ComponentRef> crs;
-  end sortCrefBasedOnSimCodeIndex;
-
   function getNumContinuousEquations
     input list<SimCode.SimEqSystem> eqs;
     input Integer numStates;
@@ -1428,6 +1423,21 @@ package SimCodeUtil
     input list<BackendDAE.SimIterator> iters;
     output Integer size ;
   end getSimIteratorSize;
+
+  function getFmiInitialAttributeStr
+    input SimCodeVar.SimVar simVar;
+    output String out_string;
+  end getFmiInitialAttributeStr;
+
+  function getExpNominal
+    input DAE.Exp exp;
+    output DAE.Exp nom;
+  end getExpNominal;
+
+  function isMocFile
+    input String fileName;
+    output Integer result;
+  end isMocFile;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -1607,7 +1617,7 @@ package BackendDAE
     record CONST end CONST;
     record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
     record JAC_VAR end JAC_VAR;
-    record JAC_DIFF_VAR end JAC_DIFF_VAR;
+    record JAC_TMP_VAR end JAC_TMP_VAR;
     record SEED_VAR end SEED_VAR;
     record OPT_CONSTR end OPT_CONSTR;
     record OPT_FCONSTR end OPT_FCONSTR;
@@ -4039,6 +4049,7 @@ package Flags
   constant ConfigFlag ZEROMQ_SERVER_ID;
   constant ConfigFlag ZEROMQ_CLIENT_ID;
   constant ConfigFlag FMI_FILTER;
+  constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES;
   constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
   constant ConfigFlag OBFUSCATE;
 

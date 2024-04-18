@@ -43,6 +43,8 @@
 #ifndef _OMC_OCL_COMMON_HEADER
 #define _OMC_OCL_COMMON_HEADER
 
+#define CL_TARGET_OPENCL_VERSION 120
+
 #include <stdio.h>
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -52,8 +54,6 @@
 #include <openmodelica.h>
 #include <stdarg.h>
 #include <sys/time.h>
-
-
 
 #define MAX_DEVICE 4
 #define SHOW_DEVICE_SELECTION

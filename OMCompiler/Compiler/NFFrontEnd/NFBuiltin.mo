@@ -339,7 +339,7 @@ constant LookupTree.Tree ENUM_LOOKUP_TREE = LookupTree.Tree.NODE(
 
 constant InstNode ENUM_NODE = InstNode.CLASS_NODE("enumeration",
   Elements.ENUMERATION, Visibility.PUBLIC,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION_ANY(), NFClassTree.EMPTY_TREE(),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFClassTree.EMPTY_TREE(),
     Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.ENUMERATION())),
   EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
 
@@ -415,7 +415,6 @@ constant InstNode TIME =
       NFBinding.EMPTY_BINDING,
       NFBinding.EMPTY_BINDING,
       NFAttributes.INPUT_ATTR,
-      NONE(),
       NONE(),
       ComponentState.TypeChecked,
       AbsynUtil.dummyInfo)),

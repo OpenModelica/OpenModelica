@@ -2,8 +2,8 @@ ModelicaCompliance.Algorithms.For.RealRange
 ModelicaCompliance.Algorithms.For.ShadowedIterator
 ModelicaCompliance.Algorithms.For.StringRange
 ModelicaCompliance.Arrays.Functions.Conversion.DimConversionMatrix
+ModelicaCompliance.Classes.Balancing.CorrectBalance5
 ModelicaCompliance.Classes.Declarations.Long.QuotedIdentifiers.?abfnrtv
-ModelicaCompliance.Classes.Enumeration.EnumUnspecified
 ModelicaCompliance.Classes.Predefined.AttributeStateSelectInvalidAlways
 ModelicaCompliance.Classes.Predefined.AttributeStateSelectInvalidNever
 ModelicaCompliance.Classes.Predefined.ReservedBooleanComp
@@ -99,7 +99,6 @@ ModelicaCompliance.Operators.Events.SampleIncorrect
 ModelicaCompliance.Operators.Overloading.VectorizeConstructAndApply
 ModelicaCompliance.Operators.Special.Cardinality
 ModelicaCompliance.Operators.Special.Delay
-ModelicaCompliance.Operators.Special.DelayIncorrect3
 ModelicaCompliance.Operators.Special.DerConstantIncorrect1
 ModelicaCompliance.Redeclare.ClassExtends.ClassExtendsNonReplaceable
 ModelicaCompliance.Redeclare.ClassExtends.NonRedeclareClassExtends

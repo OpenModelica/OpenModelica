@@ -52,6 +52,7 @@ target_compile_definitions(OpenModelicaRuntimeC PUBLIC WIN32_LEAN_AND_MEAN)
 
 target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
 target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
+target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::ryu)
 
 if(MINGW)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)

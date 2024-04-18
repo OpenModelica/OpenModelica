@@ -9,8 +9,9 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -40,17 +41,10 @@ namespace OMPlot
 class ScaleDraw : public QwtScaleDraw
 {
 public:
-  ScaleDraw(QwtPlot::Axis axis, Plot *pParent);
-  QString getUnitPrefix() const {return mUnitPrefix;}
-  int getExponent() const {return mExponent;}
-  void invalidateCache();
+  ScaleDraw(Plot *pParent);
   virtual QwtText label(double value) const;
-
 private:
-  QwtPlot::Axis mAxis;
   Plot *mpParentPlot;
-  mutable QString mUnitPrefix;
-  mutable int mExponent;
 };
 }
 

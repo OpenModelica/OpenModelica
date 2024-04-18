@@ -3,21 +3,7 @@
 
 // QT Headers
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
-#else
-#include <QtCore/QVariant>
-#include <QtGui/QAction>
-#include <QtGui/QApplication>
-#include <QtGui/QButtonGroup>
-#include <QtGui/QDialog>
-#include <QtGui/QLabel>
-#include <QtGui/QLineEdit>
-#include <QtGui/QPushButton>
-#include <QtGui/QSpacerItem>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QWidget>
-#endif
 
 class Ui_Dialog
 {
@@ -77,15 +63,9 @@ public:
     void retranslateUi(QDialog *Dialog)
     {
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 	Dialog->setWindowTitle(QApplication::translate("Dialog", "Dialog", 0));
     label->setText(QApplication::translate("Dialog", "TextLabel", 0));
     okButton->setText(QApplication::translate("Dialog", "OK", 0));
-#else
-	Dialog->setWindowTitle(QApplication::translate("Dialog", "Dialog", 0, QApplication::UnicodeUTF8));
-    label->setText(QApplication::translate("Dialog", "TextLabel", 0, QApplication::UnicodeUTF8));
-    okButton->setText(QApplication::translate("Dialog", "OK", 0, QApplication::UnicodeUTF8));
-#endif
     Q_UNUSED(Dialog);
     } // retranslateUi
 

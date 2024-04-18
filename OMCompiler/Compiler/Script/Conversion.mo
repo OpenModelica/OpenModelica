@@ -382,7 +382,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertClass", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -438,7 +438,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertElement", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -472,7 +472,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -563,7 +563,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.dumpExpStr, "convertMessage", "(", ", ", ")", true)}, info);
+            {List.toString(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -2035,6 +2035,13 @@ protected
       case Absyn.Exp.EXPRESSIONCOMMENT()
         algorithm
           exp.exp := convertExp(exp.exp, localRules, rules, env, info);
+        then
+          ();
+
+      case Absyn.Exp.SUBSCRIPTED_EXP()
+        algorithm
+          exp.exp := convertExp(exp.exp, localRules, rules, env, info);
+          exp.subscripts := convertSubscripts(exp.subscripts, localRules, rules, env, info);
         then
           ();
 

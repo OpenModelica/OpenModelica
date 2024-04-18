@@ -44,6 +44,7 @@
 
 #include <QDockWidget>
 #include <QMessageBox>
+#include <QSplitter>
 
 /*!
  * \class GDBLoggerWidget
@@ -257,7 +258,7 @@ void TargetOutputWidget::handleGDBProcessStarted()
 GDBAdapter *GDBAdapter::mpInstance = 0;
 
 /*!
- * \brief MessagesWidget::create
+ * \brief GDBAdapter::create
  */
 void GDBAdapter::create()
 {

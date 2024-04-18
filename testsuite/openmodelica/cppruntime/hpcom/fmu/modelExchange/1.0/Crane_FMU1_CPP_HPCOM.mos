@@ -8,7 +8,7 @@ loadModel(Modelica, {"3.2.3"}); getErrorString();
 setDebugFlags("hpcom,hardcodedStartValues"); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp +n=2 +hpcomCode=openmp +hpcomScheduler=level"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
-translateModelFMU(cranes.crane); getErrorString();
+buildModelFMU(cranes.crane); getErrorString();
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 clearDebugFlags(); getErrorString();

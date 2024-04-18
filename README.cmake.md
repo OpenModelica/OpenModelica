@@ -1,13 +1,18 @@
 # OpenModelica CMake build instructions
 
+- [OpenModelica CMake build instructions](#openmodelica-cmake-build-instructions)
 - [1. Quick start](#1-quick-start)
 - [2. ccache](#2-ccache)
 - [3. Usage](#3-usage)
   - [3.1. General Notes](#31-general-notes)
   - [3.2. Linux](#32-linux)
   - [3.3. macOS](#33-macos)
-    - [3.3.1 Common macOS issues](#331-common-macos-issues)
-  - [3.4. Windows MSYS/MinGW](#34-windows-msysmingw)
+    - [3.3.1 Setup](#331-setup)
+      - [3.3.1.1 MacPorts](#3311-macports)
+      - [3.3.1.2 Homebrew](#3312-homebrew)
+    - [3.3.2 Building](#332-building)
+    - [3.3.3 Common macOS issues](#333-common-macos-issues)
+  - [3.4. Windows MSYS/UCRT64](#34-windows-msysucrt64)
 - [4. Configuration Options.](#4-configuration-options)
   - [4.1. OpenModelica Specific Configuration Options](#41-openmodelica-specific-configuration-options)
     - [4.1.1. OpenModelica Options](#411-openmodelica-options)
@@ -57,9 +62,8 @@ MetaModelica compilation involves a lot of recompilation of unmodified C files b
 new time stamps for generated header files. ccache will practically reduce the cost of
 these types of recompilations to a no-op.
 
-It is available for linux (of course) and, fortunatelly, for MSYS/MinGW as well
-(mingw-w64-x86_64-ccache and mingw-w64-i686-ccache). It is not part of OMDev at the moment
-but it will be in the next iteration.
+It is available for Linux (of course) and, fortunately, for MSYS/UCRT64 as well
+(mingw-w64-ucrt-x86_64-ccache).
 
 # 3. Usage
 ## 3.1. General Notes
@@ -93,56 +97,52 @@ dependencies (If you need help, follow the instructions
 
 ## 3.3. macOS
 
-On macOS you need to install: XCode and either macports or homebrew
+### 3.3.1 Setup
+On macOS you need to install: XCode and `MacPorts`. It is possible to use `homebrew` instead of `MacPorts`. However you will not be able to build the Graphical Clients (e.g., `OMEdit`) with just `homebrew` because one of the dependencies, `QTWebKit`, is not available through `homebrew` any longer.
 
-### XCode
+First you need to install XCode
 
   ```sh
   xcode-select –-install
   ```
+#### 3.3.1.1 MacPorts
 
-### Macports
+Next install `MacPorts` by following the instructions on https://guide.macports.org/#installing.macports.
 
-Follow the instructions on https://guide.macports.org/#installing.macports
-
-Once XCode and macports are installed, you need to install the dependencies for
-OpenModelica using macports:
+Once XCode and macports are installed, you need to install the dependencies for OpenModelica using `MacPorts`:
 
   ```sh
-  sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph openjdk11
+  sudo port install curl libiconv gettext flex cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph openjdk11
   ```
 
-### Homebrew
+#### 3.3.1.2 Homebrew
 
-Follow the instructions on https://brew.sh/
+If you want to use only `homebrew` instead of `MacPorts` (remember that you will not be able to build the GUI clients this way), then follow the instructions on https://brew.sh/ to install homebrew. Once that is done, install the dependencies for OpenModelica using `homebrew`:
 
   ```sh
   brew install autoconf automake openjdk pkg-config cmake make ccache
   echo 'export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"' >> ~/.zshrc
   ```
 
-### Building
+### 3.3.2 Building
 
-Optionally, You can also install `gfortran` if you plan to use OpenModelica for dynamic
-optimization purposes.
+Optionally, You can also install `gfortran` if you plan to use OpenModelica for dynamic optimization purposes.
 
 > **Note**
 > If you install and use `gfortran`, it is recommended that you also use `gcc` and `g++`
 > (instead of `clang` and `clang++`).
 
-If you cannot or do not want to use `gfortran`, then you should disable Fortran support
-by adding ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF``` to the CMake
-configuration command.
+If you cannot or do not want to use `gfortran`, then you should disable Fortran support by adding ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF``` to the CMake configuration command.
 
 You can now configure and compile OpenModelica as:
 
   ```sh
-  # With Fortran OFF
-  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF
-  # With Fortran ON
-  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran
-  # For homebrew, you also need to disable the graphical clients
-  cmake -S . -B build_cmake -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -D OM_ENABLE_GUI_CLIENTS=OFF -D CMAKE_INSTALL_PREFIX=$PWD/install
+  # With MacPorts and Fortran available. This assumes MacPorts is installing packages to its default location /opt/local
+  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_PREFIX_PATH=/opt/local
+  # With MacPorts and Fortran NOT available. This assumes MacPorts is installing packages to its default location /opt/local
+  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -DCMAKE_PREFIX_PATH=/opt/local
+  # With homebrew, you also need to disable the graphical clients. This assumes homebrew is installing packages to its default location /usr/local/opt/
+  cmake -S . -B build_cmake -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -D OM_ENABLE_GUI_CLIENTS=OFF -DCMAKE_PREFIX_PATH=/usr/local/opt/
   ```
 
 > **Warning**
@@ -162,10 +162,9 @@ unix system, e.g.,
   ./build_cmake/install_cmake/bin/omc --help
   ```
 
-### 3.3.1 Common macOS issues
+### 3.3.3 Common macOS issues
 
-If you encounter some errors while configuring, building, or simulating-with OpenModelica
-read on below. On macOS there are a few pitfalls/issues which need attention.
+If you encounter some errors while configuring, building, or simulating-with OpenModelica read on below. On macOS there are a few pitfalls/issues which need attention.
 
 - If configuration fails due to missing packages, e.g. Qt components, add the macports
   root packages directory to CMAKE_PREFIX_PATH. Run
@@ -180,6 +179,30 @@ read on below. On macOS there are a few pitfalls/issues which need attention.
   ```sh
   $ cmake ... -DCMAKE_PREFIX_PATH=/opt/local ...
   ```
+
+- If your compilation fails because of linking issues with `libiconv``:
+  ```sh
+  [ 30%] Linking CXX executable bootstrapped/bin/bomc
+  ld: warning: dylib (/opt/homebrew/lib/libintl.dylib) was built for newer macOS version (13.0) than being linked (12.3)
+  Undefined symbols for architecture arm64:
+    "_libiconv", referenced from:
+        _SystemImpl__iconv in libomcruntime.a(System_omc.c.o)
+    "_libiconv_close", referenced from:
+        _SystemImpl__iconv in libomcruntime.a(System_omc.c.o)
+    "_libiconv_open", referenced from:
+        _SystemImpl__iconv in libomcruntime.a(System_omc.c.o)
+  ld: symbol(s) not found for architecture arm64
+  clang: error: linker command failed with exit code 1 (use -v to see invocation)
+  ```
+
+  the compilation might be using `libiconv` from XCode (which contains functions not prefixed with `lib`, i.e., `_iconv_open` instead of `_libiconv_open`). Try reconfiguring OpenModelica by adding the MacPorts base directory as a prefix path for CMake.
+
+  ```sh
+  $ cmake ... -DCMAKE_PREFIX_PATH=/opt/local ...
+  ```
+
+  This will give it priority over the XCode one and CMake will pick up the MacPorts `libiconv`.
+
 
 - If your compilation fails because of linking issues such as these:
 
@@ -197,13 +220,12 @@ read on below. On macOS there are a few pitfalls/issues which need attention.
   ```
   and start again with the commands above.
 
-- If building simulation code fails because your compiler cannot find ```stdio.h``` then
-  do one of the following:
+- If building simulation code fails because your compiler cannot find ```stdio.h``` then do one of the following:
   - If you have not already, make sure you have specified your C and C++ compilers
     explicitly when configuring OpenModelica (see above). Reconfigure and recompile
     OpenModelica.
   - If you do not want to reconfigure and build, you can instead manually change the
-    compilers used by OMEdit (for example) by going to Tools -> options -> Simulation and
+    compilers used by OMEdit (for example) by going to `Tools -> options -> Simulation` and
     adjusting `C Compiler` and `CXX Compiler` fields, i.e., they should NOT be
     `usr/bin/cc` and `/usr/bin/c++`.
   - Another option is to set the proper SDKROOT and PATH in a terminal before starting OMEdit:
@@ -213,9 +235,9 @@ read on below. On macOS there are a few pitfalls/issues which need attention.
     export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
     ```
 
-## 3.4. Windows MSYS/MinGW
+## 3.4. Windows MSYS/UCRT64
 
-There is nothing special about MSYS/MinGW if you are familiar with it. Just a few hints:
+There is nothing special about MSYS/UCRT64 if you are familiar with it. Just a few hints:
 
   - The generator should be "MSYS Makefiles". This is not what CMake chooses by default
     for Windows.
@@ -293,15 +315,7 @@ support with Ipopt. Enabling this requires having a working Fortran compiler.
 `OM_OMEDIT_ENABLE_TESTS` Enable testing and build the OMEdit Testsuite.
 
 `OM_OMEDIT_INSTALL_RUNTIME_DLLS` allows you to enable/disable the installation of the
-required runtime DLLs for MSYS/MinGW builds.
-
-You should disable this if you are either
-
-  - using OMDev but plan to start/launch all the GUI executables exclusively from a
-    MSYS/MinGW shell and never from the Windows explorer.
-
-  - Using OMDev or other MSYS/MinGW setup and have specified the MSYS/MinGW system
-    directories as your CMake install directory.
+required runtime DLLs for MSYS/UCRT64 builds.
 
 ### 4.1.4. OpenModelica/OMShell Options
 

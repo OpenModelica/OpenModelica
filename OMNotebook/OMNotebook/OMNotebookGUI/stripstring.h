@@ -47,11 +47,10 @@
 #include <QtCore/QStringList>
 
 
-typedef pair<string,string> rule_t;
-typedef vector<rule_t> rules_t;
+typedef std::pair<string,string> rule_t;
+typedef std::vector<rule_t> rules_t;
 
 
-using namespace std;
 
 
 /*!
@@ -68,10 +67,10 @@ public:
   StripString(){}
   ~StripString(){}
 
-  static string stripNBString( string str )
+  static std::string stripNBString( std::string str )
   {
-        string::size_type pos = 0;
-        while((pos = str.find("\\", pos)) != string::npos)
+        std::string::size_type pos = 0;
+        while((pos = str.find("\\", pos)) != std::string::npos)
         {
             switch(str[pos+1])
             {
@@ -133,10 +132,10 @@ public:
     return str;
   }
 
-  static string stripSimulationData( string str )
+  static std::string stripSimulationData( std::string str )
   {
-    string::size_type pos = 0;
-    if( string::npos != str.find( "\"<SimulationData", pos ))
+    std::string::size_type pos = 0;
+    if( std::string::npos != str.find( "\"<SimulationData", pos ))
     {
       //return "[Strange Mathematica code of SimulationData removed here]";
       return "";
@@ -154,7 +153,7 @@ public:
    *
    * 2005-12-08 AF, Implemented large part of the function
    */
-  static string applyRulesToText( string str, rules_t rules )
+  static std::string applyRulesToText( std::string str, rules_t rules )
   {
     // loop through all rules and apply them
     for( rules_t::iterator r_iter = rules.begin(); r_iter != rules.end(); r_iter++ )
@@ -163,51 +162,51 @@ public:
       if( (*r_iter).first == "FontFamily" )
       {
         // replace 'Courier' with 'Courier New'
-        string family = (*r_iter).second;
+        std::string family = (*r_iter).second;
         if( family == "Courier" )
           family = "Courier New";
 
         // insert font family
         family = "font-family:" + family + "; ";
-        string::size_type index = getSpanIndex( str );
+        std::string::size_type index = getSpanIndex( str );
         str.insert( index, family );
       }
       // FONT SIZE
       else if( (*r_iter).first == "FontSize" )
       {
-        string sizept = (*r_iter).second;
-        string::size_type pos = 0;
+        std::string sizept = (*r_iter).second;
+        std::string::size_type pos = 0;
         pos = sizept.find("`", pos);
-        if( pos != string::npos)
+        if( pos != std::string::npos)
           sizept.erase( pos, 1 );
 
-        string size = "font-size:" + sizept + "pt; ";
-        string::size_type index = getSpanIndex( str );
+        std::string size = "font-size:" + sizept + "pt; ";
+        std::string::size_type index = getSpanIndex( str );
         str.insert( index, size );
       }
       // FONT WEIGHT
       else if( (*r_iter).first == "FontWeight" )
       {
-        string::size_type index = getSpanIndex( str );
+        std::string::size_type index = getSpanIndex( str );
 
         // BOLD
         if( (*r_iter).second == "Bold" )
           str.insert( index, "font-weight:600; " );
         // OTHER
         else
-          cout << "[UNKNOWN] Rule::FontWeight::Value: " << (*r_iter).second.c_str() << endl;
+          std::cout << "[UNKNOWN] Rule::FontWeight::Value: " << (*r_iter).second.c_str() << std::endl;
       }
       // FONT SLANT
       else if( (*r_iter).first == "FontSlant" )
       {
-        string::size_type index = getSpanIndex( str );
+        std::string::size_type index = getSpanIndex( str );
 
         // ITALIC
         if( (*r_iter).second == "Italic" )
           str.insert( index, "font-style:italic; " );
         // OTHER
         else
-          cout << "[UNKNOWN] Rule::FontSlant::Value: " << (*r_iter).second.c_str() << endl;
+          std::cout << "[UNKNOWN] Rule::FontSlant::Value: " << (*r_iter).second.c_str() << std::endl;
       }
       // FONT COLOR
       else if( (*r_iter).first == "FontColor" )
@@ -257,14 +256,14 @@ public:
 
             // set the color
             color = "color:#" + color + "; ";
-            string::size_type index = getSpanIndex( str );
+            std::string::size_type index = getSpanIndex( str );
             str.insert( index, color.toStdString() );
           }
           else
-            cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << endl;
+            std::cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << std::endl;
         }
         else
-          cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << endl;
+          std::cout << "[UNKNOWN] StyleBox::Rule::RBGColor::Value: " << (*r_iter).second.c_str() << std::endl;
       }
       // FONT VARIATIONS
       else if( (*r_iter).first == "FontVariations" )
@@ -273,7 +272,7 @@ public:
       }
       // OTHER / MISC
       else
-        cout << "[UNKNOWN] StyleBox::Rule: " << (*r_iter).first.c_str() << " - " << (*r_iter).second.c_str() << endl;
+        std::cout << "[UNKNOWN] StyleBox::Rule: " << (*r_iter).first.c_str() << " - " << (*r_iter).second.c_str() << std::endl;
     }
 
     return str;
@@ -286,12 +285,12 @@ public:
    * \brief Apply a html <span style=""> tag to the text, and
    * return the index of the correct position inside the style
    */
-  static string::size_type getSpanIndex( string &str )
+  static std::string::size_type getSpanIndex( std::string &str )
   {
-    if( str.find( "<span style=\"", 0) == string::npos )
+    if( str.find( "<span style=\"", 0) == std::string::npos )
     {
       // no span tag, add one
-      string tmp = "<span style=\" \">" + str + "</span>";
+      std::string tmp = "<span style=\" \">" + str + "</span>";
       str = tmp;
     }
 
@@ -309,15 +308,15 @@ public:
      * The notebook parser returns: Dir/filename.htmlChapterSeven
      * have to insert # symbol
    */
-  static string fixFilename( string filename )
+  static std::string fixFilename( std::string filename )
   {
-    string::size_type index = filename.find( ".nb" );
+    std::string::size_type index = filename.find( ".nb" );
 
     // didn't found '.nb', assume that it is an internal doc link
     // and add '#' first in the filename
-    if( index == string::npos )
+    if( index == std::string::npos )
     {
-      filename = string("#") + filename;
+      filename = std::string("#") + filename;
       return filename;
     }
 

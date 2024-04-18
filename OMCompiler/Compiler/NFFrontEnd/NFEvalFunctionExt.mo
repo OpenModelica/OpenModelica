@@ -495,6 +495,40 @@ algorithm
   assignVariable(info, Expression.makeInteger(INFO));
 end Lapack_dorgqr;
 
+function Lapack_dhseqr
+  input list<Expression> args;
+protected
+  Expression job, compz, n, ilo, ihi, h, ldh, wr, wi, z, ldz, work, lwork, info;
+  Integer N, ILO, IHI, LDH, LDZ, LWORK, INFO;
+  String JOB, COMPZ;
+  list<list<Real>> H, Z;
+  list<Real> WR, WI, WORK;
+algorithm
+  {job, compz, n, ilo, ihi, h, ldh, wr, wi, z, ldz, work, lwork, info} := args;
+
+  JOB := evaluateExtStringArg(job);
+  COMPZ := evaluateExtStringArg(compz);
+  N := evaluateExtIntArg(n);
+  ILO := evaluateExtIntArg(ilo);
+  IHI := evaluateExtIntArg(ihi);
+  H := evaluateExtRealMatrixArg(h);
+  LDH := evaluateExtIntArg(ldh);
+  Z := evaluateExtRealMatrixArg(z);
+  LDZ := evaluateExtIntArg(ldz);
+  WORK := evaluateExtRealArrayArg(work);
+  LWORK := evaluateExtIntArg(lwork);
+
+  (H, WR, WI, Z, WORK, INFO) :=
+    Lapack.dhseqr(JOB, COMPZ, N, ILO, IHI, H, LDH, Z, LDZ, WORK, LWORK);
+
+  assignVariableExt(h, Expression.makeRealMatrix(H));
+  assignVariable(wr, Expression.makeRealArray(WR));
+  assignVariable(wi, Expression.makeRealArray(WI));
+  assignVariableExt(z, Expression.makeRealMatrix(Z));
+  assignVariable(work, Expression.makeRealArray(WORK));
+  assignVariable(info, Expression.makeInteger(INFO));
+end Lapack_dhseqr;
+
 protected
 function evaluateExtIntArg
   input Expression arg;

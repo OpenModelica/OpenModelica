@@ -188,7 +188,7 @@ class OMCGnuplotDirective(Directive):
       if 'parametric' in self.options:
         vl.append('>>> plotParametric("%s","%s")' % (variables[0],variables[1]), "<OMC gnuplot>")
       elif 'plotall' in self.options:
-        vl.append(">>> plotall()", "<OMC gnuplot>")
+        vl.append(">>> plotAll()", "<OMC gnuplot>")
       node = docutils.nodes.paragraph()
       self.state.nested_parse(vl, 0, node)
       cb = node.children

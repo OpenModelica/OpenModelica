@@ -134,11 +134,13 @@ public:
   QString getParameterValue(const QString &className, const QString &parameter);
   QStringList getElementModifierNames(QString className, QString name);
   QString getElementModifierValue(QString className, QString name);
+  bool setElementModifierValueOld(QString className, QString modifierName, QString modifierValue);
   bool setElementModifierValue(QString className, QString modifierName, QString modifierValue);
   bool removeElementModifiers(QString className, QString name);
   QString getElementModifierValues(QString className, QString name);
   QStringList getExtendsModifierNames(QString className, QString extendsClassName);
   QString getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName);
+  bool setExtendsModifierValueOld(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
   bool setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
   bool isExtendsModifierFinal(QString className, QString extendsClassName, QString modifierName);
   bool removeExtendsModifiers(QString className, QString extendsClassName);
@@ -165,6 +167,7 @@ public:
   bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = true, QString languageStandard = QString(""), bool requireExactVersion = false);
   bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
+  bool loadClassContentString(const QString &data, const QString &className);
   QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
   QList<QString> parseString(QString value, QString fileName, bool printErrors = true);
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
@@ -176,7 +179,7 @@ public:
   bool setSourceFile(QString className, QString path);
   bool save(QString className);
   bool saveModifiedModel(QString modelText);
-  bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate);
+  bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate, bool simplified);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
   QString diffModelicaFileListings(const QString &before, const QString &after);
@@ -188,6 +191,7 @@ public:
   bool deleteComponent(QString name, QString componentName);
   bool renameComponent(QString className, QString oldName, QString newName);
   bool updateComponent(QString name, QString className, QString componentName, QString placementAnnotation);
+  bool setElementAnnotation(const QString &elementName, QString annotation);
   bool renameComponentInClass(QString className, QString oldName, QString newName);
   bool updateConnection(QString className, QString from, QString to, QString annotation);
   bool updateConnectionNames(QString className, QString from, QString to, QString fromNew, QString toNew);

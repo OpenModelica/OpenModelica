@@ -25,5 +25,5 @@ platforms := {
   "i686-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13-i386",
   "x86_64-w64-mingw32 docker run multiarch/crossbuild",
   "i686-w64-mingw32 docker run multiarch/crossbuild"};
-buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", platforms=platforms); getErrorString();
+buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum", platforms=platforms); getErrorString();
 

@@ -6,7 +6,7 @@
 //
 
 loadFile("TanksConnectedPI.mo");
-translateModelFMU(TanksConnectedPI, version="1.0");
+buildModelFMU(TanksConnectedPI, version="1.0");
 importFMU("TanksConnectedPI.fmu");
 loadFile("TanksConnectedPI_me_FMU.mo");
 simulate(TanksConnectedPI_me_FMU,stopTime=210,numberOfIntervals=250, tolerance=1e-5);

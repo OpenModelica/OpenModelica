@@ -1,19 +1,9 @@
-# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
-# Makefile for compilation of OMC using OMDev-mingw
-# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
-#
-# $Id: Makefile.omdev.mingw.in 1817 2006-02-01 12:21:26Z adrpo $
-#
-
-# The path to the OMDev-mingw package MUST BE SET!
-#OMDEV=$OMDEV
-# Test if the needed variables are there...
+# Makefile for compilation of OMC using MSYS UCRT
 
 .testvariables:
 ifndef OMDEV
 	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
-	@echo Take the OMDev package from: http://www.ida.liu.se/~adrpo/omc/omdev/
-	@echo For questions or problems email Adrian Pop, adrpo@ida.liu.se
+	@echo See OpenModelica/OMCompiler/README.Windows.md
 	ABORT
 endif
 
@@ -25,10 +15,6 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 LIBSOCKET = -lwsock32
 
 SHELL	= /bin/sh
-override CFLAGS	+= $(USE_CORBA)
-
-USE_CORBA = -DUSE_CORBA
-CORBAHOME = $(OMDEV)
 
 SCRIPT_FILES = Compile.bat Prompt.bat openmodelica.lefty default_profiling.xsl replace-startValue.* simcodedump.xsl ngspicetoModelica.py
 

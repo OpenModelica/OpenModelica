@@ -268,6 +268,26 @@ package FFITest
     model ArrayResult1
       constant Real x[:] = arrayResult1();
     end ArrayResult1;
+
+    function exception1
+      output Integer x;
+    external "C" x = exception1_ext()
+      annotation(Library="FFITestLib");
+    end exception1;
+
+    model Exception1
+      constant Integer x = exception1();
+    end Exception1;
+
+    function crash1
+      output Integer x;
+    external "C" x = crash1_ext()
+      annotation(Library="FFITestLib");
+    end crash1;
+
+    model Crash1
+      constant Integer x = crash1();
+    end Crash1;
   end ErrorChecking;
 
   package ExternalC

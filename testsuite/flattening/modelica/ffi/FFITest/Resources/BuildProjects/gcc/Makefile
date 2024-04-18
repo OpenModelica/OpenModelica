@@ -1,4 +1,5 @@
 CC = gcc
+CXX = g++
 CFLAGS = -fPIC -Wall -Wextra -O2 -g
 LDFLAGS = -shared
 RM = rm -f
@@ -11,18 +12,21 @@ TARGET_LIB = libFFITestLib.so
 TARGET_DIR = linux64
 endif
 
-OBJS = FFITestLib.o
+OBJS = FFITestLib.o FFITestLibCpp.o
 
 .PHONY: all
 all: ${TARGET_LIB}
 
 $(TARGET_LIB): $(OBJS)
-	$(CC) ${LDFLAGS} -o $@ $<
+	$(CXX) ${LDFLAGS} -o $@ $^
 	mkdir -p ../../Library/$(TARGET_DIR)
 	cp $@ ../../Library/$(TARGET_DIR)/$@
 
 %.o: ../../C-Sources/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.o: ../../C-Sources/%.cpp
+	$(CXX) $(CFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean:

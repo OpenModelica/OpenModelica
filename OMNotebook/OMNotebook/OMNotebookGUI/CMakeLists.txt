@@ -108,7 +108,6 @@ target_include_directories(OMNotebook PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(OMNotebook PUBLIC Qt5::Xml)
 target_link_libraries(OMNotebook PUBLIC Qt5::Widgets)
 target_link_libraries(OMNotebook PUBLIC Qt5::PrintSupport)
-target_link_libraries(OMNotebook PUBLIC Qt5::WebKitWidgets)
 target_link_libraries(OMNotebook PUBLIC OMPlotLib)
 target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 
