@@ -812,6 +812,8 @@ public
       CompositeEvent cev;
       Pointer<Variable> aux_var;
       ComponentRef aux_cref;
+      list<ComponentRef> iter;
+      list<Expression> range;
     algorithm
       cev_opt := UnorderedMap.get(condition, bucket.time_map);
       if Util.isSome(cev_opt) then
@@ -825,7 +827,8 @@ public
       else
         if createAux then
           // make a new auxiliary variable and return the expression which replaces the zero crossing
-          (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.TIME_EVENT_STR, bucket.auxiliaryTimeEventIndex);
+          (iter, range) := Equation.Iterator.getFrames(condition.iter);
+          (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.TIME_EVENT_STR, bucket.auxiliaryTimeEventIndex, Iterator.fromFrames(List.zip(iter, range)));
           exp := Expression.fromCref(aux_cref);
         else
           // make no auxiliary and return the original zero crossing
