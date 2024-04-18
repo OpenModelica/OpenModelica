@@ -180,44 +180,20 @@ public
       output list<Pointer<Variable>> auxiliary_vars = {};
       output list<Pointer<Equation>> auxiliary_eqns = {};
     protected
-      String context = "EVT";
-      list<TimeEvent> tev_lst = UnorderedSet.toList(bucket.time_set);
-      list<tuple<Condition, CompositeEvent>> cev_lst = UnorderedMap.toList(bucket.time_map);
-      list<tuple<Condition, StateEvent>> sev_lst = UnorderedMap.toList(bucket.state_map);
-      ComponentRef lhs_cref;
-      Expression rhs;
-      Iterator iterator;
-      list<ComponentRef> iter;
-      list<Expression> range;
-      Pointer<Variable> aux_var;
-      Pointer<Equation> aux_eqn;
-      TimeEvent tev;
+      Condition cond;
       CompositeEvent cev;
       StateEvent sev;
-      Condition cond;
-
     algorithm
       // get auxiliary eqns and vars from composite events
-      for tpl in cev_lst loop
+      for tpl in UnorderedMap.toList(bucket.time_map) loop
         (cond, cev) := tpl;
-        if not BVariable.isDummyVariable(cev.auxiliary) then
-          aux_eqn := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(cev.auxiliary)), cond.exp, idx, context, Iterator.EMPTY(), EquationAttributes.default(EquationKind.DISCRETE, false));
-          auxiliary_vars := cev.auxiliary :: auxiliary_vars;
-          auxiliary_eqns := aux_eqn :: auxiliary_eqns;
-        end if;
+        (auxiliary_vars, auxiliary_eqns) := createAux(cond, cev.auxiliary, variables, idx, auxiliary_vars, auxiliary_eqns);
       end for;
 
       // get auxiliary eqns and vars from state events
-      for tpl in sev_lst loop
+      for tpl in UnorderedMap.toList(bucket.state_map) loop
         (cond, sev) := tpl;
-        if not BVariable.isDummyVariable(sev.auxiliary) then
-          (iter, range) := Equation.Iterator.getFrames(cond.iter);
-          // lower the subscripts (containing iterators)
-          lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(sev.auxiliary), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
-          aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, context, Iterator.fromFrames(List.zip(iter, range)), EquationAttributes.default(EquationKind.DISCRETE, false));
-          auxiliary_vars := sev.auxiliary :: auxiliary_vars;
-          auxiliary_eqns := aux_eqn :: auxiliary_eqns;
-        end if;
+        (auxiliary_vars, auxiliary_eqns) := createAux(cond, sev.auxiliary, variables, idx, auxiliary_vars, auxiliary_eqns);
       end for;
 
       eventInfo := EVENT_INFO(
@@ -226,11 +202,35 @@ public
         state_map         = bucket.state_map, // ToDo: StateEvent.updateIndices(stateEvents),
         numberMathEvents  = 0 // ToDo
       );
+
       if Flags.isSet(Flags.DUMP_EVENTS) then
         print(toString(eventInfo));
         print(List.toString(auxiliary_eqns, function Equation.pointerToString(str = "  "), StringUtil.headline_4("Event Equations"), "", "\n", "\n\n"));
       end if;
     end create;
+
+    function createAux
+      input Condition cond;
+      input Pointer<Variable> aux_var;
+      input VariablePointers variables;
+      input Pointer<Integer> idx;
+      input output list<Pointer<Variable>> auxiliary_vars;
+      input output list<Pointer<Equation>> auxiliary_eqns;
+    protected
+      list<ComponentRef> iter;
+      list<Expression> range;
+      ComponentRef lhs_cref;
+      Pointer<Equation> aux_eqn;
+    algorithm
+      if not BVariable.isDummyVariable(aux_var) then
+        (iter, range) := Equation.Iterator.getFrames(cond.iter);
+        // lower the subscripts (containing iterators)
+        lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
+        aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, "EVT", Iterator.fromFrames(List.zip(iter, range)), EquationAttributes.default(EquationKind.DISCRETE, false));
+        auxiliary_vars := aux_var :: auxiliary_vars;
+        auxiliary_eqns := aux_eqn :: auxiliary_eqns;
+      end if;
+    end createAux;
 
     function empty
       output EventInfo eventInfo;
