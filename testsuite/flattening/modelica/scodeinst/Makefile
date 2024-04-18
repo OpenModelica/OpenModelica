@@ -1160,6 +1160,7 @@ usertype6.mo \
 VectorizeBindings1.mo \
 VectorizeBindings2.mo \
 VectorizeBindings3.mo \
+VectorizeBindings4.mo \
 VectorTest.mo \
 Visibility1.mo \
 Visibility2.mo \
