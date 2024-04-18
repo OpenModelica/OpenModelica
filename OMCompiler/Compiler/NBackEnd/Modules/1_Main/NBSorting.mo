@@ -378,7 +378,7 @@ public
         case ALGEBRAIC_LOOP() then node.eqn_indices;
         case ARRAY_BUCKET()   then node.eqn_indices;
         case ELEMENT() algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because elements should not be accessed, only their parrents: " + toString(node)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because elements should not be accessed, only their parents: " + toString(node)});
         then fail();
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of incorrect super node type."});
