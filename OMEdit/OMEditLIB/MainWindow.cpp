@@ -1040,7 +1040,9 @@ void loadCRMLLibs(LibraryWidget *pLibraryWidget) {
       QString fn(p + QDir::separator() + l);
       QFile f(fn);
       if (f.exists()) {
-        pLibraryWidget->openFile(fn, Helper::utf8, false, true);
+        // do not load it again if it exists already
+        if (!pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fn, 1))
+          pLibraryWidget->openFile(fn, Helper::utf8, false, true);
       }
     }
   }
