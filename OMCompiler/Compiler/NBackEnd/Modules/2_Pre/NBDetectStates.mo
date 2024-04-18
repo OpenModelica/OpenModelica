@@ -352,9 +352,12 @@ protected
 
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")),
         arguments = {Expression.CREF(cref = state_cref)}))
-        algorithm
-          state_var := BVariable.getVarPointer(state_cref);
-          pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
+      algorithm
+        state_var := BVariable.getVarPointer(state_cref);
+        pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
+        if not scalarized then
+          pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
+        end if;
       then Expression.fromCref(pre_cref);
       // ToDo! General expressions inside pre call!
       // ToDo! edge and change replacement!
