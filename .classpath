@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="OMCompiler/3rdParty/Ipopt-3.13.4/examples/hs071_java"/>
+	<classpathentry kind="src" path="OMCompiler/3rdParty/Ipopt-3.13.4/examples/ScalableProblems_java"/>
+	<classpathentry kind="src" path="testsuite/metamodelica/MetaModelicaDev/07_OMCAndCorba"/>
+	<classpathentry kind="src" path="testsuite/openmodelica/java"/>
+	<classpathentry kind="lib" path="OMCompiler/3rdParty/antlr/3.2/tool/antlr-2.7.7.jar"/>
+	<classpathentry kind="lib" path="OMCompiler/3rdParty/antlr/3.2/tool/antlr-3.2.jar"/>
+	<classpathentry kind="lib" path="OMCompiler/3rdParty/antlr/3.2/tool/antlr-runtime-3.2.jar"/>
+	<classpathentry kind="lib" path="OMCompiler/3rdParty/antlr/3.2/tool/gunit.jar"/>
+	<classpathentry kind="lib" path="OMCompiler/3rdParty/antlr/3.2/tool/stringtemplate-3.2.jar"/>
+	<classpathentry kind="lib" path="OMCompiler/3rdParty/junit-4.6.jar"/>
+	<classpathentry kind="lib" path="OMParser/3rdParty/antlr4/tool/antlr-4.8-complete.jar"/>
+	<classpathentry kind="lib" path="OMSimulator/3rdParty/xerces/tools/jars/stylebook-1.0-b2.jar"/>
+	<classpathentry kind="lib" path="OMSimulator/3rdParty/xerces/tools/jars/xalan.jar"/>
+	<classpathentry kind="lib" path="OMSimulator/3rdParty/xerces/tools/jars/xerces.jar"/>
+	<classpathentry kind="lib" path="testsuite/simulation/modelica/hpcom/PN_Converter/pn_converter.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

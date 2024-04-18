@@ -217,6 +217,10 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       solverInfo->solverData = cvodeData;
       useStream[LOG_SOLVER] = 0;
       break;
+    case S_IDA:
+    	//add by twxin:
+
+    	break;
     default:
       FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Instantiate: Unknown solver method.")
       retValue = -1;
@@ -264,6 +268,9 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
     case S_CVODE:
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
+    case S_IDA:
+    	//
+    	break;
     default:
       FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2FreeInstance: Unknown solver method.")
       retValue = -1;

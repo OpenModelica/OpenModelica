@@ -2262,6 +2262,15 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
           return fmi2Fatal;
         }
         break;
+      case S_IDA:
+    	  //added by twxin 2024.4.10
+        flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states, comp);
+        if (flag < 0)
+        {
+          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
+          return fmi2Fatal;
+        }
+        break;
       default:
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
         return fmi2Fatal;

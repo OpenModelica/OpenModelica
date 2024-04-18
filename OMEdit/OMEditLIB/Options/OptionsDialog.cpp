@@ -6719,6 +6719,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpSolverForCoSimulationComboBox = new QComboBox;
   mpSolverForCoSimulationComboBox->addItem(tr("Explicit Euler"), "");
   mpSolverForCoSimulationComboBox->addItem(tr("CVODE"), "cvode");
+  mpSolverForCoSimulationComboBox->addItem(tr("IDA"), "ida");  //add by twxin 2024.3.26
   mpSolverForCoSimulationComboBox->installEventFilter(mpOptionsDialog);
   // Model description filters
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");

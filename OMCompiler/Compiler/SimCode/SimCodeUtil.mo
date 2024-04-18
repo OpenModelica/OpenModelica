@@ -13891,7 +13891,7 @@ algorithm
 
       // Save value
       if stringEqual(tmpName, "s") then
-        if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
+        if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") and not stringEqual(tmpValue, "ida") then  //add ida by twxin 2024.3.26
           if printWarning then
             msg := "Unknown value \"" + tmpValue + "\" for flag \"s\".";
             Error.addCompilerWarning(msg);
@@ -15738,6 +15738,7 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
+/*
 public function getCmakeSundialsLinkCode
   "Code for FMU CMakeLists.txt to specify if CVODE is needed."
   input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
@@ -15750,6 +15751,13 @@ algorithm
   end if;
 end getCmakeSundialsLinkCode;
 
+*/
+//abundon this function for less general;
+
+
+//is it required to design function for each solver like the following?    twxin 3/27 
+
+/*
 public function cvodeFmiFlagIsSet
   "Checks if s:cvode is part of FMI_FLAGS.
    If a *.json exists we don't check and assume cvode will be needed at some point."
@@ -15784,6 +15792,65 @@ algorithm
     else then();
   end match;
 end cvodeFmiFlagIsSet;
+*/
+
+
+
+
+public function getCmakeSundialsLinkCode
+  "Code for FMU CMakeLists.txt to specify if solver link is needed."
+  "modified by twxin 2024.4.10"
+  
+  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
+  output String solver = "";
+  output String solverDirectory = "\"\"";
+algorithm
+  solver := getSolverFromFlags(fmiSimulationFlags);
+  if not stringEqual(solver, "") then
+    solverDirectory := "\"" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
+  end if;
+end getCmakeSundialsLinkCode;
+
+
+public function getSolverFromFlags
+  "Checks if s:solver is part of FMI_FLAGS.
+   If a *.json exists now I don't know the way to parse.just leave it blank 
+   twxin 2024.4.10"
+  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
+  output String solver = "";
+algorithm
+  _ := match fmiSimulationFlags
+    local
+      list<tuple<String,String>> nameValueTuples;
+      String setting, value;
+      String configFile;
+      String fileContent;
+    case SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples))
+      algorithm
+        if listLength(nameValueTuples) >= 1 then
+          for tpl in nameValueTuples loop
+            (setting, value) := tpl;
+            if stringEqual(setting, "s") and not stringEqual(setting,"eluer") then
+              solver := value;
+              break;
+            end if;
+          end for;
+        end if;
+      then();
+    case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(configFile))
+      algorithm //bugs here;
+        fileContent := System.readFile(configFile);
+        if not -1 == System.stringFind(fileContent, "\"cvode\"") then
+          solver := "cvode";
+        end if;
+        if not -1 == System.stringFind(fileContent, "\"ida\"") then
+          solver := "ida";
+        end if;
+      then();
+    else then();
+  end match;
+end getSolverFromFlags;
+
 
 public function make2CMakeInclude
   "Convert makefile include directories to CMake include directories"

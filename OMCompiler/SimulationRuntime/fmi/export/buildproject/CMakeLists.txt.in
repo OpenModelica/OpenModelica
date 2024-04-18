@@ -17,14 +17,17 @@ set(RUNTIME_DEPENDENCIES_LEVEL
     @RUNTIME_DEPENDENCIES_LEVEL@
     CACHE STRING
     "Add modelica runtime dependencies to FMU if set to 'modelica'. Add system runtime dependencies as well if set to 'all'.")
-set(NEED_CVODE
-    @NEED_CVODE@
-    CACHE BOOL
-    "FMU needs to link to SUNDIALS CVODE if 'ON'. Used for CoSimulation FMUs that want to use CVODE as integrator. Use 'OFF' otherwise.")
-set(CVODE_DIRECTORY
-    @CVODE_DIRECTORY@
+    
+set(SOLVER_NAME
+    @SOLVER_NAME@
     CACHE STRING
-    "IF CVODE is needed provide a directory where to find it.")
+    "FMU needs to link to SUNDIALS SOLVER if not ''. Used for CoSimulation FMUs that want to  as integrator. Use '' otherwise.")
+set(SOLVER_DIRECTORY
+    @SOLVER_DIRECTORY@
+    CACHE STRING
+    "IF SOLVER is needed provide a directory where to find it.")
+    
+#the original NEED_CVODE,CVODE_DIRECTORY is replaced by SOLVER_NAME and SOLVER_DIRECTORY;if SOLVER_NAME=="" mean no solver lib is needed.twxin4.11
 
 # Test if RUNTIME_DEPENDENCIES is needed and available
 if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none")
@@ -64,10 +67,12 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
-if (NOT ${NEED_CVODE})
-  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
-endif()
+#if (NOT ${NEED_CVODE})
+#  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
+#                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
+#endif()
+#this is not very neccessary;twxin4.11;
+
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 
 # Set install prefix to FMU target system short and architecture
@@ -97,14 +102,27 @@ set(CMAKE_STATIC_LIBRARY_PREFIX "")
 message(STATUS "Install directory: ${CMAKE_INSTALL_PREFIX}")
 
 # Set RPATH
+#-------------------------------------------------------------------------------#
+#if(APPLE)
+#  set(CMAKE_INSTALL_RPATH "@loader_path")
+#else()
+#  if(${NEED_CVODE} AND RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
+#    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH True)
+#  endif()
+#  set(CMAKE_INSTALL_RPATH "$ORIGIN")
+#endif()
+#--------------------------------------------------------------------------------#
+#is replaced with the following for the NEED_CVODE is replaced with SOLVER_NAME
+
 if(APPLE)
   set(CMAKE_INSTALL_RPATH "@loader_path")
 else()
-  if(${NEED_CVODE} AND RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
+  if((NOT ${SOLVER_NAME} STREQUAL "") AND RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH True)
   endif()
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
 endif()
+#-------------------------------------------------------------------------------#twxin2024.4.11
 
 # Target library
 add_library(${FMU_NAME}
@@ -123,21 +141,44 @@ endif()
 # Link additional libraries
 target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
 @FMU_ADDITIONAL_LIBS@
-if(${NEED_CVODE})
-  message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
-  find_library(SUNDIALS_CVODE_LIBRARY sundials_cvode
-               PATHS ${CVODE_DIRECTORY}
+
+#-----------------------------------------------------------------------------------------#
+#if(${NEED_CVODE})
+#  message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
+#  find_library(SUNDIALS_CVODE_LIBRARY sundials_cvode
+#               PATHS ${CVODE_DIRECTORY}
+#               NO_DEFAULT_PATH)
+#  find_library(SUNDIALS_NVSERIAL_LIBRARY sundials_nvecserial
+#               PATHS ${CVODE_DIRECTORY}
+#               NO_DEFAULT_PATH)
+#  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY})
+#  target_include_directories(${FMU_NAME} PRIVATE sundials)
+#  set(WITH_SUNDIALS ";WITH_SUNDIALS")
+#  message(STATUS "CVODE: ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY}")
+#else()
+#  message(STATUS "CVODE: Not linked")
+#endif()
+#------------------------------------------------------------------------------------------#
+#is replaced with the following to support more solver:#twxin2024.4.11
+#-----------------------------------------------------------------------------------------#
+if(NOT ${SOLVER_NAME} STREQUAL "")
+  message(STATUS "SOLVER_DIRECTORY: ${SOLVER_DIRECTORY}")
+  find_library(SUNDIALS_SOLVER_LIBRARY sundials_${SOLVER_NAME}
+               PATHS ${SOLVER_DIRECTORY}
                NO_DEFAULT_PATH)
   find_library(SUNDIALS_NVSERIAL_LIBRARY sundials_nvecserial
-               PATHS ${CVODE_DIRECTORY}
+               PATHS ${SOLVER_DIRECTORY}
                NO_DEFAULT_PATH)
-  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY})
+  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_SOLVER_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY})
   target_include_directories(${FMU_NAME} PRIVATE sundials)
   set(WITH_SUNDIALS ";WITH_SUNDIALS")
-  message(STATUS "CVODE: ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY}")
+  message(STATUS "${SOLVER_NAME}: ${SUNDIALS_SOLVER_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY}")
 else()
-  message(STATUS "CVODE: Not linked")
+  message(STATUS "${SOLVER_NAME}: Not linked")
 endif()
+#------------------------------------------------------------------------------------------#
+
+
 
 # Add include directories
 target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
