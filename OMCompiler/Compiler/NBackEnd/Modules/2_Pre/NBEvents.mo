@@ -1048,6 +1048,11 @@ protected
   protected
     Boolean failed = true;
   algorithm
+    // skip if there is no continuous change in `exp`
+    if not BackendUtil.isContinuous(exp) then
+      return;
+    end if;
+
     // try to create time event or composite time event
     if BackendUtil.isOnlyTimeDependent(exp) then
       (exp, bucket, failed) := TimeEvent.create(exp, bucket, iter, eqn, funcTree, createAux);
