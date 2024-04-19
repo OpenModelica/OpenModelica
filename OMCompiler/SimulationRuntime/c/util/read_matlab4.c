@@ -141,17 +141,20 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
   }
 }
 
-void remSpaces(char *ch){
-    char *ch2 = ch;
-    unsigned int ui = 0;
-    unsigned int uj = 0;
-
-    for(ui=0;ui<=strlen(ch);ui++){
-        if(ch[ui]!=' '){
-            ch2[uj] = ch[ui];
-            uj++;
-        }
-    }
+void trimWhitespace(char *str)
+{
+  char *end;
+  /* skip leading whitespace */
+  while (isspace(*str)) {
+    str++;
+  }
+  /* remove trailing whitespace */
+  end = str + strlen(str) - 1;
+  while (end > str && isspace(*end)) {
+    end--;
+  }
+  /* write null character */
+  *(end+1) = '\0';
 }
 
 /* Read n elements into str; convert from double if necessary, etc */
@@ -311,7 +314,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
           reader->allInfo[k].name[hdr.mrows] = '\0';
           reader->allInfo[k].isParam = -1;
           reader->allInfo[k].index = -1;
-          remSpaces(reader->allInfo[k].name);
+          trimWhitespace(reader->allInfo[k].name);
           /* fprintf(stderr, "    Adding variable '%s'\n", reader->allInfo[k].name); */
          }
       }
@@ -329,7 +332,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
           reader->allInfo[k].name[hdr.ncols] = '\0';
           reader->allInfo[k].isParam = -1;
           reader->allInfo[k].index = -1;
-          remSpaces(reader->allInfo[k].name);
+          trimWhitespace(reader->allInfo[k].name);
           /* fprintf(stderr, "    Adding variable '%s'\n", reader->allInfo[k].name); */
         }
         free(tmp);
