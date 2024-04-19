@@ -15752,11 +15752,11 @@ end getCmakeLinkLibrariesCode;
 
 //is it required to design function for each solver like the following?    twxin 3/27
 
-public function cvodeFmiFlagIsSet
+public function sundialsFmiFlagIsSet
   "Checks if s:cvode is part of FMI_FLAGS.
    If a *.json exists we don't check and assume cvode will be needed at some point."
   input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
-  output Boolean needsCvode = false;
+  output Boolean needsSundials = false;
 algorithm
   _ := match fmiSimulationFlags
     local
@@ -15769,8 +15769,8 @@ algorithm
         if listLength(nameValueTuples) >= 1 then
           for tpl in nameValueTuples loop
             (setting, value) := tpl;
-            if stringEqual(setting, "s") and stringEqual(value, "cvode") then
-              needsCvode := true;
+            if stringEqual(setting, "s") and (stringEqual(value, "cvode") or stringEqual(value, "ida")) then
+              needsSundials := true;
               break;
             end if;
           end for;
@@ -15780,12 +15780,14 @@ algorithm
       algorithm
         fileContent := System.readFile(configFile);
         if not -1 == System.stringFind(fileContent, "\"cvode\"") then
-          needsCvode := true;
+          needsSundials := true;
+        elseif not -1 == System.stringFind(fileContent, "\"ida\"") then
+          needsSundials := true;
         end if;
       then();
     else then();
   end match;
-end cvodeFmiFlagIsSet;
+end sundialsFmiFlagIsSet;
 
 public function getCmakeSundialsLinkCode
   "Code for FMU CMakeLists.txt to specify if solver link is needed."
