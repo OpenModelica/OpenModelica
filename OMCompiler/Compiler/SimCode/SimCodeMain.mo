@@ -746,13 +746,14 @@ algorithm
   _ := match (simCode,target)
     local
       String str, newdir, newpath, resourcesDir, dirname;
+      String solver;
       String fmutmp;
       String guid;
       Boolean b;
       Boolean needSundials = false;
       String fileprefix;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
-      String cmakelistsStr, needCvode, cvodeDirectory;
+      String cmakelistsStr, solverNameCS, solverLibDirectory;
       list<String> sourceFiles, model_desc_src_files;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
@@ -863,8 +864,19 @@ algorithm
         end if;
 
         // Check if the sundials files are needed
-        if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
+        solver := SimCodeUtil.getSolverFromFlags(simCode.fmiSimulationFlags);
+        if stringEq(solver, "cvode") then
           // The sundials headers are in the include directory.
+          // TODO: Add both CVODE and IDA to RuntimeSources.sundials_headers,
+          // RuntimeSources.simrt_c_sundials_sources or change it into two
+          // different ones.
+          copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_sources;
+        elseif stringEq(solver, "ida") then
+          // The sundials headers are in the include directory.
+          // TODO: Add both CVODE and IDA to sundials_headers,
+          // simrt_c_sundials_sources or change it into two different ones.
           copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
           simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_sources;
@@ -961,9 +973,9 @@ algorithm
 
         // Add external libraries and includes
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMI_INTERFACE_HEADER_FILES_DIRECTORY@", "\"" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + "\"");
-        (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
+        (solverNameCS, solverLibDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@SOLVER_NAME@", "\"" + solverNameCS + "\"");
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@SOLVER_DIRECTORY@", solverLibDirectory);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs));
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 

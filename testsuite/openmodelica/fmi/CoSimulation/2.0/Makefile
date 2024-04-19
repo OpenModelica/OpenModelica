@@ -4,11 +4,12 @@ TESTFILES = \
 ExportCvodeFmu_cmake.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
+ExportIdaFmu_cmake.mos \
 fmi_interpolation_01.mos \
 FmuExportFlags.mos \
+issue10523.mos \
 RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
-issue10523.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

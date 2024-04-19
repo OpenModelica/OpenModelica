@@ -15750,26 +15750,8 @@ algorithm
   end for;
 end getCmakeLinkLibrariesCode;
 
-/*
-public function getCmakeSundialsLinkCode
-  "Code for FMU CMakeLists.txt to specify if CVODE is needed."
-  input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
-  output String needCvode = "OFF";
-  output String cvodeDirectory = "\"\"";
-algorithm
-  if cvodeFmiFlagIsSet(fmiSimulationFlags) then
-    needCvode := "ON";
-    cvodeDirectory := "\"" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
-  end if;
-end getCmakeSundialsLinkCode;
+//is it required to design function for each solver like the following?    twxin 3/27
 
-*/
-//abundon this function for less general;
-
-
-//is it required to design function for each solver like the following?    twxin 3/27 
-
-/*
 public function cvodeFmiFlagIsSet
   "Checks if s:cvode is part of FMI_FLAGS.
    If a *.json exists we don't check and assume cvode will be needed at some point."
@@ -15804,15 +15786,10 @@ algorithm
     else then();
   end match;
 end cvodeFmiFlagIsSet;
-*/
-
-
-
 
 public function getCmakeSundialsLinkCode
   "Code for FMU CMakeLists.txt to specify if solver link is needed."
-  "modified by twxin 2024.4.10"
-  
+
   input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
   output String solver = "";
   output String solverDirectory = "\"\"";
@@ -15823,10 +15800,9 @@ algorithm
   end if;
 end getCmakeSundialsLinkCode;
 
-
 public function getSolverFromFlags
   "Checks if s:solver is part of FMI_FLAGS.
-   If a *.json exists now I don't know the way to parse.just leave it blank 
+   If a *.json exists now I don't know the way to parse.just leave it blank
    twxin 2024.4.10"
   input Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
   output String solver = "";
@@ -15850,7 +15826,7 @@ algorithm
         end if;
       then();
     case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(configFile))
-      algorithm //bugs here;
+      algorithm //TODO: bugs here;
         fileContent := System.readFile(configFile);
         if not -1 == System.stringFind(fileContent, "\"cvode\"") then
           solver := "cvode";
@@ -15862,7 +15838,6 @@ algorithm
     else then();
   end match;
 end getSolverFromFlags;
-
 
 public function make2CMakeInclude
   "Convert makefile include directories to CMake include directories"
