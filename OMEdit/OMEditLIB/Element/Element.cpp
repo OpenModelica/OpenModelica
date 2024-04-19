@@ -1696,7 +1696,7 @@ void Element::setHasTransition(bool hasTransition)
     foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
       Element *pStartElement = pTransitionLineAnnotation->getStartElement();
       Element *pEndElement = pTransitionLineAnnotation->getEndElement();
-      if (pStartElement->getRootParentElement() == this || pEndElement->getRootParentElement() == this) {
+      if ((pStartElement && pStartElement->getRootParentElement() == this) || (pEndElement && pEndElement->getRootParentElement() == this)) {
         mHasTransition = true;
         update();
         return;
@@ -1719,7 +1719,7 @@ void Element::setIsInitialState(bool isInitialState)
   } else {
     foreach (LineAnnotation *pInitialStateLineAnnotation, mpGraphicsView->getInitialStatesList()) {
       Element *pStartElement = pInitialStateLineAnnotation->getStartElement();
-      if (pStartElement->getRootParentElement() == this) {
+      if (pStartElement && pStartElement->getRootParentElement() == this) {
         mIsInitialState = true;
         update();
         return;
