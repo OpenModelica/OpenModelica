@@ -8477,6 +8477,28 @@ algorithm
   end match;
 end getFmiInitialAttributeStr;
 
+function simGenericCallString
+  input SimCode.SimGenericCall call;
+  output String str;
+algorithm
+  str := match call
+    case SimCode.SINGLE_GENERIC_CALL() algorithm
+      str := "single generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
+      str := str + "\n  " + ExpressionDump.printExpStr(call.lhs) + " = " + ExpressionDump.printExpStr(call.rhs) + ";";
+    then str;
+
+    case SimCode.IF_GENERIC_CALL() algorithm
+      str := "if generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
+    then str;
+
+    case SimCode.WHEN_GENERIC_CALL() algorithm
+      str := "when generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
+    then str;
+
+    else "";
+  end match;
+end simGenericCallString;
+
 // one dlow var can result in multiple simvars: input and output are a subset
 // of algvars for example
 protected function extractVarFromVar
@@ -9454,6 +9476,8 @@ algorithm
   dumpSimEqSystemLst(simCode.algorithmAndEquationAsserts,"\n");
   print("\nequationsForZeroCrossings:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.equationsForZeroCrossings,"\n");
+  print("\ngeneric calls:\n" + UNDERLINE + "\n");
+  print(List.toString(simCode.generic_loop_calls, simGenericCallString, "", "", "\n", ""));
   print("\njacobianEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);

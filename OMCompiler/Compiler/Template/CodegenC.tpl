@@ -7354,12 +7354,14 @@ end equationNames_Partial;
 template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
-  let &sub = buffer ""
-  let &preExp = buffer ""
-  let &varDecls = buffer ""
-  let &auxFunction = buffer ""
   let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
-  (genericCalls |> call => match call
+  (genericCalls |> call =>
+    let &sub = buffer ""
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &auxFunction = buffer ""
+
+    match call
     case SINGLE_GENERIC_CALL() then
       let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
       let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
@@ -7375,6 +7377,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%lhs_%> = <%rhs_%>;
       }
       >>
+
     case IF_GENERIC_CALL() then
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
@@ -7389,6 +7392,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%branches_%>
       }
       >>
+
     case WHEN_GENERIC_CALL() then
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
