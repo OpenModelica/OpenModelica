@@ -226,7 +226,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       if (!idaData) {
         FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Instantiate: Out of memory.")
       }
-      retValue = idaData_solver_initial(data, threadData, solverInfo, idaData, 1 /* is FMI */);   /* TODO: ida_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
+      retValue = ida_solver_initial(data, threadData, solverInfo, idaData, 1 /* is FMI */);   /* TODO: ida_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
       solverInfo->solverData = idaData;
       useStream[LOG_SOLVER] = 0;
       break;

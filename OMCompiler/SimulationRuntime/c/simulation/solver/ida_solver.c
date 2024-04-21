@@ -1107,6 +1107,202 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   return retVal;
 }
 
+
+/**
+ * @brief Integration step with IDA for fmi2DoStep
+ *
+ * @param data              Runtime data struct
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        IDA solver data struct.
+ * @param tNext             Next desired time step for integrator to end.
+ * @param states            States vector.
+ * @param fmuComponent      FMU Data for fmu callback functions.
+ * @return int              Returns 0 on success and -1 else.
+ */
+int ida_solver_fmi_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
+{
+  double tout = 0;
+  int i = 0, flag;
+  int retVal = 0, finished = 0 /* FALSE */;
+  long int tmp;
+  static unsigned int stepsOutputCounter = 1;
+  int stepsMode;    /* Has to be IDA_NORMAL (1) or IDA_ONE_STEP (2) */
+  int restartAfterLSFail = 0;
+
+  /*get initial value*/
+  IDA_SOLVER *idaData = (IDA_SOLVER*) solverInfo->solverData;
+
+  SIMULATION_DATA *sData = data->localData[0];
+  SIMULATION_DATA *sDataOld = data->localData[1];
+  MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
+
+
+  /* alloc all work arrays */
+  if (!idaData->daeMode)
+  {
+    N_VSetArrayPointer_Serial(data->localData[0]->realVars, idaData->y);
+    N_VSetArrayPointer_Serial(data->localData[1]->realVars + data->modelData->nStates, idaData->yp);
+  }
+
+  if (solverInfo->didEventStep)
+  {
+    idaData->setInitialSolution = 0;
+  }
+
+  /* reinit solver */
+  if (!idaData->setInitialSolution)
+  {
+    debugStreamPrint(LOG_SOLVER, 0, "Re-initialized IDA Solver");
+
+    /* initialize states and der(states) */
+    if (idaData->daeMode)
+    {
+      memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+      /* and  also algebraic vars */
+      getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+      memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+    }
+
+    /* calculate matrix for residual scaling */
+    if (omc_flag[FLAG_IDA_SCALING])
+    {
+      getScalingFactors(data, idaData, NULL);
+
+      /* scale idaData->y and idaData->yp */
+      infoStreamPrint(LOG_SOLVER_V, 1, "Scale y and yp");
+      idaScaleData(idaData);
+      messageClose(LOG_SOLVER_V);
+    }
+
+    flag = IDAReInit(idaData->ida_mem,
+        solverInfo->currentTime,
+        idaData->y,
+        idaData->yp);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAReInit");
+
+    /* calculate matrix for residual scaling */
+    if (omc_flag[FLAG_IDA_SCALING])
+    {
+      /* scale idaData->y and idaData->yp */
+      idaReScaleData(idaData);
+    }
+
+    if (idaData->idaSmode)
+    {
+      for(i=0; i<idaData->Ns; ++i)
+      {
+        int j;
+        for(j=0; j<idaData->N; ++j)
+        {
+          NV_Ith_S(idaData->yS[i],j) = 0;
+          NV_Ith_S(idaData->ySp[i],j) = 0;
+        }
+      }
+      flag = IDASensReInit(idaData->ida_mem, IDA_SIMULTANEOUS, idaData->yS, idaData->ySp);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASensReInit");
+    }
+    idaData->setInitialSolution = 1;
+  }
+
+  //saveJumpState = threadData->currentErrorStage;
+  //threadData->currentErrorStage = ERROR_INTEGRATOR;
+
+  /* try */
+//#if !defined(OMC_EMCC)
+//  MMC_TRY_INTERNAL(simulationJumpBuffer)
+//#endif
+
+
+  /* Check that tout is not less than timeValue otherwise the solver
+   * will come in trouble.
+   * If that is the case we skip the current step. */
+  /*
+  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
+  {
+    infoStreamPrint(LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(LOG_SOLVER, 0, "Interpolate linear");
+
+    // linear extrapolation
+    for(i = 0; i < idaData->N; i++)
+    {
+      NV_Ith_S(idaData->y, i) = NV_Ith_S(idaData->y, i) + NV_Ith_S(idaData->yp, i) * solverInfo->currentStepSize;
+    }
+    sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+    data->callback->functionODE(data, threadData);
+    solverInfo->currentTime = sData->timeValue;
+
+    TRACE_POP
+    return 0;
+  }
+  */
+
+  /* Calculate steps until TOUT is reached */
+
+  /*
+  if (idaData->internalSteps)
+  {
+    // If internalSteps are selected, let IDA run to stopTime or next sample event 
+    if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
+    {
+      tout = data->simulationInfo->nextSampleEvent;
+    }
+    else
+    {
+      tout = data->simulationInfo->stopTime;
+    }
+    stepsMode = IDA_ONE_STEP;
+    flag = IDASetStopTime(idaData->ida_mem, tout);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetStopTime");
+  }
+  else
+  {
+    tout = solverInfo->currentTime + solverInfo->currentStepSize;
+    stepsMode = IDA_NORMAL;
+  }
+  */
+    
+  flag = IDASetStopTime(idaData->ida_mem, tNext);
+  if(flag<0){
+  // TODO: Add logging
+    return -1;
+  }
+
+//#if !defined(OMC_EMCC)
+//  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+//#endif
+
+//  threadData->currentErrorStage = saveJumpState;
+
+
+externalInputUpdate(data);
+data->callback->input_function(data, threadData);
+if (omc_flag[FLAG_IDA_SCALING])
+{
+    /* scale idaData->y and idaData->yp */
+    idaScaleData(idaData);
+}
+
+flag = IDASolve(idaData->ida_mem, tNext, &solverInfo->currentTime, idaData->y, idaData->yp, stepsMode);
+
+if (omc_flag[FLAG_IDA_SCALING])
+{
+    /* rescale idaData->y and idaData->yp */
+    idaReScaleData(idaData);
+}
+
+if ((flag == IDA_SUCCESS || flag == IDA_TSTOP_RETURN)&&solverInfo->currentTime >= tNext){
+//TODO: add some logging;
+}
+else{
+    printf("fmi2DoStep: ##IDA## %d error occurred at time = %.15g.", flag, solverInfo->currentTime);
+    return -1; 
+}
+return 0;
+}
+
+
+
 /**
  * @brief Compute residual F(t, y, y').
  *

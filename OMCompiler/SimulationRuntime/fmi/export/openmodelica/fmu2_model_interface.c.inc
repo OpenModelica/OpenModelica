@@ -2295,7 +2295,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         }
         break;
       case S_IDA:
-        flag = ia_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states, comp);
+        flag = ida_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states, comp);
         if (flag < 0)
         {
           FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: IDA integrator step failed.")

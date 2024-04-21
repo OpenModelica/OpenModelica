@@ -131,6 +131,9 @@ void ida_solver_deinitial(IDA_SOLVER *idaData);
 /* main ida function to make a step */
 int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
+/*called by fmi cs*/
+int ida_solver_fmi_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent);
+
 /* event handing reinitialization function  */
 int ida_event_update(DATA* data, threadData_t *threadData);
 
