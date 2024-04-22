@@ -65,7 +65,7 @@ foreach(source_file ${SOURCE_FMU_COMMON_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" ",\n                                         " SOURCE_FMU_COMMON_FILES "${SOURCE_FMU_COMMON_FILES_LIST_QUOTED}")
+string(REPLACE ";" ",\n    " SOURCE_FMU_COMMON_FILES "${SOURCE_FMU_COMMON_FILES_LIST_QUOTED}")
 
 
 set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",
@@ -164,7 +164,7 @@ set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",
                               \"./util/omc_init.h\",
                               \"./dataReconciliation/dataReconciliation.h\")
 
-string(REPLACE ";" "\n                                         " SOURCE_FMU_COMMON_HEADERS "${SOURCE_FMU_COMMON_HEADERS}")
+string(REPLACE ";" "\n    " SOURCE_FMU_COMMON_HEADERS "${SOURCE_FMU_COMMON_HEADERS}")
 
 
 ######################################################################################################################
@@ -185,7 +185,7 @@ foreach(source_file_full_path ${3RD_DGESV_FILES})
   get_filename_component(source_file ${source_file_full_path} NAME)
   list(APPEND SOURCE_FMU_DGESV_FILES_LIST_QUOTED \"./external_solvers/${source_file}\")
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_DGESV_FILES "${SOURCE_FMU_DGESV_FILES_LIST_QUOTED}")
+string(REPLACE ";" ",\n    " SOURCE_FMU_DGESV_FILES "${SOURCE_FMU_DGESV_FILES_LIST_QUOTED}")
 
 
 ######################################################################################################################
@@ -200,7 +200,7 @@ foreach(source_file ${SOURCE_FMU_NLS_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_NLS_FILES "${SOURCE_FMU_NLS_FILES_LIST_QUOTED}")
+string(REPLACE ";" ",\n    " SOURCE_FMU_NLS_FILES "${SOURCE_FMU_NLS_FILES_LIST_QUOTED}")
 
 
 # CMinPack files for NLS
@@ -228,7 +228,7 @@ foreach(source_file_full_path ${3RD_CMINPACK_FMU_FILES})
   get_filename_component(source_file ${source_file_full_path} NAME)
   list(APPEND SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED \"./external_solvers/${source_file}\")
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_CMINPACK_FILES "${SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED}")
+string(REPLACE ";" ",\n    " SOURCE_FMU_CMINPACK_FILES "${SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED}")
 
 
 
@@ -243,7 +243,7 @@ foreach(source_file ${SOURCE_FMU_LS_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_LS_FILES "${SOURCE_FMU_LS_FILES_LIST_QUOTED}")
+string(REPLACE ";" ",\n    " SOURCE_FMU_LS_FILES "${SOURCE_FMU_LS_FILES_LIST_QUOTED}")
 
 
 ######################################################################################################################
@@ -257,7 +257,7 @@ foreach(source_file ${SOURCE_FMU_MIXED_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_MIXED_FILES "${SOURCE_FMU_MIXED_FILES_LIST_QUOTED}")
+string(REPLACE ";" ",\n    " SOURCE_FMU_MIXED_FILES "${SOURCE_FMU_MIXED_FILES_LIST_QUOTED}")
 
 
 
@@ -272,7 +272,7 @@ foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_CVODE_RUNTIME_FILES "${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED}")
+string(REPLACE ";" ",\n    " SOURCE_FMU_CVODE_RUNTIME_FILES "${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED}")
 
 
 
