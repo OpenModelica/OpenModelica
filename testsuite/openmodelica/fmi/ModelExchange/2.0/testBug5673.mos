@@ -60,7 +60,7 @@ readFile("Bug5673.xml"); getErrorString();
 //     name = \"b\"
 //     valueReference = \"1000\"
 //     variability = \"continuous\" isDiscrete = \"false\"
-//     causality = \"local\" isValueChangeable = \"false\"
+//     causality = \"local\" isValueChangeable = \"true\"
 //     alias = \"noAlias\"
 //     classIndex = \"0\" classType = \"rAlg\"
 //     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"

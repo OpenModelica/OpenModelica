@@ -9991,19 +9991,13 @@ algorithm
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
-        // checkInitVal(initVal, source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
-        // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
-        // check if the variable has changeable value
-        // parameter which has final = true or evaluate annotation are not changeable
-        isValueChangeable = ((not BackendVariable.hasVarEvaluateAnnotationTrueOrFinalOrProtected(dlowVar)
-                            and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar))))
-                            and isFixed;
+        isValueChangeable = isChangeable(dlowVar);
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.FIXED(); // PARAMETERS()
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
@@ -10036,14 +10030,13 @@ algorithm
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
-        // checkInitVal(initVal, source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
-        isValueChangeable = BackendVariable.varHasConstantStartExp(dlowVar);
+        isValueChangeable = isChangeable(dlowVar);
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.CONTINUOUS(); // state() should be CONTINUOUS
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
@@ -10077,14 +10070,14 @@ algorithm
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
-        // checkInitVal(initVal, source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
-        isValueChangeable = match dir case DAE.INPUT() then true; else false; end match;
+        isValueChangeable = match dir case DAE.INPUT() then true; else isChangeable(dlowVar);
+        end match;
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = getVariabilityAttribute(dlowVar);
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
@@ -10094,6 +10087,13 @@ algorithm
           minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr));
   end match;
 end dlowvarToSimvar;
+
+protected function isChangeable
+  input BackendDAE.Var dlowVar;
+  output Boolean isValueChangeable = BackendVariable.varFixed(dlowVar)
+    and not BackendVariable.hasVarEvaluateAnnotationTrueOrFinalOrProtected(dlowVar)
+    and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar));
+end isChangeable;
 
 protected function getCausality
   input BackendDAE.Var dlowVar;

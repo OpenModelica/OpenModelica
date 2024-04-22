@@ -1197,7 +1197,7 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
   QHash<QString, QString> hash = mScalarVariablesHash.value(variableToFind);
   if (hash.value("name").compare(variableToFind) == 0) {
     *type = hash.value("type");
-    *changeAble = (hash.value("isValueChangeable").compare(QStringLiteral("true")) == 0) ? true : false;
+    *changeAble = hash.value("isValueChangeable").compare(QStringLiteral("true")) == 0;
     *variability = hash.value("variability");
     if (*changeAble) {
       *value = hash.value("start");

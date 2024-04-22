@@ -2053,7 +2053,7 @@ end isFinalVar;
 
 public function isFinalOrProtectedVar
   input BackendDAE.Var inVar;
-  output Boolean b = DAEUtil.getFinalAttr(inVar.values) or isProtectedVar(inVar);
+  output Boolean b = isFinalVar(inVar) or isProtectedVar(inVar);
 end isFinalOrProtectedVar;
 
 public function getVariableAttributes "Returns the DAE.VariableAttributes of a variable."
