@@ -43,7 +43,7 @@ extern "C" {
 
 #ifndef OMC_FMI_RUNTIME
   #include "omc_config.h"
-#endif
+#endif // OMC_FMI_RUNTIME
 #include "../../simulation_data.h"
 #include "../../util/simulation_options.h"
 #include "../../util/omc_error.h"
@@ -51,17 +51,21 @@ extern "C" {
 
 #ifdef WITH_SUNDIALS
 
-#include <cvode/cvode.h>
-#include "cvode_solver.h"
+#ifdef OMC_HAVE_CVODE
+  #include <cvode/cvode.h>
+  #include "cvode_solver.h"
+#endif // OMC_HAVE_CVODE
+#ifdef OMC_HAVE_IDA
+  #include "ida_solver.h"
+#endif // OMC_HAVE_IDA
 #ifndef OMC_FMI_RUNTIME
-#include "ida_solver.h"
 #include <kinsol/kinsol.h>
 #include "kinsolSolver.h"
 #endif
 
 /**
  * @brief Specify type of flag used by different SUNDIALS module for error
- * dispaly.
+ * display.
  */
 typedef enum sundialsFlagType {
   SUNDIALS_UNKNOWN_FLAG, /* Unknown flag type */
@@ -83,11 +87,15 @@ typedef enum sundialsFlagType {
 /* Function prototypes */
 void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
+#ifdef OMC_HAVE_CVODE
 void cvodeErrorHandlerFunction(int errorCode, const char *module,
                                const char *function, char *msg, void *userData);
-#ifndef OMC_FMI_RUNTIME
+#endif
+#ifdef OMC_HAVE_IDA
 void idaErrorHandlerFunction(int errorCode, const char *module,
                              const char *function, char *msg, void *userData);
+#endif
+#ifndef OMC_FMI_RUNTIME
 void kinsolErrorHandlerFunction(int errorCode, const char *module,
                                 const char *function, char *msg,
                                 void *userData);

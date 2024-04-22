@@ -33,6 +33,7 @@
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
 #include "../simulation/solver/cvode_solver.h"
+#include "../simulation/solver/ida_solver.h"
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
 #endif

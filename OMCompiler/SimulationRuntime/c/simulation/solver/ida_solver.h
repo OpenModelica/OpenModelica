@@ -38,18 +38,21 @@
 #include "simulation_data.h"
 #include "util/simulation_options.h"
 #include "simulation/solver/solver_main.h"
-#include "omc_config.h" /* for WITH_SUNDIALS */
+#ifndef OMC_FMI_RUNTIME
+  #include "omc_config.h" /* for WITH_SUNDIALS */
+#endif
 
 #ifdef WITH_SUNDIALS
 
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+#ifndef OMC_FMI_RUNTIME
 #include <sunlinsol/sunlinsol_klu.h>         /* Sparse linear solver KLU */
 #include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
 #include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
 #include <sunlinsol/sunlinsol_sptfqmr.h>    /* Scaled, Preconditioned Transpose-Free Quasi-Minimal Residual iterative linear solver */
-
+#endif  // OMC_FMI_RUNTIME
 
 /* readability */
 #define MINIMAL_SCALE_FACTOR 1e-8

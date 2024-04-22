@@ -47,10 +47,18 @@ encapsulated package RuntimeSources
     "_FMU.c"
   };
 
-  constant list<String> sundials_headers = {
+  constant list<String> sundials_cvode_headers = {
     "sundials/cvode/cvode_ls.h",
     "sundials/cvode/cvode_proj.h",
-    "sundials/cvode/cvode.h",
+    "sundials/cvode/cvode.h"
+  };
+
+  constant list<String> sundials_ida_headers = {
+    "sundials/idas/idas_ls.h",
+    "sundials/idas/idas.h"
+  };
+
+  constant list<String> sundials_headers = {
     "sundials/sundials/sundials_config.h",
     "sundials/sundials/sundials_dense.h",
     "sundials/sundials/sundials_direct.h",
@@ -66,8 +74,12 @@ encapsulated package RuntimeSources
     "sundials/sundials/sundials_nvector.h"
   };
 
-  constant list<String> simrt_c_sundials_sources = {
+  constant list<String> simrt_c_sundials_cvode_sources = {
     @SOURCE_FMU_CVODE_RUNTIME_FILES@
+  };
+
+  constant list<String> simrt_c_sundials_ida_sources = {
+    @SOURCE_FMU_IDA_RUNTIME_FILES@
   };
 
   constant list<String> dgesv_headers = {

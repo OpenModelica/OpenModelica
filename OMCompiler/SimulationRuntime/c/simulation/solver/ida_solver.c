@@ -40,7 +40,6 @@
 #include <string.h>
 #include <setjmp.h>
 
-#include "omc_config.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
 #include "simulation_data.h"
@@ -59,7 +58,9 @@
 #include "dassl.h"
 #include "epsilon.h"
 #include "external_input.h"
+#ifndef OMC_FMI_RUNTIME
 #include "jacobianSymbolical.h"
+#endif // OMC_FMI_RUNTIME
 #include "simulation/jacobian_util.h"
 #include "model_help.h"
 #include "omc_math.h"
@@ -1107,7 +1108,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   return retVal;
 }
 
-
 /**
  * @brief Integration step with IDA for fmi2DoStep
  *
@@ -1242,7 +1242,7 @@ int ida_solver_fmi_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
   /*
   if (idaData->internalSteps)
   {
-    // If internalSteps are selected, let IDA run to stopTime or next sample event 
+    // If internalSteps are selected, let IDA run to stopTime or next sample event
     if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
     {
       tout = data->simulationInfo->nextSampleEvent;
@@ -1261,7 +1261,7 @@ int ida_solver_fmi_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
     stepsMode = IDA_NORMAL;
   }
   */
-    
+
   flag = IDASetStopTime(idaData->ida_mem, tNext);
   if(flag<0){
   // TODO: Add logging
@@ -1296,7 +1296,7 @@ if ((flag == IDA_SUCCESS || flag == IDA_TSTOP_RETURN)&&solverInfo->currentTime >
 }
 else{
     printf("fmi2DoStep: ##IDA## %d error occurred at time = %.15g.", flag, solverInfo->currentTime);
-    return -1; 
+    return -1;
 }
 return 0;
 }

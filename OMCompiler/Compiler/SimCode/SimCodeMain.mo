@@ -865,25 +865,20 @@ algorithm
 
         // Check if the sundials files are needed
         solver := SimCodeUtil.getSolverFromFlags(simCode.fmiSimulationFlags);
+        // Copy CVODE *or* IDA into FMU
         if stringEq(solver, "cvode") then
-          // The sundials headers are in the include directory.
-          // TODO: Add both CVODE and IDA to RuntimeSources.sundials_headers,
-          // RuntimeSources.simrt_c_sundials_sources or change it into two
-          // different ones.
+          copyFiles(RuntimeSources.sundials_cvode_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_sources;
+          copyFiles(RuntimeSources.simrt_c_sundials_cvode_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_cvode_sources;
         elseif stringEq(solver, "ida") then
-          // The sundials headers are in the include directory.
-          // TODO: Add both CVODE and IDA to sundials_headers,
-          // simrt_c_sundials_sources or change it into two different ones.
+          copyFiles(RuntimeSources.sundials_ida_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_sources;
+          copyFiles(RuntimeSources.simrt_c_sundials_ida_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_ida_sources;
         else
           simrt_c_sundials_sources := {};
         end if;
-
 
         simrt_linear_solver_sources := if varInfo.numLinearSystems > 0 then RuntimeSources.simrt_linear_solver_sources else {};
         copyFiles(simrt_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);

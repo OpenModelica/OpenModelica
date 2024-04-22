@@ -33,6 +33,7 @@
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
 #include "../simulation/solver/cvode_solver.h"
+#include "../simulation/solver/ida_solver.h"
 #include "../util/omc_mmap.h"
 #include "../util/omc_file.h"
 

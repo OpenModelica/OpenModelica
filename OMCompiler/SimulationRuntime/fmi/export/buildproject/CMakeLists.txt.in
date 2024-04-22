@@ -4,6 +4,8 @@ set(FMU_NAME @FMU_NAME_IN@)
 
 project(${FMU_NAME} C)
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
 # FMU compilation options
 set(BUILD_SHARED_LIBS
     ON
@@ -179,7 +181,14 @@ if(NOT ${SOLVER_NAME} STREQUAL "")
   target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_SOLVER_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY})
   target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_SOLVER_LIBRARY})
   target_include_directories(${FMU_NAME} PRIVATE sundials)
-  set(WITH_SUNDIALS ";WITH_SUNDIALS")
+  target_compile_definitions(${FMU_NAME} PRIVATE WITH_SUNDIALS)
+  if(${SOLVER_NAME} STREQUAL "cvode")
+    target_compile_definitions(${FMU_NAME} PRIVATE OMC_HAVE_CVODE)
+    message(STATUS "OMC_HAVE_IDA: true")
+  elseif(${SOLVER_NAME} STREQUAL "ida")
+    target_compile_definitions(${FMU_NAME} PRIVATE OMC_HAVE_IDA)
+    message(STATUS "OMC_HAVE_IDA: true")
+  endif()
   message(STATUS "${SOLVER_NAME}: ${SUNDIALS_NVSERIAL_LIBRARY} ${SUNDIALS_SOLVER_LIBRARY}")
 else()
   message(STATUS "${SOLVER_NAME}: Not linked")
@@ -192,7 +201,7 @@ target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRE
                                                sundials@FMU_ADDITIONAL_INCLUDES@)
 
 # Set compiler definitions
-target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
+target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
 
 if(BUILD_SHARED_LIBS)
   # Override FMI2_FUNCTION_PREFIX if FMU compiled dynamically
