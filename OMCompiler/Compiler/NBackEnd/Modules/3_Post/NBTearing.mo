@@ -248,8 +248,10 @@ protected
         SOME(strongComponents) := syst.strongComponents;
         SOME(full) := syst.adjacencyMatrix;
         for i in 1:arrayLength(strongComponents) loop
+          // each module has a list of functions that need to be applied
+          tmp := strongComponents[i];
           for func in funcs loop
-            (tmp, full, funcTree, idx) := func(strongComponents[i], full, funcTree, idx, variables, eq_index, systemType);
+            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, variables, eq_index, systemType);
           end for;
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
@@ -279,11 +281,10 @@ protected
         tag := if comp.linear then "_LS_JAC_" else "_NLS_JAC_";
         // create residual equations
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
-
         // update jacobian to take slices (just to have correct inner variables and such)
         (jacobian, funcTree) := BJacobian.nonlinear(
-          variables = VariablePointers.fromList(list(Slice.getT(var) for var in comp.strict.iteration_vars)),
-          equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in comp.strict.residual_eqns)),
+          variables = VariablePointers.fromList(list(Slice.getT(var) for var in strict.iteration_vars)),
+          equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
           comps     = listArray(residual_comps),
           funcTree  = funcTree,
           name      = System.System.systemTypeString(systemType) + tag + intString(index));
@@ -346,7 +347,7 @@ protected
     Matching matching;
     list<StrongComponent> inner_comps, residual_comps;
   algorithm
-    print("######## minimal ########\n");
+    //print("######## minimal ########\n");
     (comp, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
 
@@ -355,8 +356,8 @@ protected
         (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, BVariable.isContinuous);
         (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
 
-        print(List.toString(disc_vars, function BVariable.pointerToString()) + "\n");
-        print(List.toString(disc_eqns, function Equation.pointerToString(str = "")) + "\n");
+        //print(List.toString(disc_vars, function BVariable.pointerToString()) + "\n");
+        //print(List.toString(disc_eqns, function Equation.pointerToString(str = "")) + "\n");
 
         /*
 
