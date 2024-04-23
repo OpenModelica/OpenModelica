@@ -112,7 +112,7 @@ public
     extends Module.wrapper;
     input System.SystemType systemType;
   protected
-    constant Module.tearingInterface func = getModule();
+    constant list<Module.tearingInterface> funcs = getModule();
     FunctionTree funcTree;
   algorithm
     if Flags.isSet(Flags.TEARING_DUMP) then
@@ -126,17 +126,17 @@ public
 
       case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree, variables, eq_index, systemType);
+          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, variables, eq_index, systemType);
           bdae.ode := systems;
           bdae.funcTree := funcTree;
       then bdae;
 
       case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree, variables, eq_index, systemType);
+          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, variables, eq_index, systemType);
           bdae.init := systems;
           if Util.isSome(bdae.init_0) then
-            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), func, funcTree, variables, eq_index, systemType);
+            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), funcs, funcTree, variables, eq_index, systemType);
             bdae.init_0 := SOME(systems);
           end if;
           bdae.funcTree := funcTree;
@@ -144,7 +144,7 @@ public
 
       case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree, variables, eq_index, systemType);
+          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, variables, eq_index, systemType);
           bdae.dae := SOME(systems);
           bdae.funcTree := funcTree;
       then bdae;
@@ -158,8 +158,11 @@ public
     input output FunctionTree funcTree    "Function call bodies";
     input output Integer index            "current unique loop index";
     input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
+  protected
+    // dummy adjacency matrix, dont need it for tearingNone()
+    Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
   algorithm
-    (comp, funcTree, index) := match comp
+    (comp, dummy, funcTree, index) := match comp
       // create implicit equations
       case StrongComponent.SINGLE_COMPONENT()
       then tearingNone(StrongComponent.ALGEBRAIC_LOOP(
@@ -168,7 +171,7 @@ public
             casual  = NONE(),
             linear  = false,
             mixed   = false,
-            status  = NBSolve.Status.IMPLICIT), funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
+            status  = NBSolve.Status.IMPLICIT), dummy, funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
 
       case StrongComponent.MULTI_COMPONENT()
       then tearingNone(StrongComponent.ALGEBRAIC_LOOP(
@@ -177,10 +180,10 @@ public
             casual  = NONE(),
             linear  = false,
             mixed   = false,
-            status  = NBSolve.Status.IMPLICIT), funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
+            status  = NBSolve.Status.IMPLICIT), dummy, funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
 
       // do nothing otherwise
-      else (comp, funcTree, index);
+      else (comp, dummy, funcTree, index);
     end match;
   end implicit;
 
@@ -196,14 +199,15 @@ public
 
   function getModule
     "Returns the module function that was chosen by the user."
-    output Module.tearingInterface func;
+    output list<Module.tearingInterface> funcs;
   protected
-    String flag = "default"; //Flags.getConfigString(Flags.JACOBIAN)
+    String flag = Flags.getConfigString(Flags.TEARING_METHOD);
   algorithm
-    (func) := match flag
-      case "default"  then (tearingNone);
-      case "none"     then (tearingNone);
-      case "minimal"  then (tearingNone);
+    funcs := match flag
+      case "cellier"        then {tearingNone, tearingFinalize};
+      case "noTearing"      then {tearingNone, tearingFinalize};
+      case "omcTearing"     then {tearingMinimal, tearingFinalize};
+      case "minimalTearing" then {tearingMinimal, tearingFinalize};
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
@@ -227,7 +231,7 @@ protected
   // Traverser function
   function tearingTraverser
     input list<System.System> systems;
-    input Module.tearingInterface func;
+    input list<Module.tearingInterface> funcs;
     output list<System.System> new_systems = {};
     input output FunctionTree funcTree;
     input VariablePointers variables;
@@ -237,23 +241,63 @@ protected
     array<StrongComponent> strongComponents;
     StrongComponent tmp;
     Integer idx = 0;
+    Adjacency.Matrix full "full adjacency matrix containing solvability info";
   algorithm
     for syst in systems loop
-      if isSome(syst.strongComponents) then
+      if isSome(syst.strongComponents) and isSome(syst.adjacencyMatrix) then
         SOME(strongComponents) := syst.strongComponents;
+        SOME(full) := syst.adjacencyMatrix;
         for i in 1:arrayLength(strongComponents) loop
-          (tmp, funcTree, idx) := func(strongComponents[i], funcTree, idx, variables, eq_index, systemType);
+          // each module has a list of functions that need to be applied
+          tmp := strongComponents[i];
+          for func in funcs loop
+            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, variables, eq_index, systemType);
+          end for;
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
             arrayUpdate(strongComponents, i, tmp);
           end if;
         end for;
         syst.strongComponents := SOME(strongComponents);
+        syst.adjacencyMatrix := SOME(full);
       end if;
       new_systems := syst :: new_systems;
     end for;
     new_systems := listReverse(new_systems);
   end tearingTraverser;
+
+  function tearingFinalize extends Module.tearingInterface;
+  protected
+    list<StrongComponent> residual_comps;
+    Option<Jacobian> jacobian;
+    Tearing strict;
+  protected
+    list<Slice<EquationPointer>> tmp;
+    list<list<Slice<EquationPointer>>> acc = {};
+    String tag;
+  algorithm
+    (comp, index) := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        tag := if comp.linear then "_LS_JAC_" else "_NLS_JAC_";
+        // create residual equations
+        residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
+        // update jacobian to take slices (just to have correct inner variables and such)
+        (jacobian, funcTree) := BJacobian.nonlinear(
+          variables = VariablePointers.fromList(list(Slice.getT(var) for var in strict.iteration_vars)),
+          equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
+          comps     = listArray(residual_comps),
+          funcTree  = funcTree,
+          name      = System.System.systemTypeString(systemType) + tag + intString(index));
+
+        strict.jac := jacobian;
+        comp.strict := strict;
+        if Flags.isSet(Flags.TEARING_DUMP) then
+          print(StrongComponent.toString(comp) + "\n");
+        end if;
+      then (comp, index);
+      else (comp, index);
+    end match;
+  end tearingFinalize;
 
   function tearingNone extends Module.tearingInterface;
     // does nothing but set index and call the jacobian
@@ -282,21 +326,6 @@ protected
         // create residual equations
         strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));
         comp.strict := strict;
-        residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
-
-        // update jacobian to take slices (just to have correct inner variables and such)
-        (jacobian, funcTree) := BJacobian.nonlinear(
-          variables = VariablePointers.fromList(list(Slice.getT(var) for var in comp.strict.iteration_vars)),
-          equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in comp.strict.residual_eqns)),
-          comps     = listArray(residual_comps),
-          funcTree  = funcTree,
-          name      = System.System.systemTypeString(systemType) + "_NLS_JAC_" + intString(index));
-
-        strict.jac := jacobian;
-        comp.strict := strict;
-        if Flags.isSet(Flags.TEARING_DUMP) then
-          print(StrongComponent.toString(comp) + "\n");
-        end if;
       then (comp, index);
       else (comp, index);
     end match;
@@ -318,10 +347,19 @@ protected
     Matching matching;
     list<StrongComponent> inner_comps, residual_comps;
   algorithm
+    //print("######## minimal ########\n");
     (comp, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
-        index := index + 1;
-        comp.idx := index;
+
+        vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
+        eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
+        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, BVariable.isContinuous);
+        (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
+
+        //print(List.toString(disc_vars, function BVariable.pointerToString()) + "\n");
+        //print(List.toString(disc_eqns, function Equation.pointerToString(str = "")) + "\n");
+
+        /*
 
         // ToDo: if other tearing modules have been used before
         //   we should not only look in residuals and iteration arrays.
@@ -331,10 +369,6 @@ protected
         //
 
         // split variables and equations in discrete and continuous
-        vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
-        eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, BVariable.isContinuous);
-        (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
         iter_lst                := list(Slice.SLICE(var, {}) for var in cont_vars);
 
         if listEmpty(disc_vars) and listEmpty(disc_eqns) then
@@ -377,6 +411,7 @@ protected
         strict.innerEquations := listArray(inner_comps);
         strict.jac            := jacobian;
         comp.strict           := strict;
+        */
         if Flags.isSet(Flags.TEARING_DUMP) then
           print(StrongComponent.toString(comp) + "\n");
         end if;
