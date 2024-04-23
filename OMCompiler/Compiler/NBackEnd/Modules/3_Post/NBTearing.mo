@@ -48,6 +48,7 @@ protected
   import Tearing = NBTearing;
 
   // NF imports
+  import ComponentRef = NFComponentRef;
   import NFFlatten.FunctionTree;
   import Variable = NFVariable;
 
@@ -121,30 +122,29 @@ public
     bdae := match (systemType, bdae)
       local
         list<System.System> systems;
-        VariablePointers variables;
         Pointer<Integer> eq_index;
 
-      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, variables, eq_index, systemType);
+          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, eq_index, systemType);
           bdae.ode := systems;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, variables, eq_index, systemType);
+          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, eq_index, systemType);
           bdae.init := systems;
           if Util.isSome(bdae.init_0) then
-            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), funcs, funcTree, variables, eq_index, systemType);
+            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), funcs, funcTree, eq_index, systemType);
             bdae.init_0 := SOME(systems);
           end if;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree, varData = BVariable.VAR_DATA_SIM(variables = variables), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, variables, eq_index, systemType);
+          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, eq_index, systemType);
           bdae.dae := SOME(systems);
           bdae.funcTree := funcTree;
       then bdae;
@@ -161,26 +161,36 @@ public
   protected
     // dummy adjacency matrix, dont need it for tearingNone()
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
+    list<Module.tearingInterface> funcs = {tearingNone, tearingFinalize};
+    StrongComponent new_comp;
   algorithm
     (comp, dummy, funcTree, index) := match comp
       // create implicit equations
-      case StrongComponent.SINGLE_COMPONENT()
-      then tearingNone(StrongComponent.ALGEBRAIC_LOOP(
-            idx     = index,
-            strict  = singleImplicit(comp.var, comp.eqn),
-            casual  = NONE(),
-            linear  = false,
-            mixed   = false,
-            status  = NBSolve.Status.IMPLICIT), dummy, funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
+      case StrongComponent.SINGLE_COMPONENT() algorithm
+        new_comp := StrongComponent.ALGEBRAIC_LOOP(
+          idx     = index,
+          strict  = singleImplicit(comp.var, comp.eqn),
+          casual  = NONE(),
+          linear  = false,
+          mixed   = false,
+          status  = NBSolve.Status.IMPLICIT);
+        for func in funcs loop
+          (new_comp, dummy, funcTree, index) := func(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
+        end for;
+      then (new_comp, dummy, funcTree, index);
 
-      case StrongComponent.MULTI_COMPONENT()
-      then tearingNone(StrongComponent.ALGEBRAIC_LOOP(
-            idx     = index,
-            strict  = singleImplicit(List.first(comp.vars), comp.eqn), // this is wrong! need to take all vars
-            casual  = NONE(),
-            linear  = false,
-            mixed   = false,
-            status  = NBSolve.Status.IMPLICIT), dummy, funcTree, index, VariablePointers.empty(), Pointer.create(0), systemType);
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        new_comp := StrongComponent.ALGEBRAIC_LOOP(
+          idx     = index,
+          strict  = singleImplicit(List.first(comp.vars), comp.eqn), // this is wrong! need to take all vars
+          casual  = NONE(),
+          linear  = false,
+          mixed   = false,
+          status  = NBSolve.Status.IMPLICIT);
+        for func in funcs loop
+          (new_comp, dummy, funcTree, index) := func(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
+        end for;
+      then (new_comp, dummy, funcTree, index);
 
       // do nothing otherwise
       else (comp, dummy, funcTree, index);
@@ -234,7 +244,6 @@ protected
     input list<Module.tearingInterface> funcs;
     output list<System.System> new_systems = {};
     input output FunctionTree funcTree;
-    input VariablePointers variables;
     input Pointer<Integer> eq_index;
     input System.SystemType systemType;
   protected
@@ -251,7 +260,7 @@ protected
           // each module has a list of functions that need to be applied
           tmp := strongComponents[i];
           for func in funcs loop
-            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, variables, eq_index, systemType);
+            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, syst.unknowns, syst.equations, eq_index, systemType);
           end for;
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
@@ -288,7 +297,6 @@ protected
           comps     = listArray(residual_comps),
           funcTree  = funcTree,
           name      = System.System.systemTypeString(systemType) + tag + intString(index));
-
         strict.jac := jacobian;
         comp.strict := strict;
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -346,8 +354,9 @@ protected
     Adjacency.Matrix adj;
     Matching matching;
     list<StrongComponent> inner_comps, residual_comps;
+    UnorderedMap<ComponentRef, Integer> v, e;
   algorithm
-    //print("######## minimal ########\n");
+    print("######## minimal ########\n");
     (comp, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
 
@@ -356,8 +365,12 @@ protected
         (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, BVariable.isContinuous);
         (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
 
-        //print(List.toString(disc_vars, function BVariable.pointerToString()) + "\n");
-        //print(List.toString(disc_eqns, function Equation.pointerToString(str = "")) + "\n");
+        print(List.toString(disc_vars, function BVariable.pointerToString(), "", "", "\n", "") + "\n");
+        print(List.toString(disc_eqns, function Equation.pointerToString(str = ""), "", "", "\n", "") + "\n");
+        v := UnorderedMap.subSet(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
+        e := UnorderedMap.subSet(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
+        (full, funcTree) := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations);
+
 
         /*
 
