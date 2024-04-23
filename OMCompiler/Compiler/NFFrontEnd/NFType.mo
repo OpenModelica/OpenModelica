@@ -1138,6 +1138,10 @@ public
 
     ty := match ty
       case ARRAY(dimensions = dims)
+        guard not failOnError and listLength(subs) > listLength(dims)
+        then Type.UNKNOWN();
+
+      case ARRAY(dimensions = dims)
         algorithm
           for sub in subs loop
             dim :: dims := dims;
