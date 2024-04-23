@@ -249,6 +249,7 @@ protected
         SOME(full) := syst.adjacencyMatrix;
         for i in 1:arrayLength(strongComponents) loop
 <<<<<<< HEAD
+<<<<<<< HEAD
           // each module has a list of functions that need to be applied
           tmp := strongComponents[i];
           for func in funcs loop
@@ -257,6 +258,12 @@ protected
           for func in funcs loop
             (tmp, full, funcTree, idx) := func(strongComponents[i], full, funcTree, idx, variables, eq_index, systemType);
 >>>>>>> [NB] start minimal tearing
+=======
+          // each module has a list of functions that need to be applied
+          tmp := strongComponents[i];
+          for func in funcs loop
+            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, variables, eq_index, systemType);
+>>>>>>> [NB] update strong component after tearing method
           end for;
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
@@ -287,6 +294,7 @@ protected
         // create residual equations
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 <<<<<<< HEAD
+<<<<<<< HEAD
         // update jacobian to take slices (just to have correct inner variables and such)
         (jacobian, funcTree) := BJacobian.nonlinear(
           variables = VariablePointers.fromList(list(Slice.getT(var) for var in strict.iteration_vars)),
@@ -298,6 +306,12 @@ protected
           variables = VariablePointers.fromList(list(Slice.getT(var) for var in comp.strict.iteration_vars)),
           equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in comp.strict.residual_eqns)),
 >>>>>>> [NB] start minimal tearing
+=======
+        // update jacobian to take slices (just to have correct inner variables and such)
+        (jacobian, funcTree) := BJacobian.nonlinear(
+          variables = VariablePointers.fromList(list(Slice.getT(var) for var in strict.iteration_vars)),
+          equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
+>>>>>>> [NB] update strong component after tearing method
           comps     = listArray(residual_comps),
           funcTree  = funcTree,
           name      = System.System.systemTypeString(systemType) + tag + intString(index));
@@ -371,7 +385,6 @@ protected
 
         //print(List.toString(disc_vars, function BVariable.pointerToString()) + "\n");
         //print(List.toString(disc_eqns, function Equation.pointerToString(str = "")) + "\n");
-
 
         /*
 
