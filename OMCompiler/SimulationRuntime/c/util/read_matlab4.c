@@ -143,18 +143,25 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
 
 void trimWhitespace(char *str)
 {
+  char *start = str;
   char *end;
-  /* skip leading whitespace */
-  while (isspace(*str)) {
-    str++;
+  size_t len = strlen(str);
+  if (len > 0 && (isspace(*start) || isspace(str[len-1]))) {
+    /* find first non-whitespace */
+    while (isspace(*start)) {
+      ++start;
+    }
+    /* find last non-whitespace */
+    end = start + strlen(start) - 1;
+    while (end > str && isspace(*end)) {
+      --end;
+    }
+    len = end - start + 1;
+    /* shift the string to remove leading whitespace */
+    if (start != str) memmove(str, start, len);
+    /* terminate the string to remove trailing whitespace */
+    *(str+len) = '\0';
   }
-  /* remove trailing whitespace */
-  end = str + strlen(str) - 1;
-  while (end > str && isspace(*end)) {
-    end--;
-  }
-  /* write null character */
-  *(end+1) = '\0';
 }
 
 /* Read n elements into str; convert from double if necessary, etc */
