@@ -89,6 +89,7 @@ BuiltinAttribute20.mo \
 BuiltinAttribute21.mo \
 BuiltinAttribute22.mo \
 BuiltinAttribute23.mo \
+BuiltinAttribute24.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -383,6 +384,7 @@ DuplicateElements4.mo \
 DuplicateElements5.mo \
 DuplicateElements9.mo \
 DuplicateElements10.mo \
+DuplicateElements11.mo \
 DuplicateElementsValid1.mo \
 DuplicateElementsValid2.mo \
 DuplicateMod1.mo \
