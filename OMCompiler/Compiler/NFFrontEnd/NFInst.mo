@@ -637,18 +637,10 @@ algorithm
     // A partial derivative of a function, function df = der(f, x).
     // Treat it as a short class definition here,
     case SCode.PDER()
-      guard Flags.getConfigBool(Flags.NEW_BACKEND)
       then expandClassDerived(def,
          SCode.ClassDef.DERIVED(Absyn.TypeSpec.TPATH(cdef.functionPath, NONE()),
                                 SCode.NOMOD(), SCode.defaultVarAttr),
          node, info);
-
-    case SCode.PDER()
-      algorithm
-        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"partial derivative of function", "use --newBackend flag."}, InstNode.info(node));
-      then
-        fail();
 
     else
       algorithm
