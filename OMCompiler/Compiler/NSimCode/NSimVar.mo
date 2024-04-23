@@ -459,6 +459,8 @@ public
         else (start, false, Causality.LOCAL);
 
         // ToDo: more cases!
+
+        // FIXME: variables that are fixed and are not CALCULATED should have isValueChangeable=true
       end match;
     end parseBinding;
 
