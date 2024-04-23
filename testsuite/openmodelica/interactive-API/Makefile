@@ -130,6 +130,7 @@ UsesAnnotation1.mos \
 UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
+TestSpace.mos \
 
 
 # test that currently fail. Move up when fixed.
