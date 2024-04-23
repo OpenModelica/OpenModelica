@@ -417,24 +417,14 @@ public
   function removeNonTopLevelDirection
     "Removes input/output prefixes from a variable that's not a top-level
      component, a component in a top-level connector, or a component in a
-     top-level input component. exposeLocalIOs can be used to keep the direction
-     for variables at lower levels as well, where 0 means top-level, 1 the level
-     below that, and so on."
+     top-level input component."
     input output Variable var;
-    input Integer exposeLocalIOs;
   protected
     ComponentRef rest_name;
     InstNode node;
     Attributes attr;
   algorithm
     if var.attributes.direction == Direction.NONE then
-      return;
-    end if;
-
-    if exposeLocalIOs > 0 and
-       var.attributes.connectorType <> ConnectorType.NON_CONNECTOR and
-       var.visibility == Visibility.PUBLIC and
-       ComponentRef.depth(var.name) < exposeLocalIOs then
       return;
     end if;
 

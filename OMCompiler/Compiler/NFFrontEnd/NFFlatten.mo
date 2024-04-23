@@ -79,7 +79,7 @@ import Face = NFConnector.Face;
 import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
-import NFPrefixes.{Direction, Variability, Visibility, Purity, Parallelism};
+import NFPrefixes.{ConnectorType, Direction, Variability, Visibility, Purity, Parallelism};
 import Variable = NFVariable;
 import ElementSource;
 import Ceval = NFCeval;
@@ -2182,7 +2182,8 @@ function resolveConnections
   input FlattenSettings settings;
 protected
   Connections conns;
-  list<Equation> conn_eql, ec_eql;
+  list<Equation> conn_eql, ec_eql, tlio_eql;
+  list<Variable> tlio_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
   CardinalityTable.Table ctable;
@@ -2239,9 +2240,11 @@ algorithm
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
-  // remove input and output prefixes from local IOs that are determined through connect equations
+  // add top-level IOs for unconnected local IOs
   if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
-    flatModel.variables := list(stripInputOutputForConnected(v, connectedLocalIOs) for v in flatModel.variables);
+    (tlio_vars, tlio_eql) := generateTopLevelIOs(vars, connectedLocalIOs);
+    flatModel.variables := List.append_reverse(flatModel.variables, tlio_vars);
+    flatModel.equations := List.append_reverse(flatModel.equations, tlio_eql);
   end if;
 
   // Evaluate any connection operators if they're used.
@@ -2251,6 +2254,66 @@ algorithm
 
   execStat(getInstanceName());
 end resolveConnections;
+
+function generateTopLevelIOs
+  "generate top-level inputs and outputs for public unconnected local input and output connectors"
+  input UnorderedMap<ComponentRef, Variable> variables;
+  input UnorderedSet<ComponentRef> connectedIOs;
+  output list<Variable> tlio_vars;
+  output list<Equation> tlio_eql;
+protected
+  Attributes attributes;
+  Variable tlio_var;
+  ComponentRef cref;
+  String name;
+  InstNode tlio_node;
+algorithm
+  tlio_vars := {};
+  tlio_eql := {};
+  for variable in UnorderedMap.valueList(variables) loop
+    attributes := variable.attributes;
+    if variable.visibility == Visibility.PUBLIC and
+      attributes.connectorType <> ConnectorType.NON_CONNECTOR and
+      (attributes.direction == Direction.INPUT or attributes.direction == Direction.OUTPUT) and
+      not UnorderedSet.contains(variable.name, connectedIOs)
+    then
+      tlio_var := variable; // same attributes like start, unit
+      tlio_var.binding := UNBOUND(); // value is defined with tlio_eql
+      // find new name in global scope, using underscore instead of dot
+      cref := variable.name;
+      name := stringDelimitList(ComponentRef.toString_impl(cref, {}), "_");
+      while UnorderedMap.contains(tlio_var.name, variables) loop
+        tlio_node := InstNode.NAME_NODE(name);
+        tlio_var.name := match cref case ComponentRef.CREF() then
+          ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+        else
+          fail();
+        end match;
+        name := name + "_" "append underscore until name is unique";
+      end while;
+      tlio_vars := tlio_var :: tlio_vars;
+      tlio_eql := Equation.makeCrefEquality(variable.name, tlio_var.name,
+        InstNode.EMPTY_NODE(), ElementSource.createElementSource(variable.info)) :: tlio_eql;
+    end if;
+  end for;
+end generateTopLevelIOs;
+
+function addGlobalIOsForUnconnected
+  "remove input and output prefixes if variable appears in connectedIOs"
+  input output Variable v;
+  input UnorderedSet<ComponentRef> connectedIOs;
+protected
+  Attributes attributes = v.attributes;
+  Variable v2 = v;
+algorithm
+  // see NFVariable.removeNonTopLevelDirection
+  if not UnorderedSet.contains(v.name, connectedIOs) and
+    (attributes.direction == Direction.INPUT or attributes.direction == Direction.OUTPUT) and
+    v.visibility == Visibility.PUBLIC and
+    attributes.connectorType <> ConnectorType.NON_CONNECTOR then
+    print("Bingo: " + NFVariable.toString(v) + " --> " + stringDelimitList(ComponentRef.toString_impl(v.name, {}), "_") + "\n");
+  end if;
+end addGlobalIOsForUnconnected;
 
 function stripInputOutputForConnected
   "remove input and output prefixes if variable appears in connectedIOs"
