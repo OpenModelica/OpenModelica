@@ -44,6 +44,7 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import FunctionTree = NFFlatten.FunctionTree;
+  import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Operator = NFOperator;
@@ -51,6 +52,7 @@ protected
 
   // NB imports
   import Differentiate = NBDifferentiate;
+  import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationAttributes, EquationPointers, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
   import BVariable = NBVariable;
@@ -686,8 +688,9 @@ public
             end for;
           end if;
         then full;
+
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected types final, got type " + strictnessString(getStrictness(full)) + "."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + strictnessString(getStrictness(full)) + "."});
         then fail();
       end match;
 
@@ -695,6 +698,47 @@ public
         print(toString(full, "Expanded Full") + "\n");
       end if;
     end expandFull;
+
+    function refine
+      "refines the solvability kind using differentiation
+      Note: only updates the solvabilites of the variables and equations from the maps"
+      input output Matrix full;
+      input output FunctionTree funcTree;
+      input UnorderedMap<ComponentRef, Integer> v    "variables to refine";
+      input UnorderedMap<ComponentRef, Integer> e    "equations to refine";
+      input VariablePointers vars                    "all variables";
+      input EquationPointers eqns                    "all equations";
+    algorithm
+      full := match full
+        local
+          ComponentRef eqn, var;
+          Integer eqn_idx, var_idx;
+          DifferentiationArguments diffArgs;
+          Pointer<Equation> eqn_ptr;
+          Expression exp;
+
+        case FULL() algorithm
+          for v_tpl in UnorderedMap.toList(v) loop
+            (var, var_idx) := v_tpl;
+            diffArgs := DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcTree);
+            diffArgs.diffCref := var;
+            for e_tpl in UnorderedMap.toList(e) loop
+              (eqn, eqn_idx) := e_tpl;
+              eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
+              // get the residual expression, differentiate and simplify it
+              exp := Equation.getResidualExp(Pointer.access(eqn_ptr));
+              (exp, diffArgs) := Differentiate.differentiateExpressionDump(exp, diffArgs, getInstanceName());
+              exp := SimplifyExp.simplifyDump(exp, true, getInstanceName());
+              print("the partial derivative by " + ComponentRef.toString(var) + " of equation\n" + Equation.pointerToString(eqn_ptr) + "\nis: " + Expression.toString(exp) + "\n");
+            end for;
+          end for;
+        then full;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + strictnessString(getStrictness(full)) + "."});
+        then fail();
+      end match;
+    end refine;
 
     function compress
       "use after equations have been removed"
