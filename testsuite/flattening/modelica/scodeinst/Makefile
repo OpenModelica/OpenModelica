@@ -384,6 +384,7 @@ DuplicateElements4.mo \
 DuplicateElements5.mo \
 DuplicateElements9.mo \
 DuplicateElements10.mo \
+DuplicateElements11.mo \
 DuplicateElementsValid1.mo \
 DuplicateElementsValid2.mo \
 DuplicateMod1.mo \
