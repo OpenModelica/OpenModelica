@@ -32,6 +32,7 @@
 encapsulated uniontype NFDimension
 protected
   import Dimension = NFDimension;
+  import Dump;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import List;
@@ -368,6 +369,7 @@ public
       local
         Type ty;
 
+      case RAW_DIM() then Dump.printSubscriptStr(dim.dim);
       case INTEGER() then String(dim.size);
       case BOOLEAN() then "Boolean";
       case ENUM(enumType = ty as Type.ENUMERATION()) then AbsynUtil.pathString(ty.typePath);
