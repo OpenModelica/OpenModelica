@@ -2190,6 +2190,7 @@ protected
   Connections.BrokenEdges broken = {};
   UnorderedMap<ComponentRef, Variable> vars;
   UnorderedSet<ComponentRef> connectedLocalIOs;
+  Integer exposeLocalIOs;
 algorithm
   vars := UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual,
     listLength(flatModel.variables));
@@ -2241,8 +2242,9 @@ algorithm
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
   // add top-level IOs for unconnected local IOs
-  if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
-    (tlio_vars, tlio_eql) := generateTopLevelIOs(vars, connectedLocalIOs);
+  exposeLocalIOs := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
+  if exposeLocalIOs > 0 then
+    (tlio_vars, tlio_eql) := generateTopLevelIOs(vars, connectedLocalIOs, exposeLocalIOs);
     flatModel.variables := List.append_reverse(flatModel.variables, tlio_vars);
     flatModel.equations := List.append_reverse(flatModel.equations, tlio_eql);
   end if;
@@ -2258,7 +2260,8 @@ end resolveConnections;
 function generateTopLevelIOs
   "generate top-level inputs and outputs for public unconnected local input and output connectors"
   input UnorderedMap<ComponentRef, Variable> variables;
-  input UnorderedSet<ComponentRef> connectedIOs;
+  input UnorderedSet<ComponentRef> connectedLocalIOs;
+  input Integer exposeLocalIOs;
   output list<Variable> tlio_vars;
   output list<Equation> tlio_eql;
 protected
@@ -2267,27 +2270,29 @@ protected
   ComponentRef cref;
   String name;
   InstNode tlio_node;
+  Integer level;
 algorithm
   tlio_vars := {};
   tlio_eql := {};
   for variable in UnorderedMap.valueList(variables) loop
+    level := ComponentRef.depth(variable.name) - 1;
     attributes := variable.attributes;
-    if variable.visibility == Visibility.PUBLIC and
+    if 0 < level and level <= exposeLocalIOs and
+      variable.visibility == Visibility.PUBLIC and
       attributes.connectorType <> ConnectorType.NON_CONNECTOR and
       (attributes.direction == Direction.INPUT or attributes.direction == Direction.OUTPUT) and
-      not UnorderedSet.contains(variable.name, connectedIOs)
+      not UnorderedSet.contains(variable.name, connectedLocalIOs)
     then
       tlio_var := variable; // same attributes like start, unit
+      tlio_var.name := ComponentRef.combineSubscripts(tlio_var.name);
       tlio_var.binding := UNBOUND(); // value is defined with tlio_eql
       // find new name in global scope, using underscore instead of dot
-      cref := variable.name;
+      cref := tlio_var.name;
       name := stringDelimitList(ComponentRef.toString_impl(cref, {}), "_");
       while UnorderedMap.contains(tlio_var.name, variables) loop
         tlio_node := InstNode.NAME_NODE(name);
         tlio_var.name := match cref case ComponentRef.CREF() then
           ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
-        else
-          fail();
         end match;
         name := name + "_" "append underscore until name is unique";
       end while;
@@ -2297,36 +2302,6 @@ algorithm
     end if;
   end for;
 end generateTopLevelIOs;
-
-function addGlobalIOsForUnconnected
-  "remove input and output prefixes if variable appears in connectedIOs"
-  input output Variable v;
-  input UnorderedSet<ComponentRef> connectedIOs;
-protected
-  Attributes attributes = v.attributes;
-  Variable v2 = v;
-algorithm
-  // see NFVariable.removeNonTopLevelDirection
-  if not UnorderedSet.contains(v.name, connectedIOs) and
-    (attributes.direction == Direction.INPUT or attributes.direction == Direction.OUTPUT) and
-    v.visibility == Visibility.PUBLIC and
-    attributes.connectorType <> ConnectorType.NON_CONNECTOR then
-    print("Bingo: " + NFVariable.toString(v) + " --> " + stringDelimitList(ComponentRef.toString_impl(v.name, {}), "_") + "\n");
-  end if;
-end addGlobalIOsForUnconnected;
-
-function stripInputOutputForConnected
-  "remove input and output prefixes if variable appears in connectedIOs"
-  input output Variable v;
-  input UnorderedSet<ComponentRef> connectedIOs;
-protected
-  Attributes attributes = v.attributes;
-algorithm
-  if UnorderedSet.contains(v.name, connectedIOs) then
-    attributes.direction := Direction.NONE;
-    v.attributes := attributes;
-  end if;
-end stripInputOutputForConnected;
 
 function evaluateConnectionOperators
   input output FlatModel flatModel;
