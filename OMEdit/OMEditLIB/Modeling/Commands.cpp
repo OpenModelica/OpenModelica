@@ -781,6 +781,9 @@ void AddConnectionCommand::redoInternal()
       return;
     }
   }
+  if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
+    mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
+  }
 }
 
 /*!
@@ -791,6 +794,9 @@ void AddConnectionCommand::undo()
 {
   mpConnectionLineAnnotation->getGraphicsView()->removeConnectionFromView(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
+  if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
+    mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
+  }
 }
 
 UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent)
@@ -994,28 +1000,7 @@ DeleteTransitionCommand::DeleteTransitionCommand(LineAnnotation *pTransitionLine
  */
 void DeleteTransitionCommand::redoInternal()
 {
-  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
-  // Remove the start component connection details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentElement()->setHasTransition(false);
-  } else if (pStartComponent) {
-    pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->setHasTransition(false);
-  }
-  // Remove the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
-  if (pEndComponent && pEndComponent->getRootParentElement()) {
-    pEndComponent->getRootParentElement()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentElement()->setHasTransition(false);
-  } else if (pEndComponent) {
-    pEndComponent->removeConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->setHasTransition(false);
-  }
-  mpTransitionLineAnnotation->getGraphicsView()->removeItem(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->emitDeleted();
+  mpTransitionLineAnnotation->getGraphicsView()->removeTransitionFromView(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromClass(mpTransitionLineAnnotation);
 }
 
@@ -1025,28 +1010,7 @@ void DeleteTransitionCommand::redoInternal()
  */
 void DeleteTransitionCommand::undo()
 {
-  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
-  // Add the start component connection details.
-  Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentElement()->setHasTransition(true);
-  } else if (pStartComponent) {
-    pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->setHasTransition(true);
-  }
-  // Add the end component connection details.
-  Element *pEndComponent = mpTransitionLineAnnotation->getEndElement();
-  if (pEndComponent && pEndComponent->getRootParentElement()) {
-    pEndComponent->getRootParentElement()->addConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->getRootParentElement()->setHasTransition(true);
-  } else if (pEndComponent) {
-    pEndComponent->addConnectionDetails(mpTransitionLineAnnotation);
-    pEndComponent->setHasTransition(true);
-  }
-  mpTransitionLineAnnotation->getGraphicsView()->addItem(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->emitAdded();
+  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToView(mpTransitionLineAnnotation, false);
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToClass(mpTransitionLineAnnotation);
 }
 
@@ -1129,19 +1093,7 @@ DeleteInitialStateCommand::DeleteInitialStateCommand(LineAnnotation *pInitialSta
  */
 void DeleteInitialStateCommand::redoInternal()
 {
-  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
-  // Remove the start component connection details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-//    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentElement()->setIsInitialState(false);
-  } else if (pStartComponent) {
-    //pStartComponent->removeConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->setIsInitialState(false);
-  }
-  mpInitialStateLineAnnotation->getGraphicsView()->removeItem(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->emitDeleted();
+  mpInitialStateLineAnnotation->getGraphicsView()->removeInitialStateFromView(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromClass(mpInitialStateLineAnnotation);
 }
 
@@ -1151,19 +1103,7 @@ void DeleteInitialStateCommand::redoInternal()
  */
 void DeleteInitialStateCommand::undo()
 {
-  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
-  // Add the start component connection details.
-  Element *pStartComponent = mpInitialStateLineAnnotation->getStartElement();
-  if (pStartComponent && pStartComponent->getRootParentElement()) {
-//    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->getRootParentElement()->setIsInitialState(true);
-  } else if (pStartComponent) {
-//    pStartComponent->addConnectionDetails(mpTransitionLineAnnotation);
-    pStartComponent->setIsInitialState(true);
-  }
-  mpInitialStateLineAnnotation->getGraphicsView()->addItem(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->emitAdded();
+  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToView(mpInitialStateLineAnnotation, false);
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
 }
 
