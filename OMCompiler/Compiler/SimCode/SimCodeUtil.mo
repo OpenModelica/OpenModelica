@@ -9997,7 +9997,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
-        isValueChangeable = isChangeable(dlowVar);
+        isValueChangeable = BackendVariable.isChangeable(dlowVar);
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.FIXED(); // PARAMETERS()
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
@@ -10036,7 +10036,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
-        isValueChangeable = isChangeable(dlowVar);
+        isValueChangeable = BackendVariable.isChangeable(dlowVar);
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.CONTINUOUS(); // state() should be CONTINUOUS
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
@@ -10076,8 +10076,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
-        isValueChangeable = match dir case DAE.INPUT() then true; else isChangeable(dlowVar);
-        end match;
+        isValueChangeable = BackendVariable.isChangeable(dlowVar);
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = getVariabilityAttribute(dlowVar);
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
@@ -10087,13 +10086,6 @@ algorithm
           minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr));
   end match;
 end dlowvarToSimvar;
-
-protected function isChangeable
-  input BackendDAE.Var dlowVar;
-  output Boolean isValueChangeable = BackendVariable.varFixed(dlowVar)
-    and not BackendVariable.hasVarEvaluateAnnotationTrueOrFinalOrProtected(dlowVar)
-    and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar));
-end isChangeable;
 
 protected function getCausality
   input BackendDAE.Var dlowVar;
