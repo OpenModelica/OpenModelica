@@ -1619,7 +1619,10 @@ namespace ModelInstance
   void PlacementAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("visible")) {
-      mVisible.deserialize(jsonObject.value("visible"));
+      if (!mVisible.deserialize(jsonObject.value("visible"))) {
+        // if we fail to deserialize the visible value then set it to true.
+        mVisible = true;
+      }
     } else {
       // if there is no visible then assume it to be true.
       mVisible = true;
@@ -1630,7 +1633,10 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("iconVisible")) {
-      mIconVisible.deserialize(jsonObject.value("iconVisible"));
+      if (mIconVisible.deserialize(jsonObject.value("iconVisible"))) {
+        // if we fail to deserialize the iconVisible value then set it to true.
+        mIconVisible = true;
+      }
     } else {
       mIconVisible = mVisible;
     }
