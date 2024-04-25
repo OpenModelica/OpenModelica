@@ -1573,10 +1573,6 @@ void LineAnnotation::updateConnectionAnnotation()
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
   } else {
-    // update the ModelInstance::Line with new annotation
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      updateLine();
-    }
     // get the connection line annotation.
     QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
     // update the connection
@@ -2108,8 +2104,8 @@ ExpandableConnectorTreeView::ExpandableConnectorTreeView(CreateConnectionDialog 
  * \param pConnectionLineAnnotation
  * \param pParent
  */
-CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
-  : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation)
+CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool createConnector, QWidget *pParent)
+    : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation), mCreateConnector(createConnector)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createConnection));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -2598,16 +2594,17 @@ void CreateConnectionDialog::createConnection()
   mpConnectionLineAnnotation->setStartElementName(startElementName);
   mpConnectionLineAnnotation->setEndElementName(endElementName);
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-      mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
-      mpConnectionLineAnnotation->updateLine();
+    /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
+     * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
+     * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
+     */
+    if (mCreateConnector) {
       mpConnectionLineAnnotation->drawCornerItems();
       mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-      ModelInfo oldModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
       mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
       mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
-      ModelInfo newModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new OMCUndoCommand(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
+    } else if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
       mpGraphicsView->getModelWidget()->updateModelText();
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
@@ -2735,20 +2732,8 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
                                                                                        mpPrioritySpinBox->value(),
                                                                                        mpTransitionLineAnnotation->getOMCShapeAnnotation()));
   } else {
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpTransitionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
-      mpTransitionLineAnnotation->updateLine();
-      mpTransitionLineAnnotation->drawCornerItems();
-      mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-      ModelInfo oldModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->addTransitionToView(mpTransitionLineAnnotation, false);
-      mpGraphicsView->addTransitionToClass(mpTransitionLineAnnotation);
-      ModelInfo newModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new OMCUndoCommand(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Transition"));
-    } else {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddTransitionCommand(mpTransitionLineAnnotation, true));
-      //mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpTransitionLineAnnotation);
-    }
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddTransitionCommand(mpTransitionLineAnnotation, true));
+    //mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpTransitionLineAnnotation);
   }
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();
@@ -2762,21 +2747,6 @@ void LineAnnotation::setProperties(const QString& condition, const bool immediat
   setSynchronize(synchronize);
   setPriority(priority);
   getTextAnnotation()->setTextString("%condition");
-}
-
-/*!
- * \brief LineAnnotation::updateLine
- * Updates the Line object with the annotation.
- */
-void LineAnnotation::updateLine()
-{
-  mpLine->setPoints(mPoints);
-  mpLine->setColor(mLineColor);
-  mpLine->setPattern(mLinePattern);
-  mpLine->setThickness(mLineThickness);
-  mpLine->setArrow(mArrow);
-  mpLine->setArrowSize(mArrowSize);
-  mpLine->setSmooth(mSmooth);
 }
 
 void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)

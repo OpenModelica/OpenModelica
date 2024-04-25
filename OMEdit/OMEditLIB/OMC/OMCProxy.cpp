@@ -2281,19 +2281,17 @@ bool OMCProxy::setComponentDimensions(QString className, QString componentName, 
  * \param from - the connection start component name.
  * \param to - the connection end component name.
  * \param className - the name of the class.
- * \return true on success.
+ * \param annotation - the connection annotation.
  */
-bool OMCProxy::addConnection(QString from, QString to, QString className, QString annotation)
+void OMCProxy::addConnection(QString from, QString to, QString className, QString annotation)
 {
   if (annotation.compare("annotate=Line()") == 0) {
     sendCommand("addConnection(" + from + "," + to + "," + className + ")");
   } else {
     sendCommand("addConnection(" + from + "," + to + "," + className + "," + annotation + ")");
   }
-  if (getResult().toLower().compare("ok") == 0) {
-    return true;
-  } else {
-    return false;
+  if (getResult().toLower().compare("ok") != 0) {
+    printMessagesStringInternal();
   }
 }
 
