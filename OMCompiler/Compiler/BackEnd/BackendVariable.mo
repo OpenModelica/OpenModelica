@@ -2060,7 +2060,9 @@ public function isChangeable "Returns true if the variable should be changeable 
   input BackendDAE.Var v;
   output Boolean isValueChangeable = isVarOnTopLevelAndInput(v) or (
     varFixed(v) and not hasVarEvaluateAnnotationTrueOrFinalOrProtected(v)
-    and (if isParam(v) then varHasConstantBindExp(v) else varHasConstantStartExp(v)));
+    // FIXME currently bindings or start attributes can be overwritten only when they are constant
+    and (if isParam(v) then varHasConstantBindExp(v) or (not varHasBindExp(v) and varHasConstantStartExp(v))
+         else varHasConstantStartExp(v)));
 end isChangeable;
 
 public function getVariableAttributes "Returns the DAE.VariableAttributes of a variable."
