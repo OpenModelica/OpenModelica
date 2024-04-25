@@ -2056,6 +2056,13 @@ public function isFinalOrProtectedVar
   output Boolean b = isFinalVar(inVar) or isProtectedVar(inVar);
 end isFinalOrProtectedVar;
 
+public function isChangeable "Returns true if the variable should be changeable after compilation (e.g. in OMEdit)"
+  input BackendDAE.Var v;
+  output Boolean isValueChangeable = isVarOnTopLevelAndInput(v) or (
+    varFixed(v) and not hasVarEvaluateAnnotationTrueOrFinalOrProtected(v)
+    and (if isParam(v) then varHasConstantBindExp(v) else varHasConstantStartExp(v)));
+end isChangeable;
+
 public function getVariableAttributes "Returns the DAE.VariableAttributes of a variable."
   input BackendDAE.Var inVar;
   output Option<DAE.VariableAttributes> outAttr = inVar.values;
