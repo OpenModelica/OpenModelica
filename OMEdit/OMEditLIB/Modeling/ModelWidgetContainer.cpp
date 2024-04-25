@@ -1488,8 +1488,8 @@ void GraphicsView::addConnectionToView(LineAnnotation *pConnectionLineAnnotation
     addConnectionToList(pConnectionLineAnnotation);
   }
   addItem(pConnectionLineAnnotation);
+  deleteConnectionFromOutOfSceneList(pConnectionLineAnnotation);
   if (!mpModelWidget->isNewApi()) {
-    deleteConnectionFromOutOfSceneList(pConnectionLineAnnotation);
     pConnectionLineAnnotation->emitAdded();
   }
 }
@@ -1551,13 +1551,9 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
       }
     }
     // add connection
-    if (pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName(),
-                                                  mpModelWidget->getLibraryTreeItem()->getNameStructure(), QString("annotate=").append(pConnectionLineAnnotation->getShapeAnnotation()))) {
-      /* Ticket #2450
-       * Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
-       */
-      //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
-    }
+    pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName(),
+                                              mpModelWidget->getLibraryTreeItem()->getNameStructure(),
+                                              QString("annotate=").append(pConnectionLineAnnotation->getShapeAnnotation()));
   }
   return true;
 }
@@ -3158,7 +3154,7 @@ Element* GraphicsView::getConnectorElement(ModelInstance::Connector *pConnector)
     // If an element type is connector then we only get one item in elementList
     // Check the elementList
     // If conditional connector or condition is false or if type is missing then connect with the red cross box
-    if (elementList.size() < 2 || element->isExpandableConnector() || !element->getModelComponent()->getCondition() || element->getModel()->isMissing()) {
+    if (elementList.size() < 2 || element->isExpandableConnector() || !element->isCondition() || (element->getModel() && element->getModel()->isMissing())) {
       connectorElement = element;
     } else {
       // Look for port from the parent element
@@ -3281,7 +3277,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
       }
       // if connectorSizing annotation is set then don't show the CreateConnectionDialog
       if (showConnectionArrayDialog) {
-        CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation, MainWindow::instance());
+        CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation, createConnector, MainWindow::instance());
         // if user cancels the array connection
         if (!pConnectionArray->exec()) {
           removeCurrentConnection();
@@ -3331,23 +3327,18 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
         } else {
           if (mpModelWidget->isNewApi()) {
             if (!connectionExists(startElementName, endElementName, false)) {
-              /* Issue #12163. Do not check conneciton validity when called from GraphicsView::createConnector
+              /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
                * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
                * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
                */
-              if (createConnector || mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-                mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
-                mpConnectionLineAnnotation->updateLine();
+              if (createConnector) {
                 mpConnectionLineAnnotation->drawCornerItems();
                 mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-                ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
                 addConnectionToView(mpConnectionLineAnnotation, false);
                 addConnectionToClass(mpConnectionLineAnnotation);
-                if (!createConnector) {
-                  ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-                  mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
-                  mpModelWidget->updateModelText();
-                }
+              } else if (mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+                mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+                mpModelWidget->updateModelText();
               } else {
                 QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                                       GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), Helper::ok);
@@ -3639,7 +3630,7 @@ void GraphicsView::copyItems(bool cut)
       if (itemsList.at(i)->isSelected()) {
         if (Element *pElement = dynamic_cast<Element*>(itemsList.at(i))) {
           QString modifiers;
-          if (pElement->getModelComponent()->getModifier()) {
+          if (pElement->getModelComponent() && pElement->getModelComponent()->getModifier()) {
             modifiers = pElement->getModelComponent()->getModifier()->toString();
           }
           components << pElement->getClassName() % " " % pElement->getName() % modifiers % " " % "annotation(" % pElement->getPlacementAnnotation(true) % ");";
@@ -4491,19 +4482,7 @@ void GraphicsView::setInitialState()
     mpTransitionLineAnnotation->setStartElementName(startComponentName);
     mpTransitionLineAnnotation->setEndElementName("");
     mpTransitionLineAnnotation->setLineType(LineAnnotation::InitialStateType);
-    if (mpModelWidget->isNewApi()) {
-      mpTransitionLineAnnotation->setLine(new ModelInstance::Line(mpModelWidget->getModelInstance()));
-      mpTransitionLineAnnotation->updateLine();
-      mpTransitionLineAnnotation->drawCornerItems();
-      mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-      ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-      addInitialStateToView(mpTransitionLineAnnotation, false);
-      addInitialStateToClass(mpTransitionLineAnnotation);
-      ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add InitialState"));
-    } else {
-      mpModelWidget->getUndoStack()->push(new AddInitialStateCommand(mpTransitionLineAnnotation, true));
-    }
+    mpModelWidget->getUndoStack()->push(new AddInitialStateCommand(mpTransitionLineAnnotation, true));
     mpModelWidget->updateModelText();
     setIsCreatingTransition(false);
   }
