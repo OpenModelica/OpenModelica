@@ -212,7 +212,7 @@ algorithm
   if Connector.variability(c1) > Variability.PARAMETER then
     equations := list(makeEqualityEquation(c1.name, c1.source, c2.name, c2.source)
       for c2 in listRest(elements));
-    // collect inputs and outputs that are inside in connections if --nonStdExposeLocalIOs > 0
+    // collect inputs and outputs that are inside in connections if --exposeLocalIOs > 0
     // strip array indices so that the variables will be found later
     if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
       for c in elements loop
