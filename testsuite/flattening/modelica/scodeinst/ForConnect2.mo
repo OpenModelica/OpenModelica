@@ -33,7 +33,7 @@ end ForConnect2;
 //   Real c2[2].f;
 //   Real c2[3].e;
 //   Real c2[3].f;
-//   final parameter Integer n(start = 3);
+//   final parameter Integer n(start = 3) = 3;
 // equation
 //   c1[1].e = c2[1].e;
 //   -(c1[1].f + c2[1].f) = 0.0;

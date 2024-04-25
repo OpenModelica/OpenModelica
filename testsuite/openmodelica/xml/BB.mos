@@ -16,7 +16,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // true
 // ""
 // "class BB.BouncingBall
-//   parameter Real e(start = 0.9);
+//   parameter Real e(start = 0.9) = 0.9;
 //   Real b1.y(start = 5.0);
 //   Real b1.vy(start = 0.0);
 //   Real b1.ay;
@@ -34,8 +34,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no value, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
 // "
 // (true,"BB.BouncingBall.xml")
-// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no value, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
-// "
+// ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
 //                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
@@ -108,6 +107,14 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </bindExpression>
 // </variable>
 // <variable id=\"2\" name=\"e\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <bindExpression string=\"0.9\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\">0.9
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
 // <attributesValues>
 // <initialValue string=\"0.9\">
 // <MathML>
