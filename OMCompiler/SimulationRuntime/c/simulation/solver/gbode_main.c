@@ -498,7 +498,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
 
   if (gbData->multi_rate && omc_flagValue[FLAG_SR_INT]==NULL) {
-    gbData->interpolation = GB_DENSE_OUTPUT_ERRCTRL;
+    gbData->interpolation = GB_DENSE_OUTPUT;
   } else {
     gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
   }
