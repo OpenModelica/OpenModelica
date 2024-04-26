@@ -1793,25 +1793,8 @@ algorithm
 
     case (_, SCode.Mod.MOD(binding = SOME(absyn_binding)))
       algorithm
-        ErrorExt.setCheckpoint(getInstanceName());
-
-        try
-          binding_exp := Inst.instExp(absyn_binding, scope, ANNOTATION_CONTEXT, mod.info);
-          binding_exp := Typing.typeExp(binding_exp, ANNOTATION_CONTEXT, mod.info);
-          binding_exp := SimplifyExp.simplify(binding_exp);
-          json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
-        else
-          if failOnError then
-            fail();
-          end if;
-
-          j := JSON.makeNull();
-          j := JSON.addPair("$error", JSON.makeString(ErrorExt.printCheckpointMessagesStr()), j);
-          j := JSON.addPair("value", dumpJSONAbsynExpression(absyn_binding), j);
-          json := JSON.addPair(name, j, json);
-        end try;
-
-        ErrorExt.delCheckpoint(getInstanceName());
+        j := dumpJSONAnnotationExp(absyn_binding, scope, mod.info, failOnError);
+        json := JSON.addPair(name, j, json);
       then
         ();
 
@@ -1824,6 +1807,61 @@ algorithm
     else ();
   end match;
 end dumpJSONAnnotationSubMod;
+
+function dumpJSONAnnotationExp
+  input Absyn.Exp absynExp;
+  input InstNode scope;
+  input SourceInfo info;
+  input Boolean failOnError;
+  output JSON json;
+protected
+  JSON j;
+algorithm
+  json := match absynExp
+    // For non-literal arrays, dump each element separately to avoid
+    // invalidating the whole array expression if any element contains invalid
+    // expressions.
+    case Absyn.Exp.ARRAY()
+      guard not AbsynUtil.isLiteralExp(absynExp)
+      algorithm
+        json := JSON.emptyArray(listLength(absynExp.arrayExp));
+        for e in absynExp.arrayExp loop
+          j := dumpJSONAnnotationExp2(e, scope, info, failOnError);
+          json := JSON.addElement(j, json);
+        end for;
+      then
+        json;
+
+    else dumpJSONAnnotationExp2(absynExp, scope, info, failOnError);
+  end match;
+end dumpJSONAnnotationExp;
+
+function dumpJSONAnnotationExp2
+  input Absyn.Exp absynExp;
+  input InstNode scope;
+  input SourceInfo info;
+  input Boolean failOnError;
+  output JSON json;
+protected
+  Expression exp;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    exp := Inst.instExp(absynExp, scope, ANNOTATION_CONTEXT, info);
+    exp := Typing.typeExp(exp, ANNOTATION_CONTEXT, info);
+    exp := SimplifyExp.simplify(exp);
+    json := Expression.toJSON(exp);
+  else
+    if failOnError then
+      fail();
+    end if;
+
+    json := JSON.makeNull();
+    json := JSON.addPair("$error", JSON.makeString(ErrorExt.printCheckpointMessagesStr()), json);
+    json := JSON.addPair("value", dumpJSONAbsynExpression(absynExp), json);
+  end try;
+  ErrorExt.delCheckpoint(getInstanceName());
+end dumpJSONAnnotationExp2;
 
 function dumpJSONSourceInfo
   input SourceInfo info;
