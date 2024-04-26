@@ -239,7 +239,7 @@ public:
   bool hasElement() const {return mpElement ? true : false;}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}
-  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification, bool checkFinal);
+  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();
 private:
   ModelInstance::Element *mpElement;
