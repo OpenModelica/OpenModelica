@@ -5,12 +5,17 @@
 loadString("
   model Alias
     Real y;             // not simple
-    Real x, z;          // regular simple
+    Real x(min=-2000, max=2000, start=-5, fixed=false, nominal=2, stateSelect=StateSelect.avoid) annotation(tearingSelect = avoid);
+    Real z(min=-1000, max=1000, start=-10, fixed=true, stateSelect=StateSelect.default);
+    Real v(min=-500, max=500, start=20, fixed=true, nominal=-5) annotation(tearingSelect = never);
+    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=1000000);          // regular simple
     Real a, b, c;       // constant simple
   equation
     a = b;
     b = c;
-    x = z;
+    x = -2*z;
+    x = v;
+    v = w;
     c = 3.0;
     y = time + c;
     z = sin(time);

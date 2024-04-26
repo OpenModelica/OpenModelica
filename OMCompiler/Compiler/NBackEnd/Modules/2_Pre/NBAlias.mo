@@ -69,10 +69,14 @@ protected
 
   // NF imports
   import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.{StateSelect, TearingSelect};
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
+  import NFFlatten.FunctionTreeImpl;
   import NFPrefixes.Variability;
 
   // Backend imports
@@ -80,10 +84,15 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
-  import NBEquation.{Equation, EquationPointers, EqData};
+  import Differentiate = NBDifferentiate;
+  import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
+  import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator};
   import Replacements = NBReplacements;
+  import SimplifyExp = NFSimplifyExp;
   import Solve = NBSolve;
+  import NBSolve.Status;
   import StrongComponent = NBStrongComponent;
+  import Tearing = NBTearing;
   import NBVariable.{VariablePointers, VarData};
 
   // Util imports
@@ -92,6 +101,12 @@ protected
   import UnorderedMap;
   import UnorderedSet;
 public
+
+  // ==========================================================================
+  //               Single Variable constants and functions
+  // ==========================================================================
+  constant Real NOMINAL_THRESHOLD = 1000.0;
+
   function main
     "Wrapper function for any alias removal function. This will be
      called during simulation and gets the corresponding subfunction from
@@ -299,7 +314,7 @@ protected
     // 2. balance sets - choose variable to keep if necessary
     // 3. match/sort set (linear w.r.t. vars since all equations contain two crefs at max and are simple/linear)
     // --------------------------------------------------------------------------------------------------------
-    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
+    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size); // kab
     for set in sets loop
       replacements := createReplacementRules(set, replacements);
     end for;
@@ -618,7 +633,7 @@ protected
   end getSimpleSets;
 
   function createReplacementRules
-    "creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
+    "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
     input output UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
@@ -626,11 +641,20 @@ protected
     // report errors/warnings
     replacements := match set.const_opt
       local
-        Pointer<Equation> const_eq;
+        //list<tuple<Vector<K>,Vector<V>>> repl;
+        Expression rhs;
+        Equation solved_eq;
+        Pointer<Equation> const_eq, eq;
         list<Pointer<Variable>> alias_vars;
         VariablePointers vars;
+        list<Pointer<Variable>> var_lst;
         EquationPointers eqs;
         list<StrongComponent> comps;
+        AttributeCollector collector;
+        Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
+        //tuple<enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE),Boolean> := (NBEquation.Equation, NFFlatten.FunctionTreeImpl.Tree, enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE), Boolean) tpl_solve;
+        Status status;
+        Boolean invertRelation;
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
@@ -644,64 +668,515 @@ protected
 
       else algorithm
         // there is no constant binding -> all others will be replaced by one variable
-        alias_vars := chooseVariableToKeep(list(BVariable.getVarPointer(cr) for cr in set.simple_variables));
+        (alias_vars, collector) := chooseVariableToKeep(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), var_to_keep);
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system
         (_, comps) := Causalize.simple(vars, eqs);
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
+        end if;
         // create replacements from strong components
         Replacements.simple(comps, replacements);
+        var_lst := VariablePointers.toList(vars);
+        print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
+        for var in var_lst loop
+          rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
+          eq := Equation.makeAssignment(BVariable.getVarName(var), rhs, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+          (solved_eq,_,status, invertRelation) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
+          collector := collector.fixValues(collector, BVariable.getVarName(var), solved_eq);
+        end for;
+        print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
+        setNewAttributes(Pointer.access(var_to_keep), collector, set);
+        checkNominalThreshold(collector.nominal_map, set);
+        errorcasesStateTearing(collector.stateSelect_map, collector.tearingSelect_map, set);
+        print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
       then replacements;
     end match;
   end createReplacementRules;
 
+  function setNewAttributes
+    "Sets new values for each attribute of kept variable, if possible. "
+    input Pointer<Variable> var_to_keep;
+    input AttributeCollector attrcollector;
+    input AliasSet set;
+  protected
+    Expression new_start;
+    list<Expression> lst;
+    Option<Expression> new_min, new_max;
+    Option<StateSelect> new_stateSelect;
+    Option<TearingSelect> new_tearingSelect;
+    UnorderedMap<ComponentRef, Expression> fixed_start_map;
+  algorithm
+  // function calls of different set functions in NBVariable.mo
+    new_min := getMaximum(attrcollector.min_val_map);
+    if Util.isSome(new_min) then
+      Pointer.update(var_to_keep, BVariable.setMin(Pointer.access(var_to_keep), new_min));
+    end if;
+    new_max := getMinimum(attrcollector.max_val_map);
+    if Util.isSome(new_max) then
+      Pointer.update(var_to_keep, BVariable.setMax(Pointer.access(var_to_keep), new_max));
+    end if;
+    fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
+    if UnorderedMap.size(fixed_start_map) == 1 then
+      {new_start} := UnorderedMap.valueList(fixed_start_map);
+      Pointer.update(var_to_keep, BVariable.setFixed2(Pointer.access(var_to_keep)));
+      Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), new_start));
+    end if;
+    new_stateSelect := chooseStateSelect(attrcollector.stateSelect_map);
+    if Util.isSome(new_stateSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map))then // only update stateSelect value, if var_to_keep has a stateSelect value
+      Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect)));
+    end if;
+    new_tearingSelect := chooseTearingSelect(attrcollector.tearingSelect_map);
+    if Util.isSome(new_tearingSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map))then // only update tearingSelect value, if var_to_keep has a tearingSelect value
+      Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect)));
+    end if;
+  end setNewAttributes;
+
   function chooseVariableToKeep
     "choose a variable from a list to keep. returns all variables but the one with the highest rating"
-    input list<Pointer<Variable>> tail;
+    input list<Pointer<Variable>> var_lst;
     input Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
-    input Integer max_rating = -1;
-    output list<Pointer<Variable>> acc;
+    output list<Pointer<Variable>> acc = {};
+    output AttributeCollector attrcollector = ATTRIBUTE_COLLECTOR(UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+                                                                  UnorderedMap.new<StateSelect>(ComponentRef.hash, ComponentRef.isEqual),
+                                                                  UnorderedMap.new<TearingSelect>(ComponentRef.hash, ComponentRef.isEqual)
+                                                                  );
+  protected
+    Pointer<Variable> var;
+    Variable cur_var;
+    list<Pointer<Variable>> rest;
+    Integer cur_rating, max_rating;
+
   algorithm
-    acc := match tail
-      local
-        list<Pointer<Variable>> rest;
-        Pointer<Variable> var, new_alias;
-        Integer cur_rating, new_max_rating;
+    var :: rest := var_lst;
+    Pointer.update(var_to_keep, var);
+    (max_rating, attrcollector) := rateVar(var, attrcollector);
 
-      case var :: rest guard(max_rating == -1) algorithm
-        // this is the entry point. update the variable to keep with the very first of the list
+    for var in rest loop
+      (cur_rating, attrcollector) := rateVar(var, attrcollector);
+      if cur_rating > max_rating then
+        max_rating := cur_rating;
+        acc := Pointer.access(var_to_keep) :: acc;
         Pointer.update(var_to_keep, var);
-        new_max_rating := rateVar(var);
-      then chooseVariableToKeep(rest, var_to_keep, new_max_rating);
-
-      case var :: rest algorithm
-        // check if new rating is better than old
-        cur_rating := rateVar(var);
-        if cur_rating > max_rating then
-          // put the currently held variable back to the list and update the new "variable to keep"
-          new_alias := Pointer.access(var_to_keep);
-          Pointer.update(var_to_keep, var);
-          new_max_rating := cur_rating;
-        else
-          // do not change anything and just keep the variable and max_rating
-          new_alias := var;
-          new_max_rating := max_rating;
-        end if;
-      then new_alias :: chooseVariableToKeep(rest, var_to_keep, new_max_rating);
-
-      else {};
-    end match;
+      else
+        // do not change anything and just keep the variable and max_rating
+        acc := var :: acc;
+      end if;
+    end for;
   end chooseVariableToKeep;
+
+  function getMaximum
+    "Gets the maximum value of an UnorderedMap."
+    input UnorderedMap<ComponentRef,Expression> map;
+    output Option<Expression> max_exp;
+  protected
+    list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
+    Expression max_exp_val;
+    Real max_val;
+  algorithm
+    (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
+    if listLength(constants) <> 0 then
+      max_val := List.maxElement(list(Expression.realValue(val) for val in constants), realLt);
+      rest := Expression.REAL(max_val) :: rest;
+    end if;
+    if listLength(rest) == 0 then // constants and rest are empty
+      max_exp := NONE();
+    elseif listLength(rest) == 1 then // one constant or one rest
+      max_exp := SOME(List.first(rest));
+    else
+      max_exp_val :=  Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.MAX_REAL,
+        args        = rest,
+        variability = NFPrefixes.Variability.PARAMETER,
+        purity      = NFPrefixes.Purity.PURE
+      ));
+      max_exp := SOME(max_exp_val);
+    end if;
+  end getMaximum;
+
+  function getMinimum
+    "Gets the minimum of an UnorderedMap."
+    input UnorderedMap<ComponentRef,Expression> map;
+    output Option<Expression> min_exp;
+  protected
+    list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
+    Expression min_exp_val;
+    Real min_val;
+  algorithm
+    (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
+    if listLength(constants) <> 0 then
+      min_val := List.minElement(list(Expression.realValue(val) for val in constants), realLt);
+      rest := Expression.REAL(min_val) :: rest;
+    end if;
+    if listLength(rest) == 0 then // constants and rest are empty
+      min_exp := NONE();
+    elseif listLength(rest) == 1 then // one constant or one rest
+      min_exp := SOME(List.first(rest));
+    else
+      min_exp_val :=  Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.MAX_REAL,
+        args        = rest,
+        variability = NFPrefixes.Variability.PARAMETER,
+        purity      = NFPrefixes.Purity.PURE
+      ));
+      min_exp := SOME(min_exp_val);
+    end if;
+  end getMinimum;
+
+  function setStartFixed
+    "Analyses start and fixed values." // case 1: 1 or 0 fixed ; case 2: more than 1 fixed
+    input UnorderedMap<ComponentRef, Expression> start_map;
+    input UnorderedMap<ComponentRef, Expression> fixed_map;
+    input AliasSet set;
+    output UnorderedMap<ComponentRef, Expression> fixed_start_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+  protected
+    list<tuple<ComponentRef, Expression>> fixed_lst;
+    list<Expression> start_lst = UnorderedMap.valueList(start_map);
+    list<Expression> fixed_start_lst;
+    Integer count_fixed = 0;
+    Boolean fixed_val;
+    ComponentRef cref;
+    Expression sval, fval;
+  algorithm
+    fixed_lst := UnorderedMap.toList(fixed_map);
+    for tpl in fixed_lst loop
+      (cref,fval) := tpl;
+      if Expression.isTrue(fval) then
+        count_fixed := count_fixed + 1;
+        sval := UnorderedMap.getSafe(cref, start_map, sourceInfo());
+        UnorderedMap.add(cref, sval, fixed_start_map);
+      end if;
+    end for;
+    if count_fixed == 0 then
+      fixed_val := false;
+      if listLength(List.unique(start_lst)) > 1 then // if length = 1, then all values are the same
+        if Flags.isSet(Flags.DUMP_REPL) then
+          Error.addCompilerWarning(getInstanceName() + ": No variable is fixed and have different start values.\n"
+                                  + AliasSet.toString(set) + "\n\tStart map:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
+        else
+          Error.addCompilerWarning(getInstanceName() + ": No variable is fixed and have different start values. Use -d=dumprepl for more information.");
+        end if;
+      end if;
+    elseif count_fixed == 1 then
+      fixed_val := true;
+    elseif count_fixed > 1 then
+      fixed_start_lst := UnorderedMap.valueList(fixed_start_map);
+      if listLength(List.unique(fixed_start_lst)) > 1 then // if length = 1, then all values are the same
+        if Flags.isSet(Flags.DUMP_REPL) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable is fixed and have different start values!\n" + AliasSet.toString(set)
+                           + "\n\tFixed start map:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
+          fail();
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable is fixed and have different start values! Use -d=dumprepl for more information."});
+          fail();
+        end if;
+      elseif listLength(List.unique(fixed_start_lst)) == 1 then
+        if Flags.isSet(Flags.DUMP_REPL) then
+          Error.addCompilerWarning(getInstanceName() + ": More than one variable is fixed and have the same start value.\n"
+                                  + AliasSet.toString(set) + "\n\tFixed start map:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t"));
+        else
+          Error.addCompilerWarning(getInstanceName() + ": More than one variable is fixed and have the same start value. Use -d=dumprepl for more information.");
+        end if;
+      end if;
+    end if;
+  end setStartFixed;
+
+  function checkNominalThreshold
+    "Calculates quotient of greatest and lowest nominal value and checks if quotient is above the constant NOMINAL_THRESHOLD."
+    input UnorderedMap<ComponentRef, Expression> map;
+    input AliasSet set;
+  protected
+    list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
+    list<Real> real_constants;
+    Real nom_min, nom_max, nom_quotient;
+  algorithm
+    (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
+    try
+      List.assertIsEmpty(rest);
+    else
+      // non literal nominal values are not allowed
+      if Flags.isSet(Flags.DUMP_REPL) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because non literal nominal values are not allowed!\n" + AliasSet.toString(set)
+                          + "\n\tNominal map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t")});
+        fail();
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because non literal nominal values are not allowed! Use -d=dumprepl for more information."});
+        fail();
+      end if;
+    end try;
+    real_constants := list(Expression.realValue(val) for val in constants);
+    nom_min := List.minElement(real_constants, realLt);
+    nom_max := List.maxElement(real_constants, realLt);
+    nom_quotient := nom_max / nom_min;
+    if abs(nom_quotient) > NOMINAL_THRESHOLD then
+      if Flags.isSet(Flags.DUMP_REPL) then
+        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold.\n"
+                                + AliasSet.toString(set) + "\n\tNominal map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
+      else
+        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold. Use -d=dumprepl for more information.");
+      end if;
+    end if;
+  end checkNominalThreshold;
+
+  function errorcasesStateTearing
+    "Calls all functions that analyze StateSelect and TearingSelect errors."
+    input UnorderedMap<ComponentRef, StateSelect> stateSelect_map;
+    input UnorderedMap<ComponentRef, TearingSelect> tearingSelect_map;
+    input AliasSet set;
+  algorithm
+    stateSelectAlways(stateSelect_map, set);
+    // maybe function which shows a warning if the case TearingSelect.ALWAYS = TearingSelect.NEVER occurs -> different values (notification)
+  end errorcasesStateTearing;
+
+  function stateSelectAlways
+    "Throws an error if more than one variable has StateSelect = always."
+    input UnorderedMap<ComponentRef, StateSelect> map;
+    input AliasSet set;
+  protected
+    list<StateSelect> lst_values = UnorderedMap.valueList(map);
+    Integer count = 0;
+  algorithm
+    for val in lst_values loop
+      if val == StateSelect.ALWAYS then
+        count := count + 1;
+      end if;
+    end for;
+    if count > 1 then
+      if Flags.isSet(Flags.DUMP_REPL) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always!" + AliasSet.toString(set)
+                            + "\n\tStateSelect map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString,"\n\t")});
+        fail();
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always! Use -d=dumprepl for more information."});
+        fail();
+      end if;
+    end if;
+  end stateSelectAlways;
+
+  function chooseStateSelect //##############################
+    "Chooses the StateSelect value with the highest rank among all StateSelect values."
+    input UnorderedMap<ComponentRef, StateSelect> map;
+    output Option<StateSelect> chosen_val;
+    output Option<ComponentRef> chosen_cref;
+  protected
+    list<tuple<ComponentRef,StateSelect>> lst_values = UnorderedMap.toList(map);
+    StateSelect state_select;
+  algorithm
+    if listLength(lst_values) == 0 then
+      chosen_val := NONE();
+    elseif listLength(lst_values) == 1 then
+      chosen_val := SOME(List.first(lst_values));
+    else
+      state_select := StateSelect.NEVER;
+      for val in lst_values loop
+        if val > state_select then
+          state_select := val;
+        end if;
+      end for;
+      chosen_val := SOME(state_select);
+    end if;
+  end chooseStateSelect;
+
+  function chooseTearingSelect
+    "Chooses the TearingSelect value with the highest rank among all TearingSelect values."
+    input UnorderedMap<ComponentRef, TearingSelect> map;
+    output Option<TearingSelect> chosen_val;
+  protected
+    list<TearingSelect> lst_values = UnorderedMap.valueList(map);
+    TearingSelect tearing_select;
+  algorithm
+    if listLength(lst_values) == 0 then
+      chosen_val := NONE();
+    elseif listLength(lst_values) == 1 then
+      chosen_val := SOME(List.first(lst_values));
+    else
+      tearing_select := TearingSelect.NEVER;
+      for val in lst_values loop
+        if val > tearing_select then
+          tearing_select := val;
+        end if;
+      end for;
+      chosen_val := SOME(tearing_select);
+    end if;
+  end chooseTearingSelect;
+
+  function mean // better: geometric mean
+    "Calculates the mean of values"
+    input list<Expression> lst;
+    output Real mean_val;
+  protected
+    Real cur_sum = 0;
+  algorithm
+    for val in lst loop
+      cur_sum := cur_sum + Expression.realValue(val);
+    end for;
+    mean_val := cur_sum / listLength(lst);
+    print("Mean = "+String(mean_val));
+  end mean;
 
   function rateVar
     "Rates a variable based on attributes"
     input Pointer<Variable> var_ptr;
     output Integer rating;
+    input output AttributeCollector attrcollector;
+  protected
+    ComponentRef name;
+    Expression min_val, max_val, start_val, fixed_val, nominal_val;
+    StateSelect stateSelect_val;
+    TearingSelect tearingSelect_val;
   algorithm
-    // ToDo: put acutal rating algorithm here
-    rating := if BVariable.isFixed(var_ptr) then 1 else 0;
-    rating := if BVariable.isFunctionAlias(var_ptr) then rating - 5 else rating;
+    if BVariable.isFunctionAlias(var_ptr) then
+      rating := -10000;
+    else
+      name := BVariable.getVarName(var_ptr);
+      rating := -ComponentRef.depth(name);
+
+    end if;
+
+
+    print(Variable.toString(Pointer.access(var_ptr)) + " test\n");
+     _ := match Pointer.access(var_ptr)
+        local
+          Variable var = Pointer.access(var_ptr);
+          BackendExtension.VariableAttributes attr;
+
+      case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_REAL())) algorithm
+
+        if Util.isSome(attr.min) then
+          min_val := Util.getOption(attr.min);
+          UnorderedMap.add(BVariable.getVarName(var_ptr), min_val, attrcollector.min_val_map);
+        end if;
+        if Util.isSome(attr.max) then
+          max_val := Util.getOption(attr.max);
+          UnorderedMap.add(BVariable.getVarName(var_ptr), max_val, attrcollector.max_val_map);
+        end if;
+        if Util.isSome(attr.start) then
+          start_val := Util.getOption(attr.start);
+          UnorderedMap.add(BVariable.getVarName(var_ptr), start_val, attrcollector.start_map);
+        end if;
+        if Util.isSome(attr.fixed) then
+          fixed_val := Util.getOption(attr.fixed);
+          UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
+          /*if Expression.isTrue(fixed_val) then
+            rating := rating + 10;  //stronger weighting if fixed
+          end if;*/
+        end if;
+        if Util.isSome(attr.nominal) then
+          nominal_val := Util.getOption(attr.nominal);
+          UnorderedMap.add(BVariable.getVarName(var_ptr), nominal_val, attrcollector.nominal_map);
+        end if;
+        if Util.isSome(attr.stateSelect) then
+          stateSelect_val := Util.getOption(attr.stateSelect);
+          if stateSelect_val == BackendExtension.StateSelect.ALWAYS then
+            rating := rating + 100;
+          end if;
+          UnorderedMap.add(BVariable.getVarName(var_ptr), stateSelect_val, attrcollector.stateSelect_map);
+        end if;
+        if Util.isSome(attr.tearingSelect) then
+          tearingSelect_val := Util.getOption(attr.tearingSelect);
+          UnorderedMap.add(BVariable.getVarName(var_ptr), tearingSelect_val, attrcollector.tearingSelect_map);
+        end if;
+
+      then ();
+
+      //case var.isDiscrete then rating +1 ;always
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.DISCRETE())) then ();
+      //case var.isAlgebraic then rating -2;
+      else ();
+    end match;
+    //print(Type.toString(Variable.typeOf(Pointer.access(var_ptr))) + " probe\n");
+    print("Ranking: "+String(rating)+"\n\n");
   end rateVar;
+
+  uniontype AttributeCollector
+    record ATTRIBUTE_COLLECTOR
+      UnorderedMap<ComponentRef,Expression> min_val_map             "set containing all minimum values" ;
+      UnorderedMap<ComponentRef,Expression> max_val_map             "set containing all maximum values";
+      UnorderedMap<ComponentRef,Expression> start_map               "set containing all start values";
+      UnorderedMap<ComponentRef,Expression> fixed_map               "set containing all fixed values";
+      UnorderedMap<ComponentRef,Expression> nominal_map             "set containing all nominal values";
+      UnorderedMap<ComponentRef,StateSelect> stateSelect_map        "set containing all stateSelect values";
+      UnorderedMap<ComponentRef,TearingSelect> tearingSelect_map    "set containing all tearingSelect values";
+    end ATTRIBUTE_COLLECTOR;
+
+    function toString
+      "Prints all sets of AttributeCollector"
+      input AttributeCollector attrcollector;
+      input output String str = "";
+    protected
+      array<UnorderedMap<ComponentRef,Expression>> array_maps;
+      array<String> array_names;
+    algorithm
+      array_maps := listArray({attrcollector.min_val_map, attrcollector.max_val_map, attrcollector.start_map, attrcollector.fixed_map, attrcollector.nominal_map});
+      array_names := listArray({"Min map", "Max map", "Start map", "Fixed map", "Nominal map"});
+      for i in 1:arrayLength(array_names) loop
+        str := str + arrayGet(array_names, i) + ":\n"+ UnorderedMap.toString(array_maps[i], ComponentRef.toString, Expression.toString ) + "\n";
+      end for;
+      str := str + "StateSelect map" + ":\n"+ UnorderedMap.toString(attrcollector.stateSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString) + "\n";
+      str := str + "TearingSelect map" + ":\n"+ UnorderedMap.toString(attrcollector.tearingSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString) + "\n";
+    end toString;
+
+    function fixValues
+      "Adapts min, max and start values of each variable according to the replacements."
+      input output AttributeCollector attrcollector;
+      input ComponentRef var_cref;
+      input Equation solved_eq;
+    protected
+      UnorderedMap<ComponentRef, Expression> repl = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+      Expression rhs, new_rhs, diff_rhs;
+      DifferentiationArguments args;
+      Boolean swap_min_max;
+      Option<Expression> min_val_opt = UnorderedMap.get(var_cref, attrcollector.min_val_map);
+      Option<Expression> max_val_opt = UnorderedMap.get(var_cref, attrcollector.max_val_map);
+      Option<Expression> start_opt = UnorderedMap.get(var_cref, attrcollector.start_map);
+    algorithm
+      rhs := Equation.getRHS(solved_eq);
+
+      // min:
+      if Util.isSome(min_val_opt) then
+        UnorderedMap.add(var_cref, Util.getOption(min_val_opt), repl);
+        new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
+        new_rhs := SimplifyExp.simplify(new_rhs);
+        UnorderedMap.add(var_cref, new_rhs, attrcollector.min_val_map);
+        min_val_opt := UnorderedMap.get(var_cref, attrcollector.min_val_map);
+      end if;
+
+      // max:
+      if Util.isSome(max_val_opt) then
+        UnorderedMap.add(var_cref, Util.getOption(max_val_opt), repl);
+        new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
+        new_rhs := SimplifyExp.simplify(new_rhs);
+        UnorderedMap.add(var_cref, new_rhs, attrcollector.max_val_map);
+        max_val_opt := UnorderedMap.get(var_cref, attrcollector.max_val_map);
+      end if;
+
+      // if linear factor is negative => swap min and max
+      args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
+      args.diffCref := var_cref;
+      diff_rhs := Differentiate.differentiateExpression(rhs, args);
+      diff_rhs := SimplifyExp.simplify(diff_rhs);
+      swap_min_max := Expression.isNegative(diff_rhs);
+      if swap_min_max == true and Util.isSome(min_val_opt) and Util.isSome(max_val_opt) then
+        UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
+        UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
+      end if;
+
+      // start:
+      if Util.isSome(start_opt) then
+        UnorderedMap.add(var_cref, Util.getOption(start_opt), repl);
+        new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
+        new_rhs := SimplifyExp.simplify(new_rhs);
+        UnorderedMap.add(var_cref, new_rhs, attrcollector.start_map);
+      end if;
+
+    end fixValues;
+
+  end AttributeCollector;
 
   annotation(__OpenModelica_Interface="backend");
 end NBAlias;

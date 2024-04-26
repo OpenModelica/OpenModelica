@@ -48,6 +48,7 @@ protected
   import Attributes = NFAttributes;
   import NFBinding.Binding;
   import Call = NFCall;
+  import Ceval = NFCeval;
   import ComplexType = NFComplexType;
   import NFComponent.Component;
   import ComponentRef = NFComponentRef;
@@ -629,6 +630,100 @@ public
       end match;
     end getStateSelect;
 
+    function setMin
+      input output VariableAttributes attributes;
+      input Option<Expression> min_val;
+    algorithm
+      attributes := match attributes
+
+        case VAR_ATTR_REAL() algorithm
+          attributes.min := min_val;
+        then attributes;
+
+        case VAR_ATTR_INT() algorithm
+          attributes.min := min_val;
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION() algorithm
+          attributes.min := min_val;
+        then attributes;
+
+        else attributes;
+      end match;
+    end setMin;
+
+    function setMax
+      input output VariableAttributes attributes;
+      input Option<Expression> max_val;
+    algorithm
+      attributes := match attributes
+
+        case VAR_ATTR_REAL() algorithm
+          attributes.max := max_val;
+        then attributes;
+
+        case VAR_ATTR_INT() algorithm
+          attributes.max := max_val;
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION() algorithm
+          attributes.max := max_val;
+        then attributes;
+
+        else attributes;
+      end match;
+    end setMax;
+
+    function setFixed2
+      input output VariableAttributes attributes;
+      input Expression val = Expression.BOOLEAN(true);
+    algorithm
+      attributes := match attributes
+
+        case VAR_ATTR_REAL() algorithm
+          attributes.fixed := SOME(val);
+        then attributes;
+
+        case VAR_ATTR_INT() algorithm
+          attributes.fixed := SOME(val);
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION() algorithm
+          attributes.fixed := SOME(val);
+        then attributes;
+
+        else attributes;
+      end match;
+    end setFixed2;
+
+    function setStateSelect
+      input output VariableAttributes attributes;
+      input StateSelect stateSelect_val;
+    algorithm
+      attributes := match attributes
+
+        case VAR_ATTR_REAL() algorithm
+          attributes.stateSelect := SOME(stateSelect_val);
+        then attributes;
+
+        else attributes;
+      end match;
+    end setStateSelect;
+
+    function setTearingSelect
+      input output VariableAttributes attributes;
+      input TearingSelect tearingSelect_val;
+    algorithm
+      attributes := match attributes
+
+        case VAR_ATTR_REAL() algorithm
+          attributes.tearingSelect := SOME(tearingSelect_val);
+        then attributes;
+
+        else attributes;
+      end match;
+    end setTearingSelect;
+
     function scalarizeReal
       input ExpressionIterator        quantity_iter "quantity";
       input ExpressionIterator        unit_iter "SI Unit for actual computation value";
@@ -893,7 +988,7 @@ public
       end match;
     end elemType;
 
-  protected
+  //protected
     function attributesToString
       input list<tuple<String, Option<Expression>>> tpl_list;
       input Option<StateSelect> stateSelect;
@@ -907,8 +1002,8 @@ public
         buffer := attributeToString(tpl, buffer);
       end for;
 
-      buffer := stateSelectString(stateSelect, buffer);
-      buffer := tearingSelectString(tearingSelect, buffer);
+      buffer := stateSelectStringBuffer(stateSelect, buffer);
+      buffer := tearingSelectStringBuffer(tearingSelect, buffer);
 
       buffer := listReverse(buffer);
 
@@ -938,33 +1033,52 @@ public
     end attributeToString;
 
     function stateSelectString
-      input Option<StateSelect> optStateSelect;
-      input output list<String> buffer;
+      input StateSelect stateSelect;
+      output String str;
     algorithm
-      buffer := match optStateSelect
-        case SOME(StateSelect.NEVER)    then "StateSelect = never" :: buffer;
-        case SOME(StateSelect.AVOID)    then "StateSelect = avoid" :: buffer;
-        case SOME(StateSelect.DEFAULT)  then "StateSelect = default" :: buffer;
-        case SOME(StateSelect.PREFER)   then "StateSelect = prefer" :: buffer;
-        case SOME(StateSelect.ALWAYS)   then "StateSelect = always" :: buffer;
-        else buffer;
+      str := match stateSelect
+        case StateSelect.NEVER    then "StateSelect = never";
+        case StateSelect.AVOID    then "StateSelect = avoid";
+        case StateSelect.DEFAULT  then "StateSelect = default";
+        case StateSelect.PREFER   then "StateSelect = prefer";
+        case StateSelect.ALWAYS   then "StateSelect = always";
       end match;
     end stateSelectString;
 
     function tearingSelectString
-      input Option<TearingSelect> optTearingSelect;
-      input output list<String> buffer;
+      input TearingSelect tearingSelect;
+      output String str;
     algorithm
-      buffer := match optTearingSelect
-        case SOME(TearingSelect.NEVER)    then "TearingSelect = never" :: buffer;
-        case SOME(TearingSelect.AVOID)    then "TearingSelect = avoid" :: buffer;
-        case SOME(TearingSelect.DEFAULT)  then "TearingSelect = default" :: buffer;
-        case SOME(TearingSelect.PREFER)   then "TearingSelect = prefer" :: buffer;
-        case SOME(TearingSelect.ALWAYS)   then "TearingSelect = always" :: buffer;
-        else buffer;
+      str := match tearingSelect
+        case TearingSelect.NEVER    then "TearingSelect = never";
+        case TearingSelect.AVOID    then "TearingSelect = avoid";
+        case TearingSelect.DEFAULT  then "TearingSelect = default";
+        case TearingSelect.PREFER   then "TearingSelect = prefer";
+        case TearingSelect.ALWAYS   then "TearingSelect = always";
       end match;
     end tearingSelectString;
 
+    function stateSelectStringBuffer
+      input Option<StateSelect> optStateSelect;
+      input output list<String> buffer;
+    algorithm
+      if isSome(optStateSelect) then
+        SOME(stateSelect) := optStateSelect;
+        buffer := stateSelectString(stateSelect) :: buffer;
+      end if;
+    end stateSelectStringBuffer;
+
+    function tearingSelectStringBuffer
+      input Option<TearingSelect> optTearingSelect;
+      input output list<String> buffer;
+    algorithm
+      if isSome(optTearingSelect) then
+        SOME(tearingSelect) := optTearingSelect;
+        buffer := tearingSelectString(tearingSelect) :: buffer;
+      end if;
+    end tearingSelectStringBuffer;
+
+  protected
     function createReal
       input list<tuple<String, Binding>> attrs;
       input Boolean isFinal;
