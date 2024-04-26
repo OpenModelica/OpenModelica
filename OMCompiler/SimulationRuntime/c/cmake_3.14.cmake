@@ -108,7 +108,7 @@ endif(MINGW)
 
 if(OM_OMC_ENABLE_IPOPT)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
+  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT;OMC_HAVE_CVODE;OMC_HAVE_IDA)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
 endif()
 

@@ -33,6 +33,7 @@
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
 #include "../simulation/solver/cvode_solver.h"
+#include "../simulation/solver/ida_solver.h"
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
 #endif
@@ -2291,6 +2292,14 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         if (flag < 0)
         {
           FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
+          return fmi2Fatal;
+        }
+        break;
+      case S_IDA:
+        flag = ida_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states, comp);
+        if (flag < 0)
+        {
+          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: IDA integrator step failed.")
           return fmi2Fatal;
         }
         break;

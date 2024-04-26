@@ -38,13 +38,17 @@
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
 /* Internal function prototypes */
+#ifdef OMC_HAVE_CVODE
 static void checkReturnFlag_CV(int flag, const char *functionName);
 static void checkReturnFlag_CVLS(int flag, const char *functionName);
+#endif
+#ifdef OMC_HAVE_IDA
+static void checkReturnFlag_IDA(int flag, const char *functionName);
+static void checkReturnFlag_IDALS(int flag, const char *functionName);
+#endif
 #ifndef OMC_FMI_RUNTIME
 static void checkReturnFlag_KIN(int flag, const char *functionName);
 static void checkReturnFlag_KINLS(int flag, const char *functionName);
-static void checkReturnFlag_IDA(int flag, const char *functionName);
-static void checkReturnFlag_IDALS(int flag, const char *functionName);
 static void checkReturnFlag_SUNLS(int flag, const char *functionName);
 static void checkReturnFlag_SUNMatrix(int flag, const char *functionName);
 #endif
@@ -69,19 +73,23 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
       //assertStreamPrint(NULL, NULL, "##SUNDIALS##: Some error with value %u occured in function %s.", flag, functionName);
       throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %u occured in function %s.", flag, functionName);
     }
+#ifdef OMC_HAVE_CVODE
   case SUNDIALS_CV_FLAG:
     checkReturnFlag_CV(flag, functionName);
     break;
   case SUNDIALS_CVLS_FLAG:
     checkReturnFlag_CVLS(flag, functionName);
     break;
-#ifndef OMC_FMI_RUNTIME
+#endif /* OMC_HAVE_CVODE */
+#ifdef OMC_HAVE_IDA
   case SUNDIALS_IDA_FLAG:
     checkReturnFlag_IDA(flag, functionName);
     break;
   case SUNDIALS_IDALS_FLAG:
     checkReturnFlag_IDALS(flag, functionName);
     break;
+#endif /* OMC_HAVE_IDA */
+#ifndef OMC_FMI_RUNTIME
   case SUNDIALS_KIN_FLAG:
     checkReturnFlag_KIN(flag, functionName);
     break;
@@ -100,6 +108,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
   }
 }
 
+#ifdef OMC_HAVE_CVODE
 /**
  * @brief Checks given CVODE flag and reports potential error.
  *
@@ -279,168 +288,9 @@ void cvodeErrorHandlerFunction(int errorCode, const char *module,
     messageClose(LOG_SOLVER);
   }
 }
+#endif /* OMC_HAVE_CVODE */
 
-#ifndef OMC_FMI_RUNTIME
-/**
- * @brief Checks given KINSOL flag and reports potential error.
- *
- * @param flag          Return value of Kinsol routine.
- * @param functionName  Name of Kinsol function that returned the flag.
- */
-static void checkReturnFlag_KIN(int flag, const char *functionName) {
-
-  const char* flagName = KINGetLinReturnFlagName(flag); /* memory is allocated here so it must be freed at the end, see kinsol_ls.c */
-
-  switch (flag) {
-  case KIN_SUCCESS:
-  case KIN_INITIAL_GUESS_OK:
-  case KIN_STEP_LT_STPTOL:
-    break;
-  case KIN_WARNING:
-    warningStreamPrint(LOG_STDOUT, 0,
-                       "##KINSOL## %s In function %s: Got some warning.", flagName, functionName);
-    break;
-  case KIN_MEM_NULL:
-    throwStreamPrint(NULL, "##KINSOL## %s In function %s: Out of memory.", flagName, functionName);
-    break;
-  case KIN_ILL_INPUT:
-    throwStreamPrint(NULL, "##KINSOL## %s In function %s: An input argument has an illegal value.", flagName, functionName);
-    break;
-  case KIN_NO_MALLOC:
-    throwStreamPrint(NULL, "##KINSOL## %s In function %s: Kinsol memory was not allocated by a call to KINCreate.", flagName, functionName);
-    break;
-  case KIN_MEM_FAIL:
-    throwStreamPrint(NULL, "##KINSOL## %s In function %s: A memory allocation request has failed.", flagName, functionName);
-    break;
-  case KIN_LINESEARCH_NONCONV:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: The line search algorithm was "
-                     "unable to find an iterate sufficiently distinct from the "
-                     "current iterate, or could not find an iterate satisfying "
-                     "the sufficient decrease condition.", flagName,
-                     functionName);
-    break;
-  case KIN_MAXITER_REACHED:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: The maximum number of "
-                     "nonlinear iterations has been reached.", flagName,
-                     functionName);
-    break;
-  case KIN_MXNEWT_5X_EXCEEDED:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_MXNEWT_5X_EXCEEDED.", flagName,
-                     functionName);
-    break;
-  case KIN_LINESEARCH_BCFAIL:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_LINESEARCH_BCFAIL.", flagName,
-                     functionName);
-    break;
-  case KIN_LINSOLV_NO_RECOVERY:
-    throwStreamPrint(
-        NULL,
-        "##KINSOL## %s In function %s: Error KIN_LINSOLV_NO_RECOVERY.", flagName,
-        functionName);
-    break;
-  case KIN_LINIT_FAIL:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_LINIT_FAIL.", flagName,
-                     functionName);
-    break;
-  case KIN_LSETUP_FAIL:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_LSETUP_FAIL.", flagName,
-                     functionName);
-    break;
-  case KIN_LSOLVE_FAIL:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_LSOLVE_FAIL.", flagName,
-                     functionName);
-    break;
-  case KIN_SYSFUNC_FAIL:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_SYSFUNC_FAIL.", flagName,
-                     functionName);
-    break;
-  case KIN_FIRST_SYSFUNC_ERR:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_FIRST_SYSFUNC_ERR.", flagName,
-                     functionName);
-    break;
-  case KIN_REPTD_SYSFUNC_ERR:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_REPTD_SYSFUNC_ERR.", flagName,
-                     functionName);
-    break;
-  case KIN_VECTOROP_ERR:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error KIN_VECTOROP_ERR.", flagName,
-                     functionName);
-    break;
-  default:
-    throwStreamPrint(NULL,
-                     "##KINSOL## %s In function %s: Error with flag %i.", flagName,
-                     functionName, flag);
-  }
-
-  free((char*)flagName);
-}
-
-/**
- * @brief Checks given KINLS flag and reports potential error.
- *
- * @param flag          Return value of Kinsol routine.
- * @param functionName  Name of Kinsol function that returned the flag.
- */
-static void checkReturnFlag_KINLS(int flag, const char *functionName) {
-  switch (flag) {
-  case KINLS_SUCCESS:
-    break;
-  case KINLS_MEM_NULL:
-    throwStreamPrint(NULL,
-                     "##KINLS## In function %s: The kin_mem pointer is NULL.",
-                     functionName);
-    break;
-  case KINLS_ILL_INPUT:
-    throwStreamPrint(NULL,
-                     "##KINLS## In function %s: An input argument has an "
-                     "illegal value or is incompatible.",
-                     functionName);
-    break;
-  case KINLS_MEM_FAIL:
-    throwStreamPrint(
-        NULL,
-        "##KINLS## In function %s: A memory allocation request failed.",
-        functionName);
-    break;
-  case KINLS_PMEM_NULL:
-    throwStreamPrint(NULL,
-                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
-                     functionName);
-    break;
-  case KINLS_JACFUNC_ERR:
-    throwStreamPrint(NULL,
-                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
-                     functionName);
-    break;
-  case KINLS_SUNMAT_FAIL:
-    throwStreamPrint(NULL,
-                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
-                     functionName);
-    break;
-  case KINLS_SUNLS_FAIL:
-    throwStreamPrint(
-        NULL,
-        "##KINLS## In function %s: A call to the LS object failed.",
-        functionName);
-    break;
-  default:
-    throwStreamPrint(NULL,
-                     "##KINLS## In function %s: Error with flag %i.",
-                     functionName, flag);
-  }
-}
-
+#ifdef OMC_HAVE_IDA
 /**
  * @brief Checks given IDA/IDAS flag and reports potential error.
  *
@@ -750,6 +600,269 @@ static void checkReturnFlag_IDALS(int flag, const char *functionName) {
 }
 
 /**
+ * @brief Error handler function for IDA
+ *
+ * @param errorCode   Error code from IDA
+ * @param module      Name of the IDA module reporting the error.
+ * @param function    Name of the function in which the error occurred.
+ * @param msg         Error Message.
+ * @param userData    Pointer to user data given with IDASetUserData.
+ */
+void idaErrorHandlerFunction(int errorCode, const char *module,
+                             const char *function, char *msg, void *userData)
+{
+  /* Variables */
+  IDA_SOLVER* idaData;
+  DATA* data;
+
+  if (userData != NULL && ACTIVE_STREAM(LOG_SOLVER)) {
+    idaData = (IDA_SOLVER*) userData;
+    data = (DATA*)idaData->userData->data;
+
+    infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
+    infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
+    infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
+    messageClose(LOG_SOLVER);
+  }
+}
+#endif /* OMC_HAVE_IDA */
+
+#ifndef OMC_FMI_RUNTIME
+/**
+ * @brief Checks given KINSOL flag and reports potential error.
+ *
+ * @param flag          Return value of Kinsol routine.
+ * @param functionName  Name of Kinsol function that returned the flag.
+ */
+static void checkReturnFlag_KIN(int flag, const char *functionName) {
+
+  const char* flagName = KINGetLinReturnFlagName(flag); /* memory is allocated here so it must be freed at the end, see kinsol_ls.c */
+
+  switch (flag) {
+  case KIN_SUCCESS:
+  case KIN_INITIAL_GUESS_OK:
+  case KIN_STEP_LT_STPTOL:
+    break;
+  case KIN_WARNING:
+    warningStreamPrint(LOG_STDOUT, 0,
+                       "##KINSOL## %s In function %s: Got some warning.", flagName, functionName);
+    break;
+  case KIN_MEM_NULL:
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: Out of memory.", flagName, functionName);
+    break;
+  case KIN_ILL_INPUT:
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: An input argument has an illegal value.", flagName, functionName);
+    break;
+  case KIN_NO_MALLOC:
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: Kinsol memory was not allocated by a call to KINCreate.", flagName, functionName);
+    break;
+  case KIN_MEM_FAIL:
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: A memory allocation request has failed.", flagName, functionName);
+    break;
+  case KIN_LINESEARCH_NONCONV:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: The line search algorithm was "
+                     "unable to find an iterate sufficiently distinct from the "
+                     "current iterate, or could not find an iterate satisfying "
+                     "the sufficient decrease condition.", flagName,
+                     functionName);
+    break;
+  case KIN_MAXITER_REACHED:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: The maximum number of "
+                     "nonlinear iterations has been reached.", flagName,
+                     functionName);
+    break;
+  case KIN_MXNEWT_5X_EXCEEDED:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_MXNEWT_5X_EXCEEDED.", flagName,
+                     functionName);
+    break;
+  case KIN_LINESEARCH_BCFAIL:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LINESEARCH_BCFAIL.", flagName,
+                     functionName);
+    break;
+  case KIN_LINSOLV_NO_RECOVERY:
+    throwStreamPrint(
+        NULL,
+        "##KINSOL## %s In function %s: Error KIN_LINSOLV_NO_RECOVERY.", flagName,
+        functionName);
+    break;
+  case KIN_LINIT_FAIL:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LINIT_FAIL.", flagName,
+                     functionName);
+    break;
+  case KIN_LSETUP_FAIL:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LSETUP_FAIL.", flagName,
+                     functionName);
+    break;
+  case KIN_LSOLVE_FAIL:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LSOLVE_FAIL.", flagName,
+                     functionName);
+    break;
+  case KIN_SYSFUNC_FAIL:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_SYSFUNC_FAIL.", flagName,
+                     functionName);
+    break;
+  case KIN_FIRST_SYSFUNC_ERR:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_FIRST_SYSFUNC_ERR.", flagName,
+                     functionName);
+    break;
+  case KIN_REPTD_SYSFUNC_ERR:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_REPTD_SYSFUNC_ERR.", flagName,
+                     functionName);
+    break;
+  case KIN_VECTOROP_ERR:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_VECTOROP_ERR.", flagName,
+                     functionName);
+    break;
+  default:
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error with flag %i.", flagName,
+                     functionName, flag);
+  }
+
+  free((char*)flagName);
+}
+
+/**
+ * @brief Checks given KINLS flag and reports potential error.
+ *
+ * @param flag          Return value of Kinsol routine.
+ * @param functionName  Name of Kinsol function that returned the flag.
+ */
+static void checkReturnFlag_KINLS(int flag, const char *functionName) {
+  switch (flag) {
+  case KINLS_SUCCESS:
+    break;
+  case KINLS_MEM_NULL:
+    throwStreamPrint(NULL,
+                     "##KINLS## In function %s: The kin_mem pointer is NULL.",
+                     functionName);
+    break;
+  case KINLS_ILL_INPUT:
+    throwStreamPrint(NULL,
+                     "##KINLS## In function %s: An input argument has an "
+                     "illegal value or is incompatible.",
+                     functionName);
+    break;
+  case KINLS_MEM_FAIL:
+    throwStreamPrint(
+        NULL,
+        "##KINLS## In function %s: A memory allocation request failed.",
+        functionName);
+    break;
+  case KINLS_PMEM_NULL:
+    throwStreamPrint(NULL,
+                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
+                     functionName);
+    break;
+  case KINLS_JACFUNC_ERR:
+    throwStreamPrint(NULL,
+                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
+                     functionName);
+    break;
+  case KINLS_SUNMAT_FAIL:
+    throwStreamPrint(NULL,
+                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
+                     functionName);
+    break;
+  case KINLS_SUNLS_FAIL:
+    throwStreamPrint(
+        NULL,
+        "##KINLS## In function %s: A call to the LS object failed.",
+        functionName);
+    break;
+  default:
+    throwStreamPrint(NULL,
+                     "##KINLS## In function %s: Error with flag %i.",
+                     functionName, flag);
+  }
+}
+
+/**
+ * @brief Error handler function given to KINSOL.
+ *
+ * @param errorCode   Error code from KINSOL
+ * @param module      Name of the KINSOL module reporting the error.
+ * @param function    Name of the function in which the error occurred.
+ * @param msg         Error Message.
+ * @param userData    Pointer to user data given with KINSetUserData.
+ */
+void kinsolErrorHandlerFunction(int errorCode, const char* module,
+                                const char *function, char* msg,
+                                void* userData) {
+  /* Variables */
+  NLS_KINSOL_DATA* kinsolData;
+  DATA* data;
+  NONLINEAR_SYSTEM_DATA* nlsData;
+  long eqSystemNumber;
+
+  if (userData != NULL) {
+    kinsolData = (NLS_KINSOL_DATA *)userData;
+    data = kinsolData->userData->data;
+    nlsData = kinsolData->userData->nlsData;
+    if (nlsData) {
+      eqSystemNumber = nlsData->equationIndex;
+    } else {
+      eqSystemNumber = -1;
+    }
+  }
+
+  if (ACTIVE_STREAM(LOG_NLS)) {
+    if (userData != NULL && eqSystemNumber > 0) {
+      warningStreamPrint(
+          LOG_NLS, 1, "kinsol failed for system %d",
+          modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
+    } else {
+      warningStreamPrint(
+          LOG_NLS, 1, "kinsol failed");
+    }
+
+    warningStreamPrint(LOG_NLS, 0,
+                       "[module] %s | [function] %s | [error_code] %d", module,
+                       function, errorCode);
+    if (msg) {
+      warningStreamPrint(LOG_NLS, 0, "%s", msg);
+    }
+
+    messageClose(LOG_NLS);
+  }
+}
+
+/**
+ * @brief Info handler function given to KINSOL.
+ *
+ * Will only print information when stream LOG_NLS_V is active.
+ *
+ * @param module      Name of the KINSOL module reporting the information.
+ * @param function    Name of the function reporting the information.
+ * @param msg         Message.
+ * @param user_data   Pointer to user data given with KINSetInfoHandlerFn.
+ */
+void kinsolInfoHandlerFunction(const char *module, const char *function,
+                               char *msg, void *user_data) {
+  UNUSED(user_data);  /* Disables compiler warning */
+
+  if (ACTIVE_STREAM(LOG_NLS_V)) {
+    warningStreamPrint(LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);
+    if (msg) {
+      warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
+    }
+
+    messageClose(LOG_NLS_V);
+  }
+}
+
+/**
  * @brief Checks given SUNLS flag and reports potential error.
  *
  * @param flag          Return value of SUNLS routine.
@@ -972,110 +1085,9 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     free(tmpBuffer);
   }
 }
-
-/**
- * @brief Error handler function for IDA
- *
- * @param errorCode   Error code from IDA
- * @param module      Name of the IDA module reporting the error.
- * @param function    Name of the function in which the error occurred.
- * @param msg         Error Message.
- * @param userData    Pointer to user data given with IDASetUserData.
- */
-void idaErrorHandlerFunction(int errorCode, const char *module,
-                             const char *function, char *msg, void *userData)
-{
-  /* Variables */
-  IDA_SOLVER* idaData;
-  DATA* data;
-
-  if (userData != NULL && ACTIVE_STREAM(LOG_SOLVER)) {
-    idaData = (IDA_SOLVER*) userData;
-    data = (DATA*)idaData->userData->data;
-
-    infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
-    infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
-    infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
-    messageClose(LOG_SOLVER);
-  }
-}
-
-/**
- * @brief Error handler function given to KINSOL.
- *
- * @param errorCode   Error code from KINSOL
- * @param module      Name of the KINSOL module reporting the error.
- * @param function    Name of the function in which the error occurred.
- * @param msg         Error Message.
- * @param userData    Pointer to user data given with KINSetUserData.
- */
-void kinsolErrorHandlerFunction(int errorCode, const char* module,
-                                const char *function, char* msg,
-                                void* userData) {
-  /* Variables */
-  NLS_KINSOL_DATA* kinsolData;
-  DATA* data;
-  NONLINEAR_SYSTEM_DATA* nlsData;
-  long eqSystemNumber;
-
-  if (userData != NULL) {
-    kinsolData = (NLS_KINSOL_DATA *)userData;
-    data = kinsolData->userData->data;
-    nlsData = kinsolData->userData->nlsData;
-    if (nlsData) {
-      eqSystemNumber = nlsData->equationIndex;
-    } else {
-      eqSystemNumber = -1;
-    }
-  }
-
-  if (ACTIVE_STREAM(LOG_NLS)) {
-    if (userData != NULL && eqSystemNumber > 0) {
-      warningStreamPrint(
-          LOG_NLS, 1, "kinsol failed for system %d",
-          modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
-    } else {
-      warningStreamPrint(
-          LOG_NLS, 1, "kinsol failed");
-    }
-
-    warningStreamPrint(LOG_NLS, 0,
-                       "[module] %s | [function] %s | [error_code] %d", module,
-                       function, errorCode);
-    if (msg) {
-      warningStreamPrint(LOG_NLS, 0, "%s", msg);
-    }
-
-    messageClose(LOG_NLS);
-  }
-}
-
-/**
- * @brief Info handler function given to KINSOL.
- *
- * Will only print information when stream LOG_NLS_V is active.
- *
- * @param module      Name of the KINSOL module reporting the information.
- * @param function    Name of the function reporting the information.
- * @param msg         Message.
- * @param user_data   Pointer to user data given with KINSetInfoHandlerFn.
- */
-void kinsolInfoHandlerFunction(const char *module, const char *function,
-                               char *msg, void *user_data) {
-  UNUSED(user_data);  /* Disables compiler warning */
-
-  if (ACTIVE_STREAM(LOG_NLS_V)) {
-    warningStreamPrint(LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);
-    if (msg) {
-      warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
-    }
-
-    messageClose(LOG_NLS_V);
-  }
-}
 #endif /* #ifndef OMC_FMI_RUNTIME */
 
-#else
+#else /* WITH_SUNDIALS */
 
 /**
  * @brief Function not supported without WITH_SUNDIALS

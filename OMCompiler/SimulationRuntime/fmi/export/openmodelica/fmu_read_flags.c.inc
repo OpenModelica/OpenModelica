@@ -33,6 +33,7 @@
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
 #include "../simulation/solver/cvode_solver.h"
+#include "../simulation/solver/ida_solver.h"
 #include "../util/omc_mmap.h"
 #include "../util/omc_file.h"
 
@@ -147,6 +148,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   SOLVER_INFO* solverInfo;
 
   CVODE_SOLVER* cvodeData;
+  IDA_SOLVER* idaData;
   int retValue;
 
   functions = comp->functions;
@@ -217,6 +219,18 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       solverInfo->solverData = cvodeData;
       useStream[LOG_SOLVER] = 0;
       break;
+    case S_IDA:
+      useStream[LOG_SOLVER] = 1;
+      idaData = NULL;
+      FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
+      idaData = (IDA_SOLVER*) functions->allocateMemory(1, sizeof(IDA_SOLVER));
+      if (!idaData) {
+        FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Instantiate: Out of memory.")
+      }
+      retValue = ida_solver_initial(data, threadData, solverInfo, idaData, 1 /* is FMI */);   /* TODO: ida_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
+      solverInfo->solverData = idaData;
+      useStream[LOG_SOLVER] = 0;
+      break;
     default:
       FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Instantiate: Unknown solver method.")
       retValue = -1;
@@ -263,6 +277,9 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       break;
     case S_CVODE:
       retValue = cvode_solver_deinitial(solverInfo->solverData);
+      break;
+    case S_IDA:
+      retValue = ida_solver_deinitial(solverInfo->solverData);
       break;
     default:
       FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2FreeInstance: Unknown solver method.")
