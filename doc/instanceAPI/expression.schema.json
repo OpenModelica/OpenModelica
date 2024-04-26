@@ -429,6 +429,20 @@
         }
       },
       "required": ["$kind", "name", "arguments"]
+    },
+    {
+      "description": "An invalid expression",
+      "type": "object",
+      "properties": {
+        "$error": {
+          "description": "Error message",
+          "type": "string"
+        },
+        "value": {
+          "description": "The invalid expression",
+          "$ref": "#"
+        }
+      }
     }
   ],
   "definitions": {
