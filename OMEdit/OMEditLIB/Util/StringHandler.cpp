@@ -1576,10 +1576,14 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
 
 QStringList StringHandler::makeVariableParts(QString variable)
 {
+  /* Do not split quoted variable.
+   * See https://github.com/OpenModelica/OpenModelica/issues/10599#issuecomment-2077331404
+   */
+  QRegularExpression re("\\.(?=(?:[^\']*\'[^\']*\')*[^\']*$)(?![^\\[\\]]*\\])");
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), Qt::SkipEmptyParts);
+  return variable.split(re, Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
+  return variable.split(re, QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
 }
 
