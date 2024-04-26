@@ -6608,5 +6608,37 @@ algorithm
   end match;
 end setClassDefType;
 
+function isLiteralExp
+  input Absyn.Exp exp;
+  output Boolean literal;
+algorithm
+  literal := match exp
+    case Absyn.Exp.INTEGER() then true;
+    case Absyn.Exp.REAL() then true;
+    case Absyn.Exp.STRING() then true;
+    case Absyn.Exp.BOOL() then true;
+    case Absyn.Exp.ARRAY() then List.all(exp.arrayExp, isLiteralExp);
+
+    case Absyn.Exp.MATRIX()
+      algorithm
+        literal := true;
+        for row in exp.matrix loop
+          literal := literal and List.all(row, isLiteralExp);
+          if not literal then
+            break;
+          end if;
+        end for;
+      then
+        literal;
+
+    case Absyn.Exp.RANGE()
+      then isLiteralExp(exp.start) and
+           Util.applyOptionOrDefault(exp.step, isLiteralExp, true) and
+           isLiteralExp(exp.stop);
+
+    else false;
+  end match;
+end isLiteralExp;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
