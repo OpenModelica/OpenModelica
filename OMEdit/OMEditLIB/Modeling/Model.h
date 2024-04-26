@@ -589,6 +589,7 @@ private:
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
+    bool isRecord() const;
     bool isType() const;
     bool isDerivedType() const;
     bool isPartial() const;

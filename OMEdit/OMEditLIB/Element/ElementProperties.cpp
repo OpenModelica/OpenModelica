@@ -273,12 +273,11 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
       mValueType = Parameter::ReplaceableComponent;
     }
     if (mpModelInstanceElement->getModel() || mpModelInstanceElement->isShortClassDefinition()) {
-      mpEditRedeclareClassButton = new QToolButton;
-      mpEditRedeclareClassButton->setIcon(QIcon(":/Resources/icons/edit-icon.svg"));
-      mpEditRedeclareClassButton->setToolTip(tr("Edit"));
-      mpEditRedeclareClassButton->setAutoRaise(true);
-      connect(mpEditRedeclareClassButton, SIGNAL(clicked()), SLOT(editRedeclareClassButtonClicked()));
+      createEditClassButton();
     }
+  } else if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isRecord()) {
+    mValueType = Parameter::Record;
+    createEditClassButton();
   } else if (mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty()) {
     mValueType = Parameter::Choices;
   } else if (mpModelInstanceElement->getAnnotation()->isChoicesAllMatching()) {
@@ -504,6 +503,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       mpValueCheckBox->blockSignals(signalsState);
       mValueCheckBoxModified = valueModified && !defaultValue;
       break;
+    case Parameter::Record:
     case Parameter::Normal:
     default:
       if (defaultValue) {
@@ -541,6 +541,7 @@ QWidget* Parameter::getValueWidget()
       return mpValueComboBox;
     case Parameter::CheckBox:
       return mpValueCheckBox;
+    case Parameter::Record:
     case Parameter::Normal:
     default:
       return mpValueTextBox;
@@ -564,6 +565,7 @@ bool Parameter::isValueModified()
       return mpValueComboBox->lineEdit()->isModified() || isValueModifiedHelper();
     case Parameter::CheckBox:
       return mValueCheckBoxModified || isValueModifiedHelper();
+    case Parameter::Record:
     case Parameter::Normal:
     default:
       return mpValueTextBox->isModified() || isValueModifiedHelper();
@@ -587,6 +589,7 @@ QString Parameter::getValue()
       return mpValueComboBox->lineEdit()->text().trimmed();
     case Parameter::CheckBox:
       return mpValueCheckBox->isChecked() ? "true" : "false";
+    case Parameter::Record:
     case Parameter::Normal:
     default:
       return mpValueTextBox->text().trimmed();
@@ -626,6 +629,7 @@ void Parameter::setEnabled(bool enable)
     case Parameter::CheckBox:
       mpValueCheckBox->setEnabled(enable);
       break;
+    case Parameter::Record:
     case Parameter::Normal:
     default:
       mpValueTextBox->setEnabled(enable);
@@ -636,8 +640,8 @@ void Parameter::setEnabled(bool enable)
   if (enable) {
     enableDisableUnitComboBox(getValue());
   }
-  if (mpEditRedeclareClassButton) {
-    mpEditRedeclareClassButton->setEnabled(enable);
+  if (mpEditClassButton) {
+    mpEditClassButton->setEnabled(enable);
   }
 }
 
@@ -649,6 +653,19 @@ void Parameter::update()
 {
   mEnable.evaluate(mpModelInstanceElement->getParentModel());
   setEnabled(mEnable);
+}
+
+/*!
+ * \brief Parameter::createEditClassButton
+ * Creates the edit class button.
+ */
+void Parameter::createEditClassButton()
+{
+  mpEditClassButton = new QToolButton;
+  mpEditClassButton->setIcon(QIcon(":/Resources/icons/edit-icon.svg"));
+  mpEditClassButton->setToolTip(tr("Edit"));
+  mpEditClassButton->setAutoRaise(true);
+  connect(mpEditClassButton, SIGNAL(clicked()), SLOT(editClassButtonClicked()));
 }
 
 void Parameter::createValueWidget()
@@ -792,7 +809,7 @@ void Parameter::createValueWidget()
 
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
-
+    case Parameter::Record:
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
@@ -871,16 +888,23 @@ bool Parameter::isValueModifiedHelper() const
 }
 
 /*!
- * \brief Parameter::editRedeclareClassButtonClicked
- * Slot activate when mpEditRedeclareClassButton clicked signal is raised.
+ * \brief Parameter::editClassButtonClicked
+ * Slot activate when mpEditClassButton clicked signal is raised.
  * Opens ElementParameters dialog for the redeclare class.
  */
-void Parameter::editRedeclareClassButtonClicked()
+void Parameter::editClassButtonClicked()
 {
   QString type;
-  const QString value = mpValueComboBox->lineEdit()->text();
+  QString value;
+  QString defaultValue;
+  if (mValueType == Parameter::Record) {
+    value = mpValueTextBox->text();
+    defaultValue = mpValueTextBox->placeholderText();
+  } else {
+    value = mpValueComboBox->lineEdit()->text();
+    defaultValue = mpValueComboBox->lineEdit()->placeholderText();
+  }
   QString modifier = value;
-  const QString defaultValue = mpValueComboBox->lineEdit()->placeholderText();
   QString defaultModifier = defaultValue;
   ModelInstance::Modifier *pReplaceableConstrainedByModifier = 0;
   QString comment;
@@ -891,6 +915,8 @@ void Parameter::editRedeclareClassButtonClicked()
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
     type = pReplaceableClass->getBaseClass();
     pReplaceableConstrainedByModifier = pReplaceableClass->getReplaceable()->getModifier();
+  } else if (mValueType == Parameter::Record) {
+    type = mpModelInstanceElement->getType();
   }
   // parse the Modelica code of element redeclaration to get the type and modifiers
   if (value.startsWith("redeclare")) {
@@ -900,7 +926,7 @@ void Parameter::editRedeclareClassButtonClicked()
       FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(value, type, modifier, comment);
     }
   }
-  // get type as qualified path
+
   if ((mpModelInstanceElement == NULL) ||
       (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
       (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
@@ -909,7 +935,7 @@ void Parameter::editRedeclareClassButtonClicked()
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("Unable to find the redeclare class."), Helper::ok);
   }
-
+  // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName(), type);
   // if we fail to find the type
   if (qualifiedType.isEmpty()) {
@@ -935,7 +961,7 @@ void Parameter::editRedeclareClassButtonClicked()
       MainWindow::instance()->getStatusBar()->clearMessage();
       if (pElementParameters->exec() == QDialog::Accepted) {
         const QString modification = pElementParameters->getModification();
-        if (mValueType == Parameter::ReplaceableComponent) {
+        if (mValueType == Parameter::ReplaceableComponent || mValueType == Parameter::Record) {
           if (value.startsWith("redeclare")) {
             QString elementRedeclaration = "redeclare " % type % " " % mpModelInstanceElement->getName() % modification;
             if (!comment.isEmpty()) {
@@ -1542,8 +1568,8 @@ void ElementParameters::setUpDialog()
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
 
-          if (pParameter->getEditRedeclareClassButton()) {
-            pGroupBoxGridLayout->addWidget(pParameter->getEditRedeclareClassButton(), layoutIndex, columnIndex++);
+          if (pParameter->getEditClassButton()) {
+            pGroupBoxGridLayout->addWidget(pParameter->getEditClassButton(), layoutIndex, columnIndex++);
           } else {
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
