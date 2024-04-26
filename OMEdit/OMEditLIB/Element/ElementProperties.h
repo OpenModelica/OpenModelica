@@ -73,6 +73,7 @@ public:
     Enumeration,
     ReplaceableComponent,
     ReplaceableClass,
+    Record,
     Choices,
     ChoicesAllMatching
   };
@@ -107,7 +108,7 @@ public:
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
-  QToolButton *getEditRedeclareClassButton() const {return mpEditRedeclareClassButton;}
+  QToolButton *getEditClassButton() const {return mpEditClassButton;}
   FinalEachToolButton *getFinalEachMenu() const {return mpFinalEachMenuButton;}
   QToolButton* getFileSelectorButton() {return mpFileSelectorButton;}
   void setLoadSelectorFilter(QString loadSelectorFilter) {mLoadSelectorFilter = loadSelectorFilter;}
@@ -162,7 +163,7 @@ private:
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   QCheckBox *mpValueCheckBox;
-  QToolButton *mpEditRedeclareClassButton = 0;
+  QToolButton *mpEditClassButton = 0;
   FinalEachToolButton *mpFinalEachMenuButton = 0;
   QToolButton *mpFileSelectorButton;
   bool mHasDisplayUnit = false;
@@ -173,12 +174,13 @@ private:
   FinalEachToolButton *mpDisplayUnitFinalEachMenuButton = 0;
   Label *mpCommentLabel;
 
+  void createEditClassButton();
   void createValueWidget();
   void enableDisableUnitComboBox(const QString &value);
   void updateValueBinding(const FlatModelica::Expression expression);
   bool isValueModifiedHelper() const;
 public slots:
-  void editRedeclareClassButtonClicked();
+  void editClassButtonClicked();
   void fileSelectorButtonClicked();
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
