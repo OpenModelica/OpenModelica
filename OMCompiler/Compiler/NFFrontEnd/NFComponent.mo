@@ -401,7 +401,14 @@ public
     output Boolean b;
   protected
     Class cls;
-    array<InstNode> children;
+
+    function has_missing_binding
+      input InstNode component;
+      output Boolean noBinding;
+    algorithm
+      noBinding := InstNode.isComponent(component) and not hasBinding(InstNode.component(component));
+    end has_missing_binding;
+
   algorithm
     if Binding.isBound(getBinding(component)) then
       // Simple case, component has normal binding equation.
@@ -420,14 +427,9 @@ public
     end if;
 
     // Check if any child of this component is missing a binding.
-    children := ClassTree.getComponents(Class.classTree(cls));
-    for c in children loop
-      if InstNode.isComponent(c) and not hasBinding(InstNode.component(c)) then
-        b := false;
-        return;
-      end if;
-    end for;
-
+    if isSome(ClassTree.findComponent(Class.classTree(cls), has_missing_binding)) then
+      b := false;
+    end if;
 
     b := true;
   end hasBinding;
@@ -856,7 +858,15 @@ public
       return;
     end if;
 
-    fixed := fixed and Expression.isTrue(Binding.getExp(binding));
+    if Binding.hasExp(binding) then
+      fixed := fixed and Expression.isTrue(Binding.getExp(binding));
+    else
+      fixed := match binding
+        case Binding.RAW_BINDING(bindingExp = Absyn.Exp.BOOL(true))
+          then true;
+        else false;
+      end match;
+    end if;
   end getFixedAttribute;
 
   function getUnitAttribute

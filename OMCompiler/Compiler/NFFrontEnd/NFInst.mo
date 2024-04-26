@@ -1912,6 +1912,12 @@ algorithm
           if not referenceEq(attr, ty_attr) then
             InstNode.componentApply(node, Component.setAttributes, ty_attr);
           end if;
+
+          if useBinding and Binding.isUnbound(binding) and not InstContext.inFunction(context) and
+             ty_attr.variability <= Variability.PARAMETER and Restriction.isType(res) then
+            updateParameterBinding(node, context);
+          end if;
+
         end if;
       then
         ();
@@ -2243,6 +2249,35 @@ algorithm
     fail();
   end if;
 end checkRecursiveDefinition;
+
+function updateParameterBinding
+  "Tries to update the binding of a fixed parameter without binding by using the
+   parameter's start attribute."
+  input InstNode node;
+  input InstContext.Type context;
+protected
+  Component comp;
+  Binding binding;
+algorithm
+  comp := InstNode.component(node);
+
+  if not Component.getFixedAttribute(comp) or InstNode.hasBinding(node) then
+    // If the parameter is not fixed or belongs to a record with a binding, do nothing.
+    return;
+  end if;
+
+  binding := Component.getTypeAttributeBinding(comp, "start");
+
+  if Binding.isBound(binding) then
+    if not InstContext.inRelaxed(context) then
+      Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING,
+        {AbsynUtil.pathString(InstNode.scopePath((node))), Binding.toString(binding)}, InstNode.info(node));
+    end if;
+
+    comp := Component.setBinding(binding, comp);
+    InstNode.updateComponent(comp, node);
+  end if;
+end updateParameterBinding;
 
 function instDimension
   input output Dimension dimension;
