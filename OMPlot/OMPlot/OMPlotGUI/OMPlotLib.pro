@@ -18,7 +18,7 @@ TEMPLATE = lib
 win32 {
  CONFIG += staticlib
 }
-QMAKE_LFLAGS += -enable-auto-import
+QMAKE_LFLAGS += -Wl,--enable-auto-import
 
 SOURCES += Plot.cpp \
   PlotZoomer.cpp \
