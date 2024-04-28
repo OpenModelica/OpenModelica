@@ -1445,8 +1445,11 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
           memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
           memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
-          memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
           memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
+          sData->timeValue = gbData->timeRight;
+          memcpy(sData->realVars, gbData->yRight, data->modelData->nStates * sizeof(double));
+          gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+          memcpy(gbData->kRight, fODE, nStates * sizeof(double));
         }
         infoStreamPrint(LOG_SOLVER, 0, "Refined step from %10g to %10g, error fast states %10g, error interpolation %10g, new stepsize %10g",
                         gbData->time, gbData->time + gbData->lastStepSize, gbData->err_fast, error_interpolation_gb(gbData, nStates, NULL, Rtol), gbData->stepSize);
