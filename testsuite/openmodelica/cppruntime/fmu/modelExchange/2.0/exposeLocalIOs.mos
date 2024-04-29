@@ -59,7 +59,7 @@ protected
   Signaling signaling(u1 = 1);
 equation
   m.p = 1;
-  signaling.u2 = 2;
+  signaling.'u2' = 2;
   signaling.u = 3:4;
   c.f = f(c.p) + modifiedInput + signaling.y;
   connect(signaling.y, measurement);
@@ -67,19 +67,19 @@ end Component;
 
 block Signaling
   RealInput u1;
-  RealInput u2;
+  RealInput 'u2';
   RealInput[2] u;
-  RealOutput y \"unconnected IO at level 0\";
+  RealOutput y;
 equation
-  y = u1 + u2 + sum(u);
+  y = u1 + 'u2' + sum(u);
 end Signaling;
 
 model System
   Source source(use_u_in = true);
   Component component(modifiedInput = 1);
   Signaling signaling;
-  Real component_measurement = 0 \"name already in use\";
-  RealOutput y;
+  Real 'component.measurement' = 0 \"name already in use\";
+  RealOutput y \"unconnected IO at level 0\";
 equation
   y = time;
   connect(source.c, component.c);
@@ -133,72 +133,71 @@ readFile("modelDescription.tmp.xml");
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"component.m.p\"
+//     name=\"'component.measurement'\"
 //     valueReference=\"1\"
-//     description=\"unconnected IO at level 2\"
+//     description=\"name already in use\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
-//     name=\"component.modifiedInput\"
+//     name=\"'component.measurement_'\"
 //     valueReference=\"2\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     causality=\"output\"
+//     >
+//     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
-//     name=\"component_measurement\"
-//     valueReference=\"7\"
-//     description=\"name already in use\"
-//     initial=\"exact\">
+//     name=\"'signaling.\\'u2\\''\"
+//     valueReference=\"3\"
+//     causality=\"input\"
+//     >
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
-//     name=\"component_measurement_\"
-//     valueReference=\"8\"
+//     name=\"'signaling.y'\"
+//     valueReference=\"4\"
 //     causality=\"output\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
-//     name=\"signaling_u2\"
-//     valueReference=\"9\"
+//     name=\"'source.u_in'\"
+//     valueReference=\"5\"
 //     causality=\"input\"
 //     >
-//     <Real start=\"0.0\"/>
+//     <Real start=\"2.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
-//     name=\"signaling_y\"
-//     valueReference=\"10\"
-//     description=\"unconnected IO at level 0\"
+//     name=\"'source.yp'\"
+//     valueReference=\"6\"
 //     causality=\"output\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
-//     name=\"source.y[2]\"
-//     valueReference=\"11\"
-//     >
-//     <Real/>
+//     name=\"component.m.p\"
+//     valueReference=\"7\"
+//     description=\"unconnected IO at level 2\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
-//     name=\"source_u_in\"
-//     valueReference=\"12\"
-//     causality=\"input\"
-//     >
-//     <Real start=\"2.0\"/>
+//     name=\"component.modifiedInput\"
+//     valueReference=\"8\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
 //   <ScalarVariable
-//     name=\"source_yp\"
+//     name=\"source.y[2]\"
 //     valueReference=\"13\"
-//     causality=\"output\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -206,6 +205,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"14\"
+//     description=\"unconnected IO at level 0\"
 //     causality=\"output\"
 //     >
 //     <Real/>
@@ -229,99 +229,98 @@ readFile("modelDescription.tmp.xml");
 //   <!-- Index of variable = \"13\" -->
 //   <ScalarVariable
 //     name=\"component.c.p\"
-//     valueReference=\"12\"
+//     valueReference=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"14\" -->
 //   <ScalarVariable
 //     name=\"component.measurement\"
-//     valueReference=\"8\"
+//     valueReference=\"2\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"15\" -->
 //   <ScalarVariable
 //     name=\"component.simpleOutput\"
-//     valueReference=\"8\"
+//     valueReference=\"2\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"16\" -->
 //   <ScalarVariable
-//     name=\"signaling.u[1]\"
-//     valueReference=\"12\"
+//     name=\"signaling.'u2'\"
+//     valueReference=\"3\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"17\" -->
 //   <ScalarVariable
-//     name=\"signaling.u[2]\"
-//     valueReference=\"11\"
+//     name=\"signaling.u[1]\"
+//     valueReference=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"18\" -->
 //   <ScalarVariable
-//     name=\"signaling.u1\"
-//     valueReference=\"11\"
+//     name=\"signaling.u[2]\"
+//     valueReference=\"13\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"19\" -->
 //   <ScalarVariable
-//     name=\"signaling.u2\"
-//     valueReference=\"9\"
+//     name=\"signaling.u1\"
+//     valueReference=\"13\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"20\" -->
 //   <ScalarVariable
 //     name=\"signaling.y\"
-//     valueReference=\"10\"
-//     description=\"unconnected IO at level 0\"
+//     valueReference=\"4\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"21\" -->
 //   <ScalarVariable
 //     name=\"source.c.f\"
-//     valueReference=\"11\"
+//     valueReference=\"13\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"22\" -->
 //   <ScalarVariable
 //     name=\"source.c.p\"
-//     valueReference=\"12\"
+//     valueReference=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"23\" -->
 //   <ScalarVariable
 //     name=\"source.u_in\"
-//     valueReference=\"12\"
+//     valueReference=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"24\" -->
 //   <ScalarVariable
 //     name=\"source.y[1]\"
-//     valueReference=\"12\"
+//     valueReference=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"25\" -->
 //   <ScalarVariable
 //     name=\"source.yf\"
-//     valueReference=\"11\"
+//     valueReference=\"13\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"26\" -->
 //   <ScalarVariable
 //     name=\"source.yp\"
-//     valueReference=\"12\"
+//     valueReference=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -337,15 +336,15 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"6\" dependencies=\"5 8\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"9\" dependencies=\"8\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"4\" dependencies=\"3 5\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"6\" dependencies=\"5\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
 //     <InitialUnknowns>
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"6\" dependencies=\"5 8\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"9\" dependencies=\"8\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"4\" dependencies=\"3 5\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"6\" dependencies=\"5\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"27\" dependencies=\"\" dependenciesKind=\"\" />
 //     </InitialUnknowns>
