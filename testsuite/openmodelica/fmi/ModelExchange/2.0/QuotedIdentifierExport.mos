@@ -1,0 +1,146 @@
+// name: QuotedIdentifier
+// status: correct
+// teardown_command: rm -rf QuotedIdentifier_tmp
+//
+// Test compilation of C FMU containing quoted identifiers.
+// Test modelDescription.xml has valid XML code.
+
+loadFile("QuotedIdentifier.mo");getErrorString();
+
+echo(false);
+mkdir("QuotedIdentifier_tmp"); cd("QuotedIdentifier_tmp");
+echo(true);
+
+buildModelFMU(QuotedIdentifier); getErrorString();
+
+// Get ModelVariables part from modelDescription
+system("unzip -cqq QuotedIdentifier.fmu modelDescription.xml > QuotedIdentifier_modelDescription_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" QuotedIdentifier_modelDescription_tmp.xml > QuotedIdentifier_modelDescription.xml"); getErrorString();
+readFile("QuotedIdentifier_modelDescription.xml");
+
+// Result:
+// true
+// ""
+// true
+// "QuotedIdentifier.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"&apos;*/ no code injection&apos;\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"&apos;\\&apos;&apos;\"
+//     valueReference=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"&apos;\\\\\\\\\\&apos;&apos;\"
+//     valueReference=\"2\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"&apos;a&quot;b&apos;\"
+//     valueReference=\"3\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"&apos;c d&apos;\"
+//     valueReference=\"4\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"&apos;e&quot;f g&apos;\"
+//     valueReference=\"5\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"&apos;h\\&apos;i //j&apos;\"
+//     valueReference=\"6\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"&apos;stupid,name&apos;\"
+//     valueReference=\"7\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;*/ no code injection&apos;)\"
+//     valueReference=\"8\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;\\&apos;&apos;)\"
+//     valueReference=\"9\"
+//     >
+//     <Real derivative=\"2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;\\\\\\\\\\&apos;&apos;)\"
+//     valueReference=\"10\"
+//     >
+//     <Real derivative=\"3\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;a&quot;b&apos;)\"
+//     valueReference=\"11\"
+//     >
+//     <Real derivative=\"4\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;c d&apos;)\"
+//     valueReference=\"12\"
+//     >
+//     <Real derivative=\"5\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;e&quot;f g&apos;)\"
+//     valueReference=\"13\"
+//     >
+//     <Real derivative=\"6\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;h\\&apos;i //j&apos;)\"
+//     valueReference=\"14\"
+//     >
+//     <Real derivative=\"7\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"der(&apos;stupid,name&apos;)\"
+//     valueReference=\"15\"
+//     >
+//     <Real derivative=\"8\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// endResult
