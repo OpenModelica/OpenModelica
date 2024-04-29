@@ -2289,9 +2289,9 @@ algorithm
       tlio_var.binding := UNBOUND(); // value is defined with tlio_eql
       // find new name in global scope, using underscore instead of dot
       cref := tlio_var.name;
-      name := stringDelimitList(ComponentRef.toString_impl(cref, {}), "_");
+      name := stringDelimitList(ComponentRef.toString_impl(cref, {}), ".");
       while UnorderedMap.contains(tlio_var.name, variables) loop
-        tlio_node := InstNode.NAME_NODE(name);
+        tlio_node := InstNode.NAME_NODE(Util.makeQuotedIdentifier(name));
         tlio_var.name := match cref case ComponentRef.CREF() then
           ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
         end match;
