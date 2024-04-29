@@ -428,7 +428,7 @@ IDENT2 : NONDIGIT (NONDIGIT | DIGIT)* | '$cpuTime';
 
 fragment
 QIDENT :
-         '\'' (QCHAR | SESCAPE)* '\'' ;
+         '\'' (QCHAR | SESCAPE) (QCHAR | SESCAPE)* '\'' ;
 
 fragment
 QCHAR :  (DIGIT | NONDIGIT | '!' | '#' | '$' | '%' | '&' | '(' | ')'

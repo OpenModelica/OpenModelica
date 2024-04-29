@@ -1,0 +1,174 @@
+// name: QuotedIdentifier
+// status: correct
+// teardown_command: rm -rf QuotedIdentifier_tmp
+//
+// Test compilation of C FMU containing quoted identifiers.
+// Test modelDescription.xml has valid XML code.
+// Test simulation with OMSimulator.
+
+loadFile("QuotedIdentifier.mo");getErrorString();
+
+echo(false);
+mkdir("QuotedIdentifier_tmp"); cd("QuotedIdentifier_tmp");
+echo(true);
+
+buildModelFMU(QuotedIdentifier); getErrorString();
+
+// Get ModelVariables part from modelDescription
+system("unzip -cqq QuotedIdentifier.fmu modelDescription.xml > QuotedIdentifier_modelDescription_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" QuotedIdentifier_modelDescription_tmp.xml > QuotedIdentifier_modelDescription.xml"); getErrorString();
+readFile("QuotedIdentifier_modelDescription.xml");
+
+// Simulate with OMSimulator
+system(getInstallationDirectoryPath() + "/bin/OMSimulator QuotedIdentifier.fmu --mode=me --tolerance=1e-6 --resultFile=\"QuotedIdentifier_dynamic_res.mat\" --stopTime=1.0 --suppressPath=true --tempDir=\"QuotedIdentifier-dynamic-tmp\"", "QuotedIdentifier_me_systemCall.log"); getErrorString();
+readFile("QuotedIdentifier_me_systemCall.log");
+
+
+// Result:
+// true
+// ""
+// true
+// "QuotedIdentifier.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"'*/ no code injection'\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"7.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"'&lt;&amp;&gt;'\"
+//     valueReference=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"6.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"'\\''\"
+//     valueReference=\"2\"
+//     initial=\"exact\">
+//     <Real start=\"8.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"'\\\\\\\\\\''\"
+//     valueReference=\"3\"
+//     initial=\"exact\">
+//     <Real start=\"5.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"'a&quot;b'\"
+//     valueReference=\"4\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"'c d'\"
+//     valueReference=\"5\"
+//     initial=\"exact\">
+//     <Real start=\"2.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"'e&quot;f g'\"
+//     valueReference=\"6\"
+//     initial=\"exact\">
+//     <Real start=\"3.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"'h\\'i //j'\"
+//     valueReference=\"7\"
+//     initial=\"exact\">
+//     <Real start=\"4.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"'stupid,name'\"
+//     valueReference=\"8\"
+//     initial=\"exact\">
+//     <Real start=\"9.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"der('*/ no code injection')\"
+//     valueReference=\"9\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"der('&lt;&amp;&gt;')\"
+//     valueReference=\"10\"
+//     >
+//     <Real derivative=\"2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"der('\\'')\"
+//     valueReference=\"11\"
+//     >
+//     <Real derivative=\"3\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"der('\\\\\\\\\\'')\"
+//     valueReference=\"12\"
+//     >
+//     <Real derivative=\"4\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"der('a&quot;b')\"
+//     valueReference=\"13\"
+//     >
+//     <Real derivative=\"5\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"der('c d')\"
+//     valueReference=\"14\"
+//     >
+//     <Real derivative=\"6\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"der('e&quot;f g')\"
+//     valueReference=\"15\"
+//     >
+//     <Real derivative=\"7\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"17\" -->
+//   <ScalarVariable
+//     name=\"der('h\\'i //j')\"
+//     valueReference=\"16\"
+//     >
+//     <Real derivative=\"8\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"18\" -->
+//   <ScalarVariable
+//     name=\"der('stupid,name')\"
+//     valueReference=\"17\"
+//     >
+//     <Real derivative=\"9\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// 0
+// ""
+// "info:    maximum step size for 'model.root': 0.002000
+// info:    Result file: QuotedIdentifier_dynamic_res.mat (bufferSize=1)
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
+//          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult
