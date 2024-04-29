@@ -5243,9 +5243,9 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorU%>
       <%vectorY%>
       "\n"
-      <%getVarName(vars.stateVars, "x")%>
-      <%getVarName(vars.inputVars, "u")%>
-      <%getVarName(vars.outputVars, "y")%>
+      <%getVarNameC(vars.stateVars, "x")%>
+      <%getVarNameC(vars.inputVars, "u")%>
+      <%getVarNameC(vars.outputVars, "y")%>
       "equation\n"
       "  der(x) = A * x + B * u;\n"
       "  y = C * x + D * u;\n"
@@ -5274,10 +5274,10 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorY%>
       <%vectorZ%>
       "\n"
-      <%getVarName(vars.stateVars, "x")%>
-      <%getVarName(vars.inputVars, "u")%>
-      <%getVarName(vars.outputVars, "y")%>
-      <%getVarName(vars.algVars, "z")%>
+      <%getVarNameC(vars.stateVars, "x")%>
+      <%getVarNameC(vars.inputVars, "u")%>
+      <%getVarNameC(vars.outputVars, "y")%>
+      <%getVarNameC(vars.algVars, "z")%>
       "equation\n"
       "  der(x) = A * x + B * u;\n"
       "  y = C * x + D * u;\n"
@@ -5415,17 +5415,18 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
   end match
 end functionlinearmodelPython;
 
-template getVarName(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a varables."
+template getVarNameC(list<SimVar> simVars, String arrayName)
+  "template getVarNameC
+   Generates name for a variable inside a C string."
 ::=
   simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
-      <<"  Real '<%arrayName%>_<%crefStrNoUnderscore(name)%>' = <%arrayName%>[<%arrindex%>];\n">>
+      <<"  Real '<%arrayName%>_<%Util.escapeModelicaStringToCString(escapeSingleQuoteIdent(crefStrNoUnderscore(name)))%>' = <%arrayName%>[<%arrindex%>];\n">>
     end match) ;separator="\n"
-end getVarName;
+end getVarNameC;
 
 template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a varables."
+  Generates name for a variable."
 ::=
   simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
@@ -5434,7 +5435,7 @@ template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getV
 end getVarNameMatlab;
 
 template getVarNamePython(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a variables."
+  Generates name for a variable."
 ::=
   simVars |> var hasindex arrindex fromindex 0 => (match var
     case SIMVAR(__) then
@@ -5443,7 +5444,7 @@ template getVarNamePython(list<SimVar> simVars, String arrayName) "template getV
 end getVarNamePython;
 
 template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a varables."
+  Generates name for a variable."
 ::=
   simVars |> var hasindex arrindex fromindex 0 => (match var
     case SIMVAR(__) then

@@ -107,14 +107,12 @@ template crefStrNoUnderscore(ComponentRef cr)
  "Generates the name of a variable for variable name array.
   However does not use underscores on qualified names.
   a.b not a._b.
-  Escaping single and double quotes from quoted identifiers.
 
-  Used for generating variable names that are exported e.g. xml files"
+  Used for generating variable names that are exported e.g. to xml files"
 ::=
   match cr
   case CREF_IDENT(__) then
-    let escapedIdent = Util.escapeModelicaStringToCString(escapeSingleQuoteIdent(ident))
-    '<%escapedIdent%><%subscriptsStr(subscriptLst)%>'
+    '<%ident%><%subscriptsStr(subscriptLst)%>'
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrNoUnderscore(componentRef)%>)'
   case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStrNoUnderscore(componentRef)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStrNoUnderscore(componentRef)%>'

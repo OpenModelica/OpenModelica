@@ -3216,7 +3216,7 @@ end plotParametric;
 
 function readSimulationResult "Reads a result file, returning a matrix corresponding to the variables and size given."
   input String filename;
-  input VariableNames variables;
+  input VariableNames variables "e.g. {a.b, a[1].b[3].c}, or a single VariableName";
   input Integer size = 0 "0=read any size... If the size is not the same as the result-file, this function fails";
   output Real result[:,:];
 external "builtin";
