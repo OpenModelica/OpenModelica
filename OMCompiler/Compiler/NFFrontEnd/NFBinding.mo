@@ -834,5 +834,18 @@ public
     end match;
   end isEvaluated;
 
+  function hasTypeOrigin
+    input Binding binding;
+    output Boolean res;
+  algorithm
+    res := match binding
+      case RAW_BINDING()
+        guard not listEmpty(binding.subs)
+        then Subscript.isSplitClassProxy(listHead(binding.subs));
+
+      else false;
+    end match;
+  end hasTypeOrigin;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;
