@@ -1153,6 +1153,7 @@ TypenameInvalid2.mo \
 TypenameInvalid3.mo \
 UnboundParameter1.mo \
 UnboundParameter2.mo \
+UnboundParameter3.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \

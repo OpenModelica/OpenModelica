@@ -2268,7 +2268,7 @@ algorithm
 
   binding := Component.getTypeAttributeBinding(comp, "start");
 
-  if Binding.isBound(binding) then
+  if Binding.isBound(binding) and not Binding.hasTypeOrigin(binding) then
     if not InstContext.inRelaxed(context) then
       Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING,
         {AbsynUtil.pathString(InstNode.scopePath((node))), Binding.toString(binding)}, InstNode.info(node));
