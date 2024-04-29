@@ -906,7 +906,6 @@ algorithm
   // C cannot handle newline in string constants
   xmlString := System.stringReplace(modelicaString, "&", "&amp;");
   xmlString := System.stringReplace(xmlString, "\"", "&quot;");
-  xmlString := System.stringReplace(xmlString, "\'", "&apos;");
   xmlString := System.stringReplace(xmlString, "<", "&lt;");
   xmlString := System.stringReplace(xmlString, ">", "&gt;");
   xmlString := System.stringReplace(xmlString, "\n", "&#10;");
