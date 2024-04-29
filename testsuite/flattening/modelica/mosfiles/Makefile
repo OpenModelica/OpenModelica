@@ -29,6 +29,7 @@ NotbasicType.mos NotbasicType2.mos \
 OverloadingFunc.mos \
 QuotedFunction.mos \
 QuotedIdentifier.mos \
+QuotedIdentifierCSV.mos \
 Return.mos \
 StringArrayReturn.mos \
 TestLoadModel.mos \
