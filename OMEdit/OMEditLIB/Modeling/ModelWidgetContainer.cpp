@@ -7988,6 +7988,40 @@ void ModelWidget::associateBusWithConnectors(QString busName)
   associateBusWithConnectors(pDiagramBusComponent, mpDiagramGraphicsView);
 }
 
+const QString modelicaBlocksInterfacesRealInput = "Modelica.Blocks.Interfaces.RealInput";
+const QString modelicaBlocksInterfacesRealOutput = "Modelica.Blocks.Interfaces.RealOutput";
+
+void walkMe(ModelInstance::Model *model, QStringList &inputVariables, QStringList &outputVariables, QStringList &parameters, QStringList &auxVariables)
+{
+  if (model == NULL) return;
+
+  for (ModelInstance::Element *element : model->getElements())
+    if (element->isComponent()) {
+      QString causality = element->getDirectionPrefix();
+      QString variability = element->getVariability();
+      const bool classNameIsReal = element->getType().compare(QStringLiteral("Real")) == 0;
+      QString ty = element->getType();
+      QString qn = element->getQualifiedName();
+      // printf("C: %s %s %s %s\n", causality.toUtf8().constData(), variability.toUtf8().constData(), ty.toUtf8().constData(), qn.toUtf8().constData());
+      if (causality.compare(QStringLiteral("input")) == 0) {
+        if (classNameIsReal || ty.compare(modelicaBlocksInterfacesRealInput) == 0) {
+          inputVariables.append(qn);
+        }
+      } else if (causality.compare(QStringLiteral("output")) == 0) {
+        if (classNameIsReal || ty.compare(modelicaBlocksInterfacesRealOutput) == 0) {
+          outputVariables.append(qn);
+        }
+      } else if(classNameIsReal && variability.compare(QStringLiteral("parameter")) == 0) {
+        parameters.append(element->getQualifiedName());
+      } else if (classNameIsReal) { /* Otherwise we are dealing with an auxiliarly variable */
+        auxVariables.append(qn);
+      }
+      walkMe(element->getModel(), inputVariables, outputVariables, parameters, auxVariables);
+    } else if (element->isExtend()) {
+      walkMe(element->getModel(), inputVariables, outputVariables, parameters, auxVariables);
+    }
+}
+
 /*!
  * \brief ModelWidget::toOMSensData
  * Creates a list of QVariant containing the model information needed by OMSens.
@@ -8000,39 +8034,38 @@ QList<QVariant> ModelWidget::toOMSensData()
   if (!mpDiagramGraphicsView) {
     return omSensData;
   }
+
   QStringList inputVariables;
   QStringList outputVariables;
   QStringList parameters;
   QStringList auxVariables;
-  const QString modelicaBlocksInterfacesRealInput = "Modelica.Blocks.Interfaces.RealInput";
-  const QString modelicaBlocksInterfacesRealOutput = "Modelica.Blocks.Interfaces.RealOutput";
-  QList<Element*> pInheritedAndComposedComponents;
-  QList<Element*> pTopMostComponents = mpDiagramGraphicsView->getElementsList() + mpDiagramGraphicsView->getInheritedElementsList();
-  for (Element *pComponent : pTopMostComponents) {
-    pInheritedAndComposedComponents = pComponent->getElementsList() + pComponent->getInheritedElementsList();
-    pInheritedAndComposedComponents.append(pComponent);
-    for (auto component : pInheritedAndComposedComponents) {
-      QString causality, variability;
-      if (isNewApi()) {
-        causality = component->getModelComponent()->getDirectionPrefix();
-        variability = component->getModelComponent()->getVariability();
-      } else {
-        causality = component->getElementInfo()->getCausality();
-        variability = component->getElementInfo()->getVariablity();
-      }
-      const bool classNameIsReal = component->getClassName().compare(QStringLiteral("Real")) == 0;
-      if (causality.compare(QStringLiteral("input")) == 0) {
-        if (classNameIsReal || component->getClassName().compare(modelicaBlocksInterfacesRealInput) == 0) {
-          inputVariables.append(component->getName());
+
+  if (isNewApi()) {
+    walkMe(getModelInstance(), inputVariables, outputVariables, parameters, auxVariables);
+  } else {
+    QList<Element*> pInheritedAndComposedComponents;
+    QList<Element*> pTopMostComponents = mpDiagramGraphicsView->getElementsList() + mpDiagramGraphicsView->getInheritedElementsList();
+    for (Element *pComponent : pTopMostComponents) {
+      pInheritedAndComposedComponents = pComponent->getElementsList() + pComponent->getInheritedElementsList();
+      pInheritedAndComposedComponents.append(pComponent);
+      for (auto element : pInheritedAndComposedComponents) {
+        QString causality, variability;
+        causality = element->getElementInfo()->getCausality();
+        variability = element->getElementInfo()->getVariablity();
+        const bool classNameIsReal = element->getClassName().compare(QStringLiteral("Real")) == 0;
+        if (causality.compare(QStringLiteral("input")) == 0) {
+          if (classNameIsReal || element->getClassName().compare(modelicaBlocksInterfacesRealInput) == 0) {
+            inputVariables.append(element->getName());
+          }
+        } else if (causality.compare(QStringLiteral("output")) == 0) {
+          if (classNameIsReal || element->getClassName().compare(modelicaBlocksInterfacesRealOutput) == 0) {
+            outputVariables.append(element->getName());
+          }
+        } else if(classNameIsReal && variability.compare(QStringLiteral("parameter")) == 0) {
+          parameters.append(element->getName());
+        } /* Otherwise we are dealing with an auxiliarly variable */else if (classNameIsReal) {
+          auxVariables.append(element->getName());
         }
-      } else if (causality.compare(QStringLiteral("output")) == 0) {
-        if (classNameIsReal || component->getClassName().compare(modelicaBlocksInterfacesRealOutput) == 0) {
-          outputVariables.append(component->getName());
-        }
-      } else if(classNameIsReal && variability.compare(QStringLiteral("parameter")) == 0) {
-        parameters.append(component->getName());
-      } /* Otherwise we are dealing with an auxiliarly variable */else if (classNameIsReal) {
-        auxVariables.append(component->getName());
       }
     }
   }
