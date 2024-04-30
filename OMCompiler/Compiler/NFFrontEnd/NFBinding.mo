@@ -788,6 +788,21 @@ public
     end match;
   end propagate;
 
+  function unpropagate
+    input output Binding binding;
+    input InstNode node;
+  algorithm
+    () := match binding
+      case RAW_BINDING()
+        algorithm
+          binding.subs := list(s for s guard not Subscript.isSplitFromOrigin(s, node) in binding.subs);
+        then
+          ();
+
+      else ();
+    end match;
+  end unpropagate;
+
   function source
     input Binding binding;
     output Source source;
