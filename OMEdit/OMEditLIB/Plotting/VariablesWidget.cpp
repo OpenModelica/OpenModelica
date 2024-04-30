@@ -608,13 +608,14 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
         // we need the following flag becasuse hideResult value can be empty.
         bool hideResultIsFalse = scalarVariable.value("hideResult").compare(QStringLiteral("false")) == 0;
         bool isProtected = scalarVariable.value("isProtected").compare(QStringLiteral("true")) == 0;
+        bool isEncryptedFile = scalarVariable.value("fileName").endsWith(".moc");
         /* Skip variables,
          *   1. If ignoreHideResult is not set and hideResult is true.
-         *   2. If emit protected flag is false and variable is protected OR if encrytped model.
+         *   2. If emit protected flag is false and variable is protected OR if variable belongs to an encrytped model.
          *      If hideResult is false for protected variable then we show it.
          */
         if ((ignoreHideResult || !hideResultIsTrue)
-            && ((protectedVariables && !simulationOptions.getFileName().endsWith(".moc")) || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
+            && ((protectedVariables && !isEncryptedFile) || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
           mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
           if (addVariablesToList) {
             variablesList->append(scalarVariable.value("name"));
@@ -1163,6 +1164,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
   scalarVariable["variability"] = attributes.value("variability").toString();
   scalarVariable["hideResult"] = attributes.value("hideResult").toString();
   scalarVariable["isProtected"] = attributes.value("isProtected").toString();
+  scalarVariable["fileName"] = attributes.value("fileName").toString();
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
   while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable")) {
