@@ -766,7 +766,6 @@ package SimCode
   uniontype ModelInfo
     record MODELINFO
       Absyn.Path name;
-      String fileName;
       String description;
       String directory;
       VarInfo varInfo;
@@ -1433,11 +1432,6 @@ package SimCodeUtil
     input DAE.Exp exp;
     output DAE.Exp nom;
   end getExpNominal;
-
-  function isMocFile
-    input String fileName;
-    output Integer result;
-  end isMocFile;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
