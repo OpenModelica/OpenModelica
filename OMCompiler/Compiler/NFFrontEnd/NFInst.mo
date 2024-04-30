@@ -2274,6 +2274,7 @@ algorithm
         {AbsynUtil.pathString(InstNode.scopePath((node))), Binding.toString(binding)}, InstNode.info(node));
     end if;
 
+    binding := Binding.unpropagate(binding, node);
     comp := Component.setBinding(binding, comp);
     InstNode.updateComponent(comp, node);
   end if;
