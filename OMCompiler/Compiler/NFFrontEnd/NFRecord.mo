@@ -125,6 +125,7 @@ algorithm
   end try;
 
   next_context := InstContext.set(context, NFInstContext.RELAXED);
+  next_context := InstContext.set(next_context, NFInstContext.FUNCTION);
   recordNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), recordNode);
   recordNode := Inst.instantiate(recordNode, context = next_context);
   Inst.instExpressions(recordNode, context = next_context);
