@@ -994,6 +994,7 @@ RecordBinding13.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \
+RecordConstructor4.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
 RecordUnknownDim1.mo \
