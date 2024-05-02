@@ -679,18 +679,24 @@ protected
         // create replacements from strong components
         Replacements.simple(comps, replacements);
         var_lst := VariablePointers.toList(vars);
-        print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
+        end if;
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
           eq := Equation.makeAssignment(BVariable.getVarName(var), rhs, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
           (solved_eq,_,status, invertRelation) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
           collector := collector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
-        print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
+        end if;
         setNewAttributes(Pointer.access(var_to_keep), collector, set);
         checkNominalThreshold(collector.nominal_map, set);
         errorcasesStateTearing(collector.stateSelect_map, collector.tearingSelect_map, set);
-        print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
+        end if;
       then replacements;
     end match;
   end createReplacementRules;
@@ -1064,8 +1070,6 @@ protected
 
     end if;
 
-
-    print(Variable.toString(Pointer.access(var_ptr)) + " test\n");
      _ := match Pointer.access(var_ptr)
         local
           Variable var = Pointer.access(var_ptr);
@@ -1116,7 +1120,7 @@ protected
       else ();
     end match;
     //print(Type.toString(Variable.typeOf(Pointer.access(var_ptr))) + " probe\n");
-    print("Ranking: "+String(rating)+"\n\n");
+    //print("Ranking: "+String(rating)+"\n\n");
   end rateVar;
 
   uniontype AttributeCollector
