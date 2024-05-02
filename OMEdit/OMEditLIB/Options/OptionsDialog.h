@@ -1112,33 +1112,35 @@ class CRMLPage : public QWidget
   Q_OBJECT
 public:
   CRMLPage(OptionsDialog *pOptionsDialog);
-  QLineEdit* getCRMLCompilerJarTextBox() {return mpCRMLCompilerJarTextBox;}
-  QLineEdit* getCRMLRepositoryDirectoryTextBox() {return mpCRMLRepositoryDirectoryTextBox;}
-  QLineEdit* getCRMLCompilerCommandLineOptionsTextBox() {return mpCRMLCompilerCommandLineOptionsTextBox;}
-  QLineEdit* getCRMLCompilerProcessTextBox() {return mpCRMLCompilerProcessTextBox;}
+  QLineEdit* getCompilerJarTextBox() {return mpCompilerJarTextBox;}
+  QLineEdit* getRepositoryDirectoryTextBox() {return mpRepositoryDirectoryTextBox;}
+  QLineEdit* getCompilerCommandLineOptionsTextBox() {return mpCompilerCommandLineOptionsTextBox;}
+  QLineEdit* getCompilerProcessTextBox() {return mpCompilerProcessTextBox;}
+  PathSelector* getModelicaLibraryPaths() {return mpModelicaLibraryPaths;}
   PathSelector* getCRMLLibraryPaths() {return mpCRMLLibraryPaths;}
 private:
   OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpCRMLGroupBox;
-  Label *mpCRMLCompilerJarLabel;
-  QLineEdit *mpCRMLCompilerJarTextBox;
-  QPushButton *mpBrowseCRMLCompilerJarButton;
-  Label *mpCRMLRepositoryDirectoryLabel;
-  QLineEdit *mpCRMLRepositoryDirectoryTextBox;
-  QPushButton *mpBrowseCRMLRepositoryDirectoryButton;
-  Label *mpCRMLCompilerCommandLineOptionsLabel;
-  QLineEdit *mpCRMLCompilerCommandLineOptionsTextBox;
-  Label *mpCRMLCompilerProcessLabel;
-  QLineEdit *mpCRMLCompilerProcessTextBox;
-  QPushButton *mpBrowseCRMLCompilerProcessButton;
-  QPushButton *mpResetCRMLCompilerProcessButton;
+  QGroupBox *mpGroupBox;
+  Label *mpCompilerJarLabel;
+  QLineEdit *mpCompilerJarTextBox;
+  QPushButton *mpBrowseCompilerJarButton;
+  Label *mpRepositoryDirectoryLabel;
+  QLineEdit *mpRepositoryDirectoryTextBox;
+  QPushButton *mpBrowseRepositoryDirectoryButton;
+  Label *mpCompilerCommandLineOptionsLabel;
+  QLineEdit *mpCompilerCommandLineOptionsTextBox;
+  Label *mpCompilerProcessLabel;
+  QLineEdit *mpCompilerProcessTextBox;
+  QPushButton *mpBrowseCompilerProcessButton;
+  QPushButton *mpResetCompilerProcessButton;
+  PathSelector *mpModelicaLibraryPaths;
   PathSelector *mpCRMLLibraryPaths;
 
 private slots:
-  void browseCRMLCompilerJar();
-  void browseCRMLRepositoryDirectory();
-  void browseCRMLCompilerProcessFile();
-  void resetCRMLCompilerProcessPath();
+  void browseCompilerJar();
+  void browseRepositoryDirectory();
+  void browseCompilerProcessFile();
+  void resetCompilerProcessPath();
 };
 
 class MOSPage : public QWidget

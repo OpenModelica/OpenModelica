@@ -1039,6 +1039,7 @@ void loadCRMLLibs(LibraryWidget *pLibraryWidget) {
     for (const auto& p : paths) {
       QString fn(p + QDir::separator() + l);
       QFile f(fn);
+      fn = fn.replace("\\", "/");
       if (f.exists()) {
         // do not load it again if it exists already
         if (!pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fn, 1))
@@ -1074,6 +1075,7 @@ void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
   QString fileName = fi.absoluteDir().absolutePath() + QDir::separator() + "generated" + QDir::separator() + fi.fileName();
   fileName = fileName.remove(fileName.lastIndexOf(".crml"), 5);
   fileName += ".mo";
+  fileName = fileName.replace("\\", "/");
   mpLibraryWidget->openFile(fileName, Helper::utf8, false, true);
   // now open it if we can find it in the tree!
   LibraryTreeItem *pMOLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);

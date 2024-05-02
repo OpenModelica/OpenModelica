@@ -218,7 +218,9 @@ namespace OptionsDefaults
   }
 
   namespace CRML {
-    QString libraryPaths = "";
+    QString modelicaLibraryPaths = "";
+    QStringList modelicaLibraries = {"CRML.mo", "CRMLtoModelica.mo", "CRML_test/package.mo"};
+    QString crmlLibraryPaths = "";
     QString repositoryDirectory = "";
     QString compilerJar = "crml-compiler-all.jar";
     QString commandLineOptions = "";
