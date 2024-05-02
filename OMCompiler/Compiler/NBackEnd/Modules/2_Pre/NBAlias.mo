@@ -701,9 +701,9 @@ protected
     input AttributeCollector attrcollector;
     input AliasSet set;
   protected
-    Expression new_start;
     list<Expression> lst;
-    Option<Expression> new_min, new_max;
+    Option<ComponentRef> new_cref;
+    Option<Expression> new_min, new_max, new_start;
     Option<StateSelect> new_stateSelect;
     Option<TearingSelect> new_tearingSelect;
     UnorderedMap<ComponentRef, Expression> fixed_start_map;
@@ -719,16 +719,20 @@ protected
     end if;
     fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
     if UnorderedMap.size(fixed_start_map) == 1 then
-      {new_start} := UnorderedMap.valueList(fixed_start_map);
+      new_start := SOME(List.first(UnorderedMap.valueList(fixed_start_map)));
       Pointer.update(var_to_keep, BVariable.setFixed2(Pointer.access(var_to_keep)));
-      Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), new_start));
+      Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start)));
     end if;
-    new_stateSelect := chooseStateSelect(attrcollector.stateSelect_map);
-    if Util.isSome(new_stateSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map))then // only update stateSelect value, if var_to_keep has a stateSelect value
+    (new_cref, new_stateSelect) := chooseStateSelect(attrcollector.stateSelect_map);
+    if Util.isSome(new_stateSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
       Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect)));
+      if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then // start value of var with StateSelect = always is stronger than start value of fixed var
+        new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
+        Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start)));
+      end if;
     end if;
     new_tearingSelect := chooseTearingSelect(attrcollector.tearingSelect_map);
-    if Util.isSome(new_tearingSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map))then // only update tearingSelect value, if var_to_keep has a tearingSelect value
+    if Util.isSome(new_tearingSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
       Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect)));
     end if;
   end setNewAttributes;
@@ -835,7 +839,7 @@ protected
     input AliasSet set;
     output UnorderedMap<ComponentRef, Expression> fixed_start_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
   protected
-    list<tuple<ComponentRef, Expression>> fixed_lst;
+    list<tuple<ComponentRef, Expression>> fixed_lst = UnorderedMap.toList(fixed_map);
     list<Expression> start_lst = UnorderedMap.valueList(start_map);
     list<Expression> fixed_start_lst;
     Integer count_fixed = 0;
@@ -843,7 +847,6 @@ protected
     ComponentRef cref;
     Expression sval, fval;
   algorithm
-    fixed_lst := UnorderedMap.toList(fixed_map);
     for tpl in fixed_lst loop
       (cref,fval) := tpl;
       if Expression.isTrue(fval) then
@@ -930,7 +933,7 @@ protected
     input AliasSet set;
   algorithm
     stateSelectAlways(stateSelect_map, set);
-    // maybe function which shows a warning if the case TearingSelect.ALWAYS = TearingSelect.NEVER occurs -> different values (notification)
+    diffTearingSelect(tearingSelect_map, set);
   end errorcasesStateTearing;
 
   function stateSelectAlways
@@ -949,7 +952,7 @@ protected
     if count > 1 then
       if Flags.isSet(Flags.DUMP_REPL) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always!" + AliasSet.toString(set)
-                            + "\n\tStateSelect map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString,"\n\t")});
+                         + "\n\tStateSelect map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString,"\n\t")});
         fail();
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always! Use -d=dumprepl for more information."});
@@ -958,27 +961,50 @@ protected
     end if;
   end stateSelectAlways;
 
-  function chooseStateSelect //##############################
+  function diffTearingSelect
+    "Shows a notification if there are different TearingSelect values."
+    input UnorderedMap<ComponentRef, TearingSelect> map;
+    input AliasSet set;
+  protected
+    list<TearingSelect> lst_values = UnorderedMap.valueList(map);
+  algorithm
+    if listLength(List.unique(lst_values)) > 1 then // if length = 1, then all values are the same
+      if Flags.isSet(Flags.DUMP_REPL) then
+        Error.addCompilerNotification("There are different TearingSelect values." + AliasSet.toString(set) + "\n\tTearingSelect map:\n\t"
+                                      + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString,"\n\t"));
+      else
+        Error.addCompilerNotification("There are different TearingSelect values. Use -d=dumprepl for more information.");
+      end if;
+    end if;
+  end diffTearingSelect;
+
+  function chooseStateSelect
     "Chooses the StateSelect value with the highest rank among all StateSelect values."
     input UnorderedMap<ComponentRef, StateSelect> map;
-    output Option<StateSelect> chosen_val;
     output Option<ComponentRef> chosen_cref;
+    output Option<StateSelect> chosen_val;
   protected
     list<tuple<ComponentRef,StateSelect>> lst_values = UnorderedMap.toList(map);
-    StateSelect state_select;
+    StateSelect sval, state_select = StateSelect.NEVER;
+    ComponentRef compref, cref;
   algorithm
     if listLength(lst_values) == 0 then
       chosen_val := NONE();
+      chosen_cref := NONE();
     elseif listLength(lst_values) == 1 then
-      chosen_val := SOME(List.first(lst_values));
+      (compref, sval) := List.first(lst_values);
+      chosen_val := SOME(sval);
+      chosen_cref := SOME(compref);
     else
-      state_select := StateSelect.NEVER;
-      for val in lst_values loop
-        if val > state_select then
-          state_select := val;
+      for tpl in lst_values loop
+        (cref,sval) := tpl;
+        if sval > state_select then
+          state_select := sval;
+          compref := cref;
         end if;
       end for;
       chosen_val := SOME(state_select);
+      chosen_cref := SOME(compref);
     end if;
   end chooseStateSelect;
 
@@ -1072,7 +1098,7 @@ protected
         end if;
         if Util.isSome(attr.stateSelect) then
           stateSelect_val := Util.getOption(attr.stateSelect);
-          if stateSelect_val == BackendExtension.StateSelect.ALWAYS then
+          if stateSelect_val == StateSelect.ALWAYS then
             rating := rating + 100;
           end if;
           UnorderedMap.add(BVariable.getVarName(var_ptr), stateSelect_val, attrcollector.stateSelect_map);
@@ -1115,10 +1141,10 @@ protected
       array_maps := listArray({attrcollector.min_val_map, attrcollector.max_val_map, attrcollector.start_map, attrcollector.fixed_map, attrcollector.nominal_map});
       array_names := listArray({"Min map", "Max map", "Start map", "Fixed map", "Nominal map"});
       for i in 1:arrayLength(array_names) loop
-        str := str + arrayGet(array_names, i) + ":\n"+ UnorderedMap.toString(array_maps[i], ComponentRef.toString, Expression.toString ) + "\n";
+        str := str + arrayGet(array_names, i) + ":\n\t"+ UnorderedMap.toString(array_maps[i], ComponentRef.toString, Expression.toString, "\n\t") + "\n";
       end for;
-      str := str + "StateSelect map" + ":\n"+ UnorderedMap.toString(attrcollector.stateSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString) + "\n";
-      str := str + "TearingSelect map" + ":\n"+ UnorderedMap.toString(attrcollector.tearingSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString) + "\n";
+      str := str + "StateSelect map" + ":\n\t"+ UnorderedMap.toString(attrcollector.stateSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString, "\n\t") + "\n";
+      str := str + "TearingSelect map" + ":\n\t"+ UnorderedMap.toString(attrcollector.tearingSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString, "\n\t") + "\n";
     end toString;
 
     function fixValues
