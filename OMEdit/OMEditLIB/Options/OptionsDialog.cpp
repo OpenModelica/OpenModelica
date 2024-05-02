@@ -1428,10 +1428,10 @@ void OptionsDialog::readCRMLSettings()
     mpCRMLPage->getCRMLCompilerProcessTextBox()->setText(OptionsDefaults::CRML::process);
   }
 
-  if (mpSettings->contains("crml/libraryPaths")) {
-    mpCRMLPage->getCRMLLibraryPaths()->setText(mpSettings->value("crml/libraryPaths").toString());
+  if (mpSettings->contains("crml/modelicaLibraryPaths")) {
+    mpCRMLPage->getCRMLLibraryPaths()->setText(mpSettings->value("crml/modelicaLibraryPaths").toString());
   } else {
-    mpCRMLPage->getCRMLLibraryPaths()->setText(OptionsDefaults::CRML::libraryPaths);
+    mpCRMLPage->getCRMLLibraryPaths()->setText(OptionsDefaults::CRML::modelicaLibraryPaths);
   }
 }
 
@@ -3166,10 +3166,10 @@ void OptionsDialog::saveCRMLSettings()
   }
 
   QString libraries = mpCRMLPage->getCRMLLibraryPaths()->text();
-  if (libraries.compare(OptionsDefaults::CRML::libraryPaths) == 0) {
-    mpSettings->remove("crml/libraryPaths");
+  if (libraries.compare(OptionsDefaults::CRML::modelicaLibraryPaths) == 0) {
+    mpSettings->remove("crml/modelicaLibraryPaths");
   } else {
-    mpSettings->setValue("crml/libraryPaths", libraries);
+    mpSettings->setValue("crml/modelicaLibraryPaths", libraries);
   }
 }
 
