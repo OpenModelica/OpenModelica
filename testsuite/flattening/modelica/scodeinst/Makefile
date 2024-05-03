@@ -90,6 +90,8 @@ BuiltinAttribute21.mo \
 BuiltinAttribute22.mo \
 BuiltinAttribute23.mo \
 BuiltinAttribute24.mo \
+BuiltinAttribute25.mo \
+BuiltinAttribute26.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
