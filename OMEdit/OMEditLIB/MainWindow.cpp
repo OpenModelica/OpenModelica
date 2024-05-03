@@ -1669,10 +1669,9 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     if (!fileInfo.exists()) return;
     OMPlot::PlotWindow *pPlotWindow = pMainWindow->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow && !externalWindow) {
-      if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOT && strcmp(plotType, "plotparametric") == 0) {
+      if (pPlotWindow->isPlot() && strcmp(plotType, "plotparametric") == 0) {
         pMainWindow->getPlotWindowContainer()->addParametricPlotWindow();
-      } else if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOTPARAMETRIC &&
-                 ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0))) {
+      } else if (pPlotWindow->isPlotParametric() && ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0))) {
         pMainWindow->getPlotWindowContainer()->addPlotWindow();
       }
     } else if (externalWindow || pMainWindow->getPlotWindowContainer()->subWindowList().size() == 0) {

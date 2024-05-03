@@ -574,7 +574,7 @@ void PlotWindowContainer::exportVariables()
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("No plot window is active for exporting variables."), Helper::ok);
     return;
   }
-  if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+  if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot export parametric plot."), Helper::ok);
     return;
   }
