@@ -139,6 +139,7 @@ public:
   bool isPlotInteractive() const {return mPlotType == PlotWindow::PLOTINTERACTIVE;}
   bool isPlotArray() const {return mPlotType == PlotWindow::PLOTARRAY;}
   bool isPlotArrayParametric() const {return mPlotType == PlotWindow::PLOTARRAYPARAMETRIC;}
+  PlotType getPlotType() const {return mPlotType;}
   void initializeFile(QString file);
   void getStartStopTime(double &start, double &stop);
   void setupToolbar();
