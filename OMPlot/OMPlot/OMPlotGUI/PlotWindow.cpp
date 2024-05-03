@@ -182,11 +182,6 @@ void PlotWindow::setPlotType(PlotType type)
   mPlotType = type;
 }
 
-PlotWindow::PlotType PlotWindow::getPlotType()
-{
-  return mPlotType;
-}
-
 void PlotWindow::initializeFile(QString file)
 {
   mFile.setFileName(file);
@@ -395,7 +390,7 @@ void PlotWindow::setupToolbar()
 void PlotWindow::plot(PlotCurve *pPlotCurve)
 {
   QString currentLine;
-  if (mVariablesList.isEmpty() && getPlotType() == PlotWindow::PLOT)
+  if (mVariablesList.isEmpty() && isPlot())
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
 
   bool editCase = pPlotCurve ? true : false;
@@ -426,7 +421,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       if (currentLine.contains("DataSet:"))
       {
         currentVariable = currentLine.remove("DataSet: ");
-        if (mVariablesList.contains(currentVariable) || getPlotType() == PlotWindow::PLOTALL)
+        if (mVariablesList.contains(currentVariable) || isPlotAll())
         {
           variablesPlotted.append(currentVariable);
           if (!editCase) {
@@ -451,13 +446,13 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           mpPlot->replot();
         }
         // if plottype is PLOT and we have read all the variable we need to plot then simply break the loop
-        if (getPlotType() == PlotWindow::PLOT)
-          if (mVariablesList.size() == variablesPlotted.size())
-            break;
+        if (isPlot() && mVariablesList.size() == variablesPlotted.size()) {
+          break;
+        }
       }
     }
     // if plottype is PLOT then check which requested variables are not found in the file
-    if (getPlotType() == PlotWindow::PLOT)
+    if (isPlot())
       checkForErrors(mVariablesList, variablesPlotted);
     // close the file
     mFile.close();
@@ -488,7 +483,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     // read in all values
     for (int i = 0; i < csvReader->numvars; i++)
     {
-      if (mVariablesList.contains(csvReader->variables[i]) || getPlotType() == PlotWindow::PLOTALL)
+      if (mVariablesList.contains(csvReader->variables[i]) || isPlotAll())
       {
         variablesPlotted.append(csvReader->variables[i]);
         double *vals = read_csv_dataset(csvReader, csvReader->variables[i]);
@@ -517,7 +512,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       }
     }
     // if plottype is PLOT then check which requested variables are not found in the file
-    if (getPlotType() == PlotWindow::PLOT)
+    if (isPlot())
       checkForErrors(mVariablesList, variablesPlotted);
     // close the file
     omc_free_csv_reader(csvReader);
@@ -550,7 +545,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     }
     // read in all values
     for (uint32_t i = 0; i < reader.nall; i++) {
-      if (mVariablesList.contains(reader.allInfo[i].name) || getPlotType() == PlotWindow::PLOTALL) {
+      if (mVariablesList.contains(reader.allInfo[i].name) || isPlotAll()) {
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
         if (!editCase) {
@@ -600,7 +595,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       }
     }
     // if plottype is PLOT then check which requested variables are not found in the file
-    if (getPlotType() == PlotWindow::PLOT)
+    if (isPlot())
       checkForErrors(mVariablesList, variablesPlotted);
     // close the file
     omc_free_matlab4_reader(&reader);
@@ -936,7 +931,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
   double *res;
   QString currentLine;
   setTime(time);
-  if (mVariablesList.isEmpty() && getPlotType() == PlotWindow::PLOTARRAY)
+  if (mVariablesList.isEmpty() && isPlotArray())
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
   bool editCase = pPlotCurve ? true : false;
   //PLOT PLT
@@ -1118,7 +1113,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         delete[] res;
       }
       // if plottype is PLOT then check which requested variables are not found in the file
-      if (getPlotType() == PlotWindow::PLOT)
+      if (isPlot())
         checkForErrors(mVariablesList, variablesPlotted);
       // close the file
       omc_free_matlab4_reader(&reader);
@@ -1356,7 +1351,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
 
 QPair<QVector<double>*, QVector<double>*> PlotWindow::plotInteractive(PlotCurve *pPlotCurve)
 {
-  if (mVariablesList.isEmpty() && getPlotType() == PlotWindow::PLOTINTERACTIVE) {
+  if (mVariablesList.isEmpty() && isPlotInteractive()) {
     throw NoVariableException(QString(tr("No variables specified!")).toStdString().c_str());
   } else if (mVariablesList.size() != 1) {
     throw NoVariableException(QString(tr("Could not determine the variable name!")).toStdString().c_str());
@@ -1848,7 +1843,7 @@ bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
     for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
       pPlotCurve->updateYAxisValue(i, -pPlotCurve->mYAxisVector.at(i));
     }
-    pPlotCurve->plotData();
+    pPlotCurve->plotData(true);
     toggleSign = true;
   }
   return toggleSign;
@@ -2226,6 +2221,10 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
     pPlotCurve->toggleVisibility(!pVariablePageWidget->getHideCheckBox()->isChecked());
     /* set the curve toggle sign */
     mpPlotWindow->toggleSign(pPlotCurve, pVariablePageWidget->getToggleSignCheckBox()->isChecked());
+    // if prefixunits value is changed
+    if (mPrefixUnitsChanged) {
+      pPlotCurve->plotData();
+    }
   }
 }
 
@@ -2258,9 +2257,11 @@ void SetupDialog::saveSetup()
 
 void SetupDialog::applySetup()
 {
+  // set the prefix units. Always set prefixUnits before setting plot data.
+  mPrefixUnitsChanged = mpPrefixUnitsCheckbox->isChecked() != mpPlotWindow->getPrefixUnits();
+  mpPlotWindow->setPrefixUnits(mpPrefixUnitsCheckbox->isChecked());
   // set the variables attributes
   for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++) {
-    // if any of the variable requires call to fitinview because of toggle sign.
     setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)));
   }
   // set the font sizes. Don't move this line. We should set the font sizes before calling setLegendPosition
@@ -2274,8 +2275,6 @@ void SetupDialog::applySetup()
   mpPlotWindow->setFooter(mpPlotFooterTextBox->text());
   // set the legend
   mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
-  // set the prefix units
-  mpPlotWindow->setPrefixUnits(mpPrefixUnitsCheckbox->isChecked());
   // set the auto scale
   mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
   // set the range

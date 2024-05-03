@@ -49,9 +49,11 @@ private:
   QString mXUnit;
   QString mXDisplayUnit;
   QString mXUnitPrefix;
+  int mXExponent = 0;
   QString mYUnit;
   QString mYDisplayUnit;
   QString mYUnitPrefix;
+  int mYExponent = 0;
   qreal mWidth;
   int mStyle;
   bool mToggleSign;
@@ -88,12 +90,10 @@ public:
   void setToggleSign(bool toggleSign) {mToggleSign = toggleSign;}
   QString getCustomTitle() const {return mCustomTitle;}
   void setCustomTitle(const QString &customTitle) {mCustomTitle = customTitle;}
-  void setXAxisVector(QVector<double> vector);
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);
   QPair<QVector<double>*, QVector<double>*> getAxisVectors();
   void clearXAxisVector() {mXAxisVector.clear();}
-  void setYAxisVector(QVector<double> vector);
   void addYAxisValue(double value);
   void updateYAxisValue(int index, double value);
   void clearYAxisVector() {mYAxisVector.clear();}
@@ -110,7 +110,7 @@ public:
   void setCustomColor(bool value);
   bool hasCustomColor();
   void toggleVisibility(bool visibility);
-  void plotData();
+  void plotData(bool toggleSign = false);
   QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
   QwtPlotMarker* getPointMarker() const {return mpPointMarker;}
 #if QWT_VERSION < 0x060000
