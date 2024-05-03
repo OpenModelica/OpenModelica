@@ -615,7 +615,7 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
          *      If hideResult is false for protected variable then we show it.
          */
         if ((ignoreHideResult || !hideResultIsTrue)
-            && ((protectedVariables && !isEncryptedFile) || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
+            && ((protectedVariables && !(simulationOptions.getFileName().endsWith(".moc") || isEncryptedFile)) || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
           mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
           if (addVariablesToList) {
             variablesList->append(scalarVariable.value("name"));
