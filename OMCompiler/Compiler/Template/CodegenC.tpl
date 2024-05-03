@@ -1471,6 +1471,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->resultFileName = NULL;
     data->modelData->modelDir = "<%directory%>";
     data->modelData->modelGUID = "{<%guid%>}";
+    data->modelData->encrypted = <%SimCodeUtil.isMocFile(fileName)%>;
     <% match isModelExchangeFMU
     case "1.0" then
       <<
