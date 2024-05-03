@@ -1820,6 +1820,7 @@ algorithm
               // happen if scalarization is turned off and for-loops aren't unrolled.
               if settings.scalarize or not Expression.contains(cond, Expression.isIterator) then
                 cond := Ceval.evalExp(cond, target);
+                cond := flattenExp(cond, prefix);
               end if;
             end if;
 
@@ -1861,6 +1862,7 @@ algorithm
         algorithm
           if var <= Variability.STRUCTURAL_PARAMETER then
             cond := Ceval.evalExp(cond, target);
+            cond := flattenExp(cond, prefix);
           end if;
 
           if not Expression.isFalse(cond) then
