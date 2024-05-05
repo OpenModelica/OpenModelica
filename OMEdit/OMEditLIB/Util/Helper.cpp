@@ -176,6 +176,8 @@ QString Helper::apply;
 QString Helper::chooseDirectory;
 QString Helper::addPath;
 QString Helper::removePath;
+QString Helper::addItem;
+QString Helper::removeItem;
 QString Helper::general;
 QString Helper::output;
 QString Helper::parameters;
@@ -458,7 +460,8 @@ QString Helper::upgradeInstalledLibraries;
 QString Helper::updateLibraryIndex;
 QString Helper::dataReconciliation;
 QString Helper::modelicaPathTip;
-QString Helper::pathListTip;
+QString Helper::pathsListTip;
+QString Helper::itemsListTip;
 
 void Helper::initHelperVariables()
 {
@@ -505,6 +508,8 @@ void Helper::initHelperVariables()
   Helper::chooseDirectory = tr("Choose Directory");
   Helper::addPath = tr("Add Path");
   Helper::removePath = tr("Remove Path");
+  Helper::addItem = tr("Add");
+  Helper::removeItem = tr("Remove");
   Helper::general = tr("General");
   Helper::output = tr("Output");
   Helper::parameters = tr("Parameters");
@@ -787,7 +792,8 @@ void Helper::initHelperVariables()
   Helper::updateLibraryIndex = tr("Update Library Index");
   Helper::dataReconciliation = tr("Data Reconciliation");
   Helper::modelicaPathTip = tr("List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.");
-  Helper::pathListTip = tr("List of paths separated by ; on Windows and : on Linux and macOS.");
+  Helper::pathsListTip = tr("List of paths separated by ; on Windows and : on Linux and macOS.");
+  Helper::itemsListTip = tr("List of items");
 }
 
 QString GUIMessages::getMessage(int type)

@@ -178,6 +178,8 @@ public:
   static QString chooseDirectory;
   static QString addPath;
   static QString removePath;
+  static QString addItem;
+  static QString removeItem;
   static QString general;
   static QString output;
   static QString parameters;
@@ -461,7 +463,8 @@ public:
   static QString updateLibraryIndex;
   static QString dataReconciliation;
   static QString modelicaPathTip;
-  static QString pathListTip;
+  static QString pathsListTip;
+  static QString itemsListTip;
 };
 
 class GUIMessages : public QObject

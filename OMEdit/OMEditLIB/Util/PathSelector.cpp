@@ -48,7 +48,7 @@ PathSelector::PathSelector(QWidget *parent, QString labelText) : QWidget(parent)
     pathLabel = new Label(labelText);
     pathText = new QLineEdit(this);
     pathText->setReadOnly(true);
-    pathText->setToolTip(Helper::pathListTip);
+    pathText->setToolTip(Helper::pathsListTip);
     pathList = new QListWidget(this);
     addButton = new QPushButton(Helper::addPath, this);
     removeButton = new QPushButton(Helper::removePath, this);

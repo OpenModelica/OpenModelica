@@ -118,7 +118,7 @@ void CRMLTranslatorOutputWidget::start()
 void CRMLTranslatorOutputWidget::compileModel()
 {
   mpCompilationProcess = new QProcess;
-  mpCompilationProcess->setWorkingDirectory(mCRMLTranslatorOptions.getCRMLRepositoryDirectory());
+  mpCompilationProcess->setWorkingDirectory(mCRMLTranslatorOptions.getRepositoryDirectory());
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
@@ -130,11 +130,11 @@ void CRMLTranslatorOutputWidget::compileModel()
   connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   QStringList args =
     {"-jar",
-     mCRMLTranslatorOptions.getCRMLCompilerJar(),
-     mCRMLTranslatorOptions.getCRMLCompilerCommandLineOptions(),
+     mCRMLTranslatorOptions.getCompilerJar(),
+     mCRMLTranslatorOptions.getCompilerCommandLineOptions(),
      "--testsuite"};
-  writeCompilationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCRMLCompilerProcess()).arg(args.join(" ")), Qt::blue);
-  mpCompilationProcess->start(mCRMLTranslatorOptions.getCRMLCompilerProcess(), args);
+  writeCompilationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Qt::blue);
+  mpCompilationProcess->start(mCRMLTranslatorOptions.getCompilerProcess(), args);
 }
 
 
@@ -177,9 +177,9 @@ void CRMLTranslatorOutputWidget::compilationProcessFinishedHelper(int exitCode, 
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(1);
-    progressStr = tr("Testsuite run in directory %1 finished.").arg(mCRMLTranslatorOptions.getCRMLRepositoryDirectory());
+    progressStr = tr("Testsuite run in directory %1 finished.").arg(mCRMLTranslatorOptions.getRepositoryDirectory());
     // here we need to find out the html file and open it in the QtBrowser
-    QString file = mCRMLTranslatorOptions.getCRMLRepositoryDirectory() + QDir::separator() + "build" + QDir::separator() + "test_report.html";
+    QString file = mCRMLTranslatorOptions.getRepositoryDirectory() + QDir::separator() + "build" + QDir::separator() + "test_report.html";
     QFileInfo fi(file);
     if (fi.exists()) {
       QUrl testsuiteUrl = QUrl::fromLocalFile(file);
@@ -193,7 +193,7 @@ void CRMLTranslatorOutputWidget::compilationProcessFinishedHelper(int exitCode, 
     }
   } else {
     mpProgressBar->setValue(0);
-    progressStr = tr("Testsuite run in directory %1 failed.").arg(mCRMLTranslatorOptions.getCRMLRepositoryDirectory());
+    progressStr = tr("Testsuite run in directory %1 failed.").arg(mCRMLTranslatorOptions.getRepositoryDirectory());
   }
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
@@ -211,7 +211,7 @@ void CRMLTranslatorOutputWidget::cancelCompilation()
     setCompilationProcessKilled(true);
     mpCompilationProcess->kill();
     mIsCompilationProcessRunning = false;
-    progressStr = tr("Testsuite run in directory %1 is cancelled.").arg(mCRMLTranslatorOptions.getCRMLRepositoryDirectory());
+    progressStr = tr("Testsuite run in directory %1 is cancelled.").arg(mCRMLTranslatorOptions.getRepositoryDirectory());
     mpProgressBar->setRange(0, 1);
     mpProgressBar->setValue(0);
     mpCancelButton->setEnabled(false);
@@ -228,7 +228,7 @@ void CRMLTranslatorOutputWidget::cancelCompilation()
 void CRMLTranslatorOutputWidget::compilationProcessStarted()
 {
   mIsCompilationProcessRunning = true;
-  const QString progressStr = tr("Testsuite run in directory %1 running. Please wait for a while.").arg(mCRMLTranslatorOptions.getCRMLRepositoryDirectory());
+  const QString progressStr = tr("Testsuite run in directory %1 running. Please wait for a while.").arg(mCRMLTranslatorOptions.getRepositoryDirectory());
   mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 0);
   mpProgressBar->setTextVisible(false);
