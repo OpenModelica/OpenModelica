@@ -39,6 +39,7 @@
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
 #include "Util/PathSelector.h"
+#include "Util/ListSelector.h"
 
 #include <QFontComboBox>
 #include <QStackedWidget>
@@ -1116,8 +1117,9 @@ public:
   QLineEdit* getRepositoryDirectoryTextBox() {return mpRepositoryDirectoryTextBox;}
   QLineEdit* getCompilerCommandLineOptionsTextBox() {return mpCompilerCommandLineOptionsTextBox;}
   QLineEdit* getCompilerProcessTextBox() {return mpCompilerProcessTextBox;}
-  PathSelector* getModelicaLibraryPaths() {return mpModelicaLibraryPaths;}
   PathSelector* getCRMLLibraryPaths() {return mpCRMLLibraryPaths;}
+  ListSelector* getModelicaLibraries() {return mpModelicaLibraries;}
+  PathSelector* getModelicaLibraryPaths() {return mpModelicaLibraryPaths;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGroupBox;
@@ -1133,8 +1135,9 @@ private:
   QLineEdit *mpCompilerProcessTextBox;
   QPushButton *mpBrowseCompilerProcessButton;
   QPushButton *mpResetCompilerProcessButton;
-  PathSelector *mpModelicaLibraryPaths;
   PathSelector *mpCRMLLibraryPaths;
+  ListSelector *mpModelicaLibraries;
+  PathSelector *mpModelicaLibraryPaths;
 
 private slots:
   void browseCompilerJar();

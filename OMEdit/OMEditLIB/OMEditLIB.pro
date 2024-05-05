@@ -94,6 +94,7 @@ SOURCES += Util/Helper.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   Util/PathSelector.cpp \
+  Util/ListSelector.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
@@ -212,6 +213,7 @@ HEADERS  += Util/Helper.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/PathSelector.h \
+  Util/ListSelector.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \

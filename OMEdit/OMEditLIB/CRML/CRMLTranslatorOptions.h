@@ -47,29 +47,37 @@ public:
   CRMLTranslatorOptions()
   {
     // General
-    setCRMLCompilerJar("");
-    setCRMLRepositoryDirectory("");
-    setCRMLCompilerCommandLineOptions("");
-    setCRMLCompilerProcess("");
+    setCompilerJar("");
+    setRepositoryDirectory("");
+    setCompilerCommandLineOptions("");
+    setCompilerProcess("");
     setCRMLLibraryPaths("");
+    setModelicaLibraryPaths("");
+    setModelicaLibraries({});
   }
 
-  void setCRMLCompilerJar(const QString &compilerJar) {mCRMLCompilerJar = compilerJar;}
-  QString getCRMLCompilerJar() const {return mCRMLCompilerJar;}
-  void setCRMLRepositoryDirectory(const QString &repositoryDirectory) {mCRMLRepositoryDirectory = repositoryDirectory;}
-  QString getCRMLRepositoryDirectory() const {return mCRMLRepositoryDirectory;}
-  void setCRMLCompilerCommandLineOptions(const QString &compilerCommandLineOptions) {mCRMLCompilerCommandLineOptions = compilerCommandLineOptions;}
-  QString getCRMLCompilerCommandLineOptions() const {return mCRMLCompilerCommandLineOptions;}
-  void setCRMLCompilerProcess(const QString &process) {mCRMLCompilerProcess = process;}
-  QString getCRMLCompilerProcess() const {return mCRMLCompilerProcess;}
+  void setCompilerJar(const QString &compilerJar) {mCompilerJar = compilerJar;}
+  QString getCompilerJar() const {return mCompilerJar;}
+  void setRepositoryDirectory(const QString &repositoryDirectory) {mRepositoryDirectory = repositoryDirectory;}
+  QString getRepositoryDirectory() const {return mRepositoryDirectory;}
+  void setCompilerCommandLineOptions(const QString &compilerCommandLineOptions) {mCompilerCommandLineOptions = compilerCommandLineOptions;}
+  QString getCompilerCommandLineOptions() const {return mCompilerCommandLineOptions;}
+  void setCompilerProcess(const QString &process) {mCompilerProcess = process;}
+  QString getCompilerProcess() const {return mCompilerProcess;}
   void setCRMLLibraryPaths(const QString &crmlLibraryPaths) {mCRMLLibraryPaths = crmlLibraryPaths;}
   QString getCRMLLibraryPaths() const {return mCRMLLibraryPaths;}
+  void setModelicaLibraryPaths(const QString &modelicaLibraryPaths) {mModelicaLibraryPaths = modelicaLibraryPaths;}
+  QString getModelicaLibraryPaths() const {return mModelicaLibraryPaths;}
+  void setModelicaLibraries(const QStringList &modelicaLibraries) {mModelicaLibraries = modelicaLibraries;}
+  QStringList getModelicaLibraries() const {return mModelicaLibraries;}
 private:
-  QString mCRMLCompilerJar;
-  QString mCRMLRepositoryDirectory;
-  QString mCRMLCompilerCommandLineOptions;
-  QString mCRMLCompilerProcess;
+  QString mCompilerJar;
+  QString mRepositoryDirectory;
+  QString mCompilerCommandLineOptions;
+  QString mCompilerProcess;
   QString mCRMLLibraryPaths;
+  QString mModelicaLibraryPaths;
+  QStringList mModelicaLibraries;
 };
 
 #endif // CRMLTRANSLATOROPTIONS_H

@@ -1032,10 +1032,10 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 }
 
 void loadCRMLLibs(LibraryWidget *pLibraryWidget) {
-  QStringList libs = {"CRML.mo", "CRMLtoModelica.mo", "CRML_test/package.mo"};
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+  QStringList libs = ep->getModelicaLibraries()->list();
   for (const auto& l : libs) {
-    CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
-    QStringList paths = ep->getCRMLLibraryPaths()->text().split(QDir::listSeparator());
+    QStringList paths = ep->getModelicaLibraryPaths()->text().split(QDir::listSeparator());
     for (const auto& p : paths) {
       QString fn(p + QDir::separator() + l);
       QFile f(fn);
@@ -3669,11 +3669,13 @@ void MainWindow::showRunCRMLTestsuiteDialog()
   CRMLTranslatorOptions crmlTranslatorOptions;
   CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
 
-  crmlTranslatorOptions.setCRMLCompilerJar(ep->getCRMLCompilerJarTextBox()->text());
-  crmlTranslatorOptions.setCRMLCompilerCommandLineOptions(ep->getCRMLCompilerCommandLineOptionsTextBox()->text());
-  crmlTranslatorOptions.setCRMLCompilerProcess(ep->getCRMLCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setCompilerJar(ep->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(ep->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(ep->getCompilerProcessTextBox()->text());
   crmlTranslatorOptions.setCRMLLibraryPaths(ep->getCRMLLibraryPaths()->text());
-  crmlTranslatorOptions.setCRMLRepositoryDirectory(ep->getCRMLRepositoryDirectoryTextBox()->text());
+  crmlTranslatorOptions.setModelicaLibraryPaths(ep->getModelicaLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraries(ep->getModelicaLibraries()->list());
+  crmlTranslatorOptions.setRepositoryDirectory(ep->getRepositoryDirectoryTextBox()->text());
 
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
   MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, Helper::runningCRMLTestsuite);

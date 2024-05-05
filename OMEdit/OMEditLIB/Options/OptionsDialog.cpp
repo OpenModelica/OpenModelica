@@ -1256,32 +1256,39 @@ void OptionsDialog::readFigaroSettings()
 void OptionsDialog::readCRMLSettings()
 {
   if (mpSettings->contains("crml/repositoryDirectory")) {
-    mpCRMLPage->getCRMLRepositoryDirectoryTextBox()->setText(mpSettings->value("crml/repositoryDirectory").toString());
+    mpCRMLPage->getRepositoryDirectoryTextBox()->setText(mpSettings->value("crml/repositoryDirectory").toString());
   } else {
-    mpCRMLPage->getCRMLRepositoryDirectoryTextBox()->setText(OptionsDefaults::CRML::repositoryDirectory);
+    mpCRMLPage->getRepositoryDirectoryTextBox()->setText(OptionsDefaults::CRML::repositoryDirectory);
   }
   if (mpSettings->contains("crml/compilerjar")) {
-    mpCRMLPage->getCRMLCompilerJarTextBox()->setText(mpSettings->value("crml/compilerjar").toString());
+    mpCRMLPage->getCompilerJarTextBox()->setText(mpSettings->value("crml/compilerjar").toString());
   } else {
-    mpCRMLPage->getCRMLCompilerJarTextBox()->setText(OptionsDefaults::CRML::compilerJar);
+    mpCRMLPage->getCompilerJarTextBox()->setText(OptionsDefaults::CRML::compilerJar);
   }
-
   if (mpSettings->contains("crml/commandlineparameters")) {
-    mpCRMLPage->getCRMLCompilerCommandLineOptionsTextBox()->setText(mpSettings->value("crml/commandlineparameters").toString());
+    mpCRMLPage->getCompilerCommandLineOptionsTextBox()->setText(mpSettings->value("crml/commandlineparameters").toString());
   } else {
-    mpCRMLPage->getCRMLCompilerCommandLineOptionsTextBox()->setText(OptionsDefaults::CRML::commandLineOptions);
+    mpCRMLPage->getCompilerCommandLineOptionsTextBox()->setText(OptionsDefaults::CRML::commandLineOptions);
   }
-
   if (mpSettings->contains("crml/process") && !mpSettings->value("crml/process").toString().isEmpty()) {
-    mpCRMLPage->getCRMLCompilerProcessTextBox()->setText(mpSettings->value("crml/process").toString());
+    mpCRMLPage->getCompilerProcessTextBox()->setText(mpSettings->value("crml/process").toString());
   } else {
-    mpCRMLPage->getCRMLCompilerProcessTextBox()->setText(OptionsDefaults::CRML::process);
+    mpCRMLPage->getCompilerProcessTextBox()->setText(OptionsDefaults::CRML::process);
   }
-
-  if (mpSettings->contains("crml/modelicaLibraryPaths")) {
-    mpCRMLPage->getCRMLLibraryPaths()->setText(mpSettings->value("crml/modelicaLibraryPaths").toString());
+  if (mpSettings->contains("crml/crmlLibraryPaths")) {
+    mpCRMLPage->getCRMLLibraryPaths()->setText(mpSettings->value("crml/crmlLibraryPaths").toString());
   } else {
-    mpCRMLPage->getCRMLLibraryPaths()->setText(OptionsDefaults::CRML::modelicaLibraryPaths);
+    mpCRMLPage->getCRMLLibraryPaths()->setText(OptionsDefaults::CRML::crmlLibraryPaths);
+  }
+  if (mpSettings->contains("crml/modelicaLibraries") && !mpSettings->value("crml/modelicaLibraries").toString().isEmpty()) {
+    mpCRMLPage->getModelicaLibraries()->setText(mpSettings->value("crml/modelicaLibraries").toString());
+  } else {
+    mpCRMLPage->getModelicaLibraries()->setText(OptionsDefaults::CRML::modelicaLibraries.join(mpCRMLPage->getModelicaLibraries()->getSeparator()));
+  }
+  if (mpSettings->contains("crml/modelicaLibraryPaths")) {
+    mpCRMLPage->getModelicaLibraryPaths()->setText(mpSettings->value("crml/modelicaLibraryPaths").toString());
+  } else {
+    mpCRMLPage->getModelicaLibraryPaths()->setText(OptionsDefaults::CRML::modelicaLibraryPaths);
   }
 }
 
@@ -2800,39 +2807,52 @@ void OptionsDialog::saveFigaroSettings()
 //! Saves the CRML section settings to omedit.ini
 void OptionsDialog::saveCRMLSettings()
 {
-  QString repositoryDirectory = mpCRMLPage->getCRMLRepositoryDirectoryTextBox()->text();
+  QString repositoryDirectory = mpCRMLPage->getRepositoryDirectoryTextBox()->text();
   if (repositoryDirectory.compare(OptionsDefaults::CRML::repositoryDirectory) == 0) {
     mpSettings->remove("crml/repositoryDirectory");
   } else {
     mpSettings->setValue("crml/repositoryDirectory", repositoryDirectory);
   }
 
-  QString compilerJar = mpCRMLPage->getCRMLCompilerJarTextBox()->text();
+  QString compilerJar = mpCRMLPage->getCompilerJarTextBox()->text();
   if (compilerJar.compare(OptionsDefaults::CRML::compilerJar) == 0) {
     mpSettings->remove("crml/compilerjar");
   } else {
     mpSettings->setValue("crml/compilerjar", compilerJar);
   }
 
-  QString commandLineOptions = mpCRMLPage->getCRMLCompilerCommandLineOptionsTextBox()->text();
+  QString commandLineOptions = mpCRMLPage->getCompilerCommandLineOptionsTextBox()->text();
   if (commandLineOptions.compare(OptionsDefaults::CRML::commandLineOptions) == 0) {
     mpSettings->remove("crml/commandlineparameters");
   } else {
     mpSettings->setValue("crml/commandlineparameters", commandLineOptions);
   }
 
-  QString process = mpCRMLPage->getCRMLCompilerProcessTextBox()->text();
+  QString process = mpCRMLPage->getCompilerProcessTextBox()->text();
   if (process.compare(OptionsDefaults::CRML::process) == 0) {
     mpSettings->remove("crml/process");
   } else {
     mpSettings->setValue("crml/process", process);
   }
 
-  QString libraries = mpCRMLPage->getCRMLLibraryPaths()->text();
-  if (libraries.compare(OptionsDefaults::CRML::modelicaLibraryPaths) == 0) {
+  QString crmlLibraryPaths = mpCRMLPage->getCRMLLibraryPaths()->text();
+  if (crmlLibraryPaths.compare(OptionsDefaults::CRML::crmlLibraryPaths) == 0) {
+    mpSettings->remove("crml/crmlLibraryPaths");
+  } else {
+    mpSettings->setValue("crml/crmLibraryPaths", crmlLibraryPaths);
+  }
+
+  QString modelicaLibraryPaths = mpCRMLPage->getModelicaLibraryPaths()->text();
+  if (modelicaLibraryPaths.compare(OptionsDefaults::CRML::modelicaLibraryPaths) == 0) {
     mpSettings->remove("crml/modelicaLibraryPaths");
   } else {
-    mpSettings->setValue("crml/modelicaLibraryPaths", libraries);
+    mpSettings->setValue("crml/modelicaLibraryPaths", modelicaLibraryPaths);
+  }
+  QString modelicaLibraries = mpCRMLPage->getModelicaLibraries()->text();
+  if (modelicaLibraryPaths.compare(OptionsDefaults::CRML::modelicaLibraryPaths) == 0) {
+    mpSettings->remove("crml/modelicaLibraryPaths");
+  } else {
+    mpSettings->setValue("crml/modelicaLibraryPaths", modelicaLibraryPaths);
   }
 }
 
@@ -6850,71 +6870,74 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  mpCRMLGroupBox = new QGroupBox(Helper::crml);
+  mpGroupBox = new QGroupBox(Helper::crml);
   // CRML compiler repository directory
-  mpCRMLRepositoryDirectoryLabel = new Label(tr("CRML Respository Directory:"));
-  mpCRMLRepositoryDirectoryTextBox = new QLineEdit;
-  mpBrowseCRMLRepositoryDirectoryButton = new QPushButton(Helper::browse);
-  mpBrowseCRMLRepositoryDirectoryButton->setAutoDefault(false);
-  connect(mpBrowseCRMLRepositoryDirectoryButton, SIGNAL(clicked()), SLOT(browseCRMLRepositoryDirectory()));
+  mpRepositoryDirectoryLabel = new Label(tr("CRML Respository Directory:"));
+  mpRepositoryDirectoryTextBox = new QLineEdit;
+  mpBrowseRepositoryDirectoryButton = new QPushButton(Helper::browse);
+  mpBrowseRepositoryDirectoryButton->setAutoDefault(false);
+  connect(mpBrowseRepositoryDirectoryButton, SIGNAL(clicked()), SLOT(browseRepositoryDirectory()));
   // CRML compiler jar file
-  mpCRMLCompilerJarLabel = new Label(tr("CRML Compiler Jar:"));
-  mpCRMLCompilerJarTextBox = new QLineEdit;
-  mpBrowseCRMLCompilerJarButton = new QPushButton(Helper::browse);
-  mpBrowseCRMLCompilerJarButton->setAutoDefault(false);
-  connect(mpBrowseCRMLCompilerJarButton, SIGNAL(clicked()), SLOT(browseCRMLCompilerJar()));
+  mpCompilerJarLabel = new Label(tr("CRML Compiler Jar:"));
+  mpCompilerJarTextBox = new QLineEdit;
+  mpBrowseCompilerJarButton = new QPushButton(Helper::browse);
+  mpBrowseCompilerJarButton->setAutoDefault(false);
+  connect(mpBrowseCompilerJarButton, SIGNAL(clicked()), SLOT(browseCompilerJar()));
   // CRML CommandLine arguments
-  mpCRMLCompilerCommandLineOptionsLabel = new Label(tr("CRML Compiler Arguments:"));
-  mpCRMLCompilerCommandLineOptionsTextBox = new QLineEdit;
+  mpCompilerCommandLineOptionsLabel = new Label(tr("CRML Compiler Arguments:"));
+  mpCompilerCommandLineOptionsTextBox = new QLineEdit;
   // CRML Process
-  mpCRMLCompilerProcessLabel = new Label(tr("CRML Processor:"));
-  mpCRMLCompilerProcessTextBox = new QLineEdit;
-  mpBrowseCRMLCompilerProcessButton = new QPushButton(Helper::browse);
-  mpBrowseCRMLCompilerProcessButton->setAutoDefault(false);
-  connect(mpBrowseCRMLCompilerProcessButton, SIGNAL(clicked()), SLOT(browseCRMLCompilerProcessFile()));
-  mpResetCRMLCompilerProcessButton = new QPushButton(Helper::reset);
-  mpResetCRMLCompilerProcessButton->setToolTip(tr("Resets to default CRML Processor path"));
-  mpResetCRMLCompilerProcessButton->setAutoDefault(false);
-  connect(mpResetCRMLCompilerProcessButton, SIGNAL(clicked()), SLOT(resetCRMLCompilerProcessPath()));
+  mpCompilerProcessLabel = new Label(tr("CRML Processor:"));
+  mpCompilerProcessTextBox = new QLineEdit;
+  mpBrowseCompilerProcessButton = new QPushButton(Helper::browse);
+  mpBrowseCompilerProcessButton->setAutoDefault(false);
+  connect(mpBrowseCompilerProcessButton, SIGNAL(clicked()), SLOT(browseCompilerProcessFile()));
+  mpResetCompilerProcessButton = new QPushButton(Helper::reset);
+  mpResetCompilerProcessButton->setToolTip(tr("Resets to default CRML Processor path"));
+  mpResetCompilerProcessButton->setAutoDefault(false);
+  connect(mpResetCompilerProcessButton, SIGNAL(clicked()), SLOT(resetCompilerProcessPath()));
   mpCRMLLibraryPaths = new PathSelector(pOptionsDialog, tr("CRML Library Paths:"));
-
+  mpModelicaLibraries = new ListSelector(pOptionsDialog, tr("Modelica libraries to automatically load"));
+  mpModelicaLibraryPaths = new PathSelector(pOptionsDialog, tr("Modelica Library Paths:"));
   // set the layout
   QGridLayout *pCRMLLayout = new QGridLayout;
   // pCRMLLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pCRMLLayout->addWidget(mpCRMLRepositoryDirectoryLabel, 0, 0);
-  pCRMLLayout->addWidget(mpCRMLRepositoryDirectoryTextBox, 0, 1, 1, 2);
-  pCRMLLayout->addWidget(mpBrowseCRMLRepositoryDirectoryButton, 0, 3);
-  pCRMLLayout->addWidget(mpCRMLCompilerJarLabel, 1, 0);
-  pCRMLLayout->addWidget(mpCRMLCompilerJarTextBox, 1, 1, 1, 2);
-  pCRMLLayout->addWidget(mpBrowseCRMLCompilerJarButton, 1, 3);
-  pCRMLLayout->addWidget(mpCRMLCompilerCommandLineOptionsLabel, 2, 0);
-  pCRMLLayout->addWidget(mpCRMLCompilerCommandLineOptionsTextBox, 2, 1, 1, 2);
-  pCRMLLayout->addWidget(mpCRMLCompilerProcessLabel, 3, 0);
-  pCRMLLayout->addWidget(mpCRMLCompilerProcessTextBox, 3, 1);
-  pCRMLLayout->addWidget(mpBrowseCRMLCompilerProcessButton, 3, 2);
-  pCRMLLayout->addWidget(mpResetCRMLCompilerProcessButton, 3, 3);
+  pCRMLLayout->addWidget(mpRepositoryDirectoryLabel, 0, 0);
+  pCRMLLayout->addWidget(mpRepositoryDirectoryTextBox, 0, 1, 1, 2);
+  pCRMLLayout->addWidget(mpBrowseRepositoryDirectoryButton, 0, 3);
+  pCRMLLayout->addWidget(mpCompilerJarLabel, 1, 0);
+  pCRMLLayout->addWidget(mpCompilerJarTextBox, 1, 1, 1, 2);
+  pCRMLLayout->addWidget(mpBrowseCompilerJarButton, 1, 3);
+  pCRMLLayout->addWidget(mpCompilerCommandLineOptionsLabel, 2, 0);
+  pCRMLLayout->addWidget(mpCompilerCommandLineOptionsTextBox, 2, 1, 1, 2);
+  pCRMLLayout->addWidget(mpCompilerProcessLabel, 3, 0);
+  pCRMLLayout->addWidget(mpCompilerProcessTextBox, 3, 1);
+  pCRMLLayout->addWidget(mpBrowseCompilerProcessButton, 3, 2);
+  pCRMLLayout->addWidget(mpResetCompilerProcessButton, 3, 3);
   pCRMLLayout->addWidget(mpCRMLLibraryPaths, 4, 0, 1, 4);
-  mpCRMLGroupBox->setLayout(pCRMLLayout);
+  pCRMLLayout->addWidget(mpModelicaLibraries, 5, 0, 1, 4);
+  pCRMLLayout->addWidget(mpModelicaLibraryPaths, 6, 0, 1, 4);
+  mpGroupBox->setLayout(pCRMLLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
-  pMainLayout->addWidget(mpCRMLGroupBox);
+  pMainLayout->addWidget(mpGroupBox);
   setLayout(pMainLayout);
 }
 
-void CRMLPage::browseCRMLCompilerJar()
+void CRMLPage::browseCompilerJar()
 {
-  mpCRMLCompilerJarTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+  mpCompilerJarTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                       NULL, Helper::jarFileTypes, NULL));
 }
 
-void CRMLPage::browseCRMLRepositoryDirectory()
+void CRMLPage::browseRepositoryDirectory()
 {
-  mpCRMLRepositoryDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
+  mpRepositoryDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
 }
 
-void CRMLPage::browseCRMLCompilerProcessFile()
+void CRMLPage::browseCompilerProcessFile()
 {
-  mpCRMLCompilerProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+  mpCompilerProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                  NULL, Helper::exeFileTypes, NULL));
 }
 
@@ -6922,9 +6945,9 @@ void CRMLPage::browseCRMLCompilerProcessFile()
  * \brief CRMLPage::resetCRMLCompilerProcessPath
  * Resets the CRML process path to default.
  */
-void CRMLPage::resetCRMLCompilerProcessPath()
+void CRMLPage::resetCompilerProcessPath()
 {
-  mpCRMLCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
+  mpCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
 }
 
 //! @class MOSPage

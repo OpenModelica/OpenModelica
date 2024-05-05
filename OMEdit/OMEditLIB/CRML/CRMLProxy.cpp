@@ -196,10 +196,10 @@ QString CRMLProxy::translateModel(QString crmlFileName, QString outputDirectory,
   args << "\"" + crmlFileName + "\" " << "\"" + outputDirectory + "\" " << "\"" + modelicaPath + "\"";
   LOG_COMMAND(command, args);
   CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
-  QString compilerJar = ep->getCRMLCompilerJarTextBox()->text();
-  QString commandLineOptions = ep->getCRMLCompilerCommandLineOptionsTextBox()->text();
-  QString process = ep->getCRMLCompilerProcessTextBox()->text();
-  QString libraries = ep->getCRMLLibraryPaths()->text();
+  QString compilerJar = ep->getCompilerJarTextBox()->text();
+  QString commandLineOptions = ep->getCompilerCommandLineOptionsTextBox()->text();
+  QString process = ep->getCompilerProcessTextBox()->text();
+  QString libraries = ep->getModelicaLibraryPaths()->text();
   if (!crmlFileName.isEmpty()) {
     QProcess crmlCompilerProcess;
     QString processDirectory = "";
@@ -252,10 +252,10 @@ QString CRMLProxy::runTestsuite(CRMLInformationDialog *pInformationDialog, QStri
   args << "\"" + directory + "\"";
   LOG_COMMAND(command, args);
   CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
-  QString compilerJar = ep->getCRMLCompilerJarTextBox()->text();
-  QString commandLineOptions = ep->getCRMLCompilerCommandLineOptionsTextBox()->text();
-  QString process = ep->getCRMLCompilerProcessTextBox()->text();
-  QString libraries = ep->getCRMLLibraryPaths()->text();
+  QString compilerJar = ep->getCompilerJarTextBox()->text();
+  QString commandLineOptions = ep->getCompilerCommandLineOptionsTextBox()->text();
+  QString process = ep->getCompilerProcessTextBox()->text();
+  QString libraries = ep->getModelicaLibraryPaths()->text();
   QString dir = directory;
   if (dir.isEmpty()) {
     dir = compilerJar;
