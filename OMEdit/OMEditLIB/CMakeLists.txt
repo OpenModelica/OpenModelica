@@ -109,6 +109,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       CrashReport/CrashReportDialog.cpp
                       CRML/CRMLFile.cpp
                       CRML/CRMLModelDialog.cpp
+                      CRML/CRMLTranslateAsDialog.cpp
                       CRML/CRMLTranslatorOutputWidget.cpp
                       CRML/CRMLProxy.cpp
                       MOS/MOSFile.cpp
@@ -247,6 +248,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       CRML/CRMLFile.h
                       CRML/CRMLProxy.h
                       CRML/CRMLModelDialog.h
+                      CRML/CRMLTranslateAsDialog.h
                       CRML/CRMLTranslatorOptions.h
                       CRML/CRMLTranslatorOutputWidget.h
                       MOS/MOSFile.h

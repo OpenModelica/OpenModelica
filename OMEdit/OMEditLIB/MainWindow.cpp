@@ -1057,21 +1057,32 @@ void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
       return;
     }
   }
-  // set the status message.
-  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure()));
-  // show the progress bar
-  mpProgressBar->setRange(0, 0);
-  showProgressBar();
-  QString translationOutput = CRMLProxy::instance()->translateModel(pLibraryTreeItem->getFileName());
-  if (!translationOutput.isEmpty()) {
-    QString windowTitle = QString("%1 - %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure());
-    CRMLInformationDialog *pInformationDialog = new CRMLInformationDialog(windowTitle, translationOutput, this);
-    pInformationDialog->show();
-  }
+
+  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+
+  crmlTranslatorOptions.setMode("translate");
+
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setOutputDirectory(fi.absoluteDir().absolutePath());
+
+  crmlTranslatorOptions.setCompilerJar(ep->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(ep->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(ep->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setCRMLLibraryPaths(ep->getCRMLLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraryPaths(ep->getModelicaLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraries(ep->getModelicaLibraries()->list());
+  crmlTranslatorOptions.setRepositoryDirectory(ep->getRepositoryDirectoryTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget,
+    QString("%1 %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure()));
+  pCRMLTranslatorOutputWidget->start();
 
   loadCRMLLibs(mpLibraryWidget);
 
-  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
   QString fileName = fi.absoluteDir().absolutePath() + QDir::separator() + "generated" + QDir::separator() + fi.fileName();
   fileName = fileName.remove(fileName.lastIndexOf(".crml"), 5);
   fileName += ".mo";
@@ -1082,10 +1093,6 @@ void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
   if (pMOLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
   }
-  // hide progress bar
-  hideProgressBar();
-  // clear the status bar message
-  mpStatusBar->clearMessage();
 }
 
 void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
@@ -1096,6 +1103,38 @@ void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
       return;
     }
   }
+
+  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
+
+  CRMLTranslateAsDialog *pCRMLTranslateAsDialog = new CRMLTranslateAsDialog(this);
+  pCRMLTranslateAsDialog->exec();
+
+  QString outputDirectory = pCRMLTranslateAsDialog->getOutputDirectoryTextBox()->getText();
+  QString modelicaWithin = pCRMLTranslateAsDialog->getParentClassTextBox()->getText();
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+
+  crmlTranslatorOptions.setMode("translateAs");
+
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setOutputDirectory(outputDirectory);
+  crmlTranslatorOptions.setModelicaWithin(modelicaWithin);
+
+  crmlTranslatorOptions.setCompilerJar(ep->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(ep->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(ep->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setCRMLLibraryPaths(ep->getCRMLLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraryPaths(ep->getModelicaLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraries(ep->getModelicaLibraries()->list());
+  crmlTranslatorOptions.setRepositoryDirectory(ep->getRepositoryDirectoryTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget,
+    QString("%1 %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure()));
+  pCRMLTranslatorOutputWidget->start();
+
+  /*
   // set the status message.
   mpStatusBar->showMessage(QString("%1 %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure()));
   // show the progress bar
@@ -1110,6 +1149,7 @@ void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
     CRMLInformationDialog *pInformationDialog = new CRMLInformationDialog(windowTitle, translationOutput, this);
     pInformationDialog->show();
   }
+  */
 
   loadCRMLLibs(mpLibraryWidget);
 
@@ -3669,6 +3709,7 @@ void MainWindow::showRunCRMLTestsuiteDialog()
   CRMLTranslatorOptions crmlTranslatorOptions;
   CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
 
+  crmlTranslatorOptions.setMode("testsuite");
   crmlTranslatorOptions.setCompilerJar(ep->getCompilerJarTextBox()->text());
   crmlTranslatorOptions.setCompilerCommandLineOptions(ep->getCompilerCommandLineOptionsTextBox()->text());
   crmlTranslatorOptions.setCompilerProcess(ep->getCompilerProcessTextBox()->text());

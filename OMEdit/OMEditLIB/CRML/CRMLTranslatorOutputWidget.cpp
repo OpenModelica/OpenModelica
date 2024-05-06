@@ -131,8 +131,26 @@ void CRMLTranslatorOutputWidget::compileModel()
   QStringList args =
     {"-jar",
      mCRMLTranslatorOptions.getCompilerJar(),
-     mCRMLTranslatorOptions.getCompilerCommandLineOptions(),
-     "--testsuite"};
+     mCRMLTranslatorOptions.getCompilerCommandLineOptions()};
+  // testsuite
+  if (mCRMLTranslatorOptions.getMode().compare("testsuite") == 0) {
+     args << "--testsuite";
+  } else if (mCRMLTranslatorOptions.getMode().compare("translate") == 0) {
+     args << mCRMLTranslatorOptions.getCRMLFile();
+  } else if (mCRMLTranslatorOptions.getMode().compare("translateAs") == 0) {
+     if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty()) {
+       args << "-o";
+       args << mCRMLTranslatorOptions.getOutputDirectory();
+     }
+     if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty()) {
+       args << "--within";
+       args << mCRMLTranslatorOptions.getModelicaWithin();
+     }
+     args << mCRMLTranslatorOptions.getCRMLFile();
+  } else {
+     // TODO fixme, error!
+  }
+  args.removeAll(QString(""));
   writeCompilationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start(mCRMLTranslatorOptions.getCompilerProcess(), args);
 }
