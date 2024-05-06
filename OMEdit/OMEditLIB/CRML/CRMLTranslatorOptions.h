@@ -47,6 +47,7 @@ public:
   CRMLTranslatorOptions()
   {
     // General
+    setMode("translateAs");
     setCompilerJar("");
     setRepositoryDirectory("");
     setCompilerCommandLineOptions("");
@@ -56,6 +57,19 @@ public:
     setModelicaLibraries({});
   }
 
+  // what functionality we need
+  void setMode(const QString &mode) {mMode = mode;}
+  QString getMode() const {return mMode;}
+
+  // dynamic compiler options
+  void setCRMLFile(const QString &file) {mCRMLFile = file;}
+  QString getCRMLFile() const {return mCRMLFile;}
+  void setOutputDirectory(const QString &directory) {mOutputDirectory = directory;}
+  QString getOutputDirectory() const {return mOutputDirectory;}
+  void setModelicaWithin(const QString &within) {mModelicaWithin = within;}
+  QString getModelicaWithin() const {return mModelicaWithin;}
+
+  // compiler options
   void setCompilerJar(const QString &compilerJar) {mCompilerJar = compilerJar;}
   QString getCompilerJar() const {return mCompilerJar;}
   void setRepositoryDirectory(const QString &repositoryDirectory) {mRepositoryDirectory = repositoryDirectory;}
@@ -71,6 +85,12 @@ public:
   void setModelicaLibraries(const QStringList &modelicaLibraries) {mModelicaLibraries = modelicaLibraries;}
   QStringList getModelicaLibraries() const {return mModelicaLibraries;}
 private:
+  QString mMode;
+
+  QString mCRMLFile;
+  QString mOutputDirectory;
+  QString mModelicaWithin;
+
   QString mCompilerJar;
   QString mRepositoryDirectory;
   QString mCompilerCommandLineOptions;
