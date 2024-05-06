@@ -2027,7 +2027,7 @@ end getVarKindForVar;
 
 public function isVarOnTopLevelAndOutput "has the DAE.VarDirection = OUTPUT
   Don't check for top level here as this is done by NFConvertDAE.makeDAEVar.
-  Otherwise the list of model variables may contradict with model structure, e.g. with --nonStdExposeLocalIOs."
+  Otherwise the list of model variables may contradict with model structure."
   input BackendDAE.Var inVar;
   //output Boolean outBoolean = DAEUtil.topLevelOutput(inVar.varName, inVar.varDirection, inVar.connectorType);
   output Boolean outBoolean = isOutputVar(inVar);
@@ -2035,7 +2035,7 @@ end isVarOnTopLevelAndOutput;
 
 public function isVarOnTopLevelAndInput "has the DAE.VarDirection = INPUT
   Don't check for top level here as this is done by NFConvertDAE.makeDAEVar.
-  Otherwise the list of model variables may contradict with model structure, e.g. with --nonStdExposeLocalIOs."
+  Otherwise the list of model variables may contradict with model structure."
   input BackendDAE.Var inVar;
   //output Boolean outBoolean = DAEUtil.topLevelInput(inVar.varName, inVar.varDirection, inVar.connectorType);
   output Boolean outBoolean = isInput(inVar);
