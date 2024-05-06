@@ -275,9 +275,8 @@ void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget)
 /*!
  * \brief PlotWindowContainer::addPlotWindow
  * Adds a new Plot Window.
- * \param maximized - sets the window state maximized
  */
-void PlotWindowContainer::addPlotWindow(bool maximized)
+void PlotWindowContainer::addPlotWindow()
 {
   try {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
@@ -290,6 +289,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
+    bool maximize = subWindowList().isEmpty();
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -299,7 +299,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     addRenameTabToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plot-window.svg"));
     pPlotWindow->show();
-    if (maximized) {
+    if (maximize) {
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
   }
@@ -324,6 +324,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->installEventFilter(this);
+    bool maximize = subWindowList().isEmpty();
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -333,6 +334,9 @@ void PlotWindowContainer::addParametricPlotWindow()
     addRenameTabToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
     pPlotWindow->show();
+    if (maximize) {
+      pPlotWindow->setWindowState(Qt::WindowMaximized);
+    }
   }
   catch (PlotException &e) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
@@ -342,9 +346,8 @@ void PlotWindowContainer::addParametricPlotWindow()
 /*!
  * \brief PlotWindowContainer::addArrayPlotWindow
  * Adds a new ArrayPlot Window.
- * \param maximized - sets the window state maximized
  */
-void PlotWindowContainer::addArrayPlotWindow(bool maximized)
+void PlotWindowContainer::addArrayPlotWindow()
 {
   try {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
@@ -364,6 +367,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
     pPlotWindow->setTimeUnit(unitComboBox->currentText());
     pPlotWindow->setXLabel(QString("array element index"));
     pPlotWindow->installEventFilter(this);
+    bool maximize = subWindowList().isEmpty();
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -373,7 +377,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
     addRenameTabToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/array-plot-window.svg"));
     pPlotWindow->show();
-    if (maximized) {
+    if (maximize) {
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
   }
@@ -385,7 +389,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
  * \brief PlotWindowContainer::addInteractivePlotWindow
  * Adds a new Interactive Plot Window
  */
-PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QString owner, int port)
+PlotWindow* PlotWindowContainer::addInteractivePlotWindow(QString owner, int port)
 {
   try {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true);
@@ -401,6 +405,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QStrin
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
+    bool maximize = subWindowList().isEmpty();
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -411,7 +416,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QStrin
     addRenameTabToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/interaction.svg"));
     pPlotWindow->show();
-    if (maximized) {
+    if (maximize) {
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
     return pPlotWindow;
@@ -445,6 +450,7 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     }
     pPlotWindow->setTimeUnit(unitComboBox->currentText());
     pPlotWindow->installEventFilter(this);
+    bool maximize = subWindowList().isEmpty();
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
     pPlotWindow->getPlot()->setFontSizes(pPlottingPage->getTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value(), pPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value(),
@@ -454,6 +460,9 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     addRenameTabToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/array-parametric-plot-window.svg"));
     pPlotWindow->show();
+    if (maximize) {
+      pPlotWindow->setWindowState(Qt::WindowMaximized);
+    }
   }
   catch (PlotException &e) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
@@ -463,19 +472,19 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
 /*!
  * \brief PlotWindowContainer::addAnimationWindow
  * Adds an animation widget as subwindow
- * \param maximized - sets the window state maximized
  */
-void PlotWindowContainer::addAnimationWindow(bool maximized)
+void PlotWindowContainer::addAnimationWindow()
 {
 #if !defined(WITHOUT_OSG)
   AnimationWindow *pAnimationWindow = new AnimationWindow(this);
   pAnimationWindow->setWindowTitle(getUniqueName("Animation : "));
+  bool maximize = subWindowList().isEmpty();
   QMdiSubWindow *pSubWindow = addSubWindow(pAnimationWindow);
   addCloseActionsToSubWindowSystemMenu(pSubWindow);
   addRenameTabToSubWindowSystemMenu(pSubWindow);
   pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
   pAnimationWindow->show();
-  if (maximized) {
+  if (maximize) {
     pAnimationWindow->setWindowState(Qt::WindowMaximized);
   }
 #else
@@ -488,23 +497,24 @@ void PlotWindowContainer::addAnimationWindow(bool maximized)
  * \brief PlotWindowContainer::addDiagramWindow
  * Adds a diagram window as subwindow
  * \param pModelWidget
- * \param maximized - sets the window state maximized
  */
-void PlotWindowContainer::addDiagramWindow(ModelWidget *pModelWidget, bool maximized)
+void PlotWindowContainer::addDiagramWindow(ModelWidget *pModelWidget)
 {
   if (!mpDiagramWindow) {
     mpDiagramWindow = new DiagramWindow(this);
   }
   showDiagramWindow(pModelWidget);
   QMdiSubWindow *pSubWindow = getDiagramSubWindowFromMdi();
+  bool maximize = false;
   if (!pSubWindow) {
+    maximize = subWindowList().isEmpty();
     pSubWindow = addSubWindow(mpDiagramWindow);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     addRenameTabToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   }
   mpDiagramWindow->show();
-  if (maximized) {
+  if (maximize) {
     mpDiagramWindow->setWindowState(Qt::WindowMaximized);
   }
   setActiveSubWindow(pSubWindow);

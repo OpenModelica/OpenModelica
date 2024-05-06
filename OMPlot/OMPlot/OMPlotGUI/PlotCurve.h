@@ -97,7 +97,8 @@ public:
   void addYAxisValue(double value);
   void updateYAxisValue(int index, double value);
   void clearYAxisVector() {mYAxisVector.clear();}
-  int getSize();
+  int getXAxisSize() const;
+  int getYAxisSize() const;
   void setFileName(QString fileName);
   QString getFileName() const;
   QString getAbsoluteFilePath() const;

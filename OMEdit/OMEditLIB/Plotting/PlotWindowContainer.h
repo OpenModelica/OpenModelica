@@ -71,13 +71,13 @@ private:
   void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;
 public slots:
-  void addPlotWindow(bool maximized = false);
+  void addPlotWindow();
   void addParametricPlotWindow();
-  void addArrayPlotWindow(bool maximized = false);
+  void addArrayPlotWindow();
   void addArrayParametricPlotWindow();
-  OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QString owner = QString(), int port = 0);
-  void addAnimationWindow(bool maximized = false);
-  void addDiagramWindow(ModelWidget *pModelWidget = 0, bool maximized = false);
+  OMPlot::PlotWindow* addInteractivePlotWindow(QString owner = QString(), int port = 0);
+  void addAnimationWindow();
+  void addDiagramWindow(ModelWidget *pModelWidget = 0);
   void clearPlotWindow();
   void removeInteractivePlotWindow();
   void renamePlotWindow();
