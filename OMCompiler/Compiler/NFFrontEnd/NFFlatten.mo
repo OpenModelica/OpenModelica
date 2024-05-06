@@ -2284,22 +2284,27 @@ algorithm
       (attributes.direction == Direction.INPUT or attributes.direction == Direction.OUTPUT) and
       not UnorderedSet.contains(variable.name, connectedLocalIOs)
     then
-      tlio_var := variable; // same attributes like start, unit
-      tlio_var.name := ComponentRef.combineSubscripts(tlio_var.name);
-      tlio_var.binding := UNBOUND(); // value is defined with tlio_eql
-      // find new name in global scope, using underscore instead of dot
-      cref := tlio_var.name;
-      name := stringDelimitList(ComponentRef.toString_impl(cref, {}), ".");
-      while UnorderedMap.contains(tlio_var.name, variables) loop
-        tlio_node := InstNode.NAME_NODE(Util.makeQuotedIdentifier(name));
-        tlio_var.name := match cref case ComponentRef.CREF() then
-          ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
-        end match;
-        name := name + "_" "append underscore until name is unique";
-      end while;
-      tlio_vars := tlio_var :: tlio_vars;
-      tlio_eql := Equation.makeCrefEquality(variable.name, tlio_var.name,
-        InstNode.EMPTY_NODE(), ElementSource.createElementSource(variable.info)) :: tlio_eql;
+      // add a new variable and equation if removeNonTopLevelDirection removes the direction
+      tlio_var := Variable.removeNonTopLevelDirection(variable);
+      attributes := tlio_var.attributes;
+      if attributes.direction == Direction.NONE then
+        tlio_var := variable; // same attributes like start, unit
+        tlio_var.name := ComponentRef.combineSubscripts(tlio_var.name);
+        tlio_var.binding := UNBOUND(); // value is defined with tlio_eql
+        // find new name in global scope, starting with quoted identifier
+        cref := tlio_var.name;
+        name := stringDelimitList(ComponentRef.toString_impl(cref, {}), ".");
+        while UnorderedMap.contains(tlio_var.name, variables) loop
+          tlio_node := InstNode.NAME_NODE(Util.makeQuotedIdentifier(name));
+          tlio_var.name := match cref case ComponentRef.CREF() then
+            ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+          end match;
+          name := name + "_" "append underscore until name is unique";
+        end while;
+        tlio_vars := tlio_var :: tlio_vars;
+        tlio_eql := Equation.makeCrefEquality(variable.name, tlio_var.name,
+          InstNode.EMPTY_NODE(), ElementSource.createElementSource(variable.info)) :: tlio_eql;
+      end if;
     end if;
   end for;
 end generateTopLevelIOs;
