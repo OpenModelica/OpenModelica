@@ -180,9 +180,14 @@ void PlotCurve::updateYAxisValue(int index, double value)
   mYAxisVector.replace(index, value);
 }
 
-int PlotCurve::getSize()
+int PlotCurve::getXAxisSize() const
 {
   return mXAxisVector.size();
+}
+
+int PlotCurve::getYAxisSize() const
+{
+  return mYAxisVector.size();
 }
 
 void PlotCurve::setFileName(QString fileName)
@@ -270,9 +275,12 @@ void PlotCurve::plotData(bool toggleSign)
       double yLowerBound = 0.0;
       double yUpperBound = 0.0;
 
-      for (int i = 0 ; i < getSize() ; i++) {
+      for (int i = 0 ; i < getXAxisSize() ; i++) {
         xLowerBound = qMin(xLowerBound, mXAxisVector.at(i));
         xUpperBound = qMax(xUpperBound, mXAxisVector.at(i));
+      }
+
+      for (int i = 0 ; i < getYAxisSize() ; i++) {
         yLowerBound = qMin(yLowerBound, mYAxisVector.at(i));
         yUpperBound = qMax(yUpperBound, mYAxisVector.at(i));
       }
@@ -315,11 +323,7 @@ void PlotCurve::plotData(bool toggleSign)
       mYExponent = 0;
     }
   }
-#if QWT_VERSION >= 0x060000
-  setRawSamples(mXAxisVector.data(), mYAxisVector.data(), getSize());
-#else
-  setRawData(mXAxisVector.data(), mYAxisVector.data(), getSize());
-#endif
+  setSamples(mXAxisVector, mYAxisVector);
 }
 
 #if QWT_VERSION < 0x060000

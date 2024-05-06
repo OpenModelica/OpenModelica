@@ -796,12 +796,13 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       // if variable is a parameter then
       else
       {
-        double xval;
-        if (omc_matlab4_val(&xval,&reader,var,0.0)) {
+        double xVal;
+        if (omc_matlab4_val(&xVal,&reader,var,0.0)) {
           omc_free_matlab4_reader(&reader);
           throw NoVariableException(QString("Parameter doesn't have a value : ").append(xVariable).toStdString().c_str());
         }
-        pPlotCurve->addXAxisValue(xval);
+        for (uint32_t i = 0 ; i < reader.nrows ; i++)
+          pPlotCurve->addXAxisValue(xVal);
       }
       //Fill variable y with data
       var = omc_matlab4_find_var(&reader, yVariable.toStdString().c_str());
@@ -823,12 +824,13 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       // if variable is a parameter then
       else
       {
-        double yval;
-        if (omc_matlab4_val(&yval,&reader,var,0.0)) {
+        double yVal;
+        if (omc_matlab4_val(&yVal,&reader,var,0.0)) {
           omc_free_matlab4_reader(&reader);
           throw NoVariableException(QString("Parameter doesn't have a value : ").append(yVariable).toStdString().c_str());
         }
-        pPlotCurve->addYAxisValue(yval);
+        for (uint32_t i = 0 ; i < reader.nrows ; i++)
+          pPlotCurve->addYAxisValue(yVal);
       }
       pPlotCurve->plotData();
       pPlotCurve->attach(mpPlot);
@@ -1261,7 +1263,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
             pPlotCurve->addXAxisValue(res[i]);
         }
         else { //yVar
-          if (pPlotCurve->getSize()!=res.count()) {
+          if (pPlotCurve->getXAxisSize()!=res.count()) {
             omc_free_csv_reader(csvReader);
             throw PlotException(tr("Arrays must be of the same length in array parametric plot."));
           }
@@ -1332,7 +1334,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
           for (int i = 0; i < vars.count(); i++)
             pPlotCurve->addXAxisValue(res[i]);
         else{
-          if (pPlotCurve->getSize()!=vars.count()) {
+          if (pPlotCurve->getXAxisSize()!=vars.count()) {
             omc_free_matlab4_reader(&reader);
             throw PlotException("Arrays must be of the same length in array parametric plot.");
           }
@@ -1652,7 +1654,7 @@ void PlotWindow::updateCurves()
 {
   for (auto & p : mpPlot->getPlotCurvesList()) {
     // append the last point to the plotting curve
-    p->getPlotDirectPainter()->drawSeries(p, p->getSize() - 2, -1);
+    p->getPlotDirectPainter()->drawSeries(p, p->getXAxisSize() - 2, -1);
   }
 }
 
