@@ -45,6 +45,7 @@
 #include "OMS/ModelDialog.h"
 #include "CRML/CRMLProxy.h"
 #include "CRML/CRMLModelDialog.h"
+#include "CRML/CRMLTranslateAsDialog.h"
 #include "MOS/MOSProxy.h"
 #include "MOS/MOSDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
@@ -1031,24 +1032,6 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
   }
 }
 
-void loadCRMLLibs(LibraryWidget *pLibraryWidget) {
-  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
-  QStringList libs = ep->getModelicaLibraries()->list();
-  for (const auto& l : libs) {
-    QStringList paths = ep->getModelicaLibraryPaths()->text().split(QDir::listSeparator());
-    for (const auto& p : paths) {
-      QString fn(p + QDir::separator() + l);
-      QFile f(fn);
-      fn = fn.replace("\\", "/");
-      if (f.exists()) {
-        // do not load it again if it exists already
-        if (!pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fn, 1))
-          pLibraryWidget->openFile(fn, Helper::utf8, false, true);
-      }
-    }
-  }
-}
-
 void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if CRML text is changed manually by user then validate it before saving. */
@@ -1081,18 +1064,6 @@ void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
     QString("%1 %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure()));
   pCRMLTranslatorOutputWidget->start();
 
-  loadCRMLLibs(mpLibraryWidget);
-
-  QString fileName = fi.absoluteDir().absolutePath() + QDir::separator() + "generated" + QDir::separator() + fi.fileName();
-  fileName = fileName.remove(fileName.lastIndexOf(".crml"), 5);
-  fileName += ".mo";
-  fileName = fileName.replace("\\", "/");
-  mpLibraryWidget->openFile(fileName, Helper::utf8, false, true);
-  // now open it if we can find it in the tree!
-  LibraryTreeItem *pMOLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
-  if (pMOLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
-  }
 }
 
 void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
@@ -1109,8 +1080,8 @@ void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
   CRMLTranslateAsDialog *pCRMLTranslateAsDialog = new CRMLTranslateAsDialog(this);
   pCRMLTranslateAsDialog->exec();
 
-  QString outputDirectory = pCRMLTranslateAsDialog->getOutputDirectoryTextBox()->getText();
-  QString modelicaWithin = pCRMLTranslateAsDialog->getParentClassTextBox()->getText();
+  QString outputDirectory = pCRMLTranslateAsDialog->getOutputDirectoryTextBox()->text();
+  QString modelicaWithin = pCRMLTranslateAsDialog->getParentClassTextBox()->text();
 
   CRMLTranslatorOptions crmlTranslatorOptions;
   CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
@@ -1134,37 +1105,6 @@ void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
     QString("%1 %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure()));
   pCRMLTranslatorOutputWidget->start();
 
-  /*
-  // set the status message.
-  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure()));
-  // show the progress bar
-  mpProgressBar->setRange(0, 0);
-  showProgressBar();
-
-  QString outputDirectory = StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append("Choose output directory"), NULL);
-
-  QString translationOutput = CRMLProxy::instance()->translateModel(pLibraryTreeItem->getFileName(), outputDirectory);
-  if (!translationOutput.isEmpty()) {
-    QString windowTitle = QString("%1 - %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure());
-    CRMLInformationDialog *pInformationDialog = new CRMLInformationDialog(windowTitle, translationOutput, this);
-    pInformationDialog->show();
-  }
-  */
-
-  loadCRMLLibs(mpLibraryWidget);
-
-  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
-  QString fileName = outputDirectory + QDir::separator() +  fi.baseName() + QDir::separator() + fi.baseName() + ".mo";
-  mpLibraryWidget->openFile(fileName, Helper::utf8, false, true);
-  // now open it if we can find it in the tree!
-  LibraryTreeItem *pMOLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
-  if (pMOLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
-  }
-  // hide progress bar
-  hideProgressBar();
-  // clear the status bar message
-  mpStatusBar->clearMessage();
 }
 
 void MainWindow::runScript(LibraryTreeItem *pLibraryTreeItem)

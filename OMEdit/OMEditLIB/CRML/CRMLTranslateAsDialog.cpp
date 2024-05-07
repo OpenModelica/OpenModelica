@@ -34,7 +34,6 @@
 
 #include <limits>
 
-#include "CRML/CRMLTranslateAsDialog.h"
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
@@ -42,6 +41,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 // #include "Commands.h"
 #include "Modeling/ItemDelegate.h"
+#include "CRML/CRMLTranslateAsDialog.h"
 
 #include <QApplication>
 #include <QMessageBox>
@@ -62,16 +62,12 @@ CRMLTranslateAsDialog::CRMLTranslateAsDialog(QWidget *pParent)
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::translateAsCRML));
   setMinimumWidth(400);
-  // Create the directory output label and text box
-  mpNameLabel = new Label(Helper::name);
-  mpNameTextBox = new QLineEdit;
-
-  // Create the output direcectory label
+  // Create the output directory label
   mpOutputDirectoryLabel = new Label(tr("Select the output directory:"));
   mpOutputDirectoryTextBox = new QLineEdit;
   mpOutputDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpOutputDirectoryBrowseButton->setAutoDefault(false);
-  connect(mpParentClassBrowseButton, SIGNAL(clicked()), SLOT(browseOutputDirectory()));
+  connect(mpOutputDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseOutputDirectory()));
 
   // Create the parent package label, text box, browse button
   mpParentClassLabel = new Label(tr("Insert in class - within (optional):"));
@@ -93,19 +89,13 @@ CRMLTranslateAsDialog::CRMLTranslateAsDialog(QWidget *pParent)
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  pMainLayout->addWidget(mpNameLabel, 0, 0);
-  pMainLayout->addWidget(mpNameTextBox, 0, 1, 1, 2);
-  pMainLayout->addWidget(mpOutputDirectoryLabel, 2, 0);
-  pMainLayout->addWidget(mpOutputDirectoryTextBox, 2, 1);
-  pMainLayout->addWidget(mpOutputDirectoryBrowseButton, 2, 2);
-  pMainLayout->addWidget(mpParentClassLabel, 3, 0);
-  pMainLayout->addWidget(mpParentClassTextBox, 3, 1);
-  pMainLayout->addWidget(mpParentClassBrowseButton, 3, 2);
-  pMainLayout->addWidget(mpPartialCheckBox, 4, 0);
-  pMainLayout->addWidget(mpSaveContentsInOneFileCheckBox, 4, 1, 1, 2);
-  pMainLayout->addWidget(mpEncapsulatedCheckBox, 5, 0, 1, 3);
-  pMainLayout->addWidget(mpStateCheckBox, 6, 0, 1, 3);
-  pMainLayout->addWidget(mpButtonBox, 7, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpOutputDirectoryLabel, 1, 0);
+  pMainLayout->addWidget(mpOutputDirectoryTextBox, 1, 1);
+  pMainLayout->addWidget(mpOutputDirectoryBrowseButton, 1, 2);
+  pMainLayout->addWidget(mpParentClassLabel, 2, 0);
+  pMainLayout->addWidget(mpParentClassTextBox, 2, 1);
+  pMainLayout->addWidget(mpParentClassBrowseButton, 2, 2);
+  pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
