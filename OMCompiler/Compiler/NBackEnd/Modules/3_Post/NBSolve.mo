@@ -583,7 +583,6 @@ public
     end if;
   end solveIfBody;
 
-protected
   function solveSimple
     input output Equation eqn;
     input ComponentRef cref;
@@ -601,11 +600,13 @@ protected
       case Equation.WHEN_EQUATION() then (eqn, Status.EXPLICIT, false);
 
       // ToDo: more cases
+      // ToDo: tuples, record elements, array constructors
 
       else (eqn, Status.UNPROCESSED, false);
     end match;
   end solveSimple;
 
+protected
   function solveSimpleLhsRhs
     input Expression lhs;
     input Expression rhs;

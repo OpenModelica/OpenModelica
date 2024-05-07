@@ -55,6 +55,7 @@ protected
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationAttributes, EquationPointers, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
+  import Solve = NBSolve;
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
 
@@ -701,43 +702,79 @@ public
 
     function refine
       "refines the solvability kind using differentiation
-      Note: only updates the solvabilites of the variables and equations from the maps"
+      Note: only updates the solvabilites of the variables and equations from the maps v and e"
       input output Matrix full;
       input output FunctionTree funcTree;
       input UnorderedMap<ComponentRef, Integer> v    "variables to refine";
       input UnorderedMap<ComponentRef, Integer> e    "equations to refine";
       input VariablePointers vars                    "all variables";
       input EquationPointers eqns                    "all equations";
+      input UnorderedSet<ComponentRef> vars_set      "context variables to determine solvability";
     algorithm
       full := match full
         local
           ComponentRef eqn, var;
           Integer eqn_idx, var_idx;
-          DifferentiationArguments diffArgs;
+          DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcTree);
           Pointer<Equation> eqn_ptr;
           Expression exp;
+          Solve.Status status;
+          Solvability sol;
+          UnorderedSet<ComponentRef> linear_set;
+          list<ComponentRef> param_lst, var_lst;
 
         case FULL() algorithm
           for v_tpl in UnorderedMap.toList(v) loop
             (var, var_idx) := v_tpl;
-            diffArgs := DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcTree);
             diffArgs.diffCref := var;
             for e_tpl in UnorderedMap.toList(e) loop
               (eqn, eqn_idx) := e_tpl;
-              eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
-              // get the residual expression, differentiate and simplify it
-              exp := Equation.getResidualExp(Pointer.access(eqn_ptr));
-              (exp, diffArgs) := Differentiate.differentiateExpressionDump(exp, diffArgs, getInstanceName());
-              exp := SimplifyExp.simplifyDump(exp, true, getInstanceName());
-              print("the partial derivative by " + ComponentRef.toString(var) + " of equation\n" + Equation.pointerToString(eqn_ptr) + "\nis: " + Expression.toString(exp) + "\n");
+              // only do something if there is a value to refine
+              if UnorderedSet.contains(var, full.occurences[eqn_idx]) then
+                // only do something if it is not implicit or unsolvable)
+                sol := UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo());
+                if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
+                  eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
+                   // booleans or (todo: enumerations)
+                  if Type.isBoolean(Equation.getType(Pointer.access(eqn_ptr))) or Type.isBoolean(ComponentRef.getSubscriptedType(var)) then
+                    // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
+                    // Use solveSimple for this and check if status is EXPLICIT
+                    (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
+                    sol := if status == NBSolve.Status.EXPLICIT then Solvability.EXPLICIT_LINEAR(NONE(), NONE()) else Solvability.UNSOLVABLE();
+                  else
+                    // get the residual expression, differentiate and simplify it
+                    exp             := Equation.getResidualExp(Pointer.access(eqn_ptr));
+                    (exp, diffArgs) := Differentiate.differentiateExpressionDump(exp, diffArgs, getInstanceName());
+                    exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
+                    if Expression.isZero(exp) then
+                      sol := Solvability.UNSOLVABLE();
+                    elseif Expression.containsCrefSet(exp, vars_set) then
+                      // nonlinear -> unique solution if does not contain the variable itself
+                      sol := Solvability.EXPLICIT_NONLINEAR(Expression.containsCref(exp, var));
+                    else
+                      // linear -> find all contained crefs and split them by kind. remove constants and save params / variables
+                      linear_set := Expression.extractCrefs(exp);
+                      (_, var_lst)          := List.splitOnTrue(UnorderedSet.toList(linear_set), function BVariable.checkCref(func = BVariable.isConst));
+                      (param_lst, var_lst)  := List.splitOnTrue(UnorderedSet.toList(linear_set), function BVariable.checkCref(func = BVariable.isParamOrConst));
+                      sol := Solvability.EXPLICIT_LINEAR(
+                        pars = if listEmpty(param_lst) then NONE() else SOME(UnorderedSet.fromList(param_lst, ComponentRef.hash, ComponentRef.isEqual)),
+                        vars = if listEmpty(var_lst) then NONE() else SOME(UnorderedSet.fromList(var_lst, ComponentRef.hash, ComponentRef.isEqual)));
+                    end if;
+                  end if;
+                  UnorderedMap.add(var, sol, full.solvabilities[eqn_idx]);
+                end if;
+              end if;
             end for;
           end for;
         then full;
-
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + strictnessString(getStrictness(full)) + "."});
         then fail();
       end match;
+
+      if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
+        print(toString(full, "Refined Full") + "\n");
+      end if;
     end refine;
 
     function compress
@@ -998,8 +1035,9 @@ public
       output Option<Mapping> mapping;
     algorithm
       mapping := match adj
+        case FULL()  then SOME(adj.mapping);
         case FINAL() then SOME(adj.mapping);
-                                             else NONE();
+        else NONE();
       end match;
     end getMappingOpt;
 
@@ -1380,7 +1418,7 @@ public
     end EXPLICIT_NONLINEAR;
 
     record EXPLICIT_LINEAR
-      Boolean param                           "true if we need to divide by a parameter to solve";
+      Option<UnorderedSet<ComponentRef>> pars "parameters we need to divide by to solve";
       Option<UnorderedSet<ComponentRef>> vars "variables we need to divide by to solve";
     end EXPLICIT_LINEAR;
 
@@ -1392,7 +1430,7 @@ public
         case UNSOLVABLE()         then "XX";
         case IMPLICIT()           then "II";
         case EXPLICIT_NONLINEAR() then "N" + (if sol.unique then "+" else "-");
-        case EXPLICIT_LINEAR()    then "L" + (if Util.isSome(sol.vars) then "V" elseif sol.param then "P" else "C");
+        case EXPLICIT_LINEAR()    then "L" + (if Util.isSome(sol.vars) then "V" elseif Util.isSome(sol.pars) then "P" else "C");
         case UNKNOWN()            then "||";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown solvability kind."});
@@ -1410,7 +1448,7 @@ public
         case EXPLICIT_NONLINEAR(unique = false)   then 5;
         case EXPLICIT_NONLINEAR()                 then 4;
         case EXPLICIT_LINEAR(vars = SOME(_))      then 3;
-        case EXPLICIT_LINEAR(param = true)        then 2;
+        case EXPLICIT_LINEAR(pars = SOME(_))      then 2;
         case EXPLICIT_LINEAR()                    then 1;
         case UNKNOWN()                            then 0;
         else algorithm
@@ -1460,7 +1498,7 @@ public
           case EXPLICIT_NONLINEAR(unique = false) algorithm NM := cref :: NM; then();
           case EXPLICIT_NONLINEAR()               algorithm NP := cref :: NP; then();
           case EXPLICIT_LINEAR(vars = SOME(_))    algorithm LV := cref :: LV; then();
-          case EXPLICIT_LINEAR(param = true)      algorithm LP := cref :: LP; then();
+          case EXPLICIT_LINEAR(pars = SOME(_))    algorithm LP := cref :: LP; then();
           case EXPLICIT_LINEAR()                  algorithm LC := cref :: LC; then();
           else                                    algorithm QQ := cref :: QQ; then();
         end match;
@@ -1494,12 +1532,23 @@ public
       output Solvability sol;
     algorithm
       sol := match st
-        case MatrixStrictness.LINEAR    then EXPLICIT_LINEAR(false, SOME(UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)));
+        case MatrixStrictness.LINEAR    then EXPLICIT_LINEAR(NONE(), SOME(UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)));
         case MatrixStrictness.MATCHING  then IMPLICIT();
         case MatrixStrictness.SORTING   then UNSOLVABLE();
         else                                 UNKNOWN();
       end match;
     end fromStrictness;
+
+    function nonlinearOrImplicit
+      input Solvability sol;
+      output Boolean b;
+    algorithm
+      b := match sol
+        case EXPLICIT_NONLINEAR() then true;
+        case IMPLICIT() then true;
+        else false;
+      end match;
+    end nonlinearOrImplicit;
   end Solvability;
 
   function collectDependenciesEquation
@@ -1539,7 +1588,7 @@ public
         Dependency.addListFull(eqn.alg.outputs, dep_map, rep_set);
         // make inputs unsolvable and outputs solvable
         Solvability.updateList(eqn.alg.inputs, Solvability.UNSOLVABLE(), sol_map);
-        Solvability.updateList(eqn.alg.outputs, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
+        Solvability.updateList(eqn.alg.outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       then UnorderedSet.fromList(listAppend(eqn.alg.inputs, eqn.alg.outputs), ComponentRef.hash, ComponentRef.isEqual);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
@@ -1776,7 +1825,7 @@ public
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref)), dep_map);
       end if;
-      Solvability.update(cref, Solvability.EXPLICIT_LINEAR(false, NONE()), sol_map);
+      Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
     else
       var := BVariable.getVarPointer(cref);
