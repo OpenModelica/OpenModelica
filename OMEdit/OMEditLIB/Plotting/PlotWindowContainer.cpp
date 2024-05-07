@@ -488,7 +488,6 @@ void PlotWindowContainer::addAnimationWindow()
     pAnimationWindow->setWindowState(Qt::WindowMaximized);
   }
 #else
-  Q_UNUSED(maximized);
   assert(0);
 #endif
 }
