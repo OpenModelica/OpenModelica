@@ -200,6 +200,8 @@ public
           list<Pointer<Equation>> rest, sliced_eqns = {};
           StrongComponent generic_comp;
           list<StrongComponent> entwined_slices = {};
+          Tearing strict;
+          list<StrongComponent> tmp, inner_comps = {};
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (eqn, funcTree, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree, systemType, implicit_index, slicing_map);
@@ -209,8 +211,13 @@ public
           (eqn, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(Pointer.access(comp.eqn), comp.vars, funcTree, systemType, implicit_index, slicing_map);
         then ({StrongComponent.MULTI_COMPONENT(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
 
-        case StrongComponent.ALGEBRAIC_LOOP() algorithm
-          // do we need to do smth here? e.g. solve inner equations? call tearing from here?
+        case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+          for inner_comp in listReverse(arrayList(strict.innerEquations)) loop
+            (tmp, funcTree, implicit_index) := solveStrongComponent(inner_comp, funcTree, systemType, implicit_index, slicing_map);
+            inner_comps := listAppend(tmp, inner_comps);
+          end for;
+          strict.innerEquations := listArray(inner_comps);
+          comp.strict := strict;
           comp.status := Status.IMPLICIT;
         then ({comp}, Status.IMPLICIT);
 
