@@ -173,10 +173,10 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
   QList<PlotCurve*> plotCurves = curvesAtPosition(pos, &indexes);
   if (!plotCurves.isEmpty()) {
     QString timeUnit = "";
-    if (mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTPARAMETRIC
-        && mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTARRAYPARAMETRIC
+    if (!mpPlot->getParentPlotWindow()->isPlotParametric()
+        && !mpPlot->getParentPlotWindow()->isPlotArrayParametric()
         && !mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
-      timeUnit = mpPlot->getParentPlotWindow()->getTimeUnit();
+      timeUnit = QString("%1%2").arg(mpPlot->getXScaleDraw()->getUnitPrefix(), mpPlot->getParentPlotWindow()->getTimeUnit());
     }
     QString toolTip;
     for (int i = 0 ; i < plotCurves.size() ; i++) {
@@ -188,6 +188,11 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
 
       pPlotCurve->getPointMarker()->setValue(x, y);
       pPlotCurve->getPointMarker()->setVisible(true);
+
+      // ScaleDraw::getExponent is only useable when time is on x-axis
+      if (!mpPlot->getParentPlotWindow()->isPlotParametric() && !mpPlot->getParentPlotWindow()->isPlotArrayParametric()) {
+        x = x / qPow(10, mpPlot->getXScaleDraw()->getExponent());
+      }
 
       if (i > 0) {
         toolTip += QString("<br /><br />");

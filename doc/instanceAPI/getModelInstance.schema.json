@@ -132,20 +132,6 @@
           },
           {
             "$ref": "expression.schema.json"
-          },
-          {
-            "description": "An invalid annotation",
-            "type": "object",
-            "properties": {
-              "$error": {
-                "description": "Error message",
-                "type": "string"
-              },
-              "value": {
-                "description": "Annotation dumped as a string",
-                "type": "string"
-              }
-            }
           }
         ]
       }

@@ -163,6 +163,12 @@ static inline void addHashLongVar(hash_long_var **ht, long key, omc_ScalarVariab
   HASH_ADD_INT( *ht, id, v );
 }
 
+static int endsWith(const char *str, const char *suffix) {
+  int str_len = strlen(str);
+  int suffix_len = strlen(suffix);
+  return (str_len >= suffix_len) && (0 == strcmp(str + (str_len-suffix_len), suffix));
+}
+
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
 /* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
 
@@ -661,7 +667,7 @@ void read_input_xml(MODEL_DATA* modelData,
     omc_ScalarVariable *v = *findHashLongVar(in, i); \
     read_var_info(v, info); \
     read_var_attribute(v, attribute); \
-    setFilterOuput(v, out[j], info->name, e); \
+    setFilterOuput(v, out[j], info->name, (e || endsWith(info->info.filename, ".moc"))); \
     addHashStringLong(&mapAlias, info->name, j); /* create a mapping for Alias variable to get the correct index */ \
     debugStreamPrint(LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j); \
     if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) \
@@ -712,7 +718,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i], modelData->realAlias[i].info.name, modelData->encrypted);
+    setFilterOuput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i], modelData->realAlias[i].info.name, (modelData->encrypted || endsWith(modelData->realAlias[i].info.info.filename, ".moc")));
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -758,7 +764,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i], modelData->integerAlias[i].info.name, modelData->encrypted);
+    setFilterOuput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i], modelData->integerAlias[i].info.name, (modelData->encrypted || endsWith(modelData->integerAlias[i].info.info.filename, ".moc")));
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -802,7 +808,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i], modelData->booleanAlias[i].info.name, modelData->encrypted);
+    setFilterOuput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i], modelData->booleanAlias[i].info.name, (modelData->encrypted || endsWith(modelData->booleanAlias[i].info.info.filename, ".moc")));
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -845,7 +851,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i], modelData->stringAlias[i].info.name, modelData->encrypted);
+    setFilterOuput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i], modelData->stringAlias[i].info.name, (modelData->encrypted || endsWith(modelData->stringAlias[i].info.info.filename, ".moc")));
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
