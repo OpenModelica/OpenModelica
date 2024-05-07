@@ -28,6 +28,7 @@ testDirectionalDerivatives.mos \
 testLoopsOverFMUs.mos \
 testSynchronousFMU_01.mos \
 testSynchronousFMU_02.mos \
+whenTest.mos \
 
 FAILINGTESTFILES = \
 test03.mos \
