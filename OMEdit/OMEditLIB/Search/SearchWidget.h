@@ -31,6 +31,10 @@
 /*
  * @author Arunkumar Palanisamy <arunkumar.palanisamy@liu.se>
  */
+
+#ifndef SEARCHWIDGET_H
+#define SEARCHWIDGET_H
+
 #include <QWidget>
 #include <QLineEdit>
 #include <QComboBox>
@@ -137,3 +141,5 @@ public slots:
 private:
   bool mStop;
 };
+
+#endif // SEARCHWIDGET_H

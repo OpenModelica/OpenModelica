@@ -32,8 +32,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef MODELICACLASSDIALOG_H
-#define MODELICACLASSDIALOG_H
+#ifndef CRMLTRANSLATEASDIALOGDIALOG_H
+#define CRMLTRANSLATEASDIALOGDIALOG_H
 
 #include <QDialog>
 #include <QLineEdit>
@@ -51,11 +51,6 @@
 #include "Modeling/ModelicaClassDialog.h"
 
 class Label;
-class LibraryWidget;
-class LibraryTreeProxyModel;
-class TreeSearchFilters;
-class DoubleSpinBox;
-class LibraryBrowseDialog;
 
 class CRMLTranslateAsDialog : public QDialog
 {
@@ -65,8 +60,6 @@ public:
   QLineEdit* getParentClassTextBox() {return mpParentClassTextBox;}
   QLineEdit* getOutputDirectoryTextBox() {return mpOutputDirectoryTextBox;}
 private:
-  Label *mpNameLabel;
-  QLineEdit *mpNameTextBox;
   Label *mpOutputDirectoryLabel;
   QLineEdit *mpOutputDirectoryTextBox;
   QPushButton *mpOutputDirectoryBrowseButton;
@@ -81,4 +74,4 @@ private slots:
   void browseParentClass();
 };
 
-#endif // MODELICACLASSDIALOG_H
+#endif // CRMLTRANSLATEASDIALOGDIALOG_H
