@@ -422,7 +422,7 @@ protected
       case Adjacency.Matrix.FULL() algorithm
         for eqn_idx in UnorderedMap.valueList(e) loop
           for var in var_lst loop
-            if Solvability.nonlinearOrImplicit(UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo())) then
+            if UnorderedSet.contains(var, full.occurences[eqn_idx]) and Solvability.nonlinearOrImplicit(UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo())) then
               linear := false; break;
             end if;
           end for;
