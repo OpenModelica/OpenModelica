@@ -123,13 +123,6 @@ public
   record ANY
   end ANY;
 
-  record SUBSCRIPTED
-    String name;
-    Type ty;
-    list<Type> subs;
-    Type subscriptedTy;
-  end SUBSCRIPTED;
-
   record CONDITIONAL_ARRAY
     "A type that might be one of two types depending on a condition.
      The two types are assumed to be array types with equal number of dimensions."
@@ -1030,43 +1023,6 @@ public
           s := IOStream.append(s, name);
         then s;
 
-      case SUBSCRIPTED()
-        algorithm
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "function ");
-          s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
-          s := IOStream.append(s, "\n");
-
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "  input ");
-          s := IOStream.append(s, toString(ty.ty));
-          s := IOStream.append(s, " exp;\n");
-
-          index := 1;
-          for sub in ty.subs loop
-            s := IOStream.append(s, indent);
-            s := IOStream.append(s, "  input ");
-            s := IOStream.append(s, toString(sub));
-            s := IOStream.append(s, " s");
-            s := IOStream.append(s, String(index));
-            s := IOStream.append(s, ";\n");
-            index := index + 1;
-          end for;
-
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "  output ");
-          s := IOStream.append(s, toString(ty.subscriptedTy));
-          s := IOStream.append(s, " result = exp[");
-          s := IOStream.append(s,
-            stringDelimitList(list("s" + String(i) for i in 1:listLength(ty.subs)), ","));
-          s := IOStream.append(s, "];\n");
-
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "end ");
-          s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
-        then
-          s;
-
       else s;
     end match;
   end toFlatDeclarationStream;
@@ -1368,20 +1324,6 @@ public
       sizeTy := Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(dimensionCount(arrayTy))});
     end if;
   end sizeType;
-
-  function subscriptedTypeName
-    input Type expType;
-    input list<Type> subscriptTypes;
-    output String str;
-  protected
-    list<String> strl;
-  algorithm
-    strl := list(toString(t) for t in subscriptTypes);
-    strl := "_" :: strl;
-    strl := toString(expType) :: strl;
-    strl := "subscript" :: strl;
-    str := stringAppendList(strl);
-  end subscriptedTypeName;
 
   function simplify
     input output Type ty;
