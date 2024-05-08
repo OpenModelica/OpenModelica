@@ -61,10 +61,11 @@ CRMLTranslateAsDialog::CRMLTranslateAsDialog(QWidget *pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::translateAsCRML));
-  setMinimumWidth(400);
+  setMinimumWidth(1000);
   // Create the output directory label
   mpOutputDirectoryLabel = new Label(tr("Select the output directory:"));
   mpOutputDirectoryTextBox = new QLineEdit;
+  mpOutputDirectoryTextBox->setText(StringHandler::getLastOpenDirectory());
   mpOutputDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpOutputDirectoryBrowseButton->setAutoDefault(false);
   connect(mpOutputDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseOutputDirectory()));

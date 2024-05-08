@@ -51,6 +51,7 @@
 #include "Modeling/ModelicaClassDialog.h"
 
 class Label;
+class LibraryTreeItem;
 
 class CRMLTranslateAsDialog : public QDialog
 {
@@ -59,6 +60,8 @@ public:
   CRMLTranslateAsDialog(QWidget *pParent = 0);
   QLineEdit* getParentClassTextBox() {return mpParentClassTextBox;}
   QLineEdit* getOutputDirectoryTextBox() {return mpOutputDirectoryTextBox;}
+  void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;};
+  LibraryTreeItem *getLibraryTreeItem() {return mpLibraryTreeItem;};
 private:
   Label *mpOutputDirectoryLabel;
   QLineEdit *mpOutputDirectoryTextBox;
@@ -69,6 +72,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  LibraryTreeItem *mpLibraryTreeItem;
 private slots:
   void browseOutputDirectory();
   void browseParentClass();
