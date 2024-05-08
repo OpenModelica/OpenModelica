@@ -133,7 +133,13 @@ public:
   void initializePlot(QStringList arguments);
   void setVariablesList(QStringList variables);
   void setPlotType(PlotType type);
-  PlotType getPlotType();
+  bool isPlot() const {return mPlotType == PlotWindow::PLOT;}
+  bool isPlotAll() const {return mPlotType == PlotWindow::PLOTALL;}
+  bool isPlotParametric() const {return mPlotType == PlotWindow::PLOTPARAMETRIC;}
+  bool isPlotInteractive() const {return mPlotType == PlotWindow::PLOTINTERACTIVE;}
+  bool isPlotArray() const {return mPlotType == PlotWindow::PLOTARRAY;}
+  bool isPlotArrayParametric() const {return mPlotType == PlotWindow::PLOTARRAYPARAMETRIC;}
+  PlotType getPlotType() const {return mPlotType;}
   void initializeFile(QString file);
   void getStartStopTime(double &start, double &stop);
   void setupToolbar();
@@ -340,6 +346,7 @@ private:
   QLabel *mpYMaximumLabel;
   QLineEdit *mpYMaximumTextBox;
   QCheckBox *mpPrefixUnitsCheckbox;
+  bool mPrefixUnitsChanged = false;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;

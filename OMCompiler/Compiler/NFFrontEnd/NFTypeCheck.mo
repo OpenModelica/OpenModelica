@@ -2950,6 +2950,30 @@ algorithm
       then
         ();
 
+    case Expression.CREF()
+      algorithm
+        bindingType := ComponentRef.getSubscriptedType(ComponentRef.expandSplitSubscripts(bindingExp.cref));
+
+        dims := {};
+        for s in ComponentRef.subscriptsAllFlat(bindingExp.cref) loop
+          dims := match s
+            case Subscript.SPLIT_INDEX()
+              algorithm
+                if isParent(s.node, component) then
+                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                end if;
+              then
+                dims;
+
+            else dims;
+          end match;
+        end for;
+
+        dims := listReverseInPlace(dims);
+        componentType := Type.liftArrayLeftList(componentType, dims);
+      then
+        ();
+
     else ();
   end match;
 end elaborateBindingType;
