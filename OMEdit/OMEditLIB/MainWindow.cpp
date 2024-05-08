@@ -145,6 +145,7 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   setMinimumSize(400, 300);
   setContentsMargins(1, 1, 1, 1);
+  mpCRMLTranslateAsDialog = NULL;
 }
 
 MainWindow *MainWindow::mpInstance = 0;
@@ -1061,27 +1062,24 @@ void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
 
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
   MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget,
-    QString("%1 %2").arg(Helper::translateCRML, pLibraryTreeItem->getNameStructure()));
+    QString("%1 %2").arg(Helper::translateCRML, fi.fileName()));
   pCRMLTranslatorOutputWidget->start();
 
 }
 
-void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
+void MainWindow::runCRMLTranslateAs(int result)
 {
-  /* if the CRML text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
-    }
-  }
 
+  LibraryTreeItem *pLibraryTreeItem = mpCRMLTranslateAsDialog->getLibraryTreeItem();
+  QString outputDirectory = mpCRMLTranslateAsDialog->getOutputDirectoryTextBox()->text();
+  QString modelicaWithin = mpCRMLTranslateAsDialog->getParentClassTextBox()->text();
   QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
 
-  CRMLTranslateAsDialog *pCRMLTranslateAsDialog = new CRMLTranslateAsDialog(this);
-  pCRMLTranslateAsDialog->exec();
+  delete(mpCRMLTranslateAsDialog);
+  mpCRMLTranslateAsDialog = NULL;
 
-  QString outputDirectory = pCRMLTranslateAsDialog->getOutputDirectoryTextBox()->text();
-  QString modelicaWithin = pCRMLTranslateAsDialog->getParentClassTextBox()->text();
+  if (result == QDialog::Rejected)
+    return;
 
   CRMLTranslatorOptions crmlTranslatorOptions;
   CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
@@ -1102,9 +1100,25 @@ void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
 
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
   MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget,
-    QString("%1 %2").arg(Helper::translateAsCRML, pLibraryTreeItem->getNameStructure()));
+    QString("%1 %2").arg(Helper::translateAsCRML, fi.fileName()));
   pCRMLTranslatorOutputWidget->start();
+}
 
+void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if the CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+
+  if (!mpCRMLTranslateAsDialog) {
+    mpCRMLTranslateAsDialog =  new CRMLTranslateAsDialog(this);
+    connect(mpCRMLTranslateAsDialog, SIGNAL(finished(int)), this, SLOT(runCRMLTranslateAs(int)));
+  }
+  mpCRMLTranslateAsDialog->setLibraryTreeItem(pLibraryTreeItem);
+  mpCRMLTranslateAsDialog->open();
 }
 
 void MainWindow::runScript(LibraryTreeItem *pLibraryTreeItem)
