@@ -1061,6 +1061,8 @@ public
     function stateSelectStringBuffer
       input Option<StateSelect> optStateSelect;
       input output list<String> buffer;
+    protected
+      StateSelect stateSelect;
     algorithm
       if isSome(optStateSelect) then
         SOME(stateSelect) := optStateSelect;
@@ -1071,6 +1073,8 @@ public
     function tearingSelectStringBuffer
       input Option<TearingSelect> optTearingSelect;
       input output list<String> buffer;
+    protected
+      TearingSelect tearingSelect;
     algorithm
       if isSome(optTearingSelect) then
         SOME(tearingSelect) := optTearingSelect;
