@@ -375,7 +375,7 @@ public
 
         // update adjacency matrices
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-        en := UnorderedMap.subSet(equations.map, list(Equation.getEqnName(eqn) for eqn in start_eqns));
+        en := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in start_eqns));
         (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations);
 
         if Flags.isSet(Flags.INITIALIZATION) then

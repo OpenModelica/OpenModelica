@@ -160,9 +160,8 @@ public
     input output Integer index            "current unique loop index";
     input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   protected
-    // dummy adjacency matrix, dont need it for none()
+    // dummy adjacency matrix, dont need it for implicit
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
-    list<Module.tearingInterface> funcs = {initialize, none, finalize};
     StrongComponent new_comp;
   algorithm
     (comp, dummy, funcTree, index) := match comp
@@ -175,10 +174,7 @@ public
           linear  = false,
           mixed   = false,
           status  = NBSolve.Status.IMPLICIT);
-        for func in funcs loop
-          (new_comp, dummy, funcTree, index) := func(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
-        end for;
-      then (new_comp, dummy, funcTree, index);
+      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
@@ -188,10 +184,7 @@ public
           linear  = false,
           mixed   = false,
           status  = NBSolve.Status.IMPLICIT);
-        for func in funcs loop
-          (new_comp, dummy, funcTree, index) := func(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
-        end for;
-      then (new_comp, dummy, funcTree, index);
+      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
 
       // do nothing otherwise
       else (comp, dummy, funcTree, index);
@@ -297,8 +290,8 @@ protected
         vars_set  := UnorderedSet.fromList(list(BVariable.getVarName(var) for var in vars_lst), ComponentRef.hash, ComponentRef.isEqual);
 
         // the sets of discrete variables and discrete equations
-        v         := UnorderedMap.subSet(variables.map, list(BVariable.getVarName(var) for var in vars_lst));
-        e         := UnorderedMap.subSet(equations.map, list(Equation.getEqnName(eqn) for eqn in eqns_lst));
+        v         := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in vars_lst));
+        e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in eqns_lst));
 
         // refining the adjacency matrix by updating solvability information using differentiation
         (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set);
@@ -389,8 +382,8 @@ protected
           comp.mixed := true;
 
           // the sets of discrete variables and discrete equations
-          v         := UnorderedMap.subSet(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
-          e         := UnorderedMap.subSet(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
+          v         := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
+          e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
 
           // match the discretes to create inner components
           adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);

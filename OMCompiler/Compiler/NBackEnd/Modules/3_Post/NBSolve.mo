@@ -547,8 +547,8 @@ public
       else
         // If eqn is non-linear in cref
         if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cref: "
-            + ComponentRef.toString(fixed_cref) + " has to be solved implicitely in equation:\n" + Equation.toString(eqn)});
+          Error.addCompilerWarning(getInstanceName() + " cref: " + ComponentRef.toString(fixed_cref)
+            + " has to be solved implicitely in equation:\n" + Equation.toString(eqn));
         end if;
         invertRelation := false;
         status := Status.IMPLICIT;

@@ -556,7 +556,7 @@ public
     end for;
   end merge;
 
-  function subSet
+  function subMap
     input UnorderedMap<K, V> map;
     input list<K> lst;
     output UnorderedMap<K, V> sub_set;
@@ -571,7 +571,7 @@ public
     for k in lst loop
       add(k, getSafe(k, map, sourceInfo()), sub_set);
     end for;
-  end subSet;
+  end subMap;
 
   function all
     "Returns true if the given function returns true for all values in the map,
