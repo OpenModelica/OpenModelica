@@ -866,16 +866,10 @@ algorithm
         // Check if the sundials files are needed
         solver := SimCodeUtil.getSolverFromFlags(simCode.fmiSimulationFlags);
         // Copy CVODE *or* IDA into FMU
-        if stringEq(solver, "cvode") then
-          copyFiles(RuntimeSources.sundials_cvode_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.simrt_c_sundials_cvode_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_cvode_sources;
-        elseif stringEq(solver, "ida") then
-          copyFiles(RuntimeSources.sundials_ida_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.simrt_c_sundials_ida_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_ida_sources;
+        if stringEq(solver, "cvode") or stringEq(solver,"ida") then
+          copyFiles(RuntimeSources.sundials_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.sundials_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          simrt_c_sundials_sources := RuntimeSources.sundials_c_sources;
         else
           simrt_c_sundials_sources := {};
         end if;
@@ -975,12 +969,6 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 
 //Do we need to write codes as above for IDA?
-
-
-
-
-
-
 
 
 

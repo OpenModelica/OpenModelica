@@ -15836,7 +15836,7 @@ algorithm
         if listLength(nameValueTuples) >= 1 then
           for tpl in nameValueTuples loop
             (setting, value) := tpl;
-            if stringEqual(setting, "s") and not stringEqual(setting,"eluer") then
+            if stringEqual(setting, "s") and not stringEqual(value,"eluer") then
               solver := value;
               break;
             end if;

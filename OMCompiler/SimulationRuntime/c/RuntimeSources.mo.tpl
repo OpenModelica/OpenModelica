@@ -10,6 +10,8 @@ encapsulated package RuntimeSources
   constant list<String> sundials_headers={"sundials/cvode/cvode_ls.h",
                                          "sundials/cvode/cvode_proj.h",
                                          "sundials/cvode/cvode.h",
+                                         "sundials/idas/idas_ls.h"
+                                         "sundials/idas/idas.h"
                                          "sundials/sundials/sundials_config.h",
                                          "sundials/sundials/sundials_dense.h",
                                          "sundials/sundials/sundials_direct.h",

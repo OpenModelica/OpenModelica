@@ -1,0 +1,84 @@
+// name:     ExportIdaFmu_cmake
+// keywords: fmu export simulation flags
+// status: correct
+// teardown_command: rm -rf Pendulum-dynamic-ida-tmp
+// cflags: -d=-newInst
+//
+// Export Pendulum as 2.0 CS FMU with IDA solver
+
+//updatePackageIndex(); getErrorString();
+//installPackage(Modelica, "4.0.0"); getErrorString();
+
+// Generate FMU
+//loadModel(Modelica, {"4.0.0."}); getErrorString();
+//loadString("model TestFMU
+//extends Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum;
+//end Pendulum;"); getErrorString();
+
+
+loadModel("model TestFMU
+Real m(start=10);
+output Real x;
+equation
+
+der(m)=-m*m+8*m;
+x=m;
+
+end TestFMU;");getErrorString();
+
+
+
+
+system("mkdir -p TestFMU-dynamic-ida-tmp");
+echo(false); cd("TestFMU-dynamic-ida-tmp"); echo(true);
+
+setCommandLineOptions("--fmiFlags=s:ida"); getErrorString();
+buildModelFMU(TestFMU, version = "2.0", fmuType="cs", platforms={"dynamic"}); getErrorString();
+
+// Check _flags.json for simulation flags
+system("unzip -cqq TestFMU.fmu resources/TestFMU_flags.json > TestFMU_flags_dynamic.json"); getErrorString();
+readFile("TestFMU_flags_dynamic.json"); getErrorString();
+
+// Simulate with OMSimulator
+//system(getInstallationDirectoryPath() + "/bin/OMSimulator Pendulum.fmu --mode=cs --tolerance=1e-6 --resultFile=\"Pendulum_dynamic_res.mat\" --stopTime=1.0 --suppressPath=true --tempDir=\"Pendulum-dynamic-tmp\"", "Pendulum_cs_systemCall.log"); getErrorString();
+//readFile("Pendulum_cs_systemCall.log");
+
+// Check results
+// TODO: The results are wrong, but with the same error as when using euler
+///val(rev.phi, 0.0, "Pendulum_dynamic_res.mat"); getErrorString();
+//val(rev.w, 0.0, "Pendulum_dynamic_res.mat"); getErrorString();
+//val(rev.phi, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
+//val(rev.w, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "Pendulum.fmu"
+// ""
+// 0
+// ""
+// "{
+//   \"s\" : \"ida\"
+// }"
+// ""
+// 0
+// ""
+// "LOG_SOLVER        | info    | IDA solver is used. Obviously the actual print is different than this string.
+// info:    Result file: Pendulum_dynamic_res.mat (bufferSize=1)
+// info:    Parameter model.root.Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter model.root.Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
+// "
+// 0.0
+// ""
+// 0.0
+// ""
+// -2.591643977798211
+// ""
+// 3.178793199957211
+// ""
+// endResult
