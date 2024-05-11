@@ -57,7 +57,7 @@ extern "C" {
 //#endif // OMC_HAVE_CVODE
 //#ifdef OMC_HAVE_IDA
   #include "ida_solver.h"
-#endif // OMC_HAVE_IDA
+//#endif // OMC_HAVE_IDA
 #ifndef OMC_FMI_RUNTIME
 #include <kinsol/kinsol.h>
 #include "kinsolSolver.h"

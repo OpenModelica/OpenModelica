@@ -320,7 +320,7 @@ void TestFMU_setupDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->modelFilePrefix = "TestFMU";
   data->modelData->resultFileName = NULL;
   data->modelData->modelDir = "";
-  data->modelData->modelGUID = "{8bbe51cf-6df6-4c76-a5dc-e613c0ae1625}";
+  data->modelData->modelGUID = "{31945a90-13d7-4748-a899-8757859fb010}";
   data->modelData->encrypted = 0;
   data->modelData->initXMLData = NULL;
   data->modelData->modelDataXml.infoXMLData = NULL;

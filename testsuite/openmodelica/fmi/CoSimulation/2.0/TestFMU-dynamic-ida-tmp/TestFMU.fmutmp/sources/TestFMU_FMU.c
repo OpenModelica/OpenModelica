@@ -1,6 +1,6 @@
 // define class name and unique id
 #define MODEL_IDENTIFIER TestFMU
-#define MODEL_GUID "{8bbe51cf-6df6-4c76-a5dc-e613c0ae1625}"
+#define MODEL_GUID "{31945a90-13d7-4748-a899-8757859fb010}"
 
 // include fmu header files, typedefs and macros
 #include <stdio.h>

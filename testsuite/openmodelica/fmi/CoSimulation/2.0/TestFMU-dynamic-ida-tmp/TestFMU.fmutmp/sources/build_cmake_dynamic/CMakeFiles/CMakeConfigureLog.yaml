@@ -39,8 +39,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-h6foai"
-      binary: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-h6foai"
+      source: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-yj41hv"
+      binary: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-yj41hv"
     cmakeVariables:
       CMAKE_C_FLAGS: ""
       CMAKE_EXE_LINKER_FLAGS: ""
@@ -48,13 +48,13 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-h6foai'
+        Change Dir: 'E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-yj41hv'
         
-        Run Build Command(s): C:/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E env VERBOSE=1 C:/SystemDev/OMDev/tools/msys/usr/bin/make.exe -f Makefile cmTC_ed026/fast
-        /usr/bin/make  -f CMakeFiles/cmTC_ed026.dir/build.make CMakeFiles/cmTC_ed026.dir/build
-        make[1]: Entering directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-h6foai'
-        Building C object CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe   -v -o CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj -c /C/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): C:/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E env VERBOSE=1 C:/SystemDev/OMDev/tools/msys/usr/bin/make.exe -f Makefile cmTC_7d0a6/fast
+        /usr/bin/make  -f CMakeFiles/cmTC_7d0a6.dir/build.make CMakeFiles/cmTC_7d0a6.dir/build
+        make[1]: Entering directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-yj41hv'
+        Building C object CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe   -v -o CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj -c /C/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c
         Using built-in specs.
         COLLECT_GCC=C:\\SystemDev\\OMDev\\tools\\msys\\ucrt64\\bin\\gcc.exe
         Target: x86_64-w64-mingw32
@@ -62,8 +62,8 @@ events:
         Thread model: posix
         Supported LTO compression algorithms: zlib zstd
         gcc version 13.2.0 (Rev3, Built by MSYS2 project) 
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_ed026.dir/'
-         C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_ed026.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=nocona -version -o C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccuu2uNa.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_7d0a6.dir/'
+         C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_7d0a6.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=nocona -version -o C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccxVvSWX.s
         GNU C17 (Rev3, Built by MSYS2 project) version 13.2.0 (x86_64-w64-mingw32)
         	compiled by GNU C version 13.2.0, GMP version 6.3.0, MPFR version 4.2.1, MPC version 1.3.1, isl version isl-0.26-GMP
         
@@ -82,16 +82,16 @@ events:
          C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/include-fixed
         End of search list.
         Compiler executable checksum: 9ededbb617523f3ae037d5140d325cc4
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_ed026.dir/'
-         C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccuu2uNa.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_7d0a6.dir/'
+         C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccxVvSWX.s
         GNU assembler version 2.42 (x86_64-w64-mingw32) using BFD version (GNU Binutils) 2.42
         COMPILER_PATH=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/
         LIBRARY_PATH=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.'
-        Linking C executable cmTC_ed026.exe
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E rm -f CMakeFiles/cmTC_ed026.dir/objects.a
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/ar.exe qc CMakeFiles/cmTC_ed026.dir/objects.a "CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj" 
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe  -v -Wl,--whole-archive CMakeFiles/cmTC_ed026.dir/objects.a -Wl,--no-whole-archive -o cmTC_ed026.exe -Wl,--out-implib,libcmTC_ed026.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.'
+        Linking C executable cmTC_7d0a6.exe
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E rm -f CMakeFiles/cmTC_7d0a6.dir/objects.a
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/ar.exe qc CMakeFiles/cmTC_7d0a6.dir/objects.a "CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj" 
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe  -v -Wl,--whole-archive CMakeFiles/cmTC_7d0a6.dir/objects.a -Wl,--no-whole-archive -o cmTC_7d0a6.exe -Wl,--out-implib,libcmTC_7d0a6.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
         Using built-in specs.
         COLLECT_GCC=C:\\SystemDev\\OMDev\\tools\\msys\\ucrt64\\bin\\gcc.exe
         COLLECT_LTO_WRAPPER=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe
@@ -102,10 +102,10 @@ events:
         gcc version 13.2.0 (Rev3, Built by MSYS2 project) 
         COMPILER_PATH=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/
         LIBRARY_PATH=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/;C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ed026.exe' '-mtune=generic' '-march=nocona' '-dumpdir' 'cmTC_ed026.'
-         C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccmWb1FB.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_ed026.exe C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/crt2.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles/cmTC_ed026.dir/objects.a --no-whole-archive --out-implib libcmTC_ed026.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/default-manifest.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ed026.exe' '-mtune=generic' '-march=nocona' '-dumpdir' 'cmTC_ed026.'
-        make[1]: Leaving directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-h6foai'
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_7d0a6.exe' '-mtune=generic' '-march=nocona' '-dumpdir' 'cmTC_7d0a6.'
+         C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccnsCN5h.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_7d0a6.exe C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/crt2.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles/cmTC_7d0a6.dir/objects.a --no-whole-archive --out-implib libcmTC_7d0a6.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/default-manifest.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_7d0a6.exe' '-mtune=generic' '-march=nocona' '-dumpdir' 'cmTC_7d0a6.'
+        make[1]: Leaving directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-yj41hv'
         
       exitCode: 0
   -
@@ -137,13 +137,13 @@ events:
     message: |
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld\\.exe|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        ignore line: [Change Dir: 'E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-h6foai']
+        ignore line: [Change Dir: 'E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-yj41hv']
         ignore line: []
-        ignore line: [Run Build Command(s): C:/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E env VERBOSE=1 C:/SystemDev/OMDev/tools/msys/usr/bin/make.exe -f Makefile cmTC_ed026/fast]
-        ignore line: [/usr/bin/make  -f CMakeFiles/cmTC_ed026.dir/build.make CMakeFiles/cmTC_ed026.dir/build]
-        ignore line: [make[1]: Entering directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-h6foai']
-        ignore line: [Building C object CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj]
-        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe   -v -o CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj -c /C/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): C:/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E env VERBOSE=1 C:/SystemDev/OMDev/tools/msys/usr/bin/make.exe -f Makefile cmTC_7d0a6/fast]
+        ignore line: [/usr/bin/make  -f CMakeFiles/cmTC_7d0a6.dir/build.make CMakeFiles/cmTC_7d0a6.dir/build]
+        ignore line: [make[1]: Entering directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-yj41hv']
+        ignore line: [Building C object CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj]
+        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe   -v -o CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj -c /C/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=C:\\SystemDev\\OMDev\\tools\\msys\\ucrt64\\bin\\gcc.exe]
         ignore line: [Target: x86_64-w64-mingw32]
@@ -151,8 +151,8 @@ events:
         ignore line: [Thread model: posix]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 13.2.0 (Rev3  Built by MSYS2 project) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_ed026.dir/']
-        ignore line: [ C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_ed026.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=nocona -version -o C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccuu2uNa.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_7d0a6.dir/']
+        ignore line: [ C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:/SystemDev/OMDev/tools/msys/ucrt64/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_7d0a6.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=nocona -version -o C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccxVvSWX.s]
         ignore line: [GNU C17 (Rev3  Built by MSYS2 project) version 13.2.0 (x86_64-w64-mingw32)]
         ignore line: [	compiled by GNU C version 13.2.0  GMP version 6.3.0  MPFR version 4.2.1  MPC version 1.3.1  isl version isl-0.26-GMP]
         ignore line: []
@@ -171,8 +171,8 @@ events:
         ignore line: [ C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/include-fixed]
         ignore line: [End of search list.]
         ignore line: [Compiler executable checksum: 9ededbb617523f3ae037d5140d325cc4]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_ed026.dir/']
-        ignore line: [ C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccuu2uNa.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_7d0a6.dir/']
+        ignore line: [ C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccxVvSWX.s]
         ignore line: [GNU assembler version 2.42 (x86_64-w64-mingw32) using BFD version (GNU Binutils) 2.42]
         ignore line: [COMPILER_PATH=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/]
         ignore line: [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/]
@@ -183,11 +183,11 @@ events:
         ignore line: [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/]
         ignore line: [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/]
         ignore line: [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.']
-        ignore line: [Linking C executable cmTC_ed026.exe]
-        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E rm -f CMakeFiles/cmTC_ed026.dir/objects.a]
-        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/ar.exe qc CMakeFiles/cmTC_ed026.dir/objects.a "CMakeFiles/cmTC_ed026.dir/CMakeCCompilerABI.c.obj" ]
-        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe  -v -Wl --whole-archive CMakeFiles/cmTC_ed026.dir/objects.a -Wl --no-whole-archive -o cmTC_ed026.exe -Wl --out-implib libcmTC_ed026.dll.a -Wl --major-image-version 0 --minor-image-version 0 ]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=nocona' '-dumpdir' 'CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.']
+        ignore line: [Linking C executable cmTC_7d0a6.exe]
+        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E rm -f CMakeFiles/cmTC_7d0a6.dir/objects.a]
+        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/ar.exe qc CMakeFiles/cmTC_7d0a6.dir/objects.a "CMakeFiles/cmTC_7d0a6.dir/CMakeCCompilerABI.c.obj" ]
+        ignore line: [/C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe  -v -Wl --whole-archive CMakeFiles/cmTC_7d0a6.dir/objects.a -Wl --no-whole-archive -o cmTC_7d0a6.exe -Wl --out-implib libcmTC_7d0a6.dll.a -Wl --major-image-version 0 --minor-image-version 0 ]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=C:\\SystemDev\\OMDev\\tools\\msys\\ucrt64\\bin\\gcc.exe]
         ignore line: [COLLECT_LTO_WRAPPER=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe]
@@ -205,13 +205,13 @@ events:
         ignore line: [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/]
         ignore line: [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/]
         ignore line: [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ed026.exe' '-mtune=generic' '-march=nocona' '-dumpdir' 'cmTC_ed026.']
-        link line: [ C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccmWb1FB.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_ed026.exe C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/crt2.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles/cmTC_ed026.dir/objects.a --no-whole-archive --out-implib libcmTC_ed026.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/default-manifest.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_7d0a6.exe' '-mtune=generic' '-march=nocona' '-dumpdir' 'cmTC_7d0a6.']
+        link line: [ C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccnsCN5h.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_7d0a6.exe C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/crt2.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles/cmTC_7d0a6.dir/objects.a --no-whole-archive --out-implib libcmTC_7d0a6.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/default-manifest.o C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o]
           arg [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe] ==> ignore
           arg [-plugin] ==> ignore
           arg [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll] ==> ignore
           arg [-plugin-opt=C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe] ==> ignore
-          arg [-plugin-opt=-fresolution=C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccmWb1FB.res] ==> ignore
+          arg [-plugin-opt=-fresolution=C:\\SystemDev\\OMDev\\tools\\msys\\tmp\\ccnsCN5h.res] ==> ignore
           arg [-plugin-opt=-pass-through=-lmingw32] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc_eh] ==> ignore
@@ -235,7 +235,7 @@ events:
           arg [i386pep] ==> ignore
           arg [-Bdynamic] ==> search dynamic
           arg [-o] ==> ignore
-          arg [cmTC_ed026.exe] ==> ignore
+          arg [cmTC_7d0a6.exe] ==> ignore
           arg [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/crt2.o] ==> obj [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/crt2.o]
           arg [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o] ==> obj [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o]
           arg [-LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0] ==> dir [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0]
@@ -245,10 +245,10 @@ events:
           arg [-LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib] ==> dir [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib]
           arg [-LC:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../..] ==> dir [C:/SystemDev/OMDev/tools/msys/ucrt64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../..]
           arg [--whole-archive] ==> ignore
-          arg [CMakeFiles/cmTC_ed026.dir/objects.a] ==> ignore
+          arg [CMakeFiles/cmTC_7d0a6.dir/objects.a] ==> ignore
           arg [--no-whole-archive] ==> ignore
           arg [--out-implib] ==> ignore
-          arg [libcmTC_ed026.dll.a] ==> ignore
+          arg [libcmTC_7d0a6.dll.a] ==> ignore
           arg [--major-image-version] ==> ignore
           arg [0] ==> ignore
           arg [--minor-image-version] ==> ignore
@@ -305,8 +305,8 @@ events:
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-ha41z4"
-      binary: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-ha41z4"
+      source: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-jqobgh"
+      binary: "E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-jqobgh"
     cmakeVariables:
       CMAKE_C_FLAGS: ""
       CMAKE_EXE_LINKER_FLAGS: ""
@@ -314,18 +314,18 @@ events:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-ha41z4'
+        Change Dir: 'E:/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-jqobgh'
         
-        Run Build Command(s): C:/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E env VERBOSE=1 C:/SystemDev/OMDev/tools/msys/usr/bin/make.exe -f Makefile cmTC_bbcc2/fast
-        /usr/bin/make  -f CMakeFiles/cmTC_bbcc2.dir/build.make CMakeFiles/cmTC_bbcc2.dir/build
-        make[1]: Entering directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-ha41z4'
-        Building C object CMakeFiles/cmTC_bbcc2.dir/src.c.obj
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_bbcc2.dir/src.c.obj -c /E/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-ha41z4/src.c
-        Linking C executable cmTC_bbcc2.exe
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E rm -f CMakeFiles/cmTC_bbcc2.dir/objects.a
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/ar.exe qc CMakeFiles/cmTC_bbcc2.dir/objects.a "CMakeFiles/cmTC_bbcc2.dir/src.c.obj" 
-        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe -Wl,--whole-archive CMakeFiles/cmTC_bbcc2.dir/objects.a -Wl,--no-whole-archive -o cmTC_bbcc2.exe -Wl,--out-implib,libcmTC_bbcc2.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 
-        make[1]: Leaving directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-ha41z4'
+        Run Build Command(s): C:/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E env VERBOSE=1 C:/SystemDev/OMDev/tools/msys/usr/bin/make.exe -f Makefile cmTC_ffbc4/fast
+        /usr/bin/make  -f CMakeFiles/cmTC_ffbc4.dir/build.make CMakeFiles/cmTC_ffbc4.dir/build
+        make[1]: Entering directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-jqobgh'
+        Building C object CMakeFiles/cmTC_ffbc4.dir/src.c.obj
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_ffbc4.dir/src.c.obj -c /E/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-jqobgh/src.c
+        Linking C executable cmTC_ffbc4.exe
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/cmake.exe -E rm -f CMakeFiles/cmTC_ffbc4.dir/objects.a
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/ar.exe qc CMakeFiles/cmTC_ffbc4.dir/objects.a "CMakeFiles/cmTC_ffbc4.dir/src.c.obj" 
+        /C/SystemDev/OMDev/tools/msys/ucrt64/bin/gcc.exe -Wl,--whole-archive CMakeFiles/cmTC_ffbc4.dir/objects.a -Wl,--no-whole-archive -o cmTC_ffbc4.exe -Wl,--out-implib,libcmTC_ffbc4.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 
+        make[1]: Leaving directory '/e/Apps/workspace/topenmodelica/testsuite/openmodelica/fmi/CoSimulation/2.0/TestFMU-dynamic-ida-tmp/TestFMU.fmutmp/sources/build_cmake_dynamic/CMakeFiles/CMakeScratch/TryCompile-jqobgh'
         
       exitCode: 0
 ...

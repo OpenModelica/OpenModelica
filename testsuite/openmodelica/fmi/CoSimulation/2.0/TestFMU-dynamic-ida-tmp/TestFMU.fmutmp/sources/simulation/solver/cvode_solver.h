@@ -134,7 +134,6 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
 #else /* WITH_SUNDIALS */
 typedef void CVODE_SOLVER;
 
-// TODO: Move to .c file
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
 {
 #ifdef OMC_FMI_RUNTIME

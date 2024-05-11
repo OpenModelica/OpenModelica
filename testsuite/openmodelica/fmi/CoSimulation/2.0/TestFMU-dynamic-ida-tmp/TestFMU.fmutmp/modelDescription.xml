@@ -2,10 +2,10 @@
 <fmiModelDescription
   fmiVersion="2.0"
   modelName="TestFMU"
-  guid="{8bbe51cf-6df6-4c76-a5dc-e613c0ae1625}"
+  guid="{31945a90-13d7-4748-a899-8757859fb010}"
   description=""
   generationTool="OpenModelica Compiler unknown-cmake"
-  generationDateAndTime="2024-05-09T15:20:32Z"
+  generationDateAndTime="2024-05-12T01:11:55Z"
   variableNamingConvention="structured"
   numberOfEventIndicators="0">
   <CoSimulation

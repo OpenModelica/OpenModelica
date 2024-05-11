@@ -142,46 +142,4 @@ int ida_event_update(DATA* data, threadData_t *threadData);
 
 #endif  /* #ifdef WITH_SUNDIALS */
 
-typedef void IDA_SOLVER;
-
-int ida_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, IDA_SOLVER *idaData, int isFMI)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##IDA## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable IDA in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##IDA## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-int ida_solver_deinitial(IDA_SOLVER *idaData)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##IDA## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable IDA in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(NULL, "##IDA## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-int ida_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##IDA## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable IDA in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##IDA## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-int ida_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##IDA## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable IDA in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##IDA## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
 #endif  /* #ifndef OMC_IDA_SOLVER_H*/
