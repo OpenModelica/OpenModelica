@@ -48,12 +48,13 @@ protected
   import Tearing = NBTearing;
 
   // NF imports
-  import ComponentRef = NFComponentRef;
   import NFFlatten.FunctionTree;
   import Variable = NFVariable;
+  import ComponentRef = NFComponentRef;
 
   // Backend imports
   import Adjacency = NBAdjacency;
+  import NBAdjacency.Solvability;
   import BEquation = NBEquation;
   import BJacobian = NBJacobian;
   import BVariable = NBVariable;
@@ -159,9 +160,8 @@ public
     input output Integer index            "current unique loop index";
     input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   protected
-    // dummy adjacency matrix, dont need it for tearingNone()
+    // dummy adjacency matrix, dont need it for implicit
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
-    list<Module.tearingInterface> funcs = {tearingNone, tearingFinalize};
     StrongComponent new_comp;
   algorithm
     (comp, dummy, funcTree, index) := match comp
@@ -174,10 +174,7 @@ public
           linear  = false,
           mixed   = false,
           status  = NBSolve.Status.IMPLICIT);
-        for func in funcs loop
-          (new_comp, dummy, funcTree, index) := func(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
-        end for;
-      then (new_comp, dummy, funcTree, index);
+      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
@@ -187,10 +184,7 @@ public
           linear  = false,
           mixed   = false,
           status  = NBSolve.Status.IMPLICIT);
-        for func in funcs loop
-          (new_comp, dummy, funcTree, index) := func(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
-        end for;
-      then (new_comp, dummy, funcTree, index);
+      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
 
       // do nothing otherwise
       else (comp, dummy, funcTree, index);
@@ -214,10 +208,10 @@ public
     String flag = Flags.getConfigString(Flags.TEARING_METHOD);
   algorithm
     funcs := match flag
-      case "cellier"        then {tearingNone, tearingFinalize};
-      case "noTearing"      then {tearingNone, tearingFinalize};
-      case "omcTearing"     then {tearingMinimal, tearingFinalize};
-      case "minimalTearing" then {tearingMinimal, tearingFinalize};
+      case "cellier"        then {initialize, none, finalize};
+      case "noTearing"      then {initialize, none, finalize};
+      case "omcTearing"     then {initialize, minimal, finalize};
+      case "minimalTearing" then {initialize, minimal, finalize};
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
@@ -275,7 +269,39 @@ protected
     new_systems := listReverse(new_systems);
   end tearingTraverser;
 
-  function tearingFinalize extends Module.tearingInterface;
+  function initialize extends Module.tearingInterface;
+  protected
+    Tearing strict;
+    list<Pointer<Variable>> vars_lst;
+    list<Pointer<Equation>> eqns_lst;
+    UnorderedSet<ComponentRef> vars_set         "all loop vars, used to determine solvability";
+    UnorderedMap<ComponentRef, Integer> v, e    "all loop vars and equations map";
+  algorithm
+    (comp, full, index) := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        index := index + 1;
+        comp.idx := index;
+
+        // get all loop variables and equations
+        vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
+        eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
+
+        // the set of all loop variables used to determine solvability
+        vars_set  := UnorderedSet.fromList(list(BVariable.getVarName(var) for var in vars_lst), ComponentRef.hash, ComponentRef.isEqual);
+
+        // the sets of discrete variables and discrete equations
+        v         := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in vars_lst));
+        e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in eqns_lst));
+
+        // refining the adjacency matrix by updating solvability information using differentiation
+        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set);
+        comp.linear       := checkLinearity(full, v, e);
+      then (comp, full, index);
+      else (comp, full, index);
+    end match;
+  end initialize;
+
+  function finalize extends Module.tearingInterface;
   protected
     list<StrongComponent> residual_comps;
     Option<Jacobian> jacobian;
@@ -285,8 +311,21 @@ protected
     list<list<Slice<EquationPointer>>> acc = {};
     String tag;
   algorithm
-    (comp, index) := match comp
+    comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        // inline potential records
+        for eqn in listReverse(strict.residual_eqns) loop
+          tmp := Inline.inlineRecordSliceEquation(eqn, variables, eq_index, true);
+          if listEmpty(tmp) then
+            acc := {eqn} :: acc;
+          else
+            acc := tmp :: acc;
+          end if;
+        end for;
+
+        // create residual equations
+        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));
+
         tag := if comp.linear then "_LS_JAC_" else "_NLS_JAC_";
         // create residual equations
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
@@ -302,236 +341,91 @@ protected
         if Flags.isSet(Flags.TEARING_DUMP) then
           print(StrongComponent.toString(comp) + "\n");
         end if;
-      then (comp, index);
-      else (comp, index);
+      then comp;
+      else comp;
     end match;
-  end tearingFinalize;
+  end finalize;
 
-  function tearingNone extends Module.tearingInterface;
-    // does nothing but set index and call the jacobian
+  function none extends Module.tearingInterface;
+    // does nothing
+  end none;
+
+  function minimal extends Module.tearingInterface;
+    // only extracts discrete variables to be solved as inner equations
   protected
-    list<StrongComponent> residual_comps;
-    Option<Jacobian> jacobian;
-    Tearing strict;
-  protected
-    list<Slice<EquationPointer>> tmp;
-    list<list<Slice<EquationPointer>>> acc = {};
-  algorithm
-    (comp, index) := match comp
-      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
-        index := index + 1;
-        comp.idx := index;
-
-        for eqn in listReverse(strict.residual_eqns) loop
-          tmp := Inline.inlineRecordSliceEquation(eqn, variables, eq_index, true);
-          if listEmpty(tmp) then
-            acc := {eqn} :: acc;
-          else
-            acc := tmp :: acc;
-          end if;
-        end for;
-
-        // create residual equations
-        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));
-        comp.strict := strict;
-      then (comp, index);
-      else (comp, index);
-    end match;
-  end tearingNone;
-
-  function tearingMinimal extends Module.tearingInterface;
-    // only extracts discrete variables to be solved as inner equations and calls jacobian module
-  protected
-    list<StrongComponent> residual_comps;
-    Option<Jacobian> jacobian;
     Tearing strict;
     list<Pointer<Variable>> vars_lst, cont_vars, disc_vars;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
-    list<Slice<VariablePointer>> iter_lst;
     list<Slice<EquationPointer>> residual_lst;
-    VariablePointers discreteVars;
-    EquationPointers eqns;
     Adjacency.Matrix adj;
     Matching matching;
-    list<StrongComponent> inner_comps, residual_comps;
-    UnorderedMap<ComponentRef, Integer> v, e;
+    list<StrongComponent> inner_comps;
+    UnorderedMap<ComponentRef, Integer> v, e            "discrete variables and equations we have to refine";
   algorithm
-    print("######## minimal ########\n");
-    (comp, index) := match comp
+    comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
-
+        // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
         (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, BVariable.isContinuous);
         (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
 
-        print(List.toString(disc_vars, function BVariable.pointerToString(), "", "", "\n", "") + "\n");
-        print(List.toString(disc_eqns, function Equation.pointerToString(str = ""), "", "", "\n", "") + "\n");
-        v := UnorderedMap.subSet(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
-        e := UnorderedMap.subSet(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
-        (full, funcTree) := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations);
-
-
-        /*
-
-        // ToDo: if other tearing modules have been used before
-        //   we should not only look in residuals and iteration arrays.
-        //   have minimal tearing explicitely as starting method?
-
-        // Equation attributes update! -> discrete initial etc are not mutually exclusive
-        //
-
-        // split variables and equations in discrete and continuous
-        iter_lst                := list(Slice.SLICE(var, {}) for var in cont_vars);
-
-        if listEmpty(disc_vars) and listEmpty(disc_eqns) then
-          // if there are no discrete variables > don't do anything
-          residual_lst    := strict.residual_eqns;
-          inner_comps     := {};
-        else
-          // fail and report if length is not equal!
-          if listLength(disc_vars) <> listLength(disc_eqns) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-              + " failed because there is an unequal amount of discrete variables and equations:\n"
-              + List.toString(disc_vars, BVariable.pointerToString, "discrete variables", "\t", "\n\t", "\n\n")
-              + List.toString(disc_eqns, function Equation.pointerToString(str = ""), "discrete equations", "\t", "\n\t", "\n\n")});
-              fail();
-          end if;
-          // solve the equations for linear occurences of the discrete variables
-          // it should be:
-          // solve discrete vars <-> discrete eqs
-          discreteVars    := VariablePointers.fromList(disc_vars);
-          eqns            := EquationPointers.fromList(disc_eqns);
-
-          (matching, inner_comps) := Causalize.simple(discreteVars, eqns, NBAdjacency.MatrixStrictness.LINEAR);
-          (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
+        if listLength(disc_vars) <> listLength(disc_eqns) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed because there is an unequal amount of discrete variables and equations:\n"
+            + List.toString(disc_vars, BVariable.pointerToString, "discrete variables", "\t", "\n\t", "\n\n")
+            + List.toString(disc_eqns, function Equation.pointerToString(str = ""), "discrete equations", "\t", "\n\t", "\n\n")});
+            fail();
         end if;
 
-        // create residual equations
-        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in strict.residual_eqns);
-        residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
+        if not listEmpty(disc_vars) then
+          comp.mixed := true;
 
-        // update jacobian to take slices (just to have correct inner variables and such)
-        (jacobian, funcTree) := BJacobian.nonlinear(
-          variables = VariablePointers.fromList(list(Slice.getT(var) for var in comp.strict.iteration_vars)),
-          equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in comp.strict.residual_eqns)),
-          comps     = listArray(residual_comps),
-          funcTree  = funcTree,
-          name      = System.System.systemTypeString(systemType) + "_NLS_JAC_" + intString(index));
+          // the sets of discrete variables and discrete equations
+          v         := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
+          e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
 
-        strict.iteration_vars := iter_lst;
-        strict.residual_eqns  := residual_lst;
-        strict.innerEquations := listArray(inner_comps);
-        strict.jac            := jacobian;
-        comp.strict           := strict;
-        */
-        if Flags.isSet(Flags.TEARING_DUMP) then
-          print(StrongComponent.toString(comp) + "\n");
+          // match the discretes to create inner components
+          adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
+          matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
+          adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
+          inner_comps := Sorting.tarjan(adj, matching, variables, equations); //probably need other variables and equations here?
+          strict.innerEquations := listArray(inner_comps);
+
+          // create residuals equations and iteration variables
+          (_, _, _, residual_lst) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(full), variables, equations);
+          strict.residual_eqns    := residual_lst;
+          strict.iteration_vars   := list(Slice.SLICE(var, {}) for var in cont_vars);
+          comp.strict := strict;
         end if;
-      then (comp, index);
-      else (comp, index);
+      then comp;
+      else comp;
     end match;
-  end tearingMinimal;
+  end minimal;
 
-/*
-  function tearingMinimal extends Module.tearingInterface;
+  function checkLinearity
+    input Adjacency.Matrix full;
+    input UnorderedMap<ComponentRef, Integer> v;
+    input UnorderedMap<ComponentRef, Integer> e;
+    output Boolean linear = true;
   protected
-    list<StrongComponent> residual_comps;
-    Option<Jacobian> jacobian;
-    StrongComponent new_comp;
-    list<Slice<EquationPointer>> residuals = {};
-    list<Pointer<Variable>> cont_lst, disc_lst;
+    list<ComponentRef> var_lst = UnorderedMap.keyList(v);
   algorithm
-    (comp, index) := match comp
-      case StrongComponent.ALGEBRAIC_LOOP() algorithm
-        index := index + 1;
-        comp.idx := index;
-
-        //(cont_lst, disc_lst)  := List.splitOnTrue(comp.strict.residual_vars, BVariable.isContinuous);
-
-        // create residual equations
-        for eqn in listReverse(comp.strict.iteration_vars) loop
-          residuals := Slice.apply(eqn, function Equation.createResidual(new = true)) :: residuals;
+    linear := match full
+      case Adjacency.Matrix.FULL() algorithm
+        for eqn_idx in UnorderedMap.valueList(e) loop
+          for var in var_lst loop
+            if UnorderedSet.contains(var, full.occurences[eqn_idx]) and Solvability.nonlinearOrImplicit(UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo())) then
+              linear := false; break;
+            end if;
+          end for;
         end for;
-        comp.strict := setResidualEqns(comp.strict, residuals);
-        residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in comp.strict.residual_eqns);
-
-        // update jacobian to take slices (just to have correct inner variables and such)
-        (jacobian, funcTree) := BJacobian.nonlinear(
-          variables = VariablePointers.fromList(list(Slice.getT(var) for var in comp.strict.iteration_vars)),
-          equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in comp.strict.residual_eqns)),
-          comps     = listArray(residual_comps),
-          funcTree  = funcTree,
-          name      = System.System.systemTypeString(systemType) + "_NLS_JAC_" + intString(index));
-
-          new_comp := StrongComponent.addLoopJacobian(comp, jacobian);
-          if Flags.isSet(Flags.TEARING_DUMP) then
-            print(StrongComponent.toString(comp) + "\n");
-          end if;
-      then (new_comp, index);
-      else (comp, index);
+      then true;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.Matrix.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
+      then fail();
     end match;
-  end tearingMinimal;
+  end checkLinearity;
 
-  function tearingMinimalWork
-    input String name;
-    input list<Pointer<Variable>> variables;
-    input list<Pointer<Equation>> equations;
-    input Boolean mixed;
-    output StrongComponent comp;
-    input output FunctionTree funcTree;
-    input output Integer index;
-  protected
-    list<Pointer<Variable>> cont_lst, disc_lst;
-    list<Slice<VariablePointer>> iteration_lst;
-    list<Slice<EquationPointer>> residual_lst;
-    VariablePointers discreteVars;
-    EquationPointers eqns;
-    Adjacency.Matrix adj;
-    Matching matching;
-    list<StrongComponent> inner_comps, residual_comps;
-    Tearing tearingSet;
-    Option<Jacobian> jacobian;
-
-  algorithm
-    index := index + 1;
-
-    (cont_lst, disc_lst)  := List.splitOnTrue(variables, BVariable.isContinuous);
-    iteration_lst         := list(Slice.SLICE(var, {}) for var in cont_lst);
-    if listEmpty(disc_lst) then
-      residual_lst    := list(Slice.SLICE(eqn, {}) for eqn in equations);
-      inner_comps     := {};
-    else
-      discreteVars    := VariablePointers.fromList(disc_lst);
-      eqns            := EquationPointers.fromList(equations);
-
-      (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
-      matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, false);
-      (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
-      inner_comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
-    end if;
-
-    // create residual equations
-    residual_lst := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in residual_lst);
-    residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in residual_lst);
-
-    tearingSet := TEARING_SET(iteration_lst, residual_lst, listArray(inner_comps), NONE());
-    comp := StrongComponent.ALGEBRAIC_LOOP(index, tearingSet, NONE(), false, mixed, NBSolve.Status.IMPLICIT);
-
-    // inner equations are part of the jacobian
-    (jacobian, funcTree) := BJacobian.nonlinear(
-      variables = VariablePointers.fromList(cont_lst),
-      equations = EquationPointers.fromList(list(Slice.getT(res) for res in residual_lst)),
-      comps     = listArray(listAppend(inner_comps, residual_comps)),
-      funcTree  = funcTree,
-      name      = name + intString(index)
-    );
-
-    comp := StrongComponent.addLoopJacobian(comp, jacobian);
-    if Flags.isSet(Flags.TEARING_DUMP) and not listEmpty(disc_lst) then
-      print(StrongComponent.toString(comp) + "\n");
-    end if;
-  end tearingMinimalWork;
-*/
   annotation(__OpenModelica_Interface="backend");
 end NBTearing;
