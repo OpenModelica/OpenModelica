@@ -348,6 +348,9 @@ simulationnewbackend-records.log: omc-diff
 simulationnewbackend-ScalableTestsuite.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/ScalableTestsuite/ -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-tearing.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/tearing/ -f Makefile test > $@
+	@echo $@ done
 simulationdeclarations.log: omc-diff
 	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
 	@echo $@ done
