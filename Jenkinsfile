@@ -55,7 +55,7 @@ pipeline {
         stage('gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -73,7 +73,7 @@ pipeline {
         stage('clang') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -118,10 +118,10 @@ pipeline {
             }
           }
         }
-        stage('cmake-jammy-gcc') {
+        stage('cmake-noble-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -201,7 +201,7 @@ pipeline {
         stage('checks') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -240,7 +240,7 @@ pipeline {
           }
           steps {
             script {
-              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
+              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache-noble')
               // deps.pull() // Already built...
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
               deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
@@ -262,7 +262,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               /* The cache Dockerfile makes /cache/runtest, etc world writable
                * This is necessary because we run the docker image as a user and need to
                * be able to have a global caching of the omlibrary parts and the runtest database.
@@ -296,7 +296,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               /* The cache Dockerfile makes /cache/runtest, etc world writable
                * This is necessary because we run the docker image as a user and need to
                * be able to have a global caching of the omlibrary parts and the runtest database.
@@ -330,7 +330,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               /* The cache Dockerfile makes /cache/runtest, etc world writable
                * This is necessary because we run the docker image as a user and need to
                * be able to have a global caching of the omlibrary parts and the runtest database.
@@ -365,7 +365,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -393,7 +393,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -421,7 +421,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -450,7 +450,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               /* The cache Dockerfile makes /cache/runtest, etc world writable
                * This is necessary because we run the docker image as a user and need to
                * be able to have a global caching of the omlibrary parts and the runtest database.
@@ -479,7 +479,7 @@ pipeline {
         stage('10 build-gui-clang-qt5') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -497,7 +497,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache'
+              dir '.CI/cache-noble'
               label 'linux'
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -536,8 +536,8 @@ pipeline {
         stage('11 testsuite-clang-parmod') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
-              label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
+              image 'openmodelica/build-deps:v1.23.0-wip'
+              //label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
               alwaysPull true
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
             }
@@ -558,7 +558,7 @@ pipeline {
         stage('12 testsuite-clang-metamodelica') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
             }
           }
@@ -576,7 +576,7 @@ pipeline {
         stage('13 testsuite-matlab-translator') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
             }
@@ -598,7 +598,7 @@ pipeline {
         stage('14 test-clang-icon-generator') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               args "--mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -734,7 +734,7 @@ pipeline {
         stage('clang-qt5-omedit-testsuite') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -757,7 +757,7 @@ pipeline {
         stage('fmuchecker-results') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
             }
@@ -785,7 +785,7 @@ pipeline {
         stage('upload-compliance') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
             }
@@ -803,7 +803,7 @@ pipeline {
         stage('upload-doc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'openmodelica/build-deps:v1.23.0-wip'
               label 'linux'
               alwaysPull true
             }

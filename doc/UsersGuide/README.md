@@ -5,7 +5,7 @@ OpenModelica User's Guide using Sphinx (Python Documentation Generator).
 ## Dependencies
 
 Getting all dependencies right is a nightmare. Just use the dev container
-`build-deps:v1.22.0` from [.devcontainer/README.md](./../../.devcontainer/README.md) and
+`build-deps:v1.23` from [.devcontainer/README.md](./../../.devcontainer/README.md) and
 set `GITHUB_AUTH`.
 
  - omc, omc-diff and omsimulator

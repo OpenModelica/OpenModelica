@@ -11,7 +11,7 @@ continuous integration.
 We added three images that are used by the continuous integration used to compile or test
 the pull requests on github.com/OpenModelica/OpenMOdelica.
 
-  - [build-deps-v1.22](./build-deps-v1.22/devcontainer.json): Default build image to
+  - [build-deps-v1.23](./build-deps-v1.23/devcontainer.json): Default build image to
     compile OpenModelica.
   - [fmuchecker](./fmuchecker/devcontainer.json): Image with FMU checker to test generated
     FMUs.
