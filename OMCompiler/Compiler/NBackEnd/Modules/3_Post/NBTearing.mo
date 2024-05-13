@@ -208,8 +208,8 @@ public
     String flag = Flags.getConfigString(Flags.TEARING_METHOD);
   algorithm
     funcs := match flag
-      case "cellier"        then {initialize, none, finalize};
-      case "noTearing"      then {initialize, none, finalize};
+      case "cellier"        then {initialize, minimal, finalize};
+      case "noTearing"      then {initialize, minimal, finalize};
       case "omcTearing"     then {initialize, minimal, finalize};
       case "minimalTearing" then {initialize, minimal, finalize};
       /* ... New tearing modules have to be added here */
@@ -333,7 +333,7 @@ protected
         (jacobian, funcTree) := BJacobian.nonlinear(
           variables = VariablePointers.fromList(list(Slice.getT(var) for var in strict.iteration_vars)),
           equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
-          comps     = listArray(residual_comps),
+          comps     = arrayAppend(strict.innerEquations,listArray(residual_comps)),
           funcTree  = funcTree,
           name      = System.System.systemTypeString(systemType) + tag + intString(index));
         strict.jac := jacobian;
