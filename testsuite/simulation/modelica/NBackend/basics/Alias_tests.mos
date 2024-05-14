@@ -1,0 +1,119 @@
+loadString("
+  model Test
+    // Throws an error if more than one variable is fixed and have different start values.
+    Real y;             // not simple
+    Real x;
+    Real z;
+    Real v; 
+    Real w;          // regular simple
+    Real a, b, c;       // constant simple
+  equation
+    a = b;
+    b = c;
+    x = -2*z;
+    x = v;
+    v = w;
+    c = 3.0;
+    y = time + c;
+    z = sin(time);
+  end Test;
+
+  model TestE1
+    Test t(x(min=-2000),y(min=-3000));
+  end TestE1;
+"); getErrorString();
+
+
+loadString("
+  model Test1
+    // Throws an error if more than one variable is fixed and have different start values.
+    Real y;             // not simple
+    Real x(min=-2000, max=2000, start=-5, fixed=true, nominal=2) annotation(tearingSelect = avoid);
+    Real z(min=-1000, max=1000, start=-10, fixed=true); 
+    Real v(min=-500, max=500, start=20, fixed=false, nominal=5); 
+    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=10, stateSelect=StateSelect.default);          // regular simple
+    Real a, b, c;       // constant simple
+  equation
+    a = b;
+    b = c;
+    x = -2*z;
+    x = v;
+    v = w;
+    c = 3.0;
+    y = time + c;
+    z = sin(time);
+  end Test1;
+"); getErrorString();
+
+loadString("
+  model Test2
+    // Throws an error if there are non literal nominal values.
+    parameter Real p(fixed=false);
+    Real y;             // not simple
+    Real x(min=-2000, max=2000, start=-5, fixed=true, nominal=2) annotation(tearingSelect = avoid);
+    Real z(min=-1000, max=1000, start=-10, fixed=false); 
+    Real v(min=-500, max=500, start=20, fixed=false, nominal=p); 
+    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=10, stateSelect=StateSelect.default);          // regular simple
+    Real a, b, c;       // constant simple
+  initial equation
+    p = a;
+  equation
+    a = b;
+    b = c;
+    x = -2*z;
+    x = v;
+    v = w;
+    c = 3.0;
+    y = time + c;
+    z = sin(time);
+  end Test2;
+"); getErrorString();
+
+loadString("
+  // Throws an error if more than one variable has StateSelect = ALWAYS and warning if more than one variable is fixed and have the same start values.
+  model Test3
+    Real y;             // not simple
+    Real x(min=-2000, max=2000, start=10, fixed=true, nominal=2) annotation(tearingSelect = avoid);
+    Real z(min=-1000, max=1000, start=10, fixed=false, stateSelect=StateSelect.always); 
+    Real v(min=-500, max=500, start=10, fixed=true, nominal=5); 
+    Real w(min=-10000, max=10000, start=10, fixed=false, nominal=10, stateSelect=StateSelect.always);          // regular simple
+    Real a, b, c;       // constant simple
+  equation
+    a = b;
+    b = c;
+    x = -2*z;
+    x = v;
+    v = w;
+    c = 3.0;
+    y = time + c;
+    z = sin(time);
+  end Test3;
+"); getErrorString();
+
+loadString("
+  model Test4
+    // Throws two warnings: 1. 0 variables are fixed and have different start values, 2. quotient of greatest and lowest nominal value is greater than the nominal threshold
+    // and one notification about having different TearingSelect values.
+    Real y;             // not simple
+    Real x(min=-2000, max=2000, start=-5, fixed=false, nominal=2) annotation(tearingSelect = avoid);
+    Real z(min=-1000, max=1000, start=-10, fixed=false) annotation(tearingSelect = never); 
+    Real v(min=-500, max=500, start=20, fixed=false, nominal=10000000); 
+    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=10);          // regular simple
+    Real a, b, c;       // constant simple
+  equation
+    a = b;
+    b = c;
+    x = -2*z;
+    x = v;
+    v = w;
+    c = 3.0;
+    y = time + c;
+    z = sin(time);
+  end Test4;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+//simulate(Test1); getErrorString();
+simulate(Test2); getErrorString();
+//simulate(Test3); getErrorString();
+//simulate(Test4); getErrorString();
