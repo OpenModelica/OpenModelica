@@ -684,7 +684,7 @@ protected
         end if;
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
-          eq := Equation.makeAssignment(BVariable.getVarName(var), rhs, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
           (solved_eq,_,status, invertRelation) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
           collector := collector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
