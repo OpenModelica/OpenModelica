@@ -393,8 +393,7 @@ protected
           strict.innerEquations := listArray(inner_comps);
 
           // create residuals equations and iteration variables
-          (_, _, _, residual_lst) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(full), variables, equations);
-          strict.residual_eqns    := residual_lst;
+          strict.residual_eqns    := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
           strict.iteration_vars   := list(Slice.SLICE(var, {}) for var in cont_vars);
           comp.strict := strict;
         end if;
