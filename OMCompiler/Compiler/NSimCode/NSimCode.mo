@@ -97,16 +97,19 @@ public
       Integer integerVarIndex;
       Integer booleanVarIndex;
       Integer stringVarIndex;
+      Integer enumerationVarIndex;
 
       Integer realParamIndex;
       Integer integerParamIndex;
       Integer booleanParamIndex;
       Integer stringParamIndex;
+      Integer enumerationParamIndex;
 
       Integer realAliasIndex;
       Integer integerAliasIndex;
       Integer booleanAliasIndex;
       Integer stringAliasIndex;
+      Integer enumerationAliasIndex;
 
       Integer equationIndex;
       Integer linearSystemIndex;
@@ -149,9 +152,9 @@ public
   function EMPTY_SIM_CODE_INDICES
     output SimCodeIndices indices = SIM_CODE_INDICES(
       1,
-      0,0,0,0,
-      0,0,0,0,
-      0,0,0,0,
+      0,0,0,0,0,
+      0,0,0,0,0,
+      0,0,0,0,0,
       1,0,0,
       0,0,0,0,
       UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
