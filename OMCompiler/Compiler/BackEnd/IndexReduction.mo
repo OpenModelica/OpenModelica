@@ -3543,8 +3543,9 @@ algorithm
       Integer diffcount,n;
       Option<DAE.ComponentRef> derName;
       DAE.VarInnerOuter io;
+      Boolean encrypted;
    // state no derivative known
-    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE(),natural=natural),varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io),_,_)
+    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE(),natural=natural),varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io,encrypted=encrypted),_,_)
       guard intGt(diffcount,1)
       equation
         n = diffcount-level;
@@ -3558,7 +3559,7 @@ algorithm
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
         //kind = if_(intGt(n,1),BackendDAE.DUMMY_DER(),BackendDAE.STATE(1,NONE()));
-        var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE(),natural),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
+        var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE(),natural),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false,encrypted);
       then (var,ht);
    // state
     case (BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount,derName=derName,natural=natural)),_,_)
@@ -3691,8 +3692,9 @@ algorithm
       DAE.Exp e;
       Integer n;
       DAE.VarInnerOuter io;
+      Boolean encrypted;
    // state no derivative known
-    case (_,_,_,_,BackendDAE.VAR(varName=name,varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io),_,_,_,_)
+    case (_,_,_,_,BackendDAE.VAR(varName=name,varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io,encrypted=encrypted),_,_,_,_)
       equation
         true = intGt(diffCount,-1);
         name = ComponentReference.crefPrefixDer(iName);
@@ -3706,7 +3708,7 @@ algorithm
         // inherit the isProtected attribute. ticket #12110
         odattr = DAEUtil.setProtectedAttr(odattr, DAEUtil.getProtectedAttr(inVar.values));
         kind = if intGt(diffCount,0) then BackendDAE.STATE(diffCount,NONE(),true) else BackendDAE.DUMMY_DER();
-        var = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
+        var = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false,encrypted);
         (vlst,ht,n) = makeHigherStatesRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,var::iVarLst,ht,iN+1);
       then (vlst,ht,n);
     // finished
@@ -3773,6 +3775,7 @@ algorithm
       Integer diffcount;
       list<BackendDAE.Var> varlst;
       DAE.VarInnerOuter io;
+      Boolean e;
     // state with stateSelect.always, diffed once
     case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),_)
       guard intEq(diffcount,1)
@@ -3792,24 +3795,24 @@ algorithm
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE(),natural));
       then (var,(vars,so,varlst,ht));
     // state, replaceable with known derivative
-    case (var as BackendDAE.VAR(name,BackendDAE.STATE(derName=SOME(_)),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(name,BackendDAE.STATE(derName=SOME(_)),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,_,_,e),(vars,so,varlst,ht))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
         cr = ComponentReference.crefPrefixDer(name);
         source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false,false),(vars,so,varlst,ht));
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false,false,e),(vars,so,varlst,ht));
     // state replacable without unknown derivative
-    case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,_,_,e),(vars,so,varlst,ht))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffcount,1,name,name,var,vars,so,varlst,ht);
         // dummy_der name vor Source information
         cr = ComponentReference.crefPrefixDer(name);
         source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false,false),(vars,so,varlst,ht));
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false,false,e),(vars,so,varlst,ht));
     // regular variable with StateSelect.Prefer
-    case (var as BackendDAE.VAR(name,BackendDAE.VARIABLE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(name,BackendDAE.VARIABLE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,_,_,e),(vars,so,varlst,ht))
       guard(BackendVariable.varStateSelectPrefer(var))
       equation
         // add replacement for each derivative
@@ -3817,7 +3820,7 @@ algorithm
         // dummy_der name vor Source information
         cr = ComponentReference.crefPrefixDer(name);
         source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false,false),(vars,so,varlst,ht));
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false,false,e),(vars,so,varlst,ht));
     else (inVar,inTpl);
   end matchcontinue;
 end makeAllDummyVarandDummyDerivativeRepl;
@@ -3858,6 +3861,7 @@ algorithm
       list<BackendDAE.Var> vlst;
       DAE.Exp e;
       DAE.VarInnerOuter io;
+      Boolean encrypted;
     // finished
     case (0,_,_,_,_,_,_,_,_) then (iVarLst,iHt);
     // state
@@ -3873,7 +3877,7 @@ algorithm
         (vlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,so,iVarLst,ht);
       then (vlst,ht);
 */  // state no derivative known
-    case (_,_,_,_,BackendDAE.VAR(varName=name,varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io),_,_,_,_)
+    case (_,_,_,_,BackendDAE.VAR(varName=name,varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io,encrypted=encrypted),_,_,_,_)
       equation
         name = ComponentReference.crefPrefixDer(iName);
         // generate replacement
@@ -3885,7 +3889,7 @@ algorithm
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
         // inherit the isProtected attribute. ticket #12110
         odattr = DAEUtil.setProtectedAttr(odattr, DAEUtil.getProtectedAttr(inVar.values));
-        var = BackendDAE.VAR(name,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
+        var = BackendDAE.VAR(name,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false,encrypted);
         (vlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,so,var::iVarLst,ht);
       then (vlst,ht);
     else
@@ -3958,7 +3962,8 @@ algorithm
       BackendDAE.VarKind kind;
       String msg;
       DAE.VarInnerOuter io;
-    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffindex),varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io),_,(vars,ht))
+      Boolean e;
+    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffindex),varDirection=dir,varParallelism=prl,varType=tp,arryDim=dim,source=source,tearingSelectOption=ts,hideResult=hideResult,comment=comment,connectorType=ct,innerOuter=io,encrypted=e),_,(vars,ht))
       equation
         dn = intMax(diffindex-level,0);
         // generate names
@@ -3969,9 +3974,9 @@ algorithm
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
         // inherit the isProtected attribute. ticket #12110
         odattr = DAEUtil.setProtectedAttr(odattr, DAEUtil.getProtectedAttr(inVar.values));
-        dummy_derstate = BackendDAE.VAR(dummyderName,BackendDAE.DUMMY_DER(),DAE.BIDIR(),prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
+        dummy_derstate = BackendDAE.VAR(dummyderName,BackendDAE.DUMMY_DER(),DAE.BIDIR(),prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false,e);
         kind = if intEq(dn,0) then BackendDAE.DUMMY_STATE() else BackendDAE.DUMMY_DER();
-        dummy_state = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false);
+        dummy_state = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false,false,e);
         dummy_state = if intEq(dn,0) then inVar else dummy_state;
         dummy_state = BackendVariable.setVarKind(dummy_state, kind);
         vars = BackendVariable.addVar(dummy_derstate, vars);
