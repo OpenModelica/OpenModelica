@@ -49,7 +49,11 @@
 #include "dassl.h"
 #include "epsilon.h"
 #include "external_input.h"
+
+#ifndef OMC_FMI_RUNTIME
 #include "jacobianSymbolical.h"
+#endif
+
 #include "meta/meta_modelica.h"
 #include "model_help.h"
 #include "omc_math.h"
@@ -1006,9 +1010,10 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   if (jac->constantEqns != NULL) {
       jac->constantEqns(data, threadData, jac, NULL);
   }
-
+  #ifndef OMC_FMI_RUNTIME
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparse);
+  #endif
 
   TRACE_POP
   return 0;

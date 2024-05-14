@@ -142,4 +142,5 @@ int ida_event_update(DATA* data, threadData_t *threadData);
 
 #endif  /* #ifdef WITH_SUNDIALS */
 
+
 #endif  /* #ifndef OMC_IDA_SOLVER_H*/

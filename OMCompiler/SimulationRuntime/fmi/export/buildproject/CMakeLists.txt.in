@@ -83,6 +83,8 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
 #endif()
 #this is not very neccessary;twxin4.11;
 
+message(STATUS "FMU_RUNTIME_SOURCES: ${FMU_RUNTIME_SOURCES}")
+
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 
 # Set install prefix to FMU target system short and architecture
