@@ -241,8 +241,8 @@ public
       (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
       (simplify,           "simplify2"), // TODO simplify in Alias only
-      (Events.main,        "Events"),
-      (DetectStates.main,  "Detect States")
+      (DetectStates.main,  "Detect States"),
+      (Events.main,        "Events")
     };
 
     mainModules := {

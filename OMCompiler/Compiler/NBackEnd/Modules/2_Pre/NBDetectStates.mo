@@ -347,20 +347,34 @@ protected
   algorithm
     exp := match exp
       local
+        list<Expression> args;
         ComponentRef state_cref, pre_cref;
         Pointer<Variable> state_var, pre_var;
+        Boolean negated;
+        Expression new_exp;
 
-      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")),
-        arguments = {Expression.CREF(cref = state_cref)}))
+      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")), arguments = args))
       algorithm
-        state_var := BVariable.getVarPointer(state_cref);
+        (state_var, negated) := match args
+          // ToDo! General expressions inside pre call!
+          // ToDo! edge and change replacement!
+          case {Expression.CREF(cref = state_cref)}                           then (BVariable.getVarPointer(state_cref), false);
+          case {Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref), true);
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unexpected expression pre("
+              + List.toString(args, Expression.toString, "", ", ", "") + ")."});
+          then fail();
+        end match;
         pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
         if not scalarized then
           pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
         end if;
-      then Expression.fromCref(pre_cref);
-      // ToDo! General expressions inside pre call!
-      // ToDo! edge and change replacement!
+        new_exp := Expression.fromCref(pre_cref);
+        if negated then
+          new_exp := Expression.logicNegate(new_exp);
+        end if;
+      then new_exp;
+
       else exp;
     end match;
   end collectPreAndPrevious;
