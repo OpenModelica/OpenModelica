@@ -1984,12 +1984,7 @@ uniontype Function
 
   function isDefaultRecordConstructor
     input Function fn;
-    output Boolean isConstructor;
-  algorithm
-    isConstructor := match Class.restriction(InstNode.getClass(fn.node))
-      case Restriction.RECORD_CONSTRUCTOR() then true;
-      else false;
-    end match;
+    output Boolean isConstructor = Restriction.isRecordConstructor(InstNode.restriction(fn.node));
   end isDefaultRecordConstructor;
 
   function isNonDefaultRecordConstructor
