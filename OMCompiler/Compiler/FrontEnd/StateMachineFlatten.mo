@@ -1750,7 +1750,7 @@ Create a DAE.VAR with some defaults"
   output DAE.Element var;
 algorithm
   var := DAE.VAR(componentRef, kind, DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.PUBLIC(), ty, NONE(), dims,
-    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER());
+    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER(), false);
 end createVarWithDefaults;
 
 protected function createVarWithStartValue "
@@ -1766,7 +1766,7 @@ protected
   DAE.Element var;
 algorithm
   var := DAE.VAR(componentRef, kind, DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.PUBLIC(), ty, NONE(), dims,
-    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER());
+    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER(), false);
   outVar := setVarFixedStartValue(var, startExp);
 end createVarWithStartValue;
 

@@ -406,6 +406,8 @@ algorithm
     else "";
   end match;
   File.write(file, hideResult);
+  File.write(file, "\" isEncrypted = \"");
+  File.write(file, boolString(simVar.isEncrypted));
   File.write(file, "\" initNonlinear = \"");
   File.write(file, boolString(simVar.initNonlinear));
   File.write(file, "\"\n");

@@ -1249,6 +1249,7 @@ algorithm
       DAE.VarVisibility protection;
       Boolean b;
       Absyn.InnerOuter io;
+      Boolean encrypted;
 
     case DAE.VAR(componentRef = name,
                   kind = kind,
@@ -1261,7 +1262,8 @@ algorithm
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   comment = comment,
-                  innerOuter = io)
+                  innerOuter = io,
+                  encrypted = encrypted)
       equation
         (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr, protection);
         tp = lowerType(t);
@@ -1271,7 +1273,7 @@ algorithm
         ts = BackendDAEUtil.setTearingSelectAttribute(comment);
         hideResult = BackendDAEUtil.setHideResultAttribute(comment, name);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false));
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false, encrypted));
   end match;
 end lowerDynamicVar;
 
@@ -1310,6 +1312,7 @@ algorithm
       list<DAE.Statement> assrtLst;
       list<BackendDAE.Equation> eqLst;
       Absyn.InnerOuter io;
+      Boolean encrypted;
      case DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
@@ -1322,7 +1325,8 @@ algorithm
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   comment = comment,
-                  innerOuter = io)
+                  innerOuter = io,
+                  encrypted = encrypted)
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct, protection);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
@@ -1336,7 +1340,7 @@ algorithm
         ts = NONE();
         hideResult = BackendDAEUtil.setHideResultAttribute(comment, name);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false), iInlineHT, eqLst);
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false, encrypted), iInlineHT, eqLst);
 
     else
       equation
@@ -1377,7 +1381,8 @@ algorithm
           connectorType         = element.connectorType,
           innerOuter            = DAEUtil.toDAEInnerOuter(element.innerOuter),
           unreplaceable         = false,
-          initNonlinear         = false
+          initNonlinear         = false,
+          encrypted             = elem.encrypted
         );
     then SOME(var);
     else NONE();
@@ -1679,6 +1684,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Type t;
       Absyn.InnerOuter io;
+      Boolean encrypted;
 
     case DAE.VAR(componentRef = name,
                   direction = dir,
@@ -1690,14 +1696,15 @@ algorithm
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   comment = comment,
-                  innerOuter=io)
+                  innerOuter=io,
+                  encrypted=encrypted)
       equation
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
         ts = NONE();
         hideResult = NONE();
       then
-        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false);
+        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false, encrypted);
   end match;
 end lowerExtObjVar;
 
@@ -2407,7 +2414,7 @@ algorithm
                   arryDim = {}, source = DAE.emptyElementSource,
                   values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()), hideResult = NONE(),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
-                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = true, initNonlinear = false) :: inVars;
+                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = true, initNonlinear = false, encrypted = false) :: inVars;
   outEqs := BackendDAE.EQUATION( exp = DAE.CREF(componentRef = cr, ty = DAE.T_CLOCK_DEFAULT),
                                 scalar = e,  source = DAE.emptyElementSource,
                                 attr = BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC ) :: inEqs;
