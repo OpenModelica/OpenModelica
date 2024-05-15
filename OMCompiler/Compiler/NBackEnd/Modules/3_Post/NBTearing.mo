@@ -372,10 +372,13 @@ protected
 
         if listLength(disc_vars) <> listLength(disc_eqns) then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed because there is an unequal amount of discrete variables and equations:\n"
-            + List.toString(disc_vars, BVariable.pointerToString, "discrete variables", "\t", "\n\t", "\n\n")
-            + List.toString(disc_eqns, function Equation.pointerToString(str = ""), "discrete equations", "\t", "\n\t", "\n\n")});
-            fail();
+            + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(disc_vars)) + "|"
+            + intString(sum(BVariable.size(var) for var in disc_vars)) + ") Discrete Variables")
+            + List.toString(disc_vars, BVariable.pointerToString, "", "\t", "\n\t", "\n", true) + "\n"
+            + StringUtil.headline_4("(" + intString(listLength(disc_eqns)) + "|"
+            + intString(sum(Equation.size(eqn) for eqn in disc_eqns)) + ") Discrete Equations")
+            + List.toString(disc_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n", true) + "\n"});
+          fail();
         end if;
 
         if not listEmpty(disc_vars) then

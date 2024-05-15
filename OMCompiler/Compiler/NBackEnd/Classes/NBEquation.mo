@@ -2159,6 +2159,31 @@ public
       Option<IfEquationBody> else_if        "optional elseif equation";
     end IF_EQUATION_BODY;
 
+    function toEquation
+      "does not name the equation"
+      input IfEquationBody body;
+      input DAE.ElementSource source;
+      input Boolean init;
+      output Pointer<Equation> eqn;
+    protected
+      EquationAttributes attr;
+    algorithm
+      attr := match body.then_eqns
+        local
+          Pointer<Equation> then_eqn;
+        case {then_eqn} then if Equation.isDiscrete(then_eqn)
+          then EquationAttributes.default(EquationKind.DISCRETE, init)
+          else EquationAttributes.default(EquationKind.CONTINUOUS, init);
+        else algorithm
+          if(Flags.isSet(Flags.FAILTRACE)) then
+            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
+              + ": Creating if-equation with multiple body equations. Unsure of type:\n" + IfEquationBody.toString(body)});
+          end if;
+        then EquationAttributes.default(EquationKind.CONTINUOUS, init);
+      end match;
+      eqn := Pointer.create(Equation.IF_EQUATION(IfEquationBody.size(body), body, source, attr));
+    end toEquation;
+
     function toString
       input IfEquationBody body;
       input String indent = "";
@@ -2293,7 +2318,7 @@ public
       Pointer<Equation> eqn;
       Option<IfEquationBody> tmp;
     algorithm
-      (conditions, then_eqns) := splitCollect(body, conditions, then_eqns);
+      (conditions, then_eqns) := splitCollect(sortForSplit(body), conditions, then_eqns);
       for i in 1:arrayLength(then_eqns) loop
         tmp := NONE();
         for tpl in List.zip(conditions, then_eqns[i]) loop
@@ -2304,7 +2329,20 @@ public
       end for;
     end split;
 
-    protected function splitCollect
+  protected
+    function sortForSplit
+      "sorts the body equations by discrete and continuous to correctly split them
+      ToDo: make it full type safe sorting"
+      input output IfEquationBody body;
+    protected
+      list<Pointer<Equation>> discretes, continuous;
+    algorithm
+      (discretes, continuous) := List.splitOnTrue(body.then_eqns, Equation.isDiscrete);
+      body.then_eqns          := listAppend(discretes, continuous);
+      body.else_if            := Util.applyOption(body.else_if, sortForSplit);
+    end sortForSplit;
+
+    function splitCollect
       "collects the equations of each branch to create single branch equation bodies afterwards."
       input IfEquationBody body;
       input output list<Expression> conditions;
