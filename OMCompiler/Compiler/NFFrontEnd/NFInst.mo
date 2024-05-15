@@ -426,6 +426,7 @@ function makeTopNode
   input list<SCode.Element> annotationClasses;
   output InstNode topNode;
 protected
+  list<SCode.Element> top_classes;
   SCode.Element cls_elem, ann_package;
   Class cls, ann_cls;
   ClassTree elems;
@@ -433,11 +434,17 @@ protected
   InstNode ann_node;
   UnorderedMap<String, InstNode> generated_inners;
 algorithm
+  top_classes := topClasses;
+
+  if Flags.getConfigBool(Flags.BASE_MODELICA) then
+    top_classes := NFBuiltinFuncs.BASE_MODELICA_POSITIVE_MAX_SIMPLE :: top_classes;
+  end if;
+
   // Create a fake SCode.Element for the top scope, so we don't have to make the
   // definition in InstNode an Option only because of this node.
   cls_elem := SCode.CLASS("<top>", SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
     SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
-    SCode.PARTS(topClasses, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.PARTS(top_classes, {}, {}, {}, {}, {}, {}, NONE()),
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
@@ -469,7 +476,7 @@ algorithm
   topNode := InstNode.setNodeType(node_ty, topNode);
 
   // Create a new class from the elements, and update the inst node with it.
-  cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
+  cls := Class.fromSCode(top_classes, false, topNode, NFClass.DEFAULT_PREFIXES);
   // The class needs to be expanded to allow lookup in it. The top scope will
   // only contain classes, so we can do this instead of the whole expandClass.
   cls := Class.initExpandedClass(cls);
