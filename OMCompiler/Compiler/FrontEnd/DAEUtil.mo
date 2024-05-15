@@ -659,6 +659,7 @@ algorithm
       DAE.ConnectorType ct; list<Absyn.Path> cls;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt; Absyn.InnerOuter io,io2;
+      Boolean ie;
       DAE.VarVisibility prot;
       DAE.ElementSource source "the origin of the element";
 
@@ -667,24 +668,24 @@ algorithm
         Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
         These are named uniqly and renamed later in "instClass"
      */
-    case(_,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,(Absyn.INNER_OUTER()))::elist))
+    case(_,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,(Absyn.INNER_OUTER()),ie)::elist))
       guard
         compareUniquedVarWithNonUnique(var,oldVar)
       equation
         newVar = nameInnerouterUniqueCref(oldVar);
-        o = DAE.VAR(oldVar,kind,dir,prl,prot,tp,NONE(),dim,ct,source,attr,cmt,Absyn.OUTER()) "intact";
-        u = DAE.VAR(newVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,Absyn.NOT_INNER_OUTER()) " unique'ified";
+        o = DAE.VAR(oldVar,kind,dir,prl,prot,tp,NONE(),dim,ct,source,attr,cmt,Absyn.OUTER(),ie) "intact";
+        u = DAE.VAR(newVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,Absyn.NOT_INNER_OUTER(),ie) " unique'ified";
         elist= u::o::elist;
       then
         DAE.DAE(elist);
 
-    case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io)::elist))
+    case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io,ie)::elist))
       guard
         ComponentReference.crefEqualNoStringCompare(var,cr)
       equation
         io2 = removeInnerAttribute(io);
       then
-        DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io2)::elist);
+        DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io2,ie)::elist);
 
     case(_,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
       equation
@@ -2408,6 +2409,7 @@ algorithm
       DAE.Exp e_1,e1_1,e2_1,e1,e2,e_2,e,e3,e_3;
       Absyn.Path p;
       Absyn.InnerOuter io;
+      Boolean encrypted;
       list<DAE.Exp> conds, conds_1;
       list<list<DAE.Element>> trueBranches, trueBranches_1;
       Boolean partialPrefix;
@@ -2428,7 +2430,8 @@ algorithm
                source=source,
                variableAttributesOption = dae_var_attr,
                comment = comment,
-               innerOuter=io)::elts))
+               innerOuter=io,
+               encrypted=encrypted)::elts))
       equation
         str = ComponentReference.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
@@ -2437,7 +2440,7 @@ algorithm
         ty = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(str_1,ty,{});
       then
-        (DAE.VAR(cref_,a,b,prl,prot,t,d_1,instDim,ct,source,dae_var_attr,comment,io)::elts_1);
+        (DAE.VAR(cref_,a,b,prl,prot,t,d_1,instDim,ct,source,dae_var_attr,comment,io,encrypted)::elts_1);
 
     case ((DAE.DEFINE(componentRef = cr,exp = e,source = source)::elts))
       equation
@@ -2602,9 +2605,10 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, DAE.VAR(_,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13))
-      then DAE.VAR(newCr,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13);
+    case(_, DAE.VAR(_,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13,e))
+      then DAE.VAR(newCr,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13,e);
   end match;
 end replaceCrefInVar;
 
@@ -2625,9 +2629,10 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, DAE.VAR(a1,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13))
-      then DAE.VAR(a1,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13);
+    case(_, DAE.VAR(a1,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13,e))
+      then DAE.VAR(a1,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13,e);
   end match;
 end replaceTypeInVar;
 
@@ -2649,10 +2654,11 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, _, DAE.VAR(_,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13))
+    case(_, _, DAE.VAR(_,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13,e))
       equation
-        outelem = DAE.VAR(newCr,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13);
+        outelem = DAE.VAR(newCr,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13,e);
       then outelem;
   end match;
 end replaceCrefandTypeInVar;
@@ -2675,9 +2681,10 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,_,a7,ct,source,a11,a12,a13))
-      then DAE.VAR(a1,a2,a3,prl,a4,a5,SOME(newBindung),a7,ct,source,a11,a12,a13);
+    case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,_,a7,ct,source,a11,a12,a13,e))
+      then DAE.VAR(a1,a2,a3,prl,a4,a5,SOME(newBindung),a7,ct,source,a11,a12,a13,e);
   end match;
 end replaceBindungInVar;
 
@@ -3671,6 +3678,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
+      Boolean encrypted;
       Integer i,j;
 
     case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),_)
@@ -3681,13 +3689,13 @@ algorithm
     case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,parallelism=parallelism,
                   protection=protection,ty=ty,binding=SOME(e),dims=dims,connectorType=ct,
                   source=source,variableAttributesOption=variableAttributesOption,
-                  comment=absynCommentOption,innerOuter=innerOuter),(ht,cache,env))
+                  comment=absynCommentOption,innerOuter=innerOuter,encrypted=encrypted),(ht,cache,env))
       equation
         (e1,(_,i,j)) = Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(ht,0,0));
         (e2,ht1,cache) = evaluateAnnotation4(cache,env,cr,e1,i,j,ht);
       then
         (DAE.VAR(cr,DAE.PARAM(),direction,parallelism,protection,ty,SOME(e2),dims,ct,
-            source,variableAttributesOption,absynCommentOption,innerOuter),(ht1,cache,env));
+            source,variableAttributesOption,absynCommentOption,innerOuter,encrypted),(ht1,cache,env));
     else (iel,inHt);
   end matchcontinue;
 end evaluateAnnotation3;

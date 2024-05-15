@@ -49,7 +49,7 @@ readFile("Bug5670.xml"); getErrorString();
 //     causality = \"output\" isValueChangeable = \"false\"
 //     alias = \"noAlias\"
 //     classIndex = \"0\" classType = \"rAlg\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"3\" startColumn = \"3\" endLine = \"3\" endColumn = \"22\" fileWritable = \"true\">
 //     <Real start=\"2.2\" fixed=\"false\" useNominal=\"false\" />
 //   </ScalarVariable>
@@ -60,7 +60,7 @@ readFile("Bug5670.xml"); getErrorString();
 //     causality = \"output\" isValueChangeable = \"false\"
 //     alias = \"noAlias\"
 //     classIndex = \"0\" classType = \"iAlg\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"4\" startColumn = \"3\" endLine = \"4\" endColumn = \"23\" fileWritable = \"true\">
 //     <Integer start=\"1\" fixed=\"false\" />
 //   </ScalarVariable>
@@ -71,7 +71,7 @@ readFile("Bug5670.xml"); getErrorString();
 //     causality = \"output\" isValueChangeable = \"false\"
 //     alias = \"noAlias\"
 //     classIndex = \"0\" classType = \"bAlg\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"6\" startColumn = \"3\" endLine = \"6\" endColumn = \"24\" fileWritable = \"true\">
 //     <Boolean start=\"true\" fixed=\"false\" />
 //   </ScalarVariable>
@@ -82,7 +82,7 @@ readFile("Bug5670.xml"); getErrorString();
 //     causality = \"output\" isValueChangeable = \"false\"
 //     alias = \"noAlias\"
 //     classIndex = \"0\" classType = \"sAlg\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"3\" endLine = \"5\" endColumn = \"25\" fileWritable = \"true\">
 //     <String start=\"test\" fixed=\"false\" />
 //   </ScalarVariable>

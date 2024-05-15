@@ -202,6 +202,7 @@ public uniontype Element
     Option<VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> comment;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
+    Boolean encrypted "true if the variable belongs to an encrypted class";
   end VAR;
 
   record DEFINE "A solved equation"
