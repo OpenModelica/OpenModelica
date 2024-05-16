@@ -330,8 +330,8 @@ public
 
       // parse records slightly different
       if BVariable.isKnownRecord(var) then
-        // only consider non literal parameter bindings
-        if not BVariable.hasLiteralBinding(var) then
+        // only consider non-evaluable parameter bindings
+        if not BVariable.hasEvaluableBinding(var) then
           initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
           parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
         else
@@ -342,8 +342,8 @@ public
 
       // all other variables that are not records and not record elements to be skipped
       elseif not (BVariable.isRecord(var) or skip_record_element) then
-        // only consider non literal parameter bindings
-        if not BVariable.hasLiteralBinding(var) then
+        // only consider non-evaluable parameter bindings
+        if not BVariable.hasEvaluableBinding(var) then
           // add variable to initial unknowns
           initial_param_vars := var :: initial_param_vars;
           // generate equation only if variable is fixed

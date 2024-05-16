@@ -4402,10 +4402,6 @@ public
       case RECORD() then List.all(exp.elements, isLiteral);
       case RANGE() then isLiteral(exp.start) and isLiteral(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteral, true);
-      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then Call.isLiteral(exp.call);
-      case CAST() then isLiteral(exp.exp);
-      case BOX() then isLiteral(exp.exp);
-      case UNBOX() then isLiteral(exp.exp);
       case FILENAME() then true;
       else false;
     end match;
