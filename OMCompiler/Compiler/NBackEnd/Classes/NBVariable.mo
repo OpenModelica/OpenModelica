@@ -1159,7 +1159,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
-    var:= match var
+    var := match var
       local
         BackendExtension.BackendInfo binfo;
 

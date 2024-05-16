@@ -2077,7 +2077,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
-          data->modelData->samplesInfo[i].interval = <%e2%> /* (max int for single time events) */;
+          data->modelData->samplesInfo[i].interval = <%e2%> /* (max real for single time events) */;
           i++;
           >>
         else '')
