@@ -740,23 +740,36 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
       foreach (LineAnnotation *pConnection, mCollidingConnections) {
         if (pConnection) {
           PointArrayAnnotation points = pConnection->getPoints();
-          for (int i = 0; i < mPoints.size(); ++i) {
-            for (int j = 0; j < points.size(); ++j) {
-              if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
-                QLineF line1(mPoints.at(i), mPoints.at(i + 1));
-                QLineF line2(points.at(j), points.at(j + 1));
-                QPointF intersectionPoint;
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-                QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
-  #else // < Qt 5.14
-                QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
-  #endif // QT_VERSION_CHECK
-                if (type == QLineF::BoundedIntersection) {
-                  painter->save();
-                  painter->setPen(Qt::NoPen);
-                  painter->setBrush(QBrush(mLineColor));
-                  painter->drawEllipse(intersectionPoint, 0.75, 0.75);
-                  painter->restore();
+          if (mPoints.size() > 1 && points.size() > 1) {
+            const QPointF firstPoint1 = mPoints.at(0);
+            const QPointF lastPoint1 = mPoints.at(mPoints.size() - 1);
+            const QPointF firstPoint2 = points.at(0);
+            const QPointF lastPoint2 = points.at(points.size() - 1);
+            for (int i = 0; i < mPoints.size(); ++i) {
+              for (int j = 0; j < points.size(); ++j) {
+                if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
+                  QLineF line1(mPoints.at(i), mPoints.at(i + 1));
+                  QLineF line2(points.at(j), points.at(j + 1));
+                  QPointF intersectionPoint;
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+                  QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
+    #else // < Qt 5.14
+                  QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
+    #endif // QT_VERSION_CHECK
+                  /* Issue #12399. Exclude first and last points.
+                   * Do not draw the node on colliding connection when the intersectionPoint is same as first or last point of connection.
+                   */
+                  if (type == QLineF::BoundedIntersection
+                      && intersectionPoint != firstPoint1
+                      && intersectionPoint != lastPoint1
+                      && intersectionPoint != firstPoint2
+                      && intersectionPoint != lastPoint2) {
+                    painter->save();
+                    painter->setPen(Qt::NoPen);
+                    painter->setBrush(QBrush(mLineColor));
+                    painter->drawEllipse(intersectionPoint, 0.75, 0.75);
+                    painter->restore();
+                  }
                 }
               }
             }

@@ -232,6 +232,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
+      Boolean e;
       DAE.Dimensions dimension;
       DAE.Algorithm alg,alg_1;
       String i;
@@ -242,12 +243,12 @@ algorithm
       list<DAE.Statement> assrtLst;
 
     case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,ct,
-                 source,variableAttributesOption,absynCommentOption,innerOuter),fns)
+                 source,variableAttributesOption,absynCommentOption,innerOuter,e),fns)
       equation
         (binding_1,source,true,_) = inlineExp(binding,fns,source);
       then
         (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding_1),dims,ct,
-                      source,variableAttributesOption,absynCommentOption,innerOuter),true);
+                      source,variableAttributesOption,absynCommentOption,innerOuter,e),true);
 
     case (DAE.DEFINE(componentRef,exp,source) ,fns)
       equation

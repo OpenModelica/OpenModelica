@@ -272,7 +272,7 @@ algorithm
           // add all $DER.x as additional variables
           for derVar in derVars loop
             var := listGet(BackendVariable.getVar(derVar, syst.orderedVars), 1);
-            var := BackendDAE.VAR(ComponentReference.crefPrefixDer(derVar), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), var.varType, NONE(), NONE(), var.arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false);
+            var := BackendDAE.VAR(ComponentReference.crefPrefixDer(derVar), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), var.varType, NONE(), NONE(), var.arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
             syst.orderedVars := BackendVariable.addVar(var, syst.orderedVars);
           end for;
           // add defining equations for $DER.x, depending on solverMethod
@@ -2391,7 +2391,7 @@ algorithm
                   values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
                   hideResult = NONE(),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
-                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = false, initNonlinear = false);
+                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = false, initNonlinear = false, encrypted = false);
 end createVar;
 
 protected function createEqVarPair

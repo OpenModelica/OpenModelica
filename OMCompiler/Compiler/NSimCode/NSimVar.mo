@@ -99,6 +99,7 @@ public
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
+      Boolean isEncrypted;
       Option<array<Integer>> inputIndex;
       Option<String> matrixName "if the varibale is a jacobian var, this is the corresponding matrix";
       Option<Variability> variability "FMI-2.0 variabilty attribute";
@@ -187,6 +188,7 @@ public
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
             hideResult          = var.backendinfo.annotations.hideResult,
+            isEncrypted         = NFVariable.isEncrypted(var),
             inputIndex          = NONE(),
             matrixName          = NONE(),
             variability         = NONE(),
@@ -304,6 +306,7 @@ public
         isValueChangeable   = simVar.isValueChangeable,
         isProtected         = simVar.isProtected,
         hideResult          = SOME(simVar.hideResult),
+        isEncrypted         = simVar.isEncrypted,
         inputIndex          = simVar.inputIndex,
         initNonlinear       = false,  // TODO: Check what to add here!
         matrixName          = simVar.matrixName,
