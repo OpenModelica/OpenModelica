@@ -788,6 +788,21 @@ public
     end match;
   end propagate;
 
+  function unpropagate
+    input output Binding binding;
+    input InstNode node;
+  algorithm
+    () := match binding
+      case RAW_BINDING()
+        algorithm
+          binding.subs := list(s for s guard not Subscript.isSplitFromOrigin(s, node) in binding.subs);
+        then
+          ();
+
+      else ();
+    end match;
+  end unpropagate;
+
   function source
     input Binding binding;
     output Source source;
@@ -833,6 +848,19 @@ public
       else false;
     end match;
   end isEvaluated;
+
+  function hasTypeOrigin
+    input Binding binding;
+    output Boolean res;
+  algorithm
+    res := match binding
+      case RAW_BINDING()
+        guard not listEmpty(binding.subs)
+        then Subscript.isSplitClassProxy(listHead(binding.subs));
+
+      else false;
+    end match;
+  end hasTypeOrigin;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

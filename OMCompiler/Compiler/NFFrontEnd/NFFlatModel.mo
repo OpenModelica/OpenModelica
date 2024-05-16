@@ -553,21 +553,7 @@ public
     input Expression exp;
     input output TypeMap types;
   algorithm
-    () := match exp
-      case Expression.SUBSCRIPTED_EXP()
-        guard Flags.getConfigBool(Flags.MODELICA_OUTPUT)
-        algorithm
-          collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
-        then
-          ();
-
-      else
-        algorithm
-          collectFlatType(Expression.typeOf(exp), types);
-        then
-          ();
-
-    end match;
+    collectFlatType(Expression.typeOf(exp), types);
   end collectExpFlatTypes_traverse;
 
   function collectFunctionFlatTypes
@@ -592,25 +578,6 @@ public
     collectFlatType(Component.getType(comp), types);
     collectBindingFlatTypes(Component.getBinding(comp), types);
   end collectComponentFlatTypes;
-
-  function collectSubscriptedFlatType
-    input Expression exp;
-    input list<Subscript> subs;
-    input Type subscriptedTy;
-    input TypeMap types;
-  protected
-    Type exp_ty;
-    list<Type> sub_tyl;
-    list<Dimension> dims;
-    list<String> strl;
-    String name;
-  algorithm
-    exp_ty := Expression.typeOf(exp);
-    dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
-    sub_tyl := list(Dimension.subscriptType(d) for d in dims);
-    name := Type.subscriptedTypeName(exp_ty, sub_tyl);
-    UnorderedMap.tryAdd(Absyn.IDENT(name), Type.SUBSCRIPTED(name, exp_ty, sub_tyl, subscriptedTy), types);
-  end collectSubscriptedFlatType;
 
   function reconstructRecordInstances
     input list<Variable> variables;
@@ -1045,16 +1012,13 @@ public
 
   function removeNonTopLevelDirections
     input output FlatModel flatModel;
-  protected
-    Integer expose_local_ios;
   algorithm
     // Keep the declared directions if --useLocalDirection=true has been set.
     if Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION) then
       return;
     end if;
 
-    expose_local_ios := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
-    flatModel.variables := list(Variable.removeNonTopLevelDirection(v, expose_local_ios) for v in flatModel.variables);
+    flatModel.variables := list(Variable.removeNonTopLevelDirection(v) for v in flatModel.variables);
   end removeNonTopLevelDirections;
 
   annotation(__OpenModelica_Interface="frontend");

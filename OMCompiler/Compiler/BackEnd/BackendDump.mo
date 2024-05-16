@@ -1815,6 +1815,12 @@ algorithm
   end match;
 end timeEventString;
 
+public function simIteratorString
+  input BackendDAE.SimIterator iter;
+  output String str;
+algorithm
+  str := ComponentReference.printComponentRefStr(iter.name) + " in " + intString(iter.start) + ":" + intString(iter.step) + ":" + intString(iter.start + iter.size);
+end simIteratorString;
 
 // =============================================================================
 // section for all debug* functions

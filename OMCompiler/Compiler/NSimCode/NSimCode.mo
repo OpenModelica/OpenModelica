@@ -97,16 +97,19 @@ public
       Integer integerVarIndex;
       Integer booleanVarIndex;
       Integer stringVarIndex;
+      Integer enumerationVarIndex;
 
       Integer realParamIndex;
       Integer integerParamIndex;
       Integer booleanParamIndex;
       Integer stringParamIndex;
+      Integer enumerationParamIndex;
 
       Integer realAliasIndex;
       Integer integerAliasIndex;
       Integer booleanAliasIndex;
       Integer stringAliasIndex;
+      Integer enumerationAliasIndex;
 
       Integer equationIndex;
       Integer linearSystemIndex;
@@ -149,9 +152,9 @@ public
   function EMPTY_SIM_CODE_INDICES
     output SimCodeIndices indices = SIM_CODE_INDICES(
       1,
-      0,0,0,0,
-      0,0,0,0,
-      0,0,0,0,
+      0,0,0,0,0,
+      0,0,0,0,0,
+      0,0,0,0,0,
       1,0,0,
       0,0,0,0,
       UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
@@ -270,7 +273,7 @@ public
           // old SimCode strcutures
           Absyn.Program program;
           list<String> libs, includes, includeDirs, libPaths;
-          String fileName, directory;
+          String directory;
           OldSimCodeFunction.MakefileParams makefileParams;
           list<OldSimCodeFunction.Function> functions;
           list<OldSimCodeFunction.RecordDeclaration> recordDecls;
@@ -396,12 +399,8 @@ public
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
             generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
-            try
-              Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(name, program);
-            else
-              fileName := "";
-            end try;
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
+
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -571,7 +570,6 @@ public
   uniontype ModelInfo
     record MODEL_INFO
       Absyn.Path name;
-      String fileName;
       String description;
       String directory;
       SimVars vars;
@@ -600,7 +598,6 @@ public
     function create
       input SimVars vars;
       input Absyn.Path name;
-      input String fileName;
       input String directory;
       input list<OldSimCodeFunction.Function> functions;
       input list<SimStrongComponent.Block> linearLoops;
@@ -612,7 +609,7 @@ public
       VarInfo info;
     algorithm
       info := VarInfo.create(vars, eventInfo, simCodeIndices);
-      modelInfo := MODEL_INFO(name, fileName, "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
+      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
 
     function setSeedVars
@@ -641,7 +638,6 @@ public
       varInfo := VarInfo.convert(modelInfo.varInfo);
       oldModelInfo := OldSimCode.MODELINFO(
         name                            = modelInfo.name,
-        fileName                        = modelInfo.fileName,
         description                     = modelInfo.description,
         directory                       = modelInfo.directory,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),

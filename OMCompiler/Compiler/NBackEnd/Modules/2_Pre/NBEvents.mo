@@ -1029,6 +1029,13 @@ protected
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
+      // replace $PRE variables with auxiliaries
+      // necessary if the $PRE variable is a when condition (cannot check the pre of a pre variable)
+      case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref))) algorithm
+        (exp, bucket) := CompositeEvent.add(Condition.CONDITION(exp, iter), Pointer.access(bucket_ptr), true);
+        Pointer.update(bucket_ptr, bucket);
+      then exp;
+
       // ToDo: math events (check the call name in a function and merge with sample case?)
 
       else exp;

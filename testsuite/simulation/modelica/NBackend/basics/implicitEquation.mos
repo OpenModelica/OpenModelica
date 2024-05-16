@@ -150,6 +150,9 @@ simulate(implicitEquation); getErrorString();
 // equationsForZeroCrossings:
 // ========================================
 //
+// generic calls:
+// ========================================
+//
 // jacobianEquations:
 // ========================================
 //

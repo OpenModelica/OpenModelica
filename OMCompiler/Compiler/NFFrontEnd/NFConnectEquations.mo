@@ -212,7 +212,7 @@ algorithm
   if Connector.variability(c1) > Variability.PARAMETER then
     equations := list(makeEqualityEquation(c1.name, c1.source, c2.name, c2.source)
       for c2 in listRest(elements));
-    // collect inputs and outputs that are inside in connections if --nonStdExposeLocalIOs > 0
+    // collect inputs and outputs that are inside in connections if --exposeLocalIOs > 0
     // strip array indices so that the variables will be found later
     if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
       for c in elements loop
@@ -599,7 +599,7 @@ protected
   Expression stream_exp, flow_exp;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
-  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, element, flowThreshold, variables),
+  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables),
     Operator.makeMul(Type.REAL()), makeInStreamCall(stream_exp));
 end sumOutside1;
 
@@ -616,7 +616,7 @@ protected
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
   flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
-  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, element, flowThreshold, variables),
+  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables),
     Operator.makeMul(Type.REAL()), stream_exp);
 end sumInside1;
 
@@ -629,10 +629,10 @@ function sumOutside2
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression exp;
 protected
-  Expression flow_exp;
+  Expression flow_exp, stream_exp;
 algorithm
-  flow_exp := flowExp(element);
-  exp := makePositiveMaxCall(flow_exp, element, flowThreshold, variables);
+  (stream_exp, flow_exp) := streamFlowExp(element);
+  exp := makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables);
 end sumOutside2;
 
 function sumInside2
@@ -644,11 +644,11 @@ function sumInside2
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression exp;
 protected
-  Expression flow_exp;
+  Expression flow_exp, stream_exp;
 algorithm
-  flow_exp := flowExp(element);
+  (stream_exp, flow_exp) := streamFlowExp(element);
   flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
-  exp := makePositiveMaxCall(flow_exp, element, flowThreshold, variables);
+  exp := makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables);
 end sumInside2;
 
 function makeInStreamCall
@@ -664,15 +664,17 @@ end makeInStreamCall;
 function makePositiveMaxCall
   "Generates a max(flow_exp, eps) call."
   input Expression flowExp;
+  input Expression streamExp;
   input Connector element;
   input Expression flowThreshold;
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression positiveMaxCall;
 protected
-  //InstNode flow_node;
   ComponentRef flow_name;
   Option<Expression> nominal_oexp;
   Expression nominal_exp, flow_threshold;
+  InstNode fn_node;
+  Function fn;
 algorithm
   flow_name := associatedFlowCref(Connector.name(element));
   nominal_oexp := lookupVarAttr(flow_name, "nominal", variables);
@@ -684,8 +686,17 @@ algorithm
     flow_threshold := flowThreshold;
   end if;
 
-  positiveMaxCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
-    {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));
+  if Flags.getConfigBool(Flags.BASE_MODELICA) then
+    fn_node := Class.lookupElement("$OMC$PositiveMax",
+      InstNode.getClass(InstNode.topScope(ComponentRef.node(flow_name))));
+    fn_node := Function.instFunctionNode(fn_node, NFInstContext.NO_CONTEXT, AbsynUtil.dummyInfo);
+    {fn} := Function.typeNodeCache(fn_node);
+    positiveMaxCall := Expression.CALL(Call.makeTypedCall(fn,
+      {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));
+  else
+    positiveMaxCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
+      {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));
+  end if;
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;

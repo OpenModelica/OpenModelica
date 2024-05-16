@@ -740,23 +740,36 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
       foreach (LineAnnotation *pConnection, mCollidingConnections) {
         if (pConnection) {
           PointArrayAnnotation points = pConnection->getPoints();
-          for (int i = 0; i < mPoints.size(); ++i) {
-            for (int j = 0; j < points.size(); ++j) {
-              if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
-                QLineF line1(mPoints.at(i), mPoints.at(i + 1));
-                QLineF line2(points.at(j), points.at(j + 1));
-                QPointF intersectionPoint;
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-                QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
-  #else // < Qt 5.14
-                QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
-  #endif // QT_VERSION_CHECK
-                if (type == QLineF::BoundedIntersection) {
-                  painter->save();
-                  painter->setPen(Qt::NoPen);
-                  painter->setBrush(QBrush(mLineColor));
-                  painter->drawEllipse(intersectionPoint, 0.75, 0.75);
-                  painter->restore();
+          if (mPoints.size() > 1 && points.size() > 1) {
+            const QPointF firstPoint1 = mPoints.at(0);
+            const QPointF lastPoint1 = mPoints.at(mPoints.size() - 1);
+            const QPointF firstPoint2 = points.at(0);
+            const QPointF lastPoint2 = points.at(points.size() - 1);
+            for (int i = 0; i < mPoints.size(); ++i) {
+              for (int j = 0; j < points.size(); ++j) {
+                if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
+                  QLineF line1(mPoints.at(i), mPoints.at(i + 1));
+                  QLineF line2(points.at(j), points.at(j + 1));
+                  QPointF intersectionPoint;
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+                  QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
+    #else // < Qt 5.14
+                  QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
+    #endif // QT_VERSION_CHECK
+                  /* Issue #12399. Exclude first and last points.
+                   * Do not draw the node on colliding connection when the intersectionPoint is same as first or last point of connection.
+                   */
+                  if (type == QLineF::BoundedIntersection
+                      && intersectionPoint != firstPoint1
+                      && intersectionPoint != lastPoint1
+                      && intersectionPoint != firstPoint2
+                      && intersectionPoint != lastPoint2) {
+                    painter->save();
+                    painter->setPen(Qt::NoPen);
+                    painter->setBrush(QBrush(mLineColor));
+                    painter->drawEllipse(intersectionPoint, 0.75, 0.75);
+                    painter->restore();
+                  }
                 }
               }
             }
@@ -1573,10 +1586,6 @@ void LineAnnotation::updateConnectionAnnotation()
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
   } else {
-    // update the ModelInstance::Line with new annotation
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      updateLine();
-    }
     // get the connection line annotation.
     QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
     // update the connection
@@ -2108,8 +2117,8 @@ ExpandableConnectorTreeView::ExpandableConnectorTreeView(CreateConnectionDialog 
  * \param pConnectionLineAnnotation
  * \param pParent
  */
-CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
-  : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation)
+CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool createConnector, QWidget *pParent)
+    : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation), mCreateConnector(createConnector)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createConnection));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -2598,16 +2607,17 @@ void CreateConnectionDialog::createConnection()
   mpConnectionLineAnnotation->setStartElementName(startElementName);
   mpConnectionLineAnnotation->setEndElementName(endElementName);
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-      mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
-      mpConnectionLineAnnotation->updateLine();
+    /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
+     * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
+     * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
+     */
+    if (mCreateConnector) {
       mpConnectionLineAnnotation->drawCornerItems();
       mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-      ModelInfo oldModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
       mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
       mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
-      ModelInfo newModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new OMCUndoCommand(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
+    } else if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
       mpGraphicsView->getModelWidget()->updateModelText();
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
@@ -2735,20 +2745,8 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
                                                                                        mpPrioritySpinBox->value(),
                                                                                        mpTransitionLineAnnotation->getOMCShapeAnnotation()));
   } else {
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpTransitionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
-      mpTransitionLineAnnotation->updateLine();
-      mpTransitionLineAnnotation->drawCornerItems();
-      mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-      ModelInfo oldModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->addTransitionToView(mpTransitionLineAnnotation, false);
-      mpGraphicsView->addTransitionToClass(mpTransitionLineAnnotation);
-      ModelInfo newModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new OMCUndoCommand(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Transition"));
-    } else {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddTransitionCommand(mpTransitionLineAnnotation, true));
-      //mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpTransitionLineAnnotation);
-    }
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddTransitionCommand(mpTransitionLineAnnotation, true));
+    //mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpTransitionLineAnnotation);
   }
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();
@@ -2762,21 +2760,6 @@ void LineAnnotation::setProperties(const QString& condition, const bool immediat
   setSynchronize(synchronize);
   setPriority(priority);
   getTextAnnotation()->setTextString("%condition");
-}
-
-/*!
- * \brief LineAnnotation::updateLine
- * Updates the Line object with the annotation.
- */
-void LineAnnotation::updateLine()
-{
-  mpLine->setPoints(mPoints);
-  mpLine->setColor(mLineColor);
-  mpLine->setPattern(mLinePattern);
-  mpLine->setThickness(mLineThickness);
-  mpLine->setArrow(mArrow);
-  mpLine->setArrowSize(mArrowSize);
-  mpLine->setSmooth(mSmooth);
 }
 
 void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)

@@ -79,7 +79,7 @@ import Face = NFConnector.Face;
 import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
-import NFPrefixes.{Direction, Variability, Visibility, Purity, Parallelism};
+import NFPrefixes.{ConnectorType, Direction, Variability, Visibility, Purity, Parallelism};
 import Variable = NFVariable;
 import ElementSource;
 import Ceval = NFCeval;
@@ -706,7 +706,8 @@ algorithm
   name := Prefix.prefix(pre);
   v := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
 
-  if var < Variability.DISCRETE and not unfix and not Type.isComplex(Type.arrayElementType(ty)) then
+  if not settings.relaxedErrorChecking and var < Variability.DISCRETE and
+     not unfix and not Type.isComplex(Type.arrayElementType(ty)) then
     // Check that the component has a binding if it's required to have one.
     verifyBinding(v, var, binding, settings);
   end if;
@@ -1819,6 +1820,7 @@ algorithm
               // happen if scalarization is turned off and for-loops aren't unrolled.
               if settings.scalarize or not Expression.contains(cond, Expression.isIterator) then
                 cond := Ceval.evalExp(cond, target);
+                cond := flattenExp(cond, prefix);
               end if;
             end if;
 
@@ -1860,6 +1862,7 @@ algorithm
         algorithm
           if var <= Variability.STRUCTURAL_PARAMETER then
             cond := Ceval.evalExp(cond, target);
+            cond := flattenExp(cond, prefix);
           end if;
 
           if not Expression.isFalse(cond) then
@@ -2182,13 +2185,15 @@ function resolveConnections
   input FlattenSettings settings;
 protected
   Connections conns;
-  list<Equation> conn_eql, ec_eql;
+  list<Equation> conn_eql, ec_eql, tlio_eql;
+  list<Variable> tlio_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
   CardinalityTable.Table ctable;
   Connections.BrokenEdges broken = {};
   UnorderedMap<ComponentRef, Variable> vars;
   UnorderedSet<ComponentRef> connectedLocalIOs;
+  Integer exposeLocalIOs;
 algorithm
   vars := UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual,
     listLength(flatModel.variables));
@@ -2239,9 +2244,12 @@ algorithm
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
-  // remove input and output prefixes from local IOs that are determined through connect equations
-  if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
-    flatModel.variables := list(stripInputOutputForConnected(v, connectedLocalIOs) for v in flatModel.variables);
+  // add top-level IOs for unconnected local IOs
+  exposeLocalIOs := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
+  if exposeLocalIOs > 0 then
+    (tlio_vars, tlio_eql) := generateTopLevelIOs(vars, connectedLocalIOs, exposeLocalIOs);
+    flatModel.variables := List.append_reverse(flatModel.variables, tlio_vars);
+    flatModel.equations := List.append_reverse(flatModel.equations, tlio_eql);
   end if;
 
   // Evaluate any connection operators if they're used.
@@ -2252,18 +2260,56 @@ algorithm
   execStat(getInstanceName());
 end resolveConnections;
 
-function stripInputOutputForConnected
-  "remove input and output prefixes if variable appears in connectedIOs"
-  input output Variable v;
-  input UnorderedSet<ComponentRef> connectedIOs;
+function generateTopLevelIOs
+  "generate top-level inputs and outputs for public unconnected local input and output connectors"
+  input UnorderedMap<ComponentRef, Variable> variables;
+  input UnorderedSet<ComponentRef> connectedLocalIOs;
+  input Integer exposeLocalIOs;
+  output list<Variable> tlio_vars;
+  output list<Equation> tlio_eql;
 protected
-  Attributes attributes = v.attributes;
+  Attributes attributes;
+  Variable tlio_var;
+  ComponentRef cref;
+  String name;
+  InstNode tlio_node;
+  Integer level;
 algorithm
-  if UnorderedSet.contains(v.name, connectedIOs) then
-    attributes.direction := Direction.NONE;
-    v.attributes := attributes;
-  end if;
-end stripInputOutputForConnected;
+  tlio_vars := {};
+  tlio_eql := {};
+  for variable in UnorderedMap.valueList(variables) loop
+    level := ComponentRef.depth(variable.name) - 1;
+    attributes := variable.attributes;
+    if 0 < level and level <= exposeLocalIOs and
+      variable.visibility == Visibility.PUBLIC and
+      attributes.connectorType <> ConnectorType.NON_CONNECTOR and
+      (attributes.direction == Direction.INPUT or attributes.direction == Direction.OUTPUT) and
+      not UnorderedSet.contains(variable.name, connectedLocalIOs)
+    then
+      // add a new variable and equation if removeNonTopLevelDirection removes the direction
+      tlio_var := Variable.removeNonTopLevelDirection(variable);
+      attributes := tlio_var.attributes;
+      if attributes.direction == Direction.NONE then
+        tlio_var := variable; // same attributes like start, unit
+        tlio_var.name := ComponentRef.combineSubscripts(tlio_var.name);
+        tlio_var.binding := UNBOUND(); // value is defined with tlio_eql
+        // find new name in global scope, starting with quoted identifier
+        cref := tlio_var.name;
+        name := stringDelimitList(ComponentRef.toString_impl(cref, {}), ".");
+        while UnorderedMap.contains(tlio_var.name, variables) loop
+          tlio_node := InstNode.NAME_NODE(Util.makeQuotedIdentifier(name));
+          tlio_var.name := match cref case ComponentRef.CREF() then
+            ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+          end match;
+          name := name + "_" "append underscore until name is unique";
+        end while;
+        tlio_vars := tlio_var :: tlio_vars;
+        tlio_eql := Equation.makeCrefEquality(variable.name, tlio_var.name,
+          InstNode.EMPTY_NODE(), ElementSource.createElementSource(variable.info)) :: tlio_eql;
+      end if;
+    end if;
+  end for;
+end generateTopLevelIOs;
 
 function evaluateConnectionOperators
   input output FlatModel flatModel;

@@ -477,6 +477,9 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   // Debug nonlinear solution process
   rtclock_t clock;
   double cpu_time_used;
+  int numIter;
+
+  numIter = 20;
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
     rt_ext_tp_tick(&clock);
@@ -486,16 +489,16 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     // Get kinsol data object
     NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
-    set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNTRUE, 10, 100*DBL_EPSILON);
+    set_kinsol_parameters(kin_mem, numIter, SUNTRUE, 10, 100*DBL_EPSILON);
     solved = solveNLS(data, threadData, nlsData);
     /* Retry solution process with updated Jacobian */
     if (!solved) {
-      infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian at time %g.", gbData->time);
-      set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10, 100*DBL_EPSILON);
+      infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian at time %g. Number of Iterations %d", gbData->time, numIter);
+      set_kinsol_parameters(kin_mem, numIter, SUNFALSE, 10, 100*DBL_EPSILON);
       solved = solveNLS(data, threadData, nlsData);
       if (!solved) {
         infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with less accuracy.");
-        set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10, 1000*DBL_EPSILON);
+        set_kinsol_parameters(kin_mem, numIter, SUNFALSE, 10, 1000*DBL_EPSILON);
         solved = solveNLS(data, threadData, nlsData);
       }
     }

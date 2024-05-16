@@ -333,6 +333,10 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
      * since the iteration seem not starting.
      */
     storePreValues(comp->fmuData);
+    /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12350
+     * we need to update discreteSystem during event update
+    */
+    updateDiscreteSystem(comp->fmuData, threadData);
     updateRelationsPre(comp->fmuData);
 
     nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);

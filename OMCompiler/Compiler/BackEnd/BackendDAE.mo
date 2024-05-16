@@ -253,6 +253,7 @@ uniontype Var "variables"
     .DAE.VarInnerOuter innerOuter "inner, outer, inner outer or unspecified";
     Boolean unreplaceable "indicates if it is allowed to replace this variable";
     Boolean initNonlinear "indicates if the variable is a nonlinear iteration variable during initialization";
+    Boolean encrypted "true if the variable belongs to an encrypted class";
   end VAR;
 end Var;
 
@@ -660,7 +661,7 @@ uniontype ZeroCrossing
     Integer index                           "zero crossing index";
     .DAE.Exp relation_                      "function";
     list<Integer> occurEquLst               "list of equations where the function occurs";
-    Option<list<SimIterator>> iter  "optional iterator for for-loops";
+    Option<list<SimIterator>> iter          "optional iterator for for-loops";
   end ZERO_CROSSING;
 end ZeroCrossing;
 

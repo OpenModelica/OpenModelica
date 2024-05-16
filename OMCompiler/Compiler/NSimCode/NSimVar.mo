@@ -99,6 +99,7 @@ public
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
+      Boolean isEncrypted;
       Option<array<Integer>> inputIndex;
       Option<String> matrixName "if the varibale is a jacobian var, this is the corresponding matrix";
       Option<Variability> variability "FMI-2.0 variabilty attribute";
@@ -187,6 +188,7 @@ public
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
             hideResult          = var.backendinfo.annotations.hideResult,
+            isEncrypted         = NFVariable.isEncrypted(var),
             inputIndex          = NONE(),
             matrixName          = NONE(),
             variability         = NONE(),
@@ -276,6 +278,17 @@ public
       end try;
     end getIndex;
 
+    function shiftIndex
+      "Shift index by some value. Used to append `enumVars` onto `intVars`."
+      input output SimVar var;
+      input Integer shift;
+    algorithm
+      var.index := var.index + shift;
+      if isSome(var.fmi_index) then
+        var.fmi_index := SOME(Util.getOption(var.fmi_index) + shift);
+      end if;
+    end shiftIndex;
+
     function convert
       input SimVar simVar;
       output OldSimCodeVar.SimVar oldSimVar;
@@ -304,6 +317,7 @@ public
         isValueChangeable   = simVar.isValueChangeable,
         isProtected         = simVar.isProtected,
         hideResult          = SOME(simVar.hideResult),
+        isEncrypted         = simVar.isEncrypted,
         inputIndex          = simVar.inputIndex,
         initNonlinear       = false,  // TODO: Check what to add here!
         matrixName          = simVar.matrixName,
@@ -459,6 +473,8 @@ public
         else (start, false, Causality.LOCAL);
 
         // ToDo: more cases!
+
+        // FIXME: variables that are fixed and are not CALCULATED should have isValueChangeable=true
       end match;
     end parseBinding;
 
@@ -702,22 +718,26 @@ public
       list<SimVar> discreteAlgVars;
       list<SimVar> intAlgVars;
       list<SimVar> boolAlgVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> enumAlgVars;
       list<SimVar> inputVars;
       list<SimVar> outputVars;
       list<SimVar> aliasVars;
       list<SimVar> intAliasVars;
       list<SimVar> boolAliasVars;
+      list<SimVar> stringAliasVars;
+      list<SimVar> enumAliasVars;
       list<SimVar> paramVars;
       list<SimVar> intParamVars;
       list<SimVar> boolParamVars;
-      list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
-      list<SimVar> stringAliasVars;
+      list<SimVar> enumParamVars;
       list<SimVar> extObjVars;
       list<SimVar> constVars;
       list<SimVar> intConstVars;
       list<SimVar> boolConstVars;
       list<SimVar> stringConstVars;
+      list<SimVar> enumConstVars;
       list<SimVar> residualVars;
       list<SimVar> jacobianVars;
       list<SimVar> seedVars;
@@ -755,13 +775,13 @@ public
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
-      list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {};
-      list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {};
+      list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {}, enumAlgVars = {};
+      list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {}, enumAlgVars2 = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
-      list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {};
-      list<SimVar> paramVars = {}, intParamVars = {}, boolParamVars = {}, stringParamVars = {};
-      list<SimVar> constVars = {}, intConstVars = {}, boolConstVars = {}, stringConstVars = {};
+      list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {}, enumAliasVars = {};
+      list<SimVar> paramVars = {}, intParamVars = {}, boolParamVars = {}, stringParamVars = {}, enumParamVars = {};
+      list<SimVar> constVars = {}, intConstVars = {}, boolConstVars = {}, stringConstVars = {}, enumConstVars = {};
       list<SimVar> extObjVars = {};
       list<SimVar> residualVars = {};
       list<SimVar> jacobianVars = {};
@@ -773,19 +793,19 @@ public
       list<SimVar> dataReconinputVars = {};
       list<SimVar> dataReconSetBVars = {};
     algorithm
-      _ := match varData
+      () := match varData
         case BVariable.VAR_DATA_SIM() algorithm
-          ({stateVars}, simCodeIndices)                                                   := createSimVarLists(varData.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({derivativeVars}, simCodeIndices)                                              := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({algVars}, simCodeIndices)                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({nonTrivialAlias}, simCodeIndices)                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices)     := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-          ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2}, simCodeIndices) := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-          ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices)     := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
-          ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices)     := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
-          ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices)     := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
-          ({inputVars}, simCodeIndices)                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          ({residualVars}, simCodeIndices)                                                := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
+          ({stateVars}, simCodeIndices)                                                                 := createSimVarLists(varData.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({derivativeVars}, simCodeIndices)                                                            := createSimVarLists(varData.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({algVars}, simCodeIndices)                                                                   := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({nonTrivialAlias}, simCodeIndices)                                                           := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)      := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices) := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars, enumAliasVars}, simCodeIndices)    := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
+          ({paramVars, intParamVars, boolParamVars, stringParamVars, enumParamVars}, simCodeIndices)    := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
+          ({constVars, intConstVars, boolConstVars, stringConstVars, enumConstVars}, simCodeIndices)    := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({inputVars}, simCodeIndices)                                                                 := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          ({residualVars}, simCodeIndices)                                                              := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
         then ();
         case BVariable.VAR_DATA_JAC() then ();
         case BVariable.VAR_DATA_HES() then ();
@@ -796,38 +816,49 @@ public
       end match;
 
       simVars := SIMVARS(
-        stateVars                           = stateVars,
-        derivativeVars                      = derivativeVars,
-        algVars                             = listAppend(algVars, nonTrivialAlias),
-        discreteAlgVars                     = listAppend(discreteAlgVars, discreteAlgVars2),
-        intAlgVars                          = listAppend(intAlgVars, intAlgVars2),
-        boolAlgVars                         = listAppend(boolAlgVars, boolAlgVars2),
-        inputVars                           = inputVars,
-        outputVars                          = outputVars,
-        aliasVars                           = aliasVars,
-        intAliasVars                        = intAliasVars,
-        boolAliasVars                       = boolAliasVars,
-        paramVars                           = paramVars,
-        intParamVars                        = intParamVars,
-        boolParamVars                       = boolParamVars,
-        stringAlgVars                       = listAppend(stringAlgVars, stringAlgVars2),
-        stringParamVars                     = stringParamVars,
-        stringAliasVars                     = stringAliasVars,
-        extObjVars                          = extObjVars,
-        constVars                           = constVars,
-        intConstVars                        = intConstVars,
-        boolConstVars                       = boolConstVars,
-        stringConstVars                     = stringConstVars,
-        residualVars                        = residualVars,
-        jacobianVars                        = jacobianVars,
-        seedVars                            = seedVars,
-        realOptimizeConstraintsVars         = realOptimizeConstraintsVars,
-        realOptimizeFinalConstraintsVars    = realOptimizeFinalConstraintsVars,
-        sensitivityVars                     = sensitivityVars,
-        dataReconSetcVars                   = dataReconSetcVars,
-        dataReconinputVars                  = dataReconinputVars,
-        dataReconSetBVars                   = dataReconSetBVars
+        stateVars                         = stateVars,
+        derivativeVars                    = derivativeVars,
+        algVars                           = listAppend(algVars, nonTrivialAlias),
+        discreteAlgVars                   = listAppend(discreteAlgVars, discreteAlgVars2),
+        intAlgVars                        = listAppend(intAlgVars, intAlgVars2),
+        boolAlgVars                       = listAppend(boolAlgVars, boolAlgVars2),
+        stringAlgVars                     = listAppend(stringAlgVars, stringAlgVars2),
+        enumAlgVars                       = listAppend(enumAlgVars, enumAlgVars2),
+        inputVars                         = inputVars,
+        outputVars                        = outputVars,
+        aliasVars                         = aliasVars,
+        intAliasVars                      = intAliasVars,
+        boolAliasVars                     = boolAliasVars,
+        stringAliasVars                   = stringAliasVars,
+        enumAliasVars                     = enumAliasVars,
+        paramVars                         = paramVars,
+        intParamVars                      = intParamVars,
+        boolParamVars                     = boolParamVars,
+        stringParamVars                   = stringParamVars,
+        enumParamVars                     = enumParamVars,
+        extObjVars                        = extObjVars,
+        constVars                         = constVars,
+        intConstVars                      = intConstVars,
+        boolConstVars                     = boolConstVars,
+        stringConstVars                   = stringConstVars,
+        enumConstVars                     = enumConstVars,
+        residualVars                      = residualVars,
+        jacobianVars                      = jacobianVars,
+        seedVars                          = seedVars,
+        realOptimizeConstraintsVars       = realOptimizeConstraintsVars,
+        realOptimizeFinalConstraintsVars  = realOptimizeFinalConstraintsVars,
+        sensitivityVars                   = sensitivityVars,
+        dataReconSetcVars                 = dataReconSetcVars,
+        dataReconinputVars                = dataReconinputVars,
+        dataReconSetBVars                 = dataReconSetBVars
       );
+
+      // FIXME we currently handle enumerations as integers.
+      // We append enums to ints so we have to shift the index accordingly.
+      simVars.intAlgVars    := listAppend(simVars.intAlgVars, list(SimVar.shiftIndex(v, simCodeIndices.integerVarIndex) for v in simVars.enumAlgVars));
+      simVars.intAliasVars  := listAppend(simVars.intAliasVars, list(SimVar.shiftIndex(v, simCodeIndices.integerAliasIndex) for v in simVars.enumAliasVars));
+      simVars.intParamVars  := listAppend(simVars.intParamVars, list(SimVar.shiftIndex(v, simCodeIndices.integerParamIndex) for v in simVars.enumParamVars));
+      simVars.intConstVars  := listAppend(simVars.intConstVars, list(SimVar.shiftIndex(v, simCodeIndices.integerVarIndex) for v in simVars.enumConstVars));
     end create;
 
     function addSeedAndJacobianVars
@@ -938,6 +969,7 @@ public
       Pointer<list<SimVar>> int_lst = Pointer.create({});
       Pointer<list<SimVar>> bool_lst = Pointer.create({});
       Pointer<list<SimVar>> string_lst = Pointer.create({});
+      Pointer<list<SimVar>> enum_lst = Pointer.create({});
       Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
     algorithm
       // scalarize variables for simcode
@@ -950,11 +982,12 @@ public
       elseif splitType == SplitType.TYPE then
         // Split the variables by basic type (real, integer, boolean, string)
         // and return a list for each type
-        VariablePointers.map(scalar_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, indices_ptr = indices_ptr, varType = varType));
+        VariablePointers.map(scalar_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, enum_lst = enum_lst, indices_ptr = indices_ptr, varType = varType));
         simVars := {listReverse(Pointer.access(real_lst)),
                     listReverse(Pointer.access(int_lst)),
                     listReverse(Pointer.access(bool_lst)),
-                    listReverse(Pointer.access(string_lst))};
+                    listReverse(Pointer.access(string_lst)),
+                    listReverse(Pointer.access(enum_lst))};
         simCodeIndices := Pointer.access(indices_ptr);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of invalid splitType."});
@@ -968,12 +1001,13 @@ public
       input Pointer<list<SimVar>> int_lst;
       input Pointer<list<SimVar>> bool_lst;
       input Pointer<list<SimVar>> string_lst;
+      input Pointer<list<SimVar>> enum_lst;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
       input VarType varType;
     protected
       SimCode.SimCodeIndices simCodeIndices = Pointer.access(indices_ptr);
     algorithm
-      _ := match (var.ty, varType)
+      () := match (var.ty, varType)
 
         case (Type.REAL(), VarType.SIMULATION)
           algorithm
@@ -1007,6 +1041,14 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
+        case (Type.ENUMERATION(), VarType.SIMULATION)
+          algorithm
+            Pointer.update(enum_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.enumerationVarIndex) :: Pointer.access(enum_lst));
+            simCodeIndices.enumerationVarIndex := simCodeIndices.enumerationVarIndex + 1;
+            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
         case (Type.REAL(), VarType.PARAMETER)
           algorithm
             Pointer.update(real_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.realParamIndex) :: Pointer.access(real_lst));
@@ -1016,14 +1058,6 @@ public
         then ();
 
         case (Type.INTEGER(), VarType.PARAMETER)
-          algorithm
-            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.integerParamIndex) :: Pointer.access(int_lst));
-            simCodeIndices.integerParamIndex := simCodeIndices.integerParamIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.ENUMERATION(), VarType.PARAMETER)
           algorithm
             Pointer.update(int_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.integerParamIndex) :: Pointer.access(int_lst));
             simCodeIndices.integerParamIndex := simCodeIndices.integerParamIndex + 1;
@@ -1043,6 +1077,14 @@ public
           algorithm
             Pointer.update(string_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.stringParamIndex) :: Pointer.access(string_lst));
             simCodeIndices.stringParamIndex := simCodeIndices.stringParamIndex + 1;
+            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
+        case (Type.ENUMERATION(), VarType.PARAMETER)
+          algorithm
+            Pointer.update(enum_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.enumerationParamIndex) :: Pointer.access(enum_lst));
+            simCodeIndices.enumerationParamIndex := simCodeIndices.enumerationParamIndex + 1;
             simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
@@ -1079,6 +1121,14 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
+        case (Type.ENUMERATION(), VarType.ALIAS)
+          algorithm
+            Pointer.update(enum_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.enumerationAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(enum_lst));
+            simCodeIndices.enumerationAliasIndex := simCodeIndices.enumerationAliasIndex + 1;
+            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
         then fail();
@@ -1088,8 +1138,9 @@ public
 
   end SimVars;
 
-  constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+  constant SimVars emptySimVars = SIMVARS(
+    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
   type SplitType  = enumeration(NONE, TYPE);
   type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL, EXTERNAL_OBJECT); // ToDo: PRE, OLD, RELATIONS...

@@ -1484,7 +1484,10 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
         warningStreamPrint(LOG_INIT, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
-    messageCloseWarning(LOG_INIT);
+    if(data->simulationInfo->initial)
+    {
+      messageCloseWarning(LOG_INIT);
+    }
     return 1;
   }
   if(nonlinsys[i].solved == NLS_SOLVED_LESS_ACCURACY)

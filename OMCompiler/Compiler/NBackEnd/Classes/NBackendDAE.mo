@@ -241,8 +241,8 @@ public
       (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
       (simplify,           "simplify2"), // TODO simplify in Alias only
-      (Events.main,        "Events"),
-      (DetectStates.main,  "Detect States")
+      (DetectStates.main,  "Detect States"),
+      (Events.main,        "Events")
     };
 
     mainModules := {
@@ -817,7 +817,7 @@ protected
       then result;
 
       // if equation
-      case FEquation.IF() then {Pointer.create(lowerIfEquation(frontend_equation, init))};
+      case FEquation.IF() then lowerIfEquation(frontend_equation, init);
 
       // When equation cases
       case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
@@ -848,21 +848,22 @@ protected
   function lowerIfEquation
     input FEquation frontend_equation;
     input Boolean init;
-    output Equation backend_equation;
+    output list<Pointer<Equation>> backend_equations;
   algorithm
-    backend_equation := match frontend_equation
+    backend_equations := match frontend_equation
       local
         list<FEquation.Branch> branches;
         DAE.ElementSource source;
         IfEquationBody ifEqBody;
+        list<IfEquationBody> bodies;
         EquationAttributes attr;
 
       case FEquation.IF(branches = branches, source = source)
         algorithm
-          attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
-          SOME(ifEqBody) := lowerIfEquationBody(branches, init);
-          // ToDo: compute correct size
-      then BEquation.IF_EQUATION(IfEquationBody.size(ifEqBody), ifEqBody, source, attr);
+          attr      := EquationAttributes.default(EquationKind.CONTINUOUS, init);
+          ifEqBody  := lowerIfEquationBody(branches, init);
+          bodies    := IfEquationBody.split(ifEqBody);
+      then list(IfEquationBody.toEquation(body, source, init) for body in bodies);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + FEquation.toString(frontend_equation)});
@@ -874,7 +875,7 @@ protected
   function lowerIfEquationBody
     input list<FEquation.Branch> branches;
     input Boolean init;
-    output Option<IfEquationBody> ifEq;
+    output IfEquationBody ifEq;
   algorithm
     ifEq := match branches
       local
@@ -882,7 +883,7 @@ protected
         list<FEquation.Branch> rest;
         list<Pointer<Equation>> eqns;
         Expression condition;
-        Option<IfEquationBody> result;
+        IfEquationBody result;
 
       // lower current branch
       case branch::rest
@@ -892,13 +893,13 @@ protected
             // finish recursion when a condition is found to be true because
             // following branches can never be reached. Also the last plain else
             // case has default Boolean true value in the NF.
-            result := SOME(BEquation.IF_EQUATION_BODY(Expression.END(), eqns, NONE()));
+            result := BEquation.IF_EQUATION_BODY(Expression.END(), eqns, NONE());
           elseif Expression.isFalse(condition) then
             // discard a branch and continue with the rest if a condition is
             // found to be false, because it can never be reached.
             result := lowerIfEquationBody(rest, init);
           else
-            result := SOME(BEquation.IF_EQUATION_BODY(condition, eqns, lowerIfEquationBody(rest, init)));
+            result := BEquation.IF_EQUATION_BODY(condition, eqns, SOME(lowerIfEquationBody(rest, init)));
           end if;
       then result;
 

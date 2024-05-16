@@ -153,7 +153,6 @@ public:
   void showOMSConnection();
   void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
-  void updateLine();
 
   static QColor findLineColorForConnection(Element *pComponent);
   void clearCollidingConnections();
@@ -285,10 +284,11 @@ class CreateConnectionDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent = 0);
+  CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool createConnector, QWidget *pParent = 0);
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
+  bool mCreateConnector;
   Element *mpStartElement;
   Element *mpStartRootElement;
   Element *mpEndElement;

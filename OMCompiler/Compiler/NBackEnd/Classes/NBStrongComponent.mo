@@ -57,7 +57,7 @@ protected
   import Matching = NBMatching;
   import Solve = NBSolve;
   import Sorting = NBSorting;
-  import NBSorting.{PseudoBucket, PseudoBucketKey, PseudoBucketValue, SuperNode};
+  import NBSorting.SuperNode;
   import BSystem = NBSystem;
   import NBSystem.{System, SystemType};
   import Tearing = NBTearing;
@@ -238,7 +238,7 @@ public
     CountCollector collector = Pointer.access(collector_ptr);
   algorithm
     _ := match comp
-      case StrongComponent.SINGLE_COMPONENT() algorithm
+      case SINGLE_COMPONENT() algorithm
         _ := match Pointer.access(comp.eqn)
           case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
@@ -247,7 +247,7 @@ public
         end match;
       then ();
 
-      case StrongComponent.MULTI_COMPONENT() algorithm
+      case MULTI_COMPONENT() algorithm
         _ := match Pointer.access(comp.eqn)
           case Equation.ALGORITHM()       algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.WHEN_EQUATION()   algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
@@ -257,7 +257,7 @@ public
         end match;
       then ();
 
-      case StrongComponent.SLICED_COMPONENT() algorithm
+      case SLICED_COMPONENT() algorithm
         _ := match Pointer.access(Slice.getT(comp.eqn))
           case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
@@ -266,11 +266,11 @@ public
         end match;
       then ();
 
-      case StrongComponent.GENERIC_COMPONENT()  algorithm collector.generic_for := collector.generic_for + 1; Pointer.update(collector_ptr, collector);   then ();
-      case StrongComponent.ENTWINED_COMPONENT() algorithm collector.entwined_for := collector.entwined_for + 1; Pointer.update(collector_ptr, collector); then ();
-      case StrongComponent.ALGEBRAIC_LOOP() guard(comp.linear) algorithm collector.loop_lin := collector.loop_lin + 1; Pointer.update(collector_ptr, collector);         then ();
-      case StrongComponent.ALGEBRAIC_LOOP()     algorithm collector.loop_nlin := collector.loop_nlin + 1; Pointer.update(collector_ptr, collector);         then ();
-      case StrongComponent.ALIAS()              algorithm strongComponentInfo(comp.original, collector_ptr);                                              then ();
+      case GENERIC_COMPONENT()  algorithm collector.generic_for := collector.generic_for + 1; Pointer.update(collector_ptr, collector);   then ();
+      case ENTWINED_COMPONENT() algorithm collector.entwined_for := collector.entwined_for + 1; Pointer.update(collector_ptr, collector); then ();
+      case ALGEBRAIC_LOOP() guard(comp.linear) algorithm collector.loop_lin := collector.loop_lin + 1; Pointer.update(collector_ptr, collector);         then ();
+      case ALGEBRAIC_LOOP()     algorithm collector.loop_nlin := collector.loop_nlin + 1; Pointer.update(collector_ptr, collector);         then ();
+      case ALIAS()              algorithm strongComponentInfo(comp.original, collector_ptr);                                              then ();
       else                                      algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");        then ();
     end match;
   end strongComponentInfo;
@@ -323,7 +323,6 @@ public
     input list<Integer> eqn_scal_indices;
     input EquationPointers eqns;
     input Adjacency.Mapping mapping;
-//    input PseudoBucket bucket;
     output StrongComponent slice;
   protected
     Pointer<Equation> eqn_ptr;
@@ -482,7 +481,7 @@ public
       case GENERIC_COMPONENT()                                then Slice.getT(comp.eqn);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component could not be
-        solved explicitely:\n" + StrongComponent.toString(comp)});
+        solved explicitely:\n" + toString(comp)});
       then fail();
     end match;
   end toSolvedEquation;

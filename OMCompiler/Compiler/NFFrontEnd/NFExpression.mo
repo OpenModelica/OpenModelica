@@ -41,14 +41,15 @@ protected
 
   import Builtin = NFBuiltin;
   import BuiltinCall = NFBuiltinCall;
+  import Ceval = NFCeval;
+  import ComplexType = NFComplexType;
+  import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import Function = NFFunction;
   import NFPrefixes.{Variability, Purity};
   import Prefixes = NFPrefixes;
-  import Ceval = NFCeval;
-  import ComplexType = NFComplexType;
-  import ExpandExp = NFExpandExp;
   import TypeCheck = NFTypeCheck;
+  import UnorderedSet;
   import ValuesUtil;
   import MetaModelica.Dangerous.*;
   import RangeIterator = NFRangeIterator;
@@ -1948,7 +1949,7 @@ public
       case UNBOX() then "UNBOX(" + toFlatString(exp.exp) + ")";
       case BOX() then "BOX(" + toFlatString(exp.exp) + ")";
 
-      case SUBSCRIPTED_EXP() then toFlatSubscriptedString(exp.exp, exp.subscripts);
+      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp) + ")" + Subscript.toFlatStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toFlatString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toFlatString(Mutable.access(exp.exp));
@@ -1961,47 +1962,6 @@ public
       else anyString(exp);
     end match;
   end toFlatString;
-
-  function toFlatSubscriptedString
-    input Expression exp;
-    input list<Subscript> subscripts;
-    output String str;
-  protected
-    Type exp_ty;
-    list<Type> sub_tyl;
-    list<Dimension> dims;
-    list<String> strl;
-    String name;
-    list<Subscript> subs;
-  algorithm
-    if Flags.getConfigBool(Flags.MODELICA_OUTPUT) then
-      subs := list(s for s guard not Subscript.isSplitIndex(s) in subscripts);
-
-      if listEmpty(subs) then
-        str := toFlatString(exp);
-      else
-        exp_ty := typeOf(exp);
-        dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
-        sub_tyl := list(Dimension.subscriptType(d) for d in dims);
-        name := Type.subscriptedTypeName(exp_ty, sub_tyl);
-
-        strl := {")"};
-
-        for s in subs loop
-          strl := Subscript.toFlatString(s) :: strl;
-          strl := "," :: strl;
-        end for;
-
-        strl := toFlatString(exp) :: strl;
-        strl := "'(" :: strl;
-        strl := name :: strl;
-        strl := "'" :: strl;
-        str := stringAppendList(strl);
-      end if;
-    else
-      str := "(" + toFlatString(exp) + ")" + Subscript.toFlatStringList(subscripts);
-    end if;
-  end toFlatSubscriptedString;
 
   function operandString
     "Helper function to toString, prints an operator and adds parentheses as needed."
@@ -4278,32 +4238,22 @@ public
     CREF(cref = cref) := exp;
   end toCref;
 
-  function extract
-    "author: kabdelhak 2020-06
-    Extracts all sub expressions from an expression using a filter function."
+  function extractCrefs
     input Expression exp;
-    input filter func;
-    output list<Expression> exp_lst;
-    partial function filter
-      input Expression exp;
-      output Boolean b;
-    end filter;
-  protected
-    // traverse helper function only needed in this function
-    function traverser
-      input Expression exp;
-      input filter func;
-      input output list<Expression> exp_lst;
-      partial function filter
-        input Expression exp;
-        output Boolean b;
-      end filter;
-    algorithm
-      exp_lst := if func(exp) then exp :: exp_lst else exp_lst;
-    end traverser;
+    output UnorderedSet<ComponentRef> crefs = fold(exp, extractCref, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+  end extractCrefs;
+
+  function extractCref
+    input Expression exp;
+    input output UnorderedSet<ComponentRef> crefs;
   algorithm
-    exp_lst := fold(exp, function traverser(func = func), {});
-  end extract;
+    crefs := match exp
+      case CREF() algorithm
+        UnorderedSet.add(exp.cref, crefs);
+      then crefs;
+      else crefs;
+    end match;
+  end extractCref;
 
   function isIterator
     input Expression exp;
@@ -5615,6 +5565,7 @@ public
   end isPure;
 
   function containsCref
+    "returns true if the expression contains the cref"
     input Expression exp;
     input ComponentRef cref;
     output Boolean b;
@@ -5632,6 +5583,26 @@ public
       else b;
     end match;
   end isCrefEqual;
+
+  function containsCrefSet
+    "returns true if the expression contains any crefs in the set"
+    input Expression exp;
+    input UnorderedSet<ComponentRef> set;
+    output Boolean b;
+  algorithm
+    b := fold(exp, function isCrefEqualSet(set = set), false);
+  end containsCrefSet;
+
+  function isCrefEqualSet
+    input Expression exp;
+    input output Boolean b;
+    input UnorderedSet<ComponentRef> set;
+  algorithm
+    b := match (b, exp)
+      case (false, CREF()) then UnorderedSet.contains(exp.cref, set);
+      else b;
+    end match;
+  end isCrefEqualSet;
 
   function filterSplitIndices
     input output Expression exp;

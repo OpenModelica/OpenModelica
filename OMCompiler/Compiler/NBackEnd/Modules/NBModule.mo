@@ -287,9 +287,11 @@ public
      necessary. Only has access to the strong component itself, everything else
      accessable with pointers."
     input output StrongComponent comp     "the suspected algebraic loop.";
+    input output Adjacency.Matrix full    "the full adjacency matrix containing solvability info";
     input output FunctionTree funcTree    "Function call bodies";
     input output Integer index            "current unique loop index";
     input VariablePointers variables      "all variables";
+    input EquationPointers equations      "all equations";
     input Pointer<Integer> eq_index       "equation index";
     input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   end tearingInterface;

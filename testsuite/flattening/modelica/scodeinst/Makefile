@@ -89,6 +89,9 @@ BuiltinAttribute20.mo \
 BuiltinAttribute21.mo \
 BuiltinAttribute22.mo \
 BuiltinAttribute23.mo \
+BuiltinAttribute24.mo \
+BuiltinAttribute25.mo \
+BuiltinAttribute26.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -383,6 +386,7 @@ DuplicateElements4.mo \
 DuplicateElements5.mo \
 DuplicateElements9.mo \
 DuplicateElements10.mo \
+DuplicateElements11.mo \
 DuplicateElementsValid1.mo \
 DuplicateElementsValid2.mo \
 DuplicateMod1.mo \
@@ -723,6 +727,7 @@ IfEquation5.mo \
 IfEquation6.mo \
 IfEquation7.mo \
 IfEquation8.mo \
+IfEquation9.mo \
 IfEquationEval1.mo \
 IfEquationEval2.mo \
 IfEquationEval3.mo \
@@ -992,6 +997,7 @@ RecordBinding13.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \
+RecordConstructor4.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
 RecordUnknownDim1.mo \
@@ -1151,6 +1157,8 @@ TypenameInvalid2.mo \
 TypenameInvalid3.mo \
 UnboundParameter1.mo \
 UnboundParameter2.mo \
+UnboundParameter3.mo \
+UnboundParameter4.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \

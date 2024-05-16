@@ -152,6 +152,9 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // equationsForZeroCrossings:
 // ========================================
 //
+// generic calls:
+// ========================================
+//
 // jacobianEquations:
 // ========================================
 //
@@ -202,14 +205,14 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 local homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {{0.0,0.0},{4.162277660168379,4.162277660168379},{4.162277660168378,4.162277660168378},{17.32455532033676,17.32455532033676}}
+// {{0.0,0.0},{4.162277660168379,4.162277660168379},{4.162277660168378,4.162277660168378},{17.324555320336756,17.324555320336756}}
 // ""
 // true
 // ""
@@ -347,6 +350,9 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // equationsForZeroCrossings:
 // ========================================
 //
+// generic calls:
+// ========================================
+//
 // jacobianEquations:
 // ========================================
 //
@@ -406,13 +412,13 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac2. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {{0.0,0.0},{4.162277660168379,4.162277660168379},{4.162277660168378,4.162277660168378},{17.32455532033676,17.32455532033676}}
+// {{0.0,0.0},{4.162277660168379,4.162277660168379},{4.162277660168378,4.162277660168378},{17.324555320336756,17.324555320336756}}
 // ""
 // endResult

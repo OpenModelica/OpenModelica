@@ -120,74 +120,75 @@ protected
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
-  StackOverflow.clearStacktraceMessages();
-  // reset dumped file sequence number
-  System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
-  System.tmpTickResetIndex(1, Global.backendDAE_cseIndex);
-  System.tmpTickResetIndex(0, Global.strongComponent_index);
-  functionTree := FCore.getFunctionTree(inCache);
-  //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
-  (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
-  (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
-    lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
+    StackOverflow.clearStacktraceMessages();
+    // reset dumped file sequence number
+    System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
+    System.tmpTickResetIndex(1, Global.backendDAE_cseIndex);
+    System.tmpTickResetIndex(0, Global.strongComponent_index);
+    functionTree := FCore.getFunctionTree(inCache);
+    //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
+    functionTree := lowerFunctions(functionTree);
+    (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
+    (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
+      lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
 
-  globalKnownVars := BackendVariable.listVar(globalKnownVarLst);
-  localKnownVars := BackendVariable.emptyVars();
-  extVars := BackendVariable.listVar(extvarlst);
-  aliasVars := BackendVariable.emptyVars();
-  if Flags.isSet(Flags.VECTORIZE) then
-    (varlst,eqns) := Vectorization.collectForLoops(varlst,eqns);
-  end if;
-  vars := BackendVariable.listVar(varlst);
+    globalKnownVars := BackendVariable.listVar(globalKnownVarLst);
+    localKnownVars := BackendVariable.emptyVars();
+    extVars := BackendVariable.listVar(extvarlst);
+    aliasVars := BackendVariable.emptyVars();
+    if Flags.isSet(Flags.VECTORIZE) then
+      (varlst,eqns) := Vectorization.collectForLoops(varlst,eqns);
+    end if;
+    vars := BackendVariable.listVar(varlst);
 
-  // handle alias equations
-  (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
-  (ieqns, eqns, reqns, extAliasVars, globalKnownVars, extVars) := getExternalObjectAlias(ieqns, eqns, reqns, globalKnownVars, extVars);
-  aliasVars := BackendVariable.addVariables(extAliasVars,aliasVars);
+    // handle alias equations
+    (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
+    (ieqns, eqns, reqns, extAliasVars, globalKnownVars, extVars) := getExternalObjectAlias(ieqns, eqns, reqns, globalKnownVars, extVars);
+    aliasVars := BackendVariable.addVariables(extAliasVars,aliasVars);
 
-  (globalKnownVarLst, eqns, reqns, ieqns) := patchRecordBindings(varlst, extvarlst, globalKnownVarLst, eqns, reqns, ieqns);
+    (globalKnownVarLst, eqns, reqns, ieqns) := patchRecordBindings(varlst, extvarlst, globalKnownVarLst, eqns, reqns, ieqns);
 
-  vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns); // ieqns don't need to be searched because they can't contain when equations
-  eqnarr := BackendEquation.listEquation(eqns);
-  reqnarr := BackendEquation.listEquation(reqns);
-  ieqnarr := BackendEquation.listEquation(ieqns);
-  einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
-  symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
-              (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
-              (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
-              (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1))};
-  syst := BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr);
-  outBackendDAE := BackendDAE.DAE(syst::{},
-                                  BackendDAE.SHARED(globalKnownVars,
-                                                    localKnownVars,
-                                                    extVars,
-                                                    aliasVars,
-                                                    ieqnarr,
-                                                    BackendEquation.emptyEqns(),
-                                                    constrs,
-                                                    clsAttrs,
-                                                    inCache,
-                                                    inEnv,
-                                                    functionTree,
-                                                    einfo,
-                                                    extObjCls,
-                                                    BackendDAE.SIMULATION(),
-                                                    symjacs,inExtraInfo,
-                                                    BackendDAEUtil.emptyPartitionsInfo(),
-                                                    BackendDAE.emptyDAEModeData,
-                                                    NONE(),
-                                                    NONE()
-                                                    ));
-  BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
-  BackendDAEUtil.checkAdjacencyMatrixSolvability(syst, functionTree,BackendDAEUtil.isInitializationDAE(outBackendDAE.shared));
-  if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
-    Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
-    String(BackendEquation.equationArraySize(syst.orderedEqs)),
-    String(BackendVariable.varsSize(syst.orderedVars))},
-    AbsynUtil.dummyInfo);
-  end if;
-  execStat("Generate backend data structure");
-  return;
+    vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns); // ieqns don't need to be searched because they can't contain when equations
+    eqnarr := BackendEquation.listEquation(eqns);
+    reqnarr := BackendEquation.listEquation(reqns);
+    ieqnarr := BackendEquation.listEquation(ieqns);
+    einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
+    symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+                (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+                (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+                (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1))};
+    syst := BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr);
+    outBackendDAE := BackendDAE.DAE(syst::{},
+                                    BackendDAE.SHARED(globalKnownVars,
+                                                      localKnownVars,
+                                                      extVars,
+                                                      aliasVars,
+                                                      ieqnarr,
+                                                      BackendEquation.emptyEqns(),
+                                                      constrs,
+                                                      clsAttrs,
+                                                      inCache,
+                                                      inEnv,
+                                                      functionTree,
+                                                      einfo,
+                                                      extObjCls,
+                                                      BackendDAE.SIMULATION(),
+                                                      symjacs,inExtraInfo,
+                                                      BackendDAEUtil.emptyPartitionsInfo(),
+                                                      BackendDAE.emptyDAEModeData,
+                                                      NONE(),
+                                                      NONE()
+                                                      ));
+    BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
+    BackendDAEUtil.checkAdjacencyMatrixSolvability(syst, functionTree,BackendDAEUtil.isInitializationDAE(outBackendDAE.shared));
+    if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
+      Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
+      String(BackendEquation.equationArraySize(syst.orderedEqs)),
+      String(BackendVariable.varsSize(syst.orderedVars))},
+      AbsynUtil.dummyInfo);
+    end if;
+    execStat("Generate backend data structure");
+    return;
   else
     setGlobalRoot(Global.stackoverFlowIndex, NONE());
     ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
@@ -1249,6 +1250,7 @@ algorithm
       DAE.VarVisibility protection;
       Boolean b;
       Absyn.InnerOuter io;
+      Boolean encrypted;
 
     case DAE.VAR(componentRef = name,
                   kind = kind,
@@ -1261,7 +1263,8 @@ algorithm
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   comment = comment,
-                  innerOuter = io)
+                  innerOuter = io,
+                  encrypted = encrypted)
       equation
         (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr, protection);
         tp = lowerType(t);
@@ -1271,7 +1274,7 @@ algorithm
         ts = BackendDAEUtil.setTearingSelectAttribute(comment);
         hideResult = BackendDAEUtil.setHideResultAttribute(comment, name);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false));
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false, encrypted));
   end match;
 end lowerDynamicVar;
 
@@ -1310,6 +1313,7 @@ algorithm
       list<DAE.Statement> assrtLst;
       list<BackendDAE.Equation> eqLst;
       Absyn.InnerOuter io;
+      Boolean encrypted;
      case DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
@@ -1322,7 +1326,8 @@ algorithm
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   comment = comment,
-                  innerOuter = io)
+                  innerOuter = io,
+                  encrypted = encrypted)
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct, protection);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
@@ -1336,7 +1341,7 @@ algorithm
         ts = NONE();
         hideResult = BackendDAEUtil.setHideResultAttribute(comment, name);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false), iInlineHT, eqLst);
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false, encrypted), iInlineHT, eqLst);
 
     else
       equation
@@ -1377,7 +1382,8 @@ algorithm
           connectorType         = element.connectorType,
           innerOuter            = DAEUtil.toDAEInnerOuter(element.innerOuter),
           unreplaceable         = false,
-          initNonlinear         = false
+          initNonlinear         = false,
+          encrypted             = elem.encrypted
         );
     then SOME(var);
     else NONE();
@@ -1589,12 +1595,7 @@ algorithm
     else
       algorithm
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        /* Consider all inputs known with flag --nonStdExposeLocalIOs > 0 unless they are protected */
-        if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) == 0 then
-          false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
-        else
-          false := DAEUtil.varDirectionEqual(inVarDirection, DAE.INPUT()) and not DAEUtil.boolVarVisibility(protection);
-        end if;
+        false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
@@ -1622,11 +1623,7 @@ algorithm
     case DAE.CONST() then BackendDAE.CONST();
     case DAE.VARIABLE()
       equation
-        if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) == 0 then
-          true = DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
-        else
-          true = DAEUtil.varDirectionEqual(varDirection, DAE.INPUT()) and not DAEUtil.boolVarVisibility(visibility);
-        end if;
+        true = DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!
@@ -1688,6 +1685,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Type t;
       Absyn.InnerOuter io;
+      Boolean encrypted;
 
     case DAE.VAR(componentRef = name,
                   direction = dir,
@@ -1699,14 +1697,15 @@ algorithm
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   comment = comment,
-                  innerOuter=io)
+                  innerOuter=io,
+                  encrypted=encrypted)
       equation
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
         ts = NONE();
         hideResult = NONE();
       then
-        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false);
+        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false, encrypted);
   end match;
 end lowerExtObjVar;
 
@@ -2416,7 +2415,7 @@ algorithm
                   arryDim = {}, source = DAE.emptyElementSource,
                   values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()), hideResult = NONE(),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
-                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = true, initNonlinear = false) :: inVars;
+                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = true, initNonlinear = false, encrypted = false) :: inVars;
   outEqs := BackendDAE.EQUATION( exp = DAE.CREF(componentRef = cr, ty = DAE.T_CLOCK_DEFAULT),
                                 scalar = e,  source = DAE.emptyElementSource,
                                 attr = BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC ) :: inEqs;
@@ -3973,6 +3972,32 @@ algorithm
         fail();
   end matchcontinue;
 end detectImplicitDiscreteAlgsStatemensFor;
+
+function lowerFunctions
+  input output DAE.FunctionTree funcTree;
+protected
+  list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> funcList;
+algorithm
+  funcTree := DAE.AvlTreePathFunction.map(funcTree, deriveFunction);
+end lowerFunctions;
+
+function deriveFunction
+  input DAE.AvlTreePathFunction.Key key;
+  input output DAE.AvlTreePathFunction.Value value;
+algorithm
+  value := match value
+    local
+      DAE.Function fn;
+      DAE.FunctionDefinition fdef;
+      list<DAE.FunctionDefinition> rest_defs;
+    case SOME(fn as DAE.FUNCTION(functions = (fdef as DAE.FUNCTION_PARTIAL_DERIVATIVE()) :: rest_defs)) algorithm
+      // TODO derive function-partial-derivatives
+      Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
+          {"partial derivative of function", "use --newBackend flag."}, fn.source.info);
+    then fail();
+    else value;
+  end match;
+end deriveFunction;
 
 protected function renameFunctionParameter"renames the parameters in function calls. the function path is prepended to the parameter cref.
 This is used for the Cpp runtime for initializing parameters in function calls. The names have to be unique in case there are equally named parameters in different functions.

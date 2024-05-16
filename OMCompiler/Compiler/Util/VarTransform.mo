@@ -120,6 +120,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io;
+      Boolean ie;
       DAE.Dimensions idims;
       DAE.ExternalDecl extDecl;
       DAE.Ident id;
@@ -134,17 +135,17 @@ algorithm
       list<list<DAE.Element>> tbs,tbs_1;
       list<DAE.Exp> conds,conds_1;
 
-    case DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp),dims,ct,source,attr,cmt,io)
+    case DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp),dims,ct,source,attr,cmt,io,ie)
       equation
         (bindExp2,_) = replaceExp(bindExp, repl, condExpFunc);
         attr = applyReplacementsVarAttr(attr, repl, condExpFunc);
         /* TODO: Add operation to source */
-      then DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp2),dims,ct,source,attr,cmt,io);
+      then DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp2),dims,ct,source,attr,cmt,io,ie);
 
-    case DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io)
+    case DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io,ie)
       equation
         attr = applyReplacementsVarAttr(attr,repl,condExpFunc);
-      then DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io);
+      then DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io,ie);
 
     case DAE.DEFINE(cr,e,source)
       equation

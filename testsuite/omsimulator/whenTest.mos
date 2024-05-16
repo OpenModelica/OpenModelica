@@ -1,0 +1,43 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf WhenTest.fmu WhenTest.log WhenTest_res.mat WhenTest_info.json WhenTest_systemCall.log/
+
+loadString("
+ model WhenTest
+   Real s(start=0, fixed=true);
+   Integer stop(start=0, fixed=true);
+   equation
+   der(s) = if stop > 0 then 0 else 2;
+   // Variant A
+   stop = if s >= 1 then 1 else 0;
+   when pre(stop) > 0 then
+     reinit(s, 1);
+   end when;
+   annotation(
+    experiment(StartTime = 0, StopTime = 1, Tolerance = 1e-06, Interval = 0.002));
+end WhenTest;
+"); getErrorString();
+
+buildModelFMU(WhenTest, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator WhenTest.fmu -r=WhenTest_res.mat", "WhenTest_systemCall.log");
+readFile("WhenTest_systemCall.log");
+
+val(der(s), 1.0, "WhenTest_res.mat");
+val(stop, 1.0, "WhenTest_res.mat");
+
+// Result:
+// true
+// ""
+// "WhenTest.fmu"
+// ""
+// 0
+// "info:    maximum step size for 'model.root': 0.002000
+// info:    Result file: WhenTest_res.mat (bufferSize=1)
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 250 NumRhsEvals  = 251 NumLinSolvSetups = 14
+//          NumNonlinSolvIters = 250 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// 0.0
+// 1.0
+// endResult

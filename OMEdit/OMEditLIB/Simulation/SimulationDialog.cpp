@@ -1871,7 +1871,7 @@ bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QS
     MainWindow::instance()->getPlotWindowContainer()->setActiveSubWindow(pInteractivePlotWindow->getSubWindow());
     pInteractivePlotWindow->interactiveSimulationPaused();
   } else {
-    pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(true, owner, simulationOptions.getInteractiveSimulationPortNumber());
+    pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(owner, simulationOptions.getInteractiveSimulationPortNumber());
   }
   connect(pOpcUaWorker, SIGNAL(sendUpdateCurves()), pInteractivePlotWindow, SLOT(updateCurves()));
   qRegisterMetaType<QPair<double,double>>();
@@ -1936,7 +1936,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
       if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
-        MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+        MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow();
         AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
         if (pAnimationWindow) {
           pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());

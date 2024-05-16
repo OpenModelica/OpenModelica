@@ -641,12 +641,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("graphics")) {
-      if (jsonObject.value("graphics").isObject()) {
-        QJsonObject graphicsObject = jsonObject.value("graphics").toObject();
-        if (graphicsObject.contains("$error")) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
-        }
-      } else if (jsonObject.value("graphics").isArray()) {
+      if (jsonObject.value("graphics").isArray()) {
         QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
         for (int i = 0; i < graphicsArray.size(); ++i) {
           QJsonObject graphicObject = graphicsArray.at(i).toObject();
@@ -677,6 +672,8 @@ namespace ModelInstance
               pBitmap->deserialize(graphicObject.value("elements").toArray());
               mGraphics.append(pBitmap);
             }
+          } else if (graphicObject.contains("$error")) {
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
           }
         }
       }
@@ -1204,6 +1201,11 @@ namespace ModelInstance
     return getRootType() == QLatin1String("enumeration");
   }
 
+  bool Model::isRecord() const
+  {
+    return (mRestriction.compare(QStringLiteral("record")) == 0);
+  }
+
   bool Model::isType() const
   {
     return (mRestriction.compare(QStringLiteral("type")) == 0);
@@ -1619,7 +1621,10 @@ namespace ModelInstance
   void PlacementAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("visible")) {
-      mVisible.deserialize(jsonObject.value("visible"));
+      if (!mVisible.deserialize(jsonObject.value("visible"))) {
+        // if we fail to deserialize the visible value then set it to true.
+        mVisible = true;
+      }
     } else {
       // if there is no visible then assume it to be true.
       mVisible = true;
@@ -1630,7 +1635,10 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("iconVisible")) {
-      mIconVisible.deserialize(jsonObject.value("iconVisible"));
+      if (mIconVisible.deserialize(jsonObject.value("iconVisible"))) {
+        // if we fail to deserialize the iconVisible value then set it to true.
+        mIconVisible = true;
+      }
     } else {
       mIconVisible = mVisible;
     }
