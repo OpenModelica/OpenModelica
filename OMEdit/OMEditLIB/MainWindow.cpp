@@ -1161,8 +1161,11 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  // create a folder with model name to dump the files in it.
-  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getNameStructure());
+  /*
+   * create a folder with hashed string from model name
+   * see https://github.com/OpenModelica/OpenModelica/issues/12171, to have short temp directory path and dump the files in it.
+  */
+  QString modelDirectoryPath = QString("%1/%2%3").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getName(), Utilities::generateHash(pLibraryTreeItem->getNameStructure()));
   if (!QDir().exists(modelDirectoryPath)) {
     QDir().mkpath(modelDirectoryPath);
   }

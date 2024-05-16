@@ -495,6 +495,7 @@ namespace Utilities {
   QString escapeForHtmlNonSecure(const QString &str);
   QString& tempDirectory();
   QSettings* getApplicationSettings();
+  QString generateHash(const QString &input);
   void parseCompositeModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
   bool isValueLiteralConstant(QString value);
