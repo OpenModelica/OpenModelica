@@ -44,6 +44,8 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QTextCodec>
+#include <QCryptographicHash>
+#include <QByteArray>
 
 #define toAscii toLatin1
 
@@ -1931,6 +1933,30 @@ QString StringHandler::number(double value)
   QString valueStr(buf);
   free(buf);
   return valueStr;
+}
+
+/*
+ * \brief StringHandler::generateHashPrefix
+ * hash the string input
+ * \param input
+ * \return hashprefix with first 4 chars
+*/
+QString StringHandler::generateHashPrefix(const QString &input)
+{
+    // Convert the input string to a QByteArray
+    QByteArray byteArray = input.toUtf8();
+    // Create a QCryptographicHash object with the desired algorithm (SHA-256 in this case)
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    // Add the data to be hashed
+    hash.addData(byteArray);
+    // Obtain the resulting hash as a QByteArray
+    QByteArray hashResult = hash.result();
+    // Convert the hash result to a hex string for readability
+    QString hashString = hashResult.toHex();
+    // Extract the first 4 characters
+    QString hashPrefix = hashString.left(4);
+
+    return hashPrefix;
 }
 
 /*!

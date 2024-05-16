@@ -170,6 +170,7 @@ public:
   static QString insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel);
   static QString number(double value);
   static QString convertSemVertoReadableString(const QString &semver);
+  static QString generateHashPrefix(const QString &input);
 protected:
   static QString mLastOpenDir;
 };
