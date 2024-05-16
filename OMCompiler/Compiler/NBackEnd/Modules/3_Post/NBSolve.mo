@@ -302,7 +302,7 @@ public
             // first solve all equation bodies accordingly
             for slice in comp.entwined_slices loop
               StrongComponent.SLICED_COMPONENT(var_cref = var_cref, eqn = eqn_slice) := slice;
-              (eqn, funcTree, solve_status, implicit_index, _):= solveEquation(Pointer.access(Slice.getT(eqn_slice)), var_cref, funcTree, systemType, implicit_index, slicing_map);
+              (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), var_cref, funcTree, systemType, implicit_index, slicing_map);
               Pointer.update(eqn_ptr, eqn);
             end for;
             replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
