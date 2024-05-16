@@ -100,8 +100,8 @@ public
       "
   extends Module.resolveSingularitiesInterface;
   protected
-    UnorderedSet<Integer> marked_eqns_set;
     list<Integer> marked_eqns;
+    Adjacency.Matrix state_adj;
     SlicingStatus status;
     Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
     list<Slice<VariablePointer>> state_candidates = {}, states, dummy_states;
@@ -114,26 +114,45 @@ public
     EquationPointers constraint_ptrs;
     Adjacency.Matrix set_adj, full_local;
     Matching set_matching;
-    list<list<Integer>> marked_eqns_lst = {}; // todo: fill!
-
+    array<list<Integer>> msss;
     Boolean debug = false;
   algorithm
-    if not listEmpty(marked_eqns_lst) then
+    // get the minimally structurally singular subset
+    msss := match adj
+      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
+          + Adjacency.Matrix.toString(adj)});
+      then fail();
+    end match;
+
+    if not arrayLength(msss) == 0 then
       changed := true;
-      // marked_eqns_lst to flat uniqie list (via UnorderedSet)
-      marked_eqns_set := UnorderedSet.new(Util.id, intEq, Util.nextPrime(sum(listLength(l) for l in marked_eqns_lst)));
-      for lst in marked_eqns_lst loop
-        for e in lst loop
-          UnorderedSet.add(e, marked_eqns_set);
-        end for;
-      end for;
-      marked_eqns := UnorderedSet.toList(marked_eqns_set);
+      // msss to flat unique list (via UnorderedSet)
+      marked_eqns := UnorderedSet.unique_list(List.flatten(arrayList(msss)), Util.id, intEq);
+      print(List.toString(marked_eqns, intString) + "\n");
       // --------------------------------------------------------
       //      1. BASIC INDEX REDUCTION
       // --------------------------------------------------------
 
       // get all unmatched eqns and state candidates
-      (constraint_eqns, state_candidates) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+      // state candidates and constraint equations are lists of slices
+      // adjacency matrix and arrays are only full based
+      // slice them before matching
+      (_, _, state_adj, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+      state_candidates := {};
+
+      if listLength(state_candidates) < listLength(constraint_eqns) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+          + " failed because there were not enough state candidates to balance out the constraint equations.\n"
+          + StringUtil.headline_4("(" + intString(listLength(state_candidates)) + "|"
+          + intString(sum(Slice.size(v, BVariable.size) for v in state_candidates)) + ") State Candidates")
+          + List.toString(state_candidates, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+          + StringUtil.headline_4("(" + intString(listLength(constraint_eqns)) + "|"
+          + intString(sum(Slice.size(e, Equation.size) for e in constraint_eqns)) + ") Constraint Equations")
+          + List.toString(constraint_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"});
+        fail();
+      end if;
 
       // ToDo: differ between user dumping and developer dumping
       if Flags.isSet(Flags.DUMMY_SELECT) then
@@ -408,17 +427,144 @@ public
   end balanceInitialization;
 
 protected
+  function getMSSS
+    "finds the minimally structurally singular subsets"
+    input array<list<Integer>> m              "eqn -> list<var>";
+    input array<list<Integer>> mT             "var -> list<eqn>";
+    input Matching matching;
+    output array<list<Integer>> msss;
+  protected
+    list<Integer> eqn_candidates = {};
+    array<Integer> eqn_coloring = arrayCreate(arrayLength(matching.eqn_to_var), -1);
+    array<Integer> var_coloring = arrayCreate(arrayLength(matching.var_to_eqn), -1);
+    Integer color = 0;
+  algorithm
+    // find all unmatched variable and equation indices
+    for eqn in 1:arrayLength(matching.eqn_to_var) loop
+      if matching.eqn_to_var[eqn] == -1 then
+        eqn_candidates := eqn :: eqn_candidates;
+      end if;
+    end for;
+
+    // use a new color for each uncolored equation
+    for eqn in eqn_candidates loop
+      if eqn_coloring[eqn] == -1 then
+        color := color + 1;
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT);
+      end if;
+    end for;
+
+    // fill the msss array, sorting each equation to their respective color
+    msss := arrayCreate(color, {});
+    for eqn in 1:arrayLength(eqn_coloring) loop
+      if eqn_coloring[eqn] <> -1 then
+        msss[eqn_coloring[eqn]] := eqn :: msss[eqn_coloring[eqn]];
+      end if;
+    end for;
+  end getMSSS;
+
+  function fillColorEqn
+    "finds all connected equation nodes and colors them equally
+    starts at an equation"
+    input Integer eqn;
+    input Integer color;
+    input array<Integer> eqn_coloring;
+    input array<Integer> var_coloring;
+    input array<list<Integer>> m              "eqn -> list<var>";
+    input array<list<Integer>> mT             "var -> list<eqn>";
+  algorithm
+    print("updating eqn " + intString(eqn) + " with color " + intString(color) + "\n");
+    arrayUpdate(eqn_coloring, eqn, color);
+    for var in m[eqn] loop
+      if var_coloring[var] == -1 then
+        fillColorVar(var, color, eqn_coloring, var_coloring, m, mT);
+      end if;
+    end for;
+  end fillColorEqn;
+
+  function fillColorVar
+    "finds all connected equation nodes and colors them equally
+    starts at a variable"
+    input Integer var;
+    input Integer color;
+    input array<Integer> eqn_coloring;
+    input array<Integer> var_coloring;
+    input array<list<Integer>> m              "eqn -> list<var>";
+    input array<list<Integer>> mT             "var -> list<eqn>";
+  algorithm
+    print("updating var " + intString(var) + " with color " + intString(color) + "\n");
+    arrayUpdate(var_coloring, var, color);
+    for eqn in mT[var] loop
+      if eqn_coloring[eqn] == -1 then
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT);
+      end if;
+    end for;
+  end fillColorVar;
+
   function getConstraintsAndCandidates
     input EquationPointers equations;
     input list<Integer> marked_eqns;
     input Option<Adjacency.Mapping> mapping_opt;
-    output list<Slice<EquationPointer>> constraint_eqns;
-    output list<Slice<VariablePointer>> state_candidates;
+    output EquationPointers constr = EquationPointers.empty();
+    output VariablePointers states = VariablePointers.empty();
+    output Adjacency.Matrix state_adj;
+    output list<Slice<EquationPointer>> sliced_constr = {};
   protected
-    UnorderedSet<ComponentRef> candidates;
-    list<Pointer<Equation>> eqns_scalar = {};
-    list<Pointer<Variable>> vars_scalar = {};
+    Adjacency.Mapping mapping;
+    UnorderedSet<Integer> eqn_indices = UnorderedSet.new(Util.id, intEq);
+    array<list<Integer>> eqn_slices = arrayCreate(EquationPointers.size(equations), {});
+    UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    Pointer<Equation> eqn_ptr;
+    Adjacency.Matrix full;
   algorithm
+    // get the mapping and fail if there is none
+    mapping := match mapping_opt
+      case SOME(mapping) then mapping;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no mapping was provided."});
+      then fail();
+    end match;
+
+    // collect all relevant constraint equations
+    for eqn in marked_eqns loop
+      UnorderedSet.add(mapping.eqn_StA[eqn], eqn_indices);
+      eqn_slices[mapping.eqn_StA[eqn]] := eqn :: eqn_slices[mapping.eqn_StA[eqn]];
+    end for;
+
+    // get the constraint equation, add it to the array and add all slices of it to the slice list
+    // furthermore, get all contained constrained equations
+    for eqn in UnorderedSet.toList(eqn_indices) loop
+      eqn_ptr := EquationPointers.getEqnAt(equations, eqn);
+      constr  := EquationPointers.add(eqn_ptr, constr);
+      sliced_constr := Slice.SLICE(eqn_ptr, eqn_slices[eqn]) :: sliced_constr;
+      for candidate in BEquation.Equation.collectCrefs(Pointer.access(eqn_ptr), getStateCandidate) loop
+        UnorderedSet.add(candidate, state_candidates);
+      end for;
+    end for;
+
+    // add all state candidates to the array
+    for candidate in UnorderedSet.toList(state_candidates) loop
+      states := VariablePointers.add(BVariable.getVarPointer(candidate), states);
+    end for;
+
+    // create adjacency matrix
+    full      := Adjacency.Matrix.createFull(states, constr);
+    state_adj := Adjacency.Matrix.fromFull(full, states.map, constr.map, constr, NBAdjacency.MatrixStrictness.LINEAR);
+
+    print(VariablePointers.toString(states) + "\n");
+    print(EquationPointers.toString(constr) + "\n");
+
+    print(Adjacency.Matrix.toString(full, "full") + "\n");
+    print(Adjacency.Matrix.toString(state_adj, "final") + "\n");
+
+    // plan:
+    // BEFORE -> figure out state order stuff (in detect states? replace all know der() calls with respective states instead of $DER)
+    // just like with the constraint equations, get the states candidates
+    // create state candidates array use it for createFull
+    // create final from full
+    // slice final using the constr slicings (state slicing not needed)
+
+/*
     (constraint_eqns, state_candidates) := match mapping_opt
       local
         Adjacency.Mapping mapping;
@@ -447,7 +593,7 @@ protected
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
-    end match;
+    end match;*/
   end getConstraintsAndCandidates;
 
   function getStateCandidate

@@ -67,7 +67,7 @@ protected
   import StringUtil;
 
 public
-  type MatrixStrictness  = enumeration(LINEAR, SOLVABLE, MATCHING, SORTING, FULL);
+  type MatrixStrictness  = enumeration(LINEAR, MATCHING, SORTING, FULL);
 
   function strictnessString
     input MatrixStrictness s;
@@ -75,7 +75,6 @@ public
   algorithm
     str := match s
       case MatrixStrictness.LINEAR    then "linear";
-      case MatrixStrictness.SOLVABLE  then "solvable";
       case MatrixStrictness.MATCHING  then "matching";
       case MatrixStrictness.SORTING   then "sorting";
       case MatrixStrictness.FULL      then "full";
@@ -1091,6 +1090,19 @@ public
       end for;
     end transposeScalar;
 
+    function toStringSingle
+      input array<list<Integer>> m;
+      output String str = "";
+    protected
+      Integer skip = stringLength(intString(arrayLength(m))) + 1;
+      String tmp;
+    algorithm
+      for row in 1:arrayLength(m) loop
+        tmp := intString(row);
+        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
+      end for;
+    end toStringSingle;
+
   protected
     function fullString
       input ComponentRef cref;
@@ -1114,19 +1126,6 @@ public
         else List.toString(dims, Dimension.toString);
       end match;
     end dimsString;
-
-    function toStringSingle
-      input array<list<Integer>> m;
-      output String str = "";
-    protected
-      Integer skip = stringLength(intString(arrayLength(m))) + 1;
-      String tmp;
-    algorithm
-      for row in 1:arrayLength(m) loop
-        tmp := intString(row);
-        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
-      end for;
-    end toStringSingle;
 
     function initialize
       input Mapping mapping;
