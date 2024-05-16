@@ -1142,7 +1142,7 @@ public
     if isBound(var_ptr) then
       var := Pointer.access(var_ptr);
       binding := Binding.getExp(var.binding);
-      b := Expression.isLiteral(Ceval.tryEvalExp(binding));
+      b := Expression.isLiteral(binding);
       if not b then
         // try to extract literal from array constructor
         (_, binding) := Iterator.extract(binding);
