@@ -735,8 +735,8 @@ public
                 sol := UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo());
                 if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
                   eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
-                   // booleans or (todo: enumerations)
-                  if Type.isBoolean(Equation.getType(Pointer.access(eqn_ptr))) or Type.isBoolean(ComponentRef.getSubscriptedType(var)) then
+                  // booleans or (todo: enumerations)
+                  if Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or not BVariable.checkCref(var, BVariable.isContinuous) then
                     // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
