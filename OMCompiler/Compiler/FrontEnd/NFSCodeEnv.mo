@@ -1877,7 +1877,7 @@ algorithm
     "\n\t\tRedeclare elements:\n\t\t\t" +
     stringDelimitList(List.map1(re, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n\t\t\t") +
     "\n\t\tClass extends:\n\t\t\t" +
-    Util.stringOption(Util.applyOption1(cei, SCodeDump.unparseElementStr, SCodeDump.defaultOptions));
+    Util.applyOptionOrDefault(cei, function SCodeDump.unparseElementStr(options = SCodeDump.defaultOptions), "");
 end printExtendsTableStr;
 
 public function printExtendsStr
