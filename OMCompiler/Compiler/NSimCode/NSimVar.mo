@@ -110,14 +110,11 @@ public
     function toString
       input SimVar var;
       input output String str = "";
-    protected
-      Expression start;
     algorithm
       str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind)
         + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
       if Util.isSome(var.start) then
-        start := Util.getOption(var.start);
-        str := str + " = " + Expression.toString(start);
+        str := str + " = " + Expression.toString(Util.getOption(var.start));
       end if;
     end toString;
 
@@ -300,14 +297,14 @@ public
         unit                = simVar.unit,
         displayUnit         = simVar.displayUnit,
         index               = simVar.index,
-        minValue            = if isSome(simVar.min) then SOME(Expression.toDAE(Util.getOption(simVar.min))) else NONE(),
-        maxValue            = if isSome(simVar.max) then SOME(Expression.toDAE(Util.getOption(simVar.max))) else NONE(),
-        initialValue        = if isSome(simVar.start) then SOME(Expression.toDAE(Util.getOption(simVar.start))) else NONE(),
-        nominalValue        = if isSome(simVar.nominal) then SOME(Expression.toDAE(Util.getOption(simVar.nominal))) else NONE(),
+        minValue            = Util.applyOption(simVar.min, Expression.toDAE),
+        maxValue            = Util.applyOption(simVar.max, Expression.toDAE),
+        initialValue        = Util.applyOption(simVar.start, Expression.toDAE),
+        nominalValue        = Util.applyOption(simVar.nominal, Expression.toDAE),
         isFixed             = simVar.isFixed,
         type_               = Type.toDAE(simVar.type_),
         isDiscrete          = simVar.isDiscrete,
-        arrayCref           = if isSome(simVar.arrayCref) then SOME(ComponentRef.toDAE(Util.getOption(simVar.arrayCref))) else NONE(),
+        arrayCref           = Util.applyOption(simVar.arrayCref, ComponentRef.toDAE),
         aliasvar            = Alias.convert(simVar.aliasvar),
         source              = DAE.emptyElementSource, //ToDo update this!
         causality           = NONE(),  //ToDo update this!
@@ -323,7 +320,7 @@ public
         matrixName          = simVar.matrixName,
         variability         = NONE(),  //ToDo update this!
         initial_            = NONE(),  //ToDo update this!
-        exportVar           = if isSome(simVar.exportVar) then SOME(ComponentRef.toDAE(Util.getOption(simVar.exportVar))) else NONE());
+        exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE));
     end convert;
 
     function convertList
@@ -346,31 +343,32 @@ public
       output Option<Expression> start = NONE();
       output Option<Expression> nominal = NONE();
       output Boolean isFixed = false;
-      output Boolean isDiscrete = false;
-      output Boolean isProtected = false;
+      output Boolean isDiscrete;
+      output Boolean isProtected;
     algorithm
-      _ := match backendInfo
+      () := match backendInfo
         local
           BackendExtension.VariableAttributes varAttr;
 
         case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_REAL())
           algorithm
-            if isSome(varAttr.unit) then
-              unit := Expression.stringValue(Util.getOption(varAttr.unit));
-            end if;
-            if isSome(varAttr.displayUnit) then
-              displayUnit := Expression.stringValue(Util.getOption(varAttr.displayUnit));
-            end if;
+            unit := Util.applyOptionOrDefault(varAttr.unit, Expression.stringValue, "");
+            displayUnit := Util.applyOptionOrDefault(varAttr.displayUnit, Expression.stringValue, "");
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
             nominal := varAttr.nominal;
-            if isSome(varAttr.fixed) then
-              isFixed := Expression.booleanValue(Util.getOption(varAttr.fixed));
-            end if;
-            if isSome(varAttr.isProtected) then
-              SOME(isProtected) := varAttr.isProtected;
-            end if;
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isDiscrete := match varKind
+              case BackendExtension.DISCRETE()        then true;
+              case BackendExtension.DISCRETE_STATE()  then true;
+              case BackendExtension.PREVIOUS()        then true;
+              case BackendExtension.PARAMETER()       then true;
+              case BackendExtension.CONSTANT()        then true;
+              case BackendExtension.START()           then true;
+                                                      else false;
+            end match;
+            isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_INT())
@@ -378,57 +376,47 @@ public
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
             isDiscrete := true;
-            if isSome(varAttr.isProtected) then
-              SOME(isProtected) := varAttr.isProtected;
-            end if;
+            isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_BOOL())
           algorithm
             start := varAttr.start;
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
             isDiscrete := true;
-            if isSome(varAttr.isProtected) then
-              SOME(isProtected) := varAttr.isProtected;
-            end if;
+            isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_CLOCK())
           algorithm
-            if isSome(varAttr.isProtected) then
-              SOME(isProtected) := varAttr.isProtected;
-            end if;
+            isDiscrete := true;
+            isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_STRING())
           algorithm
+            start := varAttr.start;
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
             isDiscrete := true;
-            if isSome(varAttr.isProtected) then
-              SOME(isProtected) := varAttr.isProtected;
-            end if;
+            isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_ENUMERATION())
           algorithm
+            min := varAttr.min;
+            max := varAttr.max;
+            start := varAttr.start;
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
             isDiscrete := true;
-            if isSome(varAttr.isProtected) then
-              SOME(isProtected) := varAttr.isProtected;
-            end if;
+            isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the BackendInfo could not be parsed:\n"
             + BackendExtension.BackendInfo.toString(backendInfo)});
         then fail();
-      end match;
-      isDiscrete := match varKind
-        case BackendExtension.DISCRETE()        then true;
-        case BackendExtension.DISCRETE_STATE()  then true;
-        case BackendExtension.PREVIOUS()        then true;
-        case BackendExtension.PARAMETER()       then true;
-        case BackendExtension.CONSTANT()        then true;
-        case BackendExtension.START()           then true;
-                                                else isDiscrete;
       end match;
     end parseAttributes;
 
