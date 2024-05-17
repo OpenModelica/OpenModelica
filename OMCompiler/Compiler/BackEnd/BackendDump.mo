@@ -1819,7 +1819,10 @@ public function simIteratorString
   input BackendDAE.SimIterator iter;
   output String str;
 algorithm
-  str := ComponentReference.printComponentRefStr(iter.name) + " in " + intString(iter.start) + ":" + intString(iter.step) + ":" + intString(iter.start + iter.size);
+  str := match iter
+    case BackendDAE.SIM_ITERATOR_RANGE()  then ComponentReference.printComponentRefStr(iter.name) + " in " + intString(iter.start) + ":" + intString(iter.step) + ":" + intString(iter.start + iter.size);
+    case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReference.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10);
+  end match;
 end simIteratorString;
 
 // =============================================================================

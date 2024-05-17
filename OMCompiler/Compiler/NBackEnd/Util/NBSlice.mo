@@ -1423,6 +1423,8 @@ protected
         Expression range;
         Integer start, step, stop;
         list<tuple<Integer, Integer>> ranges;
+        list<Expression> iterator_exps;
+        list<Integer> iterator_lst;
 
       // only occurs for non-for-loop equations (no frames to replace)
       case {} algorithm
@@ -1431,9 +1433,22 @@ protected
 
       // extract numeric information about the range
       case (iterator, range) :: rest algorithm
-        (start, step, stop) := Expression.getIntegerRange(range);
+        iterator_lst := match range
+          case Expression.RANGE() algorithm
+            (start, step, stop) := Expression.getIntegerRange(range);
+          then List.intRange3(start,step, stop);
+          case Expression.ARRAY() algorithm
+            iterator_exps := list(Expression.map(e, function Replacements.applySimpleExp(replacements = replacements)) for e in range.elements);
+            iterator_lst  := list(Expression.integerValue(SimplifyExp.simplifyDump(e, true, getInstanceName())) for e in iterator_exps);
+          then iterator_lst;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because iterator binding could not be parsed: "
+              + ComponentRef.toString(iterator) + " in " + Expression.toString(range)});
+          then fail();
+        end match;
+
         // traverse every index in the range
-        for index in start:step:stop loop
+        for index in iterator_lst loop
           UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
           if listEmpty(rest) then
             // bottom line, resolve current configuration and create index for it
