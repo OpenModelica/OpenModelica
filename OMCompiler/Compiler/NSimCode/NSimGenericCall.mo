@@ -152,16 +152,27 @@ public
   end convert;
 
   uniontype SimIterator
-    record SIM_ITERATOR
+    record SIM_ITERATOR_RANGE
       ComponentRef name;
       Integer start;
       Integer step;
       Integer size;
-    end SIM_ITERATOR;
+    end SIM_ITERATOR_RANGE;
+
+    record SIM_ITERATOR_LIST
+      ComponentRef name;
+      list<Integer> lst;
+      Integer size;
+    end SIM_ITERATOR_LIST;
 
     function toString
       input SimIterator iter;
-      output String str = "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", size: " + intString(iter.size) + "}";
+      output String str;
+    algorithm
+      str := match iter
+        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", size: " + intString(iter.size) + "}";
+        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}";
+      end match;
     end toString;
 
     function fromIterator
@@ -173,23 +184,37 @@ public
       ComponentRef name;
       Expression range;
       Integer start, step, stop;
+      list<Integer> lst;
     algorithm
       (names, ranges) := Iterator.getFrames(iter);
       for tpl in listReverse(List.zip(names, ranges)) loop
         (name, range) := tpl;
-        (start, step, stop) := match range
-          case Expression.RANGE() then (Expression.integerValue(range.start), Expression.integerValue(Util.getOptionOrDefault(range.step, Expression.INTEGER(1))), Expression.integerValue(range.stop));
+        sim_iter := match range
+          case Expression.RANGE() algorithm
+            start := Expression.integerValue(range.start);
+            step  := Expression.integerValue(Util.getOptionOrDefault(range.step, Expression.INTEGER(1)));
+            stop  := Expression.integerValue(range.stop);
+          then SIM_ITERATOR_RANGE(name, start, step, intDiv(stop-start,step)+1) :: sim_iter;
+
+          case Expression.ARRAY() guard(range.literal) algorithm
+            lst   := list(Expression.integerValue(e) for e in range.elements);
+          then SIM_ITERATOR_LIST(name, lst, listLength(lst)) :: sim_iter;
+
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect range: " + Expression.toString(range)});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect iterator domain: " + Expression.toString(range)});
           then fail();
         end match;
-        sim_iter := SIM_ITERATOR(name, start, step, intDiv(stop-start,step)+1) :: sim_iter;
       end for;
     end fromIterator;
 
     function convert
       input SimIterator iter;
-      output OldBackendDAE.SimIterator old_iter = OldBackendDAE.SIM_ITERATOR(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
+      output OldBackendDAE.SimIterator old_iter;
+    algorithm
+      old_iter := match iter
+        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
+        case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size);
+      end match;
     end convert;
   end SimIterator;
 

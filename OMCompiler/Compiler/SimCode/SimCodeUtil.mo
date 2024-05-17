@@ -15864,9 +15864,12 @@ end getCMakeVersion;
 function getSimIteratorSize
   input list<BackendDAE.SimIterator> iters;
   output Integer size = 1;
+protected
+  Integer local_size;
 algorithm
   for iter in iters loop
-    size := size * iter.size;
+    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
+    size := size * local_size;
   end for;
 end getSimIteratorSize;
 

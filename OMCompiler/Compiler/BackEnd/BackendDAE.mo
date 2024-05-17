@@ -666,12 +666,17 @@ uniontype ZeroCrossing
 end ZeroCrossing;
 
 public uniontype SimIterator
-  record SIM_ITERATOR
+  record SIM_ITERATOR_RANGE
     .DAE.ComponentRef name;
     Integer start;
     Integer step;
     Integer size;
-  end SIM_ITERATOR;
+  end SIM_ITERATOR_RANGE;
+  record SIM_ITERATOR_LIST
+    .DAE.ComponentRef name;
+    list<Integer> lst;
+    Integer size;
+  end SIM_ITERATOR_LIST;
 end SimIterator;
 
 public
