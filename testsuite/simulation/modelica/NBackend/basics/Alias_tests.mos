@@ -4,12 +4,12 @@
 
 loadString("
   model Test
-    // Throws an error if more than one variable is fixed and have different start values.
+    // Throws a notification about having different TearingSelect values.
     Real y;             // not simple
-    Real x;
-    Real z;
-    Real v; 
-    Real w;          // regular simple
+    Real x(min=-2000, max=2000, start=-5, fixed=true, nominal=2) annotation(__OpenModelica_tearingSelect=TearingSelect.avoid);
+    Real z(min=-1000, max=1000, start=-10, fixed=true) annotation(__OpenModelica_tearingSelect=TearingSelect.never);
+    Real v(min=-500, max=500, start=20, fixed=false, nominal=5);
+    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=10, stateSelect=StateSelect.default);          // regular simple
     Real a, b, c;       // constant simple
   equation
     a = b;
@@ -22,97 +22,25 @@ loadString("
     z = sin(time);
   end Test;
 
-  model TestE1
-    Test t(x(min=-2000),y(min=-3000));
-  end TestE1;
-"); getErrorString();
-
-
-loadString("
   model Test1
     // Throws an error if more than one variable is fixed and have different start values.
-    Real y;             // not simple
-    Real x(min=-2000, max=2000, start=-5, fixed=true, nominal=2) annotation(__OpenModelica_tearingSelect=TearingSelect.avoid);
-    Real z(min=-1000, max=1000, start=-10, fixed=true); 
-    Real v(min=-500, max=500, start=20, fixed=false, nominal=5); 
-    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=10, stateSelect=StateSelect.default);          // regular simple
-    Real a, b, c;       // constant simple
-  equation
-    a = b;
-    b = c;
-    x = -2*z;
-    x = v;
-    v = w;
-    c = 3.0;
-    y = time + c;
-    z = sin(time);
+    Test t(w(stateSelect=StateSelect.default));
   end Test1;
-"); getErrorString();
 
-loadString("
   model Test2
     // Throws an error if there are non literal nominal values.
     parameter Real p(fixed=false);
-    Real y;             // not simple
-    Real x(min=-2000, max=2000, start=-5, fixed=true, nominal=2) annotation(__OpenModelica_tearingSelect=TearingSelect.avoid);
-    Real z(min=-1000, max=1000, start=-10, fixed=false); 
-    Real v(min=-500, max=500, start=20, fixed=false, nominal=p); 
-    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=10, stateSelect=StateSelect.default);          // regular simple
-    Real a, b, c;       // constant simple
-  initial equation
-    p = a;
-  equation
-    a = b;
-    b = c;
-    x = -2*z;
-    x = v;
-    v = w;
-    c = 3.0;
-    y = time + c;
-    z = sin(time);
+    Test t(z(fixed=false), v(nominal=p));
   end Test2;
-"); getErrorString();
 
-loadString("
-  // Throws an error if more than one variable has StateSelect = ALWAYS and warning if more than one variable is fixed and have the same start values.
   model Test3
-    Real y;             // not simple
-    Real x(min=-2000, max=2000, start=10, fixed=true, nominal=2) annotation(__OpenModelica_tearingSelect=TearingSelect.avoid);
-    Real z(min=-1000, max=1000, start=10, fixed=false, stateSelect=StateSelect.always); 
-    Real v(min=-500, max=500, start=10, fixed=true, nominal=5); 
-    Real w(min=-10000, max=10000, start=10, fixed=false, nominal=10, stateSelect=StateSelect.always);          // regular simple
-    Real a, b, c;       // constant simple
-  equation
-    a = b;
-    b = c;
-    x = -2*z;
-    x = v;
-    v = w;
-    c = 3.0;
-    y = time + c;
-    z = sin(time);
+    // Throws an error if more than one variable has StateSelect = ALWAYS and warning if more than one variable is fixed and have the same start values.
+    Test t(x(start=20), z(start=20,stateSelect=StateSelect.always,fixed=false), w(start=20,stateSelect=StateSelect.always), v(fixed=true));
   end Test3;
-"); getErrorString();
 
-loadString("
   model Test4
     // Throws two warnings: 1. 0 variables are fixed and have different start values, 2. quotient of greatest and lowest nominal value is greater than the nominal threshold
-    // and one notification about having different TearingSelect values.
-    Real y;             // not simple
-    Real x(min=-2000, max=2000, start=-5, fixed=false, nominal=2) annotation(__OpenModelica_tearingSelect=TearingSelect.avoid);
-    Real z(min=-1000, max=1000, start=-10, fixed=false) annotation(__OpenModelica_tearingSelect=TearingSelect.never);
-    Real v(min=-500, max=500, start=20, fixed=false, nominal=10000000); 
-    Real w(min=-10000, max=10000, start=100, fixed=false, nominal=10);          // regular simple
-    Real a, b, c;       // constant simple
-  equation
-    a = b;
-    b = c;
-    x = -2*z;
-    x = v;
-    v = w;
-    c = 3.0;
-    y = time + c;
-    z = sin(time);
+    Test t(x(fixed=false), z(fixed=false), v(nominal=10000000));
   end Test4;
 "); getErrorString();
 
@@ -126,14 +54,6 @@ simulate(Test4); getErrorString();
 // true
 // ""
 // true
-// ""
-// true
-// ""
-// true
-// ""
-// true
-// ""
-// true
 // ==========================
 // [dumprepl] Alias Sets:
 // ==========================
@@ -142,35 +62,46 @@ simulate(Test4); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_2)
+// 	Constant/Parameter Binding: [SCAL] (1) t.c = 3.0 ($RES_SIM_2)
 // 	### Set Equations:
-// 	[SCAL] (1) y = time + c ($RES_SIM_1)
-// 	[SCAL] (1) b = c ($RES_SIM_6)
-// 	[SCAL] (1) a = b ($RES_SIM_7)
+// 	[SCAL] (1) t.y = time + t.c ($RES_SIM_1)
+// 	[SCAL] (1) t.b = t.c ($RES_SIM_6)
+// 	[SCAL] (1) t.a = t.b ($RES_SIM_7)
 //
 // record SimulationResult
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: Test1"
 // end SimulationResult;
-// "Error: Internal error NBAlias.setStartFixed failed because more than one variable is fixed and have different start values!
+// "Notification: There are different TearingSelect values.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
+//
+// 	TearingSelect map:
+// 	(t.x, TearingSelect = avoid)
+// 	(t.z, TearingSelect = never)
+// Error: Internal error NBAlias.setStartFixed failed because more than one variable is fixed and have different start values!
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // 	Fixed start map:
-// 	(x, -5.0)
-// 	(z, 20.0)
+// 	(t.x, -5.0)
+// 	(t.z, 20.0)
 // "
 // ==========================
 // [dumprepl] Alias Sets:
@@ -180,36 +111,47 @@ simulate(Test4); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_1)
-// 	[SCAL] (1) v = w ($RES_SIM_4)
-// 	[SCAL] (1) x = v ($RES_SIM_5)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_6)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_3)
+// 	Constant/Parameter Binding: [SCAL] (1) t.c = 3.0 ($RES_SIM_2)
 // 	### Set Equations:
-// 	[SCAL] (1) y = time + c ($RES_SIM_2)
-// 	[SCAL] (1) b = c ($RES_SIM_7)
-// 	[SCAL] (1) a = b ($RES_SIM_8)
+// 	[SCAL] (1) t.y = time + t.c ($RES_SIM_1)
+// 	[SCAL] (1) t.b = t.c ($RES_SIM_6)
+// 	[SCAL] (1) t.a = t.b ($RES_SIM_7)
 //
 // record SimulationResult
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: Test2"
 // end SimulationResult;
-// "Error: Internal error NBAlias.checkNominalThreshold failed because non literal nominal values are not allowed!
+// "Notification: There are different TearingSelect values.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_1)
-// 	[SCAL] (1) v = w ($RES_SIM_4)
-// 	[SCAL] (1) x = v ($RES_SIM_5)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_6)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
+//
+// 	TearingSelect map:
+// 	(t.x, TearingSelect = avoid)
+// 	(t.z, TearingSelect = never)
+// Error: Internal error NBAlias.checkNominalThreshold failed because non literal nominal values are not allowed!
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // 	Nominal map:
-// 	(w, 10.0)
-// 	(v, p)
-// 	(x, 2.0)
+// 	(t.w, 10.0)
+// 	(t.v, p)
+// 	(t.x, 2.0)
 // "
 // ==========================
 // [dumprepl] Alias Sets:
@@ -219,45 +161,46 @@ simulate(Test4); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_2)
+// 	Constant/Parameter Binding: [SCAL] (1) t.c = 3.0 ($RES_SIM_2)
 // 	### Set Equations:
-// 	[SCAL] (1) y = time + c ($RES_SIM_1)
-// 	[SCAL] (1) b = c ($RES_SIM_6)
-// 	[SCAL] (1) a = b ($RES_SIM_7)
+// 	[SCAL] (1) t.y = time + t.c ($RES_SIM_1)
+// 	[SCAL] (1) t.b = t.c ($RES_SIM_6)
+// 	[SCAL] (1) t.a = t.b ($RES_SIM_7)
 //
 // record SimulationResult
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: Test3"
 // end SimulationResult;
-// "Warning: NBAlias.setStartFixed: More than one variable is fixed and have the same start value.
+// "Notification: There are different TearingSelect values.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
-// 	Fixed start map:
-// 	(v, 10.0)
-// 	(x, 10.0)
-// Error: Internal error NBAlias.stateSelectAlways failed because more than one variable has StateSelect = always!	<No Constant/Parameter Binding>
+// 	TearingSelect map:
+// 	(t.x, TearingSelect = avoid)
+// 	(t.z, TearingSelect = never)
+// Error: Internal error NBAlias.stateSelectAlways failed because more than one variable has StateSelect = always!
+// 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // 	StateSelect map:
-// 	(w, StateSelect = always)
-// 	(z, StateSelect = always)
+// 	(t.w, StateSelect = always)
+// 	(t.z, StateSelect = always)
 // "
 // ==========================
 // [dumprepl] Alias Sets:
@@ -267,33 +210,33 @@ simulate(Test4); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_2)
+// 	Constant/Parameter Binding: [SCAL] (1) t.c = 3.0 ($RES_SIM_2)
 // 	### Set Equations:
-// 	[SCAL] (1) y = time + c ($RES_SIM_1)
-// 	[SCAL] (1) b = c ($RES_SIM_6)
-// 	[SCAL] (1) a = b ($RES_SIM_7)
+// 	[SCAL] (1) t.y = time + t.c ($RES_SIM_1)
+// 	[SCAL] (1) t.b = t.c ($RES_SIM_6)
+// 	[SCAL] (1) t.a = t.b ($RES_SIM_7)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
-// 	c	 ==> 	3.0
-// 	b	 ==> 	3.0
-// 	a	 ==> 	3.0
+// 	t.c	 ==> 	3.0
+// 	t.b	 ==> 	3.0
+// 	t.a	 ==> 	3.0
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
-// 	v	 ==> 	w
-// 	x	 ==> 	w
+// 	t.v	 ==> 	t.w
+// 	t.x	 ==> 	t.w
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
-// 	z	 ==> 	-0.5 * w
-// 	$FUN_1	 ==> 	-0.5 * w
-// 	y	 ==> 	3.0 + time
+// 	t.z	 ==> 	-0.5 * t.w
+// 	$FUN_1	 ==> 	-0.5 * t.w
+// 	t.y	 ==> 	3.0 + time
 //
 // record SimulationResult
 //     resultFile = "Test4_res.mat",
@@ -302,40 +245,41 @@ simulate(Test4); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NBAlias.setStartFixed: No variable is fixed and have different start values.
+// "Notification: There are different TearingSelect values.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
-// 	Start map:
-// 	(w, 100.0)
-// 	(v, 20.0)
-// 	(x, -5.0)
-// 	(z, 20.0)
+// 	TearingSelect map:
+// 	(t.x, TearingSelect = avoid)
+// 	(t.z, TearingSelect = never)
 // Warning: NBAlias.checkNominalThreshold: The quotient of the greatest and lowest nominal value is greater than the nominal threshold.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
 // 	Nominal map:
-// 	(w, 10.0)
-// 	(v, 1e7)
-// 	(x, 2.0)
-// Notification: There are different TearingSelect values.	<No Constant/Parameter Binding>
+// 	(t.w, 10.0)
+// 	(t.v, 1e7)
+// 	(t.x, 2.0)
+// Warning: NBAlias.setStartFixed: No variable is fixed and have different start values.
+// 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) v = w ($RES_SIM_3)
-// 	[SCAL] (1) x = v ($RES_SIM_4)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_5)
+// 	[SCAL] (1) t.z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) t.v = t.w ($RES_SIM_3)
+// 	[SCAL] (1) t.x = t.v ($RES_SIM_4)
+// 	[SCAL] (1) t.x = -2.0 * t.z ($RES_SIM_5)
 //
-// 	TearingSelect map:
-// 	(x, TearingSelect = avoid)
-// 	(z, TearingSelect = never)
+// 	Start map:
+// 	(t.w, 100.0)
+// 	(t.v, 20.0)
+// 	(t.x, -5.0)
+// 	(t.z, 20.0)
 // "
 // endResult

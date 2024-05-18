@@ -691,9 +691,10 @@ protected
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
         end if;
-        setNewAttributes(Pointer.access(var_to_keep), collector, set);
+        diffTearingSelect(collector.tearingSelect_map, set);
+        stateSelectAlways(collector.stateSelect_map, set);
         checkNominalThreshold(collector.nominal_map, set);
-        errorcasesStateTearing(collector.stateSelect_map, collector.tearingSelect_map, set);
+        setNewAttributes(Pointer.access(var_to_keep), collector, set);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
         end if;
@@ -868,7 +869,7 @@ protected
           Error.addCompilerWarning(getInstanceName() + ": No variable is fixed and have different start values.\n"
                                   + AliasSet.toString(set) + "\n\tStart map:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
         else
-          Error.addCompilerWarning(getInstanceName() + ": No variable is fixed and have different start values. Use -d=dumprepl for more information.");
+          Error.addCompilerWarning(getInstanceName() + ": No variable is fixed and have different start values. Use -d=dumprepl for more information.\n");
         end if;
       end if;
     elseif count_fixed == 1 then
@@ -881,7 +882,7 @@ protected
                            + "\n\tFixed start map:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
           fail();
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable is fixed and have different start values! Use -d=dumprepl for more information."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable is fixed and have different start values! Use -d=dumprepl for more information.\n"});
           fail();
         end if;
       elseif listLength(List.unique(fixed_start_lst)) == 1 then
@@ -889,7 +890,7 @@ protected
           Error.addCompilerWarning(getInstanceName() + ": More than one variable is fixed and have the same start value.\n"
                                   + AliasSet.toString(set) + "\n\tFixed start map:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t"));
         else
-          Error.addCompilerWarning(getInstanceName() + ": More than one variable is fixed and have the same start value. Use -d=dumprepl for more information.");
+          Error.addCompilerWarning(getInstanceName() + ": More than one variable is fixed and have the same start value. Use -d=dumprepl for more information.\n");
         end if;
       end if;
     end if;
@@ -914,7 +915,7 @@ protected
                           + "\n\tNominal map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t")});
         fail();
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because non literal nominal values are not allowed! Use -d=dumprepl for more information."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because non literal nominal values are not allowed! Use -d=dumprepl for more information.\n"});
         fail();
       end if;
     end try;
@@ -927,20 +928,10 @@ protected
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold.\n"
                                 + AliasSet.toString(set) + "\n\tNominal map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
       else
-        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold. Use -d=dumprepl for more information.");
+        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold. Use -d=dumprepl for more information.\n");
       end if;
     end if;
   end checkNominalThreshold;
-
-  function errorcasesStateTearing
-    "Calls all functions that analyze StateSelect and TearingSelect errors."
-    input UnorderedMap<ComponentRef, StateSelect> stateSelect_map;
-    input UnorderedMap<ComponentRef, TearingSelect> tearingSelect_map;
-    input AliasSet set;
-  algorithm
-    stateSelectAlways(stateSelect_map, set);
-    diffTearingSelect(tearingSelect_map, set);
-  end errorcasesStateTearing;
 
   function stateSelectAlways
     "Throws an error if more than one variable has StateSelect = always."
@@ -957,11 +948,11 @@ protected
     end for;
     if count > 1 then
       if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always!" + AliasSet.toString(set)
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always!\n" + AliasSet.toString(set)
                          + "\n\tStateSelect map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString,"\n\t")});
         fail();
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always! Use -d=dumprepl for more information."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always! Use -d=dumprepl for more information.\n"});
         fail();
       end if;
     end if;
@@ -976,10 +967,10 @@ protected
   algorithm
     if listLength(List.unique(lst_values)) > 1 then // if length = 1, then all values are the same
       if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addCompilerNotification("There are different TearingSelect values." + AliasSet.toString(set) + "\n\tTearingSelect map:\n\t"
+        Error.addCompilerNotification("There are different TearingSelect values.\n" + AliasSet.toString(set) + "\n\tTearingSelect map:\n\t"
                                       + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString,"\n\t"));
       else
-        Error.addCompilerNotification("There are different TearingSelect values. Use -d=dumprepl for more information.");
+        Error.addCompilerNotification("There are different TearingSelect values. Use -d=dumprepl for more information.\n");
       end if;
     end if;
   end diffTearingSelect;
