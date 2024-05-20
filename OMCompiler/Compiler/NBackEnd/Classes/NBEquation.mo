@@ -2361,7 +2361,7 @@ public
 
   uniontype WhenEquationBody
     record WHEN_EQUATION_BODY "equation when condition then cr = exp, reinit(...), terminate(...) or assert(...)"
-      Expression condition                  "the when-condition (Expression.END for no condition)";
+      Expression condition                  "the when-condition";
       list<WhenStatement> when_stmts        "body statements";
       Option<WhenEquationBody> else_when    "optional elsewhen body";
     end WHEN_EQUATION_BODY;

@@ -54,7 +54,7 @@ public
   import BackendUtil = NBBackendUtil;
   import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, SlicingStatus};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, WhenEquationBody, WhenStatement, SlicingStatus};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import BVariable = NBVariable;
   import Replacements = NBReplacements;
@@ -604,7 +604,7 @@ public
       case Equation.RECORD_EQUATION() then solveSimpleLhsRhs(eqn.lhs, eqn.rhs, cref, eqn);
 
       // ToDo: need to check if implicit
-      case Equation.WHEN_EQUATION() then (eqn, Status.EXPLICIT, false);
+      case Equation.WHEN_EQUATION() then solveSimpleWhen(eqn.body, cref, eqn);
 
       // ToDo: more cases
       // ToDo: tuples, record elements, array constructors
@@ -668,6 +668,30 @@ protected
       else (eqn, Status.UNPROCESSED, false);
     end match;
   end solveSimpleLhsRhs;
+
+  function solveSimpleWhen
+    input WhenEquationBody body;
+    input ComponentRef cref;
+    input Equation eqn;
+    output Equation eqnOut = eqn "don't change the equation";
+    output Status status;
+    output Boolean invertRelation = false;
+  algorithm
+    for stmt in body.when_stmts loop
+      status := match stmt
+        local
+          ComponentRef checkCref;
+        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = checkCref))
+          guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(stmt.rhs, cref))
+        then Status.EXPLICIT;
+        else Status.UNSOLVABLE;
+      end match;
+
+      if status == Status.EXPLICIT then
+        break;
+      end if;
+    end for;
+  end solveSimpleWhen;
 
   function solveLinear
     "author: kabdelhak, phannebohm
