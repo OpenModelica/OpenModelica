@@ -114,12 +114,14 @@ function evaluateBinding
   input InstContext.Type context;
 protected
   Expression exp, eexp;
+  SourceInfo info;
 algorithm
   if Binding.isBound(binding) then
     exp := Binding.getTypedExp(binding);
 
     if structural then
-      eexp := evaluateExp(exp, Binding.getInfo(binding));
+      info := Binding.getInfo(binding);
+      eexp := evaluateExp(exp, info);
       eexp := SimplifyExp.simplify(eexp);
 
       if not (Expression.isLiteral(eexp) or Expression.isKnownSizeFill(eexp)) then
@@ -130,7 +132,7 @@ algorithm
         end if;
       end if;
 
-      eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(InstNode.EMPTY_NODE(), prefix));
+      eexp := Flatten.flattenExp(eexp, Flatten.PREFIX(InstNode.EMPTY_NODE(), prefix), info);
     else
       eexp := evaluateExp(exp, Binding.getInfo(binding));
     end if;
@@ -203,7 +205,7 @@ algorithm
            not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref));
+          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
           outChanged := true;
         elseif outChanged then
           ty := ComponentRef.getSubscriptedType(cref);
@@ -305,9 +307,7 @@ function evaluateIfExp
   "Evaluates constants in an if-expression. This is done by first checking if
    the condition can be evaluated, in which case branch selection is done to
    avoid issues that can arise when evaluating constants in branches that are
-   expected to be discarded. This function also makes sure that if-expressions
-   with branches that have different dimensions are resolved to the correct
-   branch based on the type matching in earlier stages of the compilation."
+   expected to be discarded."
   input Expression exp;
   input SourceInfo info;
   output Expression outExp;
@@ -324,54 +324,25 @@ algorithm
   // Simplify the condition in case it can be reduced to a literal value.
   cond := SimplifyExp.simplify(cond);
 
-  if Type.isConditionalArray(ty) then
-    (outExp, outChanged) := match cond
-      case Expression.BOOLEAN()
-        algorithm
-          if not Type.isMatchedBranch(cond.value, ty) then
-            // The branch with the incompatible dimensions was chosen, print an error and fail.
-            (tb, fb) := Util.swap(cond.value, fb, tb);
-            Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
-              {Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
-               Dimension.toStringList(Type.arrayDims(Expression.typeOf(fb)), brackets = false)}, info);
-            fail();
-          end if;
+  (outExp, outChanged) := match cond
+    // Only evaluate constants in and return one of the branches if the
+    // condition is a literal boolean value.
+    case Expression.BOOLEAN()
+      algorithm
+        outExp := evaluateExpTraverser(if cond.value then tb else fb, info);
+      then
+        (outExp, true);
 
-          outExp := evaluateExpTraverser(if cond.value then tb else fb, info);
-        then
-          (outExp, true);
+    // Otherwise evaluate constants in both branches and return the whole
+    // if-expression.
+    else
+      algorithm
+        (tb, c1) := evaluateExpTraverser(tb, info);
+        (fb, c2) := evaluateExpTraverser(fb, info);
+      then
+        (Expression.IF(ty, cond, tb, fb), outChanged or c1 or c2);
 
-      else
-        algorithm
-          // The condition could not be evaluated to a literal. This is required
-          // if the branches have different dimensions, so print an error and fail.
-          Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
-            {"", Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
-                 Expression.toString(fb), Type.toString(Expression.typeOf(fb))}, info);
-        then
-          fail();
-    end match;
-  else
-    (outExp, outChanged) := match cond
-      // Only evaluate constants in and return one of the branches if the
-      // condition is a literal boolean value.
-      case Expression.BOOLEAN()
-        algorithm
-          outExp := evaluateExpTraverser(if cond.value then tb else fb, info);
-        then
-          (outExp, true);
-
-      // Otherwise evaluate constants in both branches and return the whole
-      // if-expression.
-      else
-        algorithm
-          (tb, c1) := evaluateExpTraverser(tb, info);
-          (fb, c2) := evaluateExpTraverser(fb, info);
-        then
-          (Expression.IF(ty, cond, tb, fb), outChanged or c1 or c2);
-
-    end match;
-  end if;
+  end match;
 end evaluateIfExp;
 
 function evaluateEquations
