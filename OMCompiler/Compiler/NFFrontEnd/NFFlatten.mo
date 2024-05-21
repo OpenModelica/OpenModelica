@@ -689,7 +689,7 @@ algorithm
     end if;
   end if;
 
-  ty := flattenType(ty, prefix);
+  ty := flattenType(ty, prefix, info);
   verifyDimensions(Type.arrayDims(ty), comp_node);
   pre := Prefix.push(comp_node, ty, Type.arrayDims(ty), prefix);
   ty_attrs := list(flattenTypeAttribute(m, prefix) for m in typeAttrs);
@@ -884,8 +884,10 @@ protected
   Variability comp_var, binding_var;
   Type ty;
   Prefix pre;
+  SourceInfo info;
 algorithm
-  ty := flattenType(nodeTy, prefix);
+  info := InstNode.info(node);
+  ty := flattenType(nodeTy, prefix, info);
   dims := Type.arrayDims(ty);
   binding := if isSome(outerBinding) then Util.getOption(outerBinding) else Component.getBinding(comp);
 
@@ -901,7 +903,7 @@ algorithm
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       // Constant evaluate parameters that are structural/constant.
       binding_exp := Ceval.evalExp(binding_exp);
-      binding_exp := flattenExp(binding_exp, prefix);
+      binding_exp := flattenExp(binding_exp, prefix, Binding.getInfo(binding));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
       try
@@ -913,7 +915,7 @@ algorithm
       if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
           binding_exp_eval := Ceval.tryEvalExp(binding_exp);
-          binding_exp_eval := flattenExp(binding_exp_eval, prefix);
+          binding_exp_eval := flattenExp(binding_exp_eval, prefix, Binding.getInfo(binding));
 
           // Throw away the evaluated binding if the number of dimensions no
           // longer match after evaluation, in case Ceval fails to apply the
@@ -941,7 +943,7 @@ algorithm
       if not settings.newBackend then
         name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
         eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
-          InstNode.EMPTY_NODE(), ElementSource.createElementSource(InstNode.info(node)));
+          InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
         sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
       end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
@@ -959,9 +961,9 @@ algorithm
   if listEmpty(dims) then
     (vars, sections) := flattenClass(cls, pre, visibility, opt_binding, vars, sections, deletedVars, settings);
   elseif settings.scalarize then
-    dims := list(flattenDimension(d, pre) for d in dims);
+    dims := list(flattenDimension(d, pre, info) for d in dims);
     verifyDimensions(dims, node);
-    (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
+    (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
   else
     (vars, sections) := vectorizeArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;
@@ -989,7 +991,7 @@ algorithm
         for i in arrayLength(comps):-1:1 loop
           ty := InstNode.getType(comps[i]);
           field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
-          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr));
+          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr), AbsynUtil.dummyInfo);
           fields := Expression.fromCref(field_cr) :: fields;
         end for;
       then
@@ -1030,6 +1032,7 @@ function flattenArray
   input output Sections sections;
   input list<Subscript> subscripts = {};
   input UnorderedSet<ComponentRef> deletedVars;
+  input SourceInfo info;
   input FlattenSettings settings;
 protected
   Dimension dim;
@@ -1047,13 +1050,13 @@ algorithm
       subscriptBindingOpt(subs, binding), vars, sections, deletedVars, settings);
   else
     dim :: rest_dims := dimensions;
-    dim := flattenDimension(dim, prefix);
+    dim := flattenDimension(dim, prefix, info);
     range_iter := RangeIterator.fromDim(dim);
 
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);
       (vars, sections) := flattenArray(cls, rest_dims, prefix, visibility,
-          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts, deletedVars, settings);
+          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts, deletedVars, info, settings);
     end while;
   end if;
 end flattenArray;
@@ -1449,15 +1452,15 @@ public function flattenBinding
   input output Binding binding;
   input Prefix prefix;
   input Boolean isTypeAttribute = false;
+protected
+  list<Subscript> subs, accum_subs;
+  Integer binding_level;
+  Expression bind_exp;
+  list<InstNode> pars;
+  InstNode par;
+  SourceInfo info;
 algorithm
   binding := match binding
-    local
-      list<Subscript> subs, accum_subs;
-      Integer binding_level;
-      Expression bind_exp;
-      list<InstNode> pars;
-      InstNode par;
-
     case Binding.UNBOUND() then binding;
 
     case Binding.TYPED_BINDING()
@@ -1466,8 +1469,9 @@ algorithm
           return;
         end if;
 
-        binding.bindingExp := flattenExp(binding.bindingExp, prefix);
-        binding.bindingType := flattenType(binding.bindingType, prefix);
+        info := Binding.getInfo(binding);
+        binding.bindingExp := flattenExp(binding.bindingExp, prefix, info);
+        binding.bindingType := flattenType(binding.bindingType, prefix, info);
         binding.isFlattened := true;
       then
         if Prefix.isIndexed(prefix) then vectorizeBinding(binding, prefix) else binding;
@@ -1495,40 +1499,40 @@ end flattenBinding;
 public function flattenExp
   input output Expression exp;
   input Prefix prefix;
+  input SourceInfo info;
 algorithm
   exp := match exp
     case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
-        exp.cref := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix));
-        exp.cref := flattenCref(exp.cref, prefix);
-        exp.ty := flattenType(exp.ty, prefix);
+        exp.cref := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix, info = info));
+        exp.cref := flattenCref(exp.cref, prefix, info);
+        exp.ty := flattenType(exp.ty, prefix, info);
       then
         exp;
 
     case Expression.SUBSCRIPTED_EXP(split = true)
       then Expression.mapShallow(
-        replaceSplitIndices(exp.exp, exp.subscripts, prefix),
-        function flattenExp(prefix = prefix));
+        replaceSplitIndices(exp.exp, exp.subscripts, prefix, info),
+        function flattenExp(prefix = prefix, info = info));
 
     case Expression.IF(ty = Type.CONDITIONAL_ARRAY())
-      then Expression.mapShallow(
-          flattenConditionalArrayIfExp(exp),
-          function flattenExp(prefix = prefix));
+      then flattenConditionalArrayIfExp(exp, prefix, info);
 
     case Expression.CALL()
       guard Call.isNamed(exp.call, "getInstanceName")
       then Expression.STRING(Prefix.instanceName(prefix));
 
-    else Expression.mapShallow(exp, function flattenExp(prefix = prefix));
+    else Expression.mapShallow(exp, function flattenExp(prefix = prefix, info = info));
   end match;
 
-  exp := flattenExpType(exp, prefix);
+  exp := flattenExpType(exp, prefix, info);
 end flattenExp;
 
 function replaceSplitIndices
   input output Expression exp;
   input list<Subscript> subscripts;
   input Prefix prefix;
+  input SourceInfo info;
 protected
   list<Subscript> subs = subscripts, cr_subs;
   Integer index;
@@ -1551,7 +1555,7 @@ algorithm
 
   subs := Subscript.expandSplitIndices(subs);
   exp := Expression.applySubscripts(subs, exp);
-  exp := flattenExp(exp, prefix);
+  exp := flattenExp(exp, prefix, info);
 end replaceSplitIndices;
 
 function replaceSplitIndices2
@@ -1570,6 +1574,7 @@ end replaceSplitIndices2;
 function flattenCref
   input output ComponentRef cref;
   input Prefix prefix;
+  input SourceInfo info;
 protected
   Type ty, ty2;
 algorithm
@@ -1579,7 +1584,7 @@ algorithm
     cref := flattenCrefSplitSubscripts(cref, prefix);
   end if;
 
-  cref := ComponentRef.mapTypes(cref, function flattenType(prefix = prefix));
+  cref := ComponentRef.mapTypes(cref, function flattenType(prefix = prefix, info = info));
 end flattenCref;
 
 function flattenCrefSplitSubscripts
@@ -1621,28 +1626,67 @@ end flattenCrefSplitSubscripts2;
 
 function flattenConditionalArrayIfExp
   input output Expression exp;
+  input Prefix prefix;
+  input SourceInfo info;
 protected
-  Expression cond;
+  Type ty;
+  Expression cond, tb, fb;
   Variability cond_var;
 algorithm
-  Expression.IF(condition = cond) := exp;
+  Expression.IF(ty = ty, condition = cond, trueBranch = tb, falseBranch = fb) := exp;
+  cond := flattenExp(cond, prefix, info);
   cond_var := Expression.variability(cond);
 
-  if Expression.variability(cond) == Variability.PARAMETER then
+  if Type.isConditionalArray(ty) then
+    // An if-expression where the branches are array expression with different
+    // dimensions, evaluate the condition and try to select one of the branches.
     Structural.markExp(cond);
+    cond := Ceval.tryEvalExp(cond);
+
+    exp := match cond
+      case Expression.BOOLEAN()
+        algorithm
+          if not Type.isMatchedBranch(cond.value, ty) then
+            // The branch with the incompatible dimensions was chosen, print an
+            // error and fail.
+            (tb, fb) := Util.swap(cond.value, fb, tb);
+            Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
+              {Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
+               Dimension.toStringList(Type.arrayDims(Expression.typeOf(fb)), brackets = false)}, info);
+            fail();
+          end if;
+        then
+          flattenExp(if cond.value then tb else fb, prefix, info);
+
+      else
+        algorithm
+          // The condition couldn't be evaluated, print an error and fail.
+          Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
+            {"", Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
+                 Expression.toString(fb), Type.toString(Expression.typeOf(fb))}, info);
+        then
+          fail();
+    end match;
+  elseif Expression.variability(cond) == Variability.PARAMETER then
+    Structural.markExp(cond);
+    tb := flattenExp(tb, prefix, info);
+    fb := flattenExp(fb, prefix, info);
+    ty := flattenType(ty, prefix, info);
+    exp := Expression.IF(ty, cond, tb, fb);
   end if;
 end flattenConditionalArrayIfExp;
 
 function flattenExpType
   input output Expression exp;
   input Prefix prefix;
+  input SourceInfo info;
 protected
   Type ty;
 algorithm
   ty := Expression.typeOf(exp);
 
   if Type.isArray(ty) then
-    ty := flattenType(ty, prefix);
+    ty := flattenType(ty, prefix, info);
     exp := Expression.setType(ty, exp);
   end if;
 end flattenExpType;
@@ -1650,17 +1694,19 @@ end flattenExpType;
 function flattenType
   input output Type ty;
   input Prefix prefix;
+  input SourceInfo info;
 algorithm
-  ty := Type.mapDims(ty, function flattenDimension(prefix = prefix));
+  ty := Type.mapDims(ty, function flattenDimension(prefix = prefix, info = info));
 end flattenType;
 
 function flattenDimension
   input output Dimension dim;
   input Prefix prefix;
+  input SourceInfo info;
 algorithm
   dim := match dim
     case Dimension.EXP()
-      then Dimension.fromExp(flattenExp(dim.exp, prefix), dim.var);
+      then Dimension.fromExp(flattenExp(dim.exp, prefix, info), dim.var);
 
     else dim;
   end match;
@@ -1707,6 +1753,8 @@ function flattenEquation
   input Prefix prefix;
   input output list<Equation> equations;
   input FlattenSettings settings;
+protected
+  SourceInfo info = Equation.info(eq);
 algorithm
   equations := match eq
     local
@@ -1716,9 +1764,9 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        e1 := flattenExp(eq.lhs, prefix);
-        e2 := flattenExp(eq.rhs, prefix);
-        ty := flattenType(eq.ty, prefix);
+        e1 := flattenExp(eq.lhs, prefix, info);
+        e2 := flattenExp(eq.rhs, prefix, info);
+        ty := flattenType(eq.ty, prefix, info);
       then
         Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source) :: equations;
 
@@ -1733,8 +1781,8 @@ algorithm
 
     case Equation.CONNECT()
       algorithm
-        e1 := flattenExp(eq.lhs, prefix);
-        e2 := flattenExp(eq.rhs, prefix);
+        e1 := flattenExp(eq.lhs, prefix, info);
+        e2 := flattenExp(eq.rhs, prefix, info);
       then
         Equation.CONNECT(e1, e2, eq.scope, eq.source) :: equations;
 
@@ -1743,34 +1791,34 @@ algorithm
 
     case Equation.WHEN()
       algorithm
-        eq.branches := list(flattenEqBranch(b, prefix, settings) for b in eq.branches);
+        eq.branches := list(flattenEqBranch(b, prefix, info, settings) for b in eq.branches);
       then
         eq :: equations;
 
     case Equation.ASSERT()
       algorithm
-        e1 := flattenExp(eq.condition, prefix);
-        e2 := flattenExp(eq.message, prefix);
-        e3 := flattenExp(eq.level, prefix);
+        e1 := flattenExp(eq.condition, prefix, info);
+        e2 := flattenExp(eq.message, prefix, info);
+        e3 := flattenExp(eq.level, prefix, info);
       then
         Equation.ASSERT(e1, e2, e3, eq.scope, eq.source) :: equations;
 
     case Equation.TERMINATE()
       algorithm
-        e1 := flattenExp(eq.message, prefix);
+        e1 := flattenExp(eq.message, prefix, info);
       then
         Equation.TERMINATE(e1, eq.scope, eq.source) :: equations;
 
     case Equation.REINIT()
       algorithm
-        e1 := flattenExp(eq.cref, prefix);
-        e2 := flattenExp(eq.reinitExp, prefix);
+        e1 := flattenExp(eq.cref, prefix, info);
+        e2 := flattenExp(eq.reinitExp, prefix, info);
       then
         Equation.REINIT(e1, e2, eq.scope, eq.source) :: equations;
 
     case Equation.NORETCALL()
       algorithm
-        e1 := flattenExp(eq.exp, prefix);
+        e1 := flattenExp(eq.exp, prefix, info);
       then
         Equation.NORETCALL(e1, eq.scope, eq.source) :: equations;
 
@@ -1797,11 +1845,12 @@ protected
 algorithm
   Equation.IF(branches = branches, scope = scope, source = src) := eq;
   has_connect := Equation.contains(eq, Equation.isConnection);
+  info := Equation.info(eq);
 
   // Print errors for unbound constants/parameters if the if-equation contains
   // connects, since we must select a branch in that case.
   target := if has_connect then
-    Ceval.EvalTarget.GENERIC(Equation.info(eq)) else
+    Ceval.EvalTarget.GENERIC(info) else
     Ceval.EvalTarget.IGNORE_ERRORS();
 
   while not listEmpty(branches) loop
@@ -1811,7 +1860,7 @@ algorithm
       case Equation.Branch.BRANCH(cond, var, eql)
         algorithm
           // Flatten the condition and body of the branch.
-          cond := flattenExp(cond, prefix);
+          cond := flattenExp(cond, prefix, info);
 
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
@@ -1820,7 +1869,7 @@ algorithm
               // happen if scalarization is turned off and for-loops aren't unrolled.
               if settings.scalarize or not Expression.contains(cond, Expression.isIterator) then
                 cond := Ceval.evalExp(cond, target);
-                cond := flattenExp(cond, prefix);
+                cond := flattenExp(cond, prefix, info);
               end if;
             end if;
 
@@ -1828,7 +1877,7 @@ algorithm
             if not Expression.isBoolean(cond) and has_connect then
               Error.addInternalError(
                 "Failed to evaluate branch condition in if equation containing connect equations: `" +
-                Expression.toString(cond) + "`", Equation.info(eq));
+                Expression.toString(cond) + "`", info);
               fail();
             end if;
           end if;
@@ -1862,7 +1911,7 @@ algorithm
         algorithm
           if var <= Variability.STRUCTURAL_PARAMETER then
             cond := Ceval.evalExp(cond, target);
-            cond := flattenExp(cond, prefix);
+            cond := flattenExp(cond, prefix, info);
           end if;
 
           if not Expression.isFalse(cond) then
@@ -1885,6 +1934,7 @@ end flattenIfEquation;
 function flattenEqBranch
   input output Equation.Branch branch;
   input Prefix prefix;
+  input SourceInfo info;
   input FlattenSettings settings;
 protected
   Expression exp;
@@ -1892,7 +1942,7 @@ protected
   Variability var;
 algorithm
   Equation.Branch.BRANCH(exp, var, eql) := branch;
-  exp := flattenExp(exp, prefix);
+  exp := flattenExp(exp, prefix, info);
   eql := flattenEquations(eql, prefix, settings);
   branch := Equation.makeBranch(exp, listReverseInPlace(eql), var);
 end flattenEqBranch;
@@ -1908,12 +1958,14 @@ protected
   Expression range;
   RangeIterator range_iter;
   Expression val;
+  SourceInfo info;
 algorithm
   Equation.FOR(iterator = iter, range = SOME(range), body = body) := forLoop;
+  info := Equation.info(forLoop);
 
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
-  range := flattenExp(range, prefix);
-  range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
+  range := flattenExp(range, prefix, info);
+  range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
   range_iter := RangeIterator.fromExp(range);
 
   while RangeIterator.hasNext(range_iter) loop
@@ -2039,6 +2091,8 @@ end flattenStatements;
 function flattenStatement
   input output Statement stmt;
   input Prefix prefix;
+protected
+  SourceInfo info = Statement.info(stmt);
 algorithm
   stmt := match stmt
     local
@@ -2048,15 +2102,15 @@ algorithm
 
     case Statement.ASSIGNMENT()
       algorithm
-        e1 := flattenExp(stmt.lhs, prefix);
-        e2 := flattenExp(stmt.rhs, prefix);
-        ty := flattenType(stmt.ty, prefix);
+        e1 := flattenExp(stmt.lhs, prefix, info);
+        e2 := flattenExp(stmt.rhs, prefix, info);
+        ty := flattenType(stmt.ty, prefix, info);
       then
         Statement.ASSIGNMENT(e1, e2, ty, stmt.source);
 
     case Statement.FOR()
       algorithm
-        stmt.range := Util.applyOption(stmt.range, function flattenExp(prefix = prefix));
+        stmt.range := Util.applyOption(stmt.range, function flattenExp(prefix = prefix, info = info));
         stmt.body := flattenStatements(stmt.body, prefix);
         stmt.forType := updateForType(stmt.forType, stmt.body);
       then
@@ -2064,46 +2118,46 @@ algorithm
 
     case Statement.IF()
       algorithm
-        stmt.branches := list(flattenStmtBranch(b, prefix) for b in stmt.branches);
+        stmt.branches := list(flattenStmtBranch(b, prefix, info) for b in stmt.branches);
       then
         stmt;
 
     case Statement.WHEN()
       algorithm
-        stmt.branches := list(flattenStmtBranch(b, prefix) for b in stmt.branches);
+        stmt.branches := list(flattenStmtBranch(b, prefix, info) for b in stmt.branches);
       then
         stmt;
 
     case Statement.ASSERT()
       algorithm
-        e1 := flattenExp(stmt.condition, prefix);
-        e2 := flattenExp(stmt.message, prefix);
-        e3 := flattenExp(stmt.level, prefix);
+        e1 := flattenExp(stmt.condition, prefix, info);
+        e2 := flattenExp(stmt.message, prefix, info);
+        e3 := flattenExp(stmt.level, prefix, info);
       then
         Statement.ASSERT(e1, e2, e3, stmt.source);
 
     case Statement.TERMINATE()
       algorithm
-        e1 := flattenExp(stmt.message, prefix);
+        e1 := flattenExp(stmt.message, prefix, info);
       then
         Statement.TERMINATE(e1, stmt.source);
 
     case Statement.REINIT()
       algorithm
-        e1 := flattenExp(stmt.cref, prefix);
-        e2 := flattenExp(stmt.reinitExp, prefix);
+        e1 := flattenExp(stmt.cref, prefix, info);
+        e2 := flattenExp(stmt.reinitExp, prefix, info);
       then
         Statement.REINIT(e1, e2, stmt.source);
 
     case Statement.NORETCALL()
       algorithm
-        e1 := flattenExp(stmt.exp, prefix);
+        e1 := flattenExp(stmt.exp, prefix, info);
       then
         Statement.NORETCALL(e1, stmt.source);
 
     case Statement.WHILE()
       algorithm
-        e1 := flattenExp(stmt.condition, prefix);
+        e1 := flattenExp(stmt.condition, prefix, info);
         body := flattenStatements(stmt.body, prefix);
       then
         Statement.WHILE(e1, body, stmt.source);
@@ -2121,12 +2175,13 @@ end flattenStatement;
 function flattenStmtBranch
   input output tuple<Expression, list<Statement>> branch;
   input Prefix prefix;
+  input SourceInfo info;
 protected
   Expression cond;
   list<Statement> body;
 algorithm
   (cond, body) := branch;
-  cond := flattenExp(cond, prefix);
+  cond := flattenExp(cond, prefix, info);
   body := flattenStatements(body, prefix);
   branch := (cond, body);
 end flattenStmtBranch;
