@@ -1904,7 +1904,7 @@ public
                         ) + ":" + operandFlatString(exp.stop, exp, false);
 
       case TUPLE() then "(" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, toFlatString, "'" + AbsynUtil.pathString(exp.path), "'(", ", ", ")", true);
+      case RECORD() then List.toString(exp.elements, toFlatString, Type.toFlatString(exp.ty), "(", ", ", ")", true);
       case CALL() then Call.toFlatString(exp.call);
       case SIZE() then "size(" + toFlatString(exp.exp) +
                         (
