@@ -234,7 +234,6 @@ public
     String name = className(flatModel);
   algorithm
     s := IOStream.append(s, "package '" + name + "'\n");
-    flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
@@ -578,79 +577,6 @@ public
     collectFlatType(Component.getType(comp), types);
     collectBindingFlatTypes(Component.getBinding(comp), types);
   end collectComponentFlatTypes;
-
-  function reconstructRecordInstances
-    input list<Variable> variables;
-    output list<Variable> outVariables = {};
-  protected
-    list<Variable> rest_vars = variables, record_vars;
-    Variable var;
-    ComponentRef parent_cr;
-    Type parent_ty;
-    Integer field_count;
-  algorithm
-    while not listEmpty(rest_vars) loop
-      var :: rest_vars := rest_vars;
-      parent_cr := ComponentRef.rest(var.name);
-
-      if not ComponentRef.isEmpty(parent_cr) then
-        parent_ty := ComponentRef.nodeType(parent_cr);
-
-        if Type.isRecord(parent_ty) then
-          field_count := listLength(Type.recordFields(parent_ty));
-          (record_vars, rest_vars) := List.split(rest_vars, field_count - 1);
-          record_vars := var :: record_vars;
-          var := reconstructRecordInstance(parent_cr, record_vars);
-        end if;
-      end if;
-
-      outVariables := var :: outVariables;
-    end while;
-
-    outVariables := listReverseInPlace(outVariables);
-  end reconstructRecordInstances;
-
-  function reconstructRecordInstance
-    input ComponentRef recordName;
-    input list<Variable> variables;
-    output Variable recordVar;
-  protected
-    InstNode record_node;
-    Component record_comp;
-    Type record_ty;
-    list<Expression> field_exps;
-    Expression record_exp;
-    Binding record_binding;
-  algorithm
-    record_node := ComponentRef.node(recordName);
-    record_comp := InstNode.component(record_node);
-    record_ty := ComponentRef.nodeType(recordName);
-
-    // Reconstruct the record instance binding if possible. If any field is
-    // missing a binding we assume that the record instance didn't have a
-    // binding in the first place, or that the binding was moved to an equation
-    // during flattening.
-    field_exps := {};
-    for v in variables loop
-      if Binding.hasExp(v.binding) then
-        field_exps := Binding.getExp(v.binding) :: field_exps;
-      else
-        field_exps := {};
-        break;
-      end if;
-    end for;
-
-    if listEmpty(field_exps) then
-      record_binding := NFBinding.EMPTY_BINDING;
-    else
-      field_exps := listReverseInPlace(field_exps);
-      record_exp := Expression.makeRecord(InstNode.scopePath(InstNode.classScope(record_node)), record_ty, field_exps);
-      record_binding := Binding.makeFlat(record_exp, Component.variability(record_comp), NFBinding.Source.GENERATED);
-    end if;
-
-    recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
-      Component.getAttributes(record_comp), {}, {}, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
-  end reconstructRecordInstance;
 
   function typeFlatType
     input output Type ty;

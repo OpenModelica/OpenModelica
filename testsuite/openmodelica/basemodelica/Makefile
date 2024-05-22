@@ -11,10 +11,10 @@ endif
 TESTFILES = \
   ArrayBinding1.mo \
 	Comments.mo \
-  DoublePendulum.mos \
 	Expression1.mo \
 	InStreamNominalThreshold.mo \
 	Record1.mo \
+	Record2.mo \
 	SD.mo \
 	SimpleCoolingCycle.mo \
   Tables.mos \
@@ -23,6 +23,7 @@ TESTFILES = \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES= \
+  DoublePendulum.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

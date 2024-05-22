@@ -136,8 +136,15 @@ uniontype FlattenSettings
     Boolean nfAPI;
     Boolean relaxedErrorChecking;
     Boolean newBackend;
+    Boolean splitRecordInstances;
     Boolean vectorizeBindings;
   end SETTINGS;
+
+  function disableScalarization
+    input output FlattenSettings settings;
+  algorithm
+    settings.scalarize := false;
+  end disableScalarization;
 end FlattenSettings;
 
 uniontype Prefix
@@ -332,6 +339,7 @@ algorithm
     Flags.isSet(Flags.NF_API),
     Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
+    not (Flags.getConfigBool(Flags.NEW_BACKEND) or Flags.getConfigBool(Flags.BASE_MODELICA)),
     Flags.isSet(Flags.VECTORIZE_BINDINGS)
   );
 
@@ -528,22 +536,27 @@ algorithm
 
         (vars, sections) := match getComponentType(ty, settings)
           case ComponentType.COMPLEX
-          then flattenComplexComponent(comp_node, c, cls, ty,
-            vis, outerBinding, prefix, vars, sections, deletedVars, settings);
+            then flattenComplexComponent(comp_node, c, cls, ty,
+              vis, outerBinding, prefix, vars, sections, deletedVars, settings);
 
           case ComponentType.NORMAL
-          then flattenSimpleComponent(comp_node, c, vis, outerBinding,
-            Class.getTypeAttributes(cls), prefix, vars, sections, settings, {});
+            then flattenSimpleComponent(comp_node, c, vis, outerBinding,
+              Class.getTypeAttributes(cls), prefix, vars, sections, settings, {});
 
-          case ComponentType.RECORD algorithm
-            (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
-              vis, outerBinding, prefix, {}, sections, deletedVars, settings);
-          then flattenSimpleComponent(comp_node, c, vis, outerBinding,
-            Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
+          case ComponentType.RECORD
+            algorithm
+              (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
+                vis, outerBinding, prefix, {}, sections, deletedVars,
+                FlattenSettings.disableScalarization(settings));
+              children := listReverseInPlace(children);
+            then flattenSimpleComponent(comp_node, c, vis, outerBinding,
+              Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
 
-          else algorithm
-            Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
-          then fail();
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+            then
+              fail();
         end match;
       then
         ();
@@ -616,7 +629,7 @@ algorithm
   compTy := match ty
     case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
       then ComponentType.NORMAL;
-    case Type.COMPLEX(complexTy = ComplexType.RECORD()) guard(settings.newBackend)
+    case Type.COMPLEX(complexTy = ComplexType.RECORD()) guard(not settings.splitRecordInstances)
       then ComponentType.RECORD;
     case Type.COMPLEX() then ComponentType.COMPLEX;
     case Type.ARRAY()   then getComponentType(ty.elementType, settings);
