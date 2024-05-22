@@ -574,22 +574,76 @@ public
     s := IOStream.append(s, Type.toFlatString(var.ty));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toFlatString(var.name));
-    s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, s);
 
-    if Binding.isBound(var.binding) then
+    if not listEmpty(var.typeAttributes) then
+      s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, s);
+    elseif not listEmpty(var.children) then
+      s := toFlatStreamModifier(var.children, Binding.isBound(var.binding), printBindingType, s);
+    end if;
+
+    s := toFlatStreamBinding(var.binding, printBindingType, s);
+    s := FlatModelicaUtil.appendComment(var.comment, s);
+  end toFlatStream;
+
+  function toFlatStreamBinding
+    input Binding binding;
+    input Boolean printBindingType;
+    input output IOStream.IOStream s;
+  algorithm
+    if Binding.isBound(binding) then
       s := IOStream.append(s, " = ");
 
       if printBindingType then
         s := IOStream.append(s, "(");
-        s := IOStream.append(s, Type.toFlatString(Binding.getType(var.binding)));
+        s := IOStream.append(s, Type.toFlatString(Binding.getType(binding)));
         s := IOStream.append(s, ") ");
       end if;
 
-      s := IOStream.append(s, Binding.toFlatString(var.binding));
+      s := IOStream.append(s, Binding.toFlatString(binding));
     end if;
+  end toFlatStreamBinding;
 
-    s := FlatModelicaUtil.appendComment(var.comment, s);
-  end toFlatStream;
+  function toFlatStreamModifier
+    input list<Variable> children;
+    input Boolean overwrittenBinding;
+    input Boolean printBindingType;
+    input output IOStream.IOStream s;
+  protected
+    Boolean empty = true;
+    Boolean overwritten_binding;
+    IOStream.IOStream ss;
+  algorithm
+    for child in children loop
+      ss := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+
+      if not listEmpty(child.typeAttributes) then
+        ss := Component.typeAttrsToFlatStream(child.typeAttributes, child.ty, ss);
+      elseif not listEmpty(child.children) then
+        overwritten_binding := overwrittenBinding or Binding.isBound(child.binding);
+        ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, ss);
+      end if;
+
+      if not overwrittenBinding and Binding.source(child.binding) == NFBinding.Source.MODIFIER then
+        ss := toFlatStreamBinding(child.binding, printBindingType, ss);
+      end if;
+
+      if not IOStream.empty(ss) then
+        if empty then
+          s := IOStream.append(s, "(");
+          empty := false;
+        else
+          s := IOStream.append(s, ", ");
+        end if;
+
+        s := IOStream.append(s, Util.makeQuotedIdentifier(ComponentRef.firstName(child.name)));
+        s := IOStream.appendListStream(ss, s);
+      end if;
+    end for;
+
+    if not empty then
+      s := IOStream.append(s, ")");
+    end if;
+  end toFlatStreamModifier;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

@@ -528,22 +528,25 @@ algorithm
 
         (vars, sections) := match getComponentType(ty, settings)
           case ComponentType.COMPLEX
-          then flattenComplexComponent(comp_node, c, cls, ty,
-            vis, outerBinding, prefix, vars, sections, deletedVars, settings);
+            then flattenComplexComponent(comp_node, c, cls, ty,
+              vis, outerBinding, prefix, vars, sections, deletedVars, settings);
 
           case ComponentType.NORMAL
-          then flattenSimpleComponent(comp_node, c, vis, outerBinding,
-            Class.getTypeAttributes(cls), prefix, vars, sections, settings, {});
+            then flattenSimpleComponent(comp_node, c, vis, outerBinding,
+              Class.getTypeAttributes(cls), prefix, vars, sections, settings, {});
 
-          case ComponentType.RECORD algorithm
-            (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
-              vis, outerBinding, prefix, {}, sections, deletedVars, settings);
-          then flattenSimpleComponent(comp_node, c, vis, outerBinding,
-            Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
+          case ComponentType.RECORD
+            algorithm
+              (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
+                vis, outerBinding, prefix, {}, sections, deletedVars, settings);
+            then flattenSimpleComponent(comp_node, c, vis, outerBinding,
+              Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
 
-          else algorithm
-            Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
-          then fail();
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+            then
+              fail();
         end match;
       then
         ();

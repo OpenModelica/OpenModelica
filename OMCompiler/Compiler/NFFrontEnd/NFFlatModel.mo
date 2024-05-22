@@ -649,7 +649,7 @@ public
     end if;
 
     recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
-      Component.getAttributes(record_comp), {}, {}, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
+      Component.getAttributes(record_comp), {}, variables, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
   end reconstructRecordInstance;
 
   function typeFlatType
