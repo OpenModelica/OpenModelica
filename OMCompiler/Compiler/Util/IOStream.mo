@@ -151,6 +151,48 @@ algorithm
   outStream := List.foldr(inStringList, append, inStream);
 end appendList;
 
+function appendListReverse
+  input output IOStream s;
+  input list<String> data;
+protected
+  IOStreamData s_data = s.data;
+algorithm
+  () := match s_data
+    case IOStreamData.FILE_DATA()
+      algorithm
+        for str in data loop
+          IOStreamExt.appendFile(s_data.data, str);
+        end for;
+      then
+        ();
+
+    case IOStreamData.LIST_DATA()
+      algorithm
+        s_data.data := listAppend(data, s_data.data);
+        s.data := s_data;
+      then
+        ();
+
+    case IOStreamData.BUFFER_DATA()
+      algorithm
+        for str in data loop
+          IOStreamExt.appendBuffer(s_data.data, str);
+        end for;
+      then
+        ();
+  end match;
+end appendListReverse;
+
+function appendListStream
+  input IOStream srcStream;
+  input output IOStream dstStream;
+protected
+  list<String> data;
+algorithm
+  IOStream.IOSTREAM(data = IOStreamData.LIST_DATA(data = data)) := srcStream;
+  dstStream := appendListReverse(dstStream, data);
+end appendListStream;
+
 function close
   input IOStream inStream;
   output IOStream outStream;
@@ -229,6 +271,17 @@ algorithm
         bStream;
   end matchcontinue;
 end clear;
+
+function empty
+  input IOStream inStream;
+  output Boolean res;
+protected
+  IOStreamData data = inStream.data;
+algorithm
+  res := match data
+    case LIST_DATA() then listEmpty(data.data);
+  end match;
+end empty;
 
 function string
   input IOStream inStream;
