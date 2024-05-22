@@ -34,8 +34,8 @@ end Record2;
 //     'R' 'r5';
 //     'R' 'r6'('x'(start = 1.0)) = 'R'(1.0, 2.0);
 //   equation
-//     'r1' = 'Record2.R'(0.0, 0.0);
-//     'r2' = 'Record2.R'(0.0, 0.0);
+//     'r1' = 'R'(0.0, 0.0);
+//     'r2' = 'R'(0.0, 0.0);
 //   end 'Record2';
 // end 'Record2';
 // endResult
