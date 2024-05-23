@@ -35,6 +35,7 @@ equation
 end InStreamNominalThreshold;
 
 // Result:
+// //! base 0.1.0
 // package 'InStreamNominalThreshold'
 //   function '$OMC$PositiveMax'
 //     input Real 'flowValue';

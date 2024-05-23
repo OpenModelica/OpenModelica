@@ -233,6 +233,7 @@ public
     FlatModel flat_model = flatModel;
     String name = className(flatModel);
   algorithm
+    s := IOStream.append(s, "//! base 0.1.0\n");
     s := IOStream.append(s, "package '" + name + "'\n");
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
@@ -281,7 +282,8 @@ public
       end if;
     end for;
 
-    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "    ", ";\n", s);
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source,
+      NFFlatModelicaUtil.ElementType.ROOT_CLASS, "    ", ";\n", s);
     s := IOStream.append(s, "  end '" + name + "';\n");
     s := IOStream.append(s, "end '" + name + "';\n");
   end appendFlatStream;

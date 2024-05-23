@@ -42,6 +42,7 @@ equation
 end SD;
 
 // Result:
+// //! base 0.1.0
 // package 'SD'
 //   model 'SD'
 //     parameter Integer 'N' = 3;

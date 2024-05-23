@@ -20,6 +20,7 @@ equation
 end Record2;
 
 // Result:
+// //! base 0.1.0
 // package 'Record2'
 //   record 'R'
 //     Real 'x';
