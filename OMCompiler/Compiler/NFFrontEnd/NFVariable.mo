@@ -582,7 +582,7 @@ public
     end if;
 
     s := toFlatStreamBinding(var.binding, printBindingType, s);
-    s := FlatModelicaUtil.appendComment(var.comment, s);
+    s := FlatModelicaUtil.appendComment(var.comment, NFFlatModelicaUtil.ElementType.COMPONENT, s);
   end toFlatStream;
 
   function toFlatStreamBinding
