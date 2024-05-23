@@ -295,6 +295,11 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       }
     }
 
+    /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12350
+     * we need to update discreteSystem during event update, before evaluating functionDAE
+    */
+    updateDiscreteSystem(comp->fmuData, threadData);
+
     comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
 
     /* deactivate sample events */

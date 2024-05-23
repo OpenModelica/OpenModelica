@@ -1,0 +1,76 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf WhenTest*/
+
+loadString("
+  model WhenTestA
+    Real s(start=0, fixed=true);
+    Integer stop(start=0, fixed=true);
+    equation
+    der(s) = if stop > 0 then 0 else 2;
+    // Variant A
+    stop = if s >= 1 then 1 else 0;
+    when pre(stop) > 0 then
+      reinit(s, 1);
+    end when;
+    annotation(
+     experiment(StartTime = 0, StopTime = 1, Tolerance = 1e-06, Interval = 0.002));
+ end WhenTestA;
+
+ model WhenTestB
+  Real s(start=0, fixed=true);
+  Integer stop(start=0, fixed=true);
+  equation
+  der(s) = if stop > 0 then 0 else 2;
+  // Variant A
+  stop = if s >= 1 then 1 else 0;
+  when stop > 0 then
+    reinit(s, 1);
+  end when;
+  annotation(
+   experiment(StartTime = 0, StopTime = 1, Tolerance = 1e-06, Interval = 0.002));
+ end WhenTestB;
+"); getErrorString();
+
+buildModelFMU(WhenTestA, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator WhenTestA.fmu -r=WhenTestA_res.mat", "WhenTestA_systemCall.log");
+readFile("WhenTestA_systemCall.log");
+
+val(der(s), 1.0, "WhenTestA_res.mat");
+val(stop, 1.0, "WhenTestA_res.mat");
+
+buildModelFMU(WhenTestB, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator WhenTestB.fmu -r=WhenTestB_res.mat", "WhenTestB_systemCall.log");
+readFile("WhenTestB_systemCall.log");
+
+val(der(s), 1.0, "WhenTestB_res.mat");
+val(stop, 1.0, "WhenTestB_res.mat");
+
+// Result:
+// true
+// ""
+// "WhenTestA.fmu"
+// ""
+// 0
+// "info:    maximum step size for 'model.root': 0.002000
+// info:    Result file: WhenTestA_res.mat (bufferSize=1)
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 250 NumRhsEvals  = 251 NumLinSolvSetups = 14
+//          NumNonlinSolvIters = 250 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// 0.0
+// 1.0
+// "WhenTestB.fmu"
+// ""
+// 0
+// "info:    maximum step size for 'model.root': 0.002000
+// info:    Result file: WhenTestB_res.mat (bufferSize=1)
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 250 NumRhsEvals  = 251 NumLinSolvSetups = 14
+//          NumNonlinSolvIters = 250 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// 0.0
+// 1.0
+// endResult
