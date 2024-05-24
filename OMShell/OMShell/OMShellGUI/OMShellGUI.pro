@@ -1,7 +1,4 @@
-QT += core gui xml
-greaterThan(QT_MAJOR_VERSION, 4) {
-    QT *= printsupport widgets webkitwidgets
-}
+QT += core gui widgets xml
 
 # Set the C++ standard.
 CONFIG += c++1z

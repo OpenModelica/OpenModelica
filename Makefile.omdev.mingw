@@ -13,7 +13,7 @@ else # new OMDev, use clang
 	CC = clang
 	CXX = clang++
 	QT_EXTRA_DLLS=libdouble-conversion.dll libzstd.dll libwoff2dec.dll libwoff2common.dll Qt5QmlModels.dll libnghttp2-14.dll \
-	              libunistring-2.dll libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
+	              libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
 endif
 
 # CFLAGS=-g -O2
@@ -32,6 +32,12 @@ OMDEV           = $(shell cygpath $$OMDEV)
 OMDEV_MSYS      = $(shell cygpath $$OMDEV/tools/msys)
 MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
 OM_MSYS_ENV_DIR = $(MSYSTEM_PREFIX)
+
+ifeq ($(OM_QT_MAJOR_VERSION),)
+	OM_QT_MAJOR_VERSION = 5
+else
+	OM_QT_MAJOR_VERSION = $(OM_QT_MAJOR_VERSION)
+endif
 
 CMAKE = cmake
 CMAKE_TARGET = "MSYS Makefiles"
@@ -113,7 +119,7 @@ omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omshell: omc qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION="$(OM_QT_MAJOR_VERSION)"
 
 omoptim: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
@@ -134,6 +140,15 @@ qtclientsDLLs:
 	mkdir -p $(builddir_bin)/
 
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s*.dll $(builddir_bin)/
+
+ifeq ($(OM_QT_MAJOR_VERSION),6)
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libb2-1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Core.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Gui.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Xml.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Widgets.dll $(builddir_bin)/
+	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/plugins/* $(builddir_bin)/
+else
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Core.dll $(builddir_bin)/
@@ -191,6 +206,7 @@ qtclientsDLLs:
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssh2-1.dll  $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssl-3-x64.dll  $(builddir_bin)/
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
+endif
 
 clean-qtclients:
 	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe
