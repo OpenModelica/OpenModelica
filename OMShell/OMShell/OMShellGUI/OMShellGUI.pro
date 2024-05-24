@@ -1,7 +1,7 @@
 QT += core gui widgets xml
 
 # Set the C++ standard.
-CONFIG += c++1z
+CONFIG += c++17
 
 DEFINES += OM_HAVE_PTHREADS
 
@@ -38,7 +38,7 @@ win32 {
   } else { # 64-bit
     QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
   }
-  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread
+  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcgc
   OMCINC = $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMShell.config)
