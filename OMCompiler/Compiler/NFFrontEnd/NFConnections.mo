@@ -112,6 +112,9 @@ public
     DAE.ElementSource source;
     list<Equation> eql = {};
     Type ty1, ty2;
+      list<Subscript> subs, subs1;
+    Subscript s1, s2;
+    Expression exp;
   algorithm
     // Collect all connects.
     for eq in flatModel.equations loop
@@ -119,6 +122,30 @@ public
         case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
+// set type to slice subscript
+            subs := ComponentRef.getSubscripts(lhs);
+            if (listLength(subs) > 0) then
+              s1 := List.first(subs);
+              exp := Subscript.toExp(s1);
+              if Expression.isRange(exp) then
+                s2 := Subscript.SLICE(exp);
+                subs1 := { s2 };
+                lhs := ComponentRef.setSubscripts(subs1, lhs);
+              end if;
+            end if;
+
+            // set type to slice subscript
+            subs := ComponentRef.getSubscripts(rhs);
+            if (listLength(subs) > 0) then
+              s1 := List.first(subs);
+              exp := Subscript.toExp(s1);
+              if Expression.isRange(exp) then
+                s2 := Subscript.SLICE(exp);
+                subs1 := { s2 };
+                rhs := ComponentRef.setSubscripts(subs1, rhs);
+              end if;
+            end if;
+            
             lhs := ComponentRef.evaluateSubscripts(lhs);
             rhs := ComponentRef.evaluateSubscripts(rhs);
             conns.connections := makeConnections(lhs, ty1, rhs, ty2, source, isDeleted, conns.connections);
@@ -202,7 +229,7 @@ public
   protected
     NFDimension.Dimension d;
   algorithm
-    if Type.isUnknown(ty) and not ComponentRef.hasSubscripts(cref) and Type.isArray(knownTy) then
+    if Type.isUnknown(ty) and Type.isArray(knownTy) then
       d := Type.nthDimension(knownTy, 1);
       ty := Type.ARRAY(Type.arrayElementType(knownTy), {d});
       cref := ComponentRef.setNodeType(ty, cref);
