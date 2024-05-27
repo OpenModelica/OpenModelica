@@ -116,7 +116,7 @@ omsimulator:
 
 
 omnotebook: omc omplot qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 omshell: omc qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
