@@ -76,6 +76,7 @@ namespace IAEX
   {
   }
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
   /*!
    * \author Ingemar Axelsson and Anders Fernström
    * date 2005-11-03
@@ -88,6 +89,7 @@ namespace IAEX
   {
     emit openLink( &name );
   }
+#endif
 
   /*!
    * \author Anders Fernström
@@ -197,6 +199,19 @@ namespace IAEX
 
   }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  /*!
+   * \brief MyTextBrowser::doSetSource
+   * Attempts to load the document at the given url with the specified type.
+     setSource() calls doSetSource. In Qt 5, setSource(const QUrl &url) was virtual. In Qt 6, doSetSource() is virtual instead, so that it can be overridden in subclasses.
+   * \param name
+   * \param type
+   */
+  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType type)
+  {
+    emit openLink( &name );
+  }
+#endif
 
 
 
@@ -326,7 +341,7 @@ namespace IAEX
     chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
 
-    chaptercounter_->setFixedWidth(50);
+    chaptercounter_->setFixedWidth(70);
     chaptercounter_->setReadOnly( true );
 
     connect( chaptercounter_, SIGNAL( clickOnCell() ),
