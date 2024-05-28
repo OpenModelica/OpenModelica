@@ -233,15 +233,6 @@ public
     Mutable<Expression> exp;
   end MUTABLE;
 
-  record SHARED_LITERAL
-    "Before code generation, we make a pass that replaces constant literals
-    with a SHARED_LITERAL expression. Any immutable type can be shared:
-    basic MetaModelica types and Modelica strings are fine. There is no point
-    to share Real, Integer, Boolean or Enum though."
-    Integer index "A unique indexing that can be used to point to a single shared literal in generated code";
-    Expression exp "For printing strings, code generators that do not support this kind of literal, or for getting the type in case the code generator needs that";
-  end SHARED_LITERAL;
-
   record EMPTY
     Type ty;
   end EMPTY;
@@ -256,6 +247,15 @@ public
   record FILENAME
     String filename;
   end FILENAME;
+
+  record SHARED_LITERAL
+    "Before code generation, we make a pass that replaces constant literals
+    with a SHARED_LITERAL expression. Any immutable type can be shared:
+    basic MetaModelica types and Modelica strings are fine. There is no point
+    to share Real, Integer, Boolean or Enum though."
+    Integer index "A unique indexing that can be used to point to a single shared literal in generated code";
+    Expression exp "For printing strings, code generators that do not support this kind of literal, or for getting the type in case the code generator needs that";
+  end SHARED_LITERAL;
 
   function isArray
     input Expression exp;
