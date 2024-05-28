@@ -364,9 +364,13 @@ function toFlatDeclarationStream
   input output IOStream.IOStream s;
 protected
   InstNode node;
+  InstNodeType node_ty;
 algorithm
+  node_ty := InstNode.nodeType(recordNode);
   node := instRecord(recordNode);
   Typing.typeClass(node, NFInstContext.RELAXED);
+  // Keep the node type from the original node to get the correct name.
+  node := InstNode.setNodeType(node_ty, node);
   s := IOStream.append(s, InstNode.toFlatString(node, indent));
 end toFlatDeclarationStream;
 
