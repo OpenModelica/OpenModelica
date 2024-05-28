@@ -1369,6 +1369,11 @@ namespace ModelInstance
       return true;
     }
 
+    Model *lhs_model = lhs->getModel();
+    Model *rhs_model = rhs->getModel();
+
+    if (!lhs_model || !rhs_model) return true;
+
     auto lhs_outside = isOutsideConnector(lhsConnector, *this);
     auto rhs_outside = isOutsideConnector(rhsConnector, *this);
 
@@ -1377,11 +1382,6 @@ namespace ModelInstance
     }
 
     // Check that the connectors are type compatible.
-    Model *lhs_model = lhs->getModel();
-    Model *rhs_model = rhs->getModel();
-
-    if (!lhs_model || !rhs_model) return false;
-
     return lhs_model->isTypeCompatibleWith(*rhs_model, lhs_outside, rhs_outside);
   }
 
