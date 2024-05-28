@@ -626,6 +626,7 @@ protected
       local
         ComponentRef checkCref;
         Expression exp;
+        list<Expression> elements;
 
       // always checks if exp is independent of cref!
 
@@ -664,6 +665,10 @@ protected
       case (exp, Expression.LUNARY(exp = Expression.CREF(cref = checkCref)))
         guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
       then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(rhs), Expression.logicNegate(lhs)), Status.EXPLICIT, false);
+
+      // simple solve tuples
+      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (eqn, Status.EXPLICIT, false);
+      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, false);
 
       else (eqn, Status.UNPROCESSED, false);
     end match;
@@ -725,19 +730,17 @@ protected
     input list<Pointer<Variable>> vars;
     output Boolean b = false;
   protected
+    list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
     UnorderedMap<ComponentRef, Boolean> map;
-    function boolID
-      input output Boolean b;
-    end boolID;
   algorithm
-    if listLength(tuple_exps) == listLength(vars) then
+    if listLength(filtered_exps) == listLength(vars) then
       map := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
       // add all variables to solve for
       for var in vars loop
         UnorderedMap.add(BVariable.getVarName(var), false, map);
       end for;
       // set the map entry for all variables that occur to true
-      for exp in tuple_exps loop
+      for exp in filtered_exps loop
         _ := match exp
           case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
             UnorderedMap.add(exp.cref, true, map);
@@ -746,7 +749,7 @@ protected
         end match;
       end for;
       // check if all variables occured
-      b := List.all(UnorderedMap.valueList(map), boolID);
+      b := List.all(UnorderedMap.valueList(map), Util.id);
     end if;
   end tupleSolvable;
 
