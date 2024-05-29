@@ -909,7 +909,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     if (!pLibraryTreeItem->isSaved()) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.")
-                               .arg(pLibraryTreeItem->getNameStructure()), Helper::ok);
+                               .arg(pLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return false;
     } else {
       // item not to be dropped on itself; if dropping an item on itself
@@ -941,7 +941,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     // Only allow drag & drop of Modelica LibraryTreeItem on a Modelica LibraryTreeItem
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != pLibraryTreeItem->getLibraryType()) {
       QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               tr("You can only drag & drop Modelica models."), Helper::ok);
+                               tr("You can only drag & drop Modelica models."), QMessageBox::Ok);
       return false;
     }
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
@@ -979,11 +979,11 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         if (mViewType == StringHandler::Diagram) {
           QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                    GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
-                                   .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+                                   .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
         } else {
           QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                    GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
-                                   .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+                                   .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
         }
         return false;
       }
@@ -3213,7 +3213,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
     Element *pStartElement = mpConnectionLineAnnotation->getStartElement();
     MainWindow *pMainWindow = MainWindow::instance();
     if (pStartElement == pElement) {
-      QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information), GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
+      QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information), GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), QMessageBox::Ok);
       removeCurrentConnection();
     } else {
       /* Ticket:4956
@@ -3341,7 +3341,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
                 mpModelWidget->updateModelText();
               } else {
                 QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), Helper::ok);
+                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
                 removeCurrentConnection();
               }
             } else {
@@ -3411,7 +3411,7 @@ void GraphicsView::addTransition(Element *pComponent)
     Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
     if (pStartComponent == pComponent) {
       QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
-                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
+                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), QMessageBox::Ok);
       removeCurrentTransition();
     } else {
       QString startComponentName, endComponentName;
@@ -3614,7 +3614,7 @@ void GraphicsView::copyItems(bool cut)
   if (!mpModelWidget->isNewApi()) {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
-                             Helper::ok);
+                             QMessageBox::Ok);
     return;
   }
   /* Issue #9515
@@ -4042,7 +4042,7 @@ void GraphicsView::pasteItems()
   if (!mpModelWidget->isNewApi()) {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
-                             Helper::ok);
+                             QMessageBox::Ok);
     return;
   }
   QClipboard *pClipboard = QApplication::clipboard();
@@ -4548,7 +4548,11 @@ void GraphicsView::dropEvent(QDropEvent *event)
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
     QString className;
     dataStream >> className;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    if (addComponent(className, mapToScene(event->position().toPoint()))) {
+#else
     if (addComponent(className, mapToScene(event->pos()))) {
+#endif
       event->accept();
     } else {
       event->ignore();
@@ -5786,7 +5790,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     if (!file.open(QIODevice::ReadOnly)) {
       //      QMessageBox::critical(mpLibraryWidget->MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
       //                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-      //                            .arg(file.errorString()), Helper::ok);
+      //                            .arg(file.errorString()), QMessageBox::Ok);
     } else {
       contents = QString(file.readAll());
       file.close();
@@ -9678,7 +9682,8 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
              (event->type() == QEvent::MouseButtonPress && qobject_cast<QToolButton*>(object)) ||
              (event->type() == QEvent::Shortcut && qobject_cast<QMenuBar*>(object)) ||
              (event->type() == QEvent::MouseButtonPress && qobject_cast<QTabBar*>(object)) ||
-             (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))) {
+             (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))
+             ) {
     shouldValidateText = true;
   } else if (event->type() == QEvent::FocusIn && qobject_cast<LibraryTreeView*>(object)) {
     ModelWidget *pCurrentModelWidget = getCurrentModelWidget();
@@ -10205,7 +10210,7 @@ void ModelWidgetContainer::saveModelWidget()
   // if pModelWidget = 0
   if (!pModelWidget) {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
@@ -10222,7 +10227,7 @@ void ModelWidgetContainer::saveAsModelWidget()
   // if pModelWidget = 0
   if (!pModelWidget) {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("save as")), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("save as")), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
@@ -10239,7 +10244,7 @@ void ModelWidgetContainer::saveTotalModelWidget()
   // if pModelWidget = 0
   if (!pModelWidget) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();

@@ -129,11 +129,8 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
   foreach(QVariant var, variableItemData[VariableItemData::DEFINED_IN].toList()) {
      mDefinedIn << var.value<IntStringPair>();
   }
-// FIXME: these conversions seem to fail with Qt6
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
   mInfoFileName = variableItemData[VariableItemData::INFOFILE].toString();
   mExistInResultFile = variableItemData[VariableItemData::EXISTINRESULTFILE].toBool();
-#endif
 }
 
 /*!
@@ -394,8 +391,8 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
 {
   mpVariablesTreeView = pVariablesTreeView;
   QVector<QVariant> headers;
-  headers << "" << "" << Helper::variables << Helper::variables << "" << tr("Value") << tr("Unit") << tr("Display Unit") <<
-             QStringList() << Helper::description << "" << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json" << false;
+  headers << "" << "" << Helper::variables << Helper::variables << "" << tr("Value") << tr("Unit") << tr("Display Unit")
+          << QStringList() << Helper::description << "" << false << QStringList() << QStringList() << QStringList() << "dummy.json" << false;
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
   mpActiveVariablesTreeItem = 0;
 }
@@ -682,9 +679,9 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     toolTip = tr("Simulation Result File: %1\n%2: %3/%4").arg(fileName).arg(Helper::fileLocation).arg(filePath).arg(fileName);
   }
   QRegularExpression resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
-  QString text(fileName.remove(resultTypeRegExp));
+  QString text(QString(fileName).remove(resultTypeRegExp));
   QVector<QVariant> variabledata;
-  variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json" << false;
+  variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QStringList() << QStringList() << QStringList() << "dummy.json" << false;
 
   bool existingTopVariableTreeItem;
   VariablesTreeItem *pTopVariablesTreeItem = findVariablesTreeItemOneLevel(variabledata.at(VariableItemData::NAME).toString(), mpRootVariablesTreeItem);
@@ -1272,7 +1269,7 @@ void VariablesTreeModel::openTransformationsBrowser()
       }
       pTransformationsWidget->fetchEquationData(equationIndex);
     } else {
-      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
     }
   }
 }
@@ -1454,7 +1451,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpSimulationTimeComboBox = new QComboBox;
   mpSimulationTimeComboBox->addItem("s");
   mpSimulationTimeComboBox->addItems(MainWindow::instance()->getOMCProxy()->getDerivedUnits("s"));
-  connect(mpSimulationTimeComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(timeUnitChanged(QString)));
+  connect(mpSimulationTimeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(timeUnitChanged(int)));
   // simulation time slider
   mSliderRange = 1000;
   mpSimulationTimeSlider = new QSlider(Qt::Horizontal);
@@ -1786,7 +1783,7 @@ void VariablesWidget::reSimulate(bool showSetup)
   QModelIndexList indexes = mpVariablesTreeView->selectionModel()->selectedIndexes();
   if (indexes.isEmpty()) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             tr("You must select a class to re-simulate."), Helper::ok);
+                             tr("You must select a class to re-simulate."), QMessageBox::Ok);
     return;
   }
   QModelIndex index = indexes.at(0);
@@ -1805,7 +1802,7 @@ void VariablesWidget::reSimulate(bool showSetup)
     }
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             tr("You cannot re-simulate this class.<br />This is just a result file loaded via menu <b>File->Open Result File(s)</b>."), Helper::ok);
+                             tr("You cannot re-simulate this class.<br />This is just a result file loaded via menu <b>File->Open Result File(s)</b>."), QMessageBox::Ok);
   }
 }
 
@@ -1992,7 +1989,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
         }
         if (pVariablesTreeRootItem->getSimulationOptions().isInteractiveSimulation()) {
-          QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot be attached to a plot window."), Helper::ok);
+          QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot be attached to a plot window."), QMessageBox::Ok);
           pVariablesTreeItem->setChecked(false);
           return;
         }
@@ -2070,7 +2067,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
         }
         if (pVariablesTreeRootItem->getSimulationOptions().isInteractiveSimulation()) {
-          QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot be attached to a parametric plot window."), Helper::ok);
+          QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot be attached to a parametric plot window."), QMessageBox::Ok);
           pVariablesTreeItem->setChecked(false);
           return;
         }
@@ -2232,7 +2229,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
 
       if (pVariablesTreeItem->isChecked()) { // if user checks the variable
         if (!pVariablesTreeRootItem->getSimulationOptions().isInteractiveSimulation()) {
-          QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), tr("Cannot be attached to an interactive plot window."), Helper::ok);
+          QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), tr("Cannot be attached to an interactive plot window."), QMessageBox::Ok);
           pVariablesTreeItem->setChecked(false);
         } else {
           // if user checks a variable belonging to an inactive plot window, switch to it.
@@ -2279,7 +2276,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
       }
     }
   } catch (PlotException &e) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);
   }
 }
 
@@ -2341,7 +2338,7 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
       pPlotWindow->updatePlot();
     }
   } catch (PlotException &e) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);
   }
 }
 
@@ -2461,7 +2458,7 @@ void VariablesWidget::valueEntered(const QModelIndex &index)
     }
 
   } catch (PlotException &e) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);
   }
 }
 
@@ -2631,7 +2628,7 @@ void VariablesWidget::unCheckVariableAndErrorMessage(const QModelIndex &index, c
   mpVariablesTreeModel->setData(index, Qt::Unchecked, Qt::CheckStateRole);
   mpVariablesTreeModel->blockSignals(state);
   if (!errorMessage.isEmpty()) {
-    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), errorMessage, Helper::ok);
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), errorMessage, QMessageBox::Ok);
   }
 }
 
@@ -2654,8 +2651,9 @@ void VariablesWidget::unCheckCurveVariable(const QString &variable)
  * Updates the x values of all the curves.
  * \param unit
  */
-void VariablesWidget::timeUnitChanged(QString unit)
+void VariablesWidget::timeUnitChanged(int index)
 {
+  const QString unit = mpSimulationTimeComboBox->itemText(index);
   if (unit.isEmpty()) {
     return;
   }
@@ -2682,7 +2680,7 @@ void VariablesWidget::timeUnitChanged(QString unit)
       }
     }
   } catch (PlotException &e) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);
   }
 }
 
@@ -2787,7 +2785,7 @@ void VariablesWidget::findVariables()
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   // TODO: handle PatternSyntax
-  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity));
+  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
   mpVariableTreeProxyModel->setFilterRegularExpression(regExp);
 #else
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());

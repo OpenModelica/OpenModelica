@@ -33,10 +33,12 @@ OMDEV_MSYS      = $(shell cygpath $$OMDEV/tools/msys)
 MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
 OM_MSYS_ENV_DIR = $(MSYSTEM_PREFIX)
 
-ifeq ($(OM_QT_MAJOR_VERSION),)
-	OM_QT_MAJOR_VERSION = 5
+ifeq ($(OM_QT_MAJOR_VERSION),6)
+	OM_OMEDIT_ENABLE_LIBXML2 = ON
+	OM_OMEDIT_ENABLE_QTWEBENGINE = ON
 else
-	OM_QT_MAJOR_VERSION = $(OM_QT_MAJOR_VERSION)
+	OM_OMEDIT_ENABLE_LIBXML2 = OFF
+	OM_OMEDIT_ENABLE_QTWEBENGINE = OFF
 endif
 
 CMAKE = cmake
@@ -94,7 +96,7 @@ omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 omedit: omparser omplot omsimulator qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION) OM_OMEDIT_ENABLE_LIBXML2=$(OM_OMEDIT_ENABLE_LIBXML2) OM_OMEDIT_ENABLE_QTWEBENGINE=$(OM_OMEDIT_ENABLE_QTWEBENGINE)
 
 omedit-testsuite: omedit testsuite-depends
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite OMBUILDDIR=$(OMBUILDDIR)
@@ -150,6 +152,10 @@ ifeq ($(OM_QT_MAJOR_VERSION),6)
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Core5Compat.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6PrintSupport.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Svg.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Network.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6OpenGLWidgets.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6OpenGL.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Concurrent.dll $(builddir_bin)/
 	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/plugins/* $(builddir_bin)/
 else
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/

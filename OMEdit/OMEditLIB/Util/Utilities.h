@@ -264,6 +264,11 @@ inline QDataStream& operator>>(QDataStream& in, RecentFile& recentFile)
   return in;
 }
 
+inline bool operator==(const RecentFile& lhs, const RecentFile& rhs)
+{
+  return lhs.fileName == rhs.fileName;
+}
+
 //! @struct FindTextOM
 /*! \brief It contains the recently searched text from find/replace dialog .
  * We must register this struct as a meta type since we need to use it as a QVariant.
@@ -290,6 +295,11 @@ inline QDataStream& operator>>(QDataStream& in, FindTextOM& findText)
 {
   in >> findText.text;
   return in;
+}
+
+inline bool operator==(const FindTextOM& lhs, const FindTextOM& rhs)
+{
+  return lhs.text == rhs.text;
 }
 
 //! @struct DebuggerConfiguration
@@ -330,6 +340,11 @@ inline QDataStream& operator>>(QDataStream& in, DebuggerConfiguration& configura
   in >> configurationSettings.GDBPath;
   in >> configurationSettings.arguments;
   return in;
+}
+
+inline bool operator==(const DebuggerConfiguration& lhs, const DebuggerConfiguration& rhs)
+{
+  return lhs.name == rhs.name;
 }
 
 /*!

@@ -405,7 +405,7 @@ private:
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 private slots:
-  void changeSimulationToolStartCommand(QString tool);
+  void changeSimulationToolStartCommand(int index);
   void changeSimulationTool(QString simulationToolStartCommand);
   void browseGeometryFile();
   void updateSubModelParameters();

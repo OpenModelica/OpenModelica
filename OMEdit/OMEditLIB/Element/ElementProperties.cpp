@@ -932,14 +932,14 @@ void Parameter::editClassButtonClicked()
       (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == QString()))
   {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Unable to find the redeclare class."), Helper::ok);
+                          tr("Unable to find the redeclare class."), QMessageBox::Ok);
   }
   // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName(), type);
   // if we fail to find the type
   if (qualifiedType.isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Unable to find the redeclare class."), Helper::ok);
+                          tr("Unable to find the redeclare class."), QMessageBox::Ok);
   } else {
     ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
     const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
@@ -3066,14 +3066,14 @@ void ElementAttributes::updateElementAttributes()
   if (mpElement->getName().compare(mpNameTextBox->text()) != 0) {
     if (!mpElement->getGraphicsView()->checkElementName(mpElement->getClassName(), mpNameTextBox->text())) {
       QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
+                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), QMessageBox::Ok);
       return;
     }
   }
   // check for comma
   if (StringHandler::nameContainsComma(mpNameTextBox->text())) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), QMessageBox::Ok);
     return;
   }
   // check for invalid names
@@ -3082,7 +3082,7 @@ void ElementAttributes::updateElementAttributes()
   MainWindow::instance()->getOMCProxy()->setLoggingEnabled(true);
   if (result.isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), QMessageBox::Ok);
     return;
   }
   QString variability;
@@ -3126,7 +3126,7 @@ void ElementAttributes::updateElementAttributes()
     // update element attributes if needed
     if (attributesChanged) {
       if (!pOMCProxy->setComponentProperties(modelName, mpElement->getName(), isFinal, flow, isProtected, isReplaceAble, variability, isInner, isOuter, causality)) {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3137,7 +3137,7 @@ void ElementAttributes::updateElementAttributes()
       if (pOMCProxy->setComponentComment(modelName, mpElement->getName(), comment)) {
         attributesChanged = true;
       } else {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3148,7 +3148,7 @@ void ElementAttributes::updateElementAttributes()
       if (pOMCProxy->setComponentDimensions(modelName, mpElement->getName(), arrayIndex)) {
         attributesChanged = true;
       } else {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3158,7 +3158,7 @@ void ElementAttributes::updateElementAttributes()
       if (pOMCProxy->renameComponentInClass(modelName, mpElement->getName(), mpNameTextBox->text())) {
         attributesChanged = true;
       } else {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3237,7 +3237,7 @@ void CompositeModelSubModelAttributes::setUpDialog()
   mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Simulink));
   mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::WolframSystemModeler));
   mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Other));
-  connect(mpSimulationToolComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(changeSimulationToolStartCommand(QString)));
+  connect(mpSimulationToolComboBox, SIGNAL(currentIndexChanged(int)), SLOT(changeSimulationToolStartCommand(int)));
   // Create the start command label and text box
   mpStartCommandLabel = new Label(tr("Start Command:"));
   mpStartCommandTextBox = new QLineEdit;
@@ -3330,10 +3330,11 @@ void CompositeModelSubModelAttributes::initializeDialog()
  * \brief CompositeModelSubModelAttributes::changeSimulationToolStartCommand
  * Updates the simulation tool start command.\n
  * Slot activated when mpSimulationToolComboBox currentIndexChanged signal is raised.
- * \param tool
+ * \param index
  */
-void CompositeModelSubModelAttributes::changeSimulationToolStartCommand(QString tool)
+void CompositeModelSubModelAttributes::changeSimulationToolStartCommand(int index)
 {
+  const QString tool = mpSimulationToolComboBox->itemText(index);
   mpStartCommandTextBox->setText(StringHandler::getSimulationToolStartCommand(tool, mpStartCommandTextBox->text()));
 }
 

@@ -201,17 +201,17 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
   if (mpModelWidget->getLibraryTreeItem()->isTLMSystem()) {
     if (mpIpAddressTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("IP Address"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("IP Address"), QMessageBox::Ok);
       return false;
     }
     if (mpManagerPortTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Manager Port"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Manager Port"), QMessageBox::Ok);
       return false;
     }
     if (mpMonitorPortTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Monitor Port"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Monitor Port"), QMessageBox::Ok);
       return false;
     }
   } else if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
@@ -222,17 +222,17 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
       case oms_solver_sc_cvode:
         if (mpInitialStepSizeTextBox->text().isEmpty()) {
           QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Initial Step Size"), Helper::ok);
+                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Initial Step Size"), QMessageBox::Ok);
           return false;
         }
         if (mpMinimumStepSizeTextBox->text().isEmpty()) {
           QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Minimum Step Size"), Helper::ok);
+                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Minimum Step Size"), QMessageBox::Ok);
           return false;
         }
         if (mpMaximumStepSizeTextBox->text().isEmpty()) {
           QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Maximum Step Size"), Helper::ok);
+                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Maximum Step Size"), QMessageBox::Ok);
           return false;
         }
         break;
@@ -241,7 +241,7 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
       default:
         if (mpFixedStepSizeTextBox->text().isEmpty()) {
           QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Fixed Step Size"), Helper::ok);
+                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Fixed Step Size"), QMessageBox::Ok);
           return false;
         }
         break;
@@ -249,13 +249,13 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
 
     if (mpAbsoluteToleranceTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Absolute Tolerance"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Absolute Tolerance"), QMessageBox::Ok);
       return false;
     }
 
     if (mpRelativeToleranceTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Relative Tolerance"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Relative Tolerance"), QMessageBox::Ok);
       return false;
     }
   }

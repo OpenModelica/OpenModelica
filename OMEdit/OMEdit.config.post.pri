@@ -28,33 +28,8 @@
  #
  #/
 
-include(../OMEdit.config.pre.pri)
-
-DESTDIR = ../bin
-ICON = ../OMEditLIB/Resources/icons/omedit.icns
-QMAKE_INFO_PLIST = Info.plist
-
-TEMPLATE = app
-
-PRE_TARGETDEPS += ../bin/libOMEdit.a
-
-LIBS += -L../bin -lOMEdit
-
-OMEDIT_ROOT = ../
-
-# Windows libraries and includes
-win32 {
-  include(OMEditGUI.win.config.pri)
-  RC_FILE = rc_omedit.rc
-} else { # Unix libraries and includes
-  include(OMEditGUI.unix.config.pri)
+# Don't show the warnings from included headers.
+# Don't add a space between for and open parenthesis below. Qt4 complains about it.
+for(path, INCLUDEPATH) {
+  QMAKE_CXXFLAGS += -isystem $${path}
 }
-
-INCLUDEPATH += ../ \
-  ../OMEditLIB \
-  ../OMEditLIB/CrashReport \
-  $$OPENMODELICAHOME/include/omc/c
-
-SOURCES += main.cpp
-
-include(../OMEdit.config.post.pri)

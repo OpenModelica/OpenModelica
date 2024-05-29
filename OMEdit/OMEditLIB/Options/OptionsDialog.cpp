@@ -4036,7 +4036,7 @@ AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage, bo
   setMinimumWidth(300);
   mpNameLabel = new Label(Helper::name);
   mpNameComboBox = new QComboBox;
-  connect(mpNameComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(getLibraryVersions(QString)));
+  connect(mpNameComboBox, SIGNAL(currentIndexChanged(int)), SLOT(getLibraryVersions(int)));
   mpValueLabel = new Label(Helper::version + ":");
   mpVersionsComboBox = new QComboBox;
   mpVersionsComboBox->setEditable(true);
@@ -4104,16 +4104,17 @@ void AddSystemLibraryDialog::getSystemLibraries()
 {
   mpNameComboBox->clear();
   mpNameComboBox->addItems(MainWindow::instance()->getOMCProxy()->getAvailableLibraries());
-  getLibraryVersions(mpNameComboBox->currentText());
+  getLibraryVersions(mpNameComboBox->currentIndex());
 }
 
 /*!
  * \brief AddSystemLibraryDialog::getLibraryVersions
  * Gets the library versions and add them to the combobox.
- * \param library
+ * \param index
  */
-void AddSystemLibraryDialog::getLibraryVersions(const QString &library)
+void AddSystemLibraryDialog::getLibraryVersions(int index)
 {
+  const QString library = mpNameComboBox->itemText(index);
   mpVersionsComboBox->clear();
   if (!library.isEmpty()) {
     mpVersionsComboBox->addItems(MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library));
@@ -4129,18 +4130,18 @@ void AddSystemLibraryDialog::addSystemLibrary()
 {
   // if name text box is empty show error and return
   if (mpNameComboBox->currentText().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("a")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("a")), QMessageBox::Ok);
     return;
   }
   // if value text box is empty show error and return
   if (mpVersionsComboBox->lineEdit()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("the value for a")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("the value for a")), QMessageBox::Ok);
     return;
   }
   // if user is adding a new library
   if (!mEditFlag) {
     if (nameExists()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), QMessageBox::Ok);
       return;
     }
     QStringList values;
@@ -4149,7 +4150,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
   } else if (mEditFlag) { // if user is editing old library
     QTreeWidgetItem *pItem = mpLibrariesPage->getSystemLibrariesTree()->selectedItems().at(0);
     if (nameExists(pItem)) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), QMessageBox::Ok);
       return;
     }
     pItem->setText(0, mpNameComboBox->currentText());
@@ -4260,13 +4261,13 @@ void AddUserLibraryDialog::addUserLibrary()
 {
   // if path text box is empty show error and return
   if (mpPathTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Please enter the file path."), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Please enter the file path."), QMessageBox::Ok);
     return;
   }
   // if user is adding a new library
   if (!mEditFlag) {
     if (pathExists()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), QMessageBox::Ok);
       return;
     }
     QStringList values;
@@ -4276,7 +4277,7 @@ void AddUserLibraryDialog::addUserLibrary()
     QTreeWidgetItem *pItem = mpLibrariesPage->getUserLibrariesTree()->selectedItems().at(0);
     if (pathExists(pItem))
     {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), QMessageBox::Ok);
       return;
     }
     pItem->setText(0, mpPathTextBox->text());
@@ -6745,14 +6746,14 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
   mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText(OptionsDefaults::FMI::modelDescriptionFilter));
   Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
-  connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableIncludeSourcesCheckBox(QString)));
+  connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(int)), SLOT(enableIncludeSourcesCheckBox(int)));
   mpModelDescriptionFiltersComboBox->installEventFilter(mpOptionsDialog);
   // include resources checkbox
   mpIncludeResourcesCheckBox = new QCheckBox(tr("Include Modelica based resources via loadResource"));
   // include source code checkbox
   mpIncludeSourceCodeCheckBox = new QCheckBox(tr("Include Source Code (model description filter \"blackBox\" will override this, because black box FMUs do never contain their source code.)"));
   mpIncludeSourceCodeCheckBox->setChecked(OptionsDefaults::FMI::includeSourceCode);
-  enableIncludeSourcesCheckBox(mpModelDescriptionFiltersComboBox->currentText());
+  enableIncludeSourcesCheckBox(mpModelDescriptionFiltersComboBox->currentIndex());
   // generate debug symbols
   mpGenerateDebugSymbolsCheckBox = new QCheckBox(tr("Generate Debug Symbols"));
   // set the export group box layout
@@ -6884,8 +6885,9 @@ void FMIPage::selectFMUDirectory()
  * Enables/Disables the includes sources checkbox.
  * \param modelDescriptionFilter
  */
-void FMIPage::enableIncludeSourcesCheckBox(QString modelDescriptionFilter)
+void FMIPage::enableIncludeSourcesCheckBox(int index)
 {
+  const QString modelDescriptionFilter = mpModelDescriptionFiltersComboBox->itemText(index);
   if (modelDescriptionFilter.compare(QStringLiteral("blackBox")) == 0) {
     mpIncludeSourceCodeCheckBox->setEnabled(false);
   } else {

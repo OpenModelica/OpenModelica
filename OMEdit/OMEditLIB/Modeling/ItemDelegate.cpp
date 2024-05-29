@@ -309,7 +309,7 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
       foreach (QString unit, pVariablesTreeItem->getDisplayUnits()) {
         pComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
       }
-      connect(pComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
+      connect(pComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
       return pComboBox;
     }
   } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent())) {
@@ -365,11 +365,11 @@ void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) cons
 /*!
  * \brief ItemDelegate::unitComboBoxChanged
  * Handles the case when display unit is changed in the VariablesTreeView.
- * \param text
+ * \param index
  */
-void ItemDelegate::unitComboBoxChanged(QString text)
+void ItemDelegate::unitComboBoxChanged(int index)
 {
-  Q_UNUSED(text);
+  Q_UNUSED(index);
   QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
   if (pComboBox) {
     emit commitData(pComboBox);

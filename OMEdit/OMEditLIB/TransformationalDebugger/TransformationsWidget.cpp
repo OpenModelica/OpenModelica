@@ -939,7 +939,7 @@ void TransformationsWidget::loadTransformations()
       OMEquation *eq = mEquations[i];
       eq->section = veq["section"].toString();
       if (veq["eqIndex"].toInt() != i) {
-        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + QString(": got index ") + veq["eqIndex"].toString() + QString(" expected ") + QString::number(i), Helper::ok);
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + QString(": got index ") + veq["eqIndex"].toString() + QString(" expected ") + QString::number(i), QMessageBox::Ok);
         return;
       }
       eq->index = i;
@@ -1334,7 +1334,7 @@ void TransformationsWidget::findVariables()
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   // TODO: handle PatternSyntax
-  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity));
+  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
   mpTVariableTreeProxyModel->setFilterRegularExpression(regExp);
 #else
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());

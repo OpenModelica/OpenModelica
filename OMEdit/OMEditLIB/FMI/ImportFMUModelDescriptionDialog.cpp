@@ -118,7 +118,7 @@ void ImportFMUModelDescriptionDialog::importFMUModelDescription()
 {
   if (mpFmuModelDescriptionTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU Model Description XML file")), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU Model Description XML file")), QMessageBox::Ok);
     return;
   }
   QString fmuFileName = MainWindow::instance()->getOMCProxy()->importFMUModelDescription(mpFmuModelDescriptionTextBox->text(), mpOutputDirectoryTextBox->text(), 1, false, true, true);

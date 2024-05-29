@@ -47,12 +47,14 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QApplication>
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebEnginePage>
 #include <QWebEngineSettings>
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebFrame>
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 #include <QWidgetAction>
 #include <QButtonGroup>
 #include <QInputDialog>
@@ -69,6 +71,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   setObjectName("DocumentationWidget");
+#ifndef OM_DISABLE_DOCUMENTATION
   mDocumentationFile.setFileName(Utilities::tempDirectory() + "/DocumentationWidget.html");
   // documentation toolbar
   QToolBar *pDocumentationToolBar = new QToolBar;
@@ -119,6 +122,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pDocumentationToolBar->addSeparator();
   pDocumentationToolBar->addAction(mpSaveAction);
   pDocumentationToolBar->addAction(mpCancelAction);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   // create the documentation viewer
   mpDocumentationViewer = new DocumentationViewer(this, false);
   mpDocumentationViewerFrame = new QFrame;
@@ -128,6 +132,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pDocumentationViewerLayout->setContentsMargins(0, 0, 0, 0);
   pDocumentationViewerLayout->addWidget(mpDocumentationViewer);
   mpDocumentationViewerFrame->setLayout(pDocumentationViewerLayout);
+#ifndef OM_DISABLE_DOCUMENTATION
   // create the editors tab widget
   mpEditorsWidget = new QWidget;
   mpEditorsWidget->hide();
@@ -421,19 +426,25 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mDocumentationHistoryPos = -1;
   setExecutingPreviousNextButtons(false);
   setScrollPosition(QPoint(0, 0));
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   // Documentation viewer layout
   QGridLayout *pGridLayout = new QGridLayout;
   pGridLayout->setContentsMargins(0, 0, 0, 0);
   pGridLayout->addWidget(mpDocumentationViewerFrame);
+#ifndef OM_DISABLE_DOCUMENTATION
   pGridLayout->addWidget(mpEditorsWidget);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setSpacing(0);
+#ifndef OM_DISABLE_DOCUMENTATION
   pMainLayout->addWidget(pDocumentationToolBar);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   pMainLayout->addLayout(pGridLayout, 1);
   setLayout(pMainLayout);
 }
 
+#ifndef OM_DISABLE_DOCUMENTATION
 /*!
  * \brief DocumentationWidget::~DocumentationWidget
  */
@@ -442,6 +453,7 @@ DocumentationWidget::~DocumentationWidget()
   mDocumentationFile.remove();
   delete mpDocumentationHistoryList;
 }
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 
 /*!
  * \brief DocumentationWidget::showDocumentation
@@ -450,6 +462,7 @@ DocumentationWidget::~DocumentationWidget()
  */
 void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
+#ifndef OM_DISABLE_DOCUMENTATION
   // We only support documentation of Modelica classes.
   if (pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
     return;
@@ -502,8 +515,12 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   mpCancelAction->setDisabled(true);
   mpDocumentationViewerFrame->show();
   mpEditorsWidget->hide();
+#else // #ifndef OM_DISABLE_DOCUMENTATION
+  qDebug() << "Documentation is not supported due to missing webkit and webengine.";
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 }
 
+#ifndef OM_DISABLE_DOCUMENTATION
 /*!
  * \brief DocumentationWidget::execCommand
  * Calls the document.execCommand API.
@@ -1234,6 +1251,7 @@ void DocumentationWidget::updateDocumentationHistory()
 {
   updateDocumentationHistory(qobject_cast<LibraryTreeItem*>(sender()));
 }
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 
 /*!
  * \class DocumentationViewer
@@ -1245,27 +1263,32 @@ void DocumentationWidget::updateDocumentationHistory()
  * \param isContentEditable
  */
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable)
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   : QWebEngineView(pDocumentationWidget)
-#else
+#else //#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   : QWebView(pDocumentationWidget)
 #endif
+#else // #ifndef OM_DISABLE_DOCUMENTATION
+  : QWidget(pDocumentationWidget)
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   , mIsContentEditable(isContentEditable)
 {
+  mpDocumentationWidget = pDocumentationWidget;
+#ifndef OM_DISABLE_DOCUMENTATION
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  mpDocumentationWidget = pDocumentationWidget;
   resetZoom();
   // set DocumentationViewer settings
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebEngineSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
   // set DocumentationViewer web page policy
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
@@ -1273,18 +1296,20 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
     page()->runJavaScript("document.documentElement.contentEditable = true");
   // TODO: DelegateAllLinks, linkClicked
   connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->setContentEditable(isContentEditable);
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   createActions();
   if (!isContentEditable) {
     connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
   }
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 }
 
+#ifndef OM_DISABLE_DOCUMENTATION
 /*!
  * \brief DocumentationViewer::setFocusInternal
  * Sets the focus on QWebView.\n
@@ -1308,10 +1333,10 @@ void DocumentationViewer::createActions()
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->action(QWebEnginePage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebEnginePage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->action(QWebPage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebPage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 }
 
 /*!
@@ -1355,12 +1380,12 @@ void DocumentationViewer::processLinkClick(QUrl url)
   } else { // if it is normal http request then check if its not redirected to https
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     // TODO: QNetworkAccessManager
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QNetworkAccessManager* accessManager = page()->networkAccessManager();
     QNetworkRequest request(url);
     QNetworkReply* reply = accessManager->get(request);
     connect(reply, SIGNAL(finished()), SLOT(requestFinished()));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   }
 }
 
@@ -1420,10 +1445,10 @@ void DocumentationViewer::showContextMenu(QPoint point)
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   menu.addAction(page()->action(QWebEnginePage::SelectAll));
   menu.addAction(page()->action(QWebEnginePage::Copy));
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   menu.addAction(page()->action(QWebPage::SelectAll));
   menu.addAction(page()->action(QWebPage::Copy));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   menu.exec(mapToGlobal(point));
 }
 
@@ -1438,9 +1463,9 @@ void DocumentationViewer::pageLoaded(bool ok)
   const QPoint scrollPosition = mpDocumentationWidget->getScrollPosition();
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->runJavaScript(QString("window.scrollTo(%1, %2);").arg(scrollPosition.x()).arg(scrollPosition.y()));
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->mainFrame()->scroll(scrollPosition.x(), scrollPosition.y());
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 }
 
 /*!
@@ -1450,18 +1475,18 @@ void DocumentationViewer::pageLoaded(bool ok)
  */
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 QWebEngineView* DocumentationViewer::createWindow(QWebEnginePage::WebWindowType type)
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 QWebView* DocumentationViewer::createWindow(QWebPage::WebWindowType type)
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 {
   Q_UNUSED(type);
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebEngineView *webView = new QWebEngineView;
   QWebEnginePage *newWeb = new QWebEnginePage(webView);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebView *webView = new QWebView;
   QWebPage *newWeb = new QWebPage(webView);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   webView->setAttribute(Qt::WA_DeleteOnClose, true);
   webView->setPage(newWeb);
   webView->show();
@@ -1484,15 +1509,15 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
 //      mpDocumentationWidget->execCommand("insertHTML", "<p><br></p>");
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebEngineView::keyPressEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebView::keyPressEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebEngineView::keyPressEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebView::keyPressEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     }
   } else { // if non-editable QWebView
     if (shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
@@ -1506,15 +1531,15 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
     } else if (controlModifier && event->key() == Qt::Key_A) {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       page()->triggerAction(QWebEnginePage::SelectAll);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       page()->triggerAction(QWebPage::SelectAll);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebEngineView::keyPressEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebView::keyPressEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     }
   }
 }
@@ -1551,9 +1576,9 @@ void DocumentationViewer::wheelEvent(QWheelEvent *event)
   } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebEngineView::wheelEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebView::wheelEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   }
 }
 
@@ -1570,8 +1595,9 @@ void DocumentationViewer::mouseDoubleClickEvent(QMouseEvent *event)
   } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebEngineView::mouseDoubleClickEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebView::mouseDoubleClickEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   }
 }
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
