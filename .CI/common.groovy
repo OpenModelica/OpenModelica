@@ -339,7 +339,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   }
 }
 
-void buildGUI(stash, isQt5) {
+void buildGUI(stash, qtVersion) {
   if (isWindows()) {
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -373,10 +373,13 @@ void buildGUI(stash, isQt5) {
   }
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   // compile OMSens_Qt for Qt5
-  if (isQt5) {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
+  // Pretend we already built omc since we already did so
+  if (qtVersion.equals('qt6')) {
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} OM_QT_MAJOR_VERSION=6 omc omc-diff ReferenceFiles omsimulator omparser omsens_qt"
+  } else if (qtVersion.equals('qt5')) {
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt"
   } else {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt"
   }
   sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
 

@@ -112,7 +112,8 @@ pipeline {
                 common.buildOMC('cc', 'c++', '', true, false)
                 common.makeLibsAndCache()
                 common.buildOMSens()
-                common.buildGUI('', true)
+                common.buildGUI('', 'qt5')
+                common.buildGUI('', 'qt6')
                 common.buildAndRunOMEditTestsuite('')
               }
             }
@@ -487,7 +488,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildGUI('omc-clang', true)
+              common.buildGUI('omc-clang', 'qt5')
             }
             stash name: 'omedit-testsuite-clang', includes: 'build/**, **/config.status, OMEdit/**'
           }
