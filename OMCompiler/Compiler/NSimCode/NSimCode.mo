@@ -48,7 +48,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
-  import FunctionTree = NFFlatten.FunctionTree;
+  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -241,6 +241,10 @@ public
         idx := idx + 1;
       end for;
       str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
+      if not listEmpty(simCode.literals) then
+        str := str + StringUtil.headline_3("Shared Literals");
+        str := str + List.toString(simCode.literals, Expression.toString, "", "  ", "\n  ", "\n\n");
+      end if;
       if not listEmpty(simCode.generic_loop_calls) then
         str := str + StringUtil.headline_3("Generic Calls");
         str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
@@ -277,10 +281,11 @@ public
           OldSimCodeFunction.MakefileParams makefileParams;
           list<OldSimCodeFunction.Function> functions;
           list<OldSimCodeFunction.RecordDeclaration> recordDecls;
-          //tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
           // New SimCode structures
           ModelInfo modelInfo;
           SimCodeIndices simCodeIndices;
+          UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+          Pointer<Integer> literals_idx = Pointer.create(0);
           list<Expression> literals;
           list<String> externalFunctionIncludes;
           list<SimGenericCall> generic_loop_calls;
@@ -299,10 +304,15 @@ public
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
-            algorithm
+          algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
             funcTree := BackendDAE.getFunctionTree(bdae);
+
+            // get and replace all literals
+            _ := EqData.mapExp(eqData, function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            funcTree := FunctionTreeImpl.mapExp(funcTree, function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            literals := UnorderedMap.keyList(literals_map);
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -313,7 +323,6 @@ public
             // create empty equation map and fill while creating the blocks
             equation_map := UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
 
-            literals := {};
             externalFunctionIncludes := {};
 
             independent := {};
@@ -476,7 +485,7 @@ public
 
       oldSimCode := OldSimCode.SIMCODE(
         modelInfo                     = modelInfo,
-        literals                      = {}, // usally set by a traversal below...
+        literals                      = list(Expression.toDAE(lit) for lit in simCode.literals),
         recordDecls                   = simCode.recordDecls, // ToDo: convert this to new structures
         externalFunctionIncludes      = simCode.externalFunctionIncludes,
         generic_loop_calls            = list(SimGenericCall.convert(gc) for gc in simCode.generic_loop_calls),

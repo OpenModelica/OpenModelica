@@ -1222,7 +1222,7 @@ algorithm
       list<DAE.Exp> es;
     case (exp, t)
       equation
-        failure(isLiteralExp(exp));
+        failure(isLiteralExp(exp)); // exit if the expression is not literal
       then (exp, t);
     case (exp, t)
       equation
