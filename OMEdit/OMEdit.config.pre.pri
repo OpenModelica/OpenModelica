@@ -76,11 +76,6 @@ win32 {
   equals(_OM_ENABLE_ENCRYPTION, yes) {
     QMAKE_CXXFLAGS += -DOM_ENABLE_ENCRYPTION
   }
-
-  equals(_OM_OMEDIT_ENABLE_LIBXML2, ON) {
-    INCLUDEPATH += $$(MSYSTEM_PREFIX)/include/libxml2
-    LIBS += -L$$(MSYSTEM_PREFIX)/bin -llibxml2-2
-  }
 }
 
 UI_DIR = generatedfiles/ui

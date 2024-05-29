@@ -28,11 +28,23 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent testlib
+QT += network core gui xml svg opengl printsupport widgets concurrent testlib
+equals(QT_MAJOR_VERSION, 6) {
+  QT += core5compat openglwidgets
+  !win32 {
+    _OM_OMEDIT_ENABLE_QTWEBENGINE = $$(OM_OMEDIT_ENABLE_QTWEBENGINE)
+    equals(_OM_OMEDIT_ENABLE_QTWEBENGINE, ON) {
+      QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_QTWEBENGINE
+      QT += WebEngineWidgets
+    }
+  }
 } else {
-  CONFIG += qtestlib
+  QT += xmlpatterns webkit webkitwidgets
+}
+
+_OM_OMEDIT_ENABLE_LIBXML2 = $$(OM_OMEDIT_ENABLE_LIBXML2)
+equals(_OM_OMEDIT_ENABLE_LIBXML2, ON) {
+  QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_LIBXML2
 }
 
 OMEDIT_ROOT = ../../

@@ -113,8 +113,9 @@ pipeline {
                 common.makeLibsAndCache()
                 common.buildOMSens()
                 common.buildGUI('', 'qt5')
+                common.buildAndRunOMEditTestsuite('', 'qt5')
                 common.buildGUI('', 'qt6')
-                common.buildAndRunOMEditTestsuite('')
+                common.buildAndRunOMEditTestsuite('', 'qt6')
               }
             }
           }
@@ -747,7 +748,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang')
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang', 'qt5')
             }
           }
         }

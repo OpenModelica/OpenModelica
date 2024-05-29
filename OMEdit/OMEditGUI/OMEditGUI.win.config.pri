@@ -64,3 +64,8 @@ CONFIG(release, debug|release) { # release
 
 LIBS += -L$$BFD_PATH -L$$(MSYSTEM_PREFIX)/bin
 LIBS += $$OSG_LIBS
+
+contains(QMAKE_CXXFLAGS, -DOM_OMEDIT_ENABLE_LIBXML2) {
+  INCLUDEPATH += $$(MSYSTEM_PREFIX)/include/libxml2
+  LIBS += -L$$(MSYSTEM_PREFIX)/bin -llibxml2-2
+}
