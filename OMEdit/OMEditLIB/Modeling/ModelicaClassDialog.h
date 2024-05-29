@@ -108,7 +108,7 @@ private:
 private slots:
   void browseExtendsClass();
   void browseParentClass();
-  void showHideSaveContentsInOneFileCheckBox(QString text);
+  void showHideSaveContentsInOneFileCheckBox(int index);
   void createModelicaClass();
 };
 

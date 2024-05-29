@@ -121,7 +121,7 @@ void AttachToProcessDialog::attachProcess()
 {
   if (GDBAdapter::instance()->isGDBRunning()) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), QMessageBox::Ok);
   } else {
     QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
     GDBAdapter::instance()->launch(mpAttachToProcessIDTextBox->text(), GDBPath);

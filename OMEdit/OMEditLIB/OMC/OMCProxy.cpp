@@ -560,7 +560,7 @@ void OMCProxy::exitApplication()
   removeObjectRefFile();
   QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                         QString(tr("Connection with the OpenModelica Compiler has been lost."))
-                        .append("\n\n").append(Helper::applicationName).append(" will close."), Helper::ok);
+                        .append("\n\n").append(Helper::applicationName).append(" will close."), QMessageBox::Ok);
   exit(EXIT_FAILURE);
 }
 

@@ -140,12 +140,12 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
 void CreateModelDialog::createNewModel()
 {
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), QMessageBox::Ok);
     return;
   }
 
   if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), QMessageBox::Ok);
     return;
   }
 
@@ -226,7 +226,7 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
 void AddSystemDialog::addSystem()
 {
   if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), QMessageBox::Ok);
     return;
   }
 
@@ -234,7 +234,7 @@ void AddSystemDialog::addSystem()
   // Check if Model already have the system
   if (pParentLibraryTreeItem->isTopLevel() && pParentLibraryTreeItem->childrenSize() > 0) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("A model already have a system. Only one system is allowed inside a model."), Helper::ok);
+                          tr("A model already have a system. Only one system is allowed inside a model."), QMessageBox::Ok);
     return;
   }
   // Check if system already exists
@@ -243,7 +243,7 @@ void AddSystemDialog::addSystem()
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpSystemWidget->getNameTextBox()->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
-                            .arg(tr("System"), mpSystemWidget->getNameTextBox()->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            .arg(tr("System"), mpSystemWidget->getNameTextBox()->text(), pParentLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return;
     }
   }
@@ -382,18 +382,18 @@ void AddSubModelDialog::browseStartScript()
 void AddSubModelDialog::addSubModel()
 {
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("SubModel")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("SubModel")), QMessageBox::Ok);
     return;
   }
 
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem() && mpStartScriptTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_SCRIPT), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_SCRIPT), QMessageBox::Ok);
     return;
   }
 
   QFileInfo fileInfo(mpPathTextBox->text());
   if (!fileInfo.exists()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pParentLibraryTreeItem;
@@ -402,7 +402,7 @@ void AddSubModelDialog::addSubModel()
     LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("SubModel"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("SubModel"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return;
     }
   }
@@ -436,7 +436,7 @@ void AddSubModelDialog::addSubModel()
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Failed to add submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), Helper::ok);
+                          tr("Failed to add submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), QMessageBox::Ok);
   }
 }
 
@@ -524,13 +524,13 @@ void ReplaceSubModelDialog::browseSubModelPath()
 void ReplaceSubModelDialog::replaceSubModel()
 {
   if (mpPathTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("ReplaceSubModel")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("ReplaceSubModel")), QMessageBox::Ok);
     return;
   }
 
   QFileInfo fileInfo(mpPathTextBox->text());
   if (!fileInfo.exists()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), QMessageBox::Ok);
     return;
   }
 
@@ -563,7 +563,7 @@ void ReplaceSubModelDialog::replaceSubModel()
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Failed to replace submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), Helper::ok);
+                          tr("Failed to replace submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), QMessageBox::Ok);
   }
 }
 
@@ -649,7 +649,7 @@ void AddOrEditIconDialog::addOrEditIcon()
     }
   } else { // add case
     if (mpFileTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), QMessageBox::Ok);
       mpFileTextBox->setFocus();
       return;
     }
@@ -728,7 +728,7 @@ AddConnectorDialog::AddConnectorDialog(GraphicsView *pGraphicsView)
 void AddConnectorDialog::addConnector()
 {
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Connector")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Connector")), QMessageBox::Ok);
     return;
   }
 
@@ -738,7 +738,7 @@ void AddConnectorDialog::addConnector()
     LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("Connector"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("Connector"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return;
     }
   }

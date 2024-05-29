@@ -196,7 +196,7 @@ bool DebuggerConfigurationPage::saveDebugConfiguration()
     if (configurationExists(mpNameTextBox->text())) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                             GUIMessages::getMessage(GUIMessages::DEBUG_CONFIGURATION_EXISTS_MSG).arg(mpNameTextBox->text())
-                            .arg(mDebuggerConfiguration.name), Helper::ok);
+                            .arg(mDebuggerConfiguration.name), QMessageBox::Ok);
       return false;
     }
   }
@@ -391,7 +391,7 @@ void DebuggerConfigurationsDialog::runConfiguration(DebuggerConfigurationPage *p
 {
   if (GDBAdapter::instance()->isGDBRunning()) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), QMessageBox::Ok);
   } else {
     // Remove the debug configuration we are going to run and then add it as first item of debug configurations list.
     QSettings *pSettings = Utilities::getApplicationSettings();
@@ -452,7 +452,7 @@ void DebuggerConfigurationsDialog::newConfiguration()
   QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
   if (debugConfigurations.size() >= MaxDebugConfigurations) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::DEBUG_CONFIGURATION_SIZE_EXCEED).arg(MaxDebugConfigurations), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::DEBUG_CONFIGURATION_SIZE_EXCEED).arg(MaxDebugConfigurations), QMessageBox::Ok);
     return;
   }
   // create a new DebuggerConfigurationPage

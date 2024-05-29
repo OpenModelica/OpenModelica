@@ -765,7 +765,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     pTableWidgetItem->text().toDouble(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points item ("+  QString::number(i+1) +",0)"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points item ("+  QString::number(i+1) +",0)"), QMessageBox::Ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
       return false;
     }
@@ -773,7 +773,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     pTableWidgetItem->text().toDouble(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points table ["+  QString::number(i+1) +",1]"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points table ["+  QString::number(i+1) +",1]"), QMessageBox::Ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
       return false;
     }
@@ -783,14 +783,14 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpStoreImageInModelCheckBox->isChecked() && mpShapeAnnotation->getImageSource().isEmpty()) {
       if (mpFileTextBox->text().isEmpty()) {
         QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), QMessageBox::Ok);
         mpFileTextBox->setFocus();
         return false;
       }
     } else if (!mpStoreImageInModelCheckBox->isChecked()) {
       if (mpFileTextBox->text().isEmpty()) {
         QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), QMessageBox::Ok);
         mpFileTextBox->setFocus();
         return false;
       }

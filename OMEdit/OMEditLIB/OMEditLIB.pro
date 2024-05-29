@@ -28,19 +28,13 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent
-}
+include(../OMEdit.config.pre.pri)
 
-# Set the C++ standard.
-CONFIG += c++1z
+DESTDIR = ../bin
+ICON = Resources/icons/omedit.icns
 
-TARGET = OMEdit
 TEMPLATE = lib
 CONFIG += staticlib
-
-DEFINES += OM_HAVE_PTHREADS
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_es.ts \
@@ -60,34 +54,14 @@ evil_hack_to_fool_lupdate {
 # Windows libraries and includes
 win32 {
 
-  _cxx = $$(CXX)
-  contains(_cxx, clang++) {
-    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
-    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
-    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
-    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
+  CONFIG(release, debug|release) { # release
+    # required for backtrace
+    # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
+    # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
+    # -s will remove all symbol table and relocation information from the executable.
+    QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
+    QMAKE_LFLAGS_RELEASE =
   }
-
-
-CONFIG(release, debug|release) { # release
-  # required for backtrace
-  # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
-  # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
-  # -s will remove all symbol table and relocation information from the executable.
-  QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
-  QMAKE_LFLAGS_RELEASE =
-}
-
-# if OM_ENABLE_ENCRYPTION
-_OM_ENABLE_ENCRYPTION = $$(OM_ENABLE_ENCRYPTION)
-equals(_OM_ENABLE_ENCRYPTION, yes) {
-  QMAKE_CXXFLAGS += -DOM_ENABLE_ENCRYPTION
-}
-
-# On older msys the include directory for binutils is in binutils
-# On recent (November 2022) MSYS2 this is no longer needed.
-  INCLUDEPATH += $$(OMDEV)/tools/msys/include/binutils
-
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
@@ -110,12 +84,6 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMSimulator/include/ \
   $$OPENMODELICAHOME/../OMParser/ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
-
-# Don't show the warnings from included headers.
-# Don't add a space between for and open parenthesis below. Qt4 complains about it.
-for(path, INCLUDEPATH) {
-  QMAKE_CXXFLAGS += -isystem $${path}
-}
 
 SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
@@ -348,50 +316,47 @@ HEADERS  += Util/Helper.h \
 
 CONFIG(osg) {
 
-#    CONFIG += opengl
-#  }
+  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+    SOURCES += Animation/OpenGLWidget.cpp
+  } else {
+    SOURCES += Animation/GLWidget.cpp
+  }
+  SOURCES += Animation/AbstractAnimationWindow.cpp \
+    Animation/ViewerWidget.cpp \
+    Animation/AnimationWindow.cpp \
+    Animation/ThreeDViewer.cpp \
+    Animation/ExtraShapes.cpp \
+    Animation/Visualization.cpp \
+    Animation/VisualizationMAT.cpp \
+    Animation/VisualizationCSV.cpp \
+    Animation/VisualizationFMU.cpp \
+    Animation/FMUSettingsDialog.cpp \
+    Animation/FMUWrapper.cpp \
+    Animation/AbstractVisualizer.cpp \
+    Animation/Shape.cpp \
+    Animation/Vector.cpp
 
-greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-  SOURCES += Animation/OpenGLWidget.cpp
-} else {
-  SOURCES += Animation/GLWidget.cpp
-}
-SOURCES += Animation/AbstractAnimationWindow.cpp \
-  Animation/ViewerWidget.cpp \
-  Animation/AnimationWindow.cpp \
-  Animation/ThreeDViewer.cpp \
-  Animation/ExtraShapes.cpp \
-  Animation/Visualization.cpp \
-  Animation/VisualizationMAT.cpp \
-  Animation/VisualizationCSV.cpp \
-  Animation/VisualizationFMU.cpp \
-  Animation/FMUSettingsDialog.cpp \
-  Animation/FMUWrapper.cpp \
-  Animation/AbstractVisualizer.cpp \
-  Animation/Shape.cpp \
-  Animation/Vector.cpp
-
-greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-  HEADERS += Animation/OpenGLWidget.h
-} else {
-  HEADERS += Animation/GLWidget.h
-}
-HEADERS += Animation/AbstractAnimationWindow.h \
-  Animation/ViewerWidget.h \
-  Animation/AnimationWindow.h \
-  Animation/ThreeDViewer.h \
-  Animation/AnimationUtil.h \
-  Animation/ExtraShapes.h \
-  Animation/Visualization.h \
-  Animation/VisualizationMAT.h \
-  Animation/VisualizationCSV.h \
-  Animation/VisualizationFMU.h \
-  Animation/FMUSettingsDialog.h \
-  Animation/FMUWrapper.h \
-  Animation/AbstractVisualizer.h \
-  Animation/Shape.h \
-  Animation/Vector.h \
-  Animation/rapidxml.hpp
+  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+    HEADERS += Animation/OpenGLWidget.h
+  } else {
+    HEADERS += Animation/GLWidget.h
+  }
+  HEADERS += Animation/AbstractAnimationWindow.h \
+    Animation/ViewerWidget.h \
+    Animation/AnimationWindow.h \
+    Animation/ThreeDViewer.h \
+    Animation/AnimationUtil.h \
+    Animation/ExtraShapes.h \
+    Animation/Visualization.h \
+    Animation/VisualizationMAT.h \
+    Animation/VisualizationCSV.h \
+    Animation/VisualizationFMU.h \
+    Animation/FMUSettingsDialog.h \
+    Animation/FMUWrapper.h \
+    Animation/AbstractVisualizer.h \
+    Animation/Shape.h \
+    Animation/Vector.h \
+    Animation/rapidxml.hpp
 }
 
 OTHER_FILES += Resources/css/stylesheet.qss \
@@ -401,25 +366,6 @@ OTHER_FILES += Resources/css/stylesheet.qss \
   Debugger/Parser/GDBMIParser.cpp \
   Debugger/Parser/main.cpp
 
-# Please read the warnings. They are like vegetables; good for you even if you hate them.
-CONFIG += warn_on
-win32 {
-  # -Wno-clobbered is not recognized by clang
-  !contains(_cxx, clang++) {
-    QMAKE_CXXFLAGS += -Wno-clobbered
-  }
-}
-
 RESOURCES += resource_omedit.qrc
 
-DESTDIR = ../bin
-
-UI_DIR = generatedfiles/ui
-
-MOC_DIR = generatedfiles/moc
-
-RCC_DIR = generatedfiles/rcc
-
-ICON = Resources/icons/omedit.icns
-
-QMAKE_INFO_PLIST = Info.plist
+include(../OMEdit.config.post.pri)

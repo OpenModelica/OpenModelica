@@ -227,7 +227,7 @@ void OMSSimulationDialog::saveSimulationSettings()
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), QMessageBox::Ok);
     return;
   }
 

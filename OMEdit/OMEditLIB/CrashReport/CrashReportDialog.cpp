@@ -323,7 +323,7 @@ void CrashReportDialog::reportSent(QNetworkReply *pNetworkReply)
   mpSendReportButton->setEnabled(true);
   if (pNetworkReply->error() != QNetworkReply::NoError) {
     QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          QString("Following error has occurred while sending issue report \n\n%1").arg(pNetworkReply->errorString()), Helper::ok);
+                          QString("Following error has occurred while sending issue report \n\n%1").arg(pNetworkReply->errorString()), QMessageBox::Ok);
   }
   pNetworkReply->deleteLater();
   accept();

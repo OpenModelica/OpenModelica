@@ -211,7 +211,7 @@ public:
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);
-  void enableDisableOptions(QString method);
+  void enableDisableOptions(int index);
   void showIntegrationHelp();
   void buildOnly(bool checked);
   void interactiveSimulation(bool checked);
@@ -221,7 +221,7 @@ public slots:
   void simulate();
   void reject();
 private slots:
-  void resultFileNameChanged(QString text);
+  void resultFileNameChanged(int index);
   void showVariableFilterHelp();
 };
 
