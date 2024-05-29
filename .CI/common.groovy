@@ -339,7 +339,15 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   }
 }
 
-void buildGUI(stash, isQt5) {
+def getQtMajorVersion(qtVersion) {
+  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=5'
+  if (qtVersion.equals('qt6')) {
+    OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
+  }
+  return OM_QT_MAJOR_VERSION
+}
+
+void buildGUI(stash, qtVersion) {
   if (isWindows()) {
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -352,7 +360,7 @@ void buildGUI(stash, isQt5) {
      echo set -e
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients ${getQtMajorVersion(qtVersion)}
      echo echo Check that at least OMEdit can be started
      echo ./build/bin/OMEdit --help
      ) > buildGUIWindows.sh
@@ -372,8 +380,8 @@ void buildGUI(stash, isQt5) {
     patchConfigStatus()
   }
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  // compile OMSens_Qt for Qt5
-  if (isQt5) {
+  // compile OMSens_Qt for Qt5 and Qt6
+  if (qtVersion.equals('qt6') || qtVersion.equals('qt5')) {
     sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
   } else {
     sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
@@ -385,7 +393,7 @@ void buildGUI(stash, isQt5) {
   }
 }
 
-void buildAndRunOMEditTestsuite(stash) {
+void buildAndRunOMEditTestsuite(stash, qtVersion) {
   if (isWindows()) {
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -396,7 +404,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
      echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite ${getQtMajorVersion(qtVersion)}
      echo export "APPDATA=\${PWD}/libraries"
      echo cd build/bin
      echo ./RunOMEditTestsuite.sh
@@ -427,7 +435,6 @@ void buildAndRunOMEditTestsuite(stash) {
   cd build/bin
   xvfb-run ./RunOMEditTestsuite.sh
   '''
-
   }
 }
 
