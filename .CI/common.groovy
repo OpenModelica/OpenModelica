@@ -393,7 +393,7 @@ void buildGUI(stash, qtVersion) {
   }
 }
 
-void buildAndRunOMEditTestsuite(stash, qtVersion) {
+void buildAndRunOMEditTestsuite(stash) {
   if (isWindows()) {
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -404,7 +404,7 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
      echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite OM_QT_MAJOR_VERSION=5
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
      echo export "APPDATA=\${PWD}/libraries"
      echo cd build/bin
      echo ./RunOMEditTestsuite.sh
@@ -435,7 +435,6 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
   cd build/bin
   xvfb-run ./RunOMEditTestsuite.sh
   '''
-
   }
 }
 
