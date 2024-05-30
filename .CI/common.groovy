@@ -340,7 +340,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
 }
 
 def getQtMajorVersion(qtVersion) {
-  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION='
+  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=5'
   if (qtVersion.equals('qt6')) {
     OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
   }
@@ -381,13 +381,12 @@ void buildGUI(stash, qtVersion) {
   }
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   // compile OMSens_Qt for Qt5 and Qt6
-  // Pretend we already built omc since we already did so
-  if (qtVersion.equals('qt6') || qtVersion.equals('qt5')) {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} ${getQtMajorVersion(qtVersion)} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt"
+  if (qtVersion.equals('qt5')) {
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
   } else {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt"
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
   }
-  sh "${makeCommand()} -j${numPhysicalCPU()} ${getQtMajorVersion(qtVersion)} ${outputSync()}" // Builds the GUI files
+  sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
 
   // test make install after qt builds
   sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
@@ -429,8 +428,8 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
   if (stash) {
     makeLibsAndCache()
   }
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} ${getQtMajorVersion(qtVersion)} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
-  sh "${makeCommand()} -j${numPhysicalCPU()} ${getQtMajorVersion(qtVersion)} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
+  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
+  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
   HOME="\$PWD/libraries"
   cd build/bin
