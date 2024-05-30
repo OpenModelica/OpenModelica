@@ -52,44 +52,44 @@ pipeline {
     }
     stage('setup') {
       parallel {
-        // stage('gcc') {
-        //   agent {
-        //     docker {
-        //       image 'docker.openmodelica.org/build-deps:v1.22.2'
-        //       label 'linux'
-        //       alwaysPull true
-        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-        //     }
-        //   }
-        //   environment {
-        //     QTDIR = "/usr/lib/qt4"
-        //   }
-        //   steps {
-        //     script { common.buildOMC('gcc', 'g++', '', true, false) }
-        //     stash name: 'omc-gcc', includes: 'build/**, **/config.status'
-        //   }
-        // }
-        // stage('clang') {
-        //   agent {
-        //     docker {
-        //       image 'docker.openmodelica.org/build-deps:v1.22.2'
-        //       label 'linux'
-        //       alwaysPull true
-        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-        //     }
-        //   }
-        //   steps {
-        //     script {
-        //       common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
-        //       common.getVersion()
-        //     }
-        //     // Resolve symbolic links to make Jenkins happy
-        //     sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
-        //     stash name: 'omc-clang', includes: 'build/**, **/config.status'
-        //   }
-        // }
+        stage('gcc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          environment {
+            QTDIR = "/usr/lib/qt4"
+          }
+          steps {
+            script { common.buildOMC('gcc', 'g++', '', true, false) }
+            stash name: 'omc-gcc', includes: 'build/**, **/config.status'
+          }
+        }
+        stage('clang') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          steps {
+            script {
+              common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
+              common.getVersion()
+            }
+            // Resolve symbolic links to make Jenkins happy
+            sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
+            stash name: 'omc-clang', includes: 'build/**, **/config.status'
+          }
+        }
         stage('Win/UCRT64') {
           agent {
             node {
@@ -113,116 +113,115 @@ pipeline {
                 common.makeLibsAndCache()
                 common.buildOMSens()
                 common.buildGUI('', 'qt5')
-                common.buildAndRunOMEditTestsuite('')
-                common.buildGUI('', 'qt6')
+                common.buildAndRunOMEditTestsuite('', 'qt5')
               }
             }
           }
         }
-        // stage('cmake-jammy-gcc') {
-        //   agent {
-        //     docker {
-        //       image 'docker.openmodelica.org/build-deps:v1.22.2'
-        //       label 'linux'
-        //       alwaysPull true
-        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-        //     }
-        //   }
-        //   when {
-        //     beforeAgent true
-        //     expression { !shouldWeDisableAllCMakeBuilds_value }
-        //   }
-        //   steps {
-        //     script {
-        //       echo "Running on: ${env.NODE_NAME}"
-        //       common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-        //                                 + " -DOM_USE_CCACHE=OFF"
-        //                                 + " -DCMAKE_INSTALL_PREFIX=build")
-        //       sh "build/bin/omc --version"
-        //     }
-        //     // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
-        //   }
-        // }
-        // stage('cmake-macos-arm64-gcc') {
-        //   agent {
-        //     node {
-        //       label 'M1'
-        //     }
-        //   }
-        //   when {
-        //     beforeAgent true
-        //     expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
-        //   }
-        //   steps {
-        //     script {
-        //       echo "Running on: ${env.NODE_NAME}"
-        //       withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
-        //         sh "echo PATH: $PATH"
-        //         common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-        //                                   + " -DOM_USE_CCACHE=OFF"
-        //                                   + " -DCMAKE_INSTALL_PREFIX=build"
-        //                                   // Look in /opt/local first to prefer the macports libraries
-        //                                   // over others in the system.
-        //                                   + " -DCMAKE_PREFIX_PATH=/opt/local"
-        //                                   // Always specify the compilers explicilty for macOS
-        //                                   + " -DCMAKE_C_COMPILER=gcc"
-        //                                   + " -DCMAKE_CXX_COMPILER=g++"
-        //                                   + " -DCMAKE_Fortran_COMPILER=gfortran"
-        //                               )
-        //         sh "build/bin/omc --version"
-        //       }
-        //     }
-        //   }
-        // }
-        // stage('cmake-OMDev-gcc') {
-        //   agent {
-        //     node {
-        //       label 'windows-no-release'
-        //     }
-        //   }
-        //   when {
-        //     beforeAgent true
-        //     expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
-        //   }
-        //   steps {
-        //     script {
-        //       echo "Running on: ${env.NODE_NAME}"
-        //       withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}}tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
-        //         bat "echo PATH: %PATH%"
-        //         common.cloneOMDev()
-        //         common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
-        //                                 + ' -DCMAKE_INSTALL_PREFIX=build'
-        //                                 + ' -G "MSYS Makefiles"'
-        //                               )
-        //       }
-        //     }
-        //   }
-        // }
-        // stage('checks') {
-        //   agent {
-        //     docker {
-        //       image 'docker.openmodelica.org/build-deps:v1.22.2'
-        //       label 'linux'
-        //       alwaysPull true
-        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-        //     }
-        //   }
-        //   steps {
-        //     script { common.standardSetup() }
-        //     // It's really bad if we mess up the repo and can no longer build properly
-        //     sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
-        //     // TODO: trailing-whitespace-error tab-error
-        //     sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
-        //     sh '''
-        //     cd doc/bibliography
-        //     mkdir -p openmodelica.org-bibgen
-        //     sh generate.sh "$PWD/openmodelica.org-bibgen"
-        //     '''
-        //     stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
-        //   }
-        // }
+        stage('cmake-jammy-gcc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value }
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                        + " -DOM_USE_CCACHE=OFF"
+                                        + " -DCMAKE_INSTALL_PREFIX=build")
+              sh "build/bin/omc --version"
+            }
+            // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+          }
+        }
+        stage('cmake-macos-arm64-gcc') {
+          agent {
+            node {
+              label 'M1'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableMacOSCMakeBuild_value}
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              withEnv (["PATH=/opt/homebrew/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/bin:${env.PATH}"]) {
+                sh "echo PATH: $PATH"
+                common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                          + " -DOM_USE_CCACHE=OFF"
+                                          + " -DCMAKE_INSTALL_PREFIX=build"
+                                          // Look in /opt/local first to prefer the macports libraries
+                                          // over others in the system.
+                                          + " -DCMAKE_PREFIX_PATH=/opt/local"
+                                          // Always specify the compilers explicilty for macOS
+                                          + " -DCMAKE_C_COMPILER=gcc"
+                                          + " -DCMAKE_CXX_COMPILER=g++"
+                                          + " -DCMAKE_Fortran_COMPILER=gfortran"
+                                      )
+                sh "build/bin/omc --version"
+              }
+            }
+          }
+        }
+        stage('cmake-OMDev-gcc') {
+          agent {
+            node {
+              label 'windows-no-release'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value && shouldWeEnableUCRTCMakeBuild_value}
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}}tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+                bat "echo PATH: %PATH%"
+                common.cloneOMDev()
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release'
+                                        + ' -DCMAKE_INSTALL_PREFIX=build'
+                                        + ' -G "MSYS Makefiles"'
+                                      )
+              }
+            }
+          }
+        }
+        stage('checks') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          steps {
+            script { common.standardSetup() }
+            // It's really bad if we mess up the repo and can no longer build properly
+            sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
+            // TODO: trailing-whitespace-error tab-error
+            sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
+            sh '''
+            cd doc/bibliography
+            mkdir -p openmodelica.org-bibgen
+            sh generate.sh "$PWD/openmodelica.org-bibgen"
+            '''
+            stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
+          }
+        }
       }
     }
     stage('tests') {
@@ -747,7 +746,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang')
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang', 'qt5')
             }
           }
         }

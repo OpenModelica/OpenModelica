@@ -38,14 +38,6 @@
 #include <QtGlobal>
 #include <QtTest/QtTest>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-#define OM_QTEST_ADD_GPU_BLACKLIST_SUPPORT_DEFS
-#define OM_QTEST_ADD_GPU_BLACKLIST_SUPPORT
-#else // #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-#define OM_QTEST_ADD_GPU_BLACKLIST_SUPPORT_DEFS = QTEST_ADD_GPU_BLACKLIST_SUPPORT_DEFS
-#define OM_QTEST_ADD_GPU_BLACKLIST_SUPPORT = QTEST_ADD_GPU_BLACKLIST_SUPPORT
-#endif // #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-
 #define OMEDITTEST_MAIN(TestObject) \
 static int execution_failed() \
 { \
@@ -55,7 +47,6 @@ static int execution_failed() \
   exit(1); \
 } \
 QT_BEGIN_NAMESPACE \
-OM_QTEST_ADD_GPU_BLACKLIST_SUPPORT_DEFS \
 QT_END_NAMESPACE \
 int main(int argc, char *argv[]) \
 { \
@@ -65,7 +56,6 @@ int main(int argc, char *argv[]) \
   OMEditApplication app(argc, argv, threadData, true); \
   app.setAttribute(Qt::AA_Use96Dpi, true); \
   QTEST_DISABLE_KEYPAD_NAVIGATION \
-  OM_QTEST_ADD_GPU_BLACKLIST_SUPPORT \
   TestObject tc; \
   QTEST_SET_MAIN_SOURCE_PATH \
   return QTest::qExec(&tc,argc, argv); \
