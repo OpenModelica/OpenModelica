@@ -349,7 +349,6 @@ def getQtMajorVersion(qtVersion) {
 
 void buildGUI(stash, qtVersion) {
   if (isWindows()) {
-    def qtMajorVersion = getQtMajorVersion(qtVersion)
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
@@ -361,7 +360,7 @@ void buildGUI(stash, qtVersion) {
      echo set -e
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients ${qtMajorVersion}
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients ${getQtMajorVersion(qtVersion)}
      echo echo Check that at least OMEdit can be started
      echo ./build/bin/OMEdit --help
      ) > buildGUIWindows.sh
@@ -396,7 +395,6 @@ void buildGUI(stash, qtVersion) {
 
 void buildAndRunOMEditTestsuite(stash, qtVersion) {
   if (isWindows()) {
-    def qtMajorVersion = getQtMajorVersion(qtVersion)
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
@@ -406,7 +404,7 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
      echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite ${qtMajorVersion}
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite OM_QT_MAJOR_VERSION=5
      echo export "APPDATA=\${PWD}/libraries"
      echo cd build/bin
      echo ./RunOMEditTestsuite.sh
