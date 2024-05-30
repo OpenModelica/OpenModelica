@@ -345,21 +345,9 @@ void buildGUI(stash, qtVersion) {
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=-j16
-     echo set -e
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
-     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients
-     echo echo Check that at least OMEdit can be started
-     echo ./build/bin/OMEdit --help
+     echo buildGUI
      ) > buildGUIWindows.sh
 
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
   """)
   } else {
 
@@ -391,20 +379,9 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
      echo on
      (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=-j16
-     echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
-     echo export "APPDATA=\${PWD}/libraries"
-     echo cd build/bin
-     echo ./RunOMEditTestsuite.sh
+     echo buildAndRunOMEditTestsuite
      ) > buildOMEditTestsuiteWindows.sh
 
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMEditTestsuiteWindows.sh && ./buildOMEditTestsuiteWindows.sh && rm -f ./buildOMEditTestsuiteWindows.sh"
   """)
   } else {
 

@@ -109,9 +109,6 @@ pipeline {
               withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
                 common.cloneOMDev()
-                common.buildOMC('cc', 'c++', '', true, false)
-                common.makeLibsAndCache()
-                common.buildOMSens()
                 common.buildGUI('', 'qt5')
                 common.buildAndRunOMEditTestsuite('', 'qt5')
               }
