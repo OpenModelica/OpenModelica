@@ -465,6 +465,11 @@ if not exist "%OMDEV%" (
   cd %OMDEV%
   git checkout master
   call SETUP_OMDEV.bat
+) else (
+  cd %OMDEV%
+  git reset --hard origin/master
+  git pull
+  call SETUP_OMDEV.bat
 )
 """)
 }
