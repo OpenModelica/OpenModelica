@@ -1640,11 +1640,17 @@ public
   function sizes_local
     input ComponentRef cref;
     output list<Integer> s_lst = {};
+  protected
+    Option<Integer> complex_size;
   algorithm
     s_lst := match cref
       case EMPTY() then {};
       case CREF() algorithm
+        complex_size := Type.complexSize(cref.ty);
         s_lst := list(Dimension.size(dim) for dim in Type.arrayDims(cref.ty));
+        if Util.isSome(complex_size) then
+          s_lst := Util.getOption(complex_size) :: s_lst;
+        end if;
         s_lst := if listEmpty(s_lst) then {1} else s_lst;
       then s_lst;
     end match;
