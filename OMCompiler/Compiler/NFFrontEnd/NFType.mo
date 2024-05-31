@@ -1358,8 +1358,9 @@ public
       case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions);
       case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
       case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
-      case COMPLEX()
+      case COMPLEX(complexTy = ComplexType.RECORD())
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
+      case COMPLEX() then 1;
       else 0;
     end match;
   end sizeOf;
@@ -1370,11 +1371,13 @@ public
     Non-complex types will return NONE()."
     input Type ty;
     output Option<Integer> sz;
+  protected
+    Class cls;
   algorithm
     sz := match ty
-      case ARRAY()    then complexSize(ty.elementType);
-      case COMPLEX()  then SOME(sizeOf(ty));
-                      else NONE();
+      case ARRAY()                                    then complexSize(ty.elementType);
+      case COMPLEX(complexTy = ComplexType.RECORD())  then SOME(sizeOf(ty));
+                                                      else NONE();
     end match;
   end complexSize;
 

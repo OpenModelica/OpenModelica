@@ -1117,11 +1117,8 @@ protected
     list<ComponentRef> inputs, outputs;
     EquationAttributes attr;
   algorithm
-    // ToDo! check if always DAE.EXPAND() can be used
-    // ToDo! export inputs
     size := sum(ComponentRef.size(out) for out in alg.outputs);
 
-    // can an algorithm output even be discrete?
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);
     elseif ComponentRef.listHasDiscrete(alg.outputs) then
