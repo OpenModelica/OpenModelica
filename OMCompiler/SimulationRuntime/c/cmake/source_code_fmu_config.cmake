@@ -47,10 +47,7 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
                                  ./simulation/options.c
                                  ./simulation/simulation_info_json.c
                                  ./simulation/simulation_omc_assert.c
-				 ./simulation/solver/dae_mode.c
-                                 ./simulation/solver/dassl.c
                                  ./simulation/solver/delay.c
-				 ./simulation/solver/external_input.c
                                  ./simulation/solver/fmi_events.c
                                  ./simulation/solver/model_help.c
                                  ./simulation/solver/omc_math.c

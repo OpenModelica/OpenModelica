@@ -133,10 +133,13 @@ modelica_boolean IDAflagIsSuccess(int flag) {
  * @param threadData  Thread data for error handling
  * @param solverInfo  Information about main solver. Unused at the moment.
  * @param idaData     IDA solver data.
+ * @param isFMI       True if called from inside FMU. Disable all optional
+ *                    features.
  * @return int        Returns 0 on success, aborts with throw on failure.
  */
 int ida_solver_initial(DATA* data, threadData_t *threadData,
-                       SOLVER_INFO* solverInfo, IDA_SOLVER* idaData)
+                       SOLVER_INFO* solverInfo, IDA_SOLVER* idaData,
+                       modelica_boolean isFMI)
 {
   /* Variables */
   int flag;
@@ -2062,7 +2065,7 @@ static int callSparseJacobian(double currentTime, double cj,
 #endif
 
   /* debug */
-#ifndef OMC_FMI_RUNTIME  
+#ifndef OMC_FMI_RUNTIME
   if (ACTIVE_STREAM(LOG_JAC)) {
     infoStreamPrint(LOG_JAC, 0, "##IDA## Sparse Matrix A.");
     SUNSparseMatrix_Print(Jac, stdout);
@@ -2116,7 +2119,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
 
     /*  choose the jacobian sparse vs. dense */
 
-#ifndef OMC_FMI_RUNTIME  
+#ifndef OMC_FMI_RUNTIME
     if (idaData->linearSolverMethod == IDA_LS_KLU)
     {
       if (idaData->NNZ < 0)
@@ -2156,7 +2159,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
   }
 
   /* set resScale factors */
-#ifndef OMC_FMI_RUNTIME 
+#ifndef OMC_FMI_RUNTIME
   _omc_fillVector(_omc_createVector(idaData->N,idaData->resScale), MINIMAL_SCALE_FACTOR);
   for (i=0; i<SM_INDEXPTRS_S(idaData->scaleMatrix)[idaData->N]; ++i) {
     if (idaData->resScale[SM_INDEXVALS_S(idaData->scaleMatrix)[i]] < fabs(SM_DATA_S(idaData->scaleMatrix)[i])) {

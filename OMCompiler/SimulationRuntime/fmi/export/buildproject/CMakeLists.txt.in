@@ -192,8 +192,6 @@ if(NOT ${SOLVER_NAME} STREQUAL "")
     message(STATUS "OMC_HAVE_IDA: true")
   endif()
   message(STATUS "${SOLVER_NAME}: ${SUNDIALS_NVSERIAL_LIBRARY} ${SUNDIALS_SOLVER_LIBRARY}")
-else()
-  message(STATUS "${SOLVER_NAME}: Not linked")
 endif()
 #------------------------------------------------------------------------------------------#
 

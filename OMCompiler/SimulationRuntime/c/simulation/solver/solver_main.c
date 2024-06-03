@@ -353,7 +353,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     /* Allocate ida working data */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing IDA DAE Solver");
     idaData = (IDA_SOLVER*) malloc(sizeof(IDA_SOLVER));
-    retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
+    retValue = ida_solver_initial(data, threadData, solverInfo, idaData, FALSE);
     solverInfo->solverData = idaData;
     break;
   }

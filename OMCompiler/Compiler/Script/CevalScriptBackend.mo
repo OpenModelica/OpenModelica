@@ -3512,7 +3512,7 @@ protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
   String quote, dquote, defaultFmiIncludeDirectoy;
-  String CC, CXX;
+  String CC;
   SimCodeFunction.MakefileParams makefileParams;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
@@ -3520,7 +3520,6 @@ algorithm
   quote := "'";
   dquote := if isWindows then "\"" else "'";
   CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
-  CXX := "-DCMAKE_CXX_COMPILER=" + dquote + System.basename(makefileParams.cxxcompiler) + dquote;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
@@ -3554,7 +3553,7 @@ algorithm
         end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
+                     CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3571,9 +3570,9 @@ algorithm
         if isWindows then
           CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
         end if;
-        buildDir := "build_cmake_dynamic";
+        buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
-                     CMAKE_BUILD_TYPE + " " + CC + " " + CXX +
+                     CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
