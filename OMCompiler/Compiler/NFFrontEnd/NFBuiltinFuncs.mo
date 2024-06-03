@@ -51,7 +51,6 @@ import Absyn.{Path, TypeSpec};
 import SCode;
 import SCode.{Mod, Comment};
 import DAE;
-import Builtin = NFBuiltin;
 import NFBinding;
 import Pointer;
 import NFPrefixes.Visibility;
@@ -475,6 +474,73 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
 
 constant ComponentRef CLOCK_CREF =
   ComponentRef.CREF(CLOCK_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+
+constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
+  "$OMC$PositiveMax",
+  SCode.defaultPrefixes,
+  SCode.Encapsulated.ENCAPSULATED(),
+  SCode.Partial.NOT_PARTIAL(),
+  SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.NO_PURITY())),
+  SCode.ClassDef.PARTS(
+    {
+      // input Real flowValue;
+      SCode.Element.COMPONENT(
+        "flowValue",
+        SCode.defaultPrefixes,
+        SCode.defaultInputAttr,
+        Absyn.TPATH(Absyn.IDENT("Real"), NONE()),
+        SCode.Mod.NOMOD(),
+        SCode.noComment,
+        NONE(),
+        AbsynUtil.dummyInfo
+      ),
+      // input Real eps;
+      SCode.Element.COMPONENT(
+        "eps",
+        SCode.defaultPrefixes,
+        SCode.defaultInputAttr,
+        Absyn.TPATH(Absyn.IDENT("Real"), NONE()),
+        SCode.Mod.NOMOD(),
+        SCode.noComment,
+        NONE(),
+        AbsynUtil.dummyInfo
+      ),
+      // output Real positiveMax;
+      SCode.Element.COMPONENT(
+        "positiveMax",
+        SCode.defaultPrefixes,
+        SCode.defaultOutputAttr,
+        Absyn.TPATH(Absyn.IDENT("Real"), NONE()),
+        SCode.Mod.NOMOD(),
+        SCode.noComment,
+        NONE(),
+        AbsynUtil.dummyInfo
+      )
+    },
+    {}, {},
+    // algorithm
+    {
+      SCode.AlgorithmSection.ALGORITHM({
+        // positiveMax := max(flowValue, eps);
+        SCode.Statement.ALG_ASSIGN(
+          Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("positiveMax", {})),
+          Absyn.Exp.CALL(Absyn.ComponentRef.CREF_IDENT("max", {}),
+            Absyn.FunctionArgs.FUNCTIONARGS({
+              Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("flowValue", {})),
+              Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("eps", {}))
+            }, {}),
+            {}
+          ),
+          SCode.noComment,
+          AbsynUtil.dummyInfo
+        )
+      })
+    },
+    {}, {}, {}, NONE()
+  ),
+  SCode.noComment,
+  AbsynUtil.dummyInfo
+);
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

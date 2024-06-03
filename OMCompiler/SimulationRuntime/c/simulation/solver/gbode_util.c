@@ -418,7 +418,7 @@ void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time
 {
   int nStates = gbData->nStates;
 
-  if (fabs(gbData->tv[1]-gbData->tv[0]) <= GBODE_EPSILON) {
+  if (fabs(gbData->tv[1]-gbData->tv[0]) <= GBODE_EPSILON || gbData->multi_rate) {
     addSmultVec_gb(nlsxExtrapolation, gbData->yv, gbData->kv, time - gbData->tv[0], nStates);
   } else {
     // this is actually extrapolation...

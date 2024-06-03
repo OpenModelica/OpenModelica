@@ -484,6 +484,9 @@ public
             case Equation.WHEN_EQUATION()
             then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map, equation_map);
 
+            case Equation.ALGORITHM()
+            then createAlgorithm(eqn, simCodeIndices, equation_map);
+
             case Equation.FOR_EQUATION()
             then createAlgorithm(eqn, simCodeIndices, equation_map);
 

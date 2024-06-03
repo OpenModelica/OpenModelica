@@ -48,6 +48,7 @@ public
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
   import NFBinding.Binding;
+  import Ceval = NFCeval;
   import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -221,6 +222,7 @@ public
         Pointer<Variable> varPointer;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
       case ComponentRef.CREF(node = InstNode.NAME_NODE())                       then Pointer.create(DUMMY_VARIABLE);
+      case ComponentRef.WILD()                                                  then Pointer.create(DUMMY_VARIABLE);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) +
         ", because of wrong InstNode (not VAR_NODE). Show lowering errors with -d=failtrace."});
@@ -1132,7 +1134,7 @@ public
     end match;
   end getBindingVariability;
 
-  function hasLiteralBinding extends checkVar;
+  function hasEvaluableBinding extends checkVar;
   protected
     Variable var;
     Expression binding;
@@ -1141,16 +1143,15 @@ public
     if isBound(var_ptr) then
       var := Pointer.access(var_ptr);
       binding := Binding.getExp(var.binding);
-      if Expression.isLiteral(binding) then
-        b := true;
-      else
+      b := Expression.isLiteral(binding);
+      if not b then
         // try to extract literal from array constructor
         (_, binding) := Iterator.extract(binding);
         binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
-        b := Expression.isLiteral(binding);
+        b := Expression.isLiteral(Ceval.tryEvalExp(binding));
       end if;
     end if;
-  end hasLiteralBinding;
+  end hasEvaluableBinding;
 
   function setFixed
     input output Pointer<Variable> var_ptr;
@@ -1159,7 +1160,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
-    var:= match var
+    var := match var
       local
         BackendExtension.BackendInfo binfo;
 

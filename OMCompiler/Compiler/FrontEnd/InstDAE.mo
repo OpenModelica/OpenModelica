@@ -236,27 +236,27 @@ algorithm
     case (vn,DAE.T_INTEGER(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
-      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     case (vn,DAE.T_REAL(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
-      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_REAL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_REAL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     case (vn,DAE.T_BOOL(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
-      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
     // BTH
     case (vn,DAE.T_CLOCK(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
-      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_CLOCK_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_CLOCK_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     case (vn,DAE.T_STRING(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
-      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_STRING_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_STRING_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     case (_,DAE.T_ENUMERATION(index = SOME(_)),_,_,_,_,_,_,_,_,_,_,_,_,_)
     then DAE.emptyDae;
@@ -267,14 +267,14 @@ algorithm
     case (vn,ty as DAE.T_ENUMERATION(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
-      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
      // complex type that is ExternalObject
     case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
        equation
          finst_dims = List.flatten(inst_dims);
       then
-      DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+      DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     // instantiation of complex type extending from basic type
     case (vn,DAE.T_SUBTYPE_BASIC(complexType = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
@@ -312,7 +312,7 @@ algorithm
       equation
         finst_dims = List.flatten(inst_dims);
       then
-        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     // MetaModelica extensions
     case (vn,tty as DAE.T_FUNCTION(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
@@ -321,7 +321,7 @@ algorithm
         path = ComponentReference.crefToPath(vn);
         tty.path = path;
       then
-        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,tty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,tty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     // MetaModelica extension
     case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
@@ -330,7 +330,7 @@ algorithm
         true = Types.isBoxedType(ty);
         finst_dims = List.flatten(inst_dims);
       then
-        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
     /*----------------------------*/
 
     else DAE.emptyDae;

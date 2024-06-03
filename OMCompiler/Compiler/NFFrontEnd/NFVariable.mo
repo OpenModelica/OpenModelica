@@ -321,7 +321,25 @@ public
 
   function isEncrypted
     input Variable variable;
-    output Boolean isEncrypted = StringUtil.endsWith(variable.info.fileName, ".moc");
+    output Boolean isEncrypted;
+  protected
+    ComponentRef name;
+    SourceInfo info;
+  algorithm
+    name := variable.name;
+
+    while ComponentRef.isCref(name) loop
+      info := InstNode.info(ComponentRef.node(name));
+
+      if StringUtil.endsWith(info.fileName, ".moc") then
+        isEncrypted := true;
+        return;
+      end if;
+
+      name := ComponentRef.rest(name);
+    end while;
+
+    isEncrypted := false;
   end isEncrypted;
 
   function isAccessible
@@ -417,24 +435,14 @@ public
   function removeNonTopLevelDirection
     "Removes input/output prefixes from a variable that's not a top-level
      component, a component in a top-level connector, or a component in a
-     top-level input component. exposeLocalIOs can be used to keep the direction
-     for variables at lower levels as well, where 0 means top-level, 1 the level
-     below that, and so on."
+     top-level input component."
     input output Variable var;
-    input Integer exposeLocalIOs;
   protected
     ComponentRef rest_name;
     InstNode node;
     Attributes attr;
   algorithm
     if var.attributes.direction == Direction.NONE then
-      return;
-    end if;
-
-    if exposeLocalIOs > 0 and
-       var.attributes.connectorType <> ConnectorType.NON_CONNECTOR and
-       var.visibility == Visibility.PUBLIC and
-       ComponentRef.depth(var.name) < exposeLocalIOs then
       return;
     end if;
 
@@ -566,22 +574,76 @@ public
     s := IOStream.append(s, Type.toFlatString(var.ty));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toFlatString(var.name));
-    s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, s);
 
-    if Binding.isBound(var.binding) then
+    if not listEmpty(var.typeAttributes) then
+      s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, s);
+    elseif not listEmpty(var.children) then
+      s := toFlatStreamModifier(var.children, Binding.isBound(var.binding), printBindingType, s);
+    end if;
+
+    s := toFlatStreamBinding(var.binding, printBindingType, s);
+    s := FlatModelicaUtil.appendComment(var.comment, NFFlatModelicaUtil.ElementType.COMPONENT, s);
+  end toFlatStream;
+
+  function toFlatStreamBinding
+    input Binding binding;
+    input Boolean printBindingType;
+    input output IOStream.IOStream s;
+  algorithm
+    if Binding.isBound(binding) then
       s := IOStream.append(s, " = ");
 
       if printBindingType then
         s := IOStream.append(s, "(");
-        s := IOStream.append(s, Type.toFlatString(Binding.getType(var.binding)));
+        s := IOStream.append(s, Type.toFlatString(Binding.getType(binding)));
         s := IOStream.append(s, ") ");
       end if;
 
-      s := IOStream.append(s, Binding.toFlatString(var.binding));
+      s := IOStream.append(s, Binding.toFlatString(binding));
     end if;
+  end toFlatStreamBinding;
 
-    s := FlatModelicaUtil.appendComment(var.comment, s);
-  end toFlatStream;
+  function toFlatStreamModifier
+    input list<Variable> children;
+    input Boolean overwrittenBinding;
+    input Boolean printBindingType;
+    input output IOStream.IOStream s;
+  protected
+    Boolean empty = true;
+    Boolean overwritten_binding;
+    IOStream.IOStream ss;
+  algorithm
+    for child in children loop
+      ss := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+
+      if not listEmpty(child.typeAttributes) then
+        ss := Component.typeAttrsToFlatStream(child.typeAttributes, child.ty, ss);
+      elseif not listEmpty(child.children) then
+        overwritten_binding := overwrittenBinding or Binding.isBound(child.binding);
+        ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, ss);
+      end if;
+
+      if not overwrittenBinding and Binding.source(child.binding) == NFBinding.Source.MODIFIER then
+        ss := toFlatStreamBinding(child.binding, printBindingType, ss);
+      end if;
+
+      if not IOStream.empty(ss) then
+        if empty then
+          s := IOStream.append(s, "(");
+          empty := false;
+        else
+          s := IOStream.append(s, ", ");
+        end if;
+
+        s := IOStream.append(s, Util.makeQuotedIdentifier(ComponentRef.firstName(child.name)));
+        s := IOStream.appendListStream(ss, s);
+      end if;
+    end for;
+
+    if not empty then
+      s := IOStream.append(s, ")");
+    end if;
+  end toFlatStreamModifier;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

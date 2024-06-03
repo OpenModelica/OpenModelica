@@ -89,7 +89,7 @@ double CController(double* err_values, double* stepSize_values, unsigned int err
 double IController(double* err_values, double* stepSize_values, unsigned int err_order)
 {
   double fac = 0.9;
-  double facmax = 3.5;
+  double facmax = 1.2;
   double facmin = 0.5;
   double beta = 1./(err_order+1);
 

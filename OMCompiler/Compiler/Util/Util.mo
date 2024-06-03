@@ -693,20 +693,6 @@ public function makeOptionOnTrue<T>
   annotation(__OpenModelica_EarlyInline = true);
 end makeOptionOnTrue;
 
-public function stringOption "author: PA
-  Returns string value or empty string from string option."
-  input Option<String> inStringOption;
-  output String outString;
-algorithm
-  outString:= match(inStringOption)
-    local
-      String s;
-
-    case SOME(s) then s;
-    else "";
-  end match;
-end stringOption;
-
 public function getOption<T>
   "Returns an option value if SOME, otherwise fails"
   input Option<T> inOption;

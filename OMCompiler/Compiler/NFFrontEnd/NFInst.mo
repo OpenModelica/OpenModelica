@@ -426,6 +426,7 @@ function makeTopNode
   input list<SCode.Element> annotationClasses;
   output InstNode topNode;
 protected
+  list<SCode.Element> top_classes;
   SCode.Element cls_elem, ann_package;
   Class cls, ann_cls;
   ClassTree elems;
@@ -433,11 +434,17 @@ protected
   InstNode ann_node;
   UnorderedMap<String, InstNode> generated_inners;
 algorithm
+  top_classes := topClasses;
+
+  if Flags.getConfigBool(Flags.BASE_MODELICA) then
+    top_classes := NFBuiltinFuncs.BASE_MODELICA_POSITIVE_MAX_SIMPLE :: top_classes;
+  end if;
+
   // Create a fake SCode.Element for the top scope, so we don't have to make the
   // definition in InstNode an Option only because of this node.
   cls_elem := SCode.CLASS("<top>", SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
     SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
-    SCode.PARTS(topClasses, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.PARTS(top_classes, {}, {}, {}, {}, {}, {}, NONE()),
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
@@ -469,7 +476,7 @@ algorithm
   topNode := InstNode.setNodeType(node_ty, topNode);
 
   // Create a new class from the elements, and update the inst node with it.
-  cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
+  cls := Class.fromSCode(top_classes, false, topNode, NFClass.DEFAULT_PREFIXES);
   // The class needs to be expanded to allow lookup in it. The top scope will
   // only contain classes, so we can do this instead of the whole expandClass.
   cls := Class.initExpandedClass(cls);
@@ -1912,6 +1919,12 @@ algorithm
           if not referenceEq(attr, ty_attr) then
             InstNode.componentApply(node, Component.setAttributes, ty_attr);
           end if;
+
+          if useBinding and Binding.isUnbound(binding) and not InstContext.inFunction(context) and
+             ty_attr.variability <= Variability.PARAMETER and Restriction.isType(res) then
+            updateParameterBinding(node, context);
+          end if;
+
         end if;
       then
         ();
@@ -2243,6 +2256,36 @@ algorithm
     fail();
   end if;
 end checkRecursiveDefinition;
+
+function updateParameterBinding
+  "Tries to update the binding of a fixed parameter without binding by using the
+   parameter's start attribute."
+  input InstNode node;
+  input InstContext.Type context;
+protected
+  Component comp;
+  Binding binding;
+algorithm
+  comp := InstNode.component(node);
+
+  if not Component.getFixedAttribute(comp) or InstNode.hasBinding(node) then
+    // If the parameter is not fixed or belongs to a record with a binding, do nothing.
+    return;
+  end if;
+
+  binding := Component.getTypeAttributeBinding(comp, "start");
+
+  if Binding.isBound(binding) and not Binding.hasTypeOrigin(binding) then
+    if not InstContext.inRelaxed(context) then
+      Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING,
+        {AbsynUtil.pathString(InstNode.scopePath((node))), Binding.toString(binding)}, InstNode.info(node));
+    end if;
+
+    binding := Binding.unpropagate(binding, node);
+    comp := Component.setBinding(binding, comp);
+    InstNode.updateComponent(comp, node);
+  end if;
+end updateParameterBinding;
 
 function instDimension
   input output Dimension dimension;

@@ -279,6 +279,7 @@ package SimCodeVar
       Option<Integer> fmi_index "index of variable in modelDescription.xml";
       list<String> numArrayElement;
       Boolean isValueChangeable;
+      Boolean isEncrypted;
       Boolean isProtected;
       Option<Boolean> hideResult;
       Option<String> matrixName;
@@ -766,7 +767,6 @@ package SimCode
   uniontype ModelInfo
     record MODELINFO
       Absyn.Path name;
-      String fileName;
       String description;
       String directory;
       VarInfo varInfo;
@@ -1433,11 +1433,6 @@ package SimCodeUtil
     input DAE.Exp exp;
     output DAE.Exp nom;
   end getExpNominal;
-
-  function isMocFile
-    input String fileName;
-    output Integer result;
-  end isMocFile;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -1659,12 +1654,17 @@ package BackendDAE
   end ZeroCrossing;
 
   uniontype SimIterator
-    record SIM_ITERATOR
+    record SIM_ITERATOR_RANGE
       DAE.ComponentRef name;
       Integer start;
       Integer step;
       Integer size;
-    end SIM_ITERATOR;
+    end SIM_ITERATOR_RANGE;
+    record SIM_ITERATOR_LIST
+      DAE.ComponentRef name;
+      list<Integer> lst;
+      Integer size;
+    end SIM_ITERATOR_LIST;
   end SimIterator;
 
   uniontype TimeEvent

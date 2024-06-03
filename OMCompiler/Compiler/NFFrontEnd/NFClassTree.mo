@@ -1171,6 +1171,66 @@ public
       end match;
     end foldComponents;
 
+    function findComponent
+      "Returns the first component for which the given function returns true."
+      input ClassTree tree;
+      input FuncT func;
+      output Option<InstNode> component = NONE();
+
+      partial function FuncT
+        input InstNode component;
+        output Boolean res;
+      end FuncT;
+    algorithm
+      () := match tree
+        case PARTIAL_TREE()
+          algorithm
+            for c in tree.components loop
+              if func(c) then
+                component := SOME(c);
+                break;
+              end if;
+            end for;
+          then
+            ();
+
+        case EXPANDED_TREE()
+          algorithm
+            for c in tree.components loop
+              if func(c) then
+                component := SOME(c);
+                break;
+              end if;
+            end for;
+          then
+            ();
+
+        case INSTANTIATED_TREE()
+          algorithm
+            for c in tree.components loop
+              if func(Mutable.access(c)) then
+                component := SOME(Mutable.access(c));
+                break;
+              end if;
+            end for;
+          then
+            ();
+
+        case FLAT_TREE()
+          algorithm
+            for c in tree.components loop
+              if func(c) then
+                component := SOME(c);
+                break;
+              end if;
+            end for;
+          then
+            ();
+
+        else ();
+      end match;
+    end findComponent;
+
     function classCount
       input ClassTree tree;
       output Integer count;

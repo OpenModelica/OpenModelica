@@ -125,6 +125,7 @@ algorithm
   end try;
 
   next_context := InstContext.set(context, NFInstContext.RELAXED);
+  next_context := InstContext.set(next_context, NFInstContext.FUNCTION);
   recordNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), recordNode);
   recordNode := Inst.instantiate(recordNode, context = next_context);
   Inst.instExpressions(recordNode, context = next_context);
@@ -363,9 +364,13 @@ function toFlatDeclarationStream
   input output IOStream.IOStream s;
 protected
   InstNode node;
+  InstNodeType node_ty;
 algorithm
+  node_ty := InstNode.nodeType(recordNode);
   node := instRecord(recordNode);
   Typing.typeClass(node, NFInstContext.RELAXED);
+  // Keep the node type from the original node to get the correct name.
+  node := InstNode.setNodeType(node_ty, node);
   s := IOStream.append(s, InstNode.toFlatString(node, indent));
 end toFlatDeclarationStream;
 

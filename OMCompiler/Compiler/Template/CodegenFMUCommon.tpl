@@ -475,6 +475,7 @@ template ScalarVariableAttribute2(SimVar simVar, SimCode simCode)
 ::=
 match simVar
   case SIMVAR(__) then
+  let name = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(Util.getOption(exportVar)),"$", "_D_"))
   let defaultValueReference = '<%System.tmpTick()%>'
   let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
@@ -484,7 +485,7 @@ match simVar
   let caus = getCausality2(causality)
   let initial = getFmiInitialAttributeStr(simVar)
   <<
-  name="<%System.stringReplace(crefStrNoUnderscore(Util.getOption(exportVar)),"$", "_D_")%>"
+  name="<%name%>"
   valueReference="<%valueReference%>"
   <%description%>
   <%if boolNot(stringEq(variability_, "")) then 'variability="'+variability_+'"' %>

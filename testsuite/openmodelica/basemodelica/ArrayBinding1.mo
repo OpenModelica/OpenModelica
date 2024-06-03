@@ -12,6 +12,7 @@ model ArrayBinding1
 end ArrayBinding1;
 
 // Result:
+// //! base 0.1.0
 // package 'ArrayBinding1'
 //   model 'ArrayBinding1'
 //     final parameter Real 'P' = 1.0;

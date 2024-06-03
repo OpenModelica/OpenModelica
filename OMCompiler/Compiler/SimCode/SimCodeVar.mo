@@ -102,6 +102,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     Boolean isValueChangeable;
     Boolean isProtected;
     Option<Boolean> hideResult;
+    Boolean isEncrypted;
     Option<array<Integer>> inputIndex;
     Boolean initNonlinear               "true if the variable is a nonlinear jacobian var";
     Option<String> matrixName           "if the varibale is a jacobian var, this is the corresponding matrix";

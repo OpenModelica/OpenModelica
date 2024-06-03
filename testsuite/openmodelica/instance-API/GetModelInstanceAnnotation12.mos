@@ -1,0 +1,115 @@
+// name: GetModelInstanceAnnotation12
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    annotation(Icon(graphics = {Rectangle(extent = {{1, 1}, {2, x}}), Text(textString = \"str\")}));
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"graphics\": [
+//         {
+//           \"$error\": \"[<interactive>:3:21-3:96:writable] Error: Variable x not found in scope M.\\n\",
+//           \"value\": {
+//             \"$kind\": \"call\",
+//             \"name\": \"Rectangle\",
+//             \"namedArgs\": {
+//               \"extent\": [
+//                 [
+//                   1,
+//                   1
+//                 ],
+//                 [
+//                   2,
+//                   \"x\"
+//                 ]
+//               ]
+//             }
+//           }
+//         },
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Text\",
+//           \"elements\": [
+//             true,
+//             [
+//               0,
+//               0
+//             ],
+//             0,
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"LinePattern.Solid\",
+//               \"index\": 2
+//             },
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"FillPattern.None\",
+//               \"index\": 1
+//             },
+//             0.25,
+//             [
+//               [
+//                 -10,
+//                 -10
+//               ],
+//               [
+//                 10,
+//                 10
+//               ]
+//             ],
+//             \"str\",
+//             0,
+//             [
+//               -1,
+//               -1,
+//               -1
+//             ],
+//             \"\",
+//             [
+//
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"TextAlignment.Center\",
+//               \"index\": 2
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//   },
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

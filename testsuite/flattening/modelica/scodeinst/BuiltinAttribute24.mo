@@ -1,4 +1,4 @@
-// name: BuiltinAttribute23
+// name: BuiltinAttribute24
 // keywords:
 // status: incorrect
 // cflags: -d=newInst

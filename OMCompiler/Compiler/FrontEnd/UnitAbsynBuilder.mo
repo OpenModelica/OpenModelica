@@ -626,7 +626,7 @@ algorithm
     case({},{},{},_) then {};
     case(i1::nums,i2::denoms,tpParam::tpstrs,_) equation
       typeParams = joinTypeParams(nums,denoms,tpstrs,funcInstIdOpt);
-      s = Util.stringOption(Util.applyOption(funcInstIdOpt,intString));
+      s = Util.applyOptionOrDefault(funcInstIdOpt, intString, "");
       tpParam = tpParam + s;
     then (MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,0))::typeParams;
   end match;

@@ -35,7 +35,7 @@ public
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Type = NFType;
-  import NFPrefixes.Variability;
+  import NFPrefixes.{Variability, Purity};
   import ErrorTypes;
   import Mutable;
   import Subscript = NFSubscript;
@@ -91,6 +91,7 @@ public
     Expression bindingExp;
     Type bindingType;
     Variability variability;
+    Purity purity;
     EachType eachType;
     Mutable<EvalState> evalState;
     Boolean isFlattened;
@@ -335,6 +336,7 @@ public
     Expression exp;
     Type ty;
     Variability var;
+    Purity purity;
     String field_name = InstNode.name(fieldNode);
   algorithm
     fieldBinding := match fieldBinding
@@ -348,9 +350,10 @@ public
         algorithm
           exp := Expression.recordElement(field_name, fieldBinding.bindingExp);
           ty := Expression.typeOf(exp);
+          purity := Expression.purity(exp);
           var := Expression.variability(exp);
         then
-          TYPED_BINDING(exp, ty, var, fieldBinding.eachType, fieldBinding.evalState,
+          TYPED_BINDING(exp, ty, var, purity, fieldBinding.eachType, fieldBinding.evalState,
                         fieldBinding.isFlattened, fieldBinding.source, fieldBinding.info);
 
       case FLAT_BINDING()
@@ -383,6 +386,16 @@ public
           fail();
     end match;
   end variability;
+
+  function purity
+    input Binding binding;
+    output Purity purity;
+  algorithm
+    purity := match binding
+      case TYPED_BINDING() then binding.purity;
+      else Purity.PURE;
+    end match;
+  end purity;
 
   function getInfo
     input Binding binding;
@@ -714,6 +727,7 @@ public
           bindingExp  = exp,
           bindingType = Expression.typeOf(exp),
           variability = Expression.variability(exp),
+          purity      = Expression.purity(exp),
           eachType    = EachType.NOT_EACH,
           evalState   = if Expression.isConstNumber(exp)
                         then Mutable.create(EvalState.EVALUATED)
@@ -788,6 +802,21 @@ public
     end match;
   end propagate;
 
+  function unpropagate
+    input output Binding binding;
+    input InstNode node;
+  algorithm
+    () := match binding
+      case RAW_BINDING()
+        algorithm
+          binding.subs := list(s for s guard not Subscript.isSplitFromOrigin(s, node) in binding.subs);
+        then
+          ();
+
+      else ();
+    end match;
+  end unpropagate;
+
   function source
     input Binding binding;
     output Source source;
@@ -810,7 +839,8 @@ public
     output Binding binding;
   algorithm
     binding := TYPED_BINDING(exp, Expression.typeOf(exp),
-      Expression.variability(exp), eachType, Mutable.create(state), false, source, info);
+      Expression.variability(exp), Expression.purity(exp),
+      eachType, Mutable.create(state), false, source, info);
   end makeTyped;
 
   function makeFlat
@@ -833,6 +863,19 @@ public
       else false;
     end match;
   end isEvaluated;
+
+  function hasTypeOrigin
+    input Binding binding;
+    output Boolean res;
+  algorithm
+    res := match binding
+      case RAW_BINDING()
+        guard not listEmpty(binding.subs)
+        then Subscript.isSplitClassProxy(listHead(binding.subs));
+
+      else false;
+    end match;
+  end hasTypeOrigin;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

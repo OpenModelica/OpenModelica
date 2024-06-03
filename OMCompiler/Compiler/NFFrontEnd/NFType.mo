@@ -123,13 +123,6 @@ public
   record ANY
   end ANY;
 
-  record SUBSCRIPTED
-    String name;
-    Type ty;
-    list<Type> subs;
-    Type subscriptedTy;
-  end SUBSCRIPTED;
-
   record CONDITIONAL_ARRAY
     "A type that might be one of two types depending on a condition.
      The two types are assumed to be array types with equal number of dimensions."
@@ -1030,43 +1023,6 @@ public
           s := IOStream.append(s, name);
         then s;
 
-      case SUBSCRIPTED()
-        algorithm
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "function ");
-          s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
-          s := IOStream.append(s, "\n");
-
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "  input ");
-          s := IOStream.append(s, toString(ty.ty));
-          s := IOStream.append(s, " exp;\n");
-
-          index := 1;
-          for sub in ty.subs loop
-            s := IOStream.append(s, indent);
-            s := IOStream.append(s, "  input ");
-            s := IOStream.append(s, toString(sub));
-            s := IOStream.append(s, " s");
-            s := IOStream.append(s, String(index));
-            s := IOStream.append(s, ";\n");
-            index := index + 1;
-          end for;
-
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "  output ");
-          s := IOStream.append(s, toString(ty.subscriptedTy));
-          s := IOStream.append(s, " result = exp[");
-          s := IOStream.append(s,
-            stringDelimitList(list("s" + String(i) for i in 1:listLength(ty.subs)), ","));
-          s := IOStream.append(s, "];\n");
-
-          s := IOStream.append(s, indent);
-          s := IOStream.append(s, "end ");
-          s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
-        then
-          s;
-
       else s;
     end match;
   end toFlatDeclarationStream;
@@ -1369,20 +1325,6 @@ public
     end if;
   end sizeType;
 
-  function subscriptedTypeName
-    input Type expType;
-    input list<Type> subscriptTypes;
-    output String str;
-  protected
-    list<String> strl;
-  algorithm
-    strl := list(toString(t) for t in subscriptTypes);
-    strl := "_" :: strl;
-    strl := toString(expType) :: strl;
-    strl := "subscript" :: strl;
-    str := stringAppendList(strl);
-  end subscriptedTypeName;
-
   function simplify
     input output Type ty;
   algorithm
@@ -1416,8 +1358,9 @@ public
       case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions);
       case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
       case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
-      case COMPLEX()
+      case COMPLEX(complexTy = ComplexType.RECORD())
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
+      case COMPLEX() then 1;
       else 0;
     end match;
   end sizeOf;
@@ -1428,11 +1371,13 @@ public
     Non-complex types will return NONE()."
     input Type ty;
     output Option<Integer> sz;
+  protected
+    Class cls;
   algorithm
     sz := match ty
-      case ARRAY()    then complexSize(ty.elementType);
-      case COMPLEX()  then SOME(sizeOf(ty));
-                      else NONE();
+      case ARRAY()                                    then complexSize(ty.elementType);
+      case COMPLEX(complexTy = ComplexType.RECORD())  then SOME(sizeOf(ty));
+                                                      else NONE();
     end match;
   end complexSize;
 

@@ -17,6 +17,7 @@ equation
 end Record1;
 
 // Result:
+// //! base 0.1.0
 // package 'Record1'
 //   record 'R'
 //     Real 'x';
@@ -25,11 +26,11 @@ end Record1;
 //   end 'R';
 //
 //   model 'Record1'
-//     'R' 'r1';
-//     'R' 'r2';
+//     'R' 'r1'('x'(start = 1.0) = 1.0, 'y'(start = 2.0));
+//     'R' 'r2'('x'(start = 3.0), 'y'(start = 4.0));
 //   equation
-//     'r1' = 'Record1.R'(0.0, 0.0, 3);
-//     'r2' = 'Record1.R'(0.0, 0.0, 3);
+//     'r1' = 'R'(0.0, 0.0, 3);
+//     'r2' = 'R'(0.0, 0.0, 3);
 //   end 'Record1';
 // end 'Record1';
 // endResult

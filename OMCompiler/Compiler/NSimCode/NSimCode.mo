@@ -48,7 +48,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
-  import FunctionTree = NFFlatten.FunctionTree;
+  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -97,16 +97,19 @@ public
       Integer integerVarIndex;
       Integer booleanVarIndex;
       Integer stringVarIndex;
+      Integer enumerationVarIndex;
 
       Integer realParamIndex;
       Integer integerParamIndex;
       Integer booleanParamIndex;
       Integer stringParamIndex;
+      Integer enumerationParamIndex;
 
       Integer realAliasIndex;
       Integer integerAliasIndex;
       Integer booleanAliasIndex;
       Integer stringAliasIndex;
+      Integer enumerationAliasIndex;
 
       Integer equationIndex;
       Integer linearSystemIndex;
@@ -149,9 +152,9 @@ public
   function EMPTY_SIM_CODE_INDICES
     output SimCodeIndices indices = SIM_CODE_INDICES(
       1,
-      0,0,0,0,
-      0,0,0,0,
-      0,0,0,0,
+      0,0,0,0,0,
+      0,0,0,0,0,
+      0,0,0,0,0,
       1,0,0,
       0,0,0,0,
       UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual),
@@ -238,6 +241,10 @@ public
         idx := idx + 1;
       end for;
       str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
+      if not listEmpty(simCode.literals) then
+        str := str + StringUtil.headline_3("Shared Literals");
+        str := str + List.toString(simCode.literals, Expression.toString, "", "  ", "\n  ", "\n\n");
+      end if;
       if not listEmpty(simCode.generic_loop_calls) then
         str := str + StringUtil.headline_3("Generic Calls");
         str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
@@ -270,14 +277,15 @@ public
           // old SimCode strcutures
           Absyn.Program program;
           list<String> libs, includes, includeDirs, libPaths;
-          String fileName, directory;
+          String directory;
           OldSimCodeFunction.MakefileParams makefileParams;
           list<OldSimCodeFunction.Function> functions;
           list<OldSimCodeFunction.RecordDeclaration> recordDecls;
-          //tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
           // New SimCode structures
           ModelInfo modelInfo;
           SimCodeIndices simCodeIndices;
+          UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+          Pointer<Integer> literals_idx = Pointer.create(0);
           list<Expression> literals;
           list<String> externalFunctionIncludes;
           list<SimGenericCall> generic_loop_calls;
@@ -296,10 +304,15 @@ public
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
-            algorithm
+          algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
             funcTree := BackendDAE.getFunctionTree(bdae);
+
+            // get and replace all literals
+            _ := EqData.mapExp(eqData, function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            funcTree := FunctionTreeImpl.mapExp(funcTree, function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            literals := UnorderedMap.keyList(literals_map);
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -310,7 +323,6 @@ public
             // create empty equation map and fill while creating the blocks
             equation_map := UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
 
-            literals := {};
             externalFunctionIncludes := {};
 
             independent := {};
@@ -396,12 +408,8 @@ public
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
             generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
-            try
-              Absyn.CLASS(info = SOURCEINFO(fileName = fileName)) := InteractiveUtil.getPathedClassInProgram(name, program);
-            else
-              fileName := "";
-            end try;
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
+
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -477,7 +485,7 @@ public
 
       oldSimCode := OldSimCode.SIMCODE(
         modelInfo                     = modelInfo,
-        literals                      = {}, // usally set by a traversal below...
+        literals                      = list(Expression.toDAE(lit) for lit in simCode.literals),
         recordDecls                   = simCode.recordDecls, // ToDo: convert this to new structures
         externalFunctionIncludes      = simCode.externalFunctionIncludes,
         generic_loop_calls            = list(SimGenericCall.convert(gc) for gc in simCode.generic_loop_calls),
@@ -571,7 +579,6 @@ public
   uniontype ModelInfo
     record MODEL_INFO
       Absyn.Path name;
-      String fileName;
       String description;
       String directory;
       SimVars vars;
@@ -600,7 +607,6 @@ public
     function create
       input SimVars vars;
       input Absyn.Path name;
-      input String fileName;
       input String directory;
       input list<OldSimCodeFunction.Function> functions;
       input list<SimStrongComponent.Block> linearLoops;
@@ -612,7 +618,7 @@ public
       VarInfo info;
     algorithm
       info := VarInfo.create(vars, eventInfo, simCodeIndices);
-      modelInfo := MODEL_INFO(name, fileName, "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
+      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
 
     function setSeedVars
@@ -641,7 +647,6 @@ public
       varInfo := VarInfo.convert(modelInfo.varInfo);
       oldModelInfo := OldSimCode.MODELINFO(
         name                            = modelInfo.name,
-        fileName                        = modelInfo.fileName,
         description                     = modelInfo.description,
         directory                       = modelInfo.directory,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),

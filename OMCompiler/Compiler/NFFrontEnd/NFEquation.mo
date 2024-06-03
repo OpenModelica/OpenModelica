@@ -1526,7 +1526,7 @@ public
       else IOStream.append(s, "#UNKNOWN EQUATION#");
     end match;
 
-    s := FlatModelicaUtil.appendElementSourceComment(source(eq), s);
+    s := FlatModelicaUtil.appendElementSourceComment(source(eq), NFFlatModelicaUtil.ElementType.EQUATION, s);
   end toFlatStream;
 
   function toFlatStreamList

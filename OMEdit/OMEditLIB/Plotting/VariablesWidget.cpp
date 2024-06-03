@@ -608,13 +608,14 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOpt
         // we need the following flag becasuse hideResult value can be empty.
         bool hideResultIsFalse = scalarVariable.value("hideResult").compare(QStringLiteral("false")) == 0;
         bool isProtected = scalarVariable.value("isProtected").compare(QStringLiteral("true")) == 0;
+        bool isEncrypted = scalarVariable.value("isEncrypted").compare(QStringLiteral("true")) == 0;
         /* Skip variables,
          *   1. If ignoreHideResult is not set and hideResult is true.
-         *   2. If emit protected flag is false and variable is protected OR if encrytped model.
+         *   2. If emit protected flag is false and variable is protected OR if variable belongs to an encrytped model.
          *      If hideResult is false for protected variable then we show it.
          */
         if ((ignoreHideResult || !hideResultIsTrue)
-            && ((protectedVariables && !simulationOptions.getFileName().endsWith(".moc")) || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
+            && ((protectedVariables && !isEncrypted) || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
           mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
           if (addVariablesToList) {
             variablesList->append(scalarVariable.value("name"));
@@ -1163,6 +1164,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
   scalarVariable["variability"] = attributes.value("variability").toString();
   scalarVariable["hideResult"] = attributes.value("hideResult").toString();
   scalarVariable["isProtected"] = attributes.value("isProtected").toString();
+  scalarVariable["isEncrypted"] = attributes.value("isEncrypted").toString();
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
   while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable")) {
@@ -1582,7 +1584,7 @@ void VariablesWidget::variablesUpdated()
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
     if (pPlotWindow) { // we can have an AnimateWindow there as well so always check
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-        if (pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+        if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
           QString curveNameStructure = pPlotCurve->getNameStructure();
           VariablesTreeItem *pVariableTreeItem;
           pVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
@@ -1597,7 +1599,7 @@ void VariablesWidget::variablesUpdated()
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
             pPlotCurve->detach();
           }
-        } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+        } else if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
           QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
           VariablesTreeItem *pXVariableTreeItem;
           pXVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
@@ -1654,13 +1656,13 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
     state = mpVariablesTreeModel->blockSignals(true);
     foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
       VariablesTreeItem *pVariablesTreeItem;
-      if (pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+      if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
         QString variable = pPlotCurve->getNameStructure();
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(variable, mpVariablesTreeModel->getRootVariablesTreeItem());
         if (pVariablesTreeItem) {
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
         }
-      } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+      } else if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
         // check the xvariable
         QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
@@ -1671,7 +1673,7 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
         if (pVariablesTreeItem)
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
-      } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
+      } else if (pPlotWindow->isPlotInteractive()) {
         QString variable = pPlotCurve->getNameStructure();
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(variable, mpVariablesTreeModel->getRootVariablesTreeItem());
         if (pVariablesTreeItem) {
@@ -1929,7 +1931,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
     // if the variable is not an array and
     // pPlotWindow is 0 or the plot's type is PLOTARRAY or PLOTARRAYPARAMETRIC
     // then create a new plot window.
-    if (!pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)) {
+    if (!pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->isPlotArray() || pPlotWindow->isPlotArrayParametric())) {
       bool checkedState = pVariablesTreeItem->isChecked();
       MainWindow::instance()->getPlotWindowContainer()->addPlotWindow();
       pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
@@ -1938,7 +1940,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
     // if the variable is an array and
     // pPlotWindow is 0 or the plot's type is PLOT or PLOTPARAMETRIC
     // then create a new plot window.
-    else if (pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)) {
+    else if (pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->isPlot() || pPlotWindow->isPlotParametric())) {
       bool checkedState = pVariablesTreeItem->isChecked();
       MainWindow::instance()->getPlotWindowContainer()->addArrayPlotWindow();
       pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
@@ -1950,7 +1952,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
       return;
     }
     // if plottype is PLOT or PLOTARRAY then
-    if (pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+    if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
       // check the item checkstate
       if (pVariablesTreeItem->isChecked()) {
         VariablesTreeItem *pVariablesTreeRootItem = pVariablesTreeItem;
@@ -1968,7 +1970,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setVariablesList(QStringList(pVariablesTreeItem->getPlotVariable()));
         pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
         pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
-        if (pPlotWindow->getPlotType() == PlotWindow::PLOT) {
+        if (pPlotWindow->isPlot()) {
           pPlotWindow->plot(pPlotCurve);
           /* Ticket:5839
            * Check the toggle sign of the curve and apply it in case of update.
@@ -1977,7 +1979,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotCurve->setToggleSign(false);
             pPlotWindow->toggleSign(pPlotCurve, true);
           }
-        } else {/* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY)*/
+        } else {/* i.e., pPlotWindow->isPlotArray() */
           double timePercent = mpTimeTextBox->text().toDouble();
           pPlotWindow->plotArray(timePercent, pPlotCurve);
         }
@@ -2028,7 +2030,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           }
         }
       }
-    } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) { // if plottype is PLOTPARAMETRIC or PLOTARRAYPARAMETRIC then
+    } else if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) { // if plottype is PLOTPARAMETRIC or PLOTARRAYPARAMETRIC then
       // check the item checkstate
       if (pVariablesTreeItem->isChecked()) {
         VariablesTreeItem *pVariablesTreeRootItem = pVariablesTreeItem;
@@ -2085,7 +2087,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setXDisplayUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.displayUnit));
             pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(plotParametricVariable.unit));
             pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
-            if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+            if (pPlotWindow->isPlotParametric()) {
               pPlotWindow->plotParametric(pPlotCurve);
               /* Ticket:5839
                * Check the toggle sign of the curve and apply it in case of update.
@@ -2094,7 +2096,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
                 pPlotCurve->setToggleSign(false);
                 pPlotWindow->toggleSign(pPlotCurve, true);
               }
-            } else { /* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/
+            } else { /* i.e., pPlotWindow->isPlotArrayParametric() */
               double timePercent = mpTimeTextBox->text().toDouble();
               pPlotWindow->plotArrayParametric(timePercent, pPlotCurve);
             }
@@ -2289,11 +2291,11 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
           }
           pPlotCurve->plotData();
           pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
-          if (!(pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)) {
+          if (!(pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric())) {
             break;
           }
         }
-        if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+        if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
           const QString xVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getXVariable());
           if (xVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
             for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
@@ -2364,15 +2366,14 @@ void VariablesWidget::updatePlotWindows()
     try {
       if (MainWindow::instance()->getPlotWindowContainer()->isPlotWindow(pSubWindow->widget())) {
         PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
-        PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
-        if (plotType == PlotWindow::PLOTARRAY || plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
+        if (pPlotWindow->isPlotArray() || pPlotWindow->isPlotArrayParametric()) {
           QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
           if (curves.isEmpty()) {
             if (!pPlotWindow->getFooter().isEmpty()) {
               pPlotWindow->setTime(time);
               pPlotWindow->updateTimeText();
             }
-          } else if (plotType == PlotWindow::PLOTARRAY) {
+          } else if (pPlotWindow->isPlotArray()) {
             foreach (PlotCurve* curve, curves) {
               QString varName = curve->getYVariable();
               pPlotWindow->setVariablesList(QStringList(varName));
@@ -2632,12 +2633,10 @@ void VariablesWidget::timeUnitChanged(QString unit)
     if (!pPlotWindow) {
       return;
     }
-    if (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY ||
-        pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+    if (pPlotWindow->isPlotArray() || pPlotWindow->isPlotArrayParametric()) {
       pPlotWindow->setTimeUnit(unit);
       pPlotWindow->updateTimeText();
-    } else if (pPlotWindow->getPlotType() == PlotWindow::PLOT ||
-               pPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
+    } else if (pPlotWindow->isPlot() || pPlotWindow->isPlotInteractive()) {
       OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
       pPlotWindow->setTimeUnit(unit);
       if (convertUnit.unitsCompatible) {

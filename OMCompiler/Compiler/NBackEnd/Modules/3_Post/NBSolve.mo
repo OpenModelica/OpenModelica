@@ -54,7 +54,7 @@ public
   import BackendUtil = NBBackendUtil;
   import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, SlicingStatus};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, WhenEquationBody, WhenStatement, SlicingStatus};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import BVariable = NBVariable;
   import Replacements = NBReplacements;
@@ -200,6 +200,8 @@ public
           list<Pointer<Equation>> rest, sliced_eqns = {};
           StrongComponent generic_comp;
           list<StrongComponent> entwined_slices = {};
+          Tearing strict;
+          list<StrongComponent> tmp, inner_comps = {};
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (eqn, funcTree, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree, systemType, implicit_index, slicing_map);
@@ -209,8 +211,13 @@ public
           (eqn, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(Pointer.access(comp.eqn), comp.vars, funcTree, systemType, implicit_index, slicing_map);
         then ({StrongComponent.MULTI_COMPONENT(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
 
-        case StrongComponent.ALGEBRAIC_LOOP() algorithm
-          // do we need to do smth here? e.g. solve inner equations? call tearing from here?
+        case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+          for inner_comp in listReverse(arrayList(strict.innerEquations)) loop
+            (tmp, funcTree, implicit_index) := solveStrongComponent(inner_comp, funcTree, systemType, implicit_index, slicing_map);
+            inner_comps := listAppend(tmp, inner_comps);
+          end for;
+          strict.innerEquations := listArray(inner_comps);
+          comp.strict := strict;
           comp.status := Status.IMPLICIT;
         then ({comp}, Status.IMPLICIT);
 
@@ -295,7 +302,7 @@ public
             // first solve all equation bodies accordingly
             for slice in comp.entwined_slices loop
               StrongComponent.SLICED_COMPONENT(var_cref = var_cref, eqn = eqn_slice) := slice;
-              (eqn, funcTree, solve_status, implicit_index, _):= solveEquation(Pointer.access(Slice.getT(eqn_slice)), var_cref, funcTree, systemType, implicit_index, slicing_map);
+              (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), var_cref, funcTree, systemType, implicit_index, slicing_map);
               Pointer.update(eqn_ptr, eqn);
             end for;
             replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
@@ -540,8 +547,8 @@ public
       else
         // If eqn is non-linear in cref
         if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cref: "
-            + ComponentRef.toString(fixed_cref) + " has to be solved implicitely in equation:\n" + Equation.toString(eqn)});
+          Error.addCompilerWarning(getInstanceName() + " cref: " + ComponentRef.toString(fixed_cref)
+            + " has to be solved implicitely in equation:\n" + Equation.toString(eqn));
         end if;
         invertRelation := false;
         status := Status.IMPLICIT;
@@ -583,7 +590,6 @@ public
     end if;
   end solveIfBody;
 
-protected
   function solveSimple
     input output Equation eqn;
     input ComponentRef cref;
@@ -598,14 +604,16 @@ protected
       case Equation.RECORD_EQUATION() then solveSimpleLhsRhs(eqn.lhs, eqn.rhs, cref, eqn);
 
       // ToDo: need to check if implicit
-      case Equation.WHEN_EQUATION() then (eqn, Status.EXPLICIT, false);
+      case Equation.WHEN_EQUATION() then solveSimpleWhen(eqn.body, cref, eqn);
 
       // ToDo: more cases
+      // ToDo: tuples, record elements, array constructors
 
       else (eqn, Status.UNPROCESSED, false);
     end match;
   end solveSimple;
 
+protected
   function solveSimpleLhsRhs
     input Expression lhs;
     input Expression rhs;
@@ -618,6 +626,7 @@ protected
       local
         ComponentRef checkCref;
         Expression exp;
+        list<Expression> elements;
 
       // always checks if exp is independent of cref!
 
@@ -657,9 +666,37 @@ protected
         guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
       then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(rhs), Expression.logicNegate(lhs)), Status.EXPLICIT, false);
 
+      // simple solve tuples
+      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (eqn, Status.EXPLICIT, false);
+      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, false);
+
       else (eqn, Status.UNPROCESSED, false);
     end match;
   end solveSimpleLhsRhs;
+
+  function solveSimpleWhen
+    input WhenEquationBody body;
+    input ComponentRef cref;
+    input Equation eqn;
+    output Equation eqnOut = eqn "don't change the equation";
+    output Status status;
+    output Boolean invertRelation = false;
+  algorithm
+    for stmt in body.when_stmts loop
+      status := match stmt
+        local
+          ComponentRef checkCref;
+        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = checkCref))
+          guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(stmt.rhs, cref))
+        then Status.EXPLICIT;
+        else Status.UNSOLVABLE;
+      end match;
+
+      if status == Status.EXPLICIT then
+        break;
+      end if;
+    end for;
+  end solveSimpleWhen;
 
   function solveLinear
     "author: kabdelhak, phannebohm
@@ -693,19 +730,17 @@ protected
     input list<Pointer<Variable>> vars;
     output Boolean b = false;
   protected
+    list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
     UnorderedMap<ComponentRef, Boolean> map;
-    function boolID
-      input output Boolean b;
-    end boolID;
   algorithm
-    if listLength(tuple_exps) == listLength(vars) then
+    if listLength(filtered_exps) == listLength(vars) then
       map := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
       // add all variables to solve for
       for var in vars loop
         UnorderedMap.add(BVariable.getVarName(var), false, map);
       end for;
       // set the map entry for all variables that occur to true
-      for exp in tuple_exps loop
+      for exp in filtered_exps loop
         _ := match exp
           case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
             UnorderedMap.add(exp.cref, true, map);
@@ -714,7 +749,7 @@ protected
         end match;
       end for;
       // check if all variables occured
-      b := List.all(UnorderedMap.valueList(map), boolID);
+      b := List.all(UnorderedMap.valueList(map), Util.id);
     end if;
   end tupleSolvable;
 

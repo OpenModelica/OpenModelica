@@ -1264,6 +1264,27 @@ public
     end match;
   end isSplitIndex;
 
+  function isSplitClassProxy
+    input Subscript sub;
+    output Boolean res;
+  algorithm
+    res := match sub
+      case SPLIT_PROXY() then InstNode.isClass(sub.origin);
+      else false;
+    end match;
+  end isSplitClassProxy;
+
+  function isSplitFromOrigin
+    input Subscript sub;
+    input InstNode origin;
+    output Boolean res;
+  algorithm
+    res := match sub
+      case SPLIT_PROXY() then InstNode.refEqual(origin, sub.origin);
+      else false;
+    end match;
+  end isSplitFromOrigin;
+
   function expandSplitIndices
     input list<Subscript> subs;
     input list<InstNode> indicesToKeep = {};

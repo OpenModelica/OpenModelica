@@ -1471,7 +1471,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->resultFileName = NULL;
     data->modelData->modelDir = "<%directory%>";
     data->modelData->modelGUID = "{<%guid%>}";
-    data->modelData->encrypted = <%SimCodeUtil.isMocFile(fileName)%>;
     <% match isModelExchangeFMU
     case "1.0" then
       <<
@@ -2078,7 +2077,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
-          data->modelData->samplesInfo[i].interval = <%e2%> /* (max int for single time events) */;
+          data->modelData->samplesInfo[i].interval = <%e2%> /* (max real for single time events) */;
           i++;
           >>
         else '')
@@ -4953,7 +4952,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) =>
+    case SOME(iter_) then (iter_ |> it =>
       forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
       ;separator="\n";empty)
     else ""
@@ -4964,7 +4963,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     else ""
   let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
   let forTail = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) => "}";separator="\n";empty)
+    case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
   match relation
   case exp as RELATION(__) then
@@ -5125,7 +5124,7 @@ template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> ite
 let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) =>
+    case SOME(iter_) then (iter_ |> it =>
       forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
       ;separator="\n";empty)
     else ""
@@ -5136,7 +5135,7 @@ let &preExp = buffer ""
     else ""
   let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
   let forTail = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) => "}";separator="\n";empty)
+    case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
   match relation
   case exp as RELATION(__) then
@@ -5244,9 +5243,9 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorU%>
       <%vectorY%>
       "\n"
-      <%getVarName(vars.stateVars, "x")%>
-      <%getVarName(vars.inputVars, "u")%>
-      <%getVarName(vars.outputVars, "y")%>
+      <%getVarNameC(vars.stateVars, "x")%>
+      <%getVarNameC(vars.inputVars, "u")%>
+      <%getVarNameC(vars.outputVars, "y")%>
       "equation\n"
       "  der(x) = A * x + B * u;\n"
       "  y = C * x + D * u;\n"
@@ -5275,10 +5274,10 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%vectorY%>
       <%vectorZ%>
       "\n"
-      <%getVarName(vars.stateVars, "x")%>
-      <%getVarName(vars.inputVars, "u")%>
-      <%getVarName(vars.outputVars, "y")%>
-      <%getVarName(vars.algVars, "z")%>
+      <%getVarNameC(vars.stateVars, "x")%>
+      <%getVarNameC(vars.inputVars, "u")%>
+      <%getVarNameC(vars.outputVars, "y")%>
+      <%getVarNameC(vars.algVars, "z")%>
       "equation\n"
       "  der(x) = A * x + B * u;\n"
       "  y = C * x + D * u;\n"
@@ -5416,17 +5415,18 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
   end match
 end functionlinearmodelPython;
 
-template getVarName(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a varables."
+template getVarNameC(list<SimVar> simVars, String arrayName)
+  "template getVarNameC
+   Generates name for a variable inside a C string."
 ::=
   simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
-      <<"  Real '<%arrayName%>_<%crefStrNoUnderscore(name)%>' = <%arrayName%>[<%arrindex%>];\n">>
+      <<"  Real '<%arrayName%>_<%Util.escapeModelicaStringToCString(escapeSingleQuoteIdent(crefStrNoUnderscore(name)))%>' = <%arrayName%>[<%arrindex%>];\n">>
     end match) ;separator="\n"
-end getVarName;
+end getVarNameC;
 
 template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a varables."
+  Generates name for a variable."
 ::=
   simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
@@ -5435,7 +5435,7 @@ template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getV
 end getVarNameMatlab;
 
 template getVarNamePython(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a variables."
+  Generates name for a variable."
 ::=
   simVars |> var hasindex arrindex fromindex 0 => (match var
     case SIMVAR(__) then
@@ -5444,7 +5444,7 @@ template getVarNamePython(list<SimVar> simVars, String arrayName) "template getV
 end getVarNamePython;
 
 template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVarName
-  Generates name for a varables."
+  Generates name for a variable."
 ::=
   simVars |> var hasindex arrindex fromindex 0 => (match var
     case SIMVAR(__) then
@@ -7438,33 +7438,53 @@ end genericBranch;
 
 template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
-  case SIM_ITERATOR() then
-  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-  <<
-  int <%iter_%>_loc = tmp % <%size%>;
-  int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
-  tmp /= <%size%>;
-  >>
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    int <%iter_%>_loc = tmp % <%size%>;
+    int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
+    tmp /= <%size%>;
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let arr = (lst |> elem => '<%elem%>'; separator=", ")
+    <<
+    static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
+    int <%iter_%>_loc = tmp % <%size%>;
+    int <%iter_%> = <%iter_%>_lst[<%iter_%>_loc];
+    tmp /= <%size%>;
+    >>
 end genericIterator;
 
 template forIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
-  case SIM_ITERATOR() then
-  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-  let rel = if intGt(step, 0) then "<" else ">"
-  let sign = if intGt(step, 0) then "+" else "-"
-  <<
-  for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%start%><%sign%><%size%>; <%iter_%>+=<%step%>){
-  >>
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let rel = if intGt(step, 0) then "<" else ">"
+    let sign = if intGt(step, 0) then "+" else "-"
+    <<
+    for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%start%><%sign%><%size%>; <%iter_%>+=<%step%>){
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
+      <%iter_%> = <%iter_%>_lst[<%iter_%>_];
+    >>
 end forIterator;
 
 template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
-  case SIM_ITERATOR() then
-  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-  <<
-  (<%iter_%>-<%start%>)/<%step%>+<%size%>*(
-  >>
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    (<%iter_%>-<%start%>)/<%step%>+<%size%>*(
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    <%iter_%>_+<%size%>*(
+    >>
 end forIteratorBody;
 
 template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)

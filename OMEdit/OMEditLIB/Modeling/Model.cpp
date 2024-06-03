@@ -641,12 +641,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("graphics")) {
-      if (jsonObject.value("graphics").isObject()) {
-        QJsonObject graphicsObject = jsonObject.value("graphics").toObject();
-        if (graphicsObject.contains("$error")) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
-        }
-      } else if (jsonObject.value("graphics").isArray()) {
+      if (jsonObject.value("graphics").isArray()) {
         QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
         for (int i = 0; i < graphicsArray.size(); ++i) {
           QJsonObject graphicObject = graphicsArray.at(i).toObject();
@@ -677,6 +672,8 @@ namespace ModelInstance
               pBitmap->deserialize(graphicObject.value("elements").toArray());
               mGraphics.append(pBitmap);
             }
+          } else if (graphicObject.contains("$error")) {
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
           }
         }
       }
@@ -1204,6 +1201,11 @@ namespace ModelInstance
     return getRootType() == QLatin1String("enumeration");
   }
 
+  bool Model::isRecord() const
+  {
+    return (mRestriction.compare(QStringLiteral("record")) == 0);
+  }
+
   bool Model::isType() const
   {
     return (mRestriction.compare(QStringLiteral("type")) == 0);
@@ -1367,6 +1369,11 @@ namespace ModelInstance
       return true;
     }
 
+    Model *lhs_model = lhs->getModel();
+    Model *rhs_model = rhs->getModel();
+
+    if (!lhs_model || !rhs_model) return true;
+
     auto lhs_outside = isOutsideConnector(lhsConnector, *this);
     auto rhs_outside = isOutsideConnector(rhsConnector, *this);
 
@@ -1375,11 +1382,6 @@ namespace ModelInstance
     }
 
     // Check that the connectors are type compatible.
-    Model *lhs_model = lhs->getModel();
-    Model *rhs_model = rhs->getModel();
-
-    if (!lhs_model || !rhs_model) return false;
-
     return lhs_model->isTypeCompatibleWith(*rhs_model, lhs_outside, rhs_outside);
   }
 

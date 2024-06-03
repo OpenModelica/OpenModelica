@@ -1161,8 +1161,11 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  // create a folder with model name to dump the files in it.
-  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getNameStructure());
+  /*
+   * create a folder with hashed string from model name
+   * see https://github.com/OpenModelica/OpenModelica/issues/12171, to have short temp directory path and dump the files in it.
+  */
+  QString modelDirectoryPath = QString("%1/%2%3").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getName(), Utilities::generateHash(pLibraryTreeItem->getNameStructure()));
   if (!QDir().exists(modelDirectoryPath)) {
     QDir().mkpath(modelDirectoryPath);
   }
@@ -1669,10 +1672,9 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     if (!fileInfo.exists()) return;
     OMPlot::PlotWindow *pPlotWindow = pMainWindow->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow && !externalWindow) {
-      if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOT && strcmp(plotType, "plotparametric") == 0) {
+      if (pPlotWindow->isPlot() && strcmp(plotType, "plotparametric") == 0) {
         pMainWindow->getPlotWindowContainer()->addParametricPlotWindow();
-      } else if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOTPARAMETRIC &&
-                 ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0))) {
+      } else if (pPlotWindow->isPlotParametric() && ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0))) {
         pMainWindow->getPlotWindowContainer()->addPlotWindow();
       }
     } else if (externalWindow || pMainWindow->getPlotWindowContainer()->subWindowList().size() == 0) {
@@ -4779,7 +4781,7 @@ void MainWindow::switchToPlottingPerspective()
   mpModelSwitcherToolButton->setEnabled(false);
   // if no plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
-    mpPlotWindowContainer->addPlotWindow(true);
+    mpPlotWindowContainer->addPlotWindow();
   }
   if (pModelWidget) {
     mpPlotWindowContainer->showDiagramWindow(pModelWidget);

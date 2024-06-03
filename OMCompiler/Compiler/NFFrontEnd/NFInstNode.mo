@@ -751,7 +751,7 @@ uniontype InstNode
   algorithm
     topScope := match node
       case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
-      else topScope(parentScope(node));
+      else topScope(parent(node));
     end match;
   end topScope;
 

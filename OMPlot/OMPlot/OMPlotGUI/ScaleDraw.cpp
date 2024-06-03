@@ -38,10 +38,13 @@
 
 using namespace OMPlot;
 
-ScaleDraw::ScaleDraw(Plot *pParent)
+ScaleDraw::ScaleDraw(bool prefixLabel, Plot *pParent)
   : QwtScaleDraw()
 {
+  mPrefixLabel = prefixLabel;
   mpParentPlot = pParent;
+  mUnitPrefix = "";
+  mExponent = 0;
 }
 
 /*!
@@ -53,5 +56,13 @@ ScaleDraw::ScaleDraw(Plot *pParent)
  */
 QwtText ScaleDraw::label(double value) const
 {
+  mUnitPrefix = "";
+  mExponent = 0;
+
+  if (mpParentPlot->getParentPlotWindow()->getPrefixUnits() && mPrefixLabel && !mpParentPlot->getPlotCurvesList().isEmpty()
+      && !mpParentPlot->getParentPlotWindow()->isPlotParametric() && !mpParentPlot->getParentPlotWindow()->isPlotArrayParametric()) {
+    Plot::getUnitPrefixAndExponent(scaleDiv().lowerBound(), scaleDiv().upperBound(), mUnitPrefix, mExponent);
+    value = value / qPow(10, mExponent);
+  }
   return QLocale().toString(value, 'g', 4);
 }
