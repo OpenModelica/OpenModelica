@@ -698,7 +698,7 @@ algorithm
     node := Inst.instPackage(node, context);
 
     // allow lookup in partial nodes if -d=nfAPI is on
-    if InstNode.isPartial(node) and not InstContext.inRelaxed(context) then
+    if InstNode.isPartial(node) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
@@ -767,7 +767,7 @@ algorithm
     // PartialModelicaServices is mistakenly partial in MSL versions older than
     // 3.2.3. We can't just check for Modelica 3.2 since that will break e.g. 3.2.2,
     // so just disable the check specifically for PartialModelicaServices instead.
-    if InstNode.isPartial(node) and not InstContext.inRelaxed(context) and
+    if InstNode.isPartial(node) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) and
        not InstNode.name(node) == "PartialModelicaServices" then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
@@ -974,7 +974,7 @@ algorithm
   if scope_is_class then
     scope := Inst.instPackage(node, context);
 
-    if InstNode.isPartial(scope) and not InstContext.inRelaxed(context) then
+    if InstNode.isPartial(scope) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
