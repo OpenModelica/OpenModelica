@@ -288,6 +288,10 @@ public
     String err_str;
     Adjacency.Mapping mapping;
     Option<array<tuple<Integer, Integer>>> var_opt, eqn_opt;
+    array<list<Integer>> msss;
+    VariablePointers states;
+    EquationPointers constraints;
+    Integer msss_idx = 1;
   algorithm
     (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if not listEmpty(unmatched_vars) then
@@ -299,20 +303,22 @@ public
         + intString(sum(Slice.size(e, Equation.size) for e in unmatched_eqns)) + ") Unmatched Equations")
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
       if Flags.isSet(Flags.BLT_DUMP) then
-        if Util.isSome(mapping_opt) then
-          mapping := Util.getOption(mapping_opt);
-          var_opt := SOME(mapping.var_AtS);
-          eqn_opt := SOME(mapping.eqn_AtS);
-        else
-          var_opt := NONE();
-          eqn_opt := NONE();
-        end if;
-        err_str := err_str + " \n" + StringUtil.headline_4("(" + intString(listLength(matched_vars)) + ") Matched Variables")
-          + List.toString(matched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-          + StringUtil.headline_4("(" + intString(listLength(matched_eqns)) + ") Matched Equations")
-          + List.toString(matched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-          + VariablePointers.toString(variables, "All ", var_opt) + "\n" + EquationPointers.toString(equations, "All ", eqn_opt) + "\n"
-          + Matching.toString(matching);
+        // get the minimally structurally singular subset
+        msss := match adj
+          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching);
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
+              + Adjacency.Matrix.toString(adj)});
+          then fail();
+        end match;
+
+        for marked_eqns in msss loop
+          (constraints, states,_ , _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+          err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
+            + EquationPointers.toString(constraints, "Constraint")
+            + VariablePointers.toString(states, "State");
+          msss_idx := msss_idx + 1;
+        end for;
       end if;
       Error.addMessage(Error.INTERNAL_ERROR,{err_str});
       fail();
@@ -473,7 +479,6 @@ protected
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
   algorithm
-    print("updating eqn " + intString(eqn) + " with color " + intString(color) + "\n");
     arrayUpdate(eqn_coloring, eqn, color);
     for var in m[eqn] loop
       if var_coloring[var] == -1 then
@@ -601,10 +606,22 @@ protected
     input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
   protected
     Pointer<Variable> var;
+    function getStateCandidateVar
+      input Pointer<Variable> var;
+      input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
+    algorithm
+      if (BVariable.isContinuous(var) and not BVariable.isTime(var)) then
+        UnorderedSet.add(BVariable.getVarName(var), acc);
+      end if;
+    end getStateCandidateVar;
   algorithm
     var := BVariable.getVarPointer(cref);
-    if (BVariable.isContinuous(var) and not BVariable.isTime(var)) then
-      UnorderedSet.add(cref, acc);
+    if BVariable.isRecord(var) then
+      for child in BVariable.getRecordChildren(var) loop
+        getStateCandidateVar(child, acc);
+      end for;
+    else
+      getStateCandidateVar(var, acc);
     end if;
   end getStateCandidate;
 

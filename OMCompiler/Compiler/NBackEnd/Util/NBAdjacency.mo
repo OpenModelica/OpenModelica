@@ -1559,6 +1559,8 @@ public
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     input UnorderedSet<ComponentRef> rep_set;
     output UnorderedSet<ComponentRef> occurences;
+  protected
+    list<ComponentRef> inputs, outputs;
   algorithm
     occurences := match eqn
       local
@@ -1582,13 +1584,16 @@ public
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.ALGORITHM() algorithm
+        // collect all crefs expanding potential records
+        inputs  := List.flatten(list(collectDependenciesCref(c, map, dep_map, sol_map) for c in eqn.alg.inputs));
+        outputs := List.flatten(list(collectDependenciesCref(c, map, dep_map, sol_map) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
-        Dependency.addListFull(eqn.alg.inputs, dep_map, rep_set);
-        Dependency.addListFull(eqn.alg.outputs, dep_map, rep_set);
-        // make inputs unsolvable and outputs solvable
-        Solvability.updateList(eqn.alg.inputs, Solvability.UNSOLVABLE(), sol_map);
-        Solvability.updateList(eqn.alg.outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
-      then UnorderedSet.fromList(listAppend(eqn.alg.inputs, eqn.alg.outputs), ComponentRef.hash, ComponentRef.isEqual);
+        Dependency.addListFull(inputs, dep_map, rep_set);
+        Dependency.addListFull(outputs, dep_map, rep_set);
+        // make inputs unsolvable and outputs solvable (maybe check if algorithm can be reversed)
+        Solvability.updateList(inputs, Solvability.UNSOLVABLE(), sol_map);
+        Solvability.updateList(outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
+      then UnorderedSet.fromList(listAppend(inputs, outputs), ComponentRef.hash, ComponentRef.isEqual);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
         // gather solvables from body
