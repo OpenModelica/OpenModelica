@@ -579,7 +579,7 @@ const char* SystemImpl__basename(const char *str)
  *
  * @param cmd       Command to execute.
  * @param outFile   Path to output file, can be NULL.
- * @return int      Return 0 on success, 1 on failure.
+ * @return int      Return exit code of process running command cmd.
  */
 int runProcess(const char* cmd, const char* outFile)
 {
@@ -587,44 +587,61 @@ int runProcess(const char* cmd, const char* outFile)
   PROCESS_INFORMATION processInfo;
   SECURITY_ATTRIBUTES securityAttributes;
   HANDLE logFileHandle = NULL;
-  wchar_t* unicodeOutFile = NULL;
-  char *terminal = "cmd /c";
-  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(terminal) + 4);
   DWORD exitCode = 1;
 
-  ZeroMemory(&startupInfo, sizeof(startupInfo));
-  ZeroMemory(&processInfo, sizeof(processInfo));
-
-  startupInfo.cb = sizeof(startupInfo);   // Size of struct in bytes
-  if (*outFile) {
-    unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
-    securityAttributes.nLength = sizeof(securityAttributes);
-    securityAttributes.lpSecurityDescriptor = NULL;
-    securityAttributes.bInheritHandle = TRUE;
-    logFileHandle = CreateFileW(unicodeOutFile,
-                    FILE_APPEND_DATA,
-                    FILE_SHARE_WRITE | FILE_SHARE_READ,
-                    &securityAttributes,
-                    OPEN_ALWAYS,
-                    FILE_ATTRIBUTE_NORMAL,
-                    NULL);
-    startupInfo.dwFlags |= STARTF_USESTDHANDLES;  // Additional handles in hStdInput, hStdOutput and hStdError elements
-    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-    startupInfo.hStdError = logFileHandle;
-    startupInfo.hStdOutput = logFileHandle;
-  }
-
+  // Build command
+  char* command = NULL;
+  wchar_t* unicodeCommand = NULL;
+  wchar_t* unicodeOutFile = NULL;
+  char* terminal = "cmd /c";
+  command = (char*) calloc(sizeof(char), strlen(cmd) + strlen(terminal) + 4);
   sprintf(command, "%s \"%s\"", terminal, cmd);
-  wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
+  unicodeCommand = omc_multibyte_to_wchar_str(command);
   //printf("unicodeCommand: %ls\n", unicodeCommand);
 
-  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
+  if (*outFile)
   {
+    unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
+    logFileHandle = CreateFileW(unicodeOutFile,
+                                FILE_APPEND_DATA,
+                                FILE_SHARE_WRITE | FILE_SHARE_READ,
+                                &securityAttributes,
+                                OPEN_ALWAYS,
+                                FILE_ATTRIBUTE_NORMAL,
+                                NULL);
+  }
+
+  ZeroMemory( &startupInfo, sizeof(startupInfo) );
+  ZeroMemory( &processInfo, sizeof(processInfo) );
+
+  securityAttributes.nLength = sizeof(securityAttributes);
+  securityAttributes.lpSecurityDescriptor = NULL;
+  securityAttributes.bInheritHandle = TRUE;
+
+  startupInfo.cb         = sizeof(startupInfo);   // Size of struct in bytes
+  startupInfo.dwFlags    |= STARTF_USESTDHANDLES; // Additional handles in hStdInput, hStdOutput and hStdError elements
+  startupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+  startupInfo.hStdError  = logFileHandle;
+  startupInfo.hStdOutput = logFileHandle;
+
+  BOOL bSuccess = CreateProcessW(NULL,
+    unicodeCommand,
+    NULL,
+    NULL,
+    TRUE,
+    CREATE_NO_WINDOW,
+    NULL,
+    NULL,
+    &startupInfo,
+    &processInfo);
+  if (bSuccess) {
     WaitForSingleObject(processInfo.hProcess, INFINITE);
     // Get the exit code.
     GetExitCodeProcess(processInfo.hProcess, &exitCode);
     CloseHandle(processInfo.hProcess);
     CloseHandle(processInfo.hThread);
+  } else {
+    printf("Error: Failed to create proccess: %ls", unicodeCommand);
   }
   if (logFileHandle) {
     CloseHandle(logFileHandle);
@@ -632,7 +649,7 @@ int runProcess(const char* cmd, const char* outFile)
 
   free(unicodeOutFile);
   free(unicodeCommand);
-  GC_free(command);
+  free(command);
   return (int)exitCode;
 }
 #endif
