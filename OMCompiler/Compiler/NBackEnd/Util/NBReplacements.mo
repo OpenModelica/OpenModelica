@@ -200,7 +200,7 @@ public
           // try to strip the subscripts and see if that cref occurs
           stripped := ComponentRef.stripSubscriptsAll(exp.cref);
           if UnorderedMap.contains(stripped, replacements) then
-            subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
+            subs  := ComponentRef.subscriptsAllFlat(exp.cref);
             res   := UnorderedMap.getOrFail(stripped, replacements);
             res   := Expression.applySubscripts(subs, res);
           else
