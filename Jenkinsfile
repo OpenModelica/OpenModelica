@@ -171,6 +171,32 @@ pipeline {
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
           }
         }
+        stage('cmake-jammy-gcc-qt6') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeDisableAllCMakeBuilds_value }
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                        + " -DOM_QT_MAJOR_VERSION=6"
+                                        + " -DOM_USE_CCACHE=OFF"
+                                        + " -DCMAKE_INSTALL_PREFIX=build")
+              sh "build/bin/omc --version"
+            }
+            // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+          }
+        }
         stage('cmake-macos-arm64-gcc') {
           agent {
             node {
