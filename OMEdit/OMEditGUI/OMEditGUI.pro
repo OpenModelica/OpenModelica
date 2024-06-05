@@ -90,5 +90,3 @@ DESTDIR = ../bin
 ICON = ../OMEditLIB/Resources/icons/omedit.icns
 
 QMAKE_INFO_PLIST = Info.plist
-
-HEADERS +=
