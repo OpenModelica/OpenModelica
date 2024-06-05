@@ -653,7 +653,7 @@ public
       // ALGEBRAIC => STATE_DER
       // make y a state and add new STATE_DER
       case (Expression.CREF(), DifferentiationType.TIME, _)
-        guard(BVariable.isContinuous(var_ptr))
+        guard(BVariable.isContinuous(var_ptr, false))
         algorithm
           // create derivative
           (derCref, der_ptr) := BVariable.makeDerVar(exp.cref);
@@ -780,7 +780,7 @@ public
             (arg, inp) := tpl;
             // do not check for continuous if it is for functions (differentiating a function inside a function)
             // crefs are not lowered there! assume it is continuous
-            isCont := (diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg);
+            isCont := (diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg, false);
             isReal := Type.isReal(Type.arrayElementType(Expression.typeOf(arg))); // ToDo also records
             if not (isCont and isReal) then
               // add to map; if it is not Real also already set to true (always removed from interface)

@@ -709,6 +709,7 @@ public
       input VariablePointers vars                    "all variables";
       input EquationPointers eqns                    "all equations";
       input UnorderedSet<ComponentRef> vars_set      "context variables to determine solvability";
+      input Boolean init                             "true if initial";
     algorithm
       full := match full
         local
@@ -735,7 +736,7 @@ public
                 if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
                   eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
                   // booleans or (todo: enumerations)
-                  if Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or not BVariable.checkCref(var, BVariable.isContinuous) then
+                  if Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or not BVariable.checkCref(var, function BVariable.isContinuous(init = init)) then
                     // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);

@@ -1759,7 +1759,7 @@ public
         then fail();
       end match;
 
-      if BVariable.isContinuous(var_ptr) then
+      if BVariable.isContinuous(var_ptr, initial_) then
         eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_);
       else
         eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);

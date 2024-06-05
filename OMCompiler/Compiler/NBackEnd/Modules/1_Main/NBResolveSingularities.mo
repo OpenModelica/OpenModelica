@@ -610,7 +610,7 @@ protected
       input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
     algorithm
-      if (BVariable.isContinuous(var) and not BVariable.isTime(var)) then
+      if (BVariable.isContinuous(var, false) and not BVariable.isTime(var)) then
         UnorderedSet.add(BVariable.getVarName(var), acc);
       end if;
     end getStateCandidateVar;
