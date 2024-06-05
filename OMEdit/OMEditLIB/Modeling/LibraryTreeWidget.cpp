@@ -56,6 +56,10 @@
 #include <QMessageBox>
 #include <QMenu>
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#include <QScreen>
+#endif // QT_VERSION_CHECK
+
 /*!
  * \class LibraryTreeItem
  * \brief Contains the information about the Modelica class.
