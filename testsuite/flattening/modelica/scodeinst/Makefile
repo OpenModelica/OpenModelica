@@ -951,6 +951,7 @@ ParameterBug.mos \
 ParameterDer.mo \
 PartialApplication1.mo \
 PartialApplication2.mo \
+PartialApplication3.mo \
 PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \

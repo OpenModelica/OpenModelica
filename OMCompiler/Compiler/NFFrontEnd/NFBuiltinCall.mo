@@ -339,7 +339,7 @@ protected
     input SourceInfo info;
   algorithm
     if not listEmpty(namedArgs) then
-      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+      Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
         {fnName, Util.tuple21(listHead(namedArgs))}, info);
       fail();
     end if;
@@ -1468,7 +1468,7 @@ protected
       if name == "priority" then
         args := List.appendElt(arg2, args);
       else
-        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        Error.addSourceMessageAndFail(Error.NO_SUCH_INPUT_PARAMETER,
           {ComponentRef.toString(fn_ref), name}, info);
       end if;
     end for;
@@ -1613,7 +1613,7 @@ protected
       if name == "message" then
         args := List.appendElt(arg2, args);
       else
-        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        Error.addSourceMessageAndFail(Error.NO_SUCH_INPUT_PARAMETER,
           {ComponentRef.toString(fn_ref), name}, info);
       end if;
     end for;
@@ -1686,7 +1686,7 @@ protected
       if name == "message" then
         args := List.appendElt(arg3, args);
       else
-        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        Error.addSourceMessageAndFail(Error.NO_SUCH_INPUT_PARAMETER,
           {ComponentRef.toString(fn_ref), name}, info);
       end if;
     end for;
