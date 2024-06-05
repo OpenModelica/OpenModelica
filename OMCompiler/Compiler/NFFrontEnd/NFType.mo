@@ -299,6 +299,12 @@ public
     end match;
   end isClock;
 
+  function isContinuous
+    "update for records?"
+    input Type ty;
+    output Boolean b = isReal(elementType(ty));
+  end isContinuous;
+
   function isScalar
     input Type ty;
     output Boolean isScalar;

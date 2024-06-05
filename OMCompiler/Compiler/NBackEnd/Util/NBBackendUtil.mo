@@ -240,18 +240,20 @@ public
 
   function isContinuous
     input Expression exp;
+    input Boolean init;
     output Boolean b;
   algorithm
-    b := Expression.fold(exp, isContinuousFold, true);
+    b := Expression.fold(exp, function isContinuousFold(init = init), true);
   end isContinuous;
 
   function isContinuousFold
     input Expression exp;
+    input Boolean init;
     input output Boolean b;
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then BVariable.checkCref(exp.cref, BVariable.isContinuous);
+        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(init = init));
         else true;
       end match;
     end if;

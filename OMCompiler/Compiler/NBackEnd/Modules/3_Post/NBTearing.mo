@@ -294,7 +294,7 @@ protected
         e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in eqns_lst));
 
         // refining the adjacency matrix by updating solvability information using differentiation
-        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set);
+        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set, systemType == NBSystem.SystemType.INI);
         comp.linear       := checkLinearity(full, v, e);
       then (comp, full, index);
       else (comp, full, index);
@@ -335,7 +335,8 @@ protected
           equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
           comps     = arrayAppend(strict.innerEquations,listArray(residual_comps)),
           funcTree  = funcTree,
-          name      = System.System.systemTypeString(systemType) + tag + intString(index));
+          name      = System.System.systemTypeString(systemType) + tag + intString(index),
+          init      = systemType == NBSystem.SystemType.INI);
         strict.jac := jacobian;
         comp.strict := strict;
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -367,7 +368,7 @@ protected
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, BVariable.isContinuous);
+        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = systemType == NBSystem.SystemType.INI));
         (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
 
         if listLength(disc_vars) <> listLength(disc_eqns) then

@@ -513,7 +513,7 @@ protected
       end for;
     elseif init then
       new_vars_init := BVariable.setFixed(new_var, false) :: new_vars_init;
-    elseif BVariable.isContinuous(new_var) then
+    elseif BVariable.isContinuous(new_var, false) then
       disc := false;
       new_vars_cont := new_var :: new_vars_cont;
     else
