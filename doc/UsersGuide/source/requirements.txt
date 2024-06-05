@@ -1,8 +1,13 @@
 bibtexparser
-gitpython
-natsort
 breathe
+gitpython
+junit_xml
+natsort
+ompython
+PyGithub
+setuptools
+simplejson
 sphinx
 sphinxcontrib-bibtex
 sphinxcontrib-programoutput
-ompython
+svgwrite
