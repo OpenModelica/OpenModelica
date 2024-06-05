@@ -7,7 +7,7 @@
 // Export Pendulum as 2.0 CS FMU with CVODE solver
 
 // Generate FMU
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4"}); getErrorString();
 loadString("model Pendulum
 extends Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum;
 end Pendulum;"); getErrorString();

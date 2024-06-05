@@ -277,7 +277,12 @@ string(REPLACE ";" ",\n    " SOURCE_FMU_CVODE_RUNTIME_FILES "${SOURCE_FMU_CVODE_
 
 ######################################################################################################################
 ## IDA files
-set(SOURCE_FMU_IDA_RUNTIME_FILES_LIST simulation/solver/ida_solver.c simulation/solver/sundials_error.c)
+set(SOURCE_FMU_IDA_RUNTIME_FILES_LIST simulation/solver/jacobianSymbolical.c
+                                      simulation/solver/omc_math.c
+                                      simulation/solver/sundials_error.c
+                                      simulation/solver/sundials_util.c
+                                      simulation/solver/sundials_util.c
+                                      simulation/solver/ida_solver.c)
 
 foreach(source_file ${SOURCE_FMU_IDA_RUNTIME_FILES_LIST})
   list(APPEND SOURCE_FMU_IDA_RUNTIME_FILES_LIST_QUOTED \"${source_file}\")

@@ -279,8 +279,8 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
     case S_IDA:
-      ida_solver_deinitial(solverInfo->solverData);
-      retValue = 0;
+      retValue = ida_solver_deinitial(solverInfo->solverData);
+      break;
     default:
       FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2FreeInstance: Unknown solver method.")
       retValue = -1;

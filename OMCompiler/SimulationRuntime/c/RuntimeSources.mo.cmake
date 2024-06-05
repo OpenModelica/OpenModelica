@@ -58,6 +58,11 @@ encapsulated package RuntimeSources
     "sundials/idas/idas.h"
   };
 
+  constant list<String> simrt_c_sundials_ida_additional_headers = {
+    "simulation/solver/jacobianSymbolical.h",
+    "simulation/solver/omc_math.h"
+  };
+
   constant list<String> sundials_headers = {
     "sundials/sundials/sundials_config.h",
     "sundials/sundials/sundials_dense.h",
@@ -69,6 +74,8 @@ encapsulated package RuntimeSources
     "sundials/sundials/sundials_types.h",
     "sundials/sunlinsol/sunlinsol_dense.h",
     "sundials/sunmatrix/sunmatrix_dense.h",
+    "sundials/sunmatrix/sunmatrix_sparse.h",
+    "sundials/sunmatrix/sunmatrix_band.h",
     "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h",
     "sundials/nvector/nvector_serial.h",
     "sundials/sundials/sundials_nvector.h"

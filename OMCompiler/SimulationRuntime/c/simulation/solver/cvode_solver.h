@@ -39,7 +39,7 @@
 #include "sundials_error.h"
 #include "solver_main.h"
 
-#ifdef WITH_SUNDIALS
+#ifdef OMC_HAVE_CVODE
 
 #include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
@@ -131,7 +131,7 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
 int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent);
 
-#else /* WITH_SUNDIALS */
+#else /* OMC_HAVE_CVODE */
 typedef void CVODE_SOLVER;
 
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
@@ -175,6 +175,6 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
 }
 
 
-#endif /* WITH_SUNDIALS */
+#endif /* OMC_HAVE_CVODE */
 
 #endif /* #ifndef CVODE_SOLVER_H */

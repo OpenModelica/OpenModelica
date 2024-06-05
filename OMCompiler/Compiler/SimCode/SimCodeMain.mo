@@ -876,6 +876,7 @@ algorithm
           simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_cvode_sources;
         elseif stringEq(solver, "ida") then
           copyFiles(RuntimeSources.simrt_c_sundials_ida_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.simrt_c_sundials_ida_additional_headers, source=install_include_omc_dir + "/c", destination=fmu_tmp_sources_dir);
           simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_ida_sources;
         else
           simrt_c_sundials_sources := {};

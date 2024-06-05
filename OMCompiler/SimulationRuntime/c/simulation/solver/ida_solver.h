@@ -39,10 +39,10 @@
 #include "util/simulation_options.h"
 #include "simulation/solver/solver_main.h"
 #ifndef OMC_FMI_RUNTIME
-  #include "omc_config.h" /* for WITH_SUNDIALS */
+  #include "omc_config.h" /* for OMC_HAVE_CVODE */
 #endif
 
-#ifdef WITH_SUNDIALS
+#ifdef OMC_HAVE_IDA
 
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
@@ -130,7 +130,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
                        modelica_boolean isFMI);
 
 /* deinitialize main ida Data */
-void ida_solver_deinitial(IDA_SOLVER *idaData);
+int ida_solver_deinitial(IDA_SOLVER *idaData);
 
 /* main ida function to make a step */
 int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
@@ -141,10 +141,10 @@ int ida_solver_fmi_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
 /* event handing reinitialization function  */
 int ida_event_update(DATA* data, threadData_t *threadData);
 
-#else /* WITH_SUNDIALS */
+#else /* OMC_HAVE_IDA */
 typedef void IDA_SOLVER;
 
-int ida_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, IDA_SOLVER *idaData, int isFMI)
+int ida_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, IDA_SOLVER *idaData, modelica_boolean isFMI)
 {
 #ifdef OMC_FMI_RUNTIME
   printf("##IDA## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable IDA in FMUs.\n");
@@ -184,6 +184,6 @@ int ida_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 #endif
 }
 
-#endif  /* #ifdef WITH_SUNDIALS */
+#endif  /* #ifdef OMC_HAVE_IDA */
 
 #endif  /* #ifndef OMC_IDA_SOLVER_H*/
