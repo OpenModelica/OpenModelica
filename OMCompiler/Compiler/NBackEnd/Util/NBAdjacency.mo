@@ -67,7 +67,7 @@ protected
   import StringUtil;
 
 public
-  type MatrixStrictness  = enumeration(LINEAR, SOLVABLE, MATCHING, SORTING, FULL);
+  type MatrixStrictness  = enumeration(LINEAR, MATCHING, SORTING, FULL);
 
   function strictnessString
     input MatrixStrictness s;
@@ -75,7 +75,6 @@ public
   algorithm
     str := match s
       case MatrixStrictness.LINEAR    then "linear";
-      case MatrixStrictness.SOLVABLE  then "solvable";
       case MatrixStrictness.MATCHING  then "matching";
       case MatrixStrictness.SORTING   then "sorting";
       case MatrixStrictness.FULL      then "full";
@@ -1091,6 +1090,19 @@ public
       end for;
     end transposeScalar;
 
+    function toStringSingle
+      input array<list<Integer>> m;
+      output String str = "";
+    protected
+      Integer skip = stringLength(intString(arrayLength(m))) + 1;
+      String tmp;
+    algorithm
+      for row in 1:arrayLength(m) loop
+        tmp := intString(row);
+        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
+      end for;
+    end toStringSingle;
+
   protected
     function fullString
       input ComponentRef cref;
@@ -1114,19 +1126,6 @@ public
         else List.toString(dims, Dimension.toString);
       end match;
     end dimsString;
-
-    function toStringSingle
-      input array<list<Integer>> m;
-      output String str = "";
-    protected
-      Integer skip = stringLength(intString(arrayLength(m))) + 1;
-      String tmp;
-    algorithm
-      for row in 1:arrayLength(m) loop
-        tmp := intString(row);
-        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
-      end for;
-    end toStringSingle;
 
     function initialize
       input Mapping mapping;
@@ -1560,6 +1559,8 @@ public
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     input UnorderedSet<ComponentRef> rep_set;
     output UnorderedSet<ComponentRef> occurences;
+  protected
+    list<ComponentRef> inputs, outputs;
   algorithm
     occurences := match eqn
       local
@@ -1583,13 +1584,16 @@ public
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.ALGORITHM() algorithm
+        // collect all crefs expanding potential records
+        inputs  := List.flatten(list(collectDependenciesCref(c, map, dep_map, sol_map) for c in eqn.alg.inputs));
+        outputs := List.flatten(list(collectDependenciesCref(c, map, dep_map, sol_map) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
-        Dependency.addListFull(eqn.alg.inputs, dep_map, rep_set);
-        Dependency.addListFull(eqn.alg.outputs, dep_map, rep_set);
-        // make inputs unsolvable and outputs solvable
-        Solvability.updateList(eqn.alg.inputs, Solvability.UNSOLVABLE(), sol_map);
-        Solvability.updateList(eqn.alg.outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
-      then UnorderedSet.fromList(listAppend(eqn.alg.inputs, eqn.alg.outputs), ComponentRef.hash, ComponentRef.isEqual);
+        Dependency.addListFull(inputs, dep_map, rep_set);
+        Dependency.addListFull(outputs, dep_map, rep_set);
+        // make inputs unsolvable and outputs solvable (maybe check if algorithm can be reversed)
+        Solvability.updateList(inputs, Solvability.UNSOLVABLE(), sol_map);
+        Solvability.updateList(outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
+      then UnorderedSet.fromList(listAppend(inputs, outputs), ComponentRef.hash, ComponentRef.isEqual);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
         // gather solvables from body

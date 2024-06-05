@@ -120,12 +120,21 @@ end InstNodeType;
 
 constant Integer NUMBER_OF_CACHES = 2;
 
+type PackageCacheState = enumeration(
+  NOT_INITIALIZED,
+  PROCESSING,
+  EXPANDED,
+  PARTIALLY_INSTANTIATED,
+  INSTANTIATED
+);
+
 uniontype CachedData
 
   record NO_CACHE end NO_CACHE;
 
   record PACKAGE
     InstNode instance;
+    PackageCacheState state;
   end PACKAGE;
 
   record FUNCTION
@@ -1424,10 +1433,11 @@ uniontype InstNode
 
   function setPackageCache
     input output InstNode node;
-    input CachedData in_pack_cache;
+    input InstNode packageNode;
+    input PackageCacheState state;
   algorithm
     () := match node
-      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, in_pack_cache); then ();
+      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, CachedData.PACKAGE(packageNode, state)); then ();
       else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setPackageCache;

@@ -150,7 +150,6 @@ public
 
       else algorithm
         // ####### INDEX REDUCTION ######
-        // for now no index reduction
         (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
       then changed;
     end match;
