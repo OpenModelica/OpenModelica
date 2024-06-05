@@ -40,6 +40,8 @@
 #include "Editors/BaseEditor.h"
 
 #include <QApplication>
+#include <QCryptographicHash>
+#include <QByteArray>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
 #include <QScreen>
 #else // QT_VERSION_CHECK
@@ -589,6 +591,30 @@ QString& Utilities::tempDirectory()
     }
   }
   return tmpPath;
+}
+
+/*
+ * \brief Utilities::generateHash
+ * hash the string input
+ * \param input
+ * \return hashprefix with first 4 chars
+*/
+QString Utilities::generateHash(const QString &input)
+{
+    // Convert the input string to a QByteArray
+    QByteArray byteArray = input.toUtf8();
+    // Create a QCryptographicHash object with the desired algorithm (SHA-256 in this case)
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    // Add the data to be hashed
+    hash.addData(byteArray);
+    // Obtain the resulting hash as a QByteArray
+    QByteArray hashResult = hash.result();
+    // Convert the hash result to a hex string for readability
+    QString hashString = hashResult.toHex();
+    // Extract the first 4 characters
+    QString hashPrefix = hashString.left(4);
+
+    return hashPrefix;
 }
 
 /*!
