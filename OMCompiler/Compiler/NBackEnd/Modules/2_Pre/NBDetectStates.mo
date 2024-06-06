@@ -348,8 +348,21 @@ protected
   algorithm
     exp := match exp
       local
+        Function.Function fn;
+        Boolean b;
         list<Expression> args;
         Expression new_exp, old_exp;
+
+      // the call has an input that is only a boolean. for pre() return the boolean, for edge() and change() always false
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = {Expression.BOOLEAN(b)}))
+      algorithm
+        new_exp := match fn
+          case Function.FUNCTION(path = Absyn.IDENT(name = "pre")) then Expression.BOOLEAN(b);
+          case Function.FUNCTION(path = Absyn.IDENT(name = "edge")) then Expression.BOOLEAN(false);
+          case Function.FUNCTION(path = Absyn.IDENT(name = "change")) then Expression.BOOLEAN(false);
+          else exp;
+        end match;
+      then new_exp;
 
       // the expression is pre(d) -> $PRE.d or pre(not d) -> not $PRE.d
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")), arguments = args))
@@ -394,7 +407,7 @@ protected
       case {old_exp as Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref), old_exp, true);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unexpected expression " + context + "("
-          + List.toString(args, Expression.toString, "", ", ", "") + ")."});
+          + List.toString(args, Expression.toString, "", "", ", ", "") + ")."});
       then fail();
     end match;
     pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
