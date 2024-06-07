@@ -417,6 +417,7 @@ public
     Equation eqn = Pointer.access(Slice.getT(eqn_slice));
   algorithm
     (eqn_slice, funcTree, status) := match eqn
+
       local
         list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
         Equation solved_eqn;

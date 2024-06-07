@@ -90,7 +90,7 @@ public
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, NONE(), SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
-    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE()));
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -189,19 +189,20 @@ public
     Pointer.update(var_ptr, var);
   end makeVarPtrCyclic;
 
-  function connectPrePostVar
-    "sets the pre() var for the variable and also sets the variable pointer at the pre() variable"
+  function connectPartners
+    "sets the partner for the variable and also sets the variable pointer at the partner variable"
     input Pointer<Variable> var_ptr;
-    input Pointer<Variable> pre_ptr;
+    input Pointer<Variable> par_ptr;
+    input BackendInfo.setPartner func;
   protected
     Variable var = Pointer.access(var_ptr);
-    Variable pre = Pointer.access(pre_ptr);
+    Variable par = Pointer.access(par_ptr);
   algorithm
-    var.backendinfo := BackendInfo.setPrePost(var.backendinfo, SOME(pre_ptr));
-    pre.backendinfo := BackendInfo.setPrePost(pre.backendinfo, SOME(var_ptr));
+    var.backendinfo := func(var.backendinfo, SOME(par_ptr));
+    par.backendinfo := func(par.backendinfo, SOME(var_ptr));
     Pointer.update(var_ptr, var);
-    Pointer.update(pre_ptr, pre);
-  end connectPrePostVar;
+    Pointer.update(par_ptr, par);
+  end connectPartners;
 
   function getVar
     input ComponentRef cref;
@@ -404,31 +405,49 @@ public
     end match;
   end isClocked;
 
-  function getPrePost
-    "gets the pre() / previous() var if its a variable / clocked variable or the other way around"
+  partial function getVarPartner
     input Pointer<Variable> var_ptr;
-    output Option<Pointer<Variable>> pre_post;
+    output Option<Pointer<Variable>> partner;
   protected
     Variable var = Pointer.access(var_ptr);
-  algorithm
-    pre_post := var.backendinfo.pre_post;
-  end getPrePost;
+  end getVarPartner;
 
-  function getPrePostCref
-    "only use if you are sure there is a pre-post variable"
-    input ComponentRef cref;
-    output ComponentRef pre_post;
-  protected
-    Option<Pointer<Variable>> pre_post_opt;
+  function getVarPre
+    "Gets the pre() / previous() var if its a variable / clocked variable or the other way around."
+    extends getVarPartner;
   algorithm
-    pre_post_opt := getPrePost(getVarPointer(cref));
-    if Util.isSome(pre_post_opt) then
-      pre_post := getVarName(Util.getOption(pre_post_opt));
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because it had no pre or post variable."});
-      fail();
-    end if;
-  end getPrePostCref;
+    partner := var.backendinfo.var_pre;
+  end getVarPre;
+
+  function getVarSeed
+    "Gets the SEED var to the variable or the other way around."
+    extends getVarPartner;
+  algorithm
+    partner := var.backendinfo.var_seed;
+  end getVarSeed;
+
+  function getVarPDer
+    "Gets the partial derivative of a residual or the other way around."
+    extends getVarPartner;
+  algorithm
+    partner := var.backendinfo.var_pder;
+  end getVarPDer;
+
+  function getPartnerCref
+    "Like getVarPartner but for cref. Fails if there is no partner."
+    input ComponentRef cref;
+    input getVarPartner func;
+    output ComponentRef partner_cref;
+  algorithm
+    partner_cref := match func(getVarPointer(cref))
+      local
+        Pointer<Variable> partner;
+      case SOME(partner) then getVarName(partner);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because " + ComponentRef.toString(cref) + " has no partner variable."});
+      then fail();
+    end match;
+  end getPartnerCref;
 
   function hasStartAttr extends checkVar;
   algorithm
@@ -445,7 +464,7 @@ public
     "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
     extends checkVar;
   algorithm
-    b := not isPrevious(var_ptr) and Util.isSome(getPrePost(var_ptr));
+    b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
   end hasPre;
 
   function isDummyState extends checkVar;
@@ -491,13 +510,13 @@ public
     end match;
   end isKnown;
 
-  function isDAEResidual extends checkVar;
+  function isResidual extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DAE_RESIDUAL_VAR())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RESIDUAL_VAR())) then true;
       else false;
     end match;
-  end isDAEResidual;
+  end isResidual;
 
   function isSeed extends checkVar;
   algorithm
@@ -736,7 +755,7 @@ public
     (var_ptr, _) := makeVarPtrCyclic(var, var.name);
   end createTimeVar;
 
-  function makeStateVar
+  function setStateDerivativeVar
     "Updates a variable pointer to be a state, requires the pointer to its derivative."
     input Pointer<Variable> varPointer;
     input Pointer<Variable> derivative;
@@ -746,7 +765,7 @@ public
     var := Pointer.access(varPointer);
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE(1, SOME(derivative), true));
     Pointer.update(varPointer, var);
-  end makeStateVar;
+  end setStateDerivativeVar;
 
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.
@@ -970,7 +989,7 @@ public
           pre := fromCref(pre_cref, Variable.attributes(Pointer.access(var_ptr)));
           pre.backendinfo := BackendInfo.setVarKind(pre.backendinfo, VariableKind.PREVIOUS());
           (pre_ptr, pre_cref) := makeVarPtrCyclic(pre, pre_cref);
-          connectPrePostVar(var_ptr, pre_ptr);
+          connectPartners(var_ptr, pre_ptr, BackendInfo.setVarPre);
       then ();
 
       else algorithm
@@ -991,19 +1010,26 @@ public
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
+        Option<Pointer<Variable>> ovar;
         Variable var;
-      case qual as InstNode.VAR_NODE()
-        algorithm
-          // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref);
+      case qual as InstNode.VAR_NODE() algorithm
+        // get the variable pointer from the old cref to later on link back to it
+        old_var_ptr := getVarPointer(cref);
+        ovar := getVarSeed(old_var_ptr);
+        if isSome(ovar) then
+          var_ptr := Util.getOption(ovar);
+          cref := getVarName(var_ptr);
+        else
           // prepend the seed str and the matrix name and create the new cref
           qual.name := SEED_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
           // update the variable to be a seed and pass the pointer to the original variable
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.SEED_VAR(old_var_ptr));
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.SEED_VAR());
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+          connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+        end if;
       then ();
 
       else algorithm
@@ -1016,29 +1042,38 @@ public
     "Creates a partial derivative variable pointer from a cref. Used in NBJacobian and NBHessian
     to represent generic gradient equations.
     e.g: (speed, 'Jac') -> $pDer_Jac.speed"
-    input ComponentRef cref           "old component reference";
+    input output ComponentRef cref    "old component reference to new component reference";
     input String name                 "name of the matrix this partial derivative belongs to";
     input Boolean isTmp               "sets variable kind for tmpVar or resultVar accordingly";
-    output ComponentRef pder_cref     "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
-  protected
-    VariableKind varKind = if isTmp then VariableKind.JAC_TMP_VAR() else VariableKind.JAC_VAR();
   algorithm
     () := match ComponentRef.node(cref)
       local
         InstNode qual;
+        Pointer<Variable> res_ptr;
+        Option<Pointer<Variable>> ovar;
+        VariableKind varKind;
         Variable var;
 
       // regular case for jacobians
       case qual as InstNode.VAR_NODE() algorithm
-        // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
-        qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
-        pder_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-        var := fromCref(pder_cref, Variable.attributes(getVar(cref)));
-        // update the variable kind and pass the pointer to the original variable
-        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-        // create the new variable pointer and safe it to the component reference
-        (var_ptr, pder_cref) := makeVarPtrCyclic(var, pder_cref);
+        res_ptr := getVarPointer(cref);
+        ovar := getVarPDer(res_ptr);
+        if isSome(ovar) then
+          var_ptr := Util.getOption(ovar);
+          cref := getVarName(var_ptr);
+        else
+          varKind := if isTmp then VariableKind.JAC_TMP_VAR() else VariableKind.JAC_VAR();
+          // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
+          qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+          var := fromCref(cref, Variable.attributes(Pointer.access(res_ptr)));
+          // update the variable kind and pass the pointer to the original variable
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+          // create the new variable pointer and safe it to the component reference
+          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+          connectPartners(res_ptr, var_ptr, BackendInfo.setVarPDer);
+        end if;
       then ();
 
       else algorithm
@@ -1061,7 +1096,7 @@ public
         // prepend the seed str, matrix name locally not needed
         qual.name := FUNCTION_DERIVATIVE_STR + "_" + qual.name;
         cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
-     then cref;
+      then cref;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
@@ -1122,7 +1157,7 @@ public
     // create variable and set its kind to dae_residual (change name?)
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
-    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.DAE_RESIDUAL_VAR(uniqueIndex));
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.RESIDUAL_VAR());
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeResidualVar;
@@ -1229,8 +1264,8 @@ public
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.ALGEBRAIC());
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-    (der_cref, der_var) := BVariable.makeDerVar(cref);
-    BVariable.makeStateVar(var_ptr, der_var);
+    (der_cref, der_var) := makeDerVar(cref);
+    setStateDerivativeVar(var_ptr, der_var);
   end makeAuxStateVar;
 
   function makeClockVar
@@ -1562,7 +1597,7 @@ public
           if func(var_ptr) then
             variables := remove(var_ptr, variables);
           end if;
-         end if;
+        end if;
       end for;
       variables := compress(variables);
     end mapRemovePtr;
@@ -1979,7 +2014,7 @@ public
 
     record VAR_DATA_HES
       "Only to be used for Hessians."
-      VariablePointers variables                 "All hessian variables";
+      VariablePointers variables          "All hessian variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";

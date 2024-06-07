@@ -121,12 +121,12 @@ public
   end MAIN;
 
   record JACOBIAN
-    String name                                 "unique matrix name";
-    JacobianType jacType                        "type of jacobian";
-    VarData varData                             "Variable data.";
-    array<StrongComponent> comps                "the sorted equations";
-    Jacobian.SparsityPattern sparsityPattern    "Sparsity pattern for the jacobian";
-    Jacobian.SparsityColoring sparsityColoring  "Coloring information";
+    String name                       "unique matrix name";
+    JacobianType jacType              "type of jacobian";
+    VarData varData                   "Variable data.";
+    array<StrongComponent> comps      "the sorted equations";
+    SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
+    SparsityColoring sparsityColoring "Coloring information";
   end JACOBIAN;
 
   record HESSIAN
@@ -556,7 +556,7 @@ protected
       var.backendinfo := match var.backendinfo
         case BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE());
+        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE(), NONE(), NONE());
         else BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 

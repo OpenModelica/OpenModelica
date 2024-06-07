@@ -177,7 +177,7 @@ public
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
       print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
-       StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+        StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createStartEquations;
 
@@ -246,7 +246,7 @@ public
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
       print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
-       StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+        StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createWhenReplacementEquations;
 
@@ -259,7 +259,7 @@ public
     ComponentRef cref;
     Iterator iter;
     Pointer<Variable> var_ptr;
-    Option<Pointer<Variable>> pre_post;
+    Option<Pointer<Variable>> var_pre;
     ComponentRef pre;
     list<Subscript> subscripts;
     EquationKind kind;
@@ -267,10 +267,10 @@ public
   algorithm
     (cref, iter) := tpl;
     var_ptr := BVariable.getVarPointer(cref);
-    pre_post := BVariable.getPrePost(var_ptr);
-    if Util.isSome(pre_post) then
+    var_pre := BVariable.getVarPre(var_ptr);
+    if Util.isSome(var_pre) then
       subscripts := ComponentRef.subscriptsAllFlat(cref);
-      pre := BVariable.getVarName(Util.getOption(pre_post));
+      pre := BVariable.getVarName(Util.getOption(var_pre));
       pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
       kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
       eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
@@ -294,18 +294,18 @@ public
     output Pointer<Variable> start_var;
     output ComponentRef start_name;
   protected
-    Option<Pointer<Variable>> pre_post = BVariable.getPrePost(var_ptr);
+    Option<Pointer<Variable>> var_pre = BVariable.getVarPre(var_ptr);
     Pointer<Variable> disc_state_var;
     ComponentRef merged_name;
   algorithm
-    if BVariable.isPrevious(var_ptr) and Util.isSome(pre_post) then
+    if BVariable.isPrevious(var_ptr) and Util.isSome(var_pre) then
       // for previous change the rhs to the start value of the discrete state
-      merged_name := BVariable.getVarName(Util.getOption(pre_post));
+      merged_name := BVariable.getVarName(Util.getOption(var_pre));
       merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true);
-    elseif Util.isSome(pre_post) then
+    elseif Util.isSome(var_pre) then
       // for vars with previous change the lhs cref to the $PRE cref
       merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
-      var_ptr := Util.getOption(pre_post);
+      var_ptr := Util.getOption(var_pre);
       name := BVariable.getVarName(var_ptr);
       name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
     else
@@ -460,7 +460,7 @@ public
     EquationKind kind;
   algorithm
     if not BVariable.isPrevious(var_ptr) then
-      pre := BVariable.getPrePost(var_ptr);
+      pre := BVariable.getVarPre(var_ptr);
       if Util.isSome(pre) then
         kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
         pre_eq := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var_ptr)), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
@@ -489,7 +489,7 @@ public
   algorithm
     var_ptr := Slice.getT(var_slice);
     if not BVariable.isPrevious(var_ptr) then
-      pre := BVariable.getPrePost(var_ptr);
+      pre := BVariable.getVarPre(var_ptr);
       if Util.isSome(pre) then
         name    := BVariable.getVarName(var_ptr);
         dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));

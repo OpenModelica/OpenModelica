@@ -598,7 +598,7 @@ public
         if UnorderedMap.contains(strippedCref, jacobianHT) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
-          derCref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(exp.cref)), derCref);
+          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
@@ -682,7 +682,7 @@ public
           // add derivative to new_vars
           diffArguments.new_vars := der_ptr :: diffArguments.new_vars;
           // update algebraic variable to be a state
-          BVariable.makeStateVar(var_ptr, der_ptr);
+          BVariable.setStateDerivativeVar(var_ptr, der_ptr);
       then (Expression.fromCref(derCref), diffArguments);
 
       // -------------------------------------
@@ -711,7 +711,7 @@ public
         if UnorderedMap.contains(strippedCref, jacobianHT) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
-          derCref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(exp.cref)), derCref);
+          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
@@ -1029,7 +1029,7 @@ public
         ret1 := Expression.MULTARY({ret1, diffArg1}, {}, mulOp);        // df/dy * dy/dx
         ret2 := Expression.MULTARY({ret2, diffArg2}, {}, mulOp);        // df/dz * dz/dx
         ret := Expression.MULTARY({ret1,ret2}, {}, addOp);              // df/dy * dy/dx + df/dz * dz/dx
-     then ret;
+      then ret;
 
       // try some simple known cases
       case (Expression.CALL()) algorithm
@@ -1687,8 +1687,8 @@ public
               )},
               {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))},           // / g^2
               mulOp
-           ),
-           diffArguments);
+            ),
+            diffArguments);
 
       // Power (POW, POW_EW, ...) with base zero
       // (0^r)' = 0

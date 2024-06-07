@@ -71,7 +71,9 @@ public
       VariableKind varKind                "Structural kind: state, algebraic...";
       VariableAttributes attributes       "values on built-in attributes";
       Annotations annotations             "values on annotations (vendor specific)";
-      Option<Pointer<Variable>> pre_post  "Pointer (var->pre) or (pre-> var) if existent.";
+      Option<Pointer<Variable>> var_pre   "Pointer (var -> pre) or (pre -> var) if existent.";
+      Option<Pointer<Variable>> var_seed  "Pointer (var -> seed) or (seed -> var) if existent.";
+      Option<Pointer<Variable>> var_pder  "Pointer (var -> pder) or (pder -> var) if existent.";
       Option<Pointer<Variable>> parent    "record parent if it is part of a record.";
     end BACKEND_INFO;
 
@@ -112,12 +114,25 @@ public
       binfo.parent := SOME(parent);
     end setParent;
 
-    function setPrePost
+    partial function setPartner
       input output BackendInfo binfo;
-      input Option<Pointer<Variable>> pre_post;
+      input Option<Pointer<Variable>> var_ptr;
+    end setPartner;
+
+    function setVarPre extends setPartner;
     algorithm
-      binfo.pre_post := pre_post;
-    end setPrePost;
+      binfo.var_pre := var_ptr;
+    end setVarPre;
+
+    function setVarSeed extends setPartner;
+    algorithm
+      binfo.var_seed := var_ptr;
+    end setVarSeed;
+
+    function setVarPDer extends setPartner;
+    algorithm
+      binfo.var_pder := var_ptr;
+    end setVarPDer;
 
     function setAttributes
       input output BackendInfo binfo;
@@ -135,7 +150,7 @@ public
       binfo := match binfo
         local
           Annotations anno;
-        case BackendInfo.BACKEND_INFO(annotations = anno as ANNOTATIONS()) algorithm
+        case BACKEND_INFO(annotations = anno as ANNOTATIONS()) algorithm
           anno.hideResult := hideResult;
           binfo.annotations := anno;
         then binfo;
@@ -154,12 +169,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.pre_post, binfo.parent) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE());
 
   uniontype VariableKind
     record TIME end TIME;
@@ -199,9 +214,7 @@ public
     end EXTOBJ;
     record JAC_VAR end JAC_VAR;
     record JAC_TMP_VAR end JAC_TMP_VAR;
-    record SEED_VAR
-      Pointer<Variable> var                 "Pointer to the variable for which the seed got created.";
-    end SEED_VAR;
+    record SEED_VAR end SEED_VAR;
     record OPT_CONSTR end OPT_CONSTR;
     record OPT_FCONSTR end OPT_FCONSTR;
     record OPT_INPUT_WITH_DER end OPT_INPUT_WITH_DER;
@@ -213,10 +226,7 @@ public
     // ToDo maybe deprecated:
     record ALG_STATE        "algebraic state used by inline solver" end ALG_STATE;
     record ALG_STATE_OLD    "algebraic state old value used by inline solver" end ALG_STATE_OLD;
-    record DAE_RESIDUAL_VAR
-      "variable kind used for DAEmode"
-      Integer index;
-    end DAE_RESIDUAL_VAR;
+    record RESIDUAL_VAR end RESIDUAL_VAR;
     record DAE_AUX_VAR      "auxiliary variable used for DAEmode" end DAE_AUX_VAR;
     record LOOP_ITERATION   "used in SIMCODE, iteration variables in algebraic loops" end LOOP_ITERATION;
     record LOOP_SOLVED      "used in SIMCODE, inner variables of a torn algebraic loop" end LOOP_SOLVED;
@@ -254,7 +264,7 @@ public
         case OPT_TGRID()          then "[OPT][TGRD]";
         case OPT_LOOP_INPUT()     then "[OPT][LOOP]";
         case ALG_STATE()          then "[ASTA]";
-        case DAE_RESIDUAL_VAR()   then "[RES-]";
+        case RESIDUAL_VAR()       then "[RES-]";
         case DAE_AUX_VAR()        then "[AUX-]";
         case LOOP_ITERATION()     then "[LOOP]";
         case LOOP_SOLVED()        then "[INNR]";
