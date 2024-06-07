@@ -106,6 +106,7 @@ import System;
 import Testsuite;
 import Util;
 import SerializeTaskSystemInfo;
+import File;
 
 public
 uniontype TranslateModelKind
@@ -1045,7 +1046,7 @@ protected function exportHTMLDocumentation
   input String FMUVersion;
   output String fileName;
 protected
-  File.File file := File.File();
+  File.File file;
   String info, revisions, infoHeader;
 algorithm
   (info, revisions, infoHeader) := Interactive.getNamedAnnotation(className, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
@@ -1054,6 +1055,7 @@ algorithm
   else
     fileName := "index.html";
   end if;
+  file := File.File();
   File.open(file, fileName, File.Mode.Write);
   File.write(file, infoHeader + "\n");
   File.write(file, "<h4> Information </h4>" + info + "\n");
