@@ -905,6 +905,9 @@ protected
     list<Real> real_constants;
     Real nom_min, nom_max, nom_quotient;
   algorithm
+    if listEmpty(lst_values) then
+      return;
+    end if;
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
     try
       List.assertIsEmpty(rest);
