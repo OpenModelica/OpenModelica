@@ -706,6 +706,10 @@ public
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
+        case (BEquation.IF_EQUATION(), _) algorithm
+          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+        then tmp;
+
         // for equations have to be split up before. Since they are not causalized
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(), {}) guard(listLength(eqn.body) == 1) algorithm
