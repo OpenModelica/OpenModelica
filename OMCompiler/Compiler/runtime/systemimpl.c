@@ -587,18 +587,20 @@ int runProcess(const char* cmd, const char* outFile)
   PROCESS_INFORMATION processInfo;
   SECURITY_ATTRIBUTES securityAttributes;
   HANDLE logFileHandle = NULL;
+  wchar_t* unicodeOutFile = NULL;
   DWORD exitCode = 1;
 
   // Build command
-  char* command = NULL;
-  wchar_t* unicodeCommand = NULL;
-  wchar_t* unicodeOutFile = NULL;
   char* terminal = "cmd /c";
-  command = (char*) calloc(sizeof(char), strlen(cmd) + strlen(terminal) + 4);
+  char* command = (char*) calloc(sizeof(char), strlen(cmd) + strlen(terminal) + 4);
   sprintf(command, "%s \"%s\"", terminal, cmd);
-  unicodeCommand = omc_multibyte_to_wchar_str(command);
+  wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
   //printf("unicodeCommand: %ls\n", unicodeCommand);
 
+  // Prepare log file
+  securityAttributes.nLength = sizeof(securityAttributes);
+  securityAttributes.lpSecurityDescriptor = NULL;
+  securityAttributes.bInheritHandle = TRUE;
   if (*outFile)
   {
     unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
@@ -611,12 +613,9 @@ int runProcess(const char* cmd, const char* outFile)
                                 NULL);
   }
 
+  // Create and run process
   ZeroMemory( &startupInfo, sizeof(startupInfo) );
   ZeroMemory( &processInfo, sizeof(processInfo) );
-
-  securityAttributes.nLength = sizeof(securityAttributes);
-  securityAttributes.lpSecurityDescriptor = NULL;
-  securityAttributes.bInheritHandle = TRUE;
 
   startupInfo.cb         = sizeof(startupInfo);   // Size of struct in bytes
   startupInfo.dwFlags    |= STARTF_USESTDHANDLES; // Additional handles in hStdInput, hStdOutput and hStdError elements
