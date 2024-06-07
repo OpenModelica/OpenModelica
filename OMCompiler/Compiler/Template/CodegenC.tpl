@@ -5583,7 +5583,7 @@ match sparsepattern
     let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
     let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
-    let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols")
+    let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)
     let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>';separator="\n")
     let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
@@ -5613,7 +5613,7 @@ match sparsepattern
       /* read sparse index */
       count = omc_fread(jacobian->sparsePattern->index, sizeof(unsigned int), <%sp_size_index%>, pFile, FALSE);
       if (count != <%sp_size_index%>) {
-        throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %zu", <%sizeleadindex%>+1, count);
+        throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %zu", <%sp_size_index%>, count);
       }
 
       /* write color array */
@@ -5761,16 +5761,15 @@ template genSPColors(list<list<Integer>> colorList, String arrayName)
   >>
 end genSPColors;
 
-template readSPColors(list<list<Integer>> colorList, String arrayName)
+template readSPColors(list<list<Integer>> colorList, String arrayName, String maxIndex)
 "This template generates row of the CRS format"
 ::=
   let colorArray = (colorList |> (indices) hasindex index0 =>
     let length = '<%listLength(indices)%>'
     let index = '<%intAdd(index0,1)%>'
-    let ind_name = 'indices_<%index%>'
   <<
   /* color <%index%> with <%length%> columns */
-  readSparsePatternColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>);
+  readSparsePatternColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>, <%maxIndex%>);
   >>;separator="\n")
   <<
   <%colorArray%>
