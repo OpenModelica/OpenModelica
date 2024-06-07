@@ -19,6 +19,7 @@ equation
 end Expression1;
 
 // Result:
+// //! base 0.1.0
 // package 'Expression1'
 //   function 'f'
 //     input Real[:] 'X';

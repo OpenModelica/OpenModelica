@@ -484,6 +484,9 @@ public
             case Equation.WHEN_EQUATION()
             then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map, equation_map);
 
+            case Equation.ALGORITHM()
+            then createAlgorithm(eqn, simCodeIndices, equation_map);
+
             case Equation.FOR_EQUATION()
             then createAlgorithm(eqn, simCodeIndices, equation_map);
 
@@ -701,6 +704,10 @@ public
           tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
+        then tmp;
+
+        case (BEquation.IF_EQUATION(), _) algorithm
+          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
         then tmp;
 
         // for equations have to be split up before. Since they are not causalized

@@ -176,8 +176,9 @@ protected
         output list<Pointer<Variable>> vars;
       algorithm
         vars := match exp
-          case Expression.CREF() then {BVariable.getVarPointer(exp.cref)};
-          case Expression.TUPLE() then List.flatten(list(getVarsExp(elem) for elem in exp.elements));
+          case Expression.CREF(cref = ComponentRef.WILD()) then {};
+          case Expression.CREF()    then {BVariable.getVarPointer(exp.cref)};
+          case Expression.TUPLE()   then List.flatten(list(getVarsExp(elem) for elem in exp.elements));
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because function alias auxilliary has a return type that currently cannot be parsed: " + Expression.toString(exp)});
           then fail();
@@ -361,6 +362,7 @@ protected
         Option<Call_Aux> aux_opt;
         Expression new_exp, sub_exp;
         list<ComponentRef> names;
+        list<Expression> tpl_lst;
 
       case Expression.CALL() guard(checkCallReplacement(exp.call)) algorithm
         // strip nested iterator for the iterators that actually occure in the function call
@@ -382,8 +384,9 @@ protected
           ty := Expression.typeOf(exp);
           new_exp := match ty
             case Type.TUPLE() algorithm
-              names := list(Call_Aux.createName(sub_ty, new_iter, index, init) for sub_ty in ty.types);
-            then Expression.TUPLE(ty, list(Expression.fromCref(cref) for cref in names));
+              names   := list(Call_Aux.createName(sub_ty, new_iter, index, init) for sub_ty in ty.types);
+              tpl_lst := list(if ComponentRef.size(cref) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
+            then Expression.TUPLE(ty, tpl_lst);
             else algorithm
               name := Call_Aux.createName(ty, new_iter, index, init);
             then Expression.fromCref(name);
@@ -510,7 +513,7 @@ protected
       end for;
     elseif init then
       new_vars_init := BVariable.setFixed(new_var, false) :: new_vars_init;
-    elseif BVariable.isContinuous(new_var) then
+    elseif BVariable.isContinuous(new_var, false) then
       disc := false;
       new_vars_cont := new_var :: new_vars_cont;
     else

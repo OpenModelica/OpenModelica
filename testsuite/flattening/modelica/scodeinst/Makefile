@@ -745,6 +745,7 @@ IfExpression11.mo \
 IfExpression12.mo \
 IfExpression14.mo \
 IfExpression15.mo \
+IfExpression16.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -950,6 +951,7 @@ ParameterBug.mos \
 ParameterDer.mo \
 PartialApplication1.mo \
 PartialApplication2.mo \
+PartialApplication3.mo \
 PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
@@ -1049,6 +1051,7 @@ RedeclareMod8.mo \
 RedeclareMod9.mo \
 RedeclareMod10.mo \
 RedeclareMod11.mo \
+RedeclareMod12.mo \
 RedeclareNonReplaceable1.mo \
 redeclare10.mo \
 redeclare11.mo \

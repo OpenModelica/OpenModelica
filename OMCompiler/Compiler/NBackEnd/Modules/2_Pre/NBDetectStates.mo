@@ -51,6 +51,7 @@ protected
   import InstNode = NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
+  import Operator = NFOperator;
   import Variable = NFVariable;
 
   // Backend imports
@@ -347,23 +348,77 @@ protected
   algorithm
     exp := match exp
       local
-        ComponentRef state_cref, pre_cref;
-        Pointer<Variable> state_var, pre_var;
+        Function.Function fn;
+        Boolean b;
+        list<Expression> args;
+        Expression new_exp, old_exp;
 
-      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")),
-        arguments = {Expression.CREF(cref = state_cref)}))
+      // the call has an input that is only a boolean. for pre() return the boolean, for edge() and change() always false
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = {Expression.BOOLEAN(b)}))
       algorithm
-        state_var := BVariable.getVarPointer(state_cref);
-        pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
-        if not scalarized then
-          pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
-        end if;
-      then Expression.fromCref(pre_cref);
-      // ToDo! General expressions inside pre call!
-      // ToDo! edge and change replacement!
+        new_exp := match fn
+          case Function.FUNCTION(path = Absyn.IDENT(name = "pre")) then Expression.BOOLEAN(b);
+          case Function.FUNCTION(path = Absyn.IDENT(name = "edge")) then Expression.BOOLEAN(false);
+          case Function.FUNCTION(path = Absyn.IDENT(name = "change")) then Expression.BOOLEAN(false);
+          else exp;
+        end match;
+      then new_exp;
+
+      // the expression is pre(d) -> $PRE.d or pre(not d) -> not $PRE.d
+      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")), arguments = args))
+      algorithm
+        (new_exp, _) := preFromArgs(args, acc_previous, scalarized, "pre");
+      then new_exp;
+
+      // the expression is edge(d) -> d and not $PRE.d or edge(not d) not d and $PRE.d
+      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "edge")), arguments = args))
+      algorithm
+        (new_exp, old_exp) := preFromArgs(args, acc_previous, scalarized, "edge");
+      then Expression.LBINARY(old_exp, Operator.makeAnd(Expression.typeOf(old_exp)), Expression.logicNegate(new_exp));
+
+
+      // the expression is change(d) -> d <> $PRE.d or change(not d) not d <> not $PRE.d
+      // (not necessary to have the "not" but works and is most consistent with other cases)
+      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "change")), arguments = args))
+      algorithm
+        (new_exp, old_exp) := preFromArgs(args, acc_previous, scalarized, "change");
+      then Expression.RELATION(old_exp, Operator.makeNotEqual(Expression.typeOf(old_exp)), new_exp);
+
       else exp;
     end match;
   end collectPreAndPrevious;
+
+  function preFromArgs
+    "takes a list of arguments (expected to be only one cref) and creates the pre variable from it.
+    used for pre(), edge(), change()"
+    input list<Expression> args;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input Boolean scalarized;
+    input String context;
+    output Expression new_exp;
+    output Expression old_exp;
+  protected
+    ComponentRef state_cref, pre_cref;
+    Pointer<Variable> state_var, pre_var;
+    Boolean negated;
+  algorithm
+    (state_var, old_exp, negated) := match args
+      case {old_exp as Expression.CREF(cref = state_cref)}                           then (BVariable.getVarPointer(state_cref), old_exp, false);
+      case {old_exp as Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref), old_exp, true);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unexpected expression " + context + "("
+          + List.toString(args, Expression.toString, "", "", ", ", "") + ")."});
+      then fail();
+    end match;
+    pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
+    if not scalarized then
+      pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
+    end if;
+    new_exp := Expression.fromCref(pre_cref);
+    if negated then
+      new_exp := Expression.logicNegate(new_exp);
+    end if;
+  end preFromArgs;
 
   function updateDiscreteStatesAndPrevious
     "Updates the variable pointer arrays with the new information about states and derivatives."

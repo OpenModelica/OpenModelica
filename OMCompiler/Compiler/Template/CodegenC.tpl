@@ -1471,7 +1471,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->resultFileName = NULL;
     data->modelData->modelDir = "<%directory%>";
     data->modelData->modelGUID = "{<%guid%>}";
-    data->modelData->encrypted = <%SimCodeUtil.isMocFile(fileName)%>;
     <% match isModelExchangeFMU
     case "1.0" then
       <<
@@ -2078,7 +2077,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
-          data->modelData->samplesInfo[i].interval = <%e2%> /* (max int for single time events) */;
+          data->modelData->samplesInfo[i].interval = <%e2%> /* (max real for single time events) */;
           i++;
           >>
         else '')
@@ -4953,7 +4952,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) =>
+    case SOME(iter_) then (iter_ |> it =>
       forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
       ;separator="\n";empty)
     else ""
@@ -4964,7 +4963,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     else ""
   let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
   let forTail = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) => "}";separator="\n";empty)
+    case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
   match relation
   case exp as RELATION(__) then
@@ -5125,7 +5124,7 @@ template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> ite
 let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) =>
+    case SOME(iter_) then (iter_ |> it =>
       forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
       ;separator="\n";empty)
     else ""
@@ -5136,7 +5135,7 @@ let &preExp = buffer ""
     else ""
   let tmp_ = match iter case SOME(iter_) then "+tmp" else ""
   let forTail = match iter
-    case SOME(iter_) then (iter_ |> it as SIM_ITERATOR(__) => "}";separator="\n";empty)
+    case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
     else ""
   match relation
   case exp as RELATION(__) then
@@ -7439,33 +7438,53 @@ end genericBranch;
 
 template genericIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
-  case SIM_ITERATOR() then
-  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-  <<
-  int <%iter_%>_loc = tmp % <%size%>;
-  int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
-  tmp /= <%size%>;
-  >>
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    int <%iter_%>_loc = tmp % <%size%>;
+    int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
+    tmp /= <%size%>;
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let arr = (lst |> elem => '<%elem%>'; separator=", ")
+    <<
+    static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
+    int <%iter_%>_loc = tmp % <%size%>;
+    int <%iter_%> = <%iter_%>_lst[<%iter_%>_loc];
+    tmp /= <%size%>;
+    >>
 end genericIterator;
 
 template forIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
-  case SIM_ITERATOR() then
-  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-  let rel = if intGt(step, 0) then "<" else ">"
-  let sign = if intGt(step, 0) then "+" else "-"
-  <<
-  for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%start%><%sign%><%size%>; <%iter_%>+=<%step%>){
-  >>
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let rel = if intGt(step, 0) then "<" else ">"
+    let sign = if intGt(step, 0) then "+" else "-"
+    <<
+    for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%start%><%sign%><%size%>; <%iter_%>+=<%step%>){
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
+      <%iter_%> = <%iter_%>_lst[<%iter_%>_];
+    >>
 end forIterator;
 
 template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
-  case SIM_ITERATOR() then
-  let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-  <<
-  (<%iter_%>-<%start%>)/<%step%>+<%size%>*(
-  >>
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    (<%iter_%>-<%start%>)/<%step%>+<%size%>*(
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    <<
+    <%iter_%>_+<%size%>*(
+    >>
 end forIteratorBody;
 
 template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)

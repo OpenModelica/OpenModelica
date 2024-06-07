@@ -880,7 +880,8 @@ uniontype Function
       s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(getDerivedFunctionName(fn))));
       s := IOStream.append(s, ", ");
       s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
-      s := FlatModelicaUtil.appendComment(SCodeUtil.getElementComment(InstNode.definition(fn.node)), s);
+      s := FlatModelicaUtil.appendComment(SCodeUtil.getElementComment(InstNode.definition(fn.node)),
+        NFFlatModelicaUtil.ElementType.FUNCTION, s);
       s := IOStream.append(s, ")");
     else
       cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
@@ -930,7 +931,8 @@ uniontype Function
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
         cmt := SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)), NONE());
-        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), indent + "  ", ";\n", s);
+        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt),
+          NFFlatModelicaUtil.ElementType.FUNCTION, indent + "  ", ";\n", s);
       end if;
 
       s := IOStream.append(s, indent);
@@ -1086,7 +1088,7 @@ uniontype Function
       end if;
 
       // No slot could be found, so it doesn't exist.
-      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+      Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
         {InstNode.name(instance(fn)), arg_name}, info);
     end for;
 
@@ -1694,79 +1696,78 @@ uniontype Function
     InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
     list<InstNode> inputs;
     list<Slot> slots;
+    array<Slot> slots_arr;
+    TypedArg ty_arg;
+    TypeCheck.MatchKind mk;
   algorithm
     Expression.PARTIAL_FUNCTION_APPLICATION(fn = fn_ref, args = args, argNames = arg_names) := exp;
     // TODO: Handle overloaded functions?
     fn :: _ := typeRefCache(fn_ref);
-    inputs := fn.inputs;
-    slots := fn.slots;
-    rest_names := arg_names;
+    slots_arr := listArray(fn.slots);
 
     purity := if Function.isImpure(fn) or Function.isOMImpure(fn) then Purity.IMPURE else Purity.PURE;
     variability := Variability.CONSTANT;
 
+    // Type the arguments and add them to the slots.
     for arg in args loop
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, next_context, info);
-
-      arg_name :: rest_names := rest_names;
-      (arg, inputs, slots) :=
-        applyPartialApplicationArg(arg_name, arg, arg_ty, inputs, slots, fn, info);
-
-      ty_args := Expression.box(arg) :: ty_args;
+      arg_name :: arg_names := arg_names;
+      ty_arg := TypedArg.TYPED_ARG(SOME(arg_name), arg, arg_ty, arg_var, arg_pur);
+      (slots_arr, true) := fillNamedArg(ty_arg, slots_arr, fn, info);
       variability := Prefixes.variabilityMax(variability, arg_var);
       purity := Prefixes.purityMin(purity, arg_pur);
     end for;
 
-    fn.inputs := inputs;
-    fn.slots := slots;
-    ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE);
-    exp := Expression.PARTIAL_FUNCTION_APPLICATION(fn_ref, listReverseInPlace(ty_args), arg_names, ty);
+    exp := makePartialApplicationFromSlots(slots_arr, fn, fn_ref, info);
+    ty := Expression.typeOf(exp);
   end typePartialApplication;
 
-  function applyPartialApplicationArg
-    input String argName;
-    input output Expression argExp;
-    input Type argType;
-    input list<InstNode> inputs;
-    input list<Slot> slots;
+  function makePartialApplicationFromSlots
+    input array<Slot> slotsArray;
     input Function fn;
+    input ComponentRef fnRef;
     input SourceInfo info;
-          output list<InstNode> outInputs = {};
-          output list<Slot> outSlots = {};
+    output Expression outExp;
   protected
-    InstNode i;
-    list<InstNode> rest_inputs = inputs;
-    Slot s;
-    list<Slot> rest_slots = slots;
+    list<InstNode> inputs = {};
+    list<Slot> slots = {};
+    list<Expression> args = {};
+    list<String> arg_names = {};
+    TypedArg ty_arg;
+    Expression arg;
     TypeCheck.MatchKind mk;
+    Type fn_ty;
   algorithm
-    while not listEmpty(rest_inputs) loop
-      i :: rest_inputs := rest_inputs;
-      s :: rest_slots := rest_slots;
-
-      if InstNode.name(s.node) == argName then
-        (argExp, _, mk) := TypeCheck.matchTypes(argType, InstNode.getType(i), argExp, true);
+    for slot in slotsArray loop
+      if isSome(slot.arg) then
+        // For each slot that's filled, type check the argument and add it to
+        // the arguments of the partial function application.
+        SOME(ty_arg) := slot.arg;
+        (arg, _, mk) := TypeCheck.matchTypes(ty_arg.ty, InstNode.getType(slot.node), ty_arg.value, true);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH,
-            {AbsynUtil.pathString(name(fn)), argName, Expression.toString(argExp),
-             Type.toString(argType), Type.toString(InstNode.getType(i))}, info);
+            {AbsynUtil.pathString(name(fn)), Util.getOption(ty_arg.name), Expression.toString(ty_arg.value),
+             Type.toString(ty_arg.ty), Type.toString(InstNode.getType(slot.node))}, info);
           fail();
         end if;
 
-        outInputs := listAppend(listReverseInPlace(outInputs), rest_inputs);
-        outSlots := listAppend(listReverseInPlace(outSlots), rest_slots);
-        return;
+        args := Expression.box(arg) :: args;
+        arg_names := Util.getOption(ty_arg.name) :: arg_names;
+      else
+        // For each slot that's not filled, add it as an input of the partially evaluated function.
+        inputs := slot.node :: inputs;
+        slots := slot :: slots;
       end if;
+    end for;
 
-      outInputs := i :: outInputs;
-      outSlots := s :: outSlots;
-    end while;
-
-    Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
-      {AbsynUtil.pathString(name(fn)), argName}, info);
-    fail();
-  end applyPartialApplicationArg;
+    fn.inputs := listReverseInPlace(inputs);
+    fn.slots := listReverseInPlace(slots);
+    fn_ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE);
+    args := listReverseInPlace(args);
+    arg_names := listReverseInPlace(arg_names);
+    outExp := Expression.PARTIAL_FUNCTION_APPLICATION(fnRef, args, arg_names, fn_ty);
+  end makePartialApplicationFromSlots;
 
   function isBuiltin
     input Function fn;
@@ -1984,12 +1985,7 @@ uniontype Function
 
   function isDefaultRecordConstructor
     input Function fn;
-    output Boolean isConstructor;
-  algorithm
-    isConstructor := match Class.restriction(InstNode.getClass(fn.node))
-      case Restriction.RECORD_CONSTRUCTOR() then true;
-      else false;
-    end match;
+    output Boolean isConstructor = Restriction.isRecordConstructor(InstNode.restriction(fn.node));
   end isDefaultRecordConstructor;
 
   function isNonDefaultRecordConstructor

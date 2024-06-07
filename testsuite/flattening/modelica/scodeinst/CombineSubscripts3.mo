@@ -20,6 +20,7 @@ equation
 end CombineSubscripts3;
 
 // Result:
+// //! base 0.1.0
 // package 'CombineSubscripts3'
 //   model 'CombineSubscripts3'
 //     Real[3] 'b.p';

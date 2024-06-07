@@ -619,7 +619,7 @@ algorithm
 
     else
       equation
-        Error.addCompilerError("FGraph.openNewScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + Util.stringOption(inName) + "\n");
+        Error.addCompilerError("FGraph.openNewScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + Util.getOptionOrDefault(inName, "") + "\n");
       then
         fail();
 

@@ -454,16 +454,17 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   protected
-    EquationPointer eqn = Slice.getT(eqn_slice);
+    Pointer<Equation> eqn = Slice.getT(eqn_slice);
   algorithm
     comp := match Pointer.access(eqn)
       case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
       then fail();
     end match;
   end fromSolvedEquationSlice;

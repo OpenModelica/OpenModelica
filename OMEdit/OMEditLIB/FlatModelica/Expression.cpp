@@ -1239,7 +1239,7 @@ namespace FlatModelica
       }
     }
 
-    throw json_error("Expression: invalid JSON object ", value);
+    throw json_error("Expression: unsupported JSON object ", value);
     return nullptr;
   }
 
@@ -1254,7 +1254,7 @@ namespace FlatModelica
       default: break;
     }
 
-    throw json_error("Expression: invalid JSON value ", value);
+    throw json_error("Expression: unsupported JSON value ", value);
   }
 
   void Integer::print(std::ostream &os) const

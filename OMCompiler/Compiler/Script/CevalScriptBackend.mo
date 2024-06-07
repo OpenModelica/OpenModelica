@@ -3933,12 +3933,20 @@ protected function buildModelFMU
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
+  Absyn.Program p;
   Flags.Flag flags;
   String commandLineOptions;
   list<String> args;
   Boolean haveAnnotation;
 algorithm
-  if Config.ignoreCommandLineOptionsAnnotation() then
+  // handle encryption
+  // if AST contains encrypted class show nothing
+  p := SymbolTable.getAbsyn();
+  if Interactive.astContainsEncryptedClass(p) then
+    Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+    cache := inCache;
+    outValue := Values.STRING("");
+  elseif Config.ignoreCommandLineOptionsAnnotation() then
     (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
   else
     // read the __OpenModelica_commandLineOptions
@@ -4195,10 +4203,19 @@ protected function translateModelXML " author: Alachew
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
 protected
+  Absyn.Program p;
   Boolean success;
 algorithm
-  (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
-  outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
+  // handle encryption
+  // if AST contains encrypted class show nothing
+  p := SymbolTable.getAbsyn();
+  if Interactive.astContainsEncryptedClass(p) then
+    Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+    outValue := Values.STRING("");
+  else
+    (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
+    outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
+  end if;
 end translateModelXML;
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"

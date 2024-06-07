@@ -408,7 +408,8 @@ function instantiate
 algorithm
   node := expand(node);
 
-  if instPartial or not InstNode.isPartial(node) or InstContext.inRelaxed(context) then
+  if instPartial or not InstNode.isPartial(node) or
+     InstContext.inRelaxed(context) or InstContext.inRedeclared(context) then
     node := instClass(node, mod, NFAttributes.DEFAULT_ATTR, true, 0, parent, context);
   end if;
 end instantiate;
@@ -426,6 +427,7 @@ function makeTopNode
   input list<SCode.Element> annotationClasses;
   output InstNode topNode;
 protected
+  list<SCode.Element> top_classes;
   SCode.Element cls_elem, ann_package;
   Class cls, ann_cls;
   ClassTree elems;
@@ -433,11 +435,17 @@ protected
   InstNode ann_node;
   UnorderedMap<String, InstNode> generated_inners;
 algorithm
+  top_classes := topClasses;
+
+  if Flags.getConfigBool(Flags.BASE_MODELICA) then
+    top_classes := NFBuiltinFuncs.BASE_MODELICA_POSITIVE_MAX_SIMPLE :: top_classes;
+  end if;
+
   // Create a fake SCode.Element for the top scope, so we don't have to make the
   // definition in InstNode an Option only because of this node.
   cls_elem := SCode.CLASS("<top>", SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
     SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
-    SCode.PARTS(topClasses, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.PARTS(top_classes, {}, {}, {}, {}, {}, {}, NONE()),
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
@@ -469,7 +477,7 @@ algorithm
   topNode := InstNode.setNodeType(node_ty, topNode);
 
   // Create a new class from the elements, and update the inst node with it.
-  cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
+  cls := Class.fromSCode(top_classes, false, topNode, NFClass.DEFAULT_PREFIXES);
   // The class needs to be expanded to allow lookup in it. The top scope will
   // only contain classes, so we can do this instead of the whole expandClass.
   cls := Class.initExpandedClass(cls);
@@ -1242,47 +1250,63 @@ end instExternalObjectStructors;
 function instPackage
   "This function instantiates a package given a package node. If the package has
    already been instantiated, then the cached instance from the node is
-   returned. Otherwise the node is fully instantiated, the instance is added to
-   the node's cache, and the instantiated node is returned."
+   returned. Otherwise the node is instantiated, the instance is added to the
+   node's cache, and the instantiated node is returned."
   input output InstNode node;
   input InstContext.Type context;
 protected
   CachedData cache;
   InstNode inst;
+  import NFInstNode.PackageCacheState;
+  PackageCacheState state;
 algorithm
   cache := InstNode.getPackageCache(node);
 
-  node := match cache
-    case CachedData.PACKAGE() then cache.instance;
-
-    case CachedData.NO_CACHE()
-      algorithm
-        // Cache the package node itself first, to avoid instantiation loops if
-        // the package uses itself somehow.
-        InstNode.setPackageCache(node, CachedData.PACKAGE(node));
-
-        if InstContext.inFastLookup(context) then
-          inst := expand(node);
-        else
-          // Instantiate the node.
-          inst := instantiate(node, context = context);
-
-          // Cache the instantiated node and instantiate expressions in it too.
-          if not InstNode.isPartial(inst) or InstContext.inRelaxed(context) then
-            InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
-            instExpressions(inst, context = context);
-          end if;
-        end if;
-      then
-        inst;
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got invalid instance cache", sourceInfo());
-      then
-        fail();
-
+  // Check which state the cached package is in, if any.
+  (inst, state) := match cache
+    case CachedData.PACKAGE() then (cache.instance, cache.state);
+    else (node, PackageCacheState.NOT_INITIALIZED);
   end match;
+
+  // If the package is already fully instantiated then we don't need to do anything.
+  if state == PackageCacheState.INSTANTIATED then
+    node := inst;
+    return;
+  end if;
+
+  // If we're currently trying to instantiate this package then return it
+  // unchanged to avoid an instantiation loop.
+  if state == PackageCacheState.PROCESSING then
+    node := inst;
+    return;
+  end if;
+
+  // When doing lookup in some of the API functions we only need an expanded package.
+  if InstContext.inFastLookup(context) then
+    if state < PackageCacheState.EXPANDED then
+      InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
+      inst := expand(node);
+      InstNode.setPackageCache(node, inst, PackageCacheState.EXPANDED);
+    end if;
+
+    return;
+  end if;
+
+  // Otherwise we need to at least partially instantiate the package.
+  if state < PackageCacheState.PARTIALLY_INSTANTIATED then
+    InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
+    inst := instantiate(node, context = context);
+    InstNode.setPackageCache(node, inst, PackageCacheState.PARTIALLY_INSTANTIATED);
+  end if;
+
+  // If the package isn't partial we also instantiate expressions in it.
+  if state < PackageCacheState.INSTANTIATED and
+     (not InstNode.isPartial(inst) or InstContext.inRelaxed(context)) then
+    InstNode.setPackageCache(node, inst, PackageCacheState.INSTANTIATED);
+    instExpressions(inst, context = context);
+  end if;
+
+  node := inst;
 end instPackage;
 
 function modifyExtends

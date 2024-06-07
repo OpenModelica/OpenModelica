@@ -302,14 +302,15 @@ algorithm
       Option<DAE.VariableAttributes> va;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io;
+      Boolean e;
       String name;
 
     case DAE.VAR(cref as DAE.CREF_IDENT(ident = name), vk, vd, vp, vv, ty,
-        bind, dims, ct, es, va, cmt, io)
+        bind, dims, ct, es, va, cmt, io, e)
       equation
         dims = List.map1(dims, removeSelfReferentialDim, name);
       then
-        DAE.VAR(cref, vk, vd, vp, vv, ty, bind, dims, ct, es, va, cmt, io);
+        DAE.VAR(cref, vk, vd, vp, vv, ty, bind, dims, ct, es, va, cmt, io, e);
 
   end match;
 end removeSelfReferentialDims;

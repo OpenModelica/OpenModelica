@@ -41,14 +41,15 @@ protected
 
   import Builtin = NFBuiltin;
   import BuiltinCall = NFBuiltinCall;
+  import Ceval = NFCeval;
+  import ComplexType = NFComplexType;
+  import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import Function = NFFunction;
   import NFPrefixes.{Variability, Purity};
   import Prefixes = NFPrefixes;
-  import Ceval = NFCeval;
-  import ComplexType = NFComplexType;
-  import ExpandExp = NFExpandExp;
   import TypeCheck = NFTypeCheck;
+  import UnorderedSet;
   import ValuesUtil;
   import MetaModelica.Dangerous.*;
   import RangeIterator = NFRangeIterator;
@@ -247,6 +248,15 @@ public
     String filename;
   end FILENAME;
 
+  record SHARED_LITERAL
+    "Before code generation, we make a pass that replaces constant literals
+    with a SHARED_LITERAL expression. Any immutable type can be shared:
+    basic MetaModelica types and Modelica strings are fine. There is no point
+    to share Real, Integer, Boolean or Enum though."
+    Integer index "A unique indexing that can be used to point to a single shared literal in generated code";
+    Expression exp "For printing strings, code generators that do not support this kind of literal, or for getting the type in case the code generator needs that";
+  end SHARED_LITERAL;
+
   function isArray
     input Expression exp;
     output Boolean isArray;
@@ -393,6 +403,11 @@ public
       else false;
     end match;
   end isTrivialCref;
+
+  function hash
+    input Expression exp;
+    output Integer hash = stringHashDjb2(toString(exp));
+  end hash;
 
   function isEqual
     "Returns true if the two expressions are equal, otherwise false."
@@ -689,6 +704,12 @@ public
         then
           compare(Mutable.access(exp1.exp), Mutable.access(me));
 
+      case SHARED_LITERAL()
+        algorithm
+          SHARED_LITERAL(exp = e1) := exp2;
+        then
+          compare(exp1.exp, e1);
+
       case EMPTY()
         algorithm
           EMPTY(ty = ty) := exp2;
@@ -777,6 +798,7 @@ public
       case TUPLE_ELEMENT()   then exp.ty;
       case RECORD_ELEMENT()  then exp.ty;
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
+      case SHARED_LITERAL()  then typeOf(exp.exp);
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
       case FILENAME()        then Type.STRING();
@@ -1854,6 +1876,7 @@ public
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toString(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then "LITERAL(" + intString(exp.index) + ", " + toString(exp.exp) + ")";
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
         then "function " + ComponentRef.toString(exp.fn) + "(" + stringDelimitList(
@@ -1903,7 +1926,7 @@ public
                         ) + ":" + operandFlatString(exp.stop, exp, false);
 
       case TUPLE() then "(" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, toFlatString, "'" + AbsynUtil.pathString(exp.path), "'(", ", ", ")", true);
+      case RECORD() then List.toString(exp.elements, toFlatString, Type.toFlatString(exp.ty), "(", ", ", ")", true);
       case CALL() then Call.toFlatString(exp.call);
       case SIZE() then "size(" + toFlatString(exp.exp) +
                         (
@@ -1948,10 +1971,11 @@ public
       case UNBOX() then "UNBOX(" + toFlatString(exp.exp) + ")";
       case BOX() then "BOX(" + toFlatString(exp.exp) + ")";
 
-      case SUBSCRIPTED_EXP() then toFlatSubscriptedString(exp.exp, exp.subscripts);
+      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp) + ")" + Subscript.toFlatStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toFlatString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toFlatString(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then "[literal: " + intString(exp.index) + ", " + toString(exp.exp) + "]";
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
         then "function " + ComponentRef.toFlatString(exp.fn) + "(" + stringDelimitList(
@@ -1961,47 +1985,6 @@ public
       else anyString(exp);
     end match;
   end toFlatString;
-
-  function toFlatSubscriptedString
-    input Expression exp;
-    input list<Subscript> subscripts;
-    output String str;
-  protected
-    Type exp_ty;
-    list<Type> sub_tyl;
-    list<Dimension> dims;
-    list<String> strl;
-    String name;
-    list<Subscript> subs;
-  algorithm
-    if Flags.getConfigBool(Flags.MODELICA_OUTPUT) then
-      subs := list(s for s guard not Subscript.isSplitIndex(s) in subscripts);
-
-      if listEmpty(subs) then
-        str := toFlatString(exp);
-      else
-        exp_ty := typeOf(exp);
-        dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
-        sub_tyl := list(Dimension.subscriptType(d) for d in dims);
-        name := Type.subscriptedTypeName(exp_ty, sub_tyl);
-
-        strl := {")"};
-
-        for s in subs loop
-          strl := Subscript.toFlatString(s) :: strl;
-          strl := "," :: strl;
-        end for;
-
-        strl := toFlatString(exp) :: strl;
-        strl := "'(" :: strl;
-        strl := name :: strl;
-        strl := "'" :: strl;
-        str := stringAppendList(strl);
-      end if;
-    else
-      str := "(" + toFlatString(exp) + ")" + Subscript.toFlatStringList(subscripts);
-    end if;
-  end toFlatSubscriptedString;
 
   function operandString
     "Helper function to toString, prints an operator and adds parentheses as needed."
@@ -2149,6 +2132,7 @@ public
       case BOX() then getName(exp.exp);
       case UNBOX() then getName(exp.exp);
       case MUTABLE() then getName(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then getName(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION() then ComponentRef.toString(exp.fn);
       else toString(exp);
     end match;
@@ -2214,6 +2198,7 @@ public
       case BOX() then toAbsyn(exp.exp);
       case UNBOX() then toAbsyn(exp.exp);
       case MUTABLE() then toAbsyn(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then toAbsyn(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION()
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
           Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
@@ -2335,6 +2320,7 @@ public
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
       case MUTABLE() then toDAE(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then DAE.SHARED_LITERAL(exp.index, toDAE(exp.exp));
       case FILENAME()
         then if Flags.getConfigBool(Flags.BUILDING_FMU) then
                DAE.CALL(Absyn.Path.IDENT("OpenModelica_fmuLoadResource"),
@@ -2694,6 +2680,12 @@ public
         then
           exp;
 
+      case SHARED_LITERAL()
+        algorithm
+          exp.exp := map(exp.exp, func);
+        then
+          exp;
+
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           exp.args := list(map(e, func) for e in exp.args);
@@ -2874,6 +2866,12 @@ public
         then
           exp;
 
+      case SHARED_LITERAL()
+        algorithm
+          exp.exp := mapReverse(exp.exp, func);
+        then
+          exp;
+
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           exp.args := list(mapReverse(e, func) for e in exp.args);
@@ -3032,6 +3030,12 @@ public
       case MUTABLE()
         algorithm
           Mutable.update(exp.exp, func(Mutable.access(exp.exp)));
+        then
+          exp;
+
+      case SHARED_LITERAL()
+        algorithm
+          exp.exp := func(exp.exp);
         then
           exp;
 
@@ -3237,6 +3241,7 @@ public
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
       case RECORD_ELEMENT() then fold(exp.recordExp, func, arg);
       case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
+      case SHARED_LITERAL() then fold(exp.exp, func, arg);
       case PARTIAL_FUNCTION_APPLICATION() then foldList(exp.args, func, arg);
       else arg;
     end match;
@@ -3389,6 +3394,7 @@ public
       case TUPLE_ELEMENT() algorithm apply(exp.tupleExp, func); then ();
       case RECORD_ELEMENT() algorithm apply(exp.recordExp, func); then ();
       case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
+      case SHARED_LITERAL() algorithm apply(exp.exp, func); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyList(exp.args, func); then ();
       else ();
     end match;
@@ -3525,6 +3531,7 @@ public
       case TUPLE_ELEMENT() algorithm func(exp.tupleExp); then ();
       case RECORD_ELEMENT() algorithm func(exp.recordExp); then ();
       case MUTABLE() algorithm func(Mutable.access(exp.exp)); then ();
+      case SHARED_LITERAL() algorithm func(exp.exp); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyListShallow(exp.args, func); then ();
       else ();
     end match;
@@ -3743,6 +3750,13 @@ public
         algorithm
           (e1, arg) := mapFold(Mutable.access(exp.exp), func, arg);
           Mutable.update(exp.exp, e1);
+        then
+          exp;
+
+      case SHARED_LITERAL()
+        algorithm
+          (e1, arg) := mapFold(exp.exp, func, arg);
+          exp.exp := e1;
         then
           exp;
 
@@ -3972,6 +3986,13 @@ public
         then
           exp;
 
+      case SHARED_LITERAL()
+        algorithm
+          (e1, arg) := func(exp.exp, arg);
+          exp.exp := e1;
+        then
+          exp;
+
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           (expl, arg) := List.mapFold(exp.args, func, arg);
@@ -4107,6 +4128,7 @@ public
       case TUPLE_ELEMENT() then contains(exp.tupleExp, func);
       case RECORD_ELEMENT() then contains(exp.recordExp, func);
       case MUTABLE() then contains(Mutable.access(exp.exp), func);
+      case SHARED_LITERAL() then contains(exp.exp, func);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
       else false;
     end match;
@@ -4221,6 +4243,7 @@ public
       case TUPLE_ELEMENT() then func(exp.tupleExp);
       case RECORD_ELEMENT() then func(exp.recordExp);
       case MUTABLE() then func(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then func(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
       else false;
     end match;
@@ -4278,32 +4301,22 @@ public
     CREF(cref = cref) := exp;
   end toCref;
 
-  function extract
-    "author: kabdelhak 2020-06
-    Extracts all sub expressions from an expression using a filter function."
+  function extractCrefs
     input Expression exp;
-    input filter func;
-    output list<Expression> exp_lst;
-    partial function filter
-      input Expression exp;
-      output Boolean b;
-    end filter;
-  protected
-    // traverse helper function only needed in this function
-    function traverser
-      input Expression exp;
-      input filter func;
-      input output list<Expression> exp_lst;
-      partial function filter
-        input Expression exp;
-        output Boolean b;
-      end filter;
-    algorithm
-      exp_lst := if func(exp) then exp :: exp_lst else exp_lst;
-    end traverser;
+    output UnorderedSet<ComponentRef> crefs = fold(exp, extractCref, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+  end extractCrefs;
+
+  function extractCref
+    input Expression exp;
+    input output UnorderedSet<ComponentRef> crefs;
   algorithm
-    exp_lst := fold(exp, function traverser(func = func), {});
-  end extract;
+    crefs := match exp
+      case CREF() algorithm
+        UnorderedSet.add(exp.cref, crefs);
+      then crefs;
+      else crefs;
+    end match;
+  end extractCref;
 
   function isIterator
     input Expression exp;
@@ -4452,14 +4465,30 @@ public
       case RECORD() then List.all(exp.elements, isLiteral);
       case RANGE() then isLiteral(exp.start) and isLiteral(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteral, true);
-      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then Call.isLiteral(exp.call);
-      case CAST() then isLiteral(exp.exp);
-      case BOX() then isLiteral(exp.exp);
-      case UNBOX() then isLiteral(exp.exp);
       case FILENAME() then true;
       else false;
     end match;
   end isLiteral;
+
+  function isLiteralReplace
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case STRING()         then true;
+      case BOX(STRING())    then true;
+      case BOX(REAL())      then true;
+      case BOX()            then false;
+      case INTEGER()        then false;
+      case BOOLEAN()        then false;
+      case REAL()           then false;
+      case ENUM_LITERAL()   then false;
+      case SHARED_LITERAL() then false;
+      case ARRAY() guard(arrayEmpty(exp.elements)) then false;
+      case RECORD() then List.all(exp.elements, isLiteralReplace);
+      else false;
+    end match;
+  end isLiteralReplace;
 
   function isKnownSizeFill
     input Expression exp;
@@ -5104,6 +5133,7 @@ public
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
       case RECORD_ELEMENT() then variability(exp.recordExp);
       case MUTABLE() then variability(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then variability(exp.exp);
       case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
       case FILENAME() then Variability.CONSTANT;
@@ -5172,6 +5202,7 @@ public
       case LBINARY() then Prefixes.purityMin(purity(exp.exp1), purity(exp.exp2));
       case LUNARY() then purity(exp.exp);
       case RELATION() then Prefixes.purityMin(purity(exp.exp1), purity(exp.exp2));
+      case MULTARY() then Prefixes.purityMin(purityList(exp.arguments), purityList(exp.inv_arguments));
       case IF() then Prefixes.purityMin(purity(exp.condition),
                        Prefixes.purityMin(purity(exp.trueBranch), purity(exp.falseBranch)));
       case CAST() then purity(exp.exp);
@@ -5182,6 +5213,7 @@ public
       case TUPLE_ELEMENT() then purity(exp.tupleExp);
       case RECORD_ELEMENT() then purity(exp.recordExp);
       case MUTABLE() then purity(Mutable.access(exp.exp));
+      case SHARED_LITERAL() then purity(exp.exp);
       case EMPTY() then Purity.PURE;
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
       case FILENAME() then Purity.PURE;
@@ -5619,6 +5651,7 @@ public
   end isPure;
 
   function containsCref
+    "returns true if the expression contains the cref"
     input Expression exp;
     input ComponentRef cref;
     output Boolean b;
@@ -5636,6 +5669,26 @@ public
       else b;
     end match;
   end isCrefEqual;
+
+  function containsCrefSet
+    "returns true if the expression contains any crefs in the set"
+    input Expression exp;
+    input UnorderedSet<ComponentRef> set;
+    output Boolean b;
+  algorithm
+    b := fold(exp, function isCrefEqualSet(set = set), false);
+  end containsCrefSet;
+
+  function isCrefEqualSet
+    input Expression exp;
+    input output Boolean b;
+    input UnorderedSet<ComponentRef> set;
+  algorithm
+    b := match (b, exp)
+      case (false, CREF()) then UnorderedSet.contains(exp.cref, set);
+      else b;
+    end match;
+  end isCrefEqualSet;
 
   function filterSplitIndices
     input output Expression exp;
@@ -6222,6 +6275,35 @@ public
       unaryExp := UNARY(op, exp);
     end if;
   end makeUnary;
+
+  function replaceLiteral
+    input output Expression exp;
+    input UnorderedMap<Expression, Integer> map;
+    input Pointer<Integer> idx_ptr;
+  protected
+    Integer idx;
+    Option<Integer> idx_opt;
+    Expression new_exp;
+  algorithm
+    exp := match exp
+      // replace literal expressions that are not trivial
+      case _ guard(isLiteralReplace(exp)) algorithm
+        idx_opt := UnorderedMap.get(exp, map);
+        if Util.isSome(idx_opt) then
+          // this literal already exists
+          idx := Util.getOption(idx_opt);
+        else
+          // new literal found
+          idx := Pointer.access(idx_ptr);
+          Pointer.update(idx_ptr, idx + 1);
+          UnorderedMap.add(exp, idx, map);
+        end if;
+        new_exp := Expression.SHARED_LITERAL(idx, exp);
+      then new_exp;
+
+      else exp;
+    end match;
+  end replaceLiteral;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

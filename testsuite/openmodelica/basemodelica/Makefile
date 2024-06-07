@@ -13,7 +13,10 @@ TESTFILES = \
 	Comments.mo \
   DoublePendulum.mos \
 	Expression1.mo \
+	InStreamNominalThreshold.mo \
 	Record1.mo \
+	Record2.mo \
+	Record3.mo \
 	SD.mo \
 	SimpleCoolingCycle.mo \
   Tables.mos \

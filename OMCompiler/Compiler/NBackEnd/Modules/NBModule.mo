@@ -273,6 +273,7 @@ public
     input Option<array<StrongComponent>> strongComponents "Strong Components";
     output Option<Jacobian> jacobian                      "Resulting jacobian";
     input output FunctionTree funcTree                    "Function call bodies";
+    input Boolean init;
   end jacobianInterface;
 
 // =========================================================================

@@ -1030,7 +1030,7 @@ public
       else IOStream.append(s, "#UNKNOWN STATEMENT#");
     end match;
 
-    s := FlatModelicaUtil.appendElementSourceComment(source(stmt), s);
+    s := FlatModelicaUtil.appendElementSourceComment(source(stmt), NFFlatModelicaUtil.ElementType.ALGORITHM, s);
   end toFlatStream;
 
   function toFlatStreamList

@@ -56,6 +56,10 @@
 #include <QMessageBox>
 #include <QMenu>
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#include <QScreen>
+#endif // QT_VERSION_CHECK
+
 /*!
  * \class LibraryTreeItem
  * \brief Contains the information about the Modelica class.
@@ -3527,10 +3531,17 @@ void LibraryTreeView::openInformationDialog()
     pInformationDialog->setAttribute(Qt::WA_DeleteOnClose);
     pInformationDialog->setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, pLibraryTreeItem->getNameStructure(), Helper::information));
     pInformationDialog->setMinimumWidth(300);
+    // Allow to take 90% of screen width
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.9;
+#else // QT_VERSION_CHECK
+    int screenWidth = QApplication::desktop()->availableGeometry().width() * 0.9;
+#endif // QT_VERSION_CHECK
+    pInformationDialog->setMaximumWidth(screenWidth);
     Label *pHeadingLabel = Utilities::getHeadingLabel(pLibraryTreeItem->getNameStructure());
     pHeadingLabel->setElideMode(Qt::ElideMiddle);
     QVBoxLayout *pLayout = new QVBoxLayout;
-    pLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    pLayout->setAlignment(Qt::AlignTop);
     pLayout->addWidget(pHeadingLabel);
     pLayout->addWidget(new Label(tr("Version : %1").arg(pLibraryTreeItem->getVersion())));
     pLayout->addWidget(new Label(tr("Version Date : %1").arg(pLibraryTreeItem->getVersionDate())));

@@ -174,6 +174,7 @@ algorithm
       then evaluateExternal2(name, fn, args, ext_args);
 
     case _
+      guard not EvalTarget.isInstanceAPI(target)
       // For anything else, try to call the function via FFI.
       then callExternalFunction(name, fn, args, ext_args, output_ref, ann);
 

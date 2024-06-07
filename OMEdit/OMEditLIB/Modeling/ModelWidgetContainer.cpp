@@ -1600,8 +1600,7 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
-                                           pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getNameStructure());
+    OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
   } else {
     // delete the connection
     if (pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName(), mpModelWidget->getLibraryTreeItem()->getNameStructure())) {
@@ -9077,20 +9076,8 @@ void ModelWidget::drawOMSModelConnections()
         }
 
         LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-        QString startComponentName, endComponentName;
-        if (pStartConnectorComponent->getParentElement()) {
-          startComponentName = QString("%1.%2").arg(pStartConnectorComponent->getRootParentElement()->getName()).arg(pStartConnectorComponent->getName());
-        } else {
-          startComponentName = pStartConnectorComponent->getName();
-        }
-        pConnectionLineAnnotation->setStartElementName(startComponentName);
-        if (pEndConnectorComponent->getParentElement()) {
-          endComponentName = QString("%1.%2").arg(pEndConnectorComponent->getRootParentElement()->getName()).arg(pEndConnectorComponent->getName());
-        } else {
-          endComponentName = pEndConnectorComponent->getName();
-        }
-        pConnectionLineAnnotation->setEndElementName(endComponentName);
-
+        pConnectionLineAnnotation->setStartElementName(pStartConnectorComponent->getLibraryTreeItem() ? pStartConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
+        pConnectionLineAnnotation->setEndElementName(pEndConnectorComponent->getLibraryTreeItem() ? pEndConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
         pConnectionLineAnnotation->setOMSConnectionType(pConnections[i]->type);
         pConnectionLineAnnotation->updateToolTip();
         pConnectionLineAnnotation->drawCornerItems();

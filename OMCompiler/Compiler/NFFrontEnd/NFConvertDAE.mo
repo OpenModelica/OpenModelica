@@ -138,7 +138,7 @@ algorithm
   binding_exp := Binding.toDAEExp(var.binding);
   var_attr := convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
-    var.visibility, var_attr, var.comment, settings, var.info);
+    var.visibility, var_attr, var.comment, settings, var.info, Variable.isEncrypted(var));
 end convertVariable;
 
 function makeDAEVar
@@ -151,6 +151,7 @@ function makeDAEVar
   input Option<SCode.Comment> comment;
   input VariableConversionSettings settings;
   input SourceInfo info;
+  input Boolean encrypted;
   output DAE.Element var;
 protected
   DAE.ComponentRef dcref;
@@ -182,14 +183,15 @@ algorithm
           source,
           vattr,
           comment,
-          Absyn.NOT_INNER_OUTER()
+          Absyn.NOT_INNER_OUTER(),
+          encrypted
         );
 
     else
       DAE.VAR(dcref, DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
         DAE.VarParallelism.NON_PARALLEL(), Prefixes.visibilityToDAE(vis), dty,
         binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, comment,
-        Absyn.NOT_INNER_OUTER());
+        Absyn.NOT_INNER_OUTER(),encrypted);
 
   end match;
 end makeDAEVar;
@@ -1152,7 +1154,7 @@ algorithm
         var_attr := convertVarAttributes(ty_attr, ty, attr);
       then
         makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr,
-          comp.comment, FUNCTION_VARIABLE_CONVERSION_SETTINGS, info);
+          comp.comment, FUNCTION_VARIABLE_CONVERSION_SETTINGS, info, false);
 
     else
       algorithm

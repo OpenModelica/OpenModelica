@@ -783,7 +783,7 @@ public
 
       s := IOStream.append(s, name);
       s := IOStream.append(s, " = ");
-      s := IOStream.append(s, Binding.toFlatString(binding));
+      s := IOStream.append(s, Expression.toFlatString(bind_exp));
 
       ty_attrs := listRest(ty_attrs);
       if listEmpty(ty_attrs) then
