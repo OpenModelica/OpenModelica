@@ -731,7 +731,7 @@ public
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eq)});
         then fail();
-     end match;
+      end match;
     end source;
 
     function info
@@ -1378,7 +1378,7 @@ public
     function setResidualVar
       input output Equation eqn;
       input Pointer<Variable> residualVar;
-   algorithm
+    algorithm
        // update equation attributes
       eqn := match eqn
         case SCALAR_EQUATION() algorithm
@@ -2161,7 +2161,7 @@ public
           if listLength(lhs_lst) == listLength(rhs_lst) then
             for tpl in List.zip(lhs_lst, rhs_lst) loop
               (lhs, rhs) := tpl;
-               stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
+              stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
             end for;
           else
             stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
@@ -3506,7 +3506,7 @@ public
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           func(ExpandableArray.get(i, equations.eqArr));
-         end if;
+        end if;
       end for;
     end mapPtr;
 
@@ -3552,7 +3552,7 @@ public
           if func(eq_ptr) then
             equations := remove(eq_ptr, equations);
           end if;
-         end if;
+        end if;
       end for;
       equations := compress(equations);
     end mapRemovePtr;

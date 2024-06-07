@@ -118,12 +118,12 @@ public
   end MAIN;
 
   record JACOBIAN
-    String name                                 "unique matrix name";
-    JacobianType jacType                        "type of jacobian";
-    VarData varData                             "Variable data.";
-    array<StrongComponent> comps                "the sorted equations";
-    Jacobian.SparsityPattern sparsityPattern    "Sparsity pattern for the jacobian";
-    Jacobian.SparsityColoring sparsityColoring  "Coloring information";
+    String name                       "unique matrix name";
+    JacobianType jacType              "type of jacobian";
+    VarData varData                   "Variable data.";
+    array<StrongComponent> comps      "the sorted equations";
+    SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
+    SparsityColoring sparsityColoring "Coloring information";
   end JACOBIAN;
 
   record HESSIAN
@@ -483,7 +483,7 @@ protected
 
         /* other cases should not occur up until now */
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var) + " with unhandled variable kind " + VariableKind.toString(lowVar.backendinfo.varKind)});
         then fail();
 
       end match;
@@ -544,7 +544,7 @@ protected
       var.backendinfo := match var.backendinfo
         case BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE());
+        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE(), NONE(), NONE());
         else BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 

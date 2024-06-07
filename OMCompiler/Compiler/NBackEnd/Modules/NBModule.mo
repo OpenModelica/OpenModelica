@@ -297,6 +297,5 @@ public
     input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   end tearingInterface;
 
-
   annotation(__OpenModelica_Interface="backend");
 end NBModule;
