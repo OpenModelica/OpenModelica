@@ -891,9 +891,34 @@ public
       output Pointer<Equation> eq;
     protected
       Equation e;
+    algorithm
+      e := makeAssignmentEqn(lhs, rhs, iter, attr);
+      eq := Pointer.create(e);
+      createName(eq, idx, str);
+    end makeAssignment;
+
+    function makeAssignmentUpdate
+      input output Equation eq;
+      input Expression lhs;
+      input Expression rhs;
+      input Iterator iter;
+      input EquationAttributes attr;
+    protected
+      Pointer<Variable> res_var = Equation.getResidualVar(Pointer.create(eq));
+    algorithm
+      eq := makeAssignmentEqn(lhs, rhs, iter, attr);
+      eq := Equation.setResidualVar(eq, res_var);
+    end makeAssignmentUpdate;
+
+    protected function makeAssignmentEqn
+      input Expression lhs;
+      input Expression rhs;
+      input Iterator iter;
+      input EquationAttributes attr;
+      output Equation e;
+    protected
       Type ty = Expression.typeOf(lhs);
     algorithm
-      // match type and create equation accordingly
       e := match ty
         case Type.ARRAY() then ARRAY_EQUATION(
             ty          = ty,
@@ -940,9 +965,10 @@ public
         // inline if it has size 1
         e := Inline.inlineForEquation(e);
       end if;
-      eq := Pointer.create(e);
-      createName(eq, idx, str);
-    end makeAssignment;
+    end makeAssignmentEqn;
+
+
+    public
 
     function makeAlgorithm
       input list<Statement> stmts;
@@ -1166,6 +1192,7 @@ public
         case ARRAY_EQUATION()                               then eq.lhs;
         case RECORD_EQUATION()                              then eq.lhs;
         case FOR_EQUATION() guard(listLength(eq.body) == 1) then getLHS(List.first(eq.body));
+        case IF_EQUATION()                                  then IfEquationBody.getLHS(eq.body);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS was ambiguous for: " + toString(eq)});
         then fail();
@@ -1201,7 +1228,7 @@ public
           eq.body := {setLHS(List.first(eq.body), lhs)};
         then eq;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS could not be set for: " + toString(eq)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS " + Expression.toString(lhs) + " could not be set for:\n " + toString(eq)});
         then fail();
       end match;
     end setLHS;
@@ -1462,11 +1489,18 @@ public
         else getEqnName(eqn_ptr);
       end match;
 
-      // update RHS and LHS
-      lhs := Expression.fromCref(residualCref);
-      rhs := getResidualExp(eqn);
-      eqn := setLHS(eqn, lhs);
-      eqn := setRHS(eqn, rhs);
+      eqn := match eqn
+        case IF_EQUATION() algorithm
+          eqn.body := IfEquationBody.createResidual(eqn.body, residualCref);
+        then eqn;
+        else algorithm
+          // update RHS and LHS
+          lhs := Expression.fromCref(residualCref);
+          rhs := getResidualExp(eqn);
+          eqn := setLHS(eqn, lhs);
+          eqn := setRHS(eqn, rhs);
+        then eqn;
+      end match;
 
       // update pointer or create new
       if new then eqn_ptr := Pointer.create(eqn); else Pointer.update(eqn_ptr, eqn); end if;
@@ -1503,8 +1537,6 @@ public
           end for;
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
-
-        case IF_EQUATION() then IfEquationBody.getResidualExp(eqn.body);
 
         // returns innermost residual!
         // Ambiguous for entwined for loops!
@@ -2276,18 +2308,6 @@ public
       end if;
     end createNames;
 
-    function getResidualExp
-      input IfEquationBody body;
-      output Expression exp;
-    algorithm
-      if listLength(body.then_eqns) == 1 then
-        exp := Equation.getResidualExp(Pointer.access(List.first(body.then_eqns)));
-      else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(body)});
-        fail();
-      end if;
-    end getResidualExp;
-
     function toStatement
       "converts an if equation body to an algorithmic statement"
       input IfEquationBody body;
@@ -2302,6 +2322,89 @@ public
         stmts := {stmt};
       end if;
     end toStatement;
+
+    function createResidual
+      "needs the if equation to be split"
+      input output IfEquationBody body;
+      input ComponentRef res;
+    protected
+      Pointer<Equation> eqn_ptr;
+      Equation eqn;
+      Expression exp;
+    algorithm
+      body := match body.then_eqns
+        case {eqn_ptr} algorithm
+          eqn := Pointer.access(eqn_ptr);
+          exp := Equation.getResidualExp(eqn);
+          eqn := Equation.setLHS(eqn, Expression.fromCref(res));
+          eqn := Equation.setRHS(eqn, exp);
+          Pointer.update(eqn_ptr, eqn);
+          body.else_if := Util.applyOption(body.else_if, function createResidual(res = res));
+        then body;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(body)});
+        then fail();
+      end match;
+    end createResidual;
+
+    function inline
+      "only works if the LHS of each branch are equal, so if it was solved and only has a single equation each branch"
+      input IfEquationBody body;
+      input output Equation eqn;
+    protected
+      Expression lhs, rhs;
+    algorithm
+      lhs := getLHS(body);
+      rhs := getRHS(body);
+      eqn := Equation.makeAssignmentUpdate(eqn, lhs, rhs, Equation.getForIterator(eqn), Equation.getAttributes(eqn));
+    end inline;
+
+    function getLHS
+      "needs the if equation to be split and equal lhs"
+      input IfEquationBody body;
+      input output Expression exp = Expression.END();
+    protected
+      Pointer<Equation> eqn_ptr;
+      Expression new_exp;
+    algorithm
+      exp := match body.then_eqns
+        case {eqn_ptr} algorithm
+          new_exp := Equation.getLHS(Pointer.access(eqn_ptr));
+          if Expression.isEnd(exp) or Expression.isEqual(exp, new_exp) then
+            if Util.isSome(body.else_if) then
+              new_exp := getLHS(Util.getOption(body.else_if), new_exp);
+            end if;
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of ambiguous LHS for:\n" + toString(body)});
+            fail();
+          end if;
+        then new_exp;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of un-split if-equation:\n" + toString(body)});
+        then fail();
+      end match;
+    end getLHS;
+
+    function getRHS
+      "needs the if equation to be split"
+      input IfEquationBody body;
+      output Expression exp;
+    protected
+      Pointer<Equation> eqn_ptr;
+      Expression new_exp;
+    algorithm
+      exp := match body.then_eqns
+        case {eqn_ptr} algorithm
+          new_exp := Equation.getRHS(Pointer.access(eqn_ptr));
+          if Util.isSome(body.else_if) then
+            new_exp := Expression.IF(Expression.typeOf(new_exp), body.condition, new_exp, getRHS(Util.getOption(body.else_if)));
+          end if;
+        then new_exp;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of un-split if-equation:\n" + toString(body)});
+        then fail();
+      end match;
+    end getRHS;
 
     function split
       "splits an if equation body with multiple equations into multiple bodies of each one equation
