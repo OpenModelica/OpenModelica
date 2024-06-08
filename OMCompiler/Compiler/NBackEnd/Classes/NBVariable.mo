@@ -585,7 +585,7 @@ public
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
 
-        backendinfo.attributes := BackendExtension.VariableAttributes.setMin(variableAttributes, min_val);
+        backendinfo.attributes := BackendExtension.VariableAttributes.setMin(variableAttributes, min_val, overwrite);
         var.backendinfo := backendinfo;
       then var;
     end match;
@@ -602,7 +602,7 @@ public
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
 
-        backendinfo.attributes := BackendExtension.VariableAttributes.setMax(variableAttributes, max_val);
+        backendinfo.attributes := BackendExtension.VariableAttributes.setMax(variableAttributes, max_val, overwrite);
         var.backendinfo := backendinfo;
       then var;
     end match;
@@ -619,27 +619,11 @@ public
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
 
-        backendinfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(variableAttributes, start_val);
+        backendinfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(variableAttributes, start_val, overwrite);
         var.backendinfo := backendinfo;
       then var;
     end match;
   end setStartAttribute;
-
-  function setFixed2
-    input output Variable var;
-    input Boolean overwrite = true;
-  algorithm
-    var := match var
-      local
-        BackendExtension.BackendInfo backendinfo;
-        BackendExtension.VariableAttributes variableAttributes;
-      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
-
-        backendinfo.attributes := BackendExtension.VariableAttributes.setFixed2(variableAttributes);
-        var.backendinfo := backendinfo;
-      then var;
-    end match;
-  end setFixed2;
 
   function setStateSelect
     input output Variable var;
@@ -652,7 +636,7 @@ public
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
 
-        backendinfo.attributes := BackendExtension.VariableAttributes.setStateSelect(variableAttributes, stateSelect_val);
+        backendinfo.attributes := BackendExtension.VariableAttributes.setStateSelect(variableAttributes, stateSelect_val, overwrite);
         var.backendinfo := backendinfo;
       then var;
     end match;
@@ -669,7 +653,7 @@ public
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
 
-        backendinfo.attributes := BackendExtension.VariableAttributes.setTearingSelect(variableAttributes, tearingSelect_val);
+        backendinfo.attributes := BackendExtension.VariableAttributes.setTearingSelect(variableAttributes, tearingSelect_val, overwrite);
         var.backendinfo := backendinfo;
       then var;
     end match;
@@ -1261,6 +1245,7 @@ public
   function setFixed
     input output Pointer<Variable> var_ptr;
     input Boolean b = true;
+    input Boolean overwrite = false;
   protected
     Variable var;
   algorithm
@@ -1270,7 +1255,7 @@ public
         BackendExtension.BackendInfo binfo;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b);
+        binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b, overwrite);
         var.backendinfo := binfo;
       then var;
 

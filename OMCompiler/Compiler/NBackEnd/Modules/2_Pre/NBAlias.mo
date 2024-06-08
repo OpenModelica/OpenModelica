@@ -694,7 +694,7 @@ protected
         diffTearingSelect(collector.tearingSelect_map, set);
         stateSelectAlways(collector.stateSelect_map, set);
         checkNominalThreshold(collector.nominal_map, set);
-        setNewAttributes(Pointer.access(var_to_keep), collector, set);
+        setNewAttributes(var_to_keep, collector, set);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
         end if;
@@ -704,7 +704,7 @@ protected
 
   function setNewAttributes
     "Sets new values for each attribute of kept variable, if possible. "
-    input Pointer<Variable> var_to_keep;
+    input Pointer<Pointer<Variable>> var_to_keep_ptr;
     input AttributeCollector attrcollector;
     input AliasSet set;
   protected
@@ -713,35 +713,37 @@ protected
     Option<Expression> new_min, new_max, new_start;
     Option<StateSelect> new_stateSelect;
     Option<TearingSelect> new_tearingSelect;
+    Pointer<Variable> var_to_keep = Pointer.access(var_to_keep_ptr);
     UnorderedMap<ComponentRef, Expression> fixed_start_map;
   algorithm
   // function calls of different set functions in NBVariable.mo
     new_min := getMaximum(attrcollector.min_val_map);
     if Util.isSome(new_min) then
-      Pointer.update(var_to_keep, BVariable.setMin(Pointer.access(var_to_keep), new_min));
+      Pointer.update(var_to_keep, BVariable.setMin(Pointer.access(var_to_keep), new_min, true));
     end if;
     new_max := getMinimum(attrcollector.max_val_map);
     if Util.isSome(new_max) then
-      Pointer.update(var_to_keep, BVariable.setMax(Pointer.access(var_to_keep), new_max));
+      Pointer.update(var_to_keep, BVariable.setMax(Pointer.access(var_to_keep), new_max, true));
     end if;
     fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
     if UnorderedMap.size(fixed_start_map) == 1 then
       new_start := SOME(List.first(UnorderedMap.valueList(fixed_start_map)));
-      Pointer.update(var_to_keep, BVariable.setFixed2(Pointer.access(var_to_keep)));
-      Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start)));
+      BVariable.setFixed(var_to_keep,overwrite=true);
+      Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
     end if;
     (new_cref, new_stateSelect) := chooseStateSelect(attrcollector.stateSelect_map);
     if Util.isSome(new_stateSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
-      Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect)));
+      Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect), true));
       if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then // start value of var with StateSelect = always is stronger than start value of fixed var
         new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
-        Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start)));
+        Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
       end if;
     end if;
     new_tearingSelect := chooseTearingSelect(attrcollector.tearingSelect_map);
     if Util.isSome(new_tearingSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
-      Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect)));
+      Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect), true));
     end if;
+    Pointer.update(var_to_keep_ptr,var_to_keep);
   end setNewAttributes;
 
   function chooseVariableToKeep

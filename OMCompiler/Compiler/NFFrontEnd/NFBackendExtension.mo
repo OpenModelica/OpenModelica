@@ -580,25 +580,26 @@ public
     function setStartAttribute
       input output VariableAttributes attributes;
       input Expression start;
+      input Boolean overwrite = false;
     algorithm
       attributes := match attributes
-        case VAR_ATTR_REAL() algorithm
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(start);
         then attributes;
 
-        case VAR_ATTR_INT() algorithm
+        case VAR_ATTR_INT() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(start);
         then attributes;
 
-        case VAR_ATTR_BOOL() algorithm
+        case VAR_ATTR_BOOL() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(start);
         then attributes;
 
-        case VAR_ATTR_STRING() algorithm
+        case VAR_ATTR_STRING() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(start);
         then attributes;
 
-        case VAR_ATTR_ENUMERATION() algorithm
+        case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.start)) algorithm
           attributes.start := SOME(start);
         then attributes;
 
@@ -633,18 +634,19 @@ public
     function setMin
       input output VariableAttributes attributes;
       input Option<Expression> min_val;
+      input Boolean overwrite = false;
     algorithm
       attributes := match attributes
 
-        case VAR_ATTR_REAL() algorithm
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.min)) algorithm
           attributes.min := min_val;
         then attributes;
 
-        case VAR_ATTR_INT() algorithm
+        case VAR_ATTR_INT() guard(overwrite or isNone(attributes.min)) algorithm
           attributes.min := min_val;
         then attributes;
 
-        case VAR_ATTR_ENUMERATION() algorithm
+        case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.min)) algorithm
           attributes.min := min_val;
         then attributes;
 
@@ -655,18 +657,19 @@ public
     function setMax
       input output VariableAttributes attributes;
       input Option<Expression> max_val;
+      input Boolean overwrite = false;
     algorithm
       attributes := match attributes
 
-        case VAR_ATTR_REAL() algorithm
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.max))algorithm
           attributes.max := max_val;
         then attributes;
 
-        case VAR_ATTR_INT() algorithm
+        case VAR_ATTR_INT() guard(overwrite or isNone(attributes.max)) algorithm
           attributes.max := max_val;
         then attributes;
 
-        case VAR_ATTR_ENUMERATION() algorithm
+        case VAR_ATTR_ENUMERATION() guard(overwrite or isNone(attributes.max)) algorithm
           attributes.max := max_val;
         then attributes;
 
@@ -674,35 +677,14 @@ public
       end match;
     end setMax;
 
-    function setFixed2
-      input output VariableAttributes attributes;
-      input Expression val = Expression.BOOLEAN(true);
-    algorithm
-      attributes := match attributes
-
-        case VAR_ATTR_REAL() algorithm
-          attributes.fixed := SOME(val);
-        then attributes;
-
-        case VAR_ATTR_INT() algorithm
-          attributes.fixed := SOME(val);
-        then attributes;
-
-        case VAR_ATTR_ENUMERATION() algorithm
-          attributes.fixed := SOME(val);
-        then attributes;
-
-        else attributes;
-      end match;
-    end setFixed2;
-
     function setStateSelect
       input output VariableAttributes attributes;
       input StateSelect stateSelect_val;
+      input Boolean overwrite = false;
     algorithm
       attributes := match attributes
 
-        case VAR_ATTR_REAL() algorithm
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.stateSelect)) algorithm
           attributes.stateSelect := SOME(stateSelect_val);
         then attributes;
 
@@ -713,10 +695,11 @@ public
     function setTearingSelect
       input output VariableAttributes attributes;
       input TearingSelect tearingSelect_val;
+      input Boolean overwrite = false;
     algorithm
       attributes := match attributes
 
-        case VAR_ATTR_REAL() algorithm
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.tearingSelect)) algorithm
           attributes.tearingSelect := SOME(tearingSelect_val);
         then attributes;
 
