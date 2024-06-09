@@ -56,7 +56,8 @@
 #include <QMessageBox>
 #include <QMenu>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+// adrpo: why don't we have 6.0.0 here?!
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 17))
 #include <QScreen>
 #else // QT_VERSION_CHECK
 #include <QDesktopWidget>
