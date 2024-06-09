@@ -67,6 +67,7 @@ Then update and install OpenModelica build dependencies:
 ```bash
 sudo apt-get update
 sudo apt-get build-dep openmodelica
+sudo apt-get install openmodelica
 ```
 
 # 2.2 Linux/BSD
