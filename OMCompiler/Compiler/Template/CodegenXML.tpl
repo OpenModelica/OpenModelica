@@ -297,8 +297,8 @@ end initValXml;
 template ScalarVariableTypeRealAttributeXml(String unit, String displayUnit)
  "Generates XML code for ScalarVariable Type Real file ."
 ::=
-  let unit_ = if unit then 'unit="<%unit%>"'
-  let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"'
+  let unit_ = if unit then 'unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+  let displayUnit_ = if displayUnit then 'displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
   <<
   <%unit_%> <%displayUnit_%>
   >>
