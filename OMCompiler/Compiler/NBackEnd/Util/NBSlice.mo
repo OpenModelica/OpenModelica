@@ -1201,7 +1201,11 @@ protected
       // I. resolve the skips
       d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
       (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
-      (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips);
+      if not UnorderedSet.contains(cref, rep) then
+        (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips);
+      else
+        (skip_idx, skip_ty) := (start, ty);
+      end if;
 
       // get equation and iterator sizes and frames
       body_size       := Type.sizeOf(skip_ty);
