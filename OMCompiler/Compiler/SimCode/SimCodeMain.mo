@@ -834,10 +834,12 @@ algorithm
         end if;
 
         // create optional html documentation directory
-        Util.createDirectoryTree(fmutmp + "/documentation/");
-        htmlFile := exportHTMLDocumentation(program, simCode.modelInfo.name, FMUVersion);
-        if 0 <> System.systemCall("mv '" + htmlFile + "' '" + fmutmp + "/documentation/" + "'") then
-          Error.addInternalError("Failed to move documentation file " + htmlFile + "", sourceInfo());
+        htmlFile := exportHTMLDocumentation(program, simCode, FMUVersion);
+        if (not stringEmpty(htmlFile)) then
+          Util.createDirectoryTree(fmutmp + "/documentation/");
+          if 0 <> System.systemCall("mv '" + htmlFile + "' '" + fmutmp + "/documentation/" + "'") then
+            Error.addInternalError("Failed to move documentation file " + htmlFile + "", sourceInfo());
+          end if;
         end if;
 
         SimCodeUtil.resetFunctionIndex();
@@ -1042,24 +1044,32 @@ protected function exportHTMLDocumentation
                                  __OpenModelica_infoHeader = \"<html> </html>\"))
   "
   input Absyn.Program program;
-  input Absyn.Path className;
+  input SimCode.SimCode simCode;
   input String FMUVersion;
   output String fileName;
 protected
   File.File file;
   String info, revisions, infoHeader;
 algorithm
-  (info, revisions, infoHeader) := Interactive.getNamedAnnotation(className, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
-  if (FMUVersion == "1.0") then
-    fileName := "_main.html";
-  else
-    fileName := "index.html";
-  end if;
+  (info, revisions, infoHeader) := Interactive.getNamedAnnotation(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+
   file := File.File();
-  File.open(file, fileName, File.Mode.Write);
-  File.write(file, infoHeader + "\n");
-  File.write(file, "<h4> Information </h4>" + info + "\n");
-  File.write(file, "<h4> Revisions </h4>" + revisions + "\n");
+
+  if (stringEmpty(info) and stringEmpty(revisions) and stringEmpty(infoHeader)) then
+    fileName := "";
+  else
+    if (FMUVersion == "1.0") then
+      fileName := "_main.html";
+    else
+      fileName := "index.html";
+    end if;
+    File.open(file, fileName, File.Mode.Write);
+    File.write(file, infoHeader + "\n");
+    File.write(file, "<h1>" + AbsynUtil.pathString(simCode.modelInfo.name) + "</h1>\n");
+    File.write(file, "<p> <i>" + simCode.modelInfo.description + "</i> </p> \n");
+    File.write(file, "<h4> <u> Information </u> </h4>" + info + "\n");
+    File.write(file, "<h4> <u> Revisions </u> </h4>" + revisions + "\n");
+  end if;
 end exportHTMLDocumentation;
 
 protected function callTargetTemplatesXML
