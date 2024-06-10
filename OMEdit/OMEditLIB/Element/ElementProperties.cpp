@@ -46,7 +46,6 @@
 #include <QButtonGroup>
 #include <QMessageBox>
 #include <QDesktopServices>
-#include <QDesktopWidget>
 #include <QList>
 #include <QScreen>
 #include <QStringList>
@@ -1229,13 +1228,8 @@ QSize ParametersScrollArea::minimumSizeHint() const
 {
   QSize size = QWidget::sizeHint();
   // find optimal width and height
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
   int screenWidth = QApplication::primaryScreen()->availableGeometry().width() - 100;
   int screenHeight = QApplication::primaryScreen()->availableGeometry().height() - 300;
-#else // QT_VERSION_CHECK
-  int screenWidth = QApplication::desktop()->availableGeometry().width() - 100;
-  int screenHeight = QApplication::desktop()->availableGeometry().height() - 300;
-#endif // QT_VERSION_CHECK
   int widgetWidth = mpWidget->minimumSizeHint().width() + (verticalScrollBar()->isVisible() ? verticalScrollBar()->width() : 0);
   size.rwidth() = qMin(screenWidth, widgetWidth);
   int widgetHeight = mpWidget->minimumSizeHint().height() + (horizontalScrollBar()->isVisible() ? horizontalScrollBar()->height() : 0);
