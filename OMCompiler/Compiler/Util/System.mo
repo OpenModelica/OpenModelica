@@ -739,6 +739,22 @@ The clock index is 0-31. The function fails if the number is out of range."
   external "C" System_realtimeClear(clockIndex) annotation(Library = "omcruntime");
 end realtimeClear;
 
+public function realtimeAccumulate
+"Accumulates the timer.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Real outTime;
+  external "C" outTime = System_realtimeAccumulate(clockIndex) annotation(Library = "omcruntime");
+end realtimeAccumulate;
+
+public function realtimeAccumulated
+"Returns the time accumulated from intervals between ticks and tocks.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Real outTime;
+  external "C" outTime = System_realtimeAccumulated(clockIndex) annotation(Library = "omcruntime");
+end realtimeAccumulated;
+
 public function realtimeNtick
 "Returns the number of ticks since last clear.
 The clock index is 0-31. The function fails if the number is out of range."
