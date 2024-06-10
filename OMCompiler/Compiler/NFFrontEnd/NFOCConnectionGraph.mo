@@ -922,7 +922,7 @@ protected function setRootDistance
   input list<ComponentRef> nextLevel;
   input CrefIndexTable rooted;
 algorithm
-  () := matchcontinue(finalRoots,nextLevel)
+  () := match(finalRoots,nextLevel)
     local
       list<ComponentRef> rest,next;
       ComponentRef cr;
@@ -933,39 +933,29 @@ algorithm
       then
         ();
     case(cr::rest,_)
+      guard not UnorderedMap.contains(cr, rooted)
       equation
-        UnorderedMap.addUnique(cr,distance,rooted);
-        next = UnorderedMap.getOrFail(cr, table);
+        UnorderedMap.addNew(cr,distance,rooted);
         //print("- NFOCConnectionGraph.setRootDistance: Set Distance " +
         //   ComponentRef.toString(cr) + " , " + intString(distance) + "\n");
-        //print("- NFOCConnectionGraph.setRootDistance: add " +
-        //   stringDelimitList(List.map(next,ComponentRef.toString),"\n") + " to the queue\n");
-        next = listAppend(nextLevel,next);
+        next = match UnorderedMap.get(cr, table)
+          case SOME(next)
+            //algorithm
+              //print("- NFOCConnectionGraph.setRootDistance: Add " +
+              //   stringDelimitList(List.map(next,ComponentRef.toString),"\n") + " to the queue\n");
+            then listAppend(nextLevel,next);
+          else nextLevel;
+        end match;
         setRootDistance(rest,table,distance,next,rooted);
       then
         ();
-    case(cr::rest,_)
-      equation
-        UnorderedMap.addUnique(cr,distance,rooted);
-        //print("- NFOCConnectionGraph.setRootDistance: Set Distance " +
-        //   ComponentRef.toString(cr) + " , " + intString(distance) + "\n");
-        setRootDistance(rest,table,distance,nextLevel,rooted);
-      then
-        ();
-/*    case(cr::rest,_,_,_,_)
-      equation
-        print("- NFOCConnectionGraph.setRootDistance: found " +
-           ComponentRef.toString(cr) + " twice, value is " + intString(i) + "\n");
-      then
-        setRootDistance(rest,table,distance,nextLevel,rooted);
-*/
     case (_::rest,_)
       algorithm
-      //  print("- NFOCConnectionGraph.setRootDistance: cannot found " + ComponentRef.toString(cr) + "\n");
+        //print("- NFOCConnectionGraph.setRootDistance: found " + ComponentRef.toString(cr) + "\n");
         setRootDistance(rest,table,distance,nextLevel,rooted);
       then
         ();
-  end matchcontinue;
+  end match;
 end setRootDistance;
 
 protected function addBranches
