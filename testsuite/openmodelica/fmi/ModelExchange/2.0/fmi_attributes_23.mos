@@ -4,7 +4,7 @@
 // teardown_command: rm -rf fmi_attributes_23.fmu fmi_attributes_23.log fmi_attributes_23_index.html fmi_attributes_23_info.json
 
 loadString("
-  model fmi_attributes_23
+  model fmi_attributes_23 \"model description text example \"
     parameter Real A = 2;
     output Real B;
   equation
@@ -46,10 +46,12 @@ readFile("fmi_attributes_23_index.html"); getErrorString();
 // 0
 // ""
 // "<html><h2>TestModel</h2></html>
-// <h4> Information </h4><html>
+// <h1>fmi_attributes_23</h1>
+// <p> <i>model description text example </i> </p>
+// <h4> <u> Information </u> </h4><html>
 //   <p>The linear resistor connects the branch voltage <em>v</em> with the branch current <em>i</em> by <em>i*R = v</em>. The Resistance <em>R</em> is allowed to be positive, zero, or negative.</p>
 //   </html>
-// <h4> Revisions </h4><html>
+// <h4> <u> Revisions </u> </h4><html>
 //   <ul>
 //   <li><em> August 07, 2009   </em>
 //          by Anton Haumer<br> temperature dependency of resistance added<br>
