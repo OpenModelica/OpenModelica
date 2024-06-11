@@ -314,7 +314,7 @@ protected
     // 2. balance sets - choose variable to keep if necessary
     // 3. match/sort set (linear w.r.t. vars since all equations contain two crefs at max and are simple/linear)
     // --------------------------------------------------------------------------------------------------------
-    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size); // kab
+    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
       replacements := createReplacementRules(set, replacements);
     end for;
@@ -641,7 +641,6 @@ protected
     // report errors/warnings
     replacements := match set.const_opt
       local
-        //list<tuple<Vector<K>,Vector<V>>> repl;
         Expression rhs;
         Equation solved_eq;
         Pointer<Equation> const_eq, eq;
@@ -652,7 +651,6 @@ protected
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
-        //tuple<enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE),Boolean> := (NBEquation.Equation, NFFlatten.FunctionTreeImpl.Tree, enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE), Boolean) tpl_solve;
         Status status;
         Boolean invertRelation;
 
@@ -684,7 +682,7 @@ protected
         end if;
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
-          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), "TMP", Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
           (solved_eq,_,status, invertRelation) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
           collector := collector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
@@ -1088,9 +1086,6 @@ protected
         if Util.isSome(attr.fixed) then
           fixed_val := Util.getOption(attr.fixed);
           UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
-          /*if Expression.isTrue(fixed_val) then
-            rating := rating + 10;  //stronger weighting if fixed
-          end if;*/
         end if;
         if Util.isSome(attr.nominal) then
           nominal_val := Util.getOption(attr.nominal);
@@ -1110,13 +1105,9 @@ protected
 
       then ();
 
-      //case var.isDiscrete then rating +1 ;always
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.DISCRETE())) then ();
-      //case var.isAlgebraic then rating -2;
       else ();
     end match;
-    //print(Type.toString(Variable.typeOf(Pointer.access(var_ptr))) + " probe\n");
-    //print("Ranking: "+String(rating)+"\n\n");
   end rateVar;
 
   uniontype AttributeCollector
