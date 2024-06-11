@@ -41,10 +41,6 @@ simulate(underdetermined_init); getErrorString();
 // ***************************************************************
 // 	[SCAL] (1) y = $START.y ($RES_SIM_6)
 //
-// Not underdetermined.
-// **********************
-// Not overdetermined.
-// *********************
 // record SimulationResult
 //     resultFile = "underdetermined_init_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'underdetermined_init', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

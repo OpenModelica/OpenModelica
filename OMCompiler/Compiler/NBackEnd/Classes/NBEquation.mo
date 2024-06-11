@@ -1683,8 +1683,16 @@ public
       output Boolean b;
     algorithm
       b := match Pointer.access(eqn)
+        local
+          WhenEquationBody when_body;
+          IfEquationBody if_body;
+
         case RECORD_EQUATION() then true;
         case ARRAY_EQUATION(recordSize = SOME(_)) then true;
+        case WHEN_EQUATION(body = when_body)
+          then WhenEquationBody.isRecordOrTupleEquation(when_body);
+        case IF_EQUATION(body = if_body)
+          then IfEquationBody.isRecordOrTupleEquation(if_body);
         else false;
       end match;
     end isRecordOrTupleEquation;
@@ -2430,6 +2438,22 @@ public
       end for;
     end split;
 
+    function isRecordOrTupleEquation
+      "only checks first layer body if it returns multiple variables"
+      input IfEquationBody body;
+      output Boolean b;
+    algorithm
+      b := match body.then_eqns
+        local
+          Pointer<Equation> eqn_ptr;
+         // just a tuple itself
+        case {eqn_ptr} guard(Equation.isRecordOrTupleEquation(eqn_ptr)) then true;
+        // multiple body equations -> tuple return
+        case _ :: _ then true;
+        else false;
+      end match;
+    end isRecordOrTupleEquation;
+
   protected
     function sortForSplit
       "sorts the body equations by discrete and continuous to correctly split them
@@ -2763,6 +2787,25 @@ public
       end for;
     end getAllAssigned;
 
+    function isRecordOrTupleEquation
+      "only checks first layer body if it returns multiple variables"
+      input WhenEquationBody body;
+      output Boolean b;
+    algorithm
+      b := match body.when_stmts
+        local
+          ComponentRef cref;
+         // just a record or tuple itself
+        case {WhenStatement.ASSIGN(lhs = Expression.TUPLE())} then true;
+        case {WhenStatement.ASSIGN(lhs = Expression.RECORD())} then true;
+        case {WhenStatement.ASSIGN(lhs = Expression.CREF(cref = cref))}
+          then BVariable.checkCref(cref, BVariable.isRecord);
+        // multiple body equations -> tuple return
+        case _ guard(List.count(body.when_stmts, WhenStatement.isAssign) > 1) then true;
+        else false;
+      end match;
+    end isRecordOrTupleEquation;
+
   protected
     type CrefSet = UnorderedSet<ComponentRef>;
     function collectForSplit
@@ -2989,6 +3032,16 @@ public
                       else 0;
       end match;
     end size;
+
+    function isAssign
+      input WhenStatement stmt;
+      output Boolean b;
+    algorithm
+      b := match stmt
+        case ASSIGN() then true;
+        else false;
+      end match;
+    end isAssign;
 
     function isAssignOrReinit
       input WhenStatement stmt;
