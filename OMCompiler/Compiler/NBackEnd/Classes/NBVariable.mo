@@ -1019,6 +1019,7 @@ public
     e.g. (\"$SEV\", 4) --> $SEV_4"
     input String name                           "context name e.g. §WHEN";
     input Integer uniqueIndex                   "unique identifier index";
+    input Type var_ty                           "variable type";
     input Iterator iterator = Iterator.EMPTY()  "optional for-loop iterator";
     output Pointer<Variable> var_ptr            "pointer to new variable";
     output ComponentRef cref                    "new component reference";
@@ -1035,10 +1036,10 @@ public
     (iter_crefs, _) := Iterator.getFrames(iterator);
     iter_subs := list(Subscript.fromTypedExp(Expression.fromCref(iter)) for iter in iter_crefs);
     if listEmpty(iter_subs) then
-      ty := Type.BOOLEAN();
+      ty := var_ty;
     else
       sub_sizes := Iterator.sizes(iterator);
-      ty := Type.ARRAY(Type.BOOLEAN(), list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
+      ty := Type.liftArrayLeftList(var_ty, list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
     end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
