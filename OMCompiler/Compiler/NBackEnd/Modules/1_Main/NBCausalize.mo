@@ -279,7 +279,7 @@ protected
         vn := UnorderedMap.subMap(system.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
         en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, system.unknowns, system.equations);
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, system.unknowns, system.equations, funcTree, varData, eqData, system.systemType, false, true, false);
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, system.unknowns, system.equations, funcTree, varData, eqData, system.systemType, false, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
@@ -296,7 +296,7 @@ protected
 
         // create solvable adjacency matrix for matching
         adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, system.systemType, false, true);
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, system.systemType, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
