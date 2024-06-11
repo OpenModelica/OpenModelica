@@ -152,7 +152,7 @@ algorithm
           for i in inputs loop
             arg :: args := args;
             arg := inlineCallExp(arg, forceInline);
-            stmt := Statement.mapExp(stmt,
+            stmt := Statement.mapExpShallow(stmt,
               function Expression.map(func = function replaceCrefNode(node = i, value = arg)));
           end for;
 

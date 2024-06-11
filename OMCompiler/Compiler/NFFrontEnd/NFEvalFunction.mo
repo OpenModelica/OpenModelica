@@ -429,7 +429,8 @@ function applyReplacements
   input output list<Statement> fnBody;
 algorithm
   fnBody := Statement.mapExpList(fnBody,
-    function Expression.map(func = function applyReplacements2(map = map)));
+    function Expression.map(func = function applyReplacements2(map = map)),
+    true);
 end applyReplacements;
 
 function applyReplacements2

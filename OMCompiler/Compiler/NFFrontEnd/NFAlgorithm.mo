@@ -110,23 +110,25 @@ public
   function mapExp
     input output Algorithm alg;
     input MapFunc func;
+    input Boolean shallow;
 
     partial function MapFunc
       input output Expression exp;
     end MapFunc;
   algorithm
-    alg.statements := Statement.mapExpList(alg.statements, func);
+    alg.statements := Statement.mapExpList(alg.statements, func, shallow);
   end mapExp;
 
   function mapExpList
     input output list<Algorithm> algs;
     input MapFunc func;
+    input Boolean shallow;
 
     partial function MapFunc
       input output Expression exp;
     end MapFunc;
   algorithm
-    algs := list(mapExp(alg, func) for alg in algs);
+    algs := list(mapExp(alg, func, shallow) for alg in algs);
   end mapExpList;
 
   function foldExp<ArgT>

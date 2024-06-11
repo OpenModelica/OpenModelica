@@ -293,10 +293,10 @@ public
     sections := match sections
       case SECTIONS()
         algorithm
-          eq := Equation.mapExpList(sections.equations, mapFn);
-          ieq := Equation.mapExpList(sections.initialEquations, mapFn);
-          alg := Algorithm.mapExpList(sections.algorithms, mapFn);
-          ialg := Algorithm.mapExpList(sections.initialAlgorithms, mapFn);
+          eq := Equation.mapExpList(sections.equations, mapFn, false);
+          ieq := Equation.mapExpList(sections.initialEquations, mapFn, false);
+          alg := Algorithm.mapExpList(sections.algorithms, mapFn, false);
+          ialg := Algorithm.mapExpList(sections.initialAlgorithms, mapFn, false);
         then
           SECTIONS(eq, ieq, alg, ialg);
 

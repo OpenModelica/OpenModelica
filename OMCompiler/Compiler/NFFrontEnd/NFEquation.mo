@@ -71,7 +71,7 @@ public
       branch := match branch
         case Branch.BRANCH()
           algorithm
-            cond := func(branch.condition);
+            cond := Expression.map(branch.condition, func);
 
             if mapBody then
               eql := list(Equation.mapExp(e, func) for e in branch.body);
@@ -92,6 +92,39 @@ public
         else branch;
       end match;
     end mapExp;
+
+    function mapExpShallow
+      input output Branch branch;
+      input MapExpFn func;
+      input Boolean mapBody = true;
+    protected
+      Expression cond;
+      list<Equation> eql;
+    algorithm
+      branch := match branch
+        case Branch.BRANCH()
+          algorithm
+            cond := func(branch.condition);
+
+            if mapBody then
+              eql := list(Equation.mapExpShallow(e, func) for e in branch.body);
+            else
+              eql := branch.body;
+            end if;
+          then
+            Branch.BRANCH(cond, branch.conditionVar, eql);
+
+        case Branch.INVALID_BRANCH()
+          algorithm
+            // The body of an invalid branch might not be safe to traverse, but
+            // the condition still needs to be valid and should be traversed.
+            branch.branch := mapExpShallow(branch.branch, func, mapBody = false);
+          then
+            branch;
+
+        else branch;
+      end match;
+    end mapExpShallow;
 
     function sizeOf
       input Branch branch;
@@ -687,8 +720,13 @@ public
   function mapExpList
     input output list<Equation> eql;
     input MapExpFn func;
+    input Boolean shallow;
   algorithm
-    eql := list(mapExp(eq, func) for eq in eql);
+    if shallow then
+      eql := list(mapExpShallow(eq, func) for eq in eql);
+    else
+      eql := list(mapExp(eq, func) for eq in eql);
+    end if;
   end mapExpList;
 
   function mapExp
@@ -702,31 +740,24 @@ public
 
       case EQUALITY()
         algorithm
-          e1 := func(eq.lhs);
-          e2 := func(eq.rhs);
+          e1 := Expression.map(eq.lhs, func);
+          e2 := Expression.map(eq.rhs, func);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
             then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
 
       case ARRAY_EQUALITY()
         algorithm
-          e1 := func(eq.lhs);
-          e2 := func(eq.rhs);
+          e1 := Expression.map(eq.lhs, func);
+          e2 := Expression.map(eq.rhs, func);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
             then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
 
-      //case CREF_EQUALITY()
-      //  algorithm
-      //    Expression.CREF(cref = cr1) := func(Expression.fromCref(eq.lhs));
-      //    Expression.CREF(cref = cr2) := func(Expression.fromCref(eq.rhs));
-      //  then
-      //    Equation.CREF_EQUALITY(cr1, cr2, eq.source);
-
       case CONNECT()
         algorithm
-          e1 := func(eq.lhs);
-          e2 := func(eq.rhs);
+          e1 := Expression.map(eq.lhs, func);
+          e2 := Expression.map(eq.rhs, func);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
             then eq else CONNECT(e1, e2, eq.scope, eq.source);
@@ -734,7 +765,7 @@ public
       case FOR()
         algorithm
           eq.body := list(mapExp(e, func) for e in eq.body);
-          eq.range := Util.applyOption(eq.range, func);
+          eq.range := Util.applyOption(eq.range, function Expression.map(func = func));
         then
           eq;
 
@@ -752,30 +783,30 @@ public
 
       case ASSERT()
         algorithm
-          e1 := func(eq.condition);
-          e2 := func(eq.message);
-          e3 := func(eq.level);
+          e1 := Expression.map(eq.condition, func);
+          e2 := Expression.map(eq.message, func);
+          e3 := Expression.map(eq.level, func);
         then
           if referenceEq(e1, eq.condition) and referenceEq(e2, eq.message) and
             referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.scope, eq.source);
 
       case TERMINATE()
         algorithm
-          e1 := func(eq.message);
+          e1 := Expression.map(eq.message, func);
         then
           if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.scope, eq.source);
 
       case REINIT()
         algorithm
-          e1 := func(eq.cref);
-          e2 := func(eq.reinitExp);
+          e1 := Expression.map(eq.cref, func);
+          e2 := Expression.map(eq.reinitExp, func);
         then
           if referenceEq(e1, eq.cref) and referenceEq(e2, eq.reinitExp) then
             eq else REINIT(e1, e2, eq.scope, eq.source);
 
       case NORETCALL()
         algorithm
-          e1 := func(eq.exp);
+          e1 := Expression.map(eq.exp, func);
         then
           if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.scope, eq.source);
 
@@ -823,13 +854,13 @@ public
 
       case IF()
         algorithm
-          eq.branches := list(Branch.mapExp(b, func, mapBody = false) for b in eq.branches);
+          eq.branches := list(Branch.mapExpShallow(b, func, mapBody = false) for b in eq.branches);
         then
           eq;
 
       case WHEN()
         algorithm
-          eq.branches := list(Branch.mapExp(b, func, mapBody = false) for b in eq.branches);
+          eq.branches := list(Branch.mapExpShallow(b, func, mapBody = false) for b in eq.branches);
         then
           eq;
 
@@ -1177,7 +1208,8 @@ public
     input Expression value;
   algorithm
     eql := mapExpList(eql,
-      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+      function Expression.replaceIterator(iterator = iterator, iteratorValue = value),
+      false);
   end replaceIteratorList;
 
   function isConnect

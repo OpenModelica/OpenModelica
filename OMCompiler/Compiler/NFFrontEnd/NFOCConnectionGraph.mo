@@ -1034,7 +1034,7 @@ algorithm
         //  print("Roots: " + stringDelimitList(List.map(inRoots,ComponentRef.toString),"\n") + "\n");
         rooted = newCrefIndexTable();
         setRootDistance(inRoots, table, 0, {}, rooted);
-        outEquations = list(Equation.mapExp(eq,
+        outEquations = list(Equation.mapExpShallow(eq,
             function evaluateOperators(rooted = rooted, roots = inRoots, graph = graph, info = Equation.info(eq)))
           for eq in inEquations);
       then outEquations;
