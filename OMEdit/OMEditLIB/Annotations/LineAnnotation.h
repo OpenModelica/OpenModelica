@@ -260,7 +260,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
-  void createExpandableConnectorTreeItem(ModelInstance::Component *pModelComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  void createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
   void createExpandableConnectorTreeItem(Element *pElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
 private:
   CreateConnectionDialog *mpCreateConnectionDialog;
