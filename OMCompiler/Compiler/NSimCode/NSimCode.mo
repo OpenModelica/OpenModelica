@@ -580,6 +580,7 @@ public
     record MODEL_INFO
       Absyn.Path name;
       String description;
+      String version;
       String directory;
       SimVars vars;
       VarInfo varInfo;
@@ -618,7 +619,7 @@ public
       VarInfo info;
     algorithm
       info := VarInfo.create(vars, eventInfo, simCodeIndices);
-      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
+      modelInfo := MODEL_INFO(name, "", "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
 
     function setSeedVars
@@ -648,6 +649,7 @@ public
       oldModelInfo := OldSimCode.MODELINFO(
         name                            = modelInfo.name,
         description                     = modelInfo.description,
+        version                         = modelInfo.version,
         directory                       = modelInfo.directory,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
         vars                            = SimVar.SimVars.convert(modelInfo.vars),
