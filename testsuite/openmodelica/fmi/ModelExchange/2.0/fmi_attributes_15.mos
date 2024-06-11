@@ -39,6 +39,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //   fmiVersion=\"2.0\"
 //   modelName=\"fmi_attributes_15\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange

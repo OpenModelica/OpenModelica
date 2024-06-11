@@ -47,6 +47,7 @@ readFile("modelDescription.tmp.xml");
 //   fmiVersion=\"2.0\"
 //   modelName=\"SIDTest\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
