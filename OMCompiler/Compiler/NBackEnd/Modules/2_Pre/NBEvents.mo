@@ -644,7 +644,7 @@ public
       else
         if createAux then
           // make a new auxiliary variable and return the expression which replaces the zero crossing
-          (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.STATE_EVENT_STR, bucket.auxiliaryStateEventIndex, iter);
+          (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.STATE_EVENT_STR, bucket.auxiliaryStateEventIndex, Expression.typeOf(exp), iter);
           exp := Expression.fromCref(aux_cref);
         else
           // make no auxiliary and return the original zero crossing
@@ -828,7 +828,7 @@ public
         if createAux then
           // make a new auxiliary variable and return the expression which replaces the zero crossing
           (iter, range) := Equation.Iterator.getFrames(condition.iter);
-          (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.TIME_EVENT_STR, bucket.auxiliaryTimeEventIndex, Iterator.fromFrames(List.zip(iter, range)));
+          (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.TIME_EVENT_STR, bucket.auxiliaryTimeEventIndex, Expression.typeOf(condition.exp), Iterator.fromFrames(List.zip(iter, range)));
           exp := Expression.fromCref(aux_cref);
         else
           // make no auxiliary and return the original zero crossing
