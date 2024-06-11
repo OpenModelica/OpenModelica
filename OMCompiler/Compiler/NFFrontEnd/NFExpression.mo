@@ -4477,15 +4477,8 @@ public
     b := match exp
       case STRING()         then true;
       case BOX(STRING())    then true;
-      case BOX(REAL())      then true;
-      case BOX()            then false;
-      case INTEGER()        then false;
-      case BOOLEAN()        then false;
-      case REAL()           then false;
-      case ENUM_LITERAL()   then false;
-      case SHARED_LITERAL() then false;
-      case ARRAY() guard(arrayEmpty(exp.elements)) then false;
-      case RECORD() then List.all(exp.elements, isLiteralReplace);
+      case ARRAY()          then exp.literal or Array.all(exp.elements, isLiteral);
+      //case RECORD() then List.all(exp.elements, isLiteralReplace);
       else false;
     end match;
   end isLiteralReplace;
