@@ -55,6 +55,7 @@
 #include <QDrag>
 #include <QMessageBox>
 #include <QMenu>
+#include <QScreen>
 
 /*!
  * \class LibraryTreeItem
@@ -3528,11 +3529,7 @@ void LibraryTreeView::openInformationDialog()
     pInformationDialog->setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, pLibraryTreeItem->getNameStructure(), Helper::information));
     pInformationDialog->setMinimumWidth(300);
     // Allow to take 90% of screen width
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
     int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.9;
-#else // QT_VERSION_CHECK
-    int screenWidth = QApplication::desktop()->availableGeometry().width() * 0.9;
-#endif // QT_VERSION_CHECK
     pInformationDialog->setMaximumWidth(screenWidth);
     Label *pHeadingLabel = Utilities::getHeadingLabel(pLibraryTreeItem->getNameStructure());
     pHeadingLabel->setElideMode(Qt::ElideMiddle);
