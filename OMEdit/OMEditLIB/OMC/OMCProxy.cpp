@@ -1535,12 +1535,16 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   QList<QString> docsList = mpOMCInterface->getDocumentationAnnotation(pLibraryTreeItem->getNameStructure());
   QString infoHeader = "";
   infoHeader = getDocumentationAnnotationInfoHeader(pLibraryTreeItem->parent(), infoHeader);
-  // get the class comment and show it as the first line on the documentation page.
-  QString doc = getClassComment(pLibraryTreeItem->getNameStructure());
+  QString doc = "";
+  // get the model name and show it as the first line on the documentation page.
+  doc = "<h2>" % pLibraryTreeItem->getNameStructure() % "</h2>" ;
+
+  // get the model description if available (e.g) model a "test sample" end a;
+  QString description = getClassComment(pLibraryTreeItem->getNameStructure());
   if (!doc.isEmpty()) {
-    doc = "<h4>" % doc % "</h4>";
+    doc = doc % " <p> <i>" % description % "</i> </p>";
   }
-  doc = "<h2>" % pLibraryTreeItem->getNameStructure() % "</h2>";
+
   for (int ele = 0 ; ele < docsList.size() ; ele++) {
     QString docElement = docsList[ele];
     if (docElement.isEmpty()) {
