@@ -1174,6 +1174,16 @@ public
       end match;
     end fixIndex;
 
+    function collectEntwinedEquations
+      "collects entwined equations from initial blocks"
+      input Block blck;
+      output list<Block> lst;
+    algorithm
+      lst := match blck
+        case ENTWINED_ASSIGN() then blck.single_calls;
+        else {};
+      end match;
+    end collectEntwinedEquations;
   protected
     function whenString
       input list<ComponentRef> conditions;
