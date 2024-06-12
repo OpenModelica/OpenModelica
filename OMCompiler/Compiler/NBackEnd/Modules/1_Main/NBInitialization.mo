@@ -317,19 +317,17 @@ public
     list<Pointer<Equation>> parameter_eqs = {};
     list<Pointer<Variable>> initial_param_vars = {};
     Pointer<Variable> parent;
-    Boolean skip_record_element;
+    Boolean skip;
   algorithm
-
     for var in VariablePointers.toList(parameters) loop
-
-      // check if the variable is a record element with bound parent
-      skip_record_element := match BVariable.getParent(var)
+      // check if the variable is a record element with bound parent or a record without binding
+      skip := match BVariable.getParent(var)
         case SOME(parent) then BVariable.isBound(parent);
-        else false;
+        else BVariable.isRecord(var) and not BVariable.isBound(var);
       end match;
 
       // parse records slightly different
-      if BVariable.isKnownRecord(var) then
+      if BVariable.isKnownRecord(var) and not skip then
         // only consider non-evaluable parameter bindings
         if not BVariable.hasEvaluableBinding(var) then
           initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
@@ -341,7 +339,7 @@ public
         end if;
 
       // all other variables that are not records and not record elements to be skipped
-      elseif not (BVariable.isRecord(var) or skip_record_element) then
+      elseif not (BVariable.isRecord(var) or skip) then
         // only consider non-evaluable parameter bindings
         if not BVariable.hasEvaluableBinding(var) then
           // add variable to initial unknowns
