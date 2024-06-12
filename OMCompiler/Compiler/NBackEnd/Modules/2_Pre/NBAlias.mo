@@ -711,35 +711,45 @@ protected
     Option<Expression> new_min, new_max, new_start;
     Option<StateSelect> new_stateSelect;
     Option<TearingSelect> new_tearingSelect;
-    Pointer<Variable> var_to_keep = Pointer.access(var_to_keep_ptr);
+    Pointer<Variable> fixed_var, var_to_keep = Pointer.access(var_to_keep_ptr);
     UnorderedMap<ComponentRef, Expression> fixed_start_map;
   algorithm
   // function calls of different set functions in NBVariable.mo
     new_min := getMaximum(attrcollector.min_val_map);
     if Util.isSome(new_min) then
       Pointer.update(var_to_keep, BVariable.setMin(Pointer.access(var_to_keep), new_min, true));
+      UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_min), attrcollector.min_val_map); // update attribute collector
     end if;
     new_max := getMinimum(attrcollector.max_val_map);
     if Util.isSome(new_max) then
       Pointer.update(var_to_keep, BVariable.setMax(Pointer.access(var_to_keep), new_max, true));
+      UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_max), attrcollector.max_val_map); // update attribute collector
     end if;
     fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
     if UnorderedMap.size(fixed_start_map) == 1 then
       new_start := SOME(List.first(UnorderedMap.valueList(fixed_start_map)));
-      BVariable.setFixed(var_to_keep,overwrite=true);
+      fixed_var := BVariable.getVarPointer(UnorderedMap.firstKey(fixed_start_map));
+      BVariable.setFixed(fixed_var, false, true); // avoid having two fixed variables
+      UnorderedMap.add(BVariable.getVarName(fixed_var), Expression.BOOLEAN(false), attrcollector.fixed_map); // update attribute collector
+      BVariable.setFixed(var_to_keep, overwrite=true);
+      UnorderedMap.add(BVariable.getVarName(var_to_keep), Expression.BOOLEAN(true), attrcollector.fixed_map); // update attribute collector
       Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
+      UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
     end if;
     (new_cref, new_stateSelect) := chooseStateSelect(attrcollector.stateSelect_map);
     if Util.isSome(new_stateSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
       Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect), true));
+      UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_stateSelect), attrcollector.stateSelect_map); // update attribute collector
       if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then // start value of var with StateSelect = always is stronger than start value of fixed var
         new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
         Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
+        UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
       end if;
     end if;
     new_tearingSelect := chooseTearingSelect(attrcollector.tearingSelect_map);
     if Util.isSome(new_tearingSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
       Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect), true));
+      UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_tearingSelect), attrcollector.tearingSelect_map); // update attribute collector
     end if;
     Pointer.update(var_to_keep_ptr,var_to_keep);
   end setNewAttributes;
