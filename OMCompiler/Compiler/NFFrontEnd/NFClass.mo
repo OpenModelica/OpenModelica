@@ -264,6 +264,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     component := ClassTree.nthComponent(index, classTree(cls));
   end nthComponent;
 
+  function getComponents
+    input Class cls;
+    output array<InstNode> comps = ClassTree.getComponents(classTree(cls));
+  end getComponents;
+
   function lookupAttributeBinding
     input String name;
     input Class cls;

@@ -4647,6 +4647,9 @@ public
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ARRAY() then fillType(ty, makeZero(Type.arrayElementType(ty)));
       case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
+      then fail();
     end match;
   end makeZero;
 
@@ -4657,11 +4660,16 @@ public
     InstNode op_node;
     Function.Function fn;
   algorithm
-    op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
-    Function.Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, InstNode.info(InstNode.parent(op_node)));
-    {fn} := Function.Function.typeNodeCache(op_node);
-    zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT, Purity.PURE));
-    zeroExp := Ceval.evalExp(zeroExp);
+    try
+      op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
+      Function.Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, InstNode.info(InstNode.parent(op_node)));
+      {fn} := Function.Function.typeNodeCache(op_node);
+      zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT, Purity.PURE));
+      zeroExp := Ceval.evalExp(zeroExp);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + InstNode.toString(recordNode)});
+      fail();
+    end try;
   end makeOperatorRecordZero;
 
   function makeOne

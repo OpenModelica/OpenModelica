@@ -80,7 +80,7 @@ public
     output Variable variable;
   protected
     list<ComponentRef> crefs;
-    InstNode node, child_node;
+    InstNode node, class_node;
     Component comp;
     Type ty;
     Binding binding;
@@ -89,8 +89,8 @@ public
     Option<SCode.Comment> cmt;
     SourceInfo info;
     BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    array<InstNode> child_nodes;
     list<Variable> children = {};
-    Option<Integer> complexSize;
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
@@ -110,12 +110,14 @@ public
     end if;
 
     // get the record children if the variable is a record
-    complexSize := Type.complexSize(ty);
-    if Util.isSome(complexSize) then
-      for i in Util.getOption(complexSize):-1:1 loop
-        child_node := Class.nthComponent(i, InstNode.getClass(node));
-        children := fromCref(ComponentRef.fromNode(child_node, InstNode.getType(child_node))) :: children;
-      end for;
+    if not Type.isExternalObject(ty) then
+      children := match Type.arrayElementType(ty)
+        case Type.COMPLEX(cls = class_node) algorithm
+          child_nodes := Class.getComponents(InstNode.getClass(class_node));
+          children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
+        then children;
+        else {};
+      end match;
     end if;
 
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, children, cmt, info, binfo);

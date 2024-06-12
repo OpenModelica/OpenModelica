@@ -854,20 +854,38 @@ public
     function toString
       input Matrix adj;
       input output String str = "";
+    protected
+      function complexSizeStr
+        input Option<Integer> sz;
+        output String str;
+      algorithm
+        str := match sz
+          local
+            Integer i;
+          case SOME(i) then intString(i);
+          else "0";
+        end match;
+      end complexSizeStr;
     algorithm
       str := StringUtil.headline_2(str + "AdjacencyMatrix") + "\n";
       str := match adj
         local
-          array<String> names, types;
-          Integer length1, length2;
+          list<Type> types;
+          array<String> names, types_str, complex_sizes;
+          Integer length0, length1, length2;
 
         case FULL() algorithm
-          types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := list(ComponentRef.getSubscriptedType(name) for name in adj.equation_names);
+          complex_sizes := listArray(list(complexSizeStr(Type.complexSize(ty)) for ty in types));
+          types_str := listArray(list(dimsString(Type.arrayDims(ty)) for ty in types));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
-          length1 := max(stringLength(ty) for ty in types) + 1;
+          length0 := max(stringLength(sz) for sz in complex_sizes);
+          length1 := max(stringLength(ty) for ty in types_str) + 1;
           length2 := max(stringLength(name) for name in names) + 3;
           for i in 1:arrayLength(names) loop
-            str := str + arrayGet(types, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types, i))) + " "
+            str := str
+              + arrayGet(complex_sizes, i) + " " + StringUtil.repeat(" ", length0 - stringLength(arrayGet(complex_sizes, i))) + " | "
+              + arrayGet(types_str, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types_str, i))) + " "
               + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
               + " " + List.toString(UnorderedSet.toList(adj.occurences[i]), function fullString(dep_map = adj.dependencies[i],
               sol_map = adj.solvabilities[i], rep_set = adj.repetitions[i])) + "\n";
@@ -907,7 +925,7 @@ public
 
         case FULL() algorithm
           str := StringUtil.headline_2(str + " Solvability Adjacency Matrix") + "\n";
-          types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurences[i]), adj.solvabilities[i]);
@@ -968,7 +986,7 @@ public
 
         case FULL() algorithm
           str := StringUtil.headline_2(str + " Dependency Adjacency Matrix") + "\n";
-          types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurences[i]), adj.dependencies[i], adj.repetitions[i]);

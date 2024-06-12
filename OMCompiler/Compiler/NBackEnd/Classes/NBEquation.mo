@@ -952,7 +952,6 @@ public
             attr    = attr
           );
       end match;
-
       // create for-loop around it if there is an iterator
       if not Iterator.isEmpty(iter) then
         e := FOR_EQUATION(
@@ -967,9 +966,7 @@ public
       end if;
     end makeAssignmentEqn;
 
-
-    public
-
+  public
     function makeAlgorithm
       input list<Statement> stmts;
       input Boolean init;
@@ -1363,7 +1360,6 @@ public
         then eqn;
         else eqn;
       end match;
-
       Pointer.update(eqn_ptr, eqn);
     end createName;
 
@@ -1804,7 +1800,6 @@ public
       else
         eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);
       end if;
-
       // simplify rhs and get potential iterators
       (iter, rhs) := Iterator.extract(rhs);
       rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());

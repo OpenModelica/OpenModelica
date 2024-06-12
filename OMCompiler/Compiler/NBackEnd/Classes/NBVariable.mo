@@ -148,7 +148,8 @@ public
     input Binding binding = NFBinding.EMPTY_BINDING;
     output Variable variable;
   protected
-    InstNode node, class_node, child_node;
+    InstNode node, class_node;
+    array<InstNode> child_nodes;
     ComponentRef child_cref;
     Type ty;
     Prefixes.Visibility vis;
@@ -160,16 +161,12 @@ public
     ty   := ComponentRef.getSubscriptedType(cref, true);
     vis  := InstNode.visibility(node);
     info := InstNode.info(node);
-
     // get the record children if the variable is a record (and not an external object)
     if not Type.isExternalObject(ty) then
-      children := match (Type.arrayElementType(ty), Type.complexSize(ty))
-        case (Type.COMPLEX(cls = class_node), SOME(complexSize)) algorithm
-          for i in complexSize:-1:1 loop
-            child_node  := Class.nthComponent(i, InstNode.getClass(class_node));
-            child_cref  := ComponentRef.prefixCref(child_node, InstNode.getType(child_node), {}, cref);
-            children    := fromCref(child_cref) :: children;
-          end for;
+      children := match Type.arrayElementType(ty)
+        case Type.COMPLEX(cls = class_node) algorithm
+          child_nodes := Class.getComponents(InstNode.getClass(class_node));
+          children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
         then children;
         else {};
       end match;
@@ -1009,7 +1006,6 @@ public
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DAE_RESIDUAL_VAR(uniqueIndex));
-
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeResidualVar;
