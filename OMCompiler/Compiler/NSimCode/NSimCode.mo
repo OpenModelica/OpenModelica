@@ -315,7 +315,6 @@ public
 
             // get and replace all literals
             collect_literals := function Expression.map(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            _ := EqData.mapExp(eqData, collect_literals);
             funcTree := FunctionTreeImpl.mapExp(funcTree, collect_literals);
             literals := UnorderedMap.keyList(literals_map);
 
