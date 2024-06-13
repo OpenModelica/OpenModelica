@@ -6855,8 +6855,9 @@ void ModelWidget::reDrawModelWidget()
     }
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
-    // if documentation view is visible then update it
-    if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+    // if documentation view is visible and this model is the current active model then update it
+    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+    if (pModelWidget && pModelWidget == this && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
       MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
     }
     // clear the undo stack
