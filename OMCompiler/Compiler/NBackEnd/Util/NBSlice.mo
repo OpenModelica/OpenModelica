@@ -38,13 +38,10 @@ protected
   import Slice = NBSlice;
 
   // NF imports
-  import Class = NFClass;
-  import NFClassTree.ClassTree;
   import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
@@ -1073,6 +1070,8 @@ protected
     input output Integer index;
     input output Type ty;
     input list<Integer> skips;
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
   algorithm
     (index, ty) := match (ty, skips)
       local
@@ -1080,8 +1079,9 @@ protected
         list<Integer> rest, tail;
         Type sub_ty;
         list<Type> rest_ty;
-        list<InstNode> record_fields;
-        InstNode field;
+        Pointer<Variable> parent;
+        list<ComponentRef> crefs;
+        ComponentRef field;
 
       // 0 skips are full dependencies
       case (Type.TUPLE(types = rest_ty), 0::rest) then (index, ty);
@@ -1095,24 +1095,34 @@ protected
         end for;
         sub_ty :: rest_ty := rest_ty;
         // see if there is nested skips
-      then resolveSkips(index, sub_ty, rest);
+      then resolveSkips(index, sub_ty, rest, cref, map);
 
       // skip to a record element
       case (Type.COMPLEX(complexTy = ComplexType.RECORD()), skip::rest) algorithm
-        record_fields := ClassTree.enumerateComponents(Class.classTree(InstNode.getClass(ty.cls)));
-        for i in 1:skip-1 loop
-          field :: record_fields := record_fields;
-          index := index + Type.sizeOf(InstNode.getType(field));
-        end for;
-        field :: record_fields := record_fields;
+        // get the children and skip to correct one
+        field := match BVariable.getParent(BVariable.getVarPointer(cref))
+          case SOME(parent) algorithm
+            crefs :=  list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(parent));
+            crefs := list(c for c guard(UnorderedMap.contains(c, map)) in crefs);
+            for i in 1:skip-1 loop
+              field :: crefs := crefs;
+              index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
+            end for;
+            field :: crefs := crefs;
+          then field;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
+              + " for type " + Type.toString(ty) + " is requested, but the cref is not part of a record:" + ComponentRef.toString(cref) + "."});
+          then fail();
+        end match;
         // see if there is nested skips
-      then resolveSkips(index, InstNode.getType(field), rest);
+      then resolveSkips(index, ComponentRef.getSubscriptedType(field), rest, cref, map);
 
       // skip to an array element
       case (Type.ARRAY(), rest) guard(listLength(rest) >= listLength(ty.dimensions)) algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
         index := locationToIndex(List.zip(list(Dimension.size(dim) for dim in ty.dimensions), rest), index);
-      then resolveSkips(index, ty.elementType, tail);
+      then resolveSkips(index, ty.elementType, tail, cref, map);
 
       // skip for tuple or array, but the skip is too large
       case (_, skip::_) guard(Type.isTuple(ty) or Type.isArray(ty)) algorithm
@@ -1202,7 +1212,7 @@ protected
       d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
       (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
       if not UnorderedSet.contains(cref, rep) then
-        (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips);
+        (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips, cref, map);
       else
         (skip_idx, skip_ty) := (start, ty);
       end if;
