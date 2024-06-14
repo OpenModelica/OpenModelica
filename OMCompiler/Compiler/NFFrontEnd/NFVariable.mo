@@ -210,21 +210,9 @@ public
     "Expands a variable into itself and its children if its complex."
     input Variable var;
     output list<Variable> children;
-  protected
-    function expandChildType
-      "helper function to inherit the array type dimensions"
-      input output Variable child;
-      input list<Dimension> dimensions;
-    algorithm
-      child.ty := Type.liftArrayLeftList(child.ty, dimensions);
-    end expandChildType;
   algorithm
     // for non-complex variables the children are empty therefore it will be returned itself
     var.children := List.flatten(list(expandChildren(v) for v in var.children));
-    if isComplexArray(var) then
-      // if the variable is an array, inherit the array dimensions
-      var.children := list(expandChildType(v, Type.arrayDims(var.ty)) for v in var.children);
-    end if;
     // return all children and the variable itself
     children := var :: var.children;
   end expandChildren;

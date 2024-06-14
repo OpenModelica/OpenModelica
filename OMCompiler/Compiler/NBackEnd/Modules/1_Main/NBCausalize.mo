@@ -256,7 +256,6 @@ protected
         // #################################################
         vn := UnorderedMap.subMap(system.unknowns.map, list(BVariable.getVarName(var) for var in unfixable));
         en := UnorderedMap.subMap(system.equations.map, list(Equation.getEqnName(eqn) for eqn in initials));
-
         adj_matching := Adjacency.Matrix.fromFull(full, vn, en, system.equations, NBAdjacency.MatrixStrictness.MATCHING);
         matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj_matching, true, true);
 
@@ -267,7 +266,6 @@ protected
         eo := en;
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         en := UnorderedMap.subMap(system.equations.map, list(Equation.getEqnName(eqn) for eqn in simulation));
-
         (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, system.unknowns, system.equations);
         matching := Matching.regular(matching, adj_matching, true, true);
 

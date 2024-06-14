@@ -339,7 +339,7 @@ public
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
-      sizes := ComponentRef.sizes(stripped);
+      sizes := ComponentRef.sizes(stripped, false);
       int_subs := ComponentRef.subscriptsToInteger(cref);
       var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
       indices := var_scal_idx :: indices;
@@ -1034,7 +1034,7 @@ public
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
-      sizes := ComponentRef.sizes(stripped);
+      sizes := ComponentRef.sizes(stripped, false);
       int_subs := ComponentRef.subscriptsToInteger(cref);
       var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
       indices := var_scal_idx :: indices;
@@ -1052,12 +1052,13 @@ public
     input UnorderedMap<ComponentRef, Dependency> dep        "dependency map";
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
     input array<list<Integer>> m;
     input Mapping mapping                                   "array <-> scalar index mapping";
     input UnorderedMap<Mode.Key, Mode> modes;
   algorithm
     for cref in dependencies loop
-      resolveDependency(cref, eqn_name, eqn_arr_idx, iter, ty, dep, rep, map, m, mapping, modes);
+      resolveDependency(cref, eqn_name, eqn_arr_idx, iter, ty, dep, rep, map, fullmap, m, mapping, modes);
     end for;
   end upgradeRow;
 
@@ -1071,7 +1072,7 @@ protected
     input output Type ty;
     input list<Integer> skips;
     input ComponentRef cref;
-    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
   algorithm
     (index, ty) := match (ty, skips)
       local
@@ -1082,6 +1083,7 @@ protected
         Pointer<Variable> parent;
         list<ComponentRef> crefs;
         ComponentRef field;
+        list<Subscript> subs;
 
       // 0 skips are full dependencies
       case (Type.TUPLE(types = rest_ty), 0::rest) then (index, ty);
@@ -1095,20 +1097,29 @@ protected
         end for;
         sub_ty :: rest_ty := rest_ty;
         // see if there is nested skips
-      then resolveSkips(index, sub_ty, rest, cref, map);
+      then resolveSkips(index, sub_ty, rest, cref, fullmap);
 
       // skip to a record element
       case (Type.COMPLEX(complexTy = ComplexType.RECORD()), skip::rest) algorithm
         // get the children and skip to correct one
         field := match BVariable.getParent(BVariable.getVarPointer(cref))
           case SOME(parent) algorithm
+            subs := ComponentRef.subscriptsAllFlat(cref);
             crefs :=  list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(parent));
-            crefs := list(c for c guard(UnorderedMap.contains(c, map)) in crefs);
-            for i in 1:skip-1 loop
+            crefs := list(c for c guard(UnorderedMap.contains(c, fullmap)) in crefs);
+            if skip <= listLength(crefs) then
+              for i in 1:skip-1 loop
+                field :: crefs := crefs;
+                field := ComponentRef.mergeSubscripts(subs, field);
+                index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
+              end for;
               field :: crefs := crefs;
-              index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
-            end for;
-            field :: crefs := crefs;
+              field := ComponentRef.mergeSubscripts(subs, field);
+            else
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
+                + " is too large for record elements " + List.toString(crefs, ComponentRef.toString) + "."});
+              fail();
+            end if;
           then field;
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
@@ -1116,13 +1127,13 @@ protected
           then fail();
         end match;
         // see if there is nested skips
-      then resolveSkips(index, ComponentRef.getSubscriptedType(field), rest, cref, map);
+      then resolveSkips(index, ComponentRef.getSubscriptedType(field), rest, cref, fullmap);
 
       // skip to an array element
       case (Type.ARRAY(), rest) guard(listLength(rest) >= listLength(ty.dimensions)) algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
         index := locationToIndex(List.zip(list(Dimension.size(dim) for dim in ty.dimensions), rest), index);
-      then resolveSkips(index, ty.elementType, tail, cref, map);
+      then resolveSkips(index, ty.elementType, tail, cref, fullmap);
 
       // skip for tuple or array, but the skip is too large
       case (_, skip::_) guard(Type.isTuple(ty) or Type.isArray(ty)) algorithm
@@ -1184,6 +1195,7 @@ protected
     input UnorderedMap<ComponentRef, Dependency> dep        "dependency map";
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
     input array<list<Integer>> m;
     input Mapping mapping                                   "array <-> scalar index mapping";
     input UnorderedMap<Mode.Key, Mode> modes;
@@ -1212,7 +1224,7 @@ protected
       d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
       (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
       if not UnorderedSet.contains(cref, rep) then
-        (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips, cref, map);
+        (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips, cref, fullmap);
       else
         (skip_idx, skip_ty) := (start, ty);
       end if;
@@ -1247,8 +1259,8 @@ protected
           end for;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (single dependency) failed because list of scalar variables("
-          + intString(scal_size) + ") " + List.toString(scalarized, ComponentRef.toString)
-          + ", does not fit the equation size " + intString(size) + ".\n"});
+            + intString(scal_size) + ") " + List.toString(scalarized, ComponentRef.toString)
+            + ", does not fit the equation size " + intString(size) + ".\n"});
           fail();
         end if;
 
@@ -1376,8 +1388,14 @@ protected
     input Mode mode;
   algorithm
     //print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
-    arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
-    UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
+    try
+      arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
+      UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because index " + intString(eqn_idx)
+        + " could not be added. Matrix size: " + intString(arrayLength(m)) + "."});
+      fail();
+    end try;
   end addMatrixEntry;
 
   function resolveReductions
@@ -1502,7 +1520,7 @@ protected
     stripped        := if listEmpty(frames) then cref else ComponentRef.stripSubscriptsAll(cref);
     var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
     (var_start, _)  := mapping.var_AtS[var_arr_idx];
-    sizes           := ComponentRef.sizes(stripped);
+    sizes           := ComponentRef.sizes(stripped, false);
     subs            := ComponentRef.subscriptsToExpression(cref, true);
     scal_lst        := listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
   end getCrefInFrameIndices;
