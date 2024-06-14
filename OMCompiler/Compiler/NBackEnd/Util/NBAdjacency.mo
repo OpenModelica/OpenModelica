@@ -504,7 +504,7 @@ public
                   index := UnorderedMap.getSafe(name, eqns_map, sourceInfo());
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
                   // upgrade the row and all meta data
-                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, adj.m, adj.mapping, adj.modes);
+                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, adj.m, adj.mapping, adj.modes);
                 end for;
                 adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
                 result := adj;
@@ -554,10 +554,10 @@ public
       Integer size_vo, size_vn, size_eo, size_en; //only for debugging
     algorithm
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        size_vo := sum(ComponentRef.size(var) for var in UnorderedMap.keyList(vo));
-        size_vn := sum(ComponentRef.size(var) for var in UnorderedMap.keyList(vn)) + size_vo;
-        size_eo := sum(ComponentRef.size(eqn) for eqn in UnorderedMap.keyList(eo));
-        size_en := sum(ComponentRef.size(eqn) for eqn in UnorderedMap.keyList(en)) + size_eo;
+        size_vo := sum(ComponentRef.size(var, true) for var in UnorderedMap.keyList(vo));
+        size_vn := sum(ComponentRef.size(var, true) for var in UnorderedMap.keyList(vn)) + size_vo;
+        size_eo := sum(ComponentRef.size(eqn, true) for eqn in UnorderedMap.keyList(eo));
+        size_en := sum(ComponentRef.size(eqn, true) for eqn in UnorderedMap.keyList(en)) + size_eo;
         print(StringUtil.headline_1("Expanding from size [vars: " + intString(size_vo) + "| eqns: " + intString(size_eo) + "] to [vars: " + intString(size_vn) + "| eqns: " + intString(size_en) +  "]") + "\n");
       end if;
 
@@ -600,7 +600,7 @@ public
           if not UnorderedMap.isEmpty(vn) then
             for e in UnorderedMap.valueList(eo) loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], vn, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, vars.map, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
 
@@ -608,7 +608,7 @@ public
           if not UnorderedMap.isEmpty(en) then
             for e in UnorderedMap.valueList(en) loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], v, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, vars.map, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
 
@@ -1175,6 +1175,7 @@ public
       input UnorderedMap<ComponentRef, Dependency> dep  "dependency map";
       input UnorderedSet<ComponentRef> rep              "repetition set";
       input UnorderedMap<ComponentRef, Integer> map     "unordered map to check for relevance";
+      input UnorderedMap<ComponentRef, Integer> fullmap "unordered map to check for general relevance";
       input array<list<Integer>> m;
       input Mapping mapping;
       input UnorderedMap<Mode.Key, Mode> modes;
@@ -1196,7 +1197,7 @@ public
           end for;
         else
           // todo: if, when single equation (needs to be updated for if)
-          Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
+          Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, fullmap, m, mapping, modes);
         end if;
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.pointerToString(eqn_ptr)});
@@ -1843,6 +1844,8 @@ public
   protected
     Pointer<Variable> var;
     Integer skips = 1;
+    list<Subscript> subs;
+    list<Option<Integer>> int_subs;
   algorithm
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
@@ -1853,7 +1856,14 @@ public
     else
       var := BVariable.getVarPointer(cref);
       if BVariable.isRecord(var) then
-        crefs := List.flatten(list(collectDependenciesCref(BVariable.getVarName(child), map, dep_map, sol_map) for child in BVariable.getRecordChildren(var)));
+        subs := ComponentRef.subscriptsAllFlat(cref);
+        int_subs := list(Subscript.toIntegerOpt(sub) for sub in subs);
+        // get all Record children
+        crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
+        // add original subscripts
+        crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
+        // collect dependencies
+        crefs := List.flatten(list(collectDependenciesCref(child, map, dep_map, sol_map) for child in crefs));
         for cref in crefs loop
           Dependency.skip(cref, skips, dep_map);
           skips := skips + 1;

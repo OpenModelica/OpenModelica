@@ -1117,7 +1117,7 @@ protected
     list<ComponentRef> inputs, outputs;
     EquationAttributes attr;
   algorithm
-    size := sum(ComponentRef.size(out) for out in alg.outputs);
+    size := sum(ComponentRef.size(out, true) for out in alg.outputs);
 
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);

@@ -131,6 +131,16 @@ public
     end match;
   end toInteger;
 
+  function toIntegerOpt
+    input Subscript subscript;
+    output Option<Integer> int;
+  algorithm
+    int := match subscript
+      case INDEX() then SOME(Expression.toInteger(subscript.index));
+      else NONE();
+    end match;
+  end toIntegerOpt;
+
   function toIndexList
     input Subscript subscript;
     input Integer length;
