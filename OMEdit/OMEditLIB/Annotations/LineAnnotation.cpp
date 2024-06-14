@@ -1708,6 +1708,7 @@ ExpandableConnectorTreeItem::ExpandableConnectorTreeItem()
   setArrayIndexes(QStringList());
   setRestriction(StringHandler::Model);
   setNewVariable(false);
+  setInherited(false);
 }
 
 /*!
@@ -1718,10 +1719,11 @@ ExpandableConnectorTreeItem::ExpandableConnectorTreeItem()
  * \param arrayIndex
  * \param restriction
  * \param newVariable
+ * \param inherited
  * \param pParentExpandableConnectorTreeItem
  */
 ExpandableConnectorTreeItem::ExpandableConnectorTreeItem(QString name, bool array, QStringList arrayIndexes, StringHandler::ModelicaClasses restriction, bool newVariable,
-                                                         ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+                                                         bool inherited, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   mIsRootItem = false;
   mpParentExpandableConnectorTreeItem = pParentExpandableConnectorTreeItem;
@@ -1730,6 +1732,7 @@ ExpandableConnectorTreeItem::ExpandableConnectorTreeItem(QString name, bool arra
   setArrayIndexes(arrayIndexes);
   setRestriction(restriction);
   setNewVariable(newVariable);
+  setInherited(inherited);
 }
 
 /*!
@@ -1932,7 +1935,6 @@ QVariant ExpandableConnectorTreeModel::data(const QModelIndex &index, int role) 
     return QVariant();
   }
 
-
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(index.internalPointer());
   return pExpandableConnectorTreeItem->data(index.column(), role);
 }
@@ -1946,9 +1948,10 @@ QVariant ExpandableConnectorTreeModel::data(const QModelIndex &index, int role) 
 Qt::ItemFlags ExpandableConnectorTreeModel::flags(const QModelIndex &index) const
 {
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(index.internalPointer());
-  if (pExpandableConnectorTreeItem &&
-      ((pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) ||
-      (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent()->getRestriction() == StringHandler::ExpandableConnector))) {
+  if (pExpandableConnectorTreeItem
+      && !pExpandableConnectorTreeItem->isInherited()
+      && ((pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector)
+          || (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent()->getRestriction() == StringHandler::ExpandableConnector))) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   } else {
     return Qt::ItemFlags();
@@ -1992,8 +1995,10 @@ QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex(const
  * Creates the ExpandableConnectorTreeItem
  * \param pModelElement
  * \param pParentExpandableConnectorTreeItem
+ * \param inherited
  */
-void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, bool inherited,
+                                                                     ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   StringHandler::ModelicaClasses restriction = StringHandler::Model;
   if (pModelElement->getModel()) {
@@ -2002,7 +2007,8 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstan
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = 0;
   if (pModelElement->isComponent()) {
     pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pModelElement->getName(), pModelElement->getDimensions().isArray(),
-                                                                   pModelElement->getDimensions().getTypedDimensions(), restriction, false, pParentExpandableConnectorTreeItem);
+                                                                   pModelElement->getDimensions().getTypedDimensions(), restriction, false, inherited,
+                                                                   pParentExpandableConnectorTreeItem);
     int row = pParentExpandableConnectorTreeItem->getChildren().size();
     QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
     beginInsertRows(index, row, row);
@@ -2012,15 +2018,18 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstan
   if (pModelElement->getModel()) {
     QList<ModelInstance::Element*> elements = pModelElement->getModel()->getElements();
     foreach (auto pChildModelElement, elements) {
-      if (pChildModelElement->isPublic()) {
-        createExpandableConnectorTreeItem(pChildModelElement, pExpandableConnectorTreeItem ? pExpandableConnectorTreeItem : pParentExpandableConnectorTreeItem);
+      // Issue #12548. List the elements of expandable connector class and all the expandable connectors of the class including the inherited ones.
+      if (pModelElement->getModel()->isExpandableConnector() || pChildModelElement->isExtend()
+          || (pChildModelElement->getModel() && pChildModelElement->getModel()->isExpandableConnector())) {
+        createExpandableConnectorTreeItem(pChildModelElement, inherited || pChildModelElement->isExtend(),
+                                          pExpandableConnectorTreeItem ? pExpandableConnectorTreeItem : pParentExpandableConnectorTreeItem);
       }
     }
   }
   // create add variable item only if item is expandable connector
-  if (pExpandableConnectorTreeItem && pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
+  if (pExpandableConnectorTreeItem && !pExpandableConnectorTreeItem->isInherited() && pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
     ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, QStringList(), StringHandler::Model,
-                                                                                                           true, pExpandableConnectorTreeItem);
+                                                                                                           true, false, pExpandableConnectorTreeItem);
     int row = pExpandableConnectorTreeItem->getChildren().size();
     QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem);
     beginInsertRows(index, row, row);
@@ -2042,7 +2051,7 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pE
     restriction = pElement->getLibraryTreeItem()->getRestriction();
   }
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pElement->getName(), pElement->isArray(), pElement->getTypedArrayIndexes(), restriction,
-                                                                                              false, pParentExpandableConnectorTreeItem);
+                                                                                              false, false, pParentExpandableConnectorTreeItem);
   int row = pParentExpandableConnectorTreeItem->getChildren().size();
   QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
   beginInsertRows(index, row, row);
@@ -2056,7 +2065,7 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pE
   // create add variable item only if item is expandable connector
   if (pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
     ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, QStringList(), StringHandler::Model,
-                                                                                                           true, pExpandableConnectorTreeItem);
+                                                                                                           true, false, pExpandableConnectorTreeItem);
     int row = pExpandableConnectorTreeItem->getChildren().size();
     QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem);
     beginInsertRows(index, row, row);
@@ -2139,7 +2148,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpStartExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpStartExpandableConnectorTreeView->setModel(mpStartExpandableConnectorTreeProxyModel);
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelComponent(),
+      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelComponent(), false,
                                                                              mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     } else {
       mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement(),
@@ -2162,7 +2171,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpEndExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpEndExpandableConnectorTreeView->setModel(mpEndExpandableConnectorTreeProxyModel);
     if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelComponent(),
+      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelComponent(), false,
                                                                            mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     } else {
       mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement(),
