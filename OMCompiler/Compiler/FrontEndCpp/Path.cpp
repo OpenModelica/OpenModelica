@@ -80,7 +80,7 @@ void Path::pop_back() noexcept
   _names.pop_back();
 }
 
-size_t Path::size() const noexcept
+std::size_t Path::size() const noexcept
 {
   return _names.size();
 }

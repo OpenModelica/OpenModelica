@@ -1,3 +1,4 @@
+#include <array>
 #include <ostream>
 
 #include "Prefixes.h"

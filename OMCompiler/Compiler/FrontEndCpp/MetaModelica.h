@@ -2,14 +2,15 @@
 #define METAMODELICA_H
 
 #include <cstdint>
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <iosfwd>
 #include <optional>
-#include <functional>
 #include <memory>
 #include <initializer_list>
 #include <iterator>
+#include <vector>
 
 struct record_description;
 
@@ -252,7 +253,7 @@ namespace OpenModelica
         ConstIterator end() const noexcept;
         ConstIterator cend() const noexcept;
         bool empty() const noexcept;
-        size_t size() const noexcept;
+        std::size_t size() const noexcept;
 
         void cons(Value v) noexcept;
         void* data() const noexcept;
@@ -300,7 +301,7 @@ namespace OpenModelica
         using pointer           = value_type*;
         using reference         = value_type&;
 
-        IndexedConstIterator(void *value, size_t index) noexcept;
+        IndexedConstIterator(void *value, std::size_t index) noexcept;
 
         value_type operator*() const noexcept;
         Value::ArrowProxy operator->() const noexcept;
@@ -312,7 +313,7 @@ namespace OpenModelica
 
       private:
         void *_value;
-        size_t _index = 0;
+        std::size_t _index = 0;
     };
 
     bool operator== (const IndexedConstIterator &i1, const IndexedConstIterator &i2) noexcept;
@@ -330,10 +331,10 @@ namespace OpenModelica
         IndexedConstIterator end() const noexcept;
         IndexedConstIterator cend() const noexcept;
         bool empty() const noexcept;
-        size_t size() const noexcept;
+        std::size_t size() const noexcept;
 
-        Value operator[](size_t index) const noexcept;
-        Value at(size_t index) const;
+        Value operator[](std::size_t index) const noexcept;
+        Value at(std::size_t index) const;
         void* data() const noexcept;
 
         template<typename T>
@@ -380,10 +381,10 @@ namespace OpenModelica
         IndexedConstIterator cbegin() const noexcept;
         IndexedConstIterator end() const noexcept;
         IndexedConstIterator cend() const noexcept;
-        size_t size() const noexcept;
+        std::size_t size() const noexcept;
 
-        Value operator[](size_t index) const noexcept;
-        Value at(size_t index) const;
+        Value operator[](std::size_t index) const noexcept;
+        Value at(std::size_t index) const;
         void* data() const noexcept;
 
       private:
@@ -414,11 +415,11 @@ namespace OpenModelica
         IndexedConstIterator cbegin() const noexcept;
         IndexedConstIterator end() const noexcept;
         IndexedConstIterator cend() const noexcept;
-        size_t size() const noexcept;
+        std::size_t size() const noexcept;
 
         Value operator[](std::string_view name) const noexcept;
-        Value operator[](size_t index) const noexcept;
-        Value at(size_t index) const;
+        Value operator[](std::size_t index) const noexcept;
+        Value at(std::size_t index) const;
         IndexedConstIterator find(std::string_view name) const noexcept;
         bool contains(std::string_view name) const noexcept;
         void* data() const noexcept;

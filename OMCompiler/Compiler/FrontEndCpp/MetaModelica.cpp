@@ -28,12 +28,12 @@ mmc_uint_t get_header(void *data)
   return MMC_HDR_UNMARK(MMC_GETHDR(data));
 }
 
-void* get_index(void *data, size_t index)
+void* get_index(void *data, std::size_t index)
 {
   return MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(data), index + 1));
 }
 
-size_t get_slots(void *data)
+std::size_t get_slots(void *data)
 {
   auto hdr = MMC_HDR_UNMARK(MMC_GETHDR(data));
   return MMC_HDRSLOTS(hdr);
@@ -461,7 +461,7 @@ bool List::empty() const noexcept
   return MMC_NILTEST(_value);
 }
 
-size_t List::size() const noexcept
+std::size_t List::size() const noexcept
 {
   return listLength(_value);
 }
@@ -484,7 +484,7 @@ std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, List lis
   return os;
 }
 
-IndexedConstIterator::IndexedConstIterator(void *value, size_t index) noexcept
+IndexedConstIterator::IndexedConstIterator(void *value, std::size_t index) noexcept
   : _value{value}, _index{index}
 {
 
@@ -563,17 +563,17 @@ bool Array::empty() const noexcept
   return size() == 0;
 }
 
-size_t Array::size() const noexcept
+std::size_t Array::size() const noexcept
 {
   return get_slots(_value);
 }
 
-Value Array::operator[](size_t index) const noexcept
+Value Array::operator[](std::size_t index) const noexcept
 {
   return Value{get_index(_value, index)};
 }
 
-Value Array::at(size_t index) const
+Value Array::at(std::size_t index) const
 {
   if (index >= size()) {
     throw std::out_of_range("Array::at: " + std::to_string(index) + " >= " + std::to_string(size()));
@@ -633,17 +633,17 @@ IndexedConstIterator Tuple::cend() const noexcept
   return end();
 }
 
-size_t Tuple::size() const noexcept
+std::size_t Tuple::size() const noexcept
 {
   return get_slots(_value);
 }
 
-Value Tuple::operator[](size_t index) const noexcept
+Value Tuple::operator[](std::size_t index) const noexcept
 {
   return Value{get_index(_value, index)};
 }
 
-Value Tuple::at(size_t index) const
+Value Tuple::at(std::size_t index) const
 {
   if (index >= size()) {
     throw std::out_of_range("Tuple::at: " + std::to_string(index) + " >= " + std::to_string(size()));
@@ -736,7 +736,7 @@ IndexedConstIterator Record::cend() const noexcept
   return end();
 }
 
-size_t Record::size() const noexcept
+std::size_t Record::size() const noexcept
 {
   return get_slots(_value) - 1;
 }
@@ -746,12 +746,12 @@ Value Record::operator[](std::string_view name) const noexcept
   return *find(name);
 }
 
-Value Record::operator[](size_t index) const noexcept
+Value Record::operator[](std::size_t index) const noexcept
 {
   return Value{get_index(_value, index + 1)};
 }
 
-Value Record::at(size_t index) const
+Value Record::at(std::size_t index) const
 {
   if (index >= size()) {
     throw std::out_of_range("Record::at: " + std::to_string(index) + " >= " + std::to_string(size()));
@@ -764,7 +764,7 @@ IndexedConstIterator Record::find(std::string_view name) const noexcept
 {
   auto desc = static_cast<record_description*>(get_index(_value, 0));
 
-  for (size_t i = 0u; i < size(); ++i) {
+  for (std::size_t i = 0u; i < size(); ++i) {
     if (desc->fieldNames[i] == name) {
       return {_value, i + 1};
     }
