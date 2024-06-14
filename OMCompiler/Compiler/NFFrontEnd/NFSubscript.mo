@@ -48,6 +48,7 @@ public
   import Expression = NFExpression;
   import Absyn;
   import AbsynUtil;
+  import BaseModelica;
   import Dimension = NFDimension;
   import NFPrefixes.{Variability, Purity};
   import NFCeval.EvalTarget;
@@ -810,13 +811,14 @@ public
 
   function toFlatString
     input Subscript subscript;
+    input BaseModelica.OutputFormat format;
     output String string;
   algorithm
     string := match subscript
       case RAW_SUBSCRIPT() then Dump.printSubscriptStr(subscript.subscript);
-      case UNTYPED() then Expression.toFlatString(subscript.exp);
-      case INDEX() then Expression.toFlatString(subscript.index);
-      case SLICE() then Expression.toFlatString(subscript.slice);
+      case UNTYPED() then Expression.toFlatString(subscript.exp, format);
+      case INDEX() then Expression.toFlatString(subscript.index, format);
+      case SLICE() then Expression.toFlatString(subscript.slice, format);
       case EXPANDED_SLICE()
         then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
@@ -827,9 +829,10 @@ public
 
   function toFlatStringList
     input list<Subscript> subscripts;
+    input BaseModelica.OutputFormat format;
     output String string;
   algorithm
-    string := List.toString(subscripts, toFlatString, "", "[", ",", "]", false);
+    string := List.toString(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
   end toFlatStringList;
 
   function toJSON

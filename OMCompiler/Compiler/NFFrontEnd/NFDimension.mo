@@ -393,15 +393,16 @@ public
 
   function toFlatString
     input Dimension dim;
+    input BaseModelica.OutputFormat format;
     output String str;
   algorithm
     str := match dim
       case INTEGER() then String(dim.size);
       case BOOLEAN() then "Boolean";
-      case ENUM() then Type.toFlatString(dim.enumType);
-      case EXP() then Expression.toFlatString(dim.exp);
+      case ENUM() then Type.toFlatString(dim.enumType, format);
+      case EXP() then Expression.toFlatString(dim.exp, format);
       case UNKNOWN() then ":";
-      case UNTYPED() then Expression.toFlatString(dim.dimension);
+      case UNTYPED() then Expression.toFlatString(dim.dimension, format);
     end match;
   end toFlatString;
 

@@ -30,6 +30,8 @@
  */
 
 encapsulated uniontype NFComponentRef
+  import BaseModelica;
+
 protected
   import Component = NFComponent;
   import Absyn;
@@ -327,6 +329,8 @@ public
   algorithm
     name := match cref
       case CREF() then InstNode.name(cref.node);
+      case WILD() then "_";
+      case STRING() then cref.name;
       else "";
     end match;
   end firstName;
@@ -336,6 +340,12 @@ public
   algorithm
     () := match cref
       case CREF()
+        algorithm
+          cref.restCref := EMPTY();
+        then
+          ();
+
+      case STRING()
         algorithm
           cref.restCref := EMPTY();
         then
@@ -1215,46 +1225,82 @@ public
 
   function toFlatString
     input ComponentRef cref;
+    input BaseModelica.OutputFormat format;
     output String str;
   protected
-    ComponentRef cr;
+    list<String> strl;
+    list<ComponentRef> crefs;
     list<Subscript> subs;
-    list<String> strl = {};
+    ComponentRef cr;
   algorithm
-    (cr, subs) := stripSubscripts(cref);
-    strl := toFlatString_impl(cr, strl);
+    str := firstName(cref);
 
-    str := match listHead(strl)
-      case "time" then "time";
-      case "_" then "_";
-      else stringAppendList({"'", stringDelimitList(strl, "."), "'", Subscript.toFlatStringList(subs)});
-    end match;
-  end toFlatString;
+    if str == "time" or str == "_" then
+      return;
+    end if;
 
-  function toFlatString_impl
-    input ComponentRef cref;
-    input output list<String> strl;
-  algorithm
-    strl := match cref
-      local
-        String str;
+    crefs := toListReverse(cref);
+    strl := {"'"};
+    subs := {};
 
-      case CREF()
-        algorithm
-          str := Util.escapeQuotes(InstNode.name(cref.node)) + Subscript.toFlatStringList(cref.subscripts);
+    if format.scalarizeMode == BaseModelica.ScalarizeMode.NOT_SCALARIZED then
+      while not listEmpty(crefs) loop
+        cr :: crefs := crefs;
+        strl := firstName(cr) :: strl;
+        subs := listAppend(getSubscripts(cr), subs);
 
-          if Type.isRecord(cref.ty) and not listEmpty(strl) then
-            strl := ("'" + listHead(strl)) :: listRest(strl);
-            str := str + "'";
+        if format.recordMode == BaseModelica.RecordMode.WITH_RECORDS and isCref(cr) and
+           Type.isRecord(scalarType(cr)) and not listEmpty(crefs) then
+          strl := "'" :: strl;
+
+          if not listEmpty(subs) then
+            strl := Subscript.toFlatStringList(subs, format) :: strl;
+            subs := {};
           end if;
-        then
-          toFlatString_impl(cref.restCref, str :: strl);
 
-      case WILD() then "_" :: strl;
-      case STRING() then toFlatString_impl(cref.restCref, cref.name :: strl);
-      else strl;
-    end match;
-  end toFlatString_impl;
+          if not listEmpty(crefs) then
+            strl := ".'" :: strl;
+          end if;
+        elseif not listEmpty(crefs) then
+          strl := "." :: strl;
+        end if;
+      end while;
+    else
+      while not listEmpty(crefs) loop
+        cr :: crefs := crefs;
+        strl := firstName(cr) :: strl;
+        subs := getSubscripts(cr);
+
+        if not listEmpty(subs) and
+           not (format.scalarizeMode == BaseModelica.ScalarizeMode.PARTIALLY_SCALARIZED and listEmpty(crefs)) then
+          strl := Subscript.toFlatStringList(subs, format) :: strl;
+        end if;
+
+        if not listEmpty(crefs) then
+          if format.recordMode == BaseModelica.RecordMode.WITH_RECORDS and isCref(cr) and
+             Type.isRecord(scalarType(cr)) then
+            strl := "'.'" :: strl;
+          else
+            strl := "." :: strl;
+          end if;
+        end if;
+      end while;
+
+      if format.scalarizeMode == BaseModelica.ScalarizeMode.PARTIALLY_SCALARIZED then
+        subs := getSubscripts(cref);
+      else
+        subs := {};
+      end if;
+    end if;
+
+    strl := "'" :: strl;
+
+    if not listEmpty(subs) then
+      strl := Subscript.toFlatStringList(subs, format) :: strl;
+    end if;
+
+    str := stringAppendList(listReverse(strl));
+  end toFlatString;
 
   function listToString
     input list<ComponentRef> crs;
@@ -1594,6 +1640,8 @@ public
       case CREF() guard includeScope
         then toListReverse(cref.restCref, includeScope, cref :: accum);
       case CREF(origin = Origin.CREF)
+        then toListReverse(cref.restCref, includeScope, cref :: accum);
+      case STRING()
         then toListReverse(cref.restCref, includeScope, cref :: accum);
       else accum;
     end match;
@@ -2179,7 +2227,6 @@ public
       children := list(prefixCref(node, InstNode.getType(node), {}, cref) for node in children_nodes);
     end if;
   end getRecordChildren;
-
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

@@ -562,6 +562,7 @@ public
 
   function toFlatStream
     input Variable var;
+    input BaseModelica.OutputFormat format;
     input String indent = "";
     input Boolean printBindingType = false;
     input output IOStream.IOStream s;
@@ -573,23 +574,24 @@ public
     s := IOStream.append(s, indent);
 
     s := Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
-    s := IOStream.append(s, Type.toFlatString(var.ty));
+    s := IOStream.append(s, Type.toFlatString(var.ty, format));
     s := IOStream.append(s, " ");
-    s := IOStream.append(s, ComponentRef.toFlatString(var.name));
+    s := IOStream.append(s, ComponentRef.toFlatString(var.name, format));
 
     if not listEmpty(var.typeAttributes) then
-      s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, s);
+      s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, format, s);
     elseif not listEmpty(var.children) then
-      s := toFlatStreamModifier(var.children, Binding.isBound(var.binding), printBindingType, s);
+      s := toFlatStreamModifier(var.children, Binding.isBound(var.binding), printBindingType, format, s);
     end if;
 
-    s := toFlatStreamBinding(var.binding, printBindingType, s);
+    s := toFlatStreamBinding(var.binding, printBindingType, format, s);
     s := FlatModelicaUtil.appendComment(var.comment, NFFlatModelicaUtil.ElementType.COMPONENT, s);
   end toFlatStream;
 
   function toFlatStreamBinding
     input Binding binding;
     input Boolean printBindingType;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
   algorithm
     if Binding.isBound(binding) then
@@ -597,11 +599,11 @@ public
 
       if printBindingType then
         s := IOStream.append(s, "(");
-        s := IOStream.append(s, Type.toFlatString(Binding.getType(binding)));
+        s := IOStream.append(s, Type.toFlatString(Binding.getType(binding), format));
         s := IOStream.append(s, ") ");
       end if;
 
-      s := IOStream.append(s, Binding.toFlatString(binding));
+      s := IOStream.append(s, Binding.toFlatString(binding, format));
     end if;
   end toFlatStreamBinding;
 
@@ -609,6 +611,7 @@ public
     input list<Variable> children;
     input Boolean overwrittenBinding;
     input Boolean printBindingType;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
   protected
     Boolean empty = true;
@@ -619,14 +622,14 @@ public
       ss := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
 
       if not listEmpty(child.typeAttributes) then
-        ss := Component.typeAttrsToFlatStream(child.typeAttributes, child.ty, ss);
+        ss := Component.typeAttrsToFlatStream(child.typeAttributes, child.ty, format, ss);
       elseif not listEmpty(child.children) then
         overwritten_binding := overwrittenBinding or Binding.isBound(child.binding);
-        ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, ss);
+        ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, format, ss);
       end if;
 
       if not overwrittenBinding and Binding.source(child.binding) == NFBinding.Source.MODIFIER then
-        ss := toFlatStreamBinding(child.binding, printBindingType, ss);
+        ss := toFlatStreamBinding(child.binding, printBindingType, format, ss);
       end if;
 
       if not IOStream.empty(ss) then
