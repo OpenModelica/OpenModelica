@@ -185,23 +185,24 @@ protected
   protected
     UnorderedMap<Absyn.Path, Function> replacements "rules for replacements are stored inside here";
     UnorderedSet<VariablePointer> set "new iterators from function bodies";
+    VariablePointers variables = VarData.getVariables(varData);
   algorithm
     // collect functions
     replacements := UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
     replacements := FunctionTree.fold(funcTree, function collectInlineFunctions(inline_types = inline_types), replacements);
 
     // apply replacements
-    eqData  := Replacements.replaceFunctions(eqData, replacements);
+    eqData  := Replacements.replaceFunctions(eqData, variables, replacements);
 
     // replace record constucters after functions because record operator
     // functions will produce record constructors once inlined
-    eqData  := inlineRecordsTuples(eqData, VarData.getVariables(varData));
+    eqData  := inlineRecordsTuples(eqData, variables);
 
     // collect new iterators from replaced function bodies
     set     := UnorderedSet.new(BVariable.hash, BVariable.equalName);
-    eqData  := EqData.map(eqData, function BackendDAE.lowerEquationIterators(variables = VarData.getVariables(varData), set = set));
+    eqData  := EqData.map(eqData, function BackendDAE.lowerEquationIterators(variables = variables, set = set));
     varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
-    eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = VarData.getVariables(varData)));
+    eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables));
   end inline;
 
   function collectInlineFunctions
@@ -313,16 +314,8 @@ protected
   algorithm
     tmp_eqns := Pointer.access(record_eqns);
     for i in 1:recordSize loop
-      new_lhs := Expression.nthRecordElement(i, lhs);
-      new_rhs := Expression.nthRecordElement(i, rhs);
-
-      // lower indexed record constructor elements
-      new_lhs := Expression.map(new_lhs, inlineRecordConstructorElements);
-      new_rhs := Expression.map(new_rhs, inlineRecordConstructorElements);
-
-      // lower the new component references of record attributes
-      new_lhs := Expression.map(new_lhs, function BackendDAE.lowerComponentReferenceExp(variables = variables));
-      new_rhs := Expression.map(new_rhs, function BackendDAE.lowerComponentReferenceExp(variables = variables));
+      new_lhs := inlineRecordExp(lhs, i, variables);
+      new_rhs := inlineRecordExp(rhs, i, variables);
 
       // create new equation
       tmp_eqn := Equation.makeAssignment(new_lhs, new_rhs, index, NBEquation.SIMULATION_STR, iter, attr);
@@ -343,6 +336,21 @@ protected
     new_eqn := Equation.DUMMY_EQUATION();
   end inlineRecordEquationWork;
 
+public
+  function inlineRecordExp
+    "inlines record constructors in a single expression"
+    input output Expression exp;
+    input Integer index;
+    input VariablePointers variables;
+  algorithm
+    exp := Expression.nthRecordElement(index, exp);
+    // lower indexed record constructor elements
+    exp := Expression.map(exp, inlineRecordConstructorElements);
+    // lower the new component references of record attributes
+    exp := Expression.map(exp, function BackendDAE.lowerComponentReferenceExp(variables = variables));
+  end inlineRecordExp;
+
+protected
   function inlineRecordConstructorElements
     "removes indexed constructor element calls
     Constructor(a,b,c)[2] --> b"
