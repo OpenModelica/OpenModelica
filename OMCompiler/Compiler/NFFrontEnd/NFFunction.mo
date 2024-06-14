@@ -1990,12 +1990,17 @@ uniontype Function
 
   function isNonDefaultRecordConstructor
     input Function fn;
-    output Boolean isConstructor;
-  algorithm
-    isConstructor := match fn.path
-      case Absyn.Path.QUALIFIED(path = Absyn.Path.QUALIFIED(name = "'constructor'")) then true;
-      else false;
-    end match;
+    output Boolean b = isNonDefaultRecordConstructorPath(fn.path);
+    function isNonDefaultRecordConstructorPath
+      input Absyn.Path path;
+      output Boolean b;
+    algorithm
+      b := match path
+        case Absyn.Path.QUALIFIED(name = "'constructor'") then true;
+        case Absyn.Path.QUALIFIED()                       then isNonDefaultRecordConstructorPath(path.path);
+        else false;
+      end match;
+    end isNonDefaultRecordConstructorPath;
   end isNonDefaultRecordConstructor;
 
   function toDAE

@@ -64,6 +64,7 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.{EqData, Equation, EquationPointers};
+  import Inline = NBInline;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
@@ -265,17 +266,19 @@ public
     "replaces all function calls in the replacements map with their body expressions,
     if possible."
     input output EqData eqData;
+    input VariablePointers variables;
     input UnorderedMap<Absyn.Path, Function> replacements;
   algorithm
         // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements));
+    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, variables = variables));
   end replaceFunctions;
 
   function applyFuncExp
     "Needs to be mapped with Expression.map()"
     input output Expression exp                               "Replacement happens inside this expression";
     input UnorderedMap<Absyn.Path, Function> replacements     "rules for replacements are stored inside here";
+    input VariablePointers variables;
   algorithm
     exp := match exp
       local
@@ -320,6 +323,9 @@ public
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
         body_exp := SimplifyExp.combineBinaries(body_exp);
         body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
+        // inline possible record constructors
+        //body_exp := Expression.map(body_exp, function applyFuncTupleExp(variables = variables));
+
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
@@ -330,6 +336,26 @@ public
       else exp;
     end match;
   end applyFuncExp;
+
+  function applyFuncTupleExp
+    input output Expression exp;
+    input VariablePointers variables;
+  protected
+    Type ty;
+    Option<Integer> sz;
+    list<Expression> inlined_record = {};
+  algorithm
+    ty := Expression.typeOf(exp);
+    sz := Type.complexSize(ty);
+
+    // if the call returns a record constructor, it has to be inlined
+    if Util.isSome(sz) then
+      for i in Util.getOption(sz):-1:1 loop
+        inlined_record := Inline.inlineRecordExp(exp, i, variables) :: inlined_record;
+      end for;
+      exp := Expression.TUPLE(ty, inlined_record);
+    end if;
+  end applyFuncTupleExp;
 
   function addInputArgTpl
     "adds an input to argument replacement and also adds
@@ -359,7 +385,8 @@ public
         then list(Expression.fromCref(BVariable.getVarName(child)) for child in arg_children);
 
         // if it is a basic record, take its elements
-        case Expression.RECORD() then arg.elements;
+        case Expression.RECORD()  then arg.elements;
+        case Expression.TUPLE()   then arg.elements;
 
         // if the argument is a record constructor, map it to its attributes
         case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) algorithm
