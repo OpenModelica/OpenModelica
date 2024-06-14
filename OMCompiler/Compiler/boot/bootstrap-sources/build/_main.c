@@ -54,7 +54,7 @@ MMC_CATCH_TOP(return rml_execution_failed());
 }
 }
 fflush(NULL);
-EXIT(0);
+exit(0);
 return 0;
 }
 #endif

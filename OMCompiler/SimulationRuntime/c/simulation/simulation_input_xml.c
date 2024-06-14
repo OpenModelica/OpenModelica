@@ -608,7 +608,7 @@ void read_input_xml(MODEL_DATA* modelData,
       messageClose(LOG_SIMULATION);
     }
     XML_ParserFree(parser);
-    EXIT(-1);
+    exit(-1);
   }
 
 

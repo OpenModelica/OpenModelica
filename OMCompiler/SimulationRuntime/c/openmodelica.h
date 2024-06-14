@@ -78,14 +78,8 @@ extern "C" {
 #endif
 #endif
 
-/* BEFORE: compat.h */
-#if defined(__MINGW32__) || defined(_MSC_VER) || defined(__AVR__)
-#define EXIT(code) exit(code)
-#else
-/* We need to patch exit() on Unix systems
- * It does not change the exit code of simulations for some reason! */
-#include <unistd.h>
-#define EXIT(code) {fflush(NULL); _exit(code);}
+#if defined(__unix__) || defined(__linux__) || defined(__APPLE_CC__)
+  #include <unistd.h>
 #endif
 
 #include "omc_inline.h"

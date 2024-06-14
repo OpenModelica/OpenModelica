@@ -59,7 +59,6 @@ int __omc_main(int argc, char **argv)
   }
 
   fflush(NULL);
-  EXIT(0);
   return 0;
 }
 

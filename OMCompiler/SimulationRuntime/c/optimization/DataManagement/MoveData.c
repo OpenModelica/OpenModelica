@@ -284,7 +284,7 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
   if(time->dt[0] <= 0){
     warningStreamPrint(LOG_STDOUT, 0, "read time grid from file fail!");
     warningStreamPrint(LOG_STDOUT, 0, "line %i: %g <= %g",0, (double)time->t[0][np1], (double)time->t0);
-    EXIT(0);
+    exit(0);
   }
 
 
@@ -307,7 +307,7 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
       warningStreamPrint(LOG_STDOUT, 0, "read time grid");
       warningStreamPrint(LOG_STDOUT, 0, "line %i/%i: %g <= %g",i, nsi, (double)time->t[i][np1], (double)time->t[i-1][np1]);
       warningStreamPrint(LOG_STDOUT, 0, "failed!");
-      EXIT(0);
+      exit(0);
     }
 
   }
@@ -940,7 +940,7 @@ static inline void pickUpStates(OptData* optData){
       // check if csv file is empty!
       if(n == 0){
         fprintf(stderr, "External input file: %s is empty!\n",cflags); fflush(NULL);
-        EXIT(1);
+        exit(1);
       }else{
         int i, j;
         double start_value;
