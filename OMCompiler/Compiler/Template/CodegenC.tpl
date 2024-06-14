@@ -1186,8 +1186,13 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
                      >>
                    else
                      <<
-                     MMC_INIT(0);
-                     omc_alloc_interface.init();
+                     if(omc_flag[FLAG_USE_MEMORY_POOL]) {
+                       mmc_init_nogc();
+                       omc_alloc_interface = omc_alloc_interface_pooled;
+                      } else { /* Boehm GC */
+                        MMC_INIT(0);
+                      }
+                      omc_alloc_interface.init();
                      >>
     let pminit = if Flags.getConfigBool(Flags.PARMODAUTO) then
                     <<
@@ -1214,6 +1219,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     #if defined(__cplusplus)
     extern "C" {
+    #endif
+
+    #if defined(OMC_DLL_MAIN_DEFINE)
+    #define GC_THREADS
     #endif
 
     <%simulationFileHeader(simCode.fileNamePrefix)%>
@@ -1386,16 +1395,27 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #define OMC_CHAR wchar_t
     #define OMC_EXPORT __declspec(dllexport) extern
 
-    #else
+    #else /* Linux */
+
     #define omc_fixWindowsArgv(N, A) (A)
     #define OMC_MAIN main
     #define OMC_CHAR char
     #define OMC_EXPORT extern
+
+    #endif /* #if defined(__MINGW32__) || defined(_MSC_VER) */
+
+    #if defined(OMC_DLL_MAIN_DEFINE)
+    #include <gc.h>
     #endif
 
     #if defined(threadData)
     #undef threadData
     #endif
+
+    #if defined(OMC_DLL_MAIN_DEFINE_LOCK)
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    #endif
+
     /* call the simulation runtime main from our main! */
     #if defined(OMC_DLL_MAIN_DEFINE)
     OMC_EXPORT int omcDllMain(int argc, OMC_CHAR **argv)
@@ -1403,6 +1423,17 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     int OMC_MAIN(int argc, OMC_CHAR** argv)
     #endif
     {
+      #if defined(OMC_DLL_MAIN_DEFINE_LOCK)
+      pthread_mutex_lock(&mutex);
+      #endif
+      #if defined(OMC_DLL_MAIN_DEFINE_BOEHM_GC)
+        GC_init();
+        GC_enable_incremental();
+        GC_allow_register_threads();
+        struct GC_stack_base sb;
+        GC_get_stack_base(&sb);
+        GC_register_my_thread(&sb);
+      #endif
       char** newargv = omc_fixWindowsArgv(argc, argv);
       /*
         Set the error functions to be used for simulation.
@@ -1426,13 +1457,19 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       compiledInDAEMode = <% if Flags.getConfigBool(Flags.DAE_MODE) then 1 else 0%>;
       compiledWithSymSolver = <% intSub(Flags.getConfigEnum(Flags.SYM_SOLVER), 0) %>;
       <%mainInit%>
+      #if defined(OMC_DLL_MAIN_DEFINE_LOCK)
+      pthread_mutex_unlock(&mutex);
+      #endif
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
-
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
       <%if Flags.getConfigBool(Flags.PARMODAUTO) then "dump_times(pm_model);" %>
       fflush(NULL);
     #if !defined(OMC_DLL_MAIN_DEFINE) /* do not exit, return in DLL mode */
       EXIT(res);
+    #endif
+
+    #if defined(OMC_DLL_MAIN_DEFINE_BOEHM_GC)
+      GC_unregister_my_thread();
     #endif
       return res;
     }

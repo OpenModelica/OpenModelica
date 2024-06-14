@@ -62,14 +62,14 @@ struct RINGBUFFER
  */
 RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
 {
-  RINGBUFFER *rb = (RINGBUFFER*)malloc(sizeof(RINGBUFFER));
+  RINGBUFFER *rb = (RINGBUFFER*)omc_alloc_interface.malloc_uncollectable(sizeof(RINGBUFFER));
   assertStreamPrint(NULL, 0 != rb, "out of memory");
 
   rb->firstElement = 0;
   rb->nElements = 0;
   rb->bufferSize = bufferSize > 0 ? bufferSize : 1;
   rb->itemSize = itemSize;
-  rb->buffer = calloc(rb->bufferSize, rb->itemSize);
+  rb->buffer = omc_alloc_interface.malloc_uncollectable(rb->bufferSize * rb->itemSize);
   assertStreamPrint(NULL, 0 != rb->buffer, "out of memory");
 
   return rb;
@@ -82,8 +82,8 @@ RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
  */
 void freeRingBuffer(RINGBUFFER *rb)
 {
-  free(rb->buffer);
-  free(rb);
+  omc_alloc_interface.free_uncollectable(rb->buffer);
+  omc_alloc_interface.free_uncollectable(rb);
 }
 
 /**
@@ -113,9 +113,12 @@ void *getRingData(RINGBUFFER *rb, int i)
  */
 void expandRingBuffer(RINGBUFFER *rb)
 {
+  void *buf = rb->buffer;
+  int sz = rb->bufferSize;
   rb->bufferSize *= 2;
-  rb->buffer = realloc(rb->buffer, rb->bufferSize*rb->itemSize);
+  rb->buffer = omc_alloc_interface.malloc_uncollectable(rb->bufferSize * rb->itemSize);
   assertStreamPrint(NULL, 0 != rb->buffer, "out of memory");
+  memcpy(rb->buffer, buf, sz * rb->itemSize);
 }
 
 /**

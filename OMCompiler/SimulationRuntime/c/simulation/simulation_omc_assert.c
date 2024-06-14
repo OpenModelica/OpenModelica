@@ -57,14 +57,14 @@ static void setTermMsg(const char *msg, va_list ap)
   if(NULL == TermMsg)
   {
     termMsgSize = modelica_integer_max(strlen(msg)*2+1,(size_t)2048);
-    TermMsg = (char*) malloc(termMsgSize);
+    TermMsg = (char*) omc_alloc_interface.malloc_uncollectable(termMsgSize);
   }
   i = vsnprintf(TermMsg,termMsgSize,msg,ap);
   if(i >= termMsgSize)
   {
     free(TermMsg);
     termMsgSize = 2*i+1;
-    TermMsg = (char*)malloc(termMsgSize);
+    TermMsg = (char*)omc_alloc_interface.malloc_uncollectable(termMsgSize);
     vsnprintf(TermMsg,termMsgSize,msg,ap);
   }
 }
