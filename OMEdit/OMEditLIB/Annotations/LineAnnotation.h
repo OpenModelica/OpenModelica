@@ -203,7 +203,7 @@ class ExpandableConnectorTreeItem : public QObject
   Q_OBJECT
 public:
   ExpandableConnectorTreeItem();
-  ExpandableConnectorTreeItem(QString name, bool array, QStringList arrayIndexes, StringHandler::ModelicaClasses restriction, bool newVariable,
+  ExpandableConnectorTreeItem(QString name, bool array, QStringList arrayIndexes, StringHandler::ModelicaClasses restriction, bool newVariable, bool inherited,
                               ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
   ~ExpandableConnectorTreeItem();
   bool isRootItem() {return mIsRootItem;}
@@ -218,6 +218,8 @@ public:
   StringHandler::ModelicaClasses getRestriction() {return mRestriction;}
   void setNewVariable(bool newVariable) {mNewVariable = newVariable;}
   bool isNewVariable() {return mNewVariable;}
+  void setInherited(bool inherited) {mInherited = inherited;}
+  bool isInherited() {return mInherited;}
   void insertChild(int position, ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) {mChildren.insert(position, pExpandableConnectorTreeItem);}
   ExpandableConnectorTreeItem* child(int row) {return mChildren.value(row);}
   QVariant data(int column, int role = Qt::DisplayRole) const;
@@ -232,6 +234,7 @@ private:
   QStringList mArrayIndexes;
   StringHandler::ModelicaClasses mRestriction;
   bool mNewVariable;
+  bool mInherited;
 };
 
 class CreateConnectionDialog;
@@ -260,7 +263,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
-  void createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  void createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, bool inherited, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
   void createExpandableConnectorTreeItem(Element *pElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
 private:
   CreateConnectionDialog *mpCreateConnectionDialog;
