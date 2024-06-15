@@ -208,8 +208,8 @@ public
         then ({StrongComponent.SINGLE_COMPONENT(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (eqn, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(Pointer.access(comp.eqn), comp.vars, funcTree, systemType, implicit_index, slicing_map);
-        then ({StrongComponent.MULTI_COMPONENT(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
+          (eqn_slice, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(comp.eqn, comp.vars, funcTree, systemType, implicit_index, slicing_map);
+        then ({StrongComponent.MULTI_COMPONENT(comp.vars, eqn_slice, solve_status)}, solve_status);
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
           for inner_comp in listReverse(arrayList(strict.innerEquations)) loop
@@ -403,32 +403,37 @@ public
   end solveSingleStrongComponent;
 
   function solveMultiStrongComponent
-    input output Equation eqn;
-    input list<Pointer<Variable>> vars;
+    input output Slice<EquationPointer> eqn_slice;
+    input list<Slice<VariablePointer>> var_slices;
     input output FunctionTree funcTree;
     input SystemType systemType;
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
-   algorithm
-    (eqn, funcTree, status) := match eqn
+  protected
+    Equation eqn = Pointer.access(Slice.getT(eqn_slice));
+  algorithm
+    (eqn_slice, funcTree, status) := match eqn
       local
+        list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
         Equation solved_eqn;
         IfEquationBody if_body;
         Expression lhs, rhs;
-        list<Option<Pointer<Variable>>> record_parents;
-        Pointer<Variable> parent;
+        ComponentRef var_cref;
+        UnorderedSet<ComponentRef> record_crefs;
 
       case Equation.IF_EQUATION() algorithm
         (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, systemType, implicit_index, slicing_map);
         eqn.body := if_body;
-      then (eqn, funcTree, status);
+      then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), funcTree, status);
 
       // ToDo: inverse algorithms
-      case Equation.ALGORITHM() then (eqn, funcTree, Status.EXPLICIT);
+      case Equation.ALGORITHM()
+      then (Slice.SLICE(Pointer.clone(Slice.getT(eqn_slice)), eqn_slice.indices), funcTree, Status.EXPLICIT);
 
       // for now assume they are solved
-      case Equation.WHEN_EQUATION() then (eqn, funcTree, Status.EXPLICIT);
+      case Equation.WHEN_EQUATION()
+      then (Slice.SLICE(Pointer.clone(Slice.getT(eqn_slice)), eqn_slice.indices), funcTree, Status.EXPLICIT);
 
       // solve tuple equations
       case Equation.RECORD_EQUATION() algorithm
@@ -442,21 +447,26 @@ public
           then (eqn, Status.EXPLICIT);
           else algorithm
             // check if all belong to the same record
-            record_parents := list(BVariable.getParent(var) for var in vars);
-            solved_eqn := match UnorderedSet.unique_list(record_parents, function Util.optionHash(inFunc = BVariable.hash), function Util.optionEqual(inFunc = BVariable.equalName))
-              case {SOME(parent)} algorithm
-                (solved_eqn, funcTree, status, _) := solveBody(eqn, BVariable.getVarName(parent), funcTree);
+            record_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+            for var_slice in var_slices loop
+              (var_cref, status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
+              UnorderedSet.add(var_cref, record_crefs);
+              if status == Status.UNSOLVABLE then break; end if;
+            end for;
+
+            solved_eqn := match (UnorderedSet.toList(record_crefs), status)
+              case ({var_cref}, Status.UNPROCESSED) algorithm
+                (solved_eqn, funcTree, status, _) := solveBody(eqn, var_cref, funcTree);
               then solved_eqn;
-              else algorithm
-                status := Status.IMPLICIT;
-              then eqn;
+              else eqn;
             end match;
+
           then (solved_eqn, status);
         end match;
-      then (solved_eqn, funcTree, status);
+      then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), funcTree, status);
 
       else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for equation:\n" + Equation.toString(eqn)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for equation:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
       then fail();
     end match;
   end solveMultiStrongComponent;
@@ -474,14 +484,15 @@ public
     (eqn, funcTree, status, invertRelation) := match eqn
       local
         Equation body;
+        Slice<EquationPointer> body_slice;
         Pointer<Variable> indexed_var;
 
       // For equations are expected to only have one body equation at this point
       case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
         // create indexed variable to trick matching algorithm to solve for it
         indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref), cref);
-        (body, funcTree, status, implicit_index) := solveMultiStrongComponent(body, {indexed_var}, funcTree, systemType, implicit_index, slicing_map);
-        eqn.body := {body};
+        (body_slice, funcTree, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcTree, systemType, implicit_index, slicing_map);
+        eqn.body := {Pointer.access(Slice.getT(body_slice))};
       then (eqn, funcTree, status, false);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
@@ -759,6 +770,7 @@ protected
     output Status solve_status;
   protected
     list<ComponentRef> slices_lst;
+    Option<Pointer<Variable>> record_parent;
   algorithm
     slices_lst := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = var_cref));
 
@@ -766,9 +778,15 @@ protected
       var_cref := List.first(slices_lst);
       solve_status := Status.UNPROCESSED;
     else
-      // todo: choose best slice of list if more than one.
-      // only fail for listLength == 0
-      solve_status := Status.UNSOLVABLE;
+      // check if the record parents occur (todo: vice versa?)
+      record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref));
+      if Util.isSome(record_parent) then
+        (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), eqn);
+      else
+        // todo: choose best slice of list if more than one.
+        // only fail for listLength == 0
+        solve_status := Status.UNSOLVABLE;
+      end if;
     end if;
   end getVarSlice;
 
