@@ -574,7 +574,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(Slice.getT(comp.eqn)), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm

@@ -81,6 +81,10 @@ static inline void* pointerAccess(void *ptr)
 ");
 end access;
 
+function clone
+  input output Pointer<T> mutable = create(access(mutable));
+end clone;
+
 function apply
   input output Pointer<T> mutable;
   input Func func;

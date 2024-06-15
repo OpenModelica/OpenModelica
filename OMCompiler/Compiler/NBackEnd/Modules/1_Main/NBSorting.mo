@@ -487,12 +487,6 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
       end match;
-      /*
-      print(Adjacency.Matrix.toString(adj, "before"));
-      print(Matching.toString(matching, "before"));
-      print(Adjacency.Matrix.toString(phase2_adj, "after"));
-      print(Matching.toString(phase2_matching, "after"));
-      */
     end create;
 
     function collapse

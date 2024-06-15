@@ -137,7 +137,7 @@ public
       local
         Pointer<Variable> new_var;
         Pointer<Equation> new_eqn;
-        list<Pointer<Variable>> new_vars;
+        list<Slice<VariablePointer>> new_var_slices;
         list<Pointer<Equation>> new_eqns;
         ComponentRef new_cref;
         Slice<VariablePointer> new_var_slice;
@@ -151,10 +151,10 @@ public
       then StrongComponent.SINGLE_COMPONENT(new_var, new_eqn, comp.status);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
-        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
-        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.MULTI_COMPONENT(new_vars, new_eqn, comp.status);
+        new_var_slices := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in comp.vars);
+        new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
+        Equation.createName(Slice.getT(new_eqn_slice), idx = idx, context = context);
+      then StrongComponent.MULTI_COMPONENT(new_var_slices, new_eqn_slice, comp.status);
 
       case StrongComponent.SLICED_COMPONENT() algorithm
         (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));

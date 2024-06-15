@@ -179,7 +179,7 @@ public
       case StrongComponent.MULTI_COMPONENT() algorithm
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
-          strict  = singleImplicit(List.first(comp.vars), comp.eqn), // this is wrong! need to take all vars
+          strict  = singleImplicit(Slice.getT(List.first(comp.vars)), Slice.getT(comp.eqn)), // this is wrong! need to take all vars
           casual  = NONE(),
           linear  = false,
           mixed   = false,
