@@ -352,6 +352,7 @@ if true then /* Suppress output */
     "../MidCode/HashTableMidVar.mo",
 
   // "NFFrontEnd";
+    "../NFFrontEnd/BaseModelica.mo",
     "../NFFrontEnd/NFAlgorithm.mo",
     "../NFFrontEnd/NFArrayConnections.mo",
     "../NFFrontEnd/NFAttributes.mo",

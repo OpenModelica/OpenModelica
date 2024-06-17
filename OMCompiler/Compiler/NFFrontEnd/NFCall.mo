@@ -33,6 +33,7 @@ encapsulated uniontype NFCall
 
 import Absyn;
 import AbsynUtil;
+import BaseModelica;
 import DAE;
 import Expression = NFExpression;
 import NFCallAttributes;
@@ -797,6 +798,7 @@ public
 
   function toFlatString
     input NFCall call;
+    input BaseModelica.OutputFormat format;
     output String str;
   protected
     String name, arg_str,c;
@@ -807,12 +809,12 @@ public
       case TYPED_CALL()
         algorithm
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-          arg_str := stringDelimitList(list(Expression.toFlatString(arg) for arg in call.arguments), ", ");
+          arg_str := stringDelimitList(list(Expression.toFlatString(arg, format) for arg in call.arguments), ", ");
         then
           if Function.isBuiltin(call.fn) then
             stringAppendList({name, "(", arg_str, ")"})
           elseif isExternalObjectConstructor(call) then
-            stringAppendList({Type.toFlatString(call.ty), "(", arg_str, ")"})
+            stringAppendList({Type.toFlatString(call.ty, format), "(", arg_str, ")"})
           else
             stringAppendList({Util.makeQuotedIdentifier(name), "(", arg_str, ")"});
 
@@ -822,12 +824,12 @@ public
             // Vectorized calls contains iterators with illegal Modelica names
             // (to avoid name conflicts), to make the flat output legal such
             // calls are reverted to their original form here.
-            str := Expression.toFlatString(devectorizeCall(call));
+            str := Expression.toFlatString(devectorizeCall(call), format);
           else
             name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
-            arg_str := Expression.toFlatString(call.exp);
+            arg_str := Expression.toFlatString(call.exp, format);
             c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
-              Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
+              Expression.toFlatString(Util.tuple22(iter), format) for iter in call.iters), ", ");
             str := stringAppendList({"{", arg_str, " for ", c, "}"});
           end if;
         then
@@ -836,9 +838,9 @@ public
       case TYPED_REDUCTION()
         algorithm
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-          arg_str := Expression.toFlatString(call.exp);
+          arg_str := Expression.toFlatString(call.exp, format);
           c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
-            Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
+            Expression.toFlatString(Util.tuple22(iter), format) for iter in call.iters), ", ");
         then
           if Function.isBuiltin(call.fn) then
             stringAppendList({name, "(", arg_str, " for ", c, ")"})

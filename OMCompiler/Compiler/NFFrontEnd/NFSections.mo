@@ -30,6 +30,7 @@
  */
 
 encapsulated uniontype NFSections
+  import BaseModelica;
   import Equation = NFEquation;
   import Algorithm = NFAlgorithm;
   import Statement = NFStatement;
@@ -390,6 +391,7 @@ public
   function toFlatStream
     input Sections sections;
     input Absyn.Path scopeName;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -402,7 +404,7 @@ public
           for alg in sections.algorithms loop
             s := IOStream.append(s, indent);
             s := IOStream.append(s, "algorithm\n");
-            s := Statement.toFlatStreamList(alg.statements, indent + "  ", s);
+            s := Statement.toFlatStreamList(alg.statements, format, indent + "  ", s);
           end for;
         then ();
       case EXTERNAL()
@@ -414,13 +416,13 @@ public
           if sections.explicit then
             if not ComponentRef.isEmpty(sections.outputRef) then
               s := IOStream.append(s, " ");
-              s := IOStream.append(s, ComponentRef.toFlatString(sections.outputRef));
+              s := IOStream.append(s, ComponentRef.toFlatString(sections.outputRef, format));
               s := IOStream.append(s, " =");
             end if;
             s := IOStream.append(s, " ");
             s := IOStream.append(s, sections.name);
             s := IOStream.append(s, "(");
-            s := IOStream.append(s, stringDelimitList(list(Expression.toFlatString(e) for e in sections.args), ", "));
+            s := IOStream.append(s, stringDelimitList(list(Expression.toFlatString(e, format) for e in sections.args), ", "));
             s := IOStream.append(s, ")");
           end if;
           if isSome(sections.ann) then

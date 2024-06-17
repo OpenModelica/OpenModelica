@@ -933,6 +933,7 @@ public
 
   function toFlatString
     input Type ty;
+    input BaseModelica.OutputFormat format;
     output String str;
   algorithm
     str := match ty
@@ -942,17 +943,17 @@ public
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
       case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
-      case Type.ARRAY() then List.toString(ty.dimensions, Dimension.toFlatString, toFlatString(ty.elementType), "[", ", ", "]", false);
-      case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toFlatString), ", ") + ")";
+      case Type.ARRAY() then List.toString(ty.dimensions, function Dimension.toFlatString(format = format), toFlatString(ty.elementType, format), "[", ", ", "]", false);
+      case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, function toFlatString(format = format)), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.cls)));
       case Type.FUNCTION() then Function.typeString(ty.fn);
-      case Type.METABOXED() then "#" + toFlatString(ty.ty);
+      case Type.METABOXED() then "#" + toFlatString(ty.ty, format);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
-      case Type.CONDITIONAL_ARRAY() then toFlatString(ty.trueType) + "|" + toFlatString(ty.falseType);
-      case Type.UNTYPED() then List.toString(arrayList(ty.dimensions), Dimension.toFlatString, InstNode.name(ty.typeNode), "[", ", ", "]", false);
+      case Type.CONDITIONAL_ARRAY() then toFlatString(ty.trueType, format) + "|" + toFlatString(ty.falseType, format);
+      case Type.UNTYPED() then List.toString(arrayList(ty.dimensions), function Dimension.toFlatString(format = format), InstNode.name(ty.typeNode), "[", ", ", "]", false);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
@@ -963,10 +964,11 @@ public
 
   function dimensionsToFlatString
     input Type ty;
+    input BaseModelica.OutputFormat format;
     output String str;
   algorithm
     str := match ty
-      case Type.ARRAY() then stringDelimitList(List.map(ty.dimensions, Dimension.toFlatString), ", ");
+      case Type.ARRAY() then stringDelimitList(List.map(ty.dimensions, function Dimension.toFlatString(format = format)), ", ");
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown or not array type: " + anyString(ty), sourceInfo());
@@ -977,6 +979,7 @@ public
 
   function toFlatDeclarationStream
     input Type ty;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   algorithm
@@ -1010,7 +1013,7 @@ public
           s;
 
       case COMPLEX(complexTy = ComplexType.RECORD())
-        then Record.toFlatDeclarationStream(ty.cls, indent, s);
+        then Record.toFlatDeclarationStream(ty.cls, format, indent, s);
 
       case COMPLEX(complexTy = complexTy as ComplexType.EXTERNAL_OBJECT())
         algorithm
@@ -1021,10 +1024,10 @@ public
           s := IOStream.append(s, name);
           s := IOStream.append(s, "\n  extends ExternalObject;\n\n");
           {f} := Function.typeNodeCache(complexTy.constructor);
-          s := Function.toFlatStream(f, indent + "  ", s, overrideName="constructor");
+          s := Function.toFlatStream(f, format, indent + "  ", s, overrideName="constructor");
           s := IOStream.append(s, ";\n\n");
           {f} := Function.typeNodeCache(complexTy.destructor);
-          s := Function.toFlatStream(f, indent + "  ", s, overrideName="destructor");
+          s := Function.toFlatStream(f, format, indent + "  ", s, overrideName="destructor");
           s := IOStream.append(s, ";\n\nend ");
           s := IOStream.append(s, name);
         then s;

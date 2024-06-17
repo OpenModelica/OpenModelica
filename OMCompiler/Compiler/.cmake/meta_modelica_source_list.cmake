@@ -308,6 +308,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBSlice.mo
 
     # "NFFrontEnd";
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/BaseModelica.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFArrayConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAttributes.mo

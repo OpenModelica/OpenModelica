@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFClockKind
   import Absyn;
+  import BaseModelica;
   import DAE;
   import Expression = NFExpression;
 
@@ -500,6 +501,7 @@ public
 
   function toFlatString
     input ClockKind ck;
+    input BaseModelica.OutputFormat format;
     output String str;
   algorithm
     str := match ck
@@ -507,10 +509,10 @@ public
         Expression e1, e2;
 
       case INFERRED_CLOCK()       then "";
-      case RATIONAL_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case REAL_CLOCK(e1)         then Expression.toFlatString(e1);
-      case EVENT_CLOCK(e1, e2)    then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case SOLVER_CLOCK(e1, e2)   then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
+      case RATIONAL_CLOCK(e1, e2) then Expression.toFlatString(e1, format) + ", " + Expression.toFlatString(e2, format);
+      case REAL_CLOCK(e1)         then Expression.toFlatString(e1, format);
+      case EVENT_CLOCK(e1, e2)    then Expression.toFlatString(e1, format) + ", " + Expression.toFlatString(e2, format);
+      case SOLVER_CLOCK(e1, e2)   then Expression.toFlatString(e1, format) + ", " + Expression.toFlatString(e2, format);
     end match;
 
     str := "Clock(" + str + ")";

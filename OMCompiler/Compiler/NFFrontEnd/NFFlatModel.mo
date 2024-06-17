@@ -232,20 +232,23 @@ public
   protected
     FlatModel flat_model = flatModel;
     String name = className(flatModel);
+    BaseModelica.OutputFormat format;
   algorithm
+    format := BaseModelica.formatFromFlags();
+
     s := IOStream.append(s, "//! base 0.1.0\n");
     s := IOStream.append(s, "package '" + name + "'\n");
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
-        s := Function.toFlatStream(fn, "  ", s);
+        s := Function.toFlatStream(fn, format, "  ", s);
         s := IOStream.append(s, ";\n\n");
       end if;
     end for;
 
     for ty in collectFlatTypes(flat_model, functions) loop
-      s := Type.toFlatDeclarationStream(ty, "  ", s);
+      s := Type.toFlatDeclarationStream(ty, format, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
 
@@ -254,31 +257,31 @@ public
     s := IOStream.append(s, "\n");
 
     for v in flat_model.variables loop
-      s := Variable.toFlatStream(v, "    ", printBindingTypes, s);
+      s := Variable.toFlatStream(v, format, "    ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 
     if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "  initial equation\n");
-      s := Equation.toFlatStreamList(flat_model.initialEquations, "    ", s);
+      s := Equation.toFlatStreamList(flat_model.initialEquations, format, "    ", s);
     end if;
 
     if not listEmpty(flat_model.equations) then
       s := IOStream.append(s, "  equation\n");
-      s := Equation.toFlatStreamList(flat_model.equations, "    ", s);
+      s := Equation.toFlatStreamList(flat_model.equations, format, "    ", s);
     end if;
 
     for alg in flat_model.initialAlgorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "  initial algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "    ", s);
+        s := Statement.toFlatStreamList(alg.statements, format, "    ", s);
       end if;
     end for;
 
     for alg in flat_model.algorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "  algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "    ", s);
+        s := Statement.toFlatStreamList(alg.statements, format, "    ", s);
       end if;
     end for;
 

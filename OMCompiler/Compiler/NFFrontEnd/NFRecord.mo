@@ -39,6 +39,7 @@ encapsulated package NFRecord
 "
 
 import Attributes = NFAttributes;
+import BaseModelica;
 import Binding = NFBinding;
 import Class = NFClass;
 import Component = NFComponent;
@@ -360,6 +361,7 @@ end foldInputFields;
 
 function toFlatDeclarationStream
   input InstNode recordNode;
+  input BaseModelica.OutputFormat format;
   input String indent;
   input output IOStream.IOStream s;
 protected
@@ -371,7 +373,7 @@ algorithm
   Typing.typeClass(node, NFInstContext.RELAXED);
   // Keep the node type from the original node to get the correct name.
   node := InstNode.setNodeType(node_ty, node);
-  s := IOStream.append(s, InstNode.toFlatString(node, indent));
+  s := IOStream.append(s, InstNode.toFlatString(node, format, indent));
 end toFlatDeclarationStream;
 
 annotation(__OpenModelica_Interface="frontend");

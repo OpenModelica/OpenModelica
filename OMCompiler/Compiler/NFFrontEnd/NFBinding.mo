@@ -32,6 +32,7 @@
 encapsulated uniontype NFBinding
 
 public
+  import BaseModelica;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Type = NFType;
@@ -465,17 +466,18 @@ public
 
   function toFlatString
     input Binding binding;
+    input BaseModelica.OutputFormat format;
     input String prefix = "";
     output String string;
   algorithm
     string := match binding
       case UNBOUND() then "";
       case RAW_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
-      case UNTYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case TYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case FLAT_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case CEVAL_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case INVALID_BINDING() then toFlatString(binding.binding, prefix);
+      case UNTYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case TYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case FLAT_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case CEVAL_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case INVALID_BINDING() then toFlatString(binding.binding, format, prefix);
     end match;
   end toFlatString;
 

@@ -1450,6 +1450,16 @@ constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(152, "exposeLocalIOs",
                   "0 meaning top-level (standard Modelica), 1 inputs/outputs of top-level components, >1 going deeper. " +
                   "This flag is particularly useful for FMI export."));
 
+constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_OPTION({
+    "scalarized",
+    "partiallyScalarized",
+    "nonScalarized",
+    "withRecords",
+    "withoutRecords"
+  })),
+  Gettext.gettext("Formatting options for Base Modelica"));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

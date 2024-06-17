@@ -124,20 +124,21 @@ public
 
     function toFlatStream
       input Branch branch;
+      input BaseModelica.OutputFormat format;
       input String indent;
       input output IOStream.IOStream s;
     algorithm
       s := match branch
         case BRANCH()
           algorithm
-            s := IOStream.append(s, Expression.toFlatString(branch.condition));
+            s := IOStream.append(s, Expression.toFlatString(branch.condition, format));
             s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(branch.body, indent + "  ", s);
+            s := toFlatStreamList(branch.body, format, indent + "  ", s);
           then
             s;
 
         case INVALID_BRANCH()
-          then toFlatStream(branch.branch, indent, s);
+          then toFlatStream(branch.branch, format, indent, s);
       end match;
     end toFlatStream;
 
@@ -1409,6 +1410,7 @@ public
 
   function toFlatStream
     input Equation eq;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   algorithm
@@ -1417,26 +1419,26 @@ public
     s := match eq
       case EQUALITY()
         algorithm
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
         then
           s;
 
       case ARRAY_EQUALITY()
         algorithm
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
         then
           s;
 
       case CONNECT()
         algorithm
           s := IOStream.append(s, "connect(");
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1448,11 +1450,11 @@ public
 
           if isSome(eq.range) then
             s := IOStream.append(s, " in ");
-            s := IOStream.append(s, Expression.toFlatString(Util.getOption(eq.range)));
+            s := IOStream.append(s, Expression.toFlatString(Util.getOption(eq.range), format));
           end if;
 
           s := IOStream.append(s, " loop\n");
-          s := toFlatStreamList(eq.body, indent + "  ", s);
+          s := toFlatStreamList(eq.body, format, indent + "  ", s);
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end for");
         then
@@ -1461,12 +1463,12 @@ public
       case IF()
         algorithm
           s := IOStream.append(s, "if ");
-          s := Branch.toFlatStream(listHead(eq.branches), indent, s);
+          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
             s := IOStream.append(s, "elseif ");
-            s := Branch.toFlatStream(b, indent, s);
+            s := Branch.toFlatStream(b, format, indent, s);
           end for;
 
           s := IOStream.append(s, indent);
@@ -1477,12 +1479,12 @@ public
       case WHEN()
         algorithm
           s := IOStream.append(s, "when ");
-          s := Branch.toFlatStream(listHead(eq.branches), indent, s);
+          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
             s := IOStream.append(s, "elsewhen ");
-            s := Branch.toFlatStream(b, indent, s);
+            s := Branch.toFlatStream(b, format, indent, s);
           end for;
 
           s := IOStream.append(s, indent);
@@ -1493,11 +1495,11 @@ public
       case ASSERT()
         algorithm
           s := IOStream.append(s, "assert(");
-          s := IOStream.append(s, Expression.toFlatString(eq.condition));
+          s := IOStream.append(s, Expression.toFlatString(eq.condition, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.message));
+          s := IOStream.append(s, Expression.toFlatString(eq.message, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.level));
+          s := IOStream.append(s, Expression.toFlatString(eq.level, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1505,7 +1507,7 @@ public
       case TERMINATE()
         algorithm
           s := IOStream.append(s, "terminate(");
-          s := IOStream.append(s, Expression.toFlatString(eq.message));
+          s := IOStream.append(s, Expression.toFlatString(eq.message, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1513,15 +1515,15 @@ public
       case REINIT()
         algorithm
           s := IOStream.append(s, "reinit(");
-          s := IOStream.append(s, Expression.toFlatString(eq.cref));
+          s := IOStream.append(s, Expression.toFlatString(eq.cref, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.reinitExp));
+          s := IOStream.append(s, Expression.toFlatString(eq.reinitExp, format));
           s := IOStream.append(s, ")");
         then
           s;
 
       case NORETCALL()
-        then IOStream.append(s, Expression.toFlatString(eq.exp));
+        then IOStream.append(s, Expression.toFlatString(eq.exp, format));
 
       else IOStream.append(s, "#UNKNOWN EQUATION#");
     end match;
@@ -1531,6 +1533,7 @@ public
 
   function toFlatStreamList
     input list<Equation> eql;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -1550,7 +1553,7 @@ public
 
       prev_multi_line := multi_line;
 
-      s := toFlatStream(eq, indent, s);
+      s := toFlatStream(eq, format, indent, s);
       s := IOStream.append(s, ";\n");
     end for;
   end toFlatStreamList;
