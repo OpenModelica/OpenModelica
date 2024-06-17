@@ -4726,14 +4726,52 @@ public
 
   function makeDefaultValue
     input Type ty;
+    input Option<Expression> min = NONE();
+    input Option<Expression> max = NONE();
     output Expression exp;
   algorithm
     exp := match ty
-      case Type.INTEGER() then INTEGER(0);
-      case Type.REAL() then REAL(0);
+      case Type.INTEGER()
+        algorithm
+          if isSome(min) and isNonNegative(Util.getOption(min)) then
+            // default = min if min >= 0
+            SOME(exp) := min;
+          elseif isSome(max) and isNonPositive(Util.getOption(max)) then
+            // default = max if max <= 0
+            SOME(exp) := max;
+          else
+            exp := INTEGER(0);
+          end if;
+        then
+          exp;
+
+      case Type.REAL()
+        algorithm
+          if isSome(min) and isNonNegative(Util.getOption(min)) then
+            // default = min if min >= 0.0
+            SOME(exp) := min;
+          elseif isSome(max) and isNonPositive(Util.getOption(max)) then
+            // default = max if max <= 0.0
+            SOME(exp) := max;
+          else
+            exp := REAL(0.0);
+          end if;
+        then
+          exp;
+
       case Type.STRING() then STRING("");
       case Type.BOOLEAN() then BOOLEAN(false);
-      case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
+
+      case Type.ENUMERATION()
+        algorithm
+          if isSome(min) then
+            SOME(exp) := min;
+          else
+            exp := ENUM_LITERAL(ty, listHead(ty.literals), 1);
+          end if;
+        then
+          exp;
+
       case Type.ARRAY() then fillType(ty, makeDefaultValue(Type.arrayElementType(ty)));
       case Type.TUPLE() then TUPLE(ty, list(makeDefaultValue(t) for t in ty.types));
     end match;
