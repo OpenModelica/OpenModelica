@@ -542,6 +542,7 @@ ForStatement1.mo \
 ForStatement2.mo \
 ForStatement3.mo \
 ForStatementArray.mo \
+ForStatementAssign1.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \
 func1.mo \
@@ -1078,6 +1079,7 @@ ReinitInvalid4.mo \
 ReinitInvalid5.mo \
 ReinitInvalid6.mo \
 ReinitInvalid7.mo \
+ReinitInvalid8.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \

@@ -3411,6 +3411,10 @@ function checkAssignment
   input InstContext.Type context;
   input SourceInfo info;
 algorithm
+  if InstContext.inInstanceAPI(context) then
+    return;
+  end if;
+
   () := match lhsExp
     local
       Integer i;
@@ -3709,7 +3713,16 @@ algorithm
 
   // The first argument must be a cref.
   cref := match crefExp
-    case Expression.CREF() then crefExp.cref;
+    case Expression.CREF()
+      algorithm
+        if ComponentRef.isIterator(crefExp.cref) then
+          Error.addSourceMessage(Error.ASSIGN_ITERATOR_ERROR,
+            {ComponentRef.toString(crefExp.cref)}, info);
+          fail();
+        end if;
+      then
+        crefExp.cref;
+
     else
       algorithm
         Error.addSourceMessage(Error.REINIT_MUST_BE_VAR_OR_ARRAY, {}, info);
