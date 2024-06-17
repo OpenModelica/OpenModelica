@@ -1382,7 +1382,9 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     ("nonStdTopLevelOuter", Gettext.gettext("Allow top level outer.\nSee: https://specification.modelica.org/maint/3.6/scoping-name-lookup-and-flattening.html#S4.p1")),
     ("protectedAccess", Gettext.gettext("Allow access of protected elements")),
     ("reinitInAlgorithms", Gettext.gettext("Allow reinit in algorithm sections")),
-    ("unbalancedModel", Gettext.gettext("Allow models to be locally unbalanced and to have unbalanced connectors"))
+    ("unbalancedModel", Gettext.gettext("Allow models to be locally unbalanced and to have unbalanced connectors")),
+    ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute"))
+
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
 
