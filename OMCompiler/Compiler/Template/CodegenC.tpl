@@ -1431,9 +1431,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
       <%if Flags.getConfigBool(Flags.PARMODAUTO) then "dump_times(pm_model);" %>
       fflush(NULL);
-    #if !defined(OMC_DLL_MAIN_DEFINE) /* do not exit, return in DLL mode */
-      EXIT(res);
-    #endif
       return res;
     }
 
