@@ -722,6 +722,16 @@ public
     end match;
   end getStateCref;
 
+  function hasDerVar
+    input Pointer<Variable> state_var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(state_var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(_)))) then true;
+      else false;
+    end match;
+  end hasDerVar;
+
   function getDerVar
     input Pointer<Variable> state_var;
     output Pointer<Variable> der_var;
