@@ -508,7 +508,6 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
    * Some old issues with nice use cases #3222, #2272, #2268.
    */
   qreal thickness = mLineThickness;
-
   qreal curScale = 0.0;
   if ((mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) || (mpParentComponent && mpParentComponent->getGraphicsView()->isRenderingLibraryPixmap())) {
     thickness = mLineThickness + 3.0;
@@ -522,13 +521,13 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
     qreal yScale = qSqrt(m22*m22 + m21*m21);
     curScale = qMin(xScale, yScale);
 
-    if (mLineThickness > 0.0 && mLineThickness < 1.0 && curScale < 1.0) {
+    if (mLineThickness > 0.0 && mLineThickness < 1.0 && curScale < 2.0) {
       thickness = 1.0;
     }
   }
 
   QPen pen(QBrush(mLineColor), thickness, StringHandler::getLinePatternType(mLinePattern), Qt::FlatCap, Qt::MiterJoin);
-  if (qFuzzyCompare(mLineThickness, 0.0) || (mpParentComponent && mLineThickness < 1.0 && curScale < 1.0)) {
+  if (qFuzzyCompare(mLineThickness, 0.0) || (mpParentComponent && mLineThickness < 1.0 && curScale < 2.0)) {
     pen.setCosmetic(true);
   }
   pen.setMiterLimit(1);
