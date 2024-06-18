@@ -713,7 +713,7 @@ algorithm
         if is_import then
           state := LookupState.ERROR(LookupState.IMPORT());
         else
-          state := LookupState.next(node, state, checkAccessViolations);
+          state := LookupState.next(node, state, context, checkAccessViolations);
         end if;
       then
         ();
@@ -725,7 +725,7 @@ algorithm
         if is_import then
           state := LookupState.ERROR(LookupState.IMPORT());
         else
-          state := LookupState.next(node, state, checkAccessViolations);
+          state := LookupState.next(node, state, context, checkAccessViolations);
           (node, state) := lookupLocalName(name.path, node, state, context, checkAccessViolations);
         end if;
       then
@@ -779,14 +779,14 @@ algorithm
     case Absyn.Path.IDENT()
       algorithm
         node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state);
+        state := LookupState.next(node, state, context);
       then
         (node :: nodes, state);
 
     case Absyn.Path.QUALIFIED()
       algorithm
         node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state);
+        state := LookupState.next(node, state, context);
       then
         lookupLocalNames(name.path, node, node :: nodes, state, context);
 
@@ -1020,7 +1020,7 @@ algorithm
     state := LookupState.ERROR(LookupState.NON_ENCAPSULATED());
     return;
   else
-    state := LookupState.next(n, state);
+    state := LookupState.next(n, state, context);
   end if;
 
   (foundCref, foundScope, state) := match cref
