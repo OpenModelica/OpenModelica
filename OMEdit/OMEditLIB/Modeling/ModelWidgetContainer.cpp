@@ -8141,7 +8141,7 @@ void ModelWidget::processPendingModelUpdate()
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
   if (mDiagramViewLoaded && dependsOnModel(modelName)) {
-    reDrawModelWidget(createModelInfo());
+    setRequiresUpdate(true);
   }
 }
 
@@ -10141,6 +10141,11 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  // update the model if its require update flag is set.
+  if (pModelWidget && pModelWidget->requiresUpdate()) {
+    pModelWidget->setRequiresUpdate(false);
+    pModelWidget->reDrawModelWidget(pModelWidget->createModelInfo());
+  }
   /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
    * Provided that the Documentation Browser is already visible.
    */
