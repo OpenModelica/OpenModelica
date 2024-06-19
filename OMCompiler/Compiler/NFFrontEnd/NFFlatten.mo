@@ -598,7 +598,7 @@ algorithm
   if Binding.isBound(condition) then
     cond := flattenBinding(condition, prefix);
     exp := Binding.getTypedExp(cond);
-    exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
+    exp := Ceval.evalExp(exp, Ceval.EvalTarget.new(Binding.getInfo(cond), NFInstContext.CONDITION));
     exp := Expression.expandSplitIndices(exp);
 
     // Hack to make arrays work when all elements have the same value.
@@ -1893,9 +1893,7 @@ algorithm
 
   // Print errors for unbound constants/parameters if the if-equation contains
   // connects, since we must select a branch in that case.
-  target := if has_connect then
-    Ceval.EvalTarget.GENERIC(info) else
-    Ceval.EvalTarget.IGNORE_ERRORS();
+  target := if has_connect then Ceval.EvalTarget.new(info) else NFCeval.noTarget;
 
   while not listEmpty(branches) loop
     branch :: branches := branches;
@@ -2009,7 +2007,7 @@ algorithm
 
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
   range := flattenExp(range, prefix, info);
-  range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
+  range := Ceval.evalExp(range, Ceval.EvalTarget.new(info, NFInstContext.ITERATION_RANGE));
   range_iter := RangeIterator.fromExp(range);
 
   while RangeIterator.hasNext(range_iter) loop
@@ -2038,7 +2036,7 @@ algorithm
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then
-    range := Ceval.evalExpOpt(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
+    range := Ceval.evalExpOpt(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
     eq := Equation.FOR(iter, range, connects, scope, src);
 
     if settings.arrayConnect then

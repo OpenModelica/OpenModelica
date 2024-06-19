@@ -1521,7 +1521,7 @@ algorithm
   if evaluate and not Expression.isLiteral(exp) then
     ErrorExt.setCheckpoint(getInstanceName());
     try
-      exp := Ceval.evalExp(exp, NFCeval.EvalTarget.INSTANCE_API());
+      exp := Ceval.evalExp(exp, Ceval.EvalTarget.new(AbsynUtil.dummyInfo, NFInstContext.INSTANCE_API));
       json := JSON.addPair("value", Expression.toJSON(exp), json);
     else
     end try;

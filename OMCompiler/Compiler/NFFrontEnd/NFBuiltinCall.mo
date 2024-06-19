@@ -821,7 +821,7 @@ protected
          Expression.toString(n_arg), Prefixes.variabilityString(n_var)}, info);
     end if;
 
-    n_arg := Ceval.evalExp(n_arg, Ceval.EvalTarget.GENERIC(info));
+    n_arg := Ceval.evalExp(n_arg, Ceval.EvalTarget.new(info, context));
     n := Expression.integerValue(n_arg);
 
     if n < Type.dimensionCount(exp_ty) then
@@ -1218,7 +1218,7 @@ protected
     if variability > Variability.PARAMETER or purity <> Purity.PURE then
       Error.addSourceMessageAndFail(Error.NF_CAT_FIRST_ARG_EVAL, {Expression.toString(arg), Prefixes.variabilityString(variability)}, info);
     end if;
-    Expression.INTEGER(n) := Ceval.evalExp(arg, Ceval.EvalTarget.GENERIC(info));
+    Expression.INTEGER(n) := Ceval.evalExp(arg, Ceval.EvalTarget.new(info, context));
 
     res := {};
     tys := {};

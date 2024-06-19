@@ -868,7 +868,7 @@ public
 
   function eval
     input Subscript subscript;
-    input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+    input EvalTarget target = NFCeval.noTarget;
     output Subscript outSubscript;
   algorithm
     outSubscript := match subscript
