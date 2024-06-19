@@ -228,7 +228,7 @@ protected
 
         case Equation.FOR(range = SOME(range))
           algorithm
-            range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(eq)));
+            range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(eq), NFInstContext.ITERATION_RANGE));
             body := Equation.replaceIteratorList(eq.body, eq.iterator, range);
             addConnectionsToGraph(body, graph, vCount, eCount, nmvTable);
           then

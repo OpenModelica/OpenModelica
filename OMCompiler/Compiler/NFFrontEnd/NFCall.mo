@@ -2368,7 +2368,7 @@ protected
               if InstContext.inRelaxed(context) then
                 range := Ceval.tryEvalExp(range);
               else
-                range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
+                range := Ceval.evalExp(range, Ceval.EvalTarget.new(info, NFInstContext.ITERATION_RANGE));
               end if;
               iter_ty := Expression.typeOf(range);
             end if;
@@ -2842,7 +2842,7 @@ protected
 
           ErrorExt.setCheckpoint(getInstanceName());
           try
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
+            exp := Ceval.evalExp(exp);
           else
           end try;
           ErrorExt.rollBack(getInstanceName());

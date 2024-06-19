@@ -606,6 +606,7 @@ algorithm
       TypingError ty_err;
       Integer parent_dims, dim_index;
       Boolean evaluated;
+      Ceval.EvalTarget target;
 
     // A dimension that we're already trying to type.
     case Dimension.UNTYPED(isProcessing = true)
@@ -638,7 +639,9 @@ algorithm
               exp := Ceval.tryEvalExp(exp);
               evaluated := Expression.isLiteral(exp);
             else
-              exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+              target := Ceval.EvalTarget.new(info, context,
+                SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+              exp := Ceval.evalExp(exp, target);
             end if;
           else
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
@@ -739,7 +742,9 @@ algorithm
               if InstContext.inRelaxed(context) then
                 exp := Ceval.tryEvalExp(exp);
               else
-                exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+                target := Ceval.EvalTarget.new(info, context,
+                  SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+                exp := Ceval.evalExp(exp, target);
               end if;
 
               exp := subscriptDimExp(exp, component);
@@ -804,7 +809,8 @@ algorithm
     if InstContext.inRelaxed(context) then
       e := Ceval.tryEvalExp(e);
     else
-      e := Ceval.evalExp(e, Ceval.EvalTarget.DIMENSION(component, index, e, info));
+      e := Ceval.evalExp(e, Ceval.EvalTarget.new(info, context,
+        SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, e))));
     end if;
 
     (dim, error) := nthDimensionBoundsChecked(Expression.typeOf(e), dim_index);
@@ -1198,11 +1204,13 @@ algorithm
       SourceInfo info;
       MatchKind mk;
       NFBinding.EvalState eval_state;
+      InstContext.Type next_context;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
+        next_context := InstContext.set(context, NFInstContext.CONDITION);
         info := Binding.getInfo(condition);
-        (exp, ty, var, purity) := typeExp(exp, InstContext.set(context, NFInstContext.CONDITION), info);
+        (exp, ty, var, purity) := typeExp(exp, next_context, info);
         (exp, _, mk) := TypeCheck.matchTypes(ty, Type.BOOLEAN(), exp);
 
         if TypeCheck.isIncompatibleMatch(mk) then
@@ -1222,7 +1230,7 @@ algorithm
         if evaluate then
           ErrorExt.setCheckpoint(getInstanceName());
           try
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.new(info, next_context));
             exp := simplifyDimExp(exp);
             eval_state := NFBinding.EvalState.EVALUATED;
           else
@@ -1712,7 +1720,7 @@ algorithm
 
         if Type.isConditionalArray(ty) then
           e := Expression.map(e,
-            function evaluateArrayIf(target = Ceval.EvalTarget.GENERIC(info)));
+            function evaluateArrayIf(target = Ceval.EvalTarget.new(info, context)));
           (e, ty, _) := typeExp(e, context, info);
         end if;
 
@@ -2505,7 +2513,7 @@ algorithm
 
         if variability <= Variability.STRUCTURAL_PARAMETER and purity == Purity.PURE then
           // Evaluate the index if it's a constant.
-          index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
+          index := Ceval.evalExp(index, NFCeval.noTarget);
 
           // TODO: Print an error if the index couldn't be evaluated to an int.
           Expression.INTEGER(iindex) := index;
@@ -2679,7 +2687,7 @@ function evaluateCondition
 protected
   Expression cond_exp;
 algorithm
-  cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.GENERIC(info));
+  cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.new(info, context));
 
   if Expression.arrayAllEqual(cond_exp) then
     cond_exp := Expression.arrayFirstScalar(cond_exp);
@@ -2861,7 +2869,7 @@ algorithm
             algorithm
               // The only other kind of expression that's allowed is scalar constants.
               if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
-                outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.GENERIC(info));
+                outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.new(info, NFInstContext.FUNCTION));
               else
                 Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
                   {Expression.toString(outArg)}, info);

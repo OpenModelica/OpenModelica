@@ -585,7 +585,7 @@ public
 
   function eval
     input Dimension dim;
-    input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+    input EvalTarget target = NFCeval.noTarget;
     output Dimension outDim;
   algorithm
     outDim := match dim
