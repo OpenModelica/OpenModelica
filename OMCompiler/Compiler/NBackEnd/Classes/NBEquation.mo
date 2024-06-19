@@ -1309,6 +1309,10 @@ public
         print("\n");
       end if;
       eq := match eq
+        local
+          Equation new_eq;
+          WhenEquationBody body;
+
         case SCALAR_EQUATION() algorithm
           eq.lhs := SimplifyExp.simplifyDump(eq.lhs, true, name, indent);
           eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
@@ -1326,8 +1330,13 @@ public
         case IF_EQUATION()     then eq;
         case FOR_EQUATION()    then eq;
         case WHEN_EQUATION() algorithm
-          eq.body := WhenEquationBody.simplify(eq.body, name, indent);
-        then eq;
+          new_eq := match WhenEquationBody.simplify(SOME(eq.body), name, indent)
+            case SOME(body) algorithm
+              eq.body := body;
+            then eq;
+            else Equation.DUMMY_EQUATION();
+          end match;
+        then new_eq;
         case AUX_EQUATION()    then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + toString(eq)});
@@ -2743,26 +2752,45 @@ public
     end split;
 
     function simplify
-      input output WhenEquationBody body;
+      input output Option<WhenEquationBody> body;
       input String name = "";
       input String indent = "";
     algorithm
-      // simplify condition if it is an array with surplus false conditions
-      body.condition := match body.condition
+      // ToDo: add simplification of body! (WhenStatements)
+      body := match body
         local
+          WhenEquationBody b;
           Expression condition;
           list<Expression> conditions;
-        case condition as Expression.ARRAY() algorithm
+
+        // if the condition is an array, skip surplus of False elements
+        case SOME(b as WHEN_EQUATION_BODY(condition = condition as Expression.ARRAY())) algorithm
           conditions := list(elem for elem guard(not Expression.isFalse(elem)) in arrayList(condition.elements));
-          body.condition := Expression.makeArrayCheckLiteral(Type.ARRAY(Type.BOOLEAN(), {Dimension.fromInteger(listLength(conditions))}), listArray(conditions));
-        then body.condition;
-        else body.condition;
+          b.condition := Expression.makeArrayCheckLiteral(Type.ARRAY(Type.BOOLEAN(), {Dimension.fromInteger(listLength(conditions))}), listArray(conditions));
+          b.condition := SimplifyExp.simplifyDump(b.condition, true, name, indent);
+          // if the condition is empty array or only False -> skip this unreachable branch
+          if Expression.isEmptyArray(b.condition) or Expression.isFalse(b.condition) then
+            body := b.else_when;
+          else
+            body := SOME(b);
+          end if;
+        then SOME(b);
+
+        // simplify condition
+        case SOME(b) algorithm
+          b.condition := SimplifyExp.simplifyDump(b.condition, true, name, indent);
+          b.else_when := simplify(b.else_when, name, indent);
+          // if the condition is only False -> skip this unreachable branch
+          if Expression.isFalse(b.condition) then
+            body := b.else_when;
+          else
+            body := SOME(b);
+          end if;
+        then body;
+
+        // NONE() stays NONE()
+        else body;
       end match;
-
-      // ToDo: add simplification of body! (WhenStatements)
-
-      body.condition := SimplifyExp.simplifyDump(body.condition, true, name, indent);
-      body.else_when := Util.applyOption(body.else_when, function simplify(name = name, indent = indent));
     end simplify;
 
     function getAllAssigned
