@@ -972,6 +972,7 @@ protected
   list<Statement> stmts;
   list<DAE.Statement> dstmts;
   Boolean first = true;
+  Boolean single = listLength(ifBranches) == 1;
   DAE.Else else_stmt = DAE.Else.NOELSE();
 algorithm
   for b in listReverse(ifBranches) loop
@@ -979,7 +980,7 @@ algorithm
     dcond := Expression.toDAE(cond);
     dstmts := convertStatements(stmts);
 
-    if first and Expression.isTrue(cond) then
+    if first and not single and Expression.isTrue(cond) then
       else_stmt := DAE.Else.ELSE(dstmts);
     else
       else_stmt := DAE.Else.ELSEIF(dcond, dstmts, else_stmt);
