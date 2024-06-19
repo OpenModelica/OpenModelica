@@ -69,6 +69,7 @@ import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import SCodeUtil;
 import SimplifyExp = NFSimplifyExp;
+import Structural = NFStructural;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
@@ -2842,6 +2843,7 @@ protected
 
           ErrorExt.setCheckpoint(getInstanceName());
           try
+            Structural.markExp(exp);
             exp := Ceval.evalExp(exp);
           else
           end try;
