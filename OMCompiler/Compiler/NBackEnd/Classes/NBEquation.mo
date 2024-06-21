@@ -701,7 +701,7 @@ public
         case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr, " ") + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s + EquationAttributes.toString(eq.attr, " "));
         case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr, " "));
-        case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] " + s + EquationAttributes.toString(eq.attr, " ") + "\n[----] ");
+        case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] " + s + EquationAttributes.toString(eq.attr, " ") + "\n");
         case AUX_EQUATION()    then str + "[AUX-] " + s + "Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
         case DUMMY_EQUATION()  then str + "[DUMY] (0) Dummy equation.";
         else                        str + "[FAIL] (0) " + getInstanceName() + " failed!";
@@ -2523,7 +2523,11 @@ public
     protected
       WhenEquationBody elseWhen;
     algorithm
-      str := elseStr + "when " + Expression.toString(body.condition) + " then \n";
+      str := elseStr;
+      if not selfCall then
+        str := str + indent;
+      end if;
+      str := str + "when " + Expression.toString(body.condition) + " then \n";
       for stmt in body.when_stmts loop
         str := str + WhenStatement.toString(stmt, indent + "  ") + "\n";
       end for;
@@ -3687,7 +3691,11 @@ public
         if ExpandableArray.occupied(i, equations.eqArr) then
           eqn := ExpandableArray.get(i, equations.eqArr);
           () := match Pointer.access(eqn)
+            local
+              list<Equation> body;
+            // todo: add for IF and WHEN
             case Equation.DUMMY_EQUATION() then ();
+            case Equation.FOR_EQUATION(body = body) guard(List.all(body, Equation.isDummy)) then ();
             else algorithm
               eqns := eqn :: eqns;
             then ();
