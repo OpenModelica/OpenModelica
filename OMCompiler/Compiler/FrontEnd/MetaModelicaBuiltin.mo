@@ -604,6 +604,14 @@ function stringHashDjb2
 external "builtin";
 end stringHashDjb2;
 
+function stringHashDjb2Continue
+  "Continues computing a hash by adding another string to it."
+  input String str;
+  input Integer hash;
+  output Integer outHash;
+external "builtin";
+end stringHashDjb2Continue;
+
 function stringHashDjb2Mod "Does hashing+modulo without intermediate results."
   input String str;
   input Integer mod;

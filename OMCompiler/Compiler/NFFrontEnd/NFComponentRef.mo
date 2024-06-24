@@ -1362,13 +1362,69 @@ public
 
   function hash
     input ComponentRef cref;
-    output Integer hash = stringHashDjb2(toString(cref));
+    output Integer hash;
+  protected
+    Integer h;
+
+    function hash_rest
+      input ComponentRef cref;
+      input output Integer hash;
+    algorithm
+      hash := match cref
+        case CREF()
+          algorithm
+            hash := stringHashDjb2Continue(InstNode.name(cref.node), hash);
+
+            if not listEmpty(cref.subscripts) then
+              hash := stringHashDjb2Continue(Subscript.toStringList(cref.subscripts), hash);
+            end if;
+          then
+            hash_rest(cref.restCref, hash);
+
+        case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
+        else hash;
+      end match;
+    end hash_rest;
+  algorithm
+    hash := match cref
+      case CREF()
+        algorithm
+          h := stringHashDjb2(InstNode.name(cref.node));
+
+          if not listEmpty(cref.subscripts) then
+            h := stringHashDjb2Continue(Subscript.toStringList(cref.subscripts), h);
+          end if;
+        then
+          hash_rest(cref.restCref, h);
+
+      case WILD() then stringHashDjb2("_");
+      case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
+      else 0;
+    end match;
   end hash;
 
   function hashStrip
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
-    output Integer hash = stringHashDjb2(toString(stripSubscriptsAll(cref)));
+    output Integer hash;
+  protected
+    function hash_rest
+      input ComponentRef cref;
+      input output Integer hash;
+    algorithm
+      hash := match cref
+        case CREF() then hash_rest(cref.restCref, stringHashDjb2Continue(InstNode.name(cref.node), hash));
+        case STRING() then hash_rest(cref.restCref, stringHashDjb2Continue(cref.name, hash));
+        else hash;
+      end match;
+    end hash_rest;
+  algorithm
+    hash := match cref
+      case CREF() then hash_rest(cref.restCref, stringHashDjb2(InstNode.name(cref.node)));
+      case WILD() then stringHashDjb2("_");
+      case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
+      else 0;
+    end match;
   end hashStrip;
 
   function toPath
