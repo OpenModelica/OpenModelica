@@ -879,6 +879,35 @@ bool GraphicsView::performElementCreationChecks(const QString &nameStructure, bo
  * \param pModelInstance
  * \param name
  * \param className
+ * \return
+ */
+ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className)
+{
+  /* Create a dummyOMEditClass
+   * Add the component to it
+   * Call getModelInstance on it
+   * Use the JSON of the component and add the component to current model.
+   */
+  const QString dummyClass("dummyOMEditClass");
+  MainWindow::instance()->getOMCProxy()->loadString("model " % dummyClass % " end " % dummyClass % ";", "<interactive>");
+  MainWindow::instance()->getOMCProxy()->addComponent(name, className, dummyClass, "annotate=Placement()");
+  const QJsonObject modelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(dummyClass);
+  MainWindow::instance()->getOMCProxy()->deleteClass(dummyClass);
+  pModelInstance->deserializeElements(modelJSON.value("elements").toArray());
+  QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+  if (!elements.isEmpty()) {
+    return dynamic_cast<ModelInstance::Component*>(elements.last());
+  } else {
+    return 0;
+  }
+}
+
+/*!
+ * \brief GraphicsView::createModelInstanceComponent
+ * Creates a Component and returns it.
+ * \param pModelInstance
+ * \param name
+ * \param className
  * \param isConnector
  * \return
  */
@@ -966,11 +995,16 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           || (mViewType == StringHandler::Icon && (type == StringHandler::Connector || type == StringHandler::ExpandableConnector))) {
         if (mpModelWidget->isNewApi()) {
           ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-          ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->isConnector());
-          addElementToView(pComponent, false, true, true, position, "", true);
-          ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-          mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element"));
-          mpModelWidget->updateModelText();
+          ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure());
+          if (pComponent) {
+            addElementToView(pComponent, false, true, true, position, "", true);
+            ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+            mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element", true));
+            mpModelWidget->updateModelText();
+          } else {
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to add component <b>%1</b>.").arg(name),
+                                                                  Helper::scriptingKind, Helper::errorLevel));
+          }
         } else {
           addComponentToView(name, pLibraryTreeItem, "", position, pElementInfo, true, false, true);
         }
@@ -4432,8 +4466,7 @@ void GraphicsView::createConnector()
       QString defaultName;
       QString name = getUniqueElementName(pConnectorElement->getClassName(), pConnectorElement->getName(), &defaultName);
       ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-      bool connector = pConnectorElement->getModel() ? pConnectorElement->getModel()->isConnector() : false;
-      ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pConnectorElement->getClassName(), connector);
+      ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pConnectorElement->getClassName());
       addElementToView(pComponent, false, true, true, mapToScene(mapFromGlobal(QCursor::pos())), "", true);
       addConnection(mElementsList.last(), true);
       ModelInfo newModelInfo = mpModelWidget->createModelInfo();

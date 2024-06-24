@@ -1074,22 +1074,7 @@ namespace ModelInstance
       mpPrefixes->deserialize(mModelJson.value("prefixes").toObject());
     }
 
-    QJsonArray elements = mModelJson.value("elements").toArray();
-
-    foreach (const QJsonValue &element, elements) {
-      QJsonObject elementObject = element.toObject();
-      QString kind = elementObject.value("$kind").toString();
-
-      if (kind.compare(QStringLiteral("extends")) == 0) {
-        mElements.append(new Extend(this, elementObject));
-      } else if (kind.compare(QStringLiteral("component")) == 0) {
-        mElements.append(new Component(this, elementObject));
-      } else if (kind.compare(QStringLiteral("class")) == 0) {
-        mElements.append(new ReplaceableClass(this, elementObject));
-      } else {
-        qDebug() << "Model::deserialize() unhandled kind of element" << kind;
-      }
-    }
+    deserializeElements(mModelJson.value("elements").toArray());
 
     if (mModelJson.contains("comment")) {
       mComment = mModelJson.value("comment").toString();
@@ -1154,6 +1139,29 @@ namespace ModelInstance
 
     if (mModelJson.contains("source")) {
       mSource.deserialize(mModelJson.value("source").toObject());
+    }
+  }
+
+  /*!
+   * \brief Model::deserializeElements
+   * Deserializes the elements JSON and adds the elements to the model.
+   * \param elements
+   */
+  void Model::deserializeElements(const QJsonArray elements)
+  {
+    foreach (const QJsonValue &element, elements) {
+      QJsonObject elementObject = element.toObject();
+      QString kind = elementObject.value("$kind").toString();
+
+      if (kind.compare(QStringLiteral("extends")) == 0) {
+        mElements.append(new Extend(this, elementObject));
+      } else if (kind.compare(QStringLiteral("component")) == 0) {
+        mElements.append(new Component(this, elementObject));
+      } else if (kind.compare(QStringLiteral("class")) == 0) {
+        mElements.append(new ReplaceableClass(this, elementObject));
+      } else {
+        qDebug() << "Model::deserialize() unhandled kind of element" << kind;
+      }
     }
   }
 
