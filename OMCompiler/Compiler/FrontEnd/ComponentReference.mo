@@ -58,6 +58,7 @@ protected import Print;
 protected import StringUtil;
 protected import System;
 protected import Types;
+protected import UnorderedSet;
 protected import Util;
 
 
@@ -4077,6 +4078,13 @@ algorithm
     else false;
   end match;
 end isWild;
+
+public function uniqueList
+  input list<DAE.ComponentRef> crefs;
+  output list<DAE.ComponentRef> uniqueCrefs;
+algorithm
+  uniqueCrefs := UnorderedSet.unique_list(crefs, hashComponentRef, crefEqual);
+end uniqueList;
 
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

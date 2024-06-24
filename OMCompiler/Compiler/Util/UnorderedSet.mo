@@ -553,7 +553,7 @@ public
     input list<T> inList;
     input Hash hashFunc;
     input KeyEq keyEqFunc;
-    output list<T> outList = toList(fromList(inList, hashFunc, keyEqFunc));
+    output list<T> outList = if List.hasSeveralElements(inList) then toList(fromList(inList, hashFunc, keyEqFunc)) else inList;
   end unique_list;
 
   function union
