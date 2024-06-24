@@ -127,6 +127,13 @@ static inline unsigned long djb2_hash(const unsigned char *str)
   return hash;
 }
 
+static inline unsigned long djb2_hash_continue(const unsigned char *str, unsigned long hash)
+{
+  int c;
+  while (0 != (c = *str++)) hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+  return hash;
+}
+
 /*** sdbm hash ***/
 static inline unsigned long sdbm_hash(const unsigned char* str)
 {
@@ -150,6 +157,16 @@ modelica_integer stringHashDjb2(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = djb2_hash((const unsigned char*)str);
+  res = labs(res);
+  /* fprintf(stderr, "stringHashDjb2 %s-> %ld %ld %ld\n", str, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res))); */
+  return res;
+}
+
+/* adrpo: see the comment above about djb2 hash */
+modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_integer hash)
+{
+  const char* str = MMC_STRINGDATA(s);
+  long res = djb2_hash_continue((const unsigned char*)str, (unsigned long)hash);
   res = labs(res);
   /* fprintf(stderr, "stringHashDjb2 %s-> %ld %ld %ld\n", str, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res))); */
   return res;
