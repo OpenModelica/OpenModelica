@@ -6082,7 +6082,8 @@ public function extractUniqueCrefsFromExp
   input Boolean expand = true;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
-  ocrefs := List.unique(extractCrefsFromExp(inExp));
+  ocrefs := ComponentReference.uniqueList(extractCrefsFromExp(inExp));
+
   if expand then
     ocrefs := List.flatten(List.map1(ocrefs, ComponentReference.expandCref, true));
   end if;
@@ -6125,7 +6126,7 @@ public function extractUniqueCrefsFromExpDerPreStart
   input Boolean expand = true;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
-  ocrefs := List.unique(extractCrefsFromExpDerPreStart(inExp, expand));
+  ocrefs := ComponentReference.uniqueList(extractCrefsFromExpDerPreStart(inExp, expand));
 end extractUniqueCrefsFromExpDerPreStart;
 
 public function extractCrefsFromExpDerPreStart
@@ -6196,8 +6197,8 @@ protected
   list<DAE.ComponentRef> olhscrefs;
 algorithm
   (lhscreflstlst,rhscreflstlst) := List.map_2(inStmts,extractCrefsStatment);
-  orhscrefs := List.unique(List.flatten(rhscreflstlst));
-  olhscrefs := List.unique(List.flatten(lhscreflstlst));
+  orhscrefs := ComponentReference.uniqueList(List.flatten(rhscreflstlst));
+  olhscrefs := ComponentReference.uniqueList(List.flatten(lhscreflstlst));
   ocrefs := (olhscrefs,orhscrefs);
 end extractUniqueCrefsFromStatmentS;
 
