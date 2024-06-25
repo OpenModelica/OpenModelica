@@ -411,7 +411,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_RUNTIME_DEPENDS,
   Flags.FRONTEND_INLINE,
   Flags.EXPOSE_LOCAL_IOS,
-  Flags.BASE_MODELICA_FORMAT
+  Flags.BASE_MODELICA_FORMAT,
+  Flags.BASE_MODELICA_OPTIONS
 };
 
 public function new
