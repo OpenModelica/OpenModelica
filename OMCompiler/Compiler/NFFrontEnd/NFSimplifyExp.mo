@@ -251,6 +251,11 @@ algorithm
       then
         exp;
 
+    case "pre" then match args
+      case {exp as Expression.BOOLEAN()} then exp;
+      else Expression.CALL(call);
+    end match;
+
     case "delay"           then simplifyDelay(args, call);
     case "der"             then simplifyDer(listHead(args), call);
     case "fill"            then simplifyFill(listHead(args), listRest(args), call, expand);
