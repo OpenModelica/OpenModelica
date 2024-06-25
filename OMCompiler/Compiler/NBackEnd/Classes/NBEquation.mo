@@ -55,6 +55,7 @@ public
   import Operator = NFOperator;
   import NFPrefixes.{Variability, Purity};
   import SimplifyExp = NFSimplifyExp;
+  import SimplifyModel = NFSimplifyModel;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -1326,7 +1327,9 @@ public
           eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
         then eq;
         // ToDo: implement the following correctly:
-        case ALGORITHM()       then eq;
+        case ALGORITHM() algorithm
+          eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
+        then eq;
         case IF_EQUATION()     then eq;
         case FOR_EQUATION()    then eq;
         case WHEN_EQUATION() algorithm
