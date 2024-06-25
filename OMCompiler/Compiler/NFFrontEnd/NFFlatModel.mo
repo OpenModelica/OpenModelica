@@ -240,6 +240,10 @@ public
     s := IOStream.append(s, "package '" + name + "'\n");
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
+    if Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "moveBindings") then
+      flat_model := moveBindings(flat_model);
+    end if;
+
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
         s := Function.toFlatStream(fn, format, "  ", s);
@@ -1025,6 +1029,24 @@ public
 
     flatModel.variables := list(Variable.removeNonTopLevelDirection(v) for v in flatModel.variables);
   end removeNonTopLevelDirections;
+
+  function moveBindings
+    "Moves binding equations of variables to the equation section of the flat model."
+    input output FlatModel flatModel;
+  protected
+    list<Variable> vars = {};
+    list<Equation> eqs = {};
+  algorithm
+    for var in flatModel.variables loop
+      (var, eqs) := Variable.moveBinding(var, eqs);
+      vars := var :: vars;
+    end for;
+
+    if not listEmpty(eqs) then
+      flatModel.variables := listReverseInPlace(vars);
+      flatModel.equations := listAppend(listReverseInPlace(eqs), flatModel.equations);
+    end if;
+  end moveBindings;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

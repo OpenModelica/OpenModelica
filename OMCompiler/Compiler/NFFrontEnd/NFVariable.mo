@@ -36,6 +36,7 @@ encapsulated uniontype NFVariable
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
+  import Equation = NFEquation;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
@@ -637,6 +638,20 @@ public
       s := IOStream.append(s, ")");
     end if;
   end toFlatStreamModifier;
+
+  function moveBinding
+    "Removes the binding of the variable, if it has one and it has at least
+     discrete variability, and creates an equation from it."
+    input output Variable var;
+    input output list<Equation> equations;
+  algorithm
+    if variability(var) >= Variability.DISCRETE and Binding.isBound(var.binding) then
+      equations := Equation.makeEquality(Expression.fromCref(var.name),
+        Binding.getExp(var.binding), var.ty, InstNode.EMPTY_NODE(),
+        ElementSource.createElementSource(var.info)) :: equations;
+      var.binding := NFBinding.EMPTY_BINDING;
+    end if;
+  end moveBinding;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

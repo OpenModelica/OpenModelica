@@ -14,6 +14,7 @@ TESTFILES = \
   DoublePendulum.mos \
 	Expression1.mo \
 	InStreamNominalThreshold.mo \
+	MoveBindings1.mo \
 	NonScalarizedWithRecords1.mo \
 	NonScalarizedWithoutRecords1.mo \
 	PartiallyScalarizedWithRecords1.mo \
