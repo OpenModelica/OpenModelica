@@ -1600,8 +1600,7 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
-                                           pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getNameStructure());
+    OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
   } else {
     // delete the connection
     if (pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName(), mpModelWidget->getLibraryTreeItem()->getNameStructure())) {
@@ -6860,8 +6859,9 @@ void ModelWidget::reDrawModelWidget()
     }
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
-    // if documentation view is visible then update it
-    if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+    // if documentation view is visible and this model is the current active model then update it
+    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+    if (pModelWidget && pModelWidget == this && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
       MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
     }
     // clear the undo stack
@@ -8153,7 +8153,7 @@ void ModelWidget::processPendingModelUpdate()
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
   if (mDiagramViewLoaded && dependsOnModel(modelName)) {
-    reDrawModelWidget(createModelInfo());
+    setRequiresUpdate(true);
   }
 }
 
@@ -9089,20 +9089,8 @@ void ModelWidget::drawOMSModelConnections()
         }
 
         LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-        QString startComponentName, endComponentName;
-        if (pStartConnectorComponent->getParentElement()) {
-          startComponentName = QString("%1.%2").arg(pStartConnectorComponent->getRootParentElement()->getName()).arg(pStartConnectorComponent->getName());
-        } else {
-          startComponentName = pStartConnectorComponent->getName();
-        }
-        pConnectionLineAnnotation->setStartElementName(startComponentName);
-        if (pEndConnectorComponent->getParentElement()) {
-          endComponentName = QString("%1.%2").arg(pEndConnectorComponent->getRootParentElement()->getName()).arg(pEndConnectorComponent->getName());
-        } else {
-          endComponentName = pEndConnectorComponent->getName();
-        }
-        pConnectionLineAnnotation->setEndElementName(endComponentName);
-
+        pConnectionLineAnnotation->setStartElementName(pStartConnectorComponent->getLibraryTreeItem() ? pStartConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
+        pConnectionLineAnnotation->setEndElementName(pEndConnectorComponent->getLibraryTreeItem() ? pEndConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
         pConnectionLineAnnotation->setOMSConnectionType(pConnections[i]->type);
         pConnectionLineAnnotation->updateToolTip();
         pConnectionLineAnnotation->drawCornerItems();
@@ -10166,6 +10154,11 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  // update the model if its require update flag is set.
+  if (pModelWidget && pModelWidget->requiresUpdate()) {
+    pModelWidget->setRequiresUpdate(false);
+    pModelWidget->reDrawModelWidget(pModelWidget->createModelInfo());
+  }
   /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
    * Provided that the Documentation Browser is already visible.
    */

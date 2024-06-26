@@ -419,13 +419,14 @@ uniontype LookupState
      print a (hopefully relevant) error message and fail."
     input InstNode node;
     input LookupState currentState;
+    input InstContext.Type context;
     input Boolean checkAccessViolations = true;
     output LookupState nextState;
   protected
     LookupState entry_ty;
     SCode.Element el;
   algorithm
-    if checkAccessViolations then
+    if checkAccessViolations and not InstContext.inInstanceAPI(context) then
       // Check that the element is allowed to be accessed given its visibility.
       checkProtection(node, currentState);
       // Check that we're allowed to look in the current scope.

@@ -14,9 +14,16 @@ TESTFILES = \
   DoublePendulum.mos \
 	Expression1.mo \
 	InStreamNominalThreshold.mo \
+	MoveBindings1.mo \
+	NonScalarizedWithRecords1.mo \
+	NonScalarizedWithoutRecords1.mo \
+	PartiallyScalarizedWithRecords1.mo \
+	PartiallyScalarizedWithoutRecords1.mo \
 	Record1.mo \
 	Record2.mo \
 	Record3.mo \
+	ScalarizedWithRecords1.mo \
+	ScalarizedWithoutRecords1.mo \
 	SD.mo \
 	SimpleCoolingCycle.mo \
   Tables.mos \

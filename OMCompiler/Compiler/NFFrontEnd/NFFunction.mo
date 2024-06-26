@@ -859,6 +859,7 @@ uniontype Function
 
   function toFlatStream
     input Function fn;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
     input String overrideName = "";
@@ -869,7 +870,7 @@ uniontype Function
     SCode.Mod annMod;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := Record.toFlatDeclarationStream(fn.node, indent, s);
+      s := Record.toFlatDeclarationStream(fn.node, format, indent, s);
     elseif isPartialDerivative(fn) then
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
@@ -894,23 +895,23 @@ uniontype Function
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
-        s := IOStream.append(s, InstNode.toFlatString(i, indent + "  "));
+        s := IOStream.append(s, InstNode.toFlatString(i, format, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       for o in fn.outputs loop
-        s := IOStream.append(s, InstNode.toFlatString(o, indent + "  "));
+        s := IOStream.append(s, InstNode.toFlatString(o, format, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       if not listEmpty(fn.locals) then
         for l in fn.locals loop
-          s := IOStream.append(s, InstNode.toFlatString(l, indent + "  "));
+          s := IOStream.append(s, InstNode.toFlatString(l, format, indent + "  "));
           s := IOStream.append(s, ";\n");
         end for;
       end if;
 
-      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, indent, s);
+      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, format, indent, s);
 
       if isSome(cmt.annotation_) then
         SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
@@ -943,13 +944,14 @@ uniontype Function
 
   function toFlatString
     input Function fn;
+    input BaseModelica.OutputFormat format = BaseModelica.defaultFormat;
     input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(fn, indent, s);
+    s := toFlatStream(fn, format, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;
@@ -1990,12 +1992,17 @@ uniontype Function
 
   function isNonDefaultRecordConstructor
     input Function fn;
-    output Boolean isConstructor;
-  algorithm
-    isConstructor := match fn.path
-      case Absyn.Path.QUALIFIED(path = Absyn.Path.QUALIFIED(name = "'constructor'")) then true;
-      else false;
-    end match;
+    output Boolean b = isNonDefaultRecordConstructorPath(fn.path);
+    function isNonDefaultRecordConstructorPath
+      input Absyn.Path path;
+      output Boolean b;
+    algorithm
+      b := match path
+        case Absyn.Path.QUALIFIED(name = "'constructor'") then true;
+        case Absyn.Path.QUALIFIED()                       then isNonDefaultRecordConstructorPath(path.path);
+        else false;
+      end match;
+    end isNonDefaultRecordConstructorPath;
   end isNonDefaultRecordConstructor;
 
   function toDAE

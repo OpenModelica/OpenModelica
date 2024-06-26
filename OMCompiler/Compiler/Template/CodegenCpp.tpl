@@ -12238,6 +12238,10 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
         else
             f[<%index1%>] = (<%e1%> - _zeroTol - <%e2%>);
         >>
+      case EQUAL(ty = T_INTEGER(__)) then
+        <<
+        f[<%index1%>] = std::abs(<%e2%> - <%e1%>);
+        >>
       else
         <<
         error(sourceInfo(), 'Unsupported relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')

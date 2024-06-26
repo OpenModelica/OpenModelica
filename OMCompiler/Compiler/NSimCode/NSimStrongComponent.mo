@@ -574,7 +574,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(Slice.getT(comp.eqn)), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
@@ -704,6 +704,10 @@ public
           tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
+        then tmp;
+
+        case (BEquation.IF_EQUATION(), _) algorithm
+          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
         then tmp;
 
         // for equations have to be split up before. Since they are not causalized
@@ -1170,6 +1174,16 @@ public
       end match;
     end fixIndex;
 
+    function collectEntwinedEquations
+      "collects entwined equations from initial blocks"
+      input Block blck;
+      output list<Block> lst;
+    algorithm
+      lst := match blck
+        case ENTWINED_ASSIGN() then blck.single_calls;
+        else {};
+      end match;
+    end collectEntwinedEquations;
   protected
     function whenString
       input list<ComponentRef> conditions;

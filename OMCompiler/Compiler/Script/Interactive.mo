@@ -7493,7 +7493,7 @@ algorithm
   end matchcontinue;
 end getDefaultAttr;
 
-protected function getDefaultComponentPrefixesModStr "Extractor function for defaultComponentPrefixes modifier"
+public function getDefaultComponentPrefixesModStr "Extractor function for defaultComponentPrefixes modifier"
   input Option<Absyn.Modification> mod;
   output String docStr;
 algorithm

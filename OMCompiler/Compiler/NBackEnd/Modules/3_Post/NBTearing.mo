@@ -179,7 +179,7 @@ public
       case StrongComponent.MULTI_COMPONENT() algorithm
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
-          strict  = singleImplicit(List.first(comp.vars), comp.eqn), // this is wrong! need to take all vars
+          strict  = singleImplicit(Slice.getT(List.first(comp.vars)), Slice.getT(comp.eqn)), // this is wrong! need to take all vars
           casual  = NONE(),
           linear  = false,
           mixed   = false,
@@ -294,7 +294,7 @@ protected
         e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in eqns_lst));
 
         // refining the adjacency matrix by updating solvability information using differentiation
-        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set);
+        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set, systemType == NBSystem.SystemType.INI);
         comp.linear       := checkLinearity(full, v, e);
       then (comp, full, index);
       else (comp, full, index);
@@ -335,7 +335,8 @@ protected
           equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
           comps     = arrayAppend(strict.innerEquations,listArray(residual_comps)),
           funcTree  = funcTree,
-          name      = System.System.systemTypeString(systemType) + tag + intString(index));
+          name      = System.System.systemTypeString(systemType) + tag + intString(index),
+          init      = systemType == NBSystem.SystemType.INI);
         strict.jac := jacobian;
         comp.strict := strict;
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -356,6 +357,7 @@ protected
     Tearing strict;
     list<Pointer<Variable>> vars_lst, cont_vars, disc_vars;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
+    Integer num_vars, num_eqns;
     list<Slice<EquationPointer>> residual_lst;
     Adjacency.Matrix adj;
     Matching matching;
@@ -367,16 +369,19 @@ protected
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, BVariable.isContinuous);
+        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = systemType == NBSystem.SystemType.INI));
         (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
+        num_vars := sum(BVariable.size(var) for var in disc_vars);
+        num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
 
-        if listLength(disc_vars) <> listLength(disc_eqns) then
+        if num_vars <> num_eqns then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(disc_vars)) + "|"
-            + intString(sum(BVariable.size(var) for var in disc_vars)) + ") Discrete Variables")
+            + " failed because number of discrete variables " + intString(num_vars) + " differs from number of discrete equations: " + intString(num_eqns)
+            + ".\n" + StringUtil.headline_4("(" + intString(listLength(disc_vars)) + "|"
+            + intString(num_vars) + ") Discrete Variables")
             + List.toString(disc_vars, BVariable.pointerToString, "", "\t", "\n\t", "\n", true) + "\n"
             + StringUtil.headline_4("(" + intString(listLength(disc_eqns)) + "|"
-            + intString(sum(Equation.size(eqn) for eqn in disc_eqns)) + ") Discrete Equations")
+            + intString(num_eqns) + ") Discrete Equations")
             + List.toString(disc_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n", true) + "\n"});
           fail();
         end if;

@@ -106,6 +106,7 @@ import System;
 import Testsuite;
 import Util;
 import SerializeTaskSystemInfo;
+import File;
 
 public
 uniontype TranslateModelKind
@@ -193,9 +194,9 @@ algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   /*Temporary disabled omsi fmu and generate C-fmu for omsicpp simcodetarget*/
   if Config.simCodeTarget() == "omsicpp" then
-     callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType);
-   else
-    callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType);
+     callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType, p);
+  else
+    callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType, p);
   end if;
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeFMU;
@@ -723,6 +724,7 @@ end callTargetTemplatesCPP;
 
 protected function callTargetTemplatesOMSICpp
   input SimCode.SimCode iSimCode;
+  input Absyn.Program program;
   protected
   String fmuVersion;
   String fmuType;
@@ -731,7 +733,7 @@ algorithm
     fmuVersion:="2.0";
     fmuType:="me";
    Tpl.tplNoret3(CodegenOMSICpp.translateModel, iSimCode, fmuVersion, fmuType);
-   callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType);
+   callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType,program);
 end callTargetTemplatesOMSICpp;
 
 protected function callTargetTemplatesFMU
@@ -740,15 +742,16 @@ protected function callTargetTemplatesFMU
   input String target;
   input String FMUVersion;
   input String FMUType;
+  input Absyn.Program program;
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
-      String str, newdir, newpath, resourcesDir, dirname;
+      String str, newdir, newpath, resourcesDir, dirname, htmlFile;
       String fmutmp;
       String guid;
-      Boolean b;
+      Boolean b, exportDocumentation;
       Boolean needSundials = false;
       String fileprefix;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
@@ -829,6 +832,16 @@ algorithm
             end if;
           end if;
         end if;
+
+        // create optional html documentation directory
+        (htmlFile, exportDocumentation) := exportHTMLDocumentation(program, simCode, FMUVersion);
+        if exportDocumentation then
+          Util.createDirectoryTree(fmutmp + "/documentation/");
+          if 0 <> System.systemCall("mv '" + htmlFile + "' '" + fmutmp + "/documentation/" + "'") then
+            Error.addInternalError("Failed to move documentation file " + htmlFile + "", sourceInfo());
+          end if;
+        end if;
+
         SimCodeUtil.resetFunctionIndex();
         varInfo := simCode.modelInfo.varInfo;
 
@@ -1024,6 +1037,42 @@ algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplatesFMU;
 
+protected function exportHTMLDocumentation
+  "generate html documentation for fmu's from Documentation annotation
+  (e.g) annotation(Documentation(info=\"<html> </html>\",
+                                 revisions=\"<html> </html>\",
+                                 __OpenModelica_infoHeader = \"<html> </html>\"))
+  "
+  input Absyn.Program program;
+  input SimCode.SimCode simCode;
+  input String FMUVersion;
+  output String fileName;
+  output Boolean export = true;
+protected
+  File.File file;
+  String info, revisions, infoHeader;
+algorithm
+  (info, revisions, infoHeader) := Interactive.getNamedAnnotation(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+
+  // do not export if Documentation annotation does not exist
+  if (stringEmpty(info) and stringEmpty(revisions) and stringEmpty(infoHeader)) then
+    export := false;
+  end if;
+
+  if (FMUVersion == "1.0") then
+    fileName := "_main.html";
+  else
+    fileName := "index.html";
+  end if;
+
+  file := File.File();
+  File.open(file, fileName, File.Mode.Write);
+  File.write(file, infoHeader + "\n");
+  File.write(file, "<h1>" + AbsynUtil.pathString(simCode.modelInfo.name) + "</h1>\n");
+  File.write(file, "<p> <i>" + simCode.modelInfo.description + "</i> </p> \n");
+  File.write(file, "<h4> <u> Information </u> </h4>" + info + "\n");
+  File.write(file, "<h4> <u> Revisions </u> </h4>" + revisions + "\n");
+end exportHTMLDocumentation;
 
 protected function callTargetTemplatesXML
 "Generate target code by passing the SimCode data structure to templates."

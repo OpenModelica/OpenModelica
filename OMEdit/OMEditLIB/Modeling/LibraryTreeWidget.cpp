@@ -55,6 +55,7 @@
 #include <QDrag>
 #include <QMessageBox>
 #include <QMenu>
+#include <QScreen>
 
 /*!
  * \class LibraryTreeItem
@@ -3553,11 +3554,7 @@ void LibraryTreeView::openInformationDialog()
     pInformationDialog->setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, pLibraryTreeItem->getNameStructure(), Helper::information));
     pInformationDialog->setMinimumWidth(300);
     // Allow to take 90% of screen width
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
     int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.9;
-#else // QT_VERSION_CHECK
-    int screenWidth = QApplication::desktop()->availableGeometry().width() * 0.9;
-#endif // QT_VERSION_CHECK
     pInformationDialog->setMaximumWidth(screenWidth);
     Label *pHeadingLabel = Utilities::getHeadingLabel(pLibraryTreeItem->getNameStructure());
     pHeadingLabel->setElideMode(Qt::ElideMiddle);
@@ -4722,6 +4719,15 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     default:
       break;
   }
+  /* Issue #12567
+   * Try to remove the file if it already exists since Windows can't handle case sensitive file names.
+   * So if we already have `a.mo` and wants to save it as `A.mo` then the file is saved with new contents but the filename remains `a.mo`
+   */
+#ifdef Q_OS_WIN
+  if (QFile::exists(fileName)) {
+    QFile::remove(fileName);
+  }
+#endif
   // open the file for writing
   QFile file(fileName);
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -5128,7 +5134,12 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
       QString currentLine = textStream.readLine();
       bool classExists = false;
       for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+        // Issue #12567. Compare case insensitive on Windows as `a` and `A` means the same thing.
+#ifdef Q_OS_WIN
+        if (pLibraryTreeItem->child(i)->getName().compare(currentLine, Qt::CaseInsensitive) == 0) {
+#else // #ifdef Q_OS_WIN
         if (pLibraryTreeItem->child(i)->getName().compare(currentLine) == 0) {
+#endif // #ifdef Q_OS_WIN
           classExists = true;
           break;
         }

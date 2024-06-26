@@ -62,6 +62,7 @@ val(evaporator_qm_S, 100);
 //   fmiVersion=\"2.0\"
 //   modelName=\"DrumBoilerModel\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"3\">
 //   <ModelExchange

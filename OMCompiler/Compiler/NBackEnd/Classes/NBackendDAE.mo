@@ -335,14 +335,14 @@ public
     "ToDo: add simplification for bindings"
     input output BackendDAE bdae;
   algorithm
-    // no output needed, all pointers
-    () := match bdae
+    bdae := match bdae
       local
-        EquationPointers equations;
-      case MAIN(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
-        _ := EquationPointers.map(equations, function Equation.simplify(name = getInstanceName(), indent = ""));
-      then ();
-      else ();
+        EqData eqData;
+      case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
+        eqData.equations := EquationPointers.map(eqData.equations, function Equation.simplify(name = getInstanceName(), indent = ""));
+        bdae.eqData := EqData.compress(eqData);
+      then bdae;
+      else bdae;
     end match;
   end simplify;
 
@@ -1117,7 +1117,7 @@ protected
     list<ComponentRef> inputs, outputs;
     EquationAttributes attr;
   algorithm
-    size := sum(ComponentRef.size(out) for out in alg.outputs);
+    size := sum(ComponentRef.size(out, true) for out in alg.outputs);
 
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);

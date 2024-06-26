@@ -504,7 +504,7 @@ public
                   index := UnorderedMap.getSafe(name, eqns_map, sourceInfo());
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
                   // upgrade the row and all meta data
-                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, adj.m, adj.mapping, adj.modes);
+                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, adj.m, adj.mapping, adj.modes);
                 end for;
                 adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
                 result := adj;
@@ -554,10 +554,10 @@ public
       Integer size_vo, size_vn, size_eo, size_en; //only for debugging
     algorithm
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        size_vo := sum(ComponentRef.size(var) for var in UnorderedMap.keyList(vo));
-        size_vn := sum(ComponentRef.size(var) for var in UnorderedMap.keyList(vn)) + size_vo;
-        size_eo := sum(ComponentRef.size(eqn) for eqn in UnorderedMap.keyList(eo));
-        size_en := sum(ComponentRef.size(eqn) for eqn in UnorderedMap.keyList(en)) + size_eo;
+        size_vo := sum(ComponentRef.size(var, true) for var in UnorderedMap.keyList(vo));
+        size_vn := sum(ComponentRef.size(var, true) for var in UnorderedMap.keyList(vn)) + size_vo;
+        size_eo := sum(ComponentRef.size(eqn, true) for eqn in UnorderedMap.keyList(eo));
+        size_en := sum(ComponentRef.size(eqn, true) for eqn in UnorderedMap.keyList(en)) + size_eo;
         print(StringUtil.headline_1("Expanding from size [vars: " + intString(size_vo) + "| eqns: " + intString(size_eo) + "] to [vars: " + intString(size_vn) + "| eqns: " + intString(size_en) +  "]") + "\n");
       end if;
 
@@ -600,7 +600,7 @@ public
           if not UnorderedMap.isEmpty(vn) then
             for e in UnorderedMap.valueList(eo) loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], vn, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, vars.map, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
 
@@ -608,7 +608,7 @@ public
           if not UnorderedMap.isEmpty(en) then
             for e in UnorderedMap.valueList(en) loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], v, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, vars.map, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
 
@@ -709,6 +709,7 @@ public
       input VariablePointers vars                    "all variables";
       input EquationPointers eqns                    "all equations";
       input UnorderedSet<ComponentRef> vars_set      "context variables to determine solvability";
+      input Boolean init                             "true if initial";
     algorithm
       full := match full
         local
@@ -735,7 +736,7 @@ public
                 if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
                   eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
                   // booleans or (todo: enumerations)
-                  if Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or not BVariable.checkCref(var, BVariable.isContinuous) then
+                  if Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or not BVariable.checkCref(var, function BVariable.isContinuous(init = init)) then
                     // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
@@ -853,20 +854,38 @@ public
     function toString
       input Matrix adj;
       input output String str = "";
+    protected
+      function complexSizeStr
+        input Option<Integer> sz;
+        output String str;
+      algorithm
+        str := match sz
+          local
+            Integer i;
+          case SOME(i) then intString(i);
+          else "0";
+        end match;
+      end complexSizeStr;
     algorithm
       str := StringUtil.headline_2(str + "AdjacencyMatrix") + "\n";
       str := match adj
         local
-          array<String> names, types;
-          Integer length1, length2;
+          list<Type> types;
+          array<String> names, types_str, complex_sizes;
+          Integer length0, length1, length2;
 
         case FULL() algorithm
-          types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := list(ComponentRef.getSubscriptedType(name) for name in adj.equation_names);
+          complex_sizes := listArray(list(complexSizeStr(Type.complexSize(ty)) for ty in types));
+          types_str := listArray(list(dimsString(Type.arrayDims(ty)) for ty in types));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
-          length1 := max(stringLength(ty) for ty in types) + 1;
+          length0 := max(stringLength(sz) for sz in complex_sizes);
+          length1 := max(stringLength(ty) for ty in types_str) + 1;
           length2 := max(stringLength(name) for name in names) + 3;
           for i in 1:arrayLength(names) loop
-            str := str + arrayGet(types, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types, i))) + " "
+            str := str
+              + arrayGet(complex_sizes, i) + " " + StringUtil.repeat(" ", length0 - stringLength(arrayGet(complex_sizes, i))) + " | "
+              + arrayGet(types_str, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types_str, i))) + " "
               + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
               + " " + List.toString(UnorderedSet.toList(adj.occurences[i]), function fullString(dep_map = adj.dependencies[i],
               sol_map = adj.solvabilities[i], rep_set = adj.repetitions[i])) + "\n";
@@ -906,7 +925,7 @@ public
 
         case FULL() algorithm
           str := StringUtil.headline_2(str + " Solvability Adjacency Matrix") + "\n";
-          types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurences[i]), adj.solvabilities[i]);
@@ -967,7 +986,7 @@ public
 
         case FULL() algorithm
           str := StringUtil.headline_2(str + " Dependency Adjacency Matrix") + "\n";
-          types := listArray(list(dimsString(Type.arrayDims(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurences[i]), adj.dependencies[i], adj.repetitions[i]);
@@ -1156,6 +1175,7 @@ public
       input UnorderedMap<ComponentRef, Dependency> dep  "dependency map";
       input UnorderedSet<ComponentRef> rep              "repetition set";
       input UnorderedMap<ComponentRef, Integer> map     "unordered map to check for relevance";
+      input UnorderedMap<ComponentRef, Integer> fullmap "unordered map to check for general relevance";
       input array<list<Integer>> m;
       input Mapping mapping;
       input UnorderedMap<Mode.Key, Mode> modes;
@@ -1177,7 +1197,7 @@ public
           end for;
         else
           // todo: if, when single equation (needs to be updated for if)
-          Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, m, mapping, modes);
+          Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, fullmap, m, mapping, modes);
         end if;
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.pointerToString(eqn_ptr)});
@@ -1824,6 +1844,8 @@ public
   protected
     Pointer<Variable> var;
     Integer skips = 1;
+    list<Subscript> subs;
+    list<Option<Integer>> int_subs;
   algorithm
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
@@ -1834,7 +1856,14 @@ public
     else
       var := BVariable.getVarPointer(cref);
       if BVariable.isRecord(var) then
-        crefs := List.flatten(list(collectDependenciesCref(BVariable.getVarName(child), map, dep_map, sol_map) for child in BVariable.getRecordChildren(var)));
+        subs := ComponentRef.subscriptsAllFlat(cref);
+        int_subs := list(Subscript.toIntegerOpt(sub) for sub in subs);
+        // get all Record children
+        crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
+        // add original subscripts
+        crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
+        // collect dependencies
+        crefs := List.flatten(list(collectDependenciesCref(child, map, dep_map, sol_map) for child in crefs));
         for cref in crefs loop
           Dependency.skip(cref, skips, dep_map);
           skips := skips + 1;

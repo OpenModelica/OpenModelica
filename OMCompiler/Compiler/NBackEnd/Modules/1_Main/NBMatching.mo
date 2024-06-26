@@ -122,7 +122,6 @@ public
     input output EqData eqData;
     input System.SystemType systemType;
     input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not resolve singular systems and return partial matching if true";
     input Boolean clear = true              "start from scratch if true";
   protected
     list<list<Integer>> marked_eqns;
@@ -142,24 +141,26 @@ public
     end try;
 
     // 2. Resolve singular systems if necessary
-    changed := match systemType
-      case NBSystem.SystemType.INI algorithm
-        // ####### BALANCE INITIALIZATION #######
-        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
-      then changed;
-
-      else algorithm
-        // ####### INDEX REDUCTION ######
-        (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
-      then changed;
-    end match;
+    if systemType == NBSystem.SystemType.INI then
+      // ####### BALANCE INITIALIZATION #######
+      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+    else
+      // ####### INDEX REDUCTION #######
+      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+    end if;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
       adj := Adjacency.Matrix.createFull(vars, eqns);
       adj := Adjacency.Matrix.fromFull(adj, vars.map, eqns.map, eqns, matrixStrictness);
-      (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, systemType, false, true);
+      if systemType == NBSystem.SystemType.INI then
+        // ####### DO NOT REDO BALANCING INITIALIZATION #######
+        matching := regular(EMPTY_MATCHING, adj);
+      else
+        // ####### REDO INDEX REDUCTION IF NECESSARY #######
+        (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, systemType, transposed);
+      end if;
     end if;
   end singular;
 

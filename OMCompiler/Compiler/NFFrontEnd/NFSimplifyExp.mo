@@ -188,7 +188,7 @@ algorithm
 
           if is_pure and List.all(args, Expression.isLiteral) and (scalarize or Type.isScalar(call.ty)) then
             try
-              callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
+              callExp := Ceval.evalCall(call, NFCeval.noTarget);
             else
               callExp := Expression.CALL(call);
             end try;
@@ -223,7 +223,7 @@ algorithm
   ErrorExt.setCheckpoint(getInstanceName());
 
   try
-    outExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
+    outExp := Ceval.evalCall(call, NFCeval.noTarget);
     ErrorExt.delCheckpoint(getInstanceName());
   else
     if Flags.isSet(Flags.FAILTRACE) then
@@ -250,6 +250,11 @@ algorithm
         exp := ExpandExp.expandBuiltinCat(args, call);
       then
         exp;
+
+    case "pre" then match args
+      case {exp as Expression.BOOLEAN()} then exp;
+      else Expression.CALL(call);
+    end match;
 
     case "delay"           then simplifyDelay(args, call);
     case "der"             then simplifyDer(listHead(args), call);

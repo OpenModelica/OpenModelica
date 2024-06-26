@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -32,6 +32,46 @@
 
 #include "stateset.h"
 #include "../../util/omc_error.h"
+
+/*! \fn printStateSelectionInfo
+ *
+ *  function prints actually information about current state selection
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [set]
+ *
+ *  \author wbraun
+ */
+void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
+{
+  long k, l;
+
+  infoStreamPrint(LOG_DSS, 0, "Select %ld state%s from %ld candidates.", set->nStates, set->nStates == 1 ? "" : "s", set->nCandidates);
+  infoStreamPrint(LOG_DSS, 1, "State candidates:");
+  for(k=0; k < set->nCandidates; k++)
+  {
+    infoStreamPrint(LOG_DSS, 0, "[%ld] %s", k+1, set->statescandidates[k]->name);
+  }
+  messageClose(LOG_DSS);
+
+  infoStreamPrint(LOG_DSS, 1, "Selected state%s", set->nStates == 1 ? "" : "s");
+  {
+    unsigned int aid = set->A->id - data->modelData->integerVarsData[0].info.id;
+    modelica_integer *Adump = &(data->localData[0]->integerVars[aid]);
+    for(k=0; k < set->nStates; k++)
+    {
+      for(l=0; l < set->nCandidates; l++)
+      {
+        if (Adump[k*set->nCandidates+l] == 1)
+        {
+          infoStreamPrint(LOG_DSS, 0, "[%ld] %s", l+1, set->statescandidates[l]->name);
+          break;
+        }
+      }
+    }
+  }
+  messageClose(LOG_DSS);
+}
 
 /*! \fn initializeStateSetJacobians
  *
@@ -247,7 +287,6 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
       unsigned int firstrealid = data->modelData->realVarsData[0].info.id;
       unsigned int id = statecandidates[col]->id-firstrealid;
       unsigned int sid = states[row]->id-firstrealid;
-      infoStreamPrint(LOG_DSS, 0, "select %s", statecandidates[col]->name);
       /* set A[row, col] */
       A[row*nCandidates + col] = 1;
       /* reinit state */
@@ -263,21 +302,24 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
  *  ??? desc ???
  *
  *  \param [ref] [oldPivot]
- *  \param [ref] [newPivot]
- *  \param [ref] [nCandidates]
- *  \param [ref] [nDummyStates]
- *  \param [ref] [nStates]
- *  \param [ref] [A]
- *  \param [ref] [states]
- *  \param [ref] [statecandidates]
+ *  \param [ref] [set]
+ *  \param [ref] [setIndex]
  *  \param [ref] [data]
+ *  \param [ref] [switchStates]
  *  \return ???
  */
-static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelica_integer nCandidates, modelica_integer nDummyStates, modelica_integer nStates, VAR_INFO* A, VAR_INFO** states, VAR_INFO** statecandidates, DATA *data, int switchStates)
+static int comparePivot(modelica_integer *oldPivot, STATE_SET_DATA *set, long setIndex, DATA *data, int switchStates)
 {
   TRACE_PUSH
   modelica_integer i;
   int ret = 0;
+  modelica_integer *newPivot = set->colPivot;
+  modelica_integer nCandidates = set->nCandidates;
+  modelica_integer nDummyStates = set->nDummyStates;
+  modelica_integer nStates = set->nStates;
+  VAR_INFO* A = set->A;
+  VAR_INFO** states = set->states;
+  VAR_INFO** statecandidates = set->statescandidates;
   modelica_integer* oldEnable = (modelica_integer*) calloc(nCandidates, sizeof(modelica_integer));
   modelica_integer* newEnable = (modelica_integer*) calloc(nCandidates, sizeof(modelica_integer));
 
@@ -294,9 +336,13 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
     {
       if(switchStates)
       {
-        infoStreamPrint(LOG_DSS, 1, "select new states at time %f", data->localData[0]->timeValue);
         setAMatrix(newEnable, nCandidates, nStates, A, states, statecandidates, data);
-        messageClose(LOG_DSS);
+        /* debug */
+        if(ACTIVE_STREAM(LOG_DSS)){
+          infoStreamPrint(LOG_DSS, 1, "StateSelection Set %ld at time = %f", setIndex, data->localData[0]->timeValue);
+          printStateSelectionInfo(data, set);
+          messageClose(LOG_DSS);
+        }
       }
       ret = -1;
       break;
@@ -308,44 +354,6 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
 
   TRACE_POP
   return ret;
-}
-
-/*! \fn printStateSelectionInfo
- *
- *  function prints actually information about current state selection
- *
- *  \param [in]  [data]
- *  \param [in]  [set]
- *
- *  \author wbraun
- */
-void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
-{
-  long k, l;
-
-  infoStreamPrint(LOG_DSS, 1, "Select %ld states from %ld candidates.", set->nStates, set->nCandidates);
-  for(k=0; k < set->nCandidates; k++)
-  {
-    infoStreamPrint(LOG_DSS, 0, "[%ld] candidate %s", k+1, set->statescandidates[k]->name);
-  }
-  messageClose(LOG_DSS);
-
-  infoStreamPrint(LOG_DSS, 1, "Selected states");
-  {
-    unsigned int aid = set->A->id - data->modelData->integerVarsData[0].info.id;
-    modelica_integer *Adump = &(data->localData[0]->integerVars[aid]);
-    for(k=0; k < set->nStates; k++)
-    {
-      for(l=0; l < set->nCandidates; l++)
-      {
-        if (Adump[k*set->nCandidates+l] == 1)
-        {
-          infoStreamPrint(LOG_DSS, 0, "[%ld] %s", l+1, set->statescandidates[l]->name);
-        }
-      }
-    }
-  }
-  messageClose(LOG_DSS);
 }
 
 /*! \fn stateSelectionSet
@@ -373,13 +381,6 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
     modelica_integer* oldColPivot = (modelica_integer*) malloc(set->nCandidates * sizeof(modelica_integer));
     modelica_integer* oldRowPivot = (modelica_integer*) malloc(set->nDummyStates * sizeof(modelica_integer));
 
-    /* debug */
-    if(ACTIVE_STREAM(LOG_DSS))
-    {
-      infoStreamPrint(LOG_DSS, 1, "StateSelection Set %ld at time = %f", setIndex, data->localData[0]->timeValue);
-      printStateSelectionInfo(data, set);
-      messageClose(LOG_DSS);
-    }
     /* generate jacobian, stored in set->J */
     getAnalyticalJacobianSet(data, threadData, setIndex);
 
@@ -411,7 +412,7 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
     }
     /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */
-    res = comparePivot(oldColPivot, set->colPivot, set->nCandidates, set->nDummyStates, set->nStates, set->A, set->states, set->statescandidates, data, switchStates);
+    res = comparePivot(oldColPivot, set, setIndex, data, switchStates);
     if(!switchStates)
     {
       memcpy(set->colPivot, oldColPivot, set->nCandidates*sizeof(modelica_integer));

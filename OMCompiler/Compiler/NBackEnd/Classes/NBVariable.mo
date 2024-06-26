@@ -148,7 +148,8 @@ public
     input Binding binding = NFBinding.EMPTY_BINDING;
     output Variable variable;
   protected
-    InstNode node, class_node, child_node;
+    InstNode node, class_node;
+    array<InstNode> child_nodes;
     ComponentRef child_cref;
     Type ty;
     Prefixes.Visibility vis;
@@ -160,16 +161,12 @@ public
     ty   := ComponentRef.getSubscriptedType(cref, true);
     vis  := InstNode.visibility(node);
     info := InstNode.info(node);
-
     // get the record children if the variable is a record (and not an external object)
     if not Type.isExternalObject(ty) then
-      children := match (Type.arrayElementType(ty), Type.complexSize(ty))
-        case (Type.COMPLEX(cls = class_node), SOME(complexSize)) algorithm
-          for i in complexSize:-1:1 loop
-            child_node  := Class.nthComponent(i, InstNode.getClass(class_node));
-            child_cref  := ComponentRef.prefixCref(child_node, InstNode.getType(child_node), {}, cref);
-            children    := fromCref(child_cref) :: children;
-          end for;
+      children := match Type.arrayElementType(ty)
+        case Type.COMPLEX(cls = class_node) algorithm
+          child_nodes := Class.getComponents(InstNode.getClass(class_node));
+          children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
         then children;
         else {};
       end match;
@@ -333,13 +330,17 @@ public
   end isTime;
 
   function isContinuous extends checkVar;
+    input Boolean init  "true if its an initial system";
   algorithm
     b := match Pointer.access(var_ptr)
+      local
+        Variable var;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))  then false;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))        then false;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))        then false;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))       then false;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT()))        then false;
+      case var as Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+      then init and Type.isContinuous(var.ty);
       else true;
     end match;
   end isContinuous;
@@ -721,6 +722,16 @@ public
     end match;
   end getStateCref;
 
+  function hasDerVar
+    input Pointer<Variable> state_var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(state_var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(_)))) then true;
+      else false;
+    end match;
+  end hasDerVar;
+
   function getDerVar
     input Pointer<Variable> state_var;
     output Pointer<Variable> der_var;
@@ -1005,7 +1016,6 @@ public
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DAE_RESIDUAL_VAR(uniqueIndex));
-
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeResidualVar;
@@ -1015,6 +1025,7 @@ public
     e.g. (\"$SEV\", 4) --> $SEV_4"
     input String name                           "context name e.g. §WHEN";
     input Integer uniqueIndex                   "unique identifier index";
+    input Type var_ty                           "variable type";
     input Iterator iterator = Iterator.EMPTY()  "optional for-loop iterator";
     output Pointer<Variable> var_ptr            "pointer to new variable";
     output ComponentRef cref                    "new component reference";
@@ -1031,10 +1042,10 @@ public
     (iter_crefs, _) := Iterator.getFrames(iterator);
     iter_subs := list(Subscript.fromTypedExp(Expression.fromCref(iter)) for iter in iter_crefs);
     if listEmpty(iter_subs) then
-      ty := Type.BOOLEAN();
+      ty := var_ty;
     else
       sub_sizes := Iterator.sizes(iterator);
-      ty := Type.ARRAY(Type.BOOLEAN(), list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
+      ty := Type.liftArrayLeftList(var_ty, list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
     end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));

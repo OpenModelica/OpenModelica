@@ -206,7 +206,7 @@ public
         end match;
 
         // make the new start equation
-        kind := if BVariable.isContinuous(state) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+        kind := if BVariable.isContinuous(state, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
         start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
         Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
       then ();
@@ -261,7 +261,7 @@ public
       subscripts := ComponentRef.subscriptsAllFlat(cref);
       pre := BVariable.getVarName(Util.getOption(pre_post));
       pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
-      kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+      kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
       eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
       Pointer.update(ptr_start_eqs, eq :: Pointer.access(ptr_start_eqs));
     else
@@ -317,19 +317,17 @@ public
     list<Pointer<Equation>> parameter_eqs = {};
     list<Pointer<Variable>> initial_param_vars = {};
     Pointer<Variable> parent;
-    Boolean skip_record_element;
+    Boolean skip;
   algorithm
-
     for var in VariablePointers.toList(parameters) loop
-
-      // check if the variable is a record element with bound parent
-      skip_record_element := match BVariable.getParent(var)
+      // check if the variable is a record element with bound parent or a record without binding
+      skip := match BVariable.getParent(var)
         case SOME(parent) then BVariable.isBound(parent);
-        else false;
+        else BVariable.isRecord(var) and not BVariable.isBound(var);
       end match;
 
       // parse records slightly different
-      if BVariable.isKnownRecord(var) then
+      if BVariable.isKnownRecord(var) and not skip then
         // only consider non-evaluable parameter bindings
         if not BVariable.hasEvaluableBinding(var) then
           initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
@@ -341,7 +339,7 @@ public
         end if;
 
       // all other variables that are not records and not record elements to be skipped
-      elseif not (BVariable.isRecord(var) or skip_record_element) then
+      elseif not (BVariable.isRecord(var) or skip) then
         // only consider non-evaluable parameter bindings
         if not BVariable.hasEvaluableBinding(var) then
           // add variable to initial unknowns
@@ -431,7 +429,7 @@ public
     end match;
 
     // make the new start equation
-    kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+    kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
     start_eq := Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true));
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
@@ -453,7 +451,7 @@ public
     if not BVariable.isPrevious(var_ptr) then
       pre := BVariable.getPrePost(var_ptr);
       if Util.isSome(pre) then
-        kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+        kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
         pre_eq := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var_ptr)), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
         Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
       end if;
@@ -491,7 +489,7 @@ public
         pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name, true, true);
         name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
 
-        kind := if BVariable.isContinuous(var_ptr) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+        kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
         pre_eq := Equation.makeAssignment(Expression.fromCref(name, true), Expression.fromCref(pre_name), idx, NBEquation.PRE_STR, Iterator.fromFrames(frames), EquationAttributes.default(kind, true));
 
         if not listEmpty(var_slice.indices) then
@@ -547,19 +545,13 @@ public
   function cleanupInitialCall
     input output Equation eq;
     input Boolean init;
+  protected
+    Pointer<Boolean> simplify = Pointer.create(false);
   algorithm
-    eq := match eq
-      local
-        WhenEquationBody body;
-        Pointer<Boolean> simplify;
-      case Equation.WHEN_EQUATION(body = body) algorithm
-        simplify := Pointer.create(false);
-        body.condition := Expression.map(body.condition, function cleanupInitialCallExp(init = init, simplify = simplify));
-        // TODO simplify when equation if `Pointer.access(simplify)` is true
-        eq.body := body;
-      then Equation.simplify(eq);
-      else eq;
-    end match;
+    eq := Equation.map(eq, function cleanupInitialCallExp(init = init, simplify = simplify));
+    if Pointer.access(simplify) then
+      eq := Equation.simplify(eq);
+    end if;
   end cleanupInitialCall;
 
   function cleanupInitialCallExp

@@ -57,6 +57,7 @@ protected
 
 public
   import Absyn.Path;
+  import BaseModelica;
   import DAE;
   import NFInstNode.InstNode;
   import Operator = NFOperator;
@@ -1889,6 +1890,7 @@ public
 
   function toFlatString
     input Expression exp;
+    input BaseModelica.OutputFormat format;
     output String str;
   protected
     Type t;
@@ -1905,81 +1907,81 @@ public
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then "'" + AbsynUtil.pathString(t.typePath) + "'." + exp.name;
 
-      case CLKCONST(clk) then ClockKind.toFlatString(clk);
+      case CLKCONST(clk) then ClockKind.toFlatString(clk, format);
 
-      case CREF() then ComponentRef.toFlatString(exp.cref);
+      case CREF() then ComponentRef.toFlatString(exp.cref, format);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
 
       case ARRAY()
         then if arrayEmpty(exp.elements) then
-          "fill("+toFlatString(makeDefaultValue(Type.elementType(exp.ty)))+", " + Type.dimensionsToFlatString(exp.ty) + ")"
+          "fill("+toFlatString(makeDefaultValue(Type.elementType(exp.ty)), format)+", " + Type.dimensionsToFlatString(exp.ty, format) + ")"
         else
-          "{" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + "}";
+          "{" + stringDelimitList(list(toFlatString(e, format) for e in exp.elements), ", ") + "}";
 
-      case MATRIX() then "[" + stringDelimitList(list(stringDelimitList(list(toFlatString(e) for e in el), ", ") for el in exp.elements), "; ") + "]";
+      case MATRIX() then "[" + stringDelimitList(list(stringDelimitList(list(toFlatString(e, format) for e in el), ", ") for el in exp.elements), "; ") + "]";
 
-      case RANGE() then operandFlatString(exp.start, exp, false) +
+      case RANGE() then operandFlatString(exp.start, exp, false, format) +
                         (
                         if isSome(exp.step)
-                        then ":" + operandFlatString(Util.getOption(exp.step), exp, false)
+                        then ":" + operandFlatString(Util.getOption(exp.step), exp, false, format)
                         else ""
-                        ) + ":" + operandFlatString(exp.stop, exp, false);
+                        ) + ":" + operandFlatString(exp.stop, exp, false, format);
 
-      case TUPLE() then "(" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, toFlatString, Type.toFlatString(exp.ty), "(", ", ", ")", true);
-      case CALL() then Call.toFlatString(exp.call);
-      case SIZE() then "size(" + toFlatString(exp.exp) +
+      case TUPLE() then "(" + stringDelimitList(list(toFlatString(e, format) for e in exp.elements), ", ") + ")";
+      case RECORD() then List.toString(exp.elements, function toFlatString(format = format), Type.toFlatString(exp.ty, format), "(", ", ", ")", true);
+      case CALL() then Call.toFlatString(exp.call, format);
+      case SIZE() then "size(" + toFlatString(exp.exp, format) +
                         (
                         if isSome(exp.dimIndex)
-                        then ", " + toFlatString(Util.getOption(exp.dimIndex))
+                        then ", " + toFlatString(Util.getOption(exp.dimIndex), format)
                         else ""
                         ) + ")";
       case END() then "end";
 
-      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryFlatString(exp.arguments, exp, exp.operator, false);
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryFlatString(exp.arguments, exp, exp.operator, format, false);
 
       case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
-                     then "-" + multaryFlatString(exp.inv_arguments, exp, exp.operator);
+                     then "-" + multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
-      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator);
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
-      case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator) +
+      case MULTARY() then multaryFlatString(exp.arguments, exp, exp.operator, format) +
                           Operator.symbol(Operator.invert(exp.operator)) +
-                          multaryFlatString(exp.inv_arguments, exp, exp.operator);
+                          multaryFlatString(exp.inv_arguments, exp, exp.operator, format);
 
-      case BINARY() then operandFlatString(exp.exp1, exp, true) +
+      case BINARY() then operandFlatString(exp.exp1, exp, true, format) +
                          Operator.symbol(exp.operator) +
-                         operandFlatString(exp.exp2, exp, false);
+                         operandFlatString(exp.exp2, exp, false, format);
 
       case UNARY() then Operator.symbol(exp.operator, "") +
-                        operandFlatString(exp.exp, exp, false);
+                        operandFlatString(exp.exp, exp, false, format);
 
-      case LBINARY() then operandFlatString(exp.exp1, exp, true) +
+      case LBINARY() then operandFlatString(exp.exp1, exp, true, format) +
                           Operator.symbol(exp.operator) +
-                          operandFlatString(exp.exp2, exp, false);
+                          operandFlatString(exp.exp2, exp, false, format);
 
       case LUNARY() then Operator.symbol(exp.operator, "") + " " +
-                         operandFlatString(exp.exp, exp, false);
+                         operandFlatString(exp.exp, exp, false, format);
 
-      case RELATION() then operandFlatString(exp.exp1, exp, true) +
+      case RELATION() then operandFlatString(exp.exp1, exp, true, format) +
                            Operator.symbol(exp.operator) +
-                           operandFlatString(exp.exp2, exp, false);
+                           operandFlatString(exp.exp2, exp, false, format);
 
-      case IF() then "if " + toFlatString(exp.condition) + " then " + toFlatString(exp.trueBranch) + " else " + toFlatString(exp.falseBranch);
+      case IF() then "if " + toFlatString(exp.condition, format) + " then " + toFlatString(exp.trueBranch, format) + " else " + toFlatString(exp.falseBranch, format);
 
-      case CAST() then toFlatString(exp.exp);
-      case UNBOX() then "UNBOX(" + toFlatString(exp.exp) + ")";
-      case BOX() then "BOX(" + toFlatString(exp.exp) + ")";
+      case CAST() then toFlatString(exp.exp, format);
+      case UNBOX() then "UNBOX(" + toFlatString(exp.exp, format) + ")";
+      case BOX() then "BOX(" + toFlatString(exp.exp, format) + ")";
 
-      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp) + ")" + Subscript.toFlatStringList(exp.subscripts);
-      case TUPLE_ELEMENT() then toFlatString(exp.tupleExp) + "[" + intString(exp.index) + "]";
-      case RECORD_ELEMENT() then toFlatString(exp.recordExp) + "[field: " + exp.fieldName + "]";
-      case MUTABLE() then toFlatString(Mutable.access(exp.exp));
+      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format);
+      case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format) + "[" + intString(exp.index) + "]";
+      case RECORD_ELEMENT() then toFlatString(exp.recordExp, format) + "[field: " + exp.fieldName + "]";
+      case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);
       case SHARED_LITERAL() then "[literal: " + intString(exp.index) + ", " + toString(exp.exp) + "]";
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
-        then "function " + ComponentRef.toFlatString(exp.fn) + "(" + stringDelimitList(
-          list(n + " = " + toFlatString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
+        then "function " + ComponentRef.toFlatString(exp.fn, format) + "(" + stringDelimitList(
+          list(n + " = " + toFlatString(a, format) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
       case FILENAME() then "\"" + Util.escapeModelicaStringToCString(exp.filename) + "\"";
       else anyString(exp);
@@ -2022,12 +2024,13 @@ public
     input Expression operand;
     input Expression operator;
     input Boolean lhs;
+    input BaseModelica.OutputFormat format;
     output String str;
   protected
     Integer operand_prio, operator_prio;
     Boolean parenthesize = false;
   algorithm
-    str := toFlatString(operand);
+    str := toFlatString(operand, format);
     operand_prio := priority(operand, lhs);
 
     if operand_prio == 4 then
@@ -2065,10 +2068,11 @@ public
     input list<Expression> arguments;
     input Expression exp;
     input Operator operator;
+    input BaseModelica.OutputFormat format;
     input Boolean parenthesize = true;
     output String str;
   algorithm
-    str := stringDelimitList(list(operandFlatString(e, exp, false) for e in arguments), Operator.symbol(operator));
+    str := stringDelimitList(list(operandFlatString(e, exp, false, format) for e in arguments), Operator.symbol(operator));
     if parenthesize and listLength(arguments) > 1 then
       str := "(" + str + ")";
     end if;
@@ -4477,15 +4481,8 @@ public
     b := match exp
       case STRING()         then true;
       case BOX(STRING())    then true;
-      case BOX(REAL())      then true;
-      case BOX()            then false;
-      case INTEGER()        then false;
-      case BOOLEAN()        then false;
-      case REAL()           then false;
-      case ENUM_LITERAL()   then false;
-      case SHARED_LITERAL() then false;
-      case ARRAY() guard(arrayEmpty(exp.elements)) then false;
-      case RECORD() then List.all(exp.elements, isLiteralReplace);
+      case ARRAY()          then exp.literal or Array.all(exp.elements, isLiteral);
+      //case RECORD() then List.all(exp.elements, isLiteralReplace);
       else false;
     end match;
   end isLiteralReplace;
@@ -4654,6 +4651,9 @@ public
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ARRAY() then fillType(ty, makeZero(Type.arrayElementType(ty)));
       case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
+      then fail();
     end match;
   end makeZero;
 
@@ -4664,11 +4664,16 @@ public
     InstNode op_node;
     Function.Function fn;
   algorithm
-    op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
-    Function.Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, InstNode.info(InstNode.parent(op_node)));
-    {fn} := Function.Function.typeNodeCache(op_node);
-    zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT, Purity.PURE));
-    zeroExp := Ceval.evalExp(zeroExp);
+    try
+      op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
+      Function.Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, InstNode.info(InstNode.parent(op_node)));
+      {fn} := Function.Function.typeNodeCache(op_node);
+      zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT, Purity.PURE));
+      zeroExp := Ceval.evalExp(zeroExp);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + InstNode.toString(recordNode)});
+      fail();
+    end try;
   end makeOperatorRecordZero;
 
   function makeOne
@@ -4721,14 +4726,52 @@ public
 
   function makeDefaultValue
     input Type ty;
+    input Option<Expression> min = NONE();
+    input Option<Expression> max = NONE();
     output Expression exp;
   algorithm
     exp := match ty
-      case Type.INTEGER() then INTEGER(0);
-      case Type.REAL() then REAL(0);
+      case Type.INTEGER()
+        algorithm
+          if isSome(min) and isNonNegative(Util.getOption(min)) then
+            // default = min if min >= 0
+            SOME(exp) := min;
+          elseif isSome(max) and isNonPositive(Util.getOption(max)) then
+            // default = max if max <= 0
+            SOME(exp) := max;
+          else
+            exp := INTEGER(0);
+          end if;
+        then
+          exp;
+
+      case Type.REAL()
+        algorithm
+          if isSome(min) and isNonNegative(Util.getOption(min)) then
+            // default = min if min >= 0.0
+            SOME(exp) := min;
+          elseif isSome(max) and isNonPositive(Util.getOption(max)) then
+            // default = max if max <= 0.0
+            SOME(exp) := max;
+          else
+            exp := REAL(0.0);
+          end if;
+        then
+          exp;
+
       case Type.STRING() then STRING("");
       case Type.BOOLEAN() then BOOLEAN(false);
-      case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
+
+      case Type.ENUMERATION()
+        algorithm
+          if isSome(min) then
+            SOME(exp) := min;
+          else
+            exp := ENUM_LITERAL(ty, listHead(ty.literals), 1);
+          end if;
+        then
+          exp;
+
       case Type.ARRAY() then fillType(ty, makeDefaultValue(Type.arrayElementType(ty)));
       case Type.TUPLE() then TUPLE(ty, list(makeDefaultValue(t) for t in ty.types));
     end match;

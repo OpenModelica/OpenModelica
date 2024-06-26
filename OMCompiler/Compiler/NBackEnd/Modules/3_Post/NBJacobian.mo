@@ -149,6 +149,7 @@ public
     output Option<Jacobian> jacobian;
     input output FunctionTree funcTree;
     input String name;
+    input Boolean init;
   protected
     constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
       then jacobianSymbolic
@@ -162,7 +163,8 @@ public
         equations         = equations,
         knowns            = VariablePointers.empty(0),      // remove them? are they necessary?
         strongComponents  = SOME(comps),
-        funcTree          = funcTree
+        funcTree          = funcTree,
+        init              = init
       );
   end nonlinear;
 
@@ -539,8 +541,8 @@ public
       // create cref -> index maps
       sizeCols := arrayLength(seeds);
       sizeRows := arrayLength(partials);
-      seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-      partial_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeCols));
+      partial_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeRows));
       for i in 1:sizeCols loop
         UnorderedMap.add(seeds[i], i, seed_indices);
       end for;
@@ -677,7 +679,7 @@ protected
     state_vars := list(BVariable.getStateVar(var) for var in derivative_vars);
     seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, syst.equations, knowns, syst.strongComponents, funcTree);
+    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, syst.equations, knowns, syst.strongComponents, funcTree, syst.systemType == NBSystem.SystemType.INI);
     syst.jacobian := jacobian;
     if Flags.isSet(Flags.JAC_DUMP) then
       print(System.System.toString(syst, 2));
@@ -710,17 +712,17 @@ protected
     end if;
 
     // create seed vars
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar, init = init));
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
 
-    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = false)); end for;
+    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = false), init = init); end for;
     res_vars := Pointer.access(pDer_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = true)); end for;
+    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = true), init = init); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 
     optHT := SOME(Pointer.access(jacobianHT));
@@ -783,7 +785,7 @@ protected
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmp_vars, _) := List.splitOnTrue(tmp_vars, BVariable.isContinuous);
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
@@ -833,6 +835,7 @@ protected
     input Pointer<list<Pointer<Variable>>> vars_ptr;
     input Pointer<UnorderedMap<ComponentRef,ComponentRef>> ht;
     input Func makeVar;
+    input Boolean init;
 
     partial function Func
       input output ComponentRef cref;
@@ -845,7 +848,7 @@ protected
     Pointer<Variable> new_var_ptr;
   algorithm
     // only create seed or pDer var if it is continuous
-    if BVariable.isContinuous(var_ptr) then
+    if BVariable.isContinuous(var_ptr, init) then
       (cref, new_var_ptr) := makeVar(var.name, name);
       // add $<new>.x variable pointer to the variables
       Pointer.update(vars_ptr, new_var_ptr :: Pointer.access(vars_ptr));

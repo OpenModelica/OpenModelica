@@ -586,6 +586,8 @@ public:
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
   void setHandleCollidingConnectionsNeeded(bool needed) {mHandleCollidingConnectionsNeeded = needed;}
   bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
+  void setRequiresUpdate(bool requiresUpdate) {mRequiresUpdate = requiresUpdate;}
+  bool requiresUpdate() {return mRequiresUpdate;}
 
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
@@ -680,6 +682,7 @@ private:
   QStringList mDependsOnModelsList;
   bool mHasMissingType = false;
   bool mHandleCollidingConnectionsNeeded = false;
+  bool mRequiresUpdate = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();

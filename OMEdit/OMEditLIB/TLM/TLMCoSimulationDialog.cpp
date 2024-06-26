@@ -170,13 +170,8 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(QWidget *pParent)
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
   mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
   int xPos = QApplication::primaryScreen()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
   int yPos = QApplication::primaryScreen()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
-#else // QT_VERSION_CHECK
-  int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::desktop()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
-#endif // QT_VERSION_CHECK
   mpTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, mpTLMCoSimulationOutputWidget->width(), mpTLMCoSimulationOutputWidget->height());
 }
 

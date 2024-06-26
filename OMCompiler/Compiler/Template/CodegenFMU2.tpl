@@ -113,6 +113,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let fmiVersion = '2.0'
   let modelName = dotPath(modelInfo.name)
   let description = modelInfo.description
+  let version = modelInfo.version
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
@@ -122,6 +123,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   modelName="<%Util.escapeModelicaStringToXmlString(modelName)%>"
   guid="{<%guid%>}"
   description="<%Util.escapeModelicaStringToXmlString(description)%>"
+  version="<%Util.escapeModelicaStringToXmlString(version)%>"
   generationTool="<%Util.escapeModelicaStringToXmlString(generationTool)%>"
   generationDateAndTime="<%Util.escapeModelicaStringToXmlString(generationDateAndTime)%>"
   variableNamingConvention="<%variableNamingConvention%>"

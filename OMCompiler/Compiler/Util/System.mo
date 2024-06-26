@@ -995,7 +995,9 @@ function iconv "The iconv() function converts one multibyte characters from one 
 external "C" result=SystemImpl__iconv(string,from,to,true /* Print errors */) annotation(Library = {"omcruntime"});
 end iconv;
 
-function snprintff "sprintf format string that takes one double as argument"
+function snprintff
+  "snprintf format string that takes one double as argument
+   and the maximum length of the formatted string as another argument."
   input String format;
   input Integer maxlen;
   input Real val;
@@ -1004,8 +1006,8 @@ external "C" str=System_snprintff(format,maxlen,val) annotation(Library = {"omcr
 end snprintff;
 
 function sprintff
-  "sprintf format string that takes one double as argument, but unlike snprintff
-   it takes no buffer size as argument.
+  "sprintf format string that takes one double as argument,
+   but unlike snprintff it takes no string length as argument.
 
    NOTE: This function doesn't actually call sprintf, since that would be unsafe.
          It instead calls snprintf with a fixed buffer size that should be enough

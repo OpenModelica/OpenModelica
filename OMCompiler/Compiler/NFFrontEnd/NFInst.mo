@@ -3542,6 +3542,15 @@ protected
 algorithm
   () := match lhs
     case Expression.CREF()
+      guard ComponentRef.isIterator(lhs.cref)
+      algorithm
+        // Give an error if assigning to an iterator.
+        Error.addSourceMessage(Error.ASSIGN_ITERATOR_ERROR,
+          {ComponentRef.toString(lhs.cref)}, info);
+      then
+        fail();
+
+    case Expression.CREF()
       guard ComponentRef.isCref(lhs.cref)
       algorithm
         node := ComponentRef.node(lhs.cref);

@@ -73,7 +73,7 @@ public
           end match;
 
           if not skip_record_element then
-            if BVariable.isContinuous(var) then
+            if BVariable.isContinuous(var, false) then
               binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_cont;
             else
               binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_disc;

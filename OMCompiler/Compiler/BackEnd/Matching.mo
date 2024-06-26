@@ -6169,19 +6169,19 @@ protected function removeEmptySubsets
   input list<list<Integer>> iAcc;
   output list<list<Integer>> oAcc;
 algorithm
-  oAcc := matchcontinue(index,length,subsets,iAcc)
+  oAcc := match(index,length,subsets,iAcc)
     local
       list<Integer> eqns;
       list<list<Integer>> acc;
     case (_,_,_,_)
+      guard intLe(index,length)
       equation
-        true = intLe(index,length);
         eqns = subsets[index];
         acc = appendNonEmpty(eqns,iAcc);
       then
         removeEmptySubsets(index+1,length,subsets,acc);
     else iAcc;
-  end matchcontinue;
+  end match;
 end removeEmptySubsets;
 
 protected function appendNonEmpty
@@ -6210,15 +6210,15 @@ protected function getEqnsforIndexReduction1
   input array<list<Integer>> inSubsets;
   output array<list<Integer>> outSubsets;
 algorithm
-  outSubsets:= matchcontinue (U,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets)
+  outSubsets:= match (U,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets)
     local
       list<Integer> rest,eqns;
       Integer e,e1;
     case ({},_,_,_,_,_,_,_,_,_) then inSubsets;
     case (e::rest,_,_,_,_,_,_,_,_,_)
+      guard not intGt(colummarks[e],0)
       equation
         // row is not visited
-        false = intGt(colummarks[e],0);
         // if it is a multi dim equation take all scalare equations
         e1 = mapIncRowEqn[e];
         eqns = mapEqnIncRow[e1];
@@ -6232,7 +6232,7 @@ algorithm
     case (_::rest,_,_,_,_,_,_,_,_,_)
       then
         getEqnsforIndexReduction1(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets);
-  end matchcontinue;
+  end match;
 end getEqnsforIndexReduction1;
 
 protected function getEqnsforIndexReductionphase
@@ -6287,7 +6287,7 @@ protected function getEqnsforIndexReductiontraverseRows
   output list<Integer> outEqns;
 algorithm
   outEqns:=
-  matchcontinue (rows,nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns)
+  match (rows,nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns)
     local
       list<Integer> rest,queue,nextqueue,eqns;
       Integer rc,r,e,mrc;
@@ -6301,29 +6301,29 @@ algorithm
         // row is matched
         // print("check Row " + intString(r) + "\n");
         rc = ass2[r];
-        rc = if List.exist1(mT[r],intEq,rc) then rc else -1;
         // print("check Colum " + intString(rc) + "\n");
-        true = intGt(rc,0);
-        mrc = colummarks[rc];
-        false = intEq(mrc,mark);
-        if intGt(colummarks[rc],0) then
-          mergeSubsets(mark,mrc,inSubsets,colummarks);
-          fail();
+        if List.exist1(mT[r],intEq,rc) and intGt(rc,0) and not intEq(colummarks[rc],mark) then
+          if intGt(colummarks[rc],0) then
+            mergeSubsets(mark,colummarks[rc],inSubsets,colummarks);
+            nextqueue = nextColums;
+            queue = inEqns;
+          else
+            // if it is a multi dim equation take all scalare equations
+            e = mapIncRowEqn[rc];
+            eqns = mapEqnIncRow[e];
+            _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
+            //  print("add to nextQueue and Queue " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
+            nextqueue = listAppend(nextColums,eqns);
+            queue = listAppend(inEqns,eqns);
+            //(nextqueue,queue) = getEqnsforIndexReductiontraverseColums(mT[r],colummarks,ass1,rc::nextColums,rc::inEqns);
+          end if;
+        else
+          nextqueue = nextColums;
+          queue = inEqns;
         end if;
-        // if it is a multi dim equation take all scalare equations
-        e = mapIncRowEqn[rc];
-        eqns = mapEqnIncRow[e];
-        _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
-        //  print("add to nextQueue and Queue " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
-        nextqueue = listAppend(nextColums,eqns);
-        queue = listAppend(inEqns,eqns);
-        //(nextqueue,queue) = getEqnsforIndexReductiontraverseColums(mT[r],colummarks,ass1,rc::nextColums,rc::inEqns);
       then
         getEqnsforIndexReductiontraverseRows(rest,nextqueue,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,queue);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
-      then
-        getEqnsforIndexReductiontraverseRows(rest,nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
-  end matchcontinue;
+  end match;
 end getEqnsforIndexReductiontraverseRows;
 
 protected function mergeSubsets

@@ -385,7 +385,7 @@ protected
           new_exp := match ty
             case Type.TUPLE() algorithm
               names   := list(Call_Aux.createName(sub_ty, new_iter, index, init) for sub_ty in ty.types);
-              tpl_lst := list(if ComponentRef.size(cref) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
+              tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
             then Expression.TUPLE(ty, tpl_lst);
             else algorithm
               name := Call_Aux.createName(ty, new_iter, index, init);
@@ -513,7 +513,7 @@ protected
       end for;
     elseif init then
       new_vars_init := BVariable.setFixed(new_var, false) :: new_vars_init;
-    elseif BVariable.isContinuous(new_var) then
+    elseif BVariable.isContinuous(new_var, false) then
       disc := false;
       new_vars_cont := new_var :: new_vars_cont;
     else

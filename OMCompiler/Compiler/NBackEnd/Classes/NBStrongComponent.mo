@@ -106,8 +106,8 @@ public
   record MULTI_COMPONENT
     "component for all equations that can solve for more than one variable instance
     ALGORITHM, WHEN_EQUATION, IF_EQUATION"
-    list<Pointer<Variable>> vars;
-    Pointer<Equation> eqn;
+    list<Slice<VariablePointer>> vars;
+    Slice<EquationPointer> eqn;
     Solve.Status status;
   end MULTI_COMPONENT;
 
@@ -171,10 +171,8 @@ public
       case MULTI_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Multi Strong Component (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variables:\n";
-        for var in comp.vars loop
-          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-        end for;
-        str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+        str := str + List.toString(comp.vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t", "\n\t", "");
+        str := str + "\n### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
       case SLICED_COMPONENT() algorithm
@@ -248,7 +246,7 @@ public
       then ();
 
       case MULTI_COMPONENT() algorithm
-        _ := match Pointer.access(comp.eqn)
+        _ := match Pointer.access(Slice.getT(comp.eqn))
           case Equation.ALGORITHM()       algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.WHEN_EQUATION()   algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
           case Equation.IF_EQUATION()     algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
@@ -282,7 +280,7 @@ public
   algorithm
     i := match comp
       case SINGLE_COMPONENT()   then BVariable.hash(comp.var) + Equation.hash(comp.eqn);
-      case MULTI_COMPONENT()    then Equation.hash(comp.eqn);
+      case MULTI_COMPONENT()    then Equation.hash(Slice.getT(comp.eqn));
       case SLICED_COMPONENT()   then ComponentRef.hash(comp.var_cref) + Equation.hash(Slice.getT(comp.eqn));
       case GENERIC_COMPONENT()  then Equation.hash(Slice.getT(comp.eqn));
       case ENTWINED_COMPONENT() then sum(hash(sub_comp) for sub_comp in comp.entwined_slices);
@@ -298,7 +296,7 @@ public
   algorithm
     b := match(comp1, comp2)
       case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.isEqualPtr(comp1.eqn, comp2.eqn);
-      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.isEqualPtr(Slice.getT(comp1.eqn), Slice.getT(comp2.eqn));
       case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
       case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
       case (ENTWINED_COMPONENT(), ENTWINED_COMPONENT()) then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
@@ -454,16 +452,17 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   protected
-    EquationPointer eqn = Slice.getT(eqn_slice);
+    Pointer<Equation> eqn = Slice.getT(eqn_slice);
   algorithm
     comp := match Pointer.access(eqn)
       case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
       then fail();
     end match;
   end fromSolvedEquationSlice;
@@ -476,7 +475,7 @@ public
   algorithm
     eqn := match comp
       case SINGLE_COMPONENT(status = NBSolve.Status.EXPLICIT) then comp.eqn;
-      case MULTI_COMPONENT(status = NBSolve.Status.EXPLICIT)  then comp.eqn;
+      case MULTI_COMPONENT(status = NBSolve.Status.EXPLICIT)  then Slice.getT(comp.eqn);
       case SLICED_COMPONENT(status = NBSolve.Status.EXPLICIT) then Slice.getT(comp.eqn);
       case GENERIC_COMPONENT()                                then Slice.getT(comp.eqn);
       else algorithm
@@ -528,11 +527,11 @@ public
       then ();
 
       case MULTI_COMPONENT() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
+        dependencies := Equation.collectCrefs(Pointer.access(Slice.getT(comp.eqn)), function Slice.getDependentCrefCausalized(set = set));
         dependencies := list(ComponentRef.stripIteratorSubscripts(dep) for dep in dependencies);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         for var in comp.vars loop
-          for cref in ComponentRef.scalarizeAll(BVariable.getVarName(var)) loop
+          for cref in ComponentRef.scalarizeAll(BVariable.getVarName(Slice.getT(var))) loop
             updateDependencyMap(cref, dependencies, map, jacType);
           end for;
         end for;
@@ -682,7 +681,7 @@ public
   algorithm
     vars := match comp
       case SINGLE_COMPONENT()   then {comp.var};
-      case MULTI_COMPONENT()    then comp.vars;
+      case MULTI_COMPONENT()    then list(Slice.getT(v) for v in comp.vars);
       case SLICED_COMPONENT()   then {Slice.getT(comp.var)};
       case ENTWINED_COMPONENT() then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
       case ALGEBRAIC_LOOP()     then Tearing.getResidualVars(comp.strict); // + inner?
@@ -704,7 +703,7 @@ public
   algorithm
     b := match comp
       case SINGLE_COMPONENT()   then Equation.isDiscrete(comp.eqn);
-      case MULTI_COMPONENT()    then Equation.isDiscrete(comp.eqn);
+      case MULTI_COMPONENT()    then Equation.isDiscrete(Slice.getT(comp.eqn));
       case SLICED_COMPONENT()   then Equation.isDiscrete(Slice.getT(comp.eqn));
       case ENTWINED_COMPONENT() then List.all(list(isDiscrete(c) for c in comp.entwined_slices), bool_ident);
       case GENERIC_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
@@ -768,9 +767,9 @@ public
         else
           // case 2: just create a single strong component
           comp := match Pointer.access(eqn)
-            case Equation.WHEN_EQUATION()   then MULTI_COMPONENT({var}, eqn, NBSolve.Status.UNPROCESSED);
-            case Equation.IF_EQUATION()     then MULTI_COMPONENT({var}, eqn, NBSolve.Status.UNPROCESSED);
-            case Equation.ALGORITHM()       then MULTI_COMPONENT({var}, eqn, NBSolve.Status.UNPROCESSED);
+            case Equation.WHEN_EQUATION()   then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+            case Equation.IF_EQUATION()     then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+            case Equation.ALGORITHM()       then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
                                             else SINGLE_COMPONENT(var, eqn, NBSolve.Status.UNPROCESSED);
           end match;
         end if;
@@ -802,8 +801,8 @@ public
           // getting to this point is an actual algebraic loop
           case (_, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)))
           then MULTI_COMPONENT(
-            vars    = list(Slice.getT(comp_var) for comp_var in comp_vars),
-            eqn     = Slice.getT(eqn_slice),
+            vars    = comp_vars,
+            eqn     = eqn_slice,
             status  = NBSolve.Status.UNPROCESSED
           );
 

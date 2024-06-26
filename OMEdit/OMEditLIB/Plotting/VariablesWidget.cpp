@@ -904,12 +904,12 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       bool changeAble = false;
       getVariableInformation(&matReader, variableToFind, &type, &value, &changeAble, &variability, &unit, &displayUnit, &description);
       /* set the variable type and value */
-      variableData << type <<  StringHandler::unparse(QString("\"").append(value).append("\""));
+      variableData << type << value;
       /* set the variable unit */
-      variableData << StringHandler::unparse(QString("\"").append(unit).append("\""));
+      variableData << unit;
       unit = variableData.at(VariableItemData::UNIT).toString();
       /* set the variable displayUnit */
-      variableData << StringHandler::unparse(QString("\"").append(displayUnit).append("\""));
+      variableData << displayUnit;
       /* set the variable displayUnits */
       if ((variableData.at(VariableItemData::TYPE).toString().compare(QStringLiteral("String")) != 0) && !unit.isEmpty()) {
         QStringList displayUnits, displayUnitOptions;
@@ -937,7 +937,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         variableData << QStringList();
       }
       /* set the variable description */
-      variableData << StringHandler::unparse(QString("\"").append(description).append("\""));
+      variableData << description;
       /* construct tooltip text */
       if (simulationOptions.isInteractiveSimulation()) {
         variableData << tr("Variable: %1\nVariability: %2").arg(variableToFind).arg(variability);

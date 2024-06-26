@@ -189,6 +189,7 @@ argument of an external Modelica function. Note, that the storage
 for string arrays (= pointer to string array) is still provided by the
 calling program, as for any other array. If an error occurs, this
 function does not return, but calls "ModelicaError".
+The argument is the length of the string to allocate.
 */
 
 

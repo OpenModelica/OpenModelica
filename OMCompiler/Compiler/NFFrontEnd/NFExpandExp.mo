@@ -343,7 +343,7 @@ public
       // This relies on the fact that Ceval.evalBuiltinCat doesn't actually do any
       // actual constant evaluation, and works on non-constant arrays too as long
       // as they're expanded.
-      exp := Ceval.evalBuiltinCat(listHead(args), expl, Ceval.EvalTarget.IGNORE_ERRORS());
+      exp := Ceval.evalBuiltinCat(listHead(args), expl, NFCeval.noTarget);
     else
       exp := expandGeneric(Expression.CALL(call));
     end if;

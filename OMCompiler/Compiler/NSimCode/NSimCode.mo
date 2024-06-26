@@ -265,6 +265,10 @@ public
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
       output SimCode simCode;
+    protected
+      partial function mapExp
+        input output Expression exp;
+      end mapExp;
     algorithm
       simCode := match bdae
         local
@@ -302,7 +306,7 @@ public
           Option<DaeModeData> daeModeData;
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
-
+          mapExp collect_literals;
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
@@ -310,8 +314,8 @@ public
             funcTree := BackendDAE.getFunctionTree(bdae);
 
             // get and replace all literals
-            _ := EqData.mapExp(eqData, function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            funcTree := FunctionTreeImpl.mapExp(funcTree, function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            collect_literals := function Expression.map(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            funcTree := FunctionTreeImpl.mapExp(funcTree, collect_literals);
             literals := UnorderedMap.keyList(literals_map);
 
             // create sim vars before everything else
@@ -369,6 +373,10 @@ public
                 allSim := listAppend(no_ret, allSim);
               end if;
             end if;
+
+            // add all entwined equations to all sim
+            allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
+            init := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in init)), init);
 
             // ToDo add event system
             inlineEquations := {};
@@ -580,6 +588,7 @@ public
     record MODEL_INFO
       Absyn.Path name;
       String description;
+      String version;
       String directory;
       SimVars vars;
       VarInfo varInfo;
@@ -618,7 +627,7 @@ public
       VarInfo info;
     algorithm
       info := VarInfo.create(vars, eventInfo, simCodeIndices);
-      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
+      modelInfo := MODEL_INFO(name, "", "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
 
     function setSeedVars
@@ -648,6 +657,7 @@ public
       oldModelInfo := OldSimCode.MODELINFO(
         name                            = modelInfo.name,
         description                     = modelInfo.description,
+        version                         = modelInfo.version,
         directory                       = modelInfo.directory,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
         vars                            = SimVar.SimVars.convert(modelInfo.vars),

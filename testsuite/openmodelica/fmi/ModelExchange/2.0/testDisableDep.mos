@@ -52,6 +52,7 @@ readFile("modelDescription.tmp.xml");
 //   fmiVersion=\"2.0\"
 //   modelName=\"testDID\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange

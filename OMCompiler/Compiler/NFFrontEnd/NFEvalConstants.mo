@@ -128,7 +128,7 @@ algorithm
         if InstContext.inRelaxed(context) then
           eexp := Ceval.tryEvalExp(eexp);
         else
-          eexp := Ceval.evalExp(eexp, Ceval.EvalTarget.ATTRIBUTE(binding));
+          eexp := Ceval.evalExp(eexp, Ceval.EvalTarget.new(info, context));
         end if;
       end if;
 
@@ -204,7 +204,7 @@ algorithm
         if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER and
            not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
-          outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
+          outExp := Ceval.evalCref(cref, outExp, NFCeval.noTarget, evalSubscripts = false);
           outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
           outChanged := true;
         elseif outChanged then
@@ -607,7 +607,7 @@ algorithm
         if evaluateAll or not isLocalFunctionVariable(e.cref, fnNode) then
           ErrorExt.setCheckpoint(getInstanceName());
           try
-            outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
+            outExp := Ceval.evalCref(e.cref, e, NFCeval.noTarget, evalSubscripts = false);
           else
             outExp := e;
           end try;
