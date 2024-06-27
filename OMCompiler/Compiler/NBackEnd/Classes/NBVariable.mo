@@ -571,6 +571,91 @@ public
     end match;
   end setVariableAttributes;
 
+  function setMin
+    input output Variable var;
+    input Option<Expression> min_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setMin(variableAttributes, min_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setMin;
+
+  function setMax
+    input output Variable var;
+    input Option<Expression> max_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setMax(variableAttributes, max_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setMax;
+
+  function setStartAttribute
+    input output Variable var;
+    input Expression start_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(variableAttributes, start_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setStartAttribute;
+
+  function setStateSelect
+    input output Variable var;
+    input BackendExtension.StateSelect stateSelect_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setStateSelect(variableAttributes, stateSelect_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setStateSelect;
+
+  function setTearingSelect
+    input output Variable var;
+    input BackendExtension.TearingSelect tearingSelect_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setTearingSelect(variableAttributes, tearingSelect_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setTearingSelect;
+
   function setVarKind
     "use with caution: some variable kinds have extra information that needs to be correct"
     input output Pointer<Variable> varPointer;
@@ -1167,6 +1252,7 @@ public
   function setFixed
     input output Pointer<Variable> var_ptr;
     input Boolean b = true;
+    input Boolean overwrite = false;
   protected
     Variable var;
   algorithm
@@ -1176,7 +1262,7 @@ public
         BackendExtension.BackendInfo binfo;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b);
+        binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b, overwrite);
         var.backendinfo := binfo;
       then var;
 
