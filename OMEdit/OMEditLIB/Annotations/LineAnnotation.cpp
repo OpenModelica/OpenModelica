@@ -2631,7 +2631,7 @@ void CreateConnectionDialog::createConnection()
       mpGraphicsView->getModelWidget()->updateModelText();
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
       reject();
     }
   } else {
@@ -2729,7 +2729,7 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
 {
   if (mpConditionTextBox->text().isEmpty()) {
     QMessageBox::critical(mpGraphicsView, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INVALID_TRANSITION_CONDITION), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::INVALID_TRANSITION_CONDITION), QMessageBox::Ok);
     mpConditionTextBox->setFocus(Qt::ActiveWindowFocusReason);
     return;
   }

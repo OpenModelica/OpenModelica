@@ -1605,7 +1605,7 @@ QStringList StringHandler::makeVariablePartsWithInd(QString variable)
 
   if (!varParts.isEmpty()) {
 	  QString* lastStr = &(varParts.last());
-	  int i = lastStr->lastIndexOf(QRegExp("\\[\\d+\\]"));
+	  int i = lastStr->lastIndexOf(QRegularExpression("\\[\\d+\\]"));
 	  if(i>=0){
 		  QString indexPart = *lastStr;
 		  indexPart.remove(0,i);

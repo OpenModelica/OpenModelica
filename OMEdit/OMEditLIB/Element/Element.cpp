@@ -3937,7 +3937,7 @@ void Element::showParameters()
     if (!mpLibraryTreeItem || mpLibraryTreeItem->isNonExisting()) {
       QMessageBox::critical(pMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
                             tr("Cannot show parameters window for component <b>%1</b>. Did not find type <b>%2</b>.").arg(getName())
-                            .arg(mpElementInfo->getClassName()), Helper::ok);
+                            .arg(mpElementInfo->getClassName()), QMessageBox::Ok);
       return;
     }
     pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpLibraryTreeItem->getNameStructure()).arg(getName()));

@@ -126,9 +126,15 @@ MainWindow::MainWindow(QWidget *parent)
    * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
    * DebuggerConfiguration section respectively from the settings file.
    */
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  qRegisterMetaType<RecentFile>("RecentFile");
+  qRegisterMetaType<FindTextOM>("FindTextOM");
+  qRegisterMetaType<DebuggerConfiguration>("DebuggerConfiguration");
+#else // #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
+#endif // #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
@@ -429,10 +435,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
-    restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !MessagesWidget::instance()->getAllMessageWidget()->getMessagesTextBrowser()->toPlainText().isEmpty();
     mRestoringState = true;
+    /* With qt6 we need to call restoreState before restoreGeometry otherwise OMEdit crash on startup.
+     * Don't know why this is happening.
+     * The example in Qt docs calls restoreGeometry first.
+     */
     restoreState(pSettings->value("application/windowState").toByteArray());
+    restoreGeometry(pSettings->value("application/geometry").toByteArray());
     mRestoringState = false;
     pSettings->beginGroup("algorithmicDebugger");
     /* restore stackframes list and locals columns width */
@@ -1245,7 +1255,7 @@ void showEncryptionSupportMessage()
                                    " For that, you need a special version of OpenModelica that is only released in binary form;"
                                    " please contact your library supplier for information on how to get it.<br /><br />"
                                    "Read more about <u><a href=\"https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/encryption.html\">OpenModelica Encryption</a></u>.")
-                           .arg(Helper::OpenModelicaUsersGuideVersion), Helper::ok);
+                           .arg(Helper::OpenModelicaUsersGuideVersion), QMessageBox::Ok);
 }
 #endif // OM_ENABLE_ENCRYPTION
 
@@ -1483,7 +1493,11 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   QFile omnotebookFile(omnotebookFileName);
   omnotebookFile.open(QIODevice::WriteOnly);
   QTextStream textStream(&omnotebookFile);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  textStream.setEncoding(QStringConverter::Utf8);
+#else
   textStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
   textStream.setGenerateByteOrderMark(false);
   textStream << xmlDocument.toString();
   omnotebookFile.close();
@@ -2897,7 +2911,7 @@ void MainWindow::importModelfromOMNotebook()
   if (!file.open(QIODevice::ReadOnly))
   {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName).arg(file.errorString()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName).arg(file.errorString()), QMessageBox::Ok);
     hideProgressBar();
     return;
   }
@@ -2906,7 +2920,7 @@ void MainWindow::importModelfromOMNotebook()
   QDomDocument xmlDocument;
   if (!xmlDocument.setContent(&file))
   {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error reading the xml file"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error reading the xml file"), QMessageBox::Ok);
     hideProgressBar();
     return;
   }
@@ -3006,7 +3020,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
     pGraphicsView->mSkipBackground = oldSkipDrawBackground;
     if (!fileName.endsWith(".svg") && !copyToClipboard) {
       if (!modelImage.save(fileName)) {
-        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error saving the image file"), Helper::ok);
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error saving the image file"), QMessageBox::Ok);
       }
     } else if (copyToClipboard) {
       QClipboard *pClipboard = QApplication::clipboard();
@@ -3154,7 +3168,7 @@ void MainWindow::runOMSensPlugin()
     ModelInterface *pModelInterface = qobject_cast<ModelInterface*>(mpOMSensPlugin);
     pModelInterface->analyzeModel(pModelWidget->toOMSensData());
   } else {
-    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Please open a model before starting the OMSens plugin."), Helper::ok);
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Please open a model before starting the OMSens plugin."), QMessageBox::Ok);
   }
 #endif
 }
@@ -3546,7 +3560,7 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg("interfaceData.xml")
-                          .arg(file.errorString()), Helper::ok);
+                          .arg(file.errorString()), QMessageBox::Ok);
   } else {
     QDomDocument modelDataDocument;
     modelDataDocument.setContent(&file);

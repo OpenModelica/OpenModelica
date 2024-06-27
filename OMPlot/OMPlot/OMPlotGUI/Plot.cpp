@@ -40,6 +40,8 @@
 #endif
 #include "qwt_text_label.h"
 
+#include <QtMath>
+
 namespace OMPlot{
 
 Plot::Plot(PlotWindow *pParent)

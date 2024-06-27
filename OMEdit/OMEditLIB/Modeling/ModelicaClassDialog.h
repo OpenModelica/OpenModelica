@@ -46,8 +46,10 @@
 #include <QTableWidget>
 #include <QPlainTextEdit>
 #include <QListWidget>
+#include <QRegExp>
 #include <QToolButton>
 #include <QTreeWidget>
+#include <QTextCodec>
 
 class Label;
 class LibraryWidget;
@@ -71,6 +73,9 @@ private:
   QDialogButtonBox *mpButtonBox;
 
   void findAndSelectLibraryTreeItem(const QRegExp &regExp);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  void findAndSelectLibraryTreeItem(const QRegularExpression &regExp);
+#endif
 private slots:
   void searchClasses();
   void useModelicaClass();
@@ -103,7 +108,7 @@ private:
 private slots:
   void browseExtendsClass();
   void browseParentClass();
-  void showHideSaveContentsInOneFileCheckBox(QString text);
+  void showHideSaveContentsInOneFileCheckBox(int index);
   void createModelicaClass();
 };
 

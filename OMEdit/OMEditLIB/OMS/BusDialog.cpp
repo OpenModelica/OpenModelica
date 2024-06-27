@@ -515,7 +515,7 @@ void AddBusDialog::addBus()
 {
   if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Bus")), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Bus")), QMessageBox::Ok);
     return;
   }
 
@@ -817,7 +817,7 @@ void AddTLMBusDialog::addTLMBus()
 {
   if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("TLM Bus")), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("TLM Bus")), QMessageBox::Ok);
     return;
   }
 
@@ -1792,22 +1792,22 @@ TLMConnectionDialog::TLMConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
 void TLMConnectionDialog::addTLMConnection()
 {
   if (mpDelayTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Delay")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Delay")), QMessageBox::Ok);
     return;
   }
 
   if (mpAlphaTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Alpha")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Alpha")), QMessageBox::Ok);
     return;
   }
 
   if (mpLinearImpedanceTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Linear Impedance")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Linear Impedance")), QMessageBox::Ok);
     return;
   }
 
   if (mpAngularImpedanceTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Angular Impedance")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Angular Impedance")), QMessageBox::Ok);
     return;
   }
 

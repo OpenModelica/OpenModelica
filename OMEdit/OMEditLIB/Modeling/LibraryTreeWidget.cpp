@@ -439,7 +439,7 @@ QString LibraryTreeItem::getTooltip() const {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg("TLM Bus")
-                .arg("Domain").arg(QString(mpOMSTLMBusConnector->domain))
+                .arg("Domain").arg(QString::number(mpOMSTLMBusConnector->domain))
                 .arg("Dimensions").arg(QString::number(mpOMSTLMBusConnector->dimensions))
                 .arg("Interpolation").arg(OMSProxy::getInterpolationString(mpOMSTLMBusConnector->interpolation));
     }
@@ -1205,7 +1205,11 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (hide) {
       return false;
     } else {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      return pLibraryTreeItem->getNameStructure().contains(filterRegularExpression());
+#else
       return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
+#endif
     }
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
@@ -1394,6 +1398,26 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
   }
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  if (regExp.indexIn(pLibraryTreeItem->getNameStructure()) > 0) {
+#else
+  if (pLibraryTreeItem->getNameStructure().contains(regExp)) {
+#endif
+    return pLibraryTreeItem;
+  }
+  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
+    if (LibraryTreeItem *item = findLibraryTreeItem(regExp, pLibraryTreeItem->childAt(i))) {
+      return item;
+    }
+  }
+  return 0;
+}
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegularExpression &regExp, LibraryTreeItem *pLibraryTreeItem) const
+{
+  if (!pLibraryTreeItem) {
+    pLibraryTreeItem = mpRootLibraryTreeItem;
+  }
   if (pLibraryTreeItem->getNameStructure().contains(regExp)) {
     return pLibraryTreeItem;
   }
@@ -1404,6 +1428,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
   }
   return 0;
 }
+#endif
 
 /*!
  * \brief LibraryTreeModel::findLibraryTreeItemOneLevel
@@ -1970,7 +1995,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
   } else {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(MainWindow::instance()->getOMCProxy()->getResult())
-                          .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
+                          .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
     return false;
   }
 }
@@ -2190,7 +2215,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
   } else {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(MainWindow::instance()->getOMCProxy()->getResult())
-                          .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
+                          .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
     return false;
   }
 }
@@ -2620,7 +2645,7 @@ QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *
     if (!file.open(QIODevice::ReadOnly)) {
       QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                             GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-                            .arg(file.errorString()), Helper::ok);
+                            .arg(file.errorString()), QMessageBox::Ok);
     } else {
       contents = QString(file.readAll());
       file.close();
@@ -4196,7 +4221,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   if (checkFileExists) {
     if (!fileInfo.exists()) {
       QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
+                               GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
       QSettings *pSettings = Utilities::getApplicationSettings();
       QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
       // remove the RecentFile instance from the list.
@@ -4565,7 +4590,7 @@ bool LibraryWidget::parseCompositeModelFile(QFileInfo fileInfo, QString *pCompos
   if (!file.open(QIODevice::ReadOnly)) {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileInfo.absoluteFilePath()).arg(file.errorString()),
-                          Helper::ok);
+                          QMessageBox::Ok);
     return false;
   } else {
     contents = QString(file.readAll());
@@ -4586,7 +4611,7 @@ bool LibraryWidget::parseCompositeModelFile(QFileInfo fileInfo, QString *pCompos
       QDomDocument xmlDocument;
       if (!xmlDocument.setContent(&file)) {
         QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                              tr("Error reading the xml file"), Helper::ok);
+                              tr("Error reading the xml file"), QMessageBox::Ok);
       }
       // read the file
       QDomNodeList nodes = xmlDocument.elementsByTagName("Model");
@@ -4616,7 +4641,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
   if (classNames.size() > 1) {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg("").arg(classNames.join(",")),
-                          Helper::ok);
+                          QMessageBox::Ok);
     return;
   }
   QString className = classNames.at(0);
@@ -4708,7 +4733,11 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     // set to UTF-8
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    textStream.setEncoding(QStringConverter::Utf8);
+#else
     textStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     textStream.setGenerateByteOrderMark(bom);
     textStream << newContents;
     file.close();
@@ -4757,7 +4786,7 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     }
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
+                             .arg(tr("Unable to save the file, unknown library type.")), QMessageBox::Ok);
     result = false;
   }
   /* Ticket #4788. Add the file to the recent files list. */
@@ -4791,7 +4820,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   }
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
     if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("It is not possible to save as a Modelica package saved in a directory hierarchy Mapping."), Helper::ok);
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("It is not possible to save as a Modelica package saved in a directory hierarchy Mapping."), QMessageBox::Ok);
     } else {
       saveModelicaLibraryTreeItem(pLibraryTreeItem, true);
     }
@@ -4807,7 +4836,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     saveTextLibraryTreeItem(pLibraryTreeItem, true);
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
+                             .arg(tr("Unable to save the file, unknown library type.")), QMessageBox::Ok);
   }
 }
 
@@ -5535,8 +5564,13 @@ void LibraryWidget::scrollToActiveLibraryTreeItem()
 void LibraryWidget::searchClasses()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
+  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+#else
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   QRegExp regExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
+#endif
 }

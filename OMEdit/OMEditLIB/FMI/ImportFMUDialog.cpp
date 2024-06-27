@@ -154,7 +154,7 @@ void ImportFMUDialog::importFMU()
 {
   if (mpFmuFileTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU File")), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU File")), QMessageBox::Ok);
     return;
   }
   /* ticket:4959 Create a unique folder for each FMU

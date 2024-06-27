@@ -7,7 +7,7 @@ buildbin=$(OMBUILDDIR)/bin
 buildlib=$(OMBUILDDIR)/lib/omc
 
 omplot: mkbuilddirs qwt
-	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 	cp -puf ../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
 
 $(buildlib)/libomqwt.a: mkbuilddirs qwt-build
@@ -15,7 +15,7 @@ $(buildlib)/libomqwt.a: mkbuilddirs qwt-build
 qwt: $(buildlib)/libomqwt.a
 
 qwt-build: mkbuilddirs
-	$(MAKE) -C qwt -f Makefile.omdev.mingw
+	$(MAKE) -C qwt -f Makefile.omdev.mingw OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 mkbuilddirs:
 	mkdir -p $(builddir_inc)/omplot/qwt

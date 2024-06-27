@@ -33,6 +33,7 @@
  */
 
 #include "LinearScaleEngine.h"
+#include "qwt_interval.h"
 
 using namespace OMPlot;
 

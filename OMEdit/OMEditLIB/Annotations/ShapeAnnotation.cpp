@@ -700,7 +700,7 @@ void ShapeAnnotation::applyTransformation()
     const qreal y = Utilities::mapToCoOrdinateSystem(scenePos().y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y());
     QTransform finalTransform(scaledTransform.m11(), scaledTransform.m12(), scaledTransform.m13(),
                               scaledTransform.m21(), scaledTransform.m22(), scaledTransform.m23(),
-                              x, y);
+                              x, y, 1.0);
     setTransform(finalTransform);
   }
   updateCornerItems();
