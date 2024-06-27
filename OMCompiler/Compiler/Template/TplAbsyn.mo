@@ -395,6 +395,13 @@ uniontype MMExp
   record MM_MATCH
     list<MMMatchCase> matchCases;
   end MM_MATCH;
+
+  record MM_FOR_LOOP
+    Ident idxName;
+    Ident arrName;
+    Ident eltName;
+    list<MMExp> statements;
+  end MM_FOR_LOOP;
 end MMExp;
 
 public type MMMatchCase = tuple<list<MatchingExp>, list<MMExp>>;
@@ -417,6 +424,7 @@ constant Ident textToStringNamePrefix = "str_";
 
 constant Ident matchFunPrefix = "fun_";
 constant Ident listMapFunPrefix = "lm_";
+constant Ident arrayMapFunPrefix = "am_";
 constant Ident scalarMapFunPrefix = "smf_";
 
 //constant Ident implicitTxtInArgName = "inTxt";
@@ -2567,7 +2575,7 @@ algorithm
       MMExp stmt, argmmexp, mmRecCall;
       TypeSignature argtype, oftype;
       ScopeEnv scEnv;
-      Ident intxt, outtxt, fname,   idxName, freshIdxName;
+      Ident intxt, outtxt, fname,   idxName, freshIdxName, arrName, eltName;
       TypedIdents locals,  localArgs, encodedExtargs, maplocals, caseLocals,   iargs, oargs;
       MapContext mapctx;
       TemplPackage tplPackage;
@@ -2698,6 +2706,83 @@ algorithm
           = statementsFromMapExp(false, restargs, mapctx, stmt::stmts, intxt, outtxt, locals, scEnv, tplPackage, mmFun :: accMMDecls);
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
+    //Array map - elaborate the array-mapping function
+    case ( isfirst, (argtomap as (_,argtype,_)) :: restargs,
+             MAP_CONTEXT(ofBinding = ofbind,
+                         mapExp = mapexp as (_,sinfo),
+                         iterMMExpOptions = iopts,
+                         hasIndexIdentOpt = hasIndexIdentOpt,
+                         useIter = useiter),
+           stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
+      equation
+        ARRAY_TYPE(ofType = oftype) = deAliasedType(argtype, astDefs);
+
+        ofbindEnc = typeCheckMatchingExp(ofbind, oftype, astDefs);
+        //ofbindEnc = encodeMatchingExp(ofbindEnc);
+        idxName = Util.getOptionOrDefault(hasIndexIdentOpt, impossibleIdent);
+        freshIdxName = indexNamePrefix + idxName;// + "_" + intString(listLength(locals));
+
+        //i0ti = ("i_i0",INTEGER_TYPE());
+        //i1ti = ("i_i1",INTEGER_TYPE());
+        //elaborate statemennts and gather extra arguments and usage of i0 and i1
+        (mapstmts, maplocals, scEnv, accMMDecls, _)
+          = statementsFromExp(mapexp,{}, {}, imlicitTxt, imlicitTxt, {},
+              LET_SCOPE(idxName, INTEGER_TYPE(), freshIdxName, false)
+              :: CASE_SCOPE(ofbindEnc, oftype, {}, {}, {}, impossibleIdent, true)
+              :: FUN_SCOPE({},{})
+              :: scEnv,
+              tplPackage, accMMDecls);
+        (LET_SCOPE(_, _, _, isUsed)
+         :: CASE_SCOPE(mexp, _, localNames, caseLocals, encodedExtargs, _, _)
+         :: FUN_SCOPE(_,localArgs)
+         :: scEnv) = scEnv; //releaseImmediateLocalScope(scEnv);
+
+        (mexp,_) = rewriteMatchExpByLocalNames(mexp, oftype, localNames,{}, astDefs);
+        maplocals = listAppend(caseLocals, maplocals);
+
+        //put nextIter() if needed
+        useiter = shouldUseIterFunctions(isfirst, useiter, true, isUsed, iopts, restargs);
+        //add nextIter() if needed
+        stmt = tplStatement("nextIter", {}, imlicitTxt, imlicitTxt);
+        mapstmts = if useiter then stmt :: mapstmts else mapstmts;
+        //(mapstmts,_) = addNextIter(useiter, mapstmts, imlicitTxt, imlicitTxt);
+
+        //create a new array-map function
+        fname = arrayMapFunPrefix + intString(listLength(accMMDecls));
+        iargs = imlicitTxtArg :: ("items",argtype) :: encodedExtargs;
+        assignedIdents = getAssignedIdents(mapstmts, {});
+        //oargs = List.filterOnTrue(extargs, isText);
+        oargs = List.filter1OnTrue(encodedExtargs, isAssignedText, assignedIdents);
+        oargs = imlicitTxtArg :: oargs;
+        mapstmts = listReverse(mapstmts);
+        //add indexed value if needed
+        (mapstmts, maplocals)
+          = addGetIndex(isUsed, freshIdxName, mapstmts, imlicitTxt, maplocals);
+
+        //assume the array element is the first identifier in case locals
+        idxName = "i";
+        arrName = "items";
+        (eltName, _) :: _ = caseLocals;
+
+        mapctx = MAP_CONTEXT(ofbind, mapexp, iopts, hasIndexIdentOpt, useiter);
+
+        // make fun
+        mmFun = MM_FUN(false,fname, iargs, oargs, maplocals,
+                        { MM_FOR_LOOP( idxName, arrName, eltName, mapstmts ) },
+                        GI_MAP_FUN(argtype, mapctx)
+                );
+
+        //add pushIter() if it is the first element of MAP_ARG_LIST (like <[exp1,exp2,...] : mapexp> ) or a simple one (list)exp to be mapped (like <exp of mexp: mapexp>)
+        (stmts, intxt) = addPushIter((isfirst and useiter), iopts, stmts, intxt, outtxt);
+        extargvals = List.map(localArgs, makeMMArgValue);
+        //call the elaborated function
+        (_, stmt, _, _, locals, intxt)
+          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage, sinfo);
+
+        (stmts, locals, scEnv, accMMDecls, intxt)
+          = statementsFromMapExp(false, restargs, mapctx, stmt::stmts, intxt, outtxt, locals, scEnv, tplPackage, mmFun :: accMMDecls);
+      then ( stmts, locals, scEnv, accMMDecls, intxt);
+
     //scalar map - <argtomap of ofbind: mapexp; iopts>
     //TODO: try to inline or eliminate this at all ... design problems with mixed list/scalar arguments in { }, i.e. MAP_ARG_LIST
     case ( isfirst, (argtomap as (_,argtype,_)) :: restargs,
@@ -2709,6 +2794,7 @@ algorithm
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         failure(LIST_TYPE() = deAliasedType(argtype, astDefs));
+        failure(ARRAY_TYPE() = deAliasedType(argtype, astDefs));
 
         ofbindEnc = typeCheckMatchingExp(ofbind, argtype, astDefs);
         //ofbindEnc = encodeMatchingExp(ofbindEnc);
@@ -2789,6 +2875,31 @@ algorithm
         fail();
   end matchcontinue;
 end statementsFromMapExp;
+
+public function intersectInOutArgs
+  input TypedIdents inList1;
+  input TypedIdents inList2;
+  output tuple<TypedIdents, TypedIdents, TypedIdents> outIntersectionAndRests;
+  function areTypedIdentsEqual
+    input tuple<Ident, TypeSignature> inTypedIdent1;
+    input tuple<Ident, TypeSignature> inTypedIdent2;
+    output Boolean equal;
+  protected
+    Ident ident1;
+    Ident ident2;
+  algorithm
+    (ident1, _) := inTypedIdent1;
+    (ident2, _) := inTypedIdent2;
+    equal := stringEq(ident1, ident2);
+  end areTypedIdentsEqual;
+protected
+  TypedIdents outIntersection;
+  TypedIdents outList1Rest;
+  TypedIdents outList2Rest;
+algorithm
+  (outIntersection, outList1Rest, outList2Rest) := List.intersection1OnTrue(inList1, inList2, areTypedIdentsEqual);
+  outIntersectionAndRests := (outIntersection, outList1Rest, outList2Rest);
+end intersectInOutArgs;
 
 /*
 function isIndexArg
