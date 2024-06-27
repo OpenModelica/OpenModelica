@@ -63,7 +63,7 @@ typedef int rtclock_t;
 static inline void rt_ext_tp_tick(rtclock_t* tick_tp) {}
 static inline double rt_ext_tp_tock(rtclock_t* tick_tp) {return 0.0;}
 static inline void rt_tick(int ix) {}
-static inline void rt_accumulate(int ix) {}
+static inline double rt_accumulate(int ix) {return 0.0;}
 static inline void rt_clear(int ix) {}
 static inline double rt_tock(int ix) {return 0.0;}
 

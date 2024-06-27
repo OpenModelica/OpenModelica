@@ -718,14 +718,14 @@ public function getuid
 end getuid;
 
 public function realtimeTick
-"Tock returns the time since the last tock; undefined if tick was never called.
+"Store current time in timer.
 The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   external "C" System_realtimeTick(clockIndex) annotation(Library = "omcruntime");
 end realtimeTick;
 
 public function realtimeTock
-"Tock returns the time since the last tock, undefined if tick was never called.
+"Tock returns the time since the last tick, undefined if tick was never called.
 The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   output Real outTime;
