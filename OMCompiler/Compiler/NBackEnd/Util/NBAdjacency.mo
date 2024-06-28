@@ -1680,7 +1680,7 @@ public
       case Expression.ARRAY(literal = false) algorithm
         for i in 1:arrayLength(exp.elements) loop
           set1 := collectDependencies(exp.elements[i], depth + 1, map, dep_map, sol_map, rep_set);
-          Dependency.skipList(UnorderedSet.toList(set1), depth, i, dep_map);
+          Dependency.skipList(UnorderedSet.toList(set1), depth + 1, i, dep_map);
           sets := set1 :: sets;
         end for;
       then UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
@@ -1690,7 +1690,7 @@ public
         ind := 1;
         for elem in exp.elements loop
           set1 := collectDependencies(elem, depth + 1, map, dep_map, sol_map, rep_set);
-          Dependency.skipList(UnorderedSet.toList(set1), depth, ind, dep_map);
+          Dependency.skipList(UnorderedSet.toList(set1), depth + 1, ind, dep_map);
           sets := set1 :: sets;
           ind := ind + 1;
         end for;
@@ -1702,7 +1702,7 @@ public
         ind := 1;
         for elem in exp.elements loop
           set1 := collectDependencies(elem, depth + 1, map, dep_map, sol_map, rep_set);
-          Dependency.skipList(UnorderedSet.toList(set1), depth, ind, dep_map);
+          Dependency.skipList(UnorderedSet.toList(set1), depth + 1, ind, dep_map);
           sets := set1 :: sets;
           ind := ind + 1;
         end for;
@@ -1832,7 +1832,7 @@ public
         addRepetitions(set, rep_set);
         // if the return type has to be skipped - add empty skip
         if Type.isTuple(call.ty) then
-          Dependency.skipList(UnorderedSet.toList(set), depth, 0, dep_map);
+          Dependency.skipList(UnorderedSet.toList(set), depth + 1, 0, dep_map);
         end if;
       then set;
 
@@ -1880,9 +1880,9 @@ public
         // add original subscripts
         crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
         // collect dependencies
-        crefs := List.flatten(list(collectDependenciesCref(child, depth, map, dep_map, sol_map) for child in crefs));
+        crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
         for cref in crefs loop
-          Dependency.skip(cref, depth, sk, dep_map);
+          Dependency.skip(cref, depth + 1, sk, dep_map);
           sk := sk + 1;
         end for;
       else
