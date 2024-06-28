@@ -43,7 +43,7 @@ public
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendDAE = NBackendDAE;
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.VariableAttributes;
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
@@ -1800,7 +1800,7 @@ public
         case qual as Binding.UNTYPED_BINDING()  then qual.bindingExp;
         case qual as Binding.FLAT_BINDING()     then qual.bindingExp;
         case qual as Binding.UNBOUND() algorithm
-          start := BackendExtension.VariableAttributes.getStartAttribute(var.backendinfo.attributes);
+          start := VariableAttributes.getStartAttribute(var.backendinfo.attributes);
         then Util.getOptionOrDefault(start, Expression.makeZero(ComponentRef.getSubscriptedType(var.name, true)));
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toDebugString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});

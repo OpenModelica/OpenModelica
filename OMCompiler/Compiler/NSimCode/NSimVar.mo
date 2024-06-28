@@ -40,7 +40,7 @@ protected
   import SCode;
 
   // NF imports
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
   import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -77,7 +77,7 @@ public
   uniontype SimVar "Information about a variable in a Modelica model."
     record SIMVAR
       ComponentRef name;
-      BackendExtension.VariableKind varKind;
+      VariableKind varKind;
       String comment;
       String unit;
       String displayUnit;
@@ -111,7 +111,7 @@ public
       input SimVar var;
       input output String str = "";
     algorithm
-      str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind)
+      str := str + "(" + intString(var.index) + ")" + VariableKind.toString(var.varKind)
         + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
       if Util.isSome(var.start) then
         str := str + " = " + Expression.toString(Util.getOption(var.start));
@@ -144,7 +144,7 @@ public
     algorithm
       simVar := match var
         local
-          BackendExtension.VariableKind varKind;
+          VariableKind varKind;
           String comment, unit, displayUnit;
           Option<Expression> min;
           Option<Expression> max;
@@ -334,8 +334,8 @@ public
 
   protected
     function parseAttributes
-      input BackendExtension.BackendInfo backendInfo;
-      output BackendExtension.VariableKind varKind;
+      input BackendInfo backendInfo;
+      output VariableKind varKind;
       output String unit = "";
       output String displayUnit = "";
       output Option<Expression> min = NONE();
@@ -348,9 +348,9 @@ public
     algorithm
       () := match backendInfo
         local
-          BackendExtension.VariableAttributes varAttr;
+          VariableAttributes varAttr;
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_REAL())
+        case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_REAL())
           algorithm
             unit := Util.applyOptionOrDefault(varAttr.unit, Expression.stringValue, "");
             displayUnit := Util.applyOptionOrDefault(varAttr.displayUnit, Expression.stringValue, "");
@@ -360,18 +360,18 @@ public
             nominal := varAttr.nominal;
             isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
             isDiscrete := match varKind
-              case BackendExtension.DISCRETE()        then true;
-              case BackendExtension.DISCRETE_STATE()  then true;
-              case BackendExtension.PREVIOUS()        then true;
-              case BackendExtension.PARAMETER()       then true;
-              case BackendExtension.CONSTANT()        then true;
-              case BackendExtension.START()           then true;
-                                                      else false;
+              case VariableKind.DISCRETE()        then true;
+              case VariableKind.DISCRETE_STATE()  then true;
+              case VariableKind.PREVIOUS()        then true;
+              case VariableKind.PARAMETER()       then true;
+              case VariableKind.CONSTANT()        then true;
+              case VariableKind.START()           then true;
+                                                  else false;
             end match;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_INT())
+        case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_INT())
           algorithm
             min := varAttr.min;
             max := varAttr.max;
@@ -381,7 +381,7 @@ public
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_BOOL())
+        case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_BOOL())
           algorithm
             start := varAttr.start;
             isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
@@ -389,13 +389,13 @@ public
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_CLOCK())
+        case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_CLOCK())
           algorithm
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_STRING())
+        case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_STRING())
           algorithm
             start := varAttr.start;
             isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
@@ -403,7 +403,7 @@ public
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_ENUMERATION())
+        case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_ENUMERATION())
           algorithm
             min := varAttr.min;
             max := varAttr.max;
@@ -415,7 +415,7 @@ public
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the BackendInfo could not be parsed:\n"
-            + BackendExtension.BackendInfo.toString(backendInfo)});
+            + BackendInfo.toString(backendInfo)});
         then fail();
       end match;
     end parseAttributes;
@@ -445,16 +445,16 @@ public
 
         // 1. parameter with constant binding -> start value is updated to the binding value. Value can be changed after sim
         case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
-          backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+          backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
         then (SOME(bindingExp), true, Causality.PARAMETER);
 
         // 2. just like 1. - FLAT_BINDING gets introduced by expanding/scalarizing
         case Variable.VARIABLE(binding = Binding.FLAT_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
-          backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+          backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
         then (SOME(bindingExp), true, Causality.PARAMETER);
 
         // 3. parameter with non constant binding -> normal start value. Value cannot be changed after simulation
-        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+        case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
         then (start, false, Causality.CALCULATED_PARAMETER);
 
         // 0. other variables -> regular start value and it can be changed after simulation
@@ -469,7 +469,7 @@ public
     function convertVarKind
       "Usually this function would belong to NFBackendExtension, but we want to
       avoid Frontend -> Backend dependency."
-      input BackendExtension.VariableKind varKind;
+      input VariableKind varKind;
       output OldBackendDAE.VarKind oldVarKind;
     algorithm
       oldVarKind := match varKind
@@ -478,8 +478,8 @@ public
           Option<DAE.ComponentRef> oldCrefOpt;
           DAE.ComponentRef oldCref;
 
-        case BackendExtension.ALGEBRAIC()               then OldBackendDAE.VARIABLE();
-        case BackendExtension.STATE()
+        case VariableKind.ALGEBRAIC()               then OldBackendDAE.VARIABLE();
+        case VariableKind.STATE()
           algorithm
             if isSome(varKind.derivative) then
               var := Pointer.access(Util.getOption(varKind.derivative));
@@ -488,40 +488,40 @@ public
               oldCrefOpt := NONE();
             end if;
         then OldBackendDAE.STATE(varKind.index, oldCrefOpt, varKind.natural);
-        case BackendExtension.STATE_DER()               then OldBackendDAE.STATE_DER();
-        case BackendExtension.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
-        case BackendExtension.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
-        case BackendExtension.DISCRETE()                then OldBackendDAE.DISCRETE();
-        case BackendExtension.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we dont differ between discrete states and discretes in the old backend. is this correct?
-        case BackendExtension.PREVIOUS()                then OldBackendDAE.DISCRETE();
-        case BackendExtension.PARAMETER()               then OldBackendDAE.PARAM();
-        case BackendExtension.CONSTANT()                then OldBackendDAE.CONST();
+        case VariableKind.STATE_DER()               then OldBackendDAE.STATE_DER();
+        case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
+        case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
+        case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
+        case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we dont differ between discrete states and discretes in the old backend. is this correct?
+        case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();
+        case VariableKind.PARAMETER()               then OldBackendDAE.PARAM();
+        case VariableKind.CONSTANT()                then OldBackendDAE.CONST();
         //ToDo: check this! is this correct? need typechecking?
-        case BackendExtension.START()                   then OldBackendDAE.VARIABLE();
-        case BackendExtension.EXTOBJ()                  then OldBackendDAE.EXTOBJ(varKind.fullClassName);
-        case BackendExtension.JAC_VAR()                 then OldBackendDAE.JAC_VAR();
-        case BackendExtension.JAC_TMP_VAR()             then OldBackendDAE.JAC_TMP_VAR();
-        case BackendExtension.SEED_VAR()                then OldBackendDAE.SEED_VAR();
-        case BackendExtension.OPT_CONSTR()              then OldBackendDAE.OPT_CONSTR();
-        case BackendExtension.OPT_FCONSTR()             then OldBackendDAE.OPT_FCONSTR();
-        case BackendExtension.OPT_INPUT_WITH_DER()      then OldBackendDAE.OPT_INPUT_WITH_DER();
-        case BackendExtension.OPT_INPUT_DER()           then OldBackendDAE.OPT_INPUT_DER();
-        case BackendExtension.OPT_TGRID()               then OldBackendDAE.OPT_TGRID();
-        case BackendExtension.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
+        case VariableKind.START()                   then OldBackendDAE.VARIABLE();
+        case VariableKind.EXTOBJ()                  then OldBackendDAE.EXTOBJ(varKind.fullClassName);
+        case VariableKind.JAC_VAR()                 then OldBackendDAE.JAC_VAR();
+        case VariableKind.JAC_TMP_VAR()             then OldBackendDAE.JAC_TMP_VAR();
+        case VariableKind.SEED_VAR()                then OldBackendDAE.SEED_VAR();
+        case VariableKind.OPT_CONSTR()              then OldBackendDAE.OPT_CONSTR();
+        case VariableKind.OPT_FCONSTR()             then OldBackendDAE.OPT_FCONSTR();
+        case VariableKind.OPT_INPUT_WITH_DER()      then OldBackendDAE.OPT_INPUT_WITH_DER();
+        case VariableKind.OPT_INPUT_DER()           then OldBackendDAE.OPT_INPUT_DER();
+        case VariableKind.OPT_TGRID()               then OldBackendDAE.OPT_TGRID();
+        case VariableKind.OPT_LOOP_INPUT()          then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(varKind.replaceCref));
         // ToDo maybe deprecated:
-        case BackendExtension.ALG_STATE()               then OldBackendDAE.ALG_STATE();
-        case BackendExtension.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
-        case BackendExtension.DAE_RESIDUAL_VAR()        then OldBackendDAE.DAE_RESIDUAL_VAR();
-        case BackendExtension.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
-        case BackendExtension.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
-        case BackendExtension.LOOP_SOLVED()             then OldBackendDAE.LOOP_SOLVED();
-        case BackendExtension.FRONTEND_DUMMY()
+        case VariableKind.ALG_STATE()               then OldBackendDAE.ALG_STATE();
+        case VariableKind.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
+        case VariableKind.DAE_RESIDUAL_VAR()        then OldBackendDAE.DAE_RESIDUAL_VAR();
+        case VariableKind.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
+        case VariableKind.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
+        case VariableKind.LOOP_SOLVED()             then OldBackendDAE.LOOP_SOLVED();
+        case VariableKind.FRONTEND_DUMMY()
           algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong VariableKind FRONTEND_DUMMY(). This should not exist after frontend."});
         then fail();
         else
           algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled VariableKind " + BackendExtension.VariableKind.toString(varKind) + "."});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled VariableKind " + VariableKind.toString(varKind) + "."});
         then fail();
       end match;
     end convertVarKind;

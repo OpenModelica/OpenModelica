@@ -38,7 +38,6 @@ encapsulated package NBInitialization
 protected
   // NF imports
   import Algorithm = NFAlgorithm;
-  import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
