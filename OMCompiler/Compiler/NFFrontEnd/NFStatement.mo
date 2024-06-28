@@ -457,12 +457,17 @@ public
   function mapExpList
     input output list<Statement> stmtl;
     input MapFunc func;
+    input Boolean shallow;
 
     partial function MapFunc
       input output Expression exp;
     end MapFunc;
   algorithm
-    stmtl := list(mapExp(s, func) for s in stmtl);
+    if shallow then
+      stmtl := list(mapExpShallow(s, func) for s in stmtl);
+    else
+      stmtl := list(mapExp(s, func) for s in stmtl);
+    end if;
   end mapExpList;
 
   function mapExp
@@ -479,15 +484,15 @@ public
 
       case ASSIGNMENT()
         algorithm
-          e1 := func(stmt.lhs);
-          e2 := func(stmt.rhs);
+          e1 := Expression.map(stmt.lhs, func);
+          e2 := Expression.map(stmt.rhs, func);
         then
           if referenceEq(e1, stmt.lhs) and referenceEq(e2, stmt.rhs) then
             stmt else ASSIGNMENT(e1, e2, stmt.ty, stmt.source);
 
       case FOR()
         algorithm
-          stmt.body := mapExpList(stmt.body, func);
+          stmt.body := mapExpList(stmt.body, func, false);
           stmt.range := Util.applyOption(stmt.range, func);
         then
           stmt;
@@ -495,22 +500,22 @@ public
       case IF()
         algorithm
           stmt.branches := list(
-            (func(Util.tuple21(b)), mapExpList(Util.tuple22(b), func)) for b in stmt.branches);
+            (func(Util.tuple21(b)), mapExpList(Util.tuple22(b), func, false)) for b in stmt.branches);
         then
           stmt;
 
       case WHEN()
         algorithm
           stmt.branches := list(
-            (func(Util.tuple21(b)), mapExpList(Util.tuple22(b), func)) for b in stmt.branches);
+            (func(Util.tuple21(b)), mapExpList(Util.tuple22(b), func, false)) for b in stmt.branches);
         then
           stmt;
 
       case ASSERT()
         algorithm
-          e1 := func(stmt.condition);
-          e2 := func(stmt.message);
-          e3 := func(stmt.level);
+          e1 := Expression.map(stmt.condition, func);
+          e2 := Expression.map(stmt.message, func);
+          e3 := Expression.map(stmt.level, func);
         then
           if referenceEq(e1, stmt.condition) and referenceEq(e2, stmt.message) and
             referenceEq(e3, stmt.level) then stmt else ASSERT(e1, e2, e3, stmt.source);
@@ -531,12 +536,12 @@ public
 
       case NORETCALL()
         algorithm
-          e1 := func(stmt.exp);
+          e1 := Expression.map(stmt.exp, func);
         then
           if referenceEq(e1, stmt.exp) then stmt else NORETCALL(e1, stmt.source);
 
       case WHILE()
-        then WHILE(func(stmt.condition), mapExpList(stmt.body, func), stmt.source);
+        then WHILE(Expression.map(stmt.condition,func), mapExpList(stmt.body, func, false), stmt.source);
 
       else stmt;
     end match;
@@ -723,7 +728,8 @@ public
     input Expression value;
   algorithm
     stmtl := mapExpList(stmtl,
-      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+      function Expression.replaceIterator(iterator = iterator, iteratorValue = value),
+      true);
   end replaceIteratorList;
 
   function toString

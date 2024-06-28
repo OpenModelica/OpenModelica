@@ -1332,7 +1332,7 @@ algorithm
         algorithm
           (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
           subs := listReverseInPlace(subs);
-          eq := Equation.mapExp(eq, function addIterator(prefix = prefix, subscripts = subs));
+          eq := Equation.mapExpShallow(eq, function addIterator(prefix = prefix, subscripts = subs));
           scope := Equation.scope(eqn);
           src := Equation.source(eqn);
 
@@ -1391,7 +1391,7 @@ algorithm
       algorithm
         (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
         subs := listReverseInPlace(subs);
-        body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscripts = subs));
+        body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscripts = subs), true);
 
         while not listEmpty(iters) loop
           iter :: iters := iters;
@@ -2464,7 +2464,7 @@ function evaluateEquationConnOp
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
 algorithm
-  eq := Equation.mapExp(eq,
+  eq := Equation.mapExpShallow(eq,
     function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
       variables = variables, ctable = ctable));
 

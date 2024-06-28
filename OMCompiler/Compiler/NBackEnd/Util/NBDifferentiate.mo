@@ -1472,7 +1472,7 @@ public
 
                   // differentiate function statements
                   (algorithms, diffArgs) := List.mapFold(algorithms, differentiateAlgorithm, diffArgs);
-                  algorithms := Algorithm.mapExpList(algorithms, function Replacements.single(old = Expression.fromCref(diffCref), new = Expression.makeOne(ComponentRef.getSubscriptedType(diffCref))));
+                  algorithms := Algorithm.mapExpList(algorithms, function Replacements.single(old = Expression.fromCref(diffCref), new = Expression.makeOne(ComponentRef.getSubscriptedType(diffCref))), true);
 
                   UnorderedMap.add(InstNode.name(var), false, interface_map);
                 end for;

@@ -231,7 +231,7 @@ algorithm
     flatModel := SimplifyModel.combineBinaries(flatModel);
     execStat("combineBinaries");
     // try to replace calls with array constructors for the new backend
-    flatModel.equations := Equation.mapExpList(flatModel.equations, function Expression.wrapCall(fun = Call.toArrayConstructor));
+    flatModel.equations := Equation.mapExpList(flatModel.equations, function Expression.wrapCall(fun = Call.toArrayConstructor), false);
     flatModel.variables := list(Variable.mapExp(var, function Expression.wrapCall(fun = Call.toArrayConstructor)) for var in flatModel.variables);
     execStat("replaceArrayConstructors");
   end if;

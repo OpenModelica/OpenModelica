@@ -644,10 +644,10 @@ function combineBinaries
   input output FlatModel flatModel;
 algorithm
   flatModel.variables         := list(Variable.mapExp(var, SimplifyExp.combineBinaries) for var in flatModel.variables);
-  flatModel.equations         := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
-  flatModel.initialEquations  := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
-  flatModel.algorithms        := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.algorithms);
-  flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.initialAlgorithms);
+  flatModel.equations         := list(Equation.mapExpShallow(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
+  flatModel.initialEquations  := list(Equation.mapExpShallow(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
+  flatModel.algorithms        := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries, true) for alg in flatModel.algorithms);
+  flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries, true) for alg in flatModel.initialAlgorithms);
 end combineBinaries;
 
 annotation(__OpenModelica_Interface="frontend");

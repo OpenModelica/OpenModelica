@@ -86,10 +86,10 @@ public
     end MapFn;
   algorithm
     flatModel.variables := list(Variable.mapExpShallow(v, fn) for v in flatModel.variables);
-    flatModel.equations := Equation.mapExpList(flatModel.equations, fn);
-    flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, fn);
-    flatModel.algorithms := Algorithm.mapExpList(flatModel.algorithms, fn);
-    flatModel.initialAlgorithms := Algorithm.mapExpList(flatModel.initialAlgorithms, fn);
+    flatModel.equations := Equation.mapExpList(flatModel.equations, fn, true);
+    flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, fn, true);
+    flatModel.algorithms := Algorithm.mapExpList(flatModel.algorithms, fn, true);
+    flatModel.initialAlgorithms := Algorithm.mapExpList(flatModel.initialAlgorithms, fn, true);
   end mapExp;
 
   function mapEquations

@@ -72,9 +72,9 @@ algorithm
   end for;
 
   flatModel.variables := listReverseInPlace(vars);
-  flatModel.equations := Equation.mapExpList(flatModel.equations, expandComplexCref);
+  flatModel.equations := Equation.mapExpList(flatModel.equations, expandComplexCref, true);
   flatModel.equations := scalarizeEquations(flatModel.equations);
-  flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, expandComplexCref);
+  flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, expandComplexCref, true);
   flatModel.initialEquations := scalarizeEquations(flatModel.initialEquations);
   flatModel.algorithms := list(scalarizeAlgorithm(a) for a in flatModel.algorithms);
   flatModel.initialAlgorithms := list(scalarizeAlgorithm(a) for a in flatModel.initialAlgorithms);

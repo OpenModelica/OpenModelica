@@ -1120,8 +1120,7 @@ public
         then eq;
 
         case ALGORITHM() algorithm
-          // pass mapFunc because the function itself does not map
-          alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp));
+          alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp), true);
           if not referenceEq(alg, eq.alg) then
             eq.alg := Algorithm.setInputsOutputs(alg);
           end if;

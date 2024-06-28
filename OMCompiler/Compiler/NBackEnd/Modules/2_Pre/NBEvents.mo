@@ -603,7 +603,7 @@ public
         then ();
         else algorithm
           iter := Iterator.fromFrames(listReverse(frames));
-          _ := Statement.mapExp(stmt, function Expression.mapReverse(
+          _ := Statement.mapExpShallow(stmt, function Expression.mapReverse(
               func = function collectEventsTraverse(
                 bucket_ptr  = bucket_ptr,
                 iter        = iter,

@@ -103,10 +103,10 @@ public
     input output FunctionTree functions;
   algorithm
     flatModel.variables := list(replaceVariableConstants(c) for c in flatModel.variables);
-    flatModel.equations := Equation.mapExpList(flatModel.equations, replaceExpConstants);
-    flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, replaceExpConstants);
-    flatModel.algorithms := Algorithm.mapExpList(flatModel.algorithms, replaceExpConstants);
-    flatModel.initialAlgorithms := Algorithm.mapExpList(flatModel.initialAlgorithms, replaceExpConstants);
+    flatModel.equations := Equation.mapExpList(flatModel.equations, replaceExpConstants, true);
+    flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, replaceExpConstants, true);
+    flatModel.algorithms := Algorithm.mapExpList(flatModel.algorithms, replaceExpConstants, true);
+    flatModel.initialAlgorithms := Algorithm.mapExpList(flatModel.initialAlgorithms, replaceExpConstants, true);
     functions := FunctionTree.map(functions, replaceFuncConstants);
     execStat(getInstanceName());
   end replaceConstants;
@@ -329,7 +329,7 @@ public
           () := match sections
             case Sections.SECTIONS()
               algorithm
-                sections.algorithms := list(Algorithm.mapExp(a, replaceExpConstants) for a in sections.algorithms);
+                sections.algorithms := list(Algorithm.mapExp(a, replaceExpConstants, true) for a in sections.algorithms);
                 cls.sections := sections;
                 InstNode.updateClass(cls, func.node);
               then
