@@ -1,0 +1,17 @@
+// status: correct
+
+convertUnits("m", "mm"); getErrorString();
+(_, r, _) := convertUnits("m", "mm"); getErrorString();
+r;
+s := String(r);
+s;
+
+// Result:
+// (true,0.001,0.0)
+// ""
+//
+// ""
+// 0.001
+// "0.001"
+// "0.001"
+// endResult
