@@ -941,7 +941,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if (isXMLTCP && !sim_communication_port_open) {
     errorStreamPrint(LOG_STDOUT, 0, "xmltcp log format requires a TCP-port to be passed (and successfully open)");
-    EXIT(1);
+    exit(1);
   }
 #endif
 
@@ -961,7 +961,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     }
 
     messageClose(LOG_STDOUT);
-    EXIT(1);
+    exit(1);
   }
 
   if(omc_flag[FLAG_HELP])
@@ -1045,13 +1045,13 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
         }
         messageClose(LOG_STDOUT);
 
-        EXIT(0);
+        return 0;
       }
     }
 
     warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -help=%s", option.c_str());
     warningStreamPrint(LOG_STDOUT, 0, "use %s -help for a list of all command-line flags", argv[0]);
-    EXIT(1);
+    exit(1);
   }
 
   setGlobalVerboseLevel(argc, argv);
@@ -1067,7 +1067,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   if(!data)
   {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
-    EXIT(1);
+    exit(1);
   }
 
   readFlag((int*)&data->simulationInfo->nlsMethod, NLS_MAX, omc_flagValue[FLAG_NLS], "-nls", NLS_NAME, NLS_DESC);
