@@ -1318,8 +1318,14 @@ public
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
-        // this might scale badly, try to unique the lists in the end or always use sets here
-        arrayUpdate(dep.skips, depth, UnorderedSet.unique_list(sk :: dep.skips[depth], Util.id, intEq));
+        try
+          // this might scale badly, try to unique the lists in the end or always use sets here
+          arrayUpdate(dep.skips, depth, UnorderedSet.unique_list(sk :: dep.skips[depth], Util.id, intEq));
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref " + ComponentRef.toString(cref)
+            + " was saved with depth " + intString(arrayLength(dep.skips)) + " but depth " + intString(depth) + " was requested."});
+          fail();
+        end try;
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
@@ -1671,7 +1677,8 @@ public
         Expression call_exp;
         Call call;
         Boolean repeatLeft, repeatRight, reduce;
-        Integer ind;
+        Integer ind, new_depth;
+        Boolean isTuple;
 
       // add a cref dependency
       case Expression.CREF() then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
@@ -1823,15 +1830,18 @@ public
 
       // for functions set the dependency to full reduction (+ repetition) and solvability to implicit
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        // add depth if return type is tuple
+        isTuple := Type.isTuple(call.ty);
+        new_depth := if isTuple then depth + 1 else depth;
         for arg in call.arguments loop
-          sets := collectDependencies(arg, depth, map, dep_map, sol_map, rep_set) :: sets;
+          sets := collectDependencies(arg, new_depth, map, dep_map, sol_map, rep_set) :: sets;
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
         Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
         addRepetitions(set, rep_set);
         // if the return type has to be skipped - add empty skip
-        if Type.isTuple(call.ty) then
+        if isTuple then
           Dependency.skipList(UnorderedSet.toList(set), depth + 1, 0, dep_map);
         end if;
       then set;
