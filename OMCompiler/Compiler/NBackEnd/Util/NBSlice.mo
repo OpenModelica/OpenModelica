@@ -1067,6 +1067,28 @@ public
   // ############################################################
 
 protected
+  function resolveSkipsLst
+    input Integer index;
+    input Type ty;
+    input list<list<Integer>> skips;
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
+    output list<tuple<Integer, Type>> skip_lst = {};
+  protected
+    list<list<Integer>> combinations = List.combination(skips);
+    Integer sub_idx;
+    Type sub_ty;
+  algorithm
+    if listEmpty(combinations) then
+      skip_lst := {(index, ty)};
+    else
+      for com in combinations loop
+        (sub_idx, sub_ty) := resolveSkips(index, ty, com, cref, fullmap);
+        skip_lst := (sub_idx, sub_ty) :: skip_lst;
+      end for;
+    end if;
+  end resolveSkipsLst;
+
   function resolveSkips
     input output Integer index;
     input output Type ty;
@@ -1201,6 +1223,7 @@ protected
     input UnorderedMap<Mode.Key, Mode> modes;
   protected
     Dependency d;
+    list<tuple<Integer, Type>> skip_lst;
     Type skip_ty;
     Integer skip_idx, start, size, body_size, iter_size, scal_size, shift = 0;
     list<ComponentRef> names;
@@ -1224,108 +1247,111 @@ protected
       d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
       (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
       if not UnorderedSet.contains(cref, rep) then
-        (skip_idx, skip_ty) := resolveSkips(start, ty, d.skips, cref, fullmap);
+        skip_lst := resolveSkipsLst(start, ty, arrayList(d.skips), cref, fullmap);
       else
-        (skip_idx, skip_ty) := (start, ty);
+        skip_lst := {(start, ty)};
       end if;
 
-      // get equation and iterator sizes and frames
-      body_size       := Type.sizeOf(skip_ty);
-      iter_size       := Iterator.size(iter);
-      size            := body_size * iter_size;
-      (names, ranges) := Iterator.getFrames(iter);
-      frames          := List.zip(names, ranges);
+      for tpl in skip_lst loop
+        (skip_idx, skip_ty) := tpl;
+        // get equation and iterator sizes and frames
+        body_size       := Type.sizeOf(skip_ty);
+        iter_size       := Iterator.size(iter);
+        size            := body_size * iter_size;
+        (names, ranges) := Iterator.getFrames(iter);
+        frames          := List.zip(names, ranges);
 
-      // II. check for regular vs. reduced dimensions
-      regulars := Dependency.toBoolean(d);
-      if List.all(regulars, Util.id) then
-        // II.1 all regular - single dependency per row.
-        mode := Mode.create(eqn_name, {cref}, false);
-        scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
-        map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
-        for scal in scalarized loop
-          UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
-        end for;
-        scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
-        // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
-        if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
-          for i in 1:size/scal_size loop
+        // II. check for regular vs. reduced dimensions
+        regulars := Dependency.toBoolean(d);
+        if List.all(regulars, Util.id) then
+          // II.1 all regular - single dependency per row.
+          mode := Mode.create(eqn_name, {cref}, false);
+          scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
+          map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+          for scal in scalarized loop
+            UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+          end for;
+          scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
+          // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
+          if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
+            for i in 1:size/scal_size loop
+              for scal in scalarized loop
+                for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+                  addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
+                  shift := shift + 1;
+                end for;
+              end for;
+            end for;
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (single dependency) failed because list of scalar variables("
+              + intString(scal_size) + ") " + List.toString(scalarized, ComponentRef.toString)
+              + ", does not fit the equation size " + intString(size) + ".\n"});
+            fail();
+          end if;
+
+        elseif List.any(regulars, Util.id) then
+          // II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key
+          // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
+          subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
+          dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
+          eq_dims := Type.arrayDims(ty);
+          if listLength(subs) == listLength(dims) and listLength(subs) == listLength(regulars) and listLength(subs) == listLength(eq_dims) then
+            // 2. create a map that maps a configuration key to the corresponding scalar crefs
+            stripped  := ComponentRef.stripSubscriptsAll(cref);
+            key       := arrayCreate(listLength(subs), 0);
+            map1      := UnorderedMap.new<Val1>(keyHash, keyEqual);
+            resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
+
+            // 3. create a map that maps a configuration key to the final variable indices
+            map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
+            for k in UnorderedMap.keyList(map1) loop
+              scalarized := UnorderedMap.getSafe(k, map1, sourceInfo());
+              scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map) for scal in scalarized));
+              UnorderedMap.add(k, scal_lst, map2);
+            end for;
+
+            // 4. iterate over all equation dimensions and use the map to get the correct dependencies
+            key := arrayCreate(listLength(subs), 0);
+            resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {cref}, false), Pointer.create(skip_idx));
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
+              + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
+              + "variable dimensions(" + intString(listLength(dims)) + "): " + List.toString(dims, Dimension.toString) + "\n"
+              + "equation dimensions(" + intString(listLength(eq_dims)) + "): " + List.toString(eq_dims, Dimension.toString) + "\n"
+              + "variable dependencies(" + intString(listLength(regulars)) + "): " + List.toString(regulars, boolString) + "\n"});
+            fail();
+          end if;
+
+        else
+          // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
+          repeated    := UnorderedSet.contains(cref, rep);
+          scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
+          map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+          for scal in scalarized loop
+            UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+          end for;
+
+          // if its repeated, use the same cref always
+          if repeated then
+            mode := Mode.create(eqn_name, {cref}, false);
+          end if;
+
+          for i in skip_idx:iter_size:skip_idx+size-iter_size loop
+            shift := 0;
             for scal in scalarized loop
+              // if its not repeated use local cref
+              if not repeated then
+                mode := Mode.create(eqn_name, {scal}, true);
+              end if;
               for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
-                addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
+                if intMod(shift, iter_size) == 0 then shift := 0; end if;
+                addMatrixEntry(m, modes, i + shift, scal_idx, mode);
                 shift := shift + 1;
               end for;
             end for;
           end for;
-        else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (single dependency) failed because list of scalar variables("
-            + intString(scal_size) + ") " + List.toString(scalarized, ComponentRef.toString)
-            + ", does not fit the equation size " + intString(size) + ".\n"});
-          fail();
         end if;
-
-      elseif List.any(regulars, Util.id) then
-        // II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key
-        // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
-        subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
-        dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
-        eq_dims := Type.arrayDims(ty);
-        if listLength(subs) == listLength(dims) and listLength(subs) == listLength(regulars) and listLength(subs) == listLength(eq_dims) then
-          // 2. create a map that maps a configuration key to the corresponding scalar crefs
-          stripped  := ComponentRef.stripSubscriptsAll(cref);
-          key       := arrayCreate(listLength(subs), 0);
-          map1      := UnorderedMap.new<Val1>(keyHash, keyEqual);
-          resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
-
-          // 3. create a map that maps a configuration key to the final variable indices
-          map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
-          for k in UnorderedMap.keyList(map1) loop
-            scalarized := UnorderedMap.getSafe(k, map1, sourceInfo());
-            scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map) for scal in scalarized));
-            UnorderedMap.add(k, scal_lst, map2);
-          end for;
-
-          // 4. iterate over all equation dimensions and use the map to get the correct dependencies
-          key := arrayCreate(listLength(subs), 0);
-          resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {cref}, false), Pointer.create(skip_idx));
-        else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
-            + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
-            + "variable dimensions(" + intString(listLength(dims)) + "): " + List.toString(dims, Dimension.toString) + "\n"
-            + "equation dimensions(" + intString(listLength(eq_dims)) + "): " + List.toString(eq_dims, Dimension.toString) + "\n"
-            + "variable dependencies(" + intString(listLength(regulars)) + "): " + List.toString(regulars, boolString) + "\n"});
-          fail();
-        end if;
-
-      else
-        // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
-        repeated    := UnorderedSet.contains(cref, rep);
-        scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
-        map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
-        for scal in scalarized loop
-          UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
-        end for;
-
-        // if its repeated, use the same cref always
-        if repeated then
-          mode := Mode.create(eqn_name, {cref}, false);
-        end if;
-
-        for i in skip_idx:iter_size:skip_idx+size-iter_size loop
-          shift := 0;
-          for scal in scalarized loop
-            // if its not repeated use local cref
-            if not repeated then
-              mode := Mode.create(eqn_name, {scal}, true);
-            end if;
-            for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
-              if intMod(shift, iter_size) == 0 then shift := 0; end if;
-              addMatrixEntry(m, modes, i + shift, scal_idx, mode);
-              shift := shift + 1;
-            end for;
-          end for;
-        end for;
-      end if;
+      end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + ComponentRef.toString(cref) + "."});
       fail();
