@@ -40,7 +40,6 @@ protected
   import DAE;
 
   // NF imports
-  import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;

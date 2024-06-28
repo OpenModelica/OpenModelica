@@ -43,7 +43,6 @@ protected
   import Absyn;
 
   // New Frontend Imports
-  import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;

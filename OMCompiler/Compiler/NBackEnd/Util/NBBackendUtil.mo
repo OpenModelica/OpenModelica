@@ -36,7 +36,7 @@ encapsulated package NBBackendUtil
 
 public
   // NF imports
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.BackendInfo;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Operator = NFOperator;
@@ -122,7 +122,7 @@ public
       case Expression.CLKCONST () then 0; // clk !!
       case Expression.CREF() algorithm
         var := BVariable.getVar(exp.cref);
-      then stringHashDjb2Mod(BackendExtension.BackendInfo.toString(var.backendinfo), mod);
+      then stringHashDjb2Mod(BackendInfo.toString(var.backendinfo), mod);
       case Expression.TYPENAME() then 1; // ty !!
       case Expression.ARRAY() algorithm // ty !!
         for elem in exp.elements loop

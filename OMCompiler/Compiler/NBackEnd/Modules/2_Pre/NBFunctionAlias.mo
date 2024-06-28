@@ -42,7 +42,6 @@ protected
   import DAE;
 
   // NF imports
-  import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;

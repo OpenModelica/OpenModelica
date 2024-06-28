@@ -68,7 +68,7 @@ protected
   import DAE;
 
   // NF imports
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.VariableKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Operator = NFOperator;
@@ -238,7 +238,7 @@ protected
           // update constant start values and add to parameters
           // otherwise they would not show in the result file
           (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstOrParamAliasBinding);
-          const_vars := list(BVariable.setVarKind(var, BackendExtension.VariableKind.PARAMETER()) for var in const_vars);
+          const_vars := list(BVariable.setVarKind(var, VariableKind.PARAMETER()) for var in const_vars);
           const_vars := list(BVariable.setBindingAsStartAndFix(var) for var in const_vars);
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);

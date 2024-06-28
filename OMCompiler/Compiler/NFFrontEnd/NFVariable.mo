@@ -45,8 +45,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Direction;
   import NFPrefixes.AccessLevel;
   import Type = NFType;
-  import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.BackendInfo;
+  import NFBackendExtension.{BackendInfo, VariableKind};
 
 protected
   import Ceval = NFCeval;
@@ -89,7 +88,7 @@ public
     Attributes attr;
     Option<SCode.Comment> cmt;
     SourceInfo info;
-    BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
     array<InstNode> child_nodes;
     list<Variable> children = {};
   algorithm
@@ -105,7 +104,7 @@ public
     // conversion to backend process (except for iterators). NBackendDAE.lower
     if ComponentRef.isIterator(cref) then
       binding := NFBinding.EMPTY_BINDING;
-      binfo.varKind := BackendExtension.ITERATOR();
+      binfo.varKind := VariableKind.ITERATOR();
     else
       binding := Component.getImplicitBinding(comp);
     end if;
@@ -464,7 +463,7 @@ public
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
     var.children := list(mapExp(v, fn) for v in var.children);
-    var.backendinfo := BackendExtension.BackendInfo.map(var.backendinfo, fn);
+    var.backendinfo := BackendInfo.map(var.backendinfo, fn);
   end mapExp;
 
   function mapExpShallow
