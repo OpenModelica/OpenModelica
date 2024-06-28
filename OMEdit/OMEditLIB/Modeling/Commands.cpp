@@ -1594,7 +1594,8 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
  * \param commandText
  * \param pParent
  */
-OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText, UndoCommand *pParent)
+OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText,
+                               bool skipGetModelInstance, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -1606,6 +1607,7 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
   mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(mpParentContainingLibraryTreeItem->getNameStructure());
   mNewModelInfo = newModelInfo;
   setText(commandText);
+  mSkipGetModelInstance = skipGetModelInstance;
 }
 
 /*!
@@ -1615,7 +1617,9 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
 void OMCUndoCommand::redoInternal()
 {
   MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
-  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
+  if (!mSkipGetModelInstance || mUndoCalledOnce) {
+    mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
+  }
 }
 
 /*!
@@ -1624,6 +1628,7 @@ void OMCUndoCommand::redoInternal()
  */
 void OMCUndoCommand::undo()
 {
+  mUndoCalledOnce = true;
   MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }

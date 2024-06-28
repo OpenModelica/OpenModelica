@@ -575,6 +575,7 @@ private:
     Model(const QJsonObject &jsonObject, Element *pParentElement = 0);
     virtual ~Model();
     void deserialize();
+    void deserializeElements(const QJsonArray elements);
 
     Element *getParentElement() const {return mpParentElement;}
     Extend *getParentExtend() const;

@@ -2074,13 +2074,13 @@ QString OMCProxy::getDefaultComponentPrefixes(QString className)
 /*!
   Adds a component to the model.
   \param name - the component name
-  \param className - the component fully qualified name.
-  \param componentName - the name of the component to add.
+  \param componentName - the component fully qualified name.
+  \param className - the name of the class where to add component.
   \return true on success.
   */
-bool OMCProxy::addComponent(QString name, QString className, QString componentName, QString placementAnnotation)
+bool OMCProxy::addComponent(QString name, QString componentName, QString className, QString placementAnnotation)
 {
-  sendCommand("addComponent(" + name + ", " + className + "," + componentName + "," + placementAnnotation + ")");
+  sendCommand("addComponent(" + name + "," + componentName + "," + className + "," + placementAnnotation + ")");
   if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
