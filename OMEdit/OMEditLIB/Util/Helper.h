@@ -59,6 +59,7 @@ public:
   static QString OMCServerName;
   static QString omFileTypes;
   static QString omEncryptedFileTypes;
+  static QString crmlFileTypes;
   static QString omnotebookFileTypes;
   static QString ngspiceNetlistFileTypes;
   static QString imageFileTypes;
@@ -73,9 +74,10 @@ public:
   static QString exeFileTypes;
   static QString txtFileTypes;
   static QString figaroFileTypes;
+  static QString jarFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
-  static QString omScriptTypes;
+  static QString omScriptFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -139,6 +141,10 @@ public:
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
+  static QString newCRMLModel;
+  static QString newCRMLModelTip;
+  static QString newMOSScript;
+  static QString newMOSScriptTip;
   static QString libraries;
   static QString clearRecentFiles;
   static QString encoding;
@@ -170,6 +176,10 @@ public:
   static QString saveTotalTip;
   static QString apply;
   static QString chooseDirectory;
+  static QString addPath;
+  static QString removePath;
+  static QString addItem;
+  static QString removeItem;
   static QString general;
   static QString output;
   static QString parameters;
@@ -227,6 +237,8 @@ public:
   static QString unloadClass;
   static QString unloadClassTip;
   static QString unloadCompositeModelOrTextTip;
+  static QString unloadCRMLTip;
+  static QString unloadMOSTip;
   static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
@@ -249,6 +261,14 @@ public:
   static QString simulation;
   static QString reSimulation;
   static QString interactiveSimulation;
+  static QString translateCRML;
+  static QString translateCRMLTip;
+  static QString translateAsCRML;
+  static QString translateAsCRMLTip;
+  static QString runningCRMLTestsuite;
+  static QString runningCRMLTestsuiteTip;
+  static QString runScript;
+  static QString runScriptTip;
   static QString options;
   static QString extent;
   static QString bottom;
@@ -287,6 +307,8 @@ public:
   static QString endAngle;
   static QString curveStyle;
   static QString figaro;
+  static QString crml;
+  static QString mos;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;
@@ -440,6 +462,9 @@ public:
   static QString upgradeInstalledLibraries;
   static QString updateLibraryIndex;
   static QString dataReconciliation;
+  static QString modelicaPathTip;
+  static QString pathsListTip;
+  static QString itemsListTip;
 };
 
 class GUIMessages : public QObject

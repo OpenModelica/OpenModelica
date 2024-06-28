@@ -94,6 +94,7 @@ class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
+class CRMLTranslateAsDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -245,6 +246,9 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void translateCRML(LibraryTreeItem *pLibraryTreeItem);
+  void translateAsCRML(LibraryTreeItem *pLibraryTreeItem);
+  void runScript(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
@@ -317,6 +321,7 @@ private:
   QObject *mpOMSensPlugin;
   GitCommands *mpGitCommands;
   CommitChangesDialog *mpCommitChangesDialog;
+  CRMLTranslateAsDialog* mpCRMLTranslateAsDialog;
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QTabWidget *mpMessagesTabWidget;
@@ -341,11 +346,19 @@ private:
   QAction *mpNewCompositeModelFileAction;
   QAction *mpOpenCompositeModelFileAction;
   QAction *mpLoadExternModelAction;
+  // CRML File Actions
+  QAction *mpNewCRMLFileAction;
+  QAction *mpOpenCRMLFileAction;
+  // MOS File Actions
+  QAction *mpNewMOSFileAction;
+  QAction *mpOpenMOSFileAction;
+  // Directory actions
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
   QAction *mpSaveTotalAction;
+  // FMU
   QAction *mpImportFMUAction;
   QAction *mpImportFMUModelDescriptionAction;
   QAction *mpImportFromOMNotebookAction;
@@ -396,6 +409,8 @@ private:
   QAction *mpArchivedSimulationsAction;
   // Data reconciliation action
   QAction *mpCalculateDataReconciliationAction;
+  // CRML run testsuite action
+  QAction *mpRunCRMLTestsuiteAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -511,6 +526,10 @@ public slots:
   void createNewCompositeModelFile();
   void openCompositeModelFile();
   void loadExternalModels();
+  void createNewCRMLFile();
+  void openCRMLFile();
+  void createNewMOSFile();
+  void openMOSFile();
   void openDirectory();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
@@ -593,6 +612,7 @@ public slots:
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void enableReSimulationToolbar(bool visible);
+  void runCRMLTranslateAs(int result);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
@@ -603,6 +623,7 @@ private slots:
   void messageTabClosed(int index);
   void autoSave();
   void showDataReconciliationDialog();
+  void showRunCRMLTestsuiteDialog();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();

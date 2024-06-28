@@ -41,6 +41,7 @@
 #include "Simulation/SimulationDialog.h"
 #include "Simulation//SimulationOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
+#include "CRML/CRMLTranslatorOutputWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
@@ -580,6 +581,14 @@ bool MessagesWidget::closeTab(int index)
     emit messageTabClosed(index);
     return true;
   }
+  // Close CRMLTranslatorOutputWidget
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isCompilationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
+    return true;
+  }
+
   return false;
 }
 

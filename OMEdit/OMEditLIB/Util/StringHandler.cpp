@@ -1804,6 +1804,8 @@ int StringHandler::getLeadingSpacesSize(QString str)
  */
 bool StringHandler::isFileWritAble(QString filePath)
 {
+  if (filePath.isEmpty())
+    return true;
   QFile file(filePath);
   if (file.exists()) {
     return file.permissions().testFlag(QFile::WriteUser);

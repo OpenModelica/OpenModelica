@@ -22,6 +22,8 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
+                      Util/PathSelector.cpp
+                      Util/ListSelector.cpp
                       MainWindow.cpp
                       OMC/OMCProxy.cpp
                       Modeling/Model.cpp
@@ -42,6 +44,8 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Editors/TextEditor.cpp
                       Editors/CEditor.cpp
                       Editors/CompositeModelEditor.cpp
+                      Editors/CRMLEditor.cpp
+                      Editors/MOSEditor.cpp
                       Editors/OMSimulatorEditor.cpp
                       Editors/MetaModelicaEditor.cpp
                       Editors/HTMLEditor.cpp
@@ -108,6 +112,14 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       CrashReport/backtrace.c
                       CrashReport/GDBBacktrace.cpp
                       CrashReport/CrashReportDialog.cpp
+                      CRML/CRMLFile.cpp
+                      CRML/CRMLModelDialog.cpp
+                      CRML/CRMLTranslateAsDialog.cpp
+                      CRML/CRMLTranslatorOutputWidget.cpp
+                      CRML/CRMLProxy.cpp
+                      MOS/MOSFile.cpp
+                      MOS/MOSDialog.cpp
+                      MOS/MOSProxy.cpp
                       Git/GitCommands.cpp
                       Git/CommitChangesDialog.cpp
                       Git/RevertCommitsDialog.cpp
@@ -125,6 +137,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/TimeManager.cpp
                       Util/ResourceCache.cpp
                       Util/NetworkAccessManager.cpp
+                      Util/GitHubArtifactDownloader.cpp
                       FlatModelica/Expression.cpp
                       FlatModelica/ExpressionFuncs.cpp
                       FlatModelica/Parser.cpp
@@ -150,6 +163,8 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
+                      Util/ListSelector.h
+                      Util/PathSelector.h
                       MainWindow.h
                       OMC/OMCProxy.h
                       Modeling/Model.h
@@ -171,6 +186,8 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Editors/TextEditor.h
                       Editors/CEditor.h
                       Editors/CompositeModelEditor.h
+                      Editors/CRMLEditor.h
+                      Editors/MOSEditor.h
                       Editors/OMSimulatorEditor.h
                       Editors/MetaModelicaEditor.h
                       Editors/HTMLEditor.h
@@ -239,6 +256,15 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       CrashReport/backtrace.h
                       CrashReport/GDBBacktrace.h
                       CrashReport/CrashReportDialog.h
+                      CRML/CRMLFile.h
+                      CRML/CRMLProxy.h
+                      CRML/CRMLModelDialog.h
+                      CRML/CRMLTranslateAsDialog.h
+                      CRML/CRMLTranslatorOptions.h
+                      CRML/CRMLTranslatorOutputWidget.h
+                      MOS/MOSFile.h
+                      MOS/MOSProxy.h
+                      MOS/MOSDialog.h
                       Git/GitCommands.h
                       Git/CommitChangesDialog.h
                       Git/RevertCommitsDialog.h
@@ -258,6 +284,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Interfaces/ModelInterface.h
                       Util/ResourceCache.h
                       Util/NetworkAccessManager.h
+                      Util/GitHubArtifactDownloader.h
                       FlatModelica/Expression.h
                       FlatModelica/ExpressionFuncs.h
                       FlatModelica/Parser.h

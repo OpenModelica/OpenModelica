@@ -28,6 +28,9 @@
         <file>Resources/icons/simulate-animation.svg</file>
         <file>Resources/icons/control-panel.svg</file>
         <file>Resources/icons/simulation-center.svg</file>
+        <file>Resources/icons/translate.svg</file>
+        <file>Resources/icons/translateAs.svg</file>
+        <file>Resources/icons/runScript.svg</file>
         <file>Resources/css/stylesheet.qss</file>
         <file>Resources/icons/check.svg</file>
         <file>Resources/icons/check-all.svg</file>
@@ -111,6 +114,8 @@
         <file>Resources/icons/transition-mode.svg</file>
         <file>Resources/icons/export-xml.svg</file>
         <file>Resources/icons/optimization-icon.svg</file>
+        <file>Resources/icons/crml-icon.svg</file>
+        <file>Resources/icons/mos-icon.svg</file>
         <file>Resources/icons/refresh.svg</file>
         <file>Resources/icons/reset.svg</file>
         <file>Resources/icons/add-icon.svg</file>

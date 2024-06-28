@@ -32,6 +32,9 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#ifndef UTILITIES_H
+#define UTILITIES_H
+
 #include <QApplication>
 #include <QSplashScreen>
 #include <QStatusBar>
@@ -67,9 +70,6 @@
 #include <windows.h>
 #include <tlhelp32.h>
 #endif
-
-#ifndef UTILITIES_H
-#define UTILITIES_H
 
 class OMCProxy;
 
@@ -529,6 +529,8 @@ namespace Utilities {
 #endif
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
+  bool isCRMLFile(QString extension);
+  bool isMOSFile(QString extension);
   QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
   QString getGDBPath();
 

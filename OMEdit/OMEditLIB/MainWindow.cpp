@@ -42,6 +42,11 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#include "CRML/CRMLProxy.h"
+#include "CRML/CRMLModelDialog.h"
+#include "CRML/CRMLTranslateAsDialog.h"
+#include "MOS/MOSProxy.h"
+#include "MOS/MOSDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -55,6 +60,7 @@
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
+#include "CRML/CRMLTranslatorOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "TLM/TLMCoSimulationOutputWidget.h"
@@ -145,6 +151,7 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   setMinimumSize(400, 300);
   setContentsMargins(1, 1, 1, 1);
+  mpCRMLTranslateAsDialog = NULL;
 }
 
 MainWindow *MainWindow::mpInstance = 0;
@@ -208,6 +215,10 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mNumberOfProcessors = mpOMCProxy->numProcessors();
   // create an object of OMSProxy
   OMSProxy::create();
+  // create an object of CRMLProxy
+  CRMLProxy::create();
+  // create an object of MOSProxy
+  MOSProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
@@ -1069,6 +1080,119 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
       mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
     }
   }
+}
+
+void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+
+  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+
+  crmlTranslatorOptions.setMode("translate");
+
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setOutputDirectory(fi.absoluteDir().absolutePath());
+
+  crmlTranslatorOptions.setCompilerJar(ep->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(ep->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(ep->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setCRMLLibraryPaths(ep->getCRMLLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraryPaths(ep->getModelicaLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraries(ep->getModelicaLibraries()->list());
+  crmlTranslatorOptions.setRepositoryDirectory(ep->getRepositoryDirectoryTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget,
+    QString("%1 %2").arg(Helper::translateCRML, fi.fileName()));
+  pCRMLTranslatorOutputWidget->start();
+
+}
+
+void MainWindow::runCRMLTranslateAs(int result)
+{
+
+  LibraryTreeItem *pLibraryTreeItem = mpCRMLTranslateAsDialog->getLibraryTreeItem();
+  QString outputDirectory = mpCRMLTranslateAsDialog->getOutputDirectoryTextBox()->text();
+  QString modelicaWithin = mpCRMLTranslateAsDialog->getParentClassTextBox()->text();
+  QFileInfo fi = QFileInfo(pLibraryTreeItem->getFileName());
+
+  delete(mpCRMLTranslateAsDialog);
+  mpCRMLTranslateAsDialog = NULL;
+
+  if (result == QDialog::Rejected)
+    return;
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+
+  crmlTranslatorOptions.setMode("translateAs");
+
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setOutputDirectory(outputDirectory);
+  crmlTranslatorOptions.setModelicaWithin(modelicaWithin);
+
+  crmlTranslatorOptions.setCompilerJar(ep->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(ep->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(ep->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setCRMLLibraryPaths(ep->getCRMLLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraryPaths(ep->getModelicaLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraries(ep->getModelicaLibraries()->list());
+  crmlTranslatorOptions.setRepositoryDirectory(ep->getRepositoryDirectoryTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget,
+    QString("%1 %2").arg(Helper::translateAsCRML, fi.fileName()));
+  pCRMLTranslatorOutputWidget->start();
+}
+
+void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if the CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+
+  if (!mpCRMLTranslateAsDialog) {
+    mpCRMLTranslateAsDialog =  new CRMLTranslateAsDialog(this);
+    connect(mpCRMLTranslateAsDialog, SIGNAL(finished(int)), this, SLOT(runCRMLTranslateAs(int)));
+  }
+  mpCRMLTranslateAsDialog->setLibraryTreeItem(pLibraryTreeItem);
+  mpCRMLTranslateAsDialog->open();
+}
+
+void MainWindow::runScript(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString result = mpOMCProxy->runScript(pLibraryTreeItem->getFileName());
+  if (!result.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, result, true, this);
+    pInformationDialog->show();
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
@@ -2217,6 +2341,102 @@ void MainWindow::loadExternalModels()
       pMessageBox->exec();
     } else {
       mpLibraryWidget->openFile(file, Helper::utf8, false, false, true);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
+/*!
+ * \brief MainWindow::createNewCRMLFile
+ * Opens the new CRML Model dialog.
+ */
+void MainWindow::createNewCRMLFile()
+{
+  CreateCRMLModelDialog *pCreateCRMLModelDialog = new CreateCRMLModelDialog(this);
+  pCreateCRMLModelDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::openCRMLFile
+ * Opens the CRML file(s).\n
+ * Slot activated when mpOpenCRMLFileAction triggered signal is raised.
+ */
+void MainWindow::openCRMLFile()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
+                                              Helper::crmlFileTypes, NULL);
+  if (fileNames.isEmpty()) {
+    return;
+  }
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames) {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file)) {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else {
+      mpLibraryWidget->openFile(file, Helper::utf8, false);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
+/*!
+ * \brief MainWindow::createNewMOSFile
+ * Opens the new Modelica Scripting dialog.
+ */
+void MainWindow::createNewMOSFile()
+{
+  CreateMOSDialog *pCreateMOSDialog = new CreateMOSDialog(this);
+  pCreateMOSDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::openMOSFile
+ * Opens the Modelica Scripting .mos file(s).\n
+ * Slot activated when mpOpenMOSFileAction triggered signal is raised.
+ */
+void MainWindow::openMOSFile()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
+                                              Helper::omScriptFileTypes, NULL);
+  if (fileNames.isEmpty()) {
+    return;
+  }
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames) {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file)) {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else {
+      mpLibraryWidget->openFile(file, Helper::utf8, false);
     }
   }
   mpStatusBar->clearMessage();
@@ -3707,6 +3927,12 @@ void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &n
     if (pOMSSimulationOutputWidget) {
       connect(pOMSSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
       connect(pOMSSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+    } else {
+      CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(pSimulationOutputTab);
+      if (pCRMLTranslatorOutputWidget) {
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+      }
     }
   }
 }
@@ -3754,6 +3980,31 @@ void MainWindow::showDataReconciliationDialog()
     }
   }
 }
+
+/*!
+ * \brief MainWindow::showRunCRMLTestsuiteDialog
+ * Slot activated when mpRunCRMLTestsuiteAction triggered signal is raised.\n
+ * Runs the CRML testsuite and opens the result as html.
+ */
+void MainWindow::showRunCRMLTestsuiteDialog()
+{
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
+
+  crmlTranslatorOptions.setMode("testsuite");
+  crmlTranslatorOptions.setCompilerJar(ep->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(ep->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(ep->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setCRMLLibraryPaths(ep->getCRMLLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraryPaths(ep->getModelicaLibraryPaths()->text());
+  crmlTranslatorOptions.setModelicaLibraries(ep->getModelicaLibraries()->list());
+  crmlTranslatorOptions.setRepositoryDirectory(ep->getRepositoryDirectoryTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, Helper::runningCRMLTestsuite);
+  pCRMLTranslatorOutputWidget->start();
+}
+
 
 /*!
  * \brief MainWindow::showDebugConfigurationsDialog
@@ -3921,6 +4172,22 @@ void MainWindow::createActions()
   mpOpenCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Composite Model(s)"), this);
   mpOpenCompositeModelFileAction->setStatusTip(tr("Opens the Composite Model file(s)"));
   connect(mpOpenCompositeModelFileAction, SIGNAL(triggered()), SLOT(openCompositeModelFile()));
+  // create new CRML action
+  mpNewCRMLFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newCRMLModel, this);
+  mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
+  connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
+  // open CRML file action
+  mpOpenCRMLFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open CRML Model(s)"), this);
+  mpOpenCRMLFileAction->setStatusTip(tr("Opens the CRML file(s)"));
+  connect(mpOpenCRMLFileAction, SIGNAL(triggered()), SLOT(openCRMLFile()));
+  // create new MOS action
+  mpNewMOSFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newMOSScript, this);
+  mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
+  connect(mpNewMOSFileAction, SIGNAL(triggered()), SLOT(createNewMOSFile()));
+  // open MOS file action
+  mpOpenMOSFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Modelica Script(s)"), this);
+  mpOpenMOSFileAction->setStatusTip(tr("Opens the Modelica Scripting file(s)"));
+  connect(mpOpenMOSFileAction, SIGNAL(triggered()), SLOT(openMOSFile()));
   // load External Model action
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
@@ -4153,6 +4420,11 @@ void MainWindow::createActions()
   mpCalculateDataReconciliationAction = new QAction(tr("Calculate Data Reconciliation"), this);
   mpCalculateDataReconciliationAction->setStatusTip(tr("Calculates the data reconciliation"));
   connect(mpCalculateDataReconciliationAction, SIGNAL(triggered()), SLOT(showDataReconciliationDialog()));
+  // CRML menu
+  // run testsuite
+  mpRunCRMLTestsuiteAction = new QAction(tr("Run CRML Testsuite"), this);
+  mpRunCRMLTestsuiteAction->setStatusTip(tr("Run the CRML Testsuite and display report"));
+  connect(mpRunCRMLTestsuiteAction, SIGNAL(triggered()), SLOT(showRunCRMLTestsuiteDialog()));
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -4424,6 +4696,12 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpOpenCompositeModelFileAction);
   mpFileMenu->addAction(mpLoadExternModelAction);
   mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpNewCRMLFileAction);
+  mpFileMenu->addAction(mpOpenCRMLFileAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpNewMOSFileAction);
+  mpFileMenu->addAction(mpOpenMOSFileAction);
+  mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpSaveAction);
@@ -4595,6 +4873,13 @@ void MainWindow::createMenus()
   pDataReconciliationMenu->addAction(mpCalculateDataReconciliationAction);
   // add data reconciliation menu to menu bar
   menuBar()->addAction(pDataReconciliationMenu->menuAction());
+  // CRML menu
+  QMenu *pCRMLMenu = new QMenu(menuBar());
+  pCRMLMenu->setTitle(tr("&CRML"));
+  // add actions to CRML menu
+  pCRMLMenu->addAction(mpRunCRMLTestsuiteAction);
+  // add data CRML menu to menu bar
+  menuBar()->addAction(pCRMLMenu->menuAction());
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
