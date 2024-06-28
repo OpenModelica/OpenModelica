@@ -103,67 +103,58 @@ protected
   Variability bind_var;
   BackendInfo binfo;
   Binding.Source bind_src;
-  Boolean force_scalar_attributes = false;
+  Boolean has_binding;
 algorithm
+  binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
+
   if Type.isArray(var.ty) and Type.hasKnownSize(var.ty) then
     try
-      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info, binfo) := var;
+      Variable.VARIABLE(name, ty, _, vis, attr, ty_attr, _, cmt, info, binfo) := var;
       crefs := ComponentRef.scalarize(name);
 
       if listEmpty(crefs) then
         return;
       end if;
 
-      if Binding.isBound(binding) then
-        binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
+      has_binding := Binding.isBound(binding);
+      bind_src := Binding.source(binding);
+
+      if has_binding then
+        binding_iter := ExpressionIterator.fromExp(Binding.getTypedExp(binding));
         bind_var := Binding.variability(binding);
 
-        for attribute in {"min", "max", "nominal"} loop
-          force_scalar_attributes := not Binding.isUnbound(Variable.lookupTypeAttribute(attribute, var));
-          if force_scalar_attributes then break; end if;
-        end for;
-        // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
-        // fixes ticket #6267
-        // adrpo: do not do this for arrays less than 2: see #7450
-        //        TODO! FIXME! get rid of this absurdity when the backend
-        //        can handle arrays of one = function call
-        // kabdelhak: also do not do it for arrays with certain attributes: see #7485
-        if not force_scalar_attributes and listLength(crefs) > 1
-           and not Flags.getConfigBool(Flags.BUILDING_FMU) and
-           ExpressionIterator.isSubscriptedArrayCall(binding_iter)
-        then
-          var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
+        // Avoid scalarizing the variable if it would result in indexing a
+        // function call (#6267), unless we're building an FMU or the variable
+        // has attributes that must be scalarized (#7485).
+        if ExpressionIterator.isSubscriptedArrayCall(binding_iter) and
+           not Flags.getConfigBool(Flags.BUILDING_FMU) and
+           not variableHasForcedScalarAttribute(var) then
           vars := var :: vars;
-        else
-          bind_var := Binding.variability(binding);
-          bind_src := Binding.source(binding);
-          elem_ty := Type.arrayElementType(ty);
-          (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
-          backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
-          for cr in crefs loop
-            (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-            binding := Binding.makeFlat(exp, bind_var, bind_src);
-            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-            binfo :: backend_attributes := backend_attributes;
-            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
-          end for;
+          return;
         end if;
       else
-        elem_ty := Type.arrayElementType(ty);
-        (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
-        backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
-        for cr in crefs loop
-          ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          binfo :: backend_attributes := backend_attributes;
-          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
-        end for;
+        bind_var := Variability.CONSTANT; // Not used
       end if;
+
+      elem_ty := Type.arrayElementType(ty);
+      (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+      backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
+
+      for cr in crefs loop
+        if has_binding then
+          (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+          binding := Binding.makeFlat(exp, bind_var, bind_src);
+        end if;
+
+        ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+        binfo :: backend_attributes := backend_attributes;
+        vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
+      end for;
     else
       Error.assertion(false, getInstanceName() + " failed on " +
         Variable.toString(var, printBindingType = true), var.info);
     end try;
   else
-    var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
     vars := var :: vars;
   end if;
 end scalarizeVariable;
@@ -508,6 +499,20 @@ algorithm
 
   statements := Statement.WHEN(listReverseInPlace(bl), source) :: statements;
 end scalarizeWhenStatement;
+
+function variableHasForcedScalarAttribute
+  input Variable var;
+  output Boolean res;
+algorithm
+  for attribute in {"min", "max", "nominal"} loop
+    if Binding.isBound(Variable.lookupTypeAttribute(attribute, var)) then
+      res := true;
+      return;
+    end if;
+  end for;
+
+  res := false;
+end variableHasForcedScalarAttribute;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFScalarize;
