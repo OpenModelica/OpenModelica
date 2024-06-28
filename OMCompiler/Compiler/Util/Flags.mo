@@ -561,6 +561,15 @@ constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(194, "dumpBindings", false,
   Gettext.gettext("Dumps information about the equations created from bindings."));
 constant DebugFlag DUMP_SORTING = DEBUG_FLAG(195, "dumpSorting", false,
   Gettext.gettext("Dumps information about the process of sorting."));
+/* LLVM Specific Flags*/
+constant DebugFlag JIT_EVAL_FUNC = DEBUG_FLAG(196, "jit_eval_func", false,
+ Gettext.gettext("Turns on/off JIT compilation"));
+constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(197, "jit_dump_ir", false,
+ Gettext.gettext("Dumps LLVM-IR before execution"));
+constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(198, "jit_no_opt", false,
+ Gettext.gettext("Generates LLVM-IR without optimization."));
+constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(199, "dumpMidCode", false,
+ Gettext.gettext("Dumps MidCode after generation in a human readble format"));
 
 public
 // CONFIGURATION FLAGS
