@@ -1075,15 +1075,18 @@ protected
     input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
     output list<tuple<Integer, Type>> skip_lst = {};
   protected
+    list<list<Integer>> combinations = List.combination(skips);
     Integer sub_idx;
     Type sub_ty;
   algorithm
-    for com in List.combination(skips) loop
-      (sub_idx, sub_ty) := resolveSkips(index, ty, com, cref, fullmap);
-      skip_lst := (sub_idx, sub_ty) :: skip_lst;
-    end for;
-  algorithm
-
+    if listEmpty(combinations) then
+      skip_lst := {(index, ty)};
+    else
+      for com in combinations loop
+        (sub_idx, sub_ty) := resolveSkips(index, ty, com, cref, fullmap);
+        skip_lst := (sub_idx, sub_ty) :: skip_lst;
+      end for;
+    end if;
   end resolveSkipsLst;
 
   function resolveSkips
