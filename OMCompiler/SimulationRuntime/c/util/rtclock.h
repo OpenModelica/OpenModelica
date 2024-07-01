@@ -63,7 +63,7 @@ typedef int rtclock_t;
 static inline void rt_ext_tp_tick(rtclock_t* tick_tp) {}
 static inline double rt_ext_tp_tock(rtclock_t* tick_tp) {return 0.0;}
 static inline void rt_tick(int ix) {}
-static inline void rt_accumulate(int ix) {}
+static inline double rt_accumulate(int ix) {return 0.0;}
 static inline void rt_clear(int ix) {}
 static inline double rt_tock(int ix) {return 0.0;}
 
@@ -121,7 +121,7 @@ double rt_tock(int ix);
 void rt_clear_total(int ix);
 /* clear zeros out the accumulated data, and adds it to the total (we have two levels of accumulation) */
 void rt_clear(int ix);
-void rt_accumulate(int ix); /* Uses integer addition for maximum accuracy and good speed. */
+double rt_accumulate(int ix); /* Uses integer addition for maximum accuracy and good speed. */
 double rt_accumulated(int ix);
 double rt_max_accumulated(int ix);
 double rt_total(int ix);
