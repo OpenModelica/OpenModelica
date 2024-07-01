@@ -360,7 +360,7 @@ public
     Integer arr_idx;
     Slice.IntLst scal_indices;
     list<StrongComponent> entwined_slices = {};
-     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
+    list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
   algorithm
     // collect individual buckets again
     for idx in eqn_indices loop
