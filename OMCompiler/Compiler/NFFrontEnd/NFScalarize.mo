@@ -105,11 +105,11 @@ protected
   Binding.Source bind_src;
   Boolean has_binding;
 algorithm
-  binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
+  var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
 
   if Type.isArray(var.ty) and Type.hasKnownSize(var.ty) then
     try
-      Variable.VARIABLE(name, ty, _, vis, attr, ty_attr, _, cmt, info, binfo) := var;
+      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info, binfo) := var;
       crefs := ComponentRef.scalarize(name);
 
       if listEmpty(crefs) then
