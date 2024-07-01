@@ -1974,7 +1974,7 @@ public
       case BOX() then "BOX(" + toFlatString(exp.exp, format) + ")";
 
       case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format);
-      case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format) + "[" + intString(exp.index) + "]";
+      case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
       case RECORD_ELEMENT() then toFlatString(exp.recordExp, format) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);
       case SHARED_LITERAL() then "[literal: " + intString(exp.index) + ", " + toString(exp.exp) + "]";
