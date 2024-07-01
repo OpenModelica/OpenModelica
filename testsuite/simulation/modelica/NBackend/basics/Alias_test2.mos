@@ -1,14 +1,14 @@
 // name: Alias_test2
 // keywords: NewBackend, Alias
 // status: correct
+// function: Throws an error if there are non literal nominal values.
 
 loadString("
   model Test2
-    // Throws an error if there are non literal nominal values.
     parameter Real p(fixed=false);
-    Real y;             // not simple
-    Real x(min=-200, max=200, start=-5, fixed=false, nominal=2);
-    Real z(min=-100, max=100, start=-10, fixed=true, nominal=p);        // regular simple
+    Real y;                   // not simple
+    Real x(nominal=2);
+    Real z(nominal=p);        // regular simple
   equation
     x = -2*z;
     y = time + 3.0;
@@ -43,13 +43,13 @@ simulate(Test2); getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: Test2"
 // end SimulationResult;
-// "Error: Internal error NBAlias.checkNominalThreshold failed because non literal nominal values are not allowed!
+// "Warning: NBAlias.checkNominalThreshold failed because non literal nominal values are not allowed.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
 //
-// 	Nominal map:
+// 	Nominal map after replacements:
 // 	(x, 2.0)
 // 	(z, p)
 // "

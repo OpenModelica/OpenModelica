@@ -1,13 +1,13 @@
 // name: Alias_test1
 // keywords: NewBackend, Alias
 // status: correct
+// function: Generates a notification if TearingSelect values differ and throws an error if multiple variables are fixed with different start values."
 
 loadString("
   model Test1
-    // Throws a notification about having different TearingSelect values and an error if more than one variable is fixed and have different start values.
-    Real y;             // not simple
-    Real x(min=-200, max=200, start=-5, fixed=true, nominal=2) annotation(__OpenModelica_tearingSelect=TearingSelect.avoid);
-    Real z(min=-100, max=100, start=-10, fixed=true) annotation(__OpenModelica_tearingSelect=TearingSelect.never);        // regular simple
+    Real y;                               // not simple
+    Real x(start=-5, fixed=true);
+    Real z(start=-10, fixed=true);        // regular simple
   equation
     x = -2*z;
     y = time + 3.0;
@@ -43,22 +43,13 @@ simulate(Test1); getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: Test1"
 // end SimulationResult;
-// "Notification: There are different TearingSelect values.
+// "Error: Internal error NBAlias.setStartFixed failed because multiple variables are fixed with different start values!
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
 //
-// 	TearingSelect map:
-// 	(x, TearingSelect = avoid)
-// 	(z, TearingSelect = never)
-// Error: Internal error NBAlias.setStartFixed failed because more than one variable is fixed and have different start values!
-// 	<No Constant/Parameter Binding>
-// 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
-//
-// 	Fixed start map:
+// 	Fixed start map after replacements:
 // 	(x, -5.0)
 // 	(z, 20.0)
 // "

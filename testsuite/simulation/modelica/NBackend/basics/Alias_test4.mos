@@ -1,13 +1,13 @@
 // name: Alias_test4
 // keywords: NewBackend, Alias
 // status: correct
+// function: Throws a warning if multiple variables are fixed and have identical start values.
 
 loadString("
   model Test4
-    // Throws a warning if more than one variable is fixed and have the same start values.
-    Real y;             // not simple
-    Real x(min=-200, max=200, start=20, fixed=true, nominal=2);
-    Real z(min=-100, max=100, start=-10, fixed=true);        // regular simple
+    Real y;                               // not simple
+    Real x(start=20, fixed=true);
+    Real z(start=-10, fixed=true);        // regular simple
   equation
     x = -2*z;
     y = time + 3.0;
@@ -54,13 +54,13 @@ simulate(Test4); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NBAlias.setStartFixed: More than one variable is fixed and have the same start value.
+// "Warning: NBAlias.setStartFixed: Multiple variables are fixed and have identical start values.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
 //
-// 	Fixed start map:
+// 	Fixed start map after replacements:
 // 	(x, 20.0)
 // 	(z, 20.0)
 // "

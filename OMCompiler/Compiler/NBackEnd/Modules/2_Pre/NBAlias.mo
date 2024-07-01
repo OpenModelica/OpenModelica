@@ -876,10 +876,10 @@ protected
       fixed_val := false;
       if listLength(List.unique(start_lst)) > 1 then // if length = 1, then all values are the same
         if Flags.isSet(Flags.DUMP_REPL) then
-          Error.addCompilerWarning(getInstanceName() + ": No variable is fixed and have different start values.\n"
-                                  + AliasSet.toString(set) + "\n\tStart map:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
+          Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values.\n"
+                                  + AliasSet.toString(set) + "\n\tStart map after replacements:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
         else
-          Error.addCompilerWarning(getInstanceName() + ": No variable is fixed and have different start values. Use -d=dumprepl for more information.\n");
+          Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values. Use -d=dumprepl for more information.\n");
         end if;
       end if;
     elseif count_fixed == 1 then
@@ -888,19 +888,19 @@ protected
       fixed_start_lst := UnorderedMap.valueList(fixed_start_map);
       if listLength(List.unique(fixed_start_lst)) > 1 then // if length = 1, then all values are the same
         if Flags.isSet(Flags.DUMP_REPL) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable is fixed and have different start values!\n" + AliasSet.toString(set)
-                           + "\n\tFixed start map:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values!\n" + AliasSet.toString(set)
+                           + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
           fail();
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable is fixed and have different start values! Use -d=dumprepl for more information.\n"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values! Use -d=dumprepl for more information.\n"});
           fail();
         end if;
       elseif listLength(List.unique(fixed_start_lst)) == 1 then
         if Flags.isSet(Flags.DUMP_REPL) then
-          Error.addCompilerWarning(getInstanceName() + ": More than one variable is fixed and have the same start value.\n"
-                                  + AliasSet.toString(set) + "\n\tFixed start map:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t"));
+          Error.addCompilerWarning(getInstanceName() + ": Multiple variables are fixed and have identical start values.\n"
+                                  + AliasSet.toString(set) + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t"));
         else
-          Error.addCompilerWarning(getInstanceName() + ": More than one variable is fixed and have the same start value. Use -d=dumprepl for more information.\n");
+          Error.addCompilerWarning(getInstanceName() + ": Multiple variables are fixed and have identical start values. Use -d=dumprepl for more information.\n");
         end if;
       end if;
     end if;
@@ -924,11 +924,11 @@ protected
     else
       // non literal nominal values are not allowed
       if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because non literal nominal values are not allowed!\n" + AliasSet.toString(set)
-                          + "\n\tNominal map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t")});
+        Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed.\n" + AliasSet.toString(set)
+                          + "\n\tNominal map after replacements:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
         fail();
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because non literal nominal values are not allowed! Use -d=dumprepl for more information.\n"});
+        Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed. Use -d=dumprepl for more information.\n");
         fail();
       end if;
     end try;
@@ -939,7 +939,8 @@ protected
     if abs(nom_quotient) > NOMINAL_THRESHOLD then
       if Flags.isSet(Flags.DUMP_REPL) then
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold.\n"
-                                + AliasSet.toString(set) + "\n\tNominal map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
+                                + AliasSet.toString(set) + "\n\tNominal threshold: " + realString(NOMINAL_THRESHOLD) + "\n\tNominal map after replacements:\n\t"
+                                + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
       else
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold. Use -d=dumprepl for more information.\n");
       end if;
@@ -947,7 +948,7 @@ protected
   end checkNominalThreshold;
 
   function stateSelectAlways
-    "Throws an error if more than one variable has StateSelect = always."
+    "Throws an error if multiple variables have StateSelect = always."
     input UnorderedMap<ComponentRef, StateSelect> map;
     input AliasSet set;
   protected
@@ -961,11 +962,11 @@ protected
     end for;
     if count > 1 then
       if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always!\n" + AliasSet.toString(set)
-                         + "\n\tStateSelect map:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString,"\n\t")});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables have StateSelect = always!\n" + AliasSet.toString(set)
+                         + "\n\tStateSelect map after replacements:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString,"\n\t")});
         fail();
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because more than one variable has StateSelect = always! Use -d=dumprepl for more information.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables have StateSelect = always! Use -d=dumprepl for more information.\n"});
         fail();
       end if;
     end if;
@@ -980,7 +981,7 @@ protected
   algorithm
     if listLength(List.unique(lst_values)) > 1 then // if length = 1, then all values are the same
       if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addCompilerNotification("There are different TearingSelect values.\n" + AliasSet.toString(set) + "\n\tTearingSelect map:\n\t"
+        Error.addCompilerNotification("There are different TearingSelect values.\n" + AliasSet.toString(set) + "\n\tTearingSelect map after replacements:\n\t"
                                       + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString,"\n\t"));
       else
         Error.addCompilerNotification("There are different TearingSelect values. Use -d=dumprepl for more information.\n");
