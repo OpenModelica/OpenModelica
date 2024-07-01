@@ -312,6 +312,11 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
 
   char buf[PATH_MAX];
 
+  if (MMC_STRLEN(uri_om) <= 0) {
+    omc_assert(threadData, omc_dummyFileInfo, "Malformed URI (got an empty string)");
+    MMC_THROW();
+  }
+
   char* uri = (char*)omc_alloc_interface.malloc_atomic(sizeof(char) * (MMC_STRLEN(uri_om)+1));
   strcpy(uri, MMC_STRINGDATA(uri_om));
 
