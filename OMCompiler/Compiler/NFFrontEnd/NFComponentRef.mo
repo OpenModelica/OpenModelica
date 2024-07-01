@@ -325,11 +325,12 @@ public
 
   function firstName
     input ComponentRef cref;
+    input Boolean baseModelica = false;
     output String name;
   algorithm
     name := match cref
       case CREF() then InstNode.name(cref.node);
-      case WILD() then "_";
+      case WILD() then if baseModelica then "" else "_";
       case STRING() then cref.name;
       else "";
     end match;
@@ -1233,9 +1234,9 @@ public
     list<Subscript> subs;
     ComponentRef cr;
   algorithm
-    str := firstName(cref);
+    str := firstName(cref, baseModelica = true);
 
-    if str == "time" or str == "_" then
+    if str == "time" or str == "" then
       return;
     end if;
 
@@ -1246,7 +1247,7 @@ public
     if format.scalarizeMode == BaseModelica.ScalarizeMode.NOT_SCALARIZED then
       while not listEmpty(crefs) loop
         cr :: crefs := crefs;
-        strl := firstName(cr) :: strl;
+        strl := firstName(cr, baseModelica = true) :: strl;
         subs := listAppend(getSubscripts(cr), subs);
 
         if format.recordMode == BaseModelica.RecordMode.WITH_RECORDS and isCref(cr) and
@@ -1268,7 +1269,7 @@ public
     else
       while not listEmpty(crefs) loop
         cr :: crefs := crefs;
-        strl := firstName(cr) :: strl;
+        strl := firstName(cr, baseModelica = true) :: strl;
         subs := getSubscripts(cr);
 
         if not listEmpty(subs) and

@@ -28,6 +28,7 @@ TESTFILES = \
 	SimpleCoolingCycle.mo \
   Tables.mos \
 	Tuple1.mo \
+	Tuple2.mo \
 
 
 # test that currently fail. Move up when fixed.
