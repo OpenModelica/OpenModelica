@@ -99,6 +99,9 @@ uniontype EvalTarget
     DAE.ElementSource source;
   end STATEMENT;
 
+  record INSTANCE_API
+  end INSTANCE_API;
+
   record IGNORE_ERRORS end IGNORE_ERRORS;
 
   function isRange
@@ -120,6 +123,16 @@ uniontype EvalTarget
       else false;
     end match;
   end isDimension;
+
+  function isInstanceAPI
+    input EvalTarget target;
+    output Boolean api;
+  algorithm
+    api := match target
+      case INSTANCE_API() then true;
+      else false;
+    end match;
+  end isInstanceAPI;
 
   function hasInfo
     input EvalTarget target;
@@ -699,7 +712,7 @@ algorithm
     // A record component without an explicit binding, create one from its children.
     case Component.COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))
       algorithm
-        exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
+        exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref, target);
         binding := Binding.CEVAL_BINDING(exp);
 
         if not ComponentRef.hasSubscripts(cref) then
@@ -714,7 +727,7 @@ algorithm
       algorithm
         exp := Expression.mapCrefScalars(Expression.fromCref(cref),
           function makeRecordBindingExp(typeNode = component.classInst,
-            recordNode = rec_node, recordType = ty));
+            recordNode = rec_node, recordType = ty, target = target));
 
         binding := Binding.CEVAL_BINDING(exp);
 
@@ -771,6 +784,7 @@ function makeRecordBindingExp
   input InstNode recordNode;
   input Type recordType;
   input ComponentRef cref;
+  input EvalTarget target;
   output Expression exp;
 protected
   ClassTree tree;
@@ -792,7 +806,7 @@ algorithm
     arg := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
-      arg := evalExp(arg, EvalTarget.IGNORE_ERRORS());
+      arg := evalExp(arg, target);
     end if;
 
     args := arg :: args;

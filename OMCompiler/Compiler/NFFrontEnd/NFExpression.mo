@@ -5168,6 +5168,7 @@ public
       case LBINARY() then Prefixes.purityMin(purity(exp.exp1), purity(exp.exp2));
       case LUNARY() then purity(exp.exp);
       case RELATION() then Prefixes.purityMin(purity(exp.exp1), purity(exp.exp2));
+      case MULTARY() then Prefixes.purityMin(purityList(exp.arguments), purityList(exp.inv_arguments));
       case IF() then Prefixes.purityMin(purity(exp.condition),
                        Prefixes.purityMin(purity(exp.trueBranch), purity(exp.falseBranch)));
       case CAST() then purity(exp.exp);

@@ -79,7 +79,7 @@ import NFCall.Call;
 import Ceval = NFCeval;
 import NFClassTree.ClassTree;
 import NFFlatten.FunctionTree;
-import NFPrefixes.{Variability};
+import NFPrefixes.{Variability, Purity};
 import NFSections.Sections;
 import Package = NFPackage;
 import Parser;
@@ -1381,7 +1381,8 @@ algorithm
 
         json := dumpJSONSCodeMod(elem.modifications, scope, json);
 
-        is_constant := comp.attributes.variability <= Variability.PARAMETER;
+        is_constant := comp.attributes.variability <= Variability.PARAMETER and
+                       Binding.purity(comp.binding) == Purity.PURE;
         if Binding.isExplicitlyBound(comp.binding) then
           json := JSON.addPair("value", dumpJSONBinding(comp.binding, originalBinding, evaluate = is_constant), json);
         end if;
@@ -1520,7 +1521,7 @@ algorithm
   if evaluate and not Expression.isLiteral(exp) then
     ErrorExt.setCheckpoint(getInstanceName());
     try
-      exp := Ceval.evalExp(exp);
+      exp := Ceval.evalExp(exp, NFCeval.EvalTarget.INSTANCE_API());
       json := JSON.addPair("value", Expression.toJSON(exp), json);
     else
     end try;

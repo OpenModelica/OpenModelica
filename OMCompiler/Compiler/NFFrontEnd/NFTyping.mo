@@ -1159,15 +1159,16 @@ algorithm
       Expression exp;
       Type ty;
       Variability var;
+      Purity purity;
       SourceInfo info;
       NFBinding.EachType each_ty;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
         info := Binding.getInfo(binding);
-        (exp, ty, var) := typeExp(exp, context, info);
+        (exp, ty, var, purity) := typeExp(exp, context, info);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.eachType,
+        Binding.TYPED_BINDING(exp, ty, var, purity, binding.eachType,
           Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false,
           binding.source, binding.info);
 
@@ -1193,6 +1194,7 @@ algorithm
       Expression exp;
       Type ty;
       Variability var;
+      Purity purity;
       SourceInfo info;
       MatchKind mk;
       NFBinding.EvalState eval_state;
@@ -1200,7 +1202,7 @@ algorithm
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
         info := Binding.getInfo(condition);
-        (exp, ty, var) := typeExp(exp, InstContext.set(context, NFInstContext.CONDITION), info);
+        (exp, ty, var, purity) := typeExp(exp, InstContext.set(context, NFInstContext.CONDITION), info);
         (exp, _, mk) := TypeCheck.matchTypes(ty, Type.BOOLEAN(), exp);
 
         if TypeCheck.isIncompatibleMatch(mk) then
@@ -1228,7 +1230,7 @@ algorithm
           ErrorExt.rollBack(getInstanceName());
         end if;
       then
-        Binding.TYPED_BINDING(exp, ty, var, NFBinding.EachType.NOT_EACH,
+        Binding.TYPED_BINDING(exp, ty, var, purity, NFBinding.EachType.NOT_EACH,
           Mutable.create(eval_state), false, condition.source, info);
 
   end match;
