@@ -62,16 +62,8 @@ import NFInstNode.InstNode;
 public
 function scalarize
   input output FlatModel flatModel;
-protected
-  list<Variable> vars = {};
-  list<Equation> eql = {}, ieql = {};
-  list<Algorithm> alg = {}, ialg = {};
 algorithm
-  for c in flatModel.variables loop
-    vars := scalarizeVariable(c, vars);
-  end for;
-
-  flatModel.variables := listReverseInPlace(vars);
+  flatModel.variables := scalarizeVariables(flatModel.variables);
   flatModel.equations := Equation.mapExpList(flatModel.equations, expandComplexCref);
   flatModel.equations := scalarizeEquations(flatModel.equations);
   flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, expandComplexCref);
@@ -82,9 +74,22 @@ algorithm
   execStat(getInstanceName());
 end scalarize;
 
+function scalarizeVariables
+  input list<Variable> vars;
+  input Boolean forceScalarize = false;
+  output list<Variable> outVars = {};
+algorithm
+  for v in vars loop
+    outVars := scalarizeVariable(v, outVars, forceScalarize);
+  end for;
+
+  outVars := listReverseInPlace(outVars);
+end scalarizeVariables;
+
 function scalarizeVariable
   input Variable var;
   input output list<Variable> vars = {};
+  input Boolean forceScalarize = false;
 protected
   ComponentRef name;
   Binding binding;
@@ -126,7 +131,8 @@ algorithm
         // Avoid scalarizing the variable if it would result in indexing a
         // function call (#6267), unless we're building an FMU or the variable
         // has attributes that must be scalarized (#7485).
-        if ExpressionIterator.isSubscriptedArrayCall(binding_iter) and
+        if not forceScalarize and
+           ExpressionIterator.isSubscriptedArrayCall(binding_iter) and
            not Flags.getConfigBool(Flags.BUILDING_FMU) and
            not variableHasForcedScalarAttribute(var) then
           vars := var :: vars;
@@ -236,7 +242,6 @@ algorithm
   end match;
 end scalarizeComplexVariable;
 
-protected
 function scalarizeTypeAttributes
   input list<tuple<String, Binding>> attrs;
   output list<String> names = {};
@@ -303,10 +308,11 @@ end expandComplexCref_traverser;
 
 function scalarizeEquations
   input list<Equation> eql;
+  input Boolean forceScalarize = false;
   output list<Equation> equations = {};
 algorithm
   for eq in eql loop
-    equations := scalarizeEquation(eq, equations);
+    equations := scalarizeEquation(eq, equations, forceScalarize);
   end for;
 
   equations := listReverseInPlace(equations);
@@ -315,6 +321,7 @@ end scalarizeEquations;
 function scalarizeEquation
   input Equation eq;
   input output list<Equation> equations;
+  input Boolean forceScalarize = false;
 algorithm
   equations := match eq
     local
@@ -327,7 +334,7 @@ algorithm
 
     case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src) guard Type.isArray(ty)
       algorithm
-        if Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs) then
+        if not forceScalarize and (Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs)) then
           equations := Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, src) :: equations;
         else
           lhs_iter := ExpressionIterator.fromExp(lhs);
@@ -347,6 +354,9 @@ algorithm
         end if;
       then
         equations;
+
+    case Equation.ARRAY_EQUALITY() guard forceScalarize
+      then scalarizeEquation(Equation.EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.scope, eq.source), equations, true);
 
     case Equation.CONNECT() then equations;
 

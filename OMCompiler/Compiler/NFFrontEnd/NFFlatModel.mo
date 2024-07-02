@@ -35,32 +35,34 @@ encapsulated uniontype NFFlatModel
   import Variable = NFVariable;
 
 protected
-  import Statement = NFStatement;
-  import NFFunction.Function;
-  import Expression = NFExpression;
-  import Type = NFType;
   import Binding = NFBinding;
-  import Dimension = NFDimension;
-  import ComplexType = NFComplexType;
-  import NFInstNode.InstNode;
-  import IOStream;
-  import NFSubscript.Subscript;
   import Class = NFClass;
-  import NFClassTree.ClassTree;
+  import ComplexType = NFComplexType;
   import Component = NFComponent;
-  import NFComponentRef.ComponentRef;
   import DAE.ElementSource;
-  import MetaModelica.Dangerous.listReverseInPlace;
-  import StringUtil;
-  import Util;
-  import Prefixes = NFPrefixes;
-  import NFPrefixes.Visibility;
-  import FlatModelicaUtil = NFFlatModelicaUtil;
-  import UnorderedMap;
-  import Typing = NFTyping;
+  import Dimension = NFDimension;
   import ErrorExt;
-  import Lookup = NFLookup;
+  import ExpandExp = NFExpandExp;
+  import Expression = NFExpression;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import InstContext = NFInstContext;
+  import IOStream;
+  import Lookup = NFLookup;
+  import MetaModelica.Dangerous.listReverseInPlace;
+  import NFClassTree.ClassTree;
+  import NFComponentRef.ComponentRef;
+  import NFFunction.Function;
+  import NFInstNode.InstNode;
+  import NFPrefixes.Visibility;
+  import NFSubscript.Subscript;
+  import Prefixes = NFPrefixes;
+  import Scalarize = NFScalarize;
+  import Statement = NFStatement;
+  import StringUtil;
+  import Type = NFType;
+  import Typing = NFTyping;
+  import UnorderedMap;
+  import Util;
 
   import FlatModel = NFFlatModel;
 
@@ -233,20 +235,39 @@ public
     FlatModel flat_model = flatModel;
     String name = className(flatModel);
     BaseModelica.OutputFormat format;
+    Boolean scalarize;
   algorithm
     format := BaseModelica.formatFromFlags();
+    scalarize := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize");
 
-    s := IOStream.append(s, "//! base 0.1.0\n");
-    s := IOStream.append(s, "package '" + name + "'\n");
-    flat_model.variables := reconstructRecordInstances(flat_model.variables);
+    if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
+       Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
+      flat_model := obfuscate(flat_model);
+    end if;
+
+    if scalarize then
+      flat_model.variables := Scalarize.scalarizeVariables(flat_model.variables, forceScalarize = true);
+      flat_model.equations := Equation.splitRecordEquations(flat_model.equations);
+      flat_model.equations := Scalarize.scalarizeEquations(flat_model.equations, forceScalarize = true);
+      flat_model.equations := Equation.mapExpList(flat_model.equations, ExpandExp.expandCallArgs);
+      flat_model.initialEquations := Equation.splitRecordEquations(flat_model.initialEquations);
+      flat_model.initialEquations := Scalarize.scalarizeEquations(flat_model.initialEquations, forceScalarize = true);
+      flat_model.initialEquations := Equation.mapExpList(flat_model.initialEquations, ExpandExp.expandCallArgs);
+    else
+      flat_model.variables := reconstructRecordInstances(flat_model.variables);
+    end if;
 
     if Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "moveBindings") then
       flat_model := moveBindings(flat_model);
     end if;
 
+    s := IOStream.append(s, "//! base 0.1.0\n");
+    s := IOStream.append(s, "package '" + name + "'\n");
+
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
-        s := Function.toFlatStream(fn, format, "  ", s);
+        // Function parameters are not affected by the scalarization mode, so use default format here.
+        s := Function.toFlatStream(fn, BaseModelica.defaultFormat, "  ", s);
         s := IOStream.append(s, ";\n\n");
       end if;
     end for;

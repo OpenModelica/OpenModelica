@@ -59,9 +59,10 @@ public
   algorithm
     if not Flags.isSet(Flags.NF_SCALARIZE) then
       format.scalarizeMode := ScalarizeMode.NOT_SCALARIZED;
+    elseif Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize") then
+      format.scalarizeMode := ScalarizeMode.SCALARIZED;
+      format.recordMode := RecordMode.WITHOUT_RECORDS;
     end if;
-
-    format.recordMode := RecordMode.WITH_RECORDS;
 
     for option in Flags.getConfigStringList(Flags.BASE_MODELICA_FORMAT) loop
       () := match option
