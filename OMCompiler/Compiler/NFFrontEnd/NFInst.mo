@@ -206,8 +206,10 @@ algorithm
   // Collect a tree of all functions that are still used in the flat model.
   functions := Flatten.collectFunctions(flatModel);
 
-  // Dump the flat model to a string if dumpFlat = true.
-  flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+  // Dump the flat model to a string if dumpFlat = true and --baseModelicaOptions=scalarize is not set.
+  if not Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize") then
+    flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+  end if;
 
   InstUtil.dumpFlatModelDebug("simplify", flatModel, functions);
   InstUtil.printStructuralParameters(flatModel);
@@ -224,6 +226,10 @@ algorithm
   flatModel := InstUtil.replaceEmptyArrays(flatModel);
   InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
+  // Dump the flat model to a string if dumpFlat = true and --baseModelicaOptions=scalarize is set.
+  if Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize") then
+    flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+  end if;
 
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
     // Combine the binaries to multaries. For now only on new backend

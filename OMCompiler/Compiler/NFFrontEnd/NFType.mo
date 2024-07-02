@@ -1227,6 +1227,18 @@ public
     end match;
   end lookupRecordFieldType;
 
+  function recordFieldCount
+    input Type recordType;
+    output Integer fieldCount;
+  protected
+    array<Record.Field> fields;
+  algorithm
+    fieldCount := match recordType
+      case COMPLEX(complexTy = ComplexType.RECORD(fields = fields)) then arrayLength(fields);
+      else 0;
+    end match;
+  end recordFieldCount;
+
   function recordFields
     input Type recordType;
     output list<Record.Field> field_lst;

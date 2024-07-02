@@ -1464,7 +1464,8 @@ constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat"
 
 constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOptions",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
-    ("moveBindings", Gettext.notrans("Moves movable binding equations to normal equations."))
+    ("moveBindings", Gettext.notrans("Moves movable binding equations to normal equations.")),
+    ("scalarize", Gettext.notrans("Fully scalarize the Base Modelica model."))
     })),
   Gettext.gettext("Enables optional Base Modelica options."));
 

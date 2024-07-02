@@ -64,6 +64,11 @@ public
   protected
     FlatModel flat_model = flatModel;
   algorithm
+    if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
+       Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
+      flat_model := FlatModel.obfuscate(flat_model);
+    end if;
+
     // --dumpFlatModel=stage dumps specific stages, --dumpFlatModel dumps all stages.
     if Flags.isConfigFlagSet(Flags.DUMP_FLAT_MODEL, stage) or
        listEmpty(Flags.getConfigStringList(Flags.DUMP_FLAT_MODEL)) then

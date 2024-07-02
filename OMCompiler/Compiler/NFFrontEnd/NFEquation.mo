@@ -42,10 +42,12 @@ protected
   import ElementSource;
   import Equation = NFEquation;
   import Error;
+  import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
   import Call = NFCall;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   uniontype Branch
@@ -1569,6 +1571,80 @@ public
       else false;
     end match;
   end isMultiLine;
+
+  function splitRecordEquations
+    input list<Equation> equations;
+    output list<Equation> outEquations = {};
+  algorithm
+    for eq in equations loop
+      outEquations := splitRecordEquation(eq, outEquations);
+    end for;
+
+    outEquations := listReverseInPlace(outEquations);
+  end splitRecordEquations;
+
+  function splitRecordEquation
+    "Splits an equation involving record expressions into separate equations for
+     each record field."
+    input Equation eq;
+    input output list<Equation> equations;
+  protected
+    Expression lhs, rhs;
+  algorithm
+    equations := match eq
+      case EQUALITY()
+        guard Type.isRecord(Type.arrayElementType(eq.ty))
+        algorithm
+          eq.lhs := ExpandExp.expand(eq.lhs);
+          eq.rhs := ExpandExp.expand(eq.rhs);
+
+          for i in 1:Type.recordFieldCount(Type.arrayElementType(eq.ty)) loop
+            lhs := Expression.nthRecordElement(i, eq.lhs);
+            rhs := Expression.nthRecordElement(i, eq.rhs);
+            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source) :: equations;
+          end for;
+        then
+          equations;
+
+      case ARRAY_EQUALITY()
+        guard Type.isRecord(Type.arrayElementType(eq.ty))
+        then splitRecordEquation(EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.scope, eq.source), equations);
+
+      case FOR()
+        algorithm
+          eq.body := splitRecordEquations(eq.body);
+        then
+          eq :: equations;
+
+      case IF()
+        algorithm
+          eq.branches := list(splitRecordEquationBranch(b) for b in eq.branches);
+        then
+          eq :: equations;
+
+      case WHEN()
+        algorithm
+          eq.branches := list(splitRecordEquationBranch(b) for b in eq.branches);
+        then
+          eq :: equations;
+
+      else eq :: equations;
+    end match;
+  end splitRecordEquation;
+
+  function splitRecordEquationBranch
+    input output Branch branch;
+  algorithm
+    () := match branch
+      case BRANCH()
+        algorithm
+          branch.body := splitRecordEquations(branch.body);
+        then
+          ();
+
+      else ();
+    end match;
+  end splitRecordEquationBranch;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEquation;
