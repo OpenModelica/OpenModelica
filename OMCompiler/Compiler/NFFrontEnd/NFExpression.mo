@@ -1875,7 +1875,7 @@ public
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
       case SUBSCRIPTED_EXP() then "(" + toString(exp.exp) + ")" + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
-      case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
+      case RECORD_ELEMENT() then "(" + toString(exp.recordExp) + ")." + exp.fieldName;
       case MUTABLE() then toString(Mutable.access(exp.exp));
       case SHARED_LITERAL() then "LITERAL(" + intString(exp.index) + ", " + toString(exp.exp) + ")";
       case EMPTY() then "#EMPTY#";
@@ -1975,7 +1975,7 @@ public
 
       case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
-      case RECORD_ELEMENT() then toFlatString(exp.recordExp, format) + "[field: " + exp.fieldName + "]";
+      case RECORD_ELEMENT() then "(" + toFlatString(exp.recordExp, format) + ")." + exp.fieldName;
       case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);
       case SHARED_LITERAL() then "[literal: " + intString(exp.index) + ", " + toString(exp.exp) + "]";
       case EMPTY() then "#EMPTY#";
