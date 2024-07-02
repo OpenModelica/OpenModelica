@@ -2376,6 +2376,7 @@ algorithm
   outLst := match(inLst, inIndexType)
     // transform to absolute indexes
     case (_, BackendDAE.ABSOLUTE())
+      guard not AvlSetInt.isEmpty(inLst) and AvlSetInt.smallestKey(inLst) < 0
       algorithm
         outLst := AvlSetInt.EMPTY();
         for key in AvlSetInt.listKeys(inLst) loop
