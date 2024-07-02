@@ -313,6 +313,17 @@ algorithm
   end if;
 end intersection;
 
+function smallestKey
+  input Tree tree;
+  output Key key;
+algorithm
+  key := match tree
+    case NODE(right = EMPTY()) then tree.key;
+    case NODE() then smallestKey(tree.right);
+    case LEAF() then tree.key;
+  end match;
+end smallestKey;
+
 protected
 
 function referenceEqOrEmpty
