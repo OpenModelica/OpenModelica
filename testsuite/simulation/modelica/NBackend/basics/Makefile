@@ -7,8 +7,6 @@ multary_simplification.mos \
 parameterSystem.mos \
 Alias.mos \
 Alias2.mos \
-Alias_tests.mos \
-Alias_test0.mos \
 Alias_test1.mos \
 Alias_test2.mos \
 Alias_test3.mos \
