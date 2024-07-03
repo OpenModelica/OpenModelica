@@ -1288,7 +1288,7 @@ public
 
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
-        binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start);
+        binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start, true);
         var.backendinfo := binfo;
       then var;
 
