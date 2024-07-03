@@ -1,7 +1,7 @@
 // name: Alias_test1
 // keywords: NewBackend, Alias
 // status: correct
-// function: Generates a notification if TearingSelect values differ and throws an error if multiple variables are fixed with different start values."
+// function: Generates a notification if TearingSelect values differ and throws an error if multiple variables are fixed with different start values.
 
 loadString("
   model Test1

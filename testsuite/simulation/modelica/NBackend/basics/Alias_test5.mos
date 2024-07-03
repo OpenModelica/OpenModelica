@@ -55,13 +55,12 @@ simulate(Test5); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NBAlias.checkNominalThreshold: The quotient of the greatest and lowest nominal value is greater than the nominal threshold.
+// "Warning: NBAlias.checkNominalThreshold: The quotient of the greatest and lowest nominal value is greater than the nominal threshold = 1000.0.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
 //
-// 	Nominal threshold: 1000.0
 // 	Nominal map after replacements:
 // 	(x, 2.0)
 // 	(z, 1e7)

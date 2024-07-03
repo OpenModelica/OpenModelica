@@ -939,11 +939,11 @@ protected
     nom_quotient := nom_max / nom_min;
     if abs(nom_quotient) > NOMINAL_THRESHOLD then
       if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold.\n"
-                                + AliasSet.toString(set) + "\n\tNominal threshold: " + realString(NOMINAL_THRESHOLD) + "\n\tNominal map after replacements:\n\t"
+        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ".\n"
+                                + AliasSet.toString(set) + "\n\tNominal map after replacements:\n\t"
                                 + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
       else
-        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold. Use -d=dumprepl for more information.\n");
+        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ". Use -d=dumprepl for more information.\n");
       end if;
     end if;
   end checkNominalThreshold;
