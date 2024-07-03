@@ -85,6 +85,7 @@ public
   constant String SIMULATION_STR  = "SIM";
   constant String START_STR       = "SRT";
   constant String PRE_STR         = "PRE";
+  constant String TMP_STR         = "TMP";
 
   type EquationPointer = Pointer<Equation> "mainly used for mapping purposes";
 
