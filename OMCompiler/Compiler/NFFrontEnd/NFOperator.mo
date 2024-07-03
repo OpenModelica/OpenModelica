@@ -916,6 +916,7 @@ public
       case Op.MUL_MATRIX_VECTOR then true;
       case Op.MUL_VECTOR_MATRIX then true;
       case Op.MATRIX_PRODUCT    then true;
+      case Op.SCALAR_PRODUCT    then true;
                                 else false;
     end match;
   end reduction;

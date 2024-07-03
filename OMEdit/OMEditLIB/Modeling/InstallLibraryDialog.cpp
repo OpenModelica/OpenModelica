@@ -77,7 +77,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   pSupportLevelsGroupBox->setLayout(pSupportLevelsGridLayout);
   // name combobox
   mpNameComboBox = new QComboBox;
-  connect(mpNameComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(libraryIndexChanged(QString)));
+  connect(mpNameComboBox, SIGNAL(currentIndexChanged(int)), SLOT(libraryIndexChanged(int)));
   // source label
   mpSourceLabel = new Label;
   mpSourceLabel->setOpenExternalLinks(true);
@@ -98,7 +98,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
     }
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::LIBRARY_INDEX_FILE_NOT_FOUND).arg(indexFilePath), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::LIBRARY_INDEX_FILE_NOT_FOUND).arg(indexFilePath), QMessageBox::Ok);
   }
   // exact match checkbox
   mpExactMatchCheckBox = new QCheckBox(tr("Exact Match (Install only the specified version of dependencies)"));
@@ -200,16 +200,17 @@ void InstallLibraryDialog::filterChanged(bool checked)
     }
   }
 
-  libraryIndexChanged(mpNameComboBox->currentText());
+  libraryIndexChanged(mpNameComboBox->currentIndex());
 }
 
 /*!
  * \brief InstallLibraryDialog::libraryIndexChanged
  * Fills the version combobox when the library is changed.
- * \param text
+ * \param index
  */
-void InstallLibraryDialog::libraryIndexChanged(const QString &text)
+void InstallLibraryDialog::libraryIndexChanged(int index)
 {
+  const QString text = mpNameComboBox->itemText(index);
   mpSourceLabel->clear();
   mpVersionComboBox->clear();
 
@@ -243,7 +244,7 @@ void InstallLibraryDialog::installLibrary()
     accept();
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("The library <b>%1</b> is not installed. See message browser for any possible messages.").arg(library), Helper::ok);
+                          tr("The library <b>%1</b> is not installed. See message browser for any possible messages.").arg(library), QMessageBox::Ok);
     mpProgressLabel->hide();
     mpOkButton->setEnabled(true);
   }
@@ -307,7 +308,7 @@ void UpgradeInstalledLibrariesDialog::upgradeInstalledLibraries()
     accept();
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Failed to upgrade libraries. See message browser for any possible messages."), Helper::ok);
+                          tr("Failed to upgrade libraries. See message browser for any possible messages."), QMessageBox::Ok);
     mpProgressLabel->hide();
     mpUpgradeButton->setEnabled(true);
   }

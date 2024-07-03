@@ -82,6 +82,7 @@ extern modelica_integer nobox_stringGet(threadData_t *threadData,metamodelica_st
 extern modelica_metatype boxptr_stringUpdateStringChar(threadData_t *,metamodelica_string str, metamodelica_string c, modelica_metatype ix);
 extern modelica_integer stringHash(metamodelica_string_const);
 extern modelica_integer stringHashDjb2(metamodelica_string_const s);
+extern modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_integer hash);
 extern modelica_integer stringHashDjb2Mod(metamodelica_string_const s,modelica_integer mod);
 extern modelica_integer stringHashSdbm(metamodelica_string_const str);
 #define substring(X,Y,Z) boxptr_substring(threadData,X,mmc_mk_icon(Y),mmc_mk_icon(Z))

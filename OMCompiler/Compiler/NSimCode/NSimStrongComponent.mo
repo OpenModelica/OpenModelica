@@ -40,7 +40,6 @@ protected
   import DAE;
 
   // NF imports
-  import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
@@ -574,7 +573,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(Slice.getT(comp.eqn)), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
@@ -1174,6 +1173,16 @@ public
       end match;
     end fixIndex;
 
+    function collectEntwinedEquations
+      "collects entwined equations from initial blocks"
+      input Block blck;
+      output list<Block> lst;
+    algorithm
+      lst := match blck
+        case ENTWINED_ASSIGN() then blck.single_calls;
+        else {};
+      end match;
+    end collectEntwinedEquations;
   protected
     function whenString
       input list<ComponentRef> conditions;

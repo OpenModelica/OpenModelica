@@ -370,6 +370,7 @@ DimUnknown12.mo \
 DimUnknown13.mo \
 DimUnknown14.mo \
 DimUnknown15.mo \
+DimUnknown16.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -542,6 +543,7 @@ ForStatement1.mo \
 ForStatement2.mo \
 ForStatement3.mo \
 ForStatementArray.mo \
+ForStatementAssign1.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \
 func1.mo \
@@ -1078,6 +1080,7 @@ ReinitInvalid4.mo \
 ReinitInvalid5.mo \
 ReinitInvalid6.mo \
 ReinitInvalid7.mo \
+ReinitInvalid8.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \
@@ -1162,6 +1165,7 @@ UnboundParameter1.mo \
 UnboundParameter2.mo \
 UnboundParameter3.mo \
 UnboundParameter4.mo \
+UnboundParameter5.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \

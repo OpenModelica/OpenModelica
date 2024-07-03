@@ -249,8 +249,9 @@ public
           if Flags.isSet(Flags.DUMP_SORTING) then
             print(StringUtil.headline_1("Sorting"));
           end if;
-          buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.modes);
 
+          // phase 1 tarjan
+          buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.modes);
           comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
           // phase 2 tarjan
@@ -260,6 +261,7 @@ public
           // it is just safer if something is changed in the future
           () := match phase2_adj
             case Adjacency.Matrix.FINAL() algorithm
+              // phase 3 tarjan
               phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
               comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
             then ();
@@ -485,12 +487,6 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
       end match;
-      /*
-      print(Adjacency.Matrix.toString(adj, "before"));
-      print(Matching.toString(matching, "before"));
-      print(Adjacency.Matrix.toString(phase2_adj, "after"));
-      print(Matching.toString(phase2_matching, "after"));
-      */
     end create;
 
     function collapse

@@ -7405,6 +7405,25 @@ algorithm
   outResult := false;
 end any;
 
+public function count<T>
+  "Counts the number of elements the function returns true for"
+  input list<T> inList;
+  input PredFunc inFunc;
+  output Integer outResult = 0;
+
+  partial function PredFunc
+    input T inElement;
+    output Boolean outMatch;
+  end PredFunc;
+algorithm
+  for e in inList loop
+    if inFunc(e) then
+      outResult := outResult + 1;
+      return;
+    end if;
+  end for;
+end count;
+
 public function separateOnTrue<T>
   "Takes a list of values and a filter function over the values and returns 2
    sub lists of values for which the matching function returns true and false."

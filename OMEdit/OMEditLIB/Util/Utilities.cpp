@@ -42,11 +42,6 @@
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QByteArray>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-#include <QScreen>
-#else // QT_VERSION_CHECK
-#include <QDesktopWidget>
-#endif // QT_VERSION_CHECK
 #include <QGridLayout>
 #include <QStylePainter>
 #include <QPainter>
@@ -629,7 +624,9 @@ QSettings* Utilities::getApplicationSettings()
   if (!init) {
     init = 1;
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
+#endif
   }
   return pSettings;
 }

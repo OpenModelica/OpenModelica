@@ -109,7 +109,7 @@ public
       fail();
     end if;
 
-    order := Ceval.evalExp(order, EvalTarget.GENERIC(info));
+    order := Ceval.evalExp(order, EvalTarget.new(info));
   end typeDerivative;
 
   function toDAE

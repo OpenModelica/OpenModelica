@@ -404,7 +404,15 @@ protected
           case "previous" then Expression.EMPTY(Type.INTEGER());
           case "hold"     then Expression.EMPTY(Type.INTEGER());
           case "sample" algorithm
-            {_, _, arg} := Call.arguments(exp.call);
+            arg := match Call.arguments(exp.call)
+              // not collected samples have 2 arguments
+              case {_, arg} then arg;
+              // collected samples have 3 arguments
+              case {_, _, arg} then arg;
+              else algorithm
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+              then fail();
+            end match;
             _ := collectPartitioningCrefs(arg, var_crefs);
           then Expression.EMPTY(Type.INTEGER());
           else exp;

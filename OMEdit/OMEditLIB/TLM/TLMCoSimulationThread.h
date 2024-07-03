@@ -37,6 +37,7 @@
 #include "TLMCoSimulationOutputWidget.h"
 
 #include <QThread>
+#include <QFile>
 
 class TLMCoSimulationOutputWidget;
 class TLMCoSimulationThread : public QThread

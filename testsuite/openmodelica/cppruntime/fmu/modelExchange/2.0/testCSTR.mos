@@ -65,6 +65,7 @@ getErrorString();
 //   fmiVersion=\"2.0\"
 //   modelName=\"CSTRModel\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange

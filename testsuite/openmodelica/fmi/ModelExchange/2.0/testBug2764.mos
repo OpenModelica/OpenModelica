@@ -43,6 +43,7 @@ readFile("modelDescription.tmp.xml");
 //   fmiVersion=\"2.0\"
 //   modelName=\"test_Bug2764\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"1\">
 //   <ModelExchange

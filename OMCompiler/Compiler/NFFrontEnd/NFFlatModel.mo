@@ -35,32 +35,34 @@ encapsulated uniontype NFFlatModel
   import Variable = NFVariable;
 
 protected
-  import Statement = NFStatement;
-  import NFFunction.Function;
-  import Expression = NFExpression;
-  import Type = NFType;
   import Binding = NFBinding;
-  import Dimension = NFDimension;
-  import ComplexType = NFComplexType;
-  import NFInstNode.InstNode;
-  import IOStream;
-  import NFSubscript.Subscript;
   import Class = NFClass;
-  import NFClassTree.ClassTree;
+  import ComplexType = NFComplexType;
   import Component = NFComponent;
-  import NFComponentRef.ComponentRef;
   import DAE.ElementSource;
-  import MetaModelica.Dangerous.listReverseInPlace;
-  import StringUtil;
-  import Util;
-  import Prefixes = NFPrefixes;
-  import NFPrefixes.Visibility;
-  import FlatModelicaUtil = NFFlatModelicaUtil;
-  import UnorderedMap;
-  import Typing = NFTyping;
+  import Dimension = NFDimension;
   import ErrorExt;
-  import Lookup = NFLookup;
+  import ExpandExp = NFExpandExp;
+  import Expression = NFExpression;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import InstContext = NFInstContext;
+  import IOStream;
+  import Lookup = NFLookup;
+  import MetaModelica.Dangerous.listReverseInPlace;
+  import NFClassTree.ClassTree;
+  import NFComponentRef.ComponentRef;
+  import NFFunction.Function;
+  import NFInstNode.InstNode;
+  import NFPrefixes.Visibility;
+  import NFSubscript.Subscript;
+  import Prefixes = NFPrefixes;
+  import Scalarize = NFScalarize;
+  import Statement = NFStatement;
+  import StringUtil;
+  import Type = NFType;
+  import Typing = NFTyping;
+  import UnorderedMap;
+  import Util;
 
   import FlatModel = NFFlatModel;
 
@@ -232,20 +234,46 @@ public
   protected
     FlatModel flat_model = flatModel;
     String name = className(flatModel);
+    BaseModelica.OutputFormat format;
+    Boolean scalarize;
   algorithm
+    format := BaseModelica.formatFromFlags();
+    scalarize := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize");
+
+    if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
+       Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
+      flat_model := obfuscate(flat_model);
+    end if;
+
+    if scalarize then
+      flat_model.variables := Scalarize.scalarizeVariables(flat_model.variables, forceScalarize = true);
+      flat_model.equations := Equation.splitRecordEquations(flat_model.equations);
+      flat_model.equations := Scalarize.scalarizeEquations(flat_model.equations, forceScalarize = true);
+      flat_model.equations := Equation.mapExpList(flat_model.equations, ExpandExp.expandCallArgs);
+      flat_model.initialEquations := Equation.splitRecordEquations(flat_model.initialEquations);
+      flat_model.initialEquations := Scalarize.scalarizeEquations(flat_model.initialEquations, forceScalarize = true);
+      flat_model.initialEquations := Equation.mapExpList(flat_model.initialEquations, ExpandExp.expandCallArgs);
+    else
+      flat_model.variables := reconstructRecordInstances(flat_model.variables);
+    end if;
+
+    if Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "moveBindings") then
+      flat_model := moveBindings(flat_model);
+    end if;
+
     s := IOStream.append(s, "//! base 0.1.0\n");
     s := IOStream.append(s, "package '" + name + "'\n");
-    flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
-        s := Function.toFlatStream(fn, "  ", s);
+        // Function parameters are not affected by the scalarization mode, so use default format here.
+        s := Function.toFlatStream(fn, BaseModelica.defaultFormat, "  ", s);
         s := IOStream.append(s, ";\n\n");
       end if;
     end for;
 
     for ty in collectFlatTypes(flat_model, functions) loop
-      s := Type.toFlatDeclarationStream(ty, "  ", s);
+      s := Type.toFlatDeclarationStream(ty, format, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
 
@@ -254,31 +282,31 @@ public
     s := IOStream.append(s, "\n");
 
     for v in flat_model.variables loop
-      s := Variable.toFlatStream(v, "    ", printBindingTypes, s);
+      s := Variable.toFlatStream(v, format, "    ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 
     if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "  initial equation\n");
-      s := Equation.toFlatStreamList(flat_model.initialEquations, "    ", s);
+      s := Equation.toFlatStreamList(flat_model.initialEquations, format, "    ", s);
     end if;
 
     if not listEmpty(flat_model.equations) then
       s := IOStream.append(s, "  equation\n");
-      s := Equation.toFlatStreamList(flat_model.equations, "    ", s);
+      s := Equation.toFlatStreamList(flat_model.equations, format, "    ", s);
     end if;
 
     for alg in flat_model.initialAlgorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "  initial algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "    ", s);
+        s := Statement.toFlatStreamList(alg.statements, format, "    ", s);
       end if;
     end for;
 
     for alg in flat_model.algorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "  algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "    ", s);
+        s := Statement.toFlatStreamList(alg.statements, format, "    ", s);
       end if;
     end for;
 
@@ -1022,6 +1050,24 @@ public
 
     flatModel.variables := list(Variable.removeNonTopLevelDirection(v) for v in flatModel.variables);
   end removeNonTopLevelDirections;
+
+  function moveBindings
+    "Moves binding equations of variables to the equation section of the flat model."
+    input output FlatModel flatModel;
+  protected
+    list<Variable> vars = {};
+    list<Equation> eqs = {};
+  algorithm
+    for var in flatModel.variables loop
+      (var, eqs) := Variable.moveBinding(var, eqs);
+      vars := var :: vars;
+    end for;
+
+    if not listEmpty(eqs) then
+      flatModel.variables := listReverseInPlace(vars);
+      flatModel.equations := listAppend(listReverseInPlace(eqs), flatModel.equations);
+    end if;
+  end moveBindings;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

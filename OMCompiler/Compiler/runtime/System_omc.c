@@ -758,27 +758,38 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
     MMC_THROW();
   }
   buf = ModelicaAllocateString(len);
-  if (snprintf(buf,len,fmt,d) >= len) {
+
+  int str_len = snprintf(buf, len + 1, fmt, d);
+
+  if (str_len < 0) {
+    fprintf(stderr, "System_snprintff: Encoding error.\n");
     MMC_THROW();
   }
+
+  if (str_len > len) {
+    fprintf(stderr, "System_snprintff: The formatted string would have length %d but the buffer only has room for %d characters.\n", str_len, len);
+    MMC_THROW();
+  }
+
   return buf;
 }
 
 extern const char* System_sprintff(const char *fmt, double d)
 {
   char *buf;
-  const int buf_size = 20;
-  buf = ModelicaAllocateString(buf_size);
+  const int len = 20;
+  buf = ModelicaAllocateString(len);
 
-  int len = snprintf(buf, buf_size, fmt, d);
+  int str_len = snprintf(buf, len + 1, fmt, d);
 
-  if (len < 0) {
+  if (str_len < 0) {
+    fprintf(stderr, "System_sprintff: Encoding error.\n");
     MMC_THROW();
   }
 
-  if (len >= buf_size) {
-    buf = ModelicaAllocateString(len + 1);
-    snprintf(buf, len, fmt, d);
+  if (str_len > len) {
+    buf = ModelicaAllocateString(str_len);
+    snprintf(buf, str_len + 1, fmt, d);
   }
 
   return buf;

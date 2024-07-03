@@ -4,20 +4,19 @@
 #
 #-------------------------------------------------
 
-QT += core gui svg
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT *= printsupport widgets
+QT += core gui svg printsupport widgets
+equals(QT_MAJOR_VERSION, 6) {
+  QT += core5compat
 }
 
 # Set the C++ standard.
-CONFIG += c++1z
+CONFIG += c++17
 
 TARGET = OMPlot
 TEMPLATE = lib
 
 win32 {
  CONFIG += staticlib
- QMAKE_LFLAGS += -Wl,--enable-auto-import
 }
 
 SOURCES += Plot.cpp \

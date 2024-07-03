@@ -541,8 +541,8 @@ public
       // create cref -> index maps
       sizeCols := arrayLength(seeds);
       sizeRows := arrayLength(partials);
-      seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-      partial_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeCols));
+      partial_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeRows));
       for i in 1:sizeCols loop
         UnorderedMap.add(seeds[i], i, seed_indices);
       end for;

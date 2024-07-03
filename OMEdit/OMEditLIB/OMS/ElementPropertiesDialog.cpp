@@ -327,7 +327,7 @@ void ElementPropertiesDialog::updateProperties()
 {
   // check name
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::item), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::item), QMessageBox::Ok);
     return;
   }
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();

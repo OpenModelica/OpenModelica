@@ -31,6 +31,7 @@
 
 encapsulated package NFInstNode
 
+import BaseModelica;
 import Binding = NFBinding;
 import Component = NFComponent;
 import Class = NFClass;
@@ -1588,25 +1589,27 @@ uniontype InstNode
 
   function toFlatString
     input InstNode node;
+    input BaseModelica.OutputFormat format;
     input String indent;
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), indent);
-      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, indent);
+      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), format, indent);
+      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, format, indent);
       else name(node);
     end match;
   end toFlatString;
 
   function toFlatStream
     input InstNode node;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   algorithm
     s := match node
-      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), indent, s);
-      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, indent, s);
-      else IOStream.append(s, toFlatString(node, indent));
+      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), format, indent, s);
+      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, format, indent, s);
+      else IOStream.append(s, toFlatString(node, format, indent));
     end match;
   end toFlatStream;
 

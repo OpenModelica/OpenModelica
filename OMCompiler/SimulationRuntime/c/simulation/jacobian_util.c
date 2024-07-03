@@ -168,7 +168,7 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
  * @param color         Current color index.
  * @param length        Number of columns in color `color`.
  */
-void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length) {
+void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex) {
   unsigned int i, index;
   size_t count;
 
@@ -176,6 +176,9 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
     count = omc_fread(&index, sizeof(unsigned int), 1, pFile, FALSE);
     if (count != 1) {
       throwStreamPrint(threadData, "Error while reading color %u of sparsity pattern.", color);
+    }
+    if (index < 0 || index >= maxIndex) {
+      throwStreamPrint(threadData, "Error while reading color %u of sparsity pattern. Index %d out of bounds", color, index);
     }
     colorCols[index] = color;
   }

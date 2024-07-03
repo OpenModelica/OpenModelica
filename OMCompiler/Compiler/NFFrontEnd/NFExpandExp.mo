@@ -343,7 +343,7 @@ public
       // This relies on the fact that Ceval.evalBuiltinCat doesn't actually do any
       // actual constant evaluation, and works on non-constant arrays too as long
       // as they're expanded.
-      exp := Ceval.evalBuiltinCat(listHead(args), expl, Ceval.EvalTarget.IGNORE_ERRORS());
+      exp := Ceval.evalBuiltinCat(listHead(args), expl, NFCeval.noTarget);
     else
       exp := expandGeneric(Expression.CALL(call));
     end if;
@@ -1096,6 +1096,23 @@ public
 
     end match;
   end expandGeneric2;
+
+  function expandCallArgs
+    input output Expression exp;
+  protected
+    Call call;
+  algorithm
+    () := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        algorithm
+          call.arguments := list(expand(arg) for arg in call.arguments);
+          exp.call := call;
+        then
+          ();
+
+      else ();
+    end match;
+  end expandCallArgs;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpandExp;

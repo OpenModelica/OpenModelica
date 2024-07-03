@@ -54,7 +54,7 @@ protected
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.{Annotations, BackendInfo, VariableAttributes, VariableKind};
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
@@ -335,14 +335,14 @@ public
     "ToDo: add simplification for bindings"
     input output BackendDAE bdae;
   algorithm
-    // no output needed, all pointers
-    () := match bdae
+    bdae := match bdae
       local
-        EquationPointers equations;
-      case MAIN(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
-        _ := EquationPointers.map(equations, function Equation.simplify(name = getInstanceName(), indent = ""));
-      then ();
-      else ();
+        EqData eqData;
+      case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
+        eqData.equations := EquationPointers.map(eqData.equations, function Equation.simplify(name = getInstanceName(), indent = ""));
+        bdae.eqData := EqData.compress(eqData);
+      then bdae;
+      else bdae;
     end match;
   end simplify;
 
@@ -429,53 +429,53 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
-        case BackendExtension.ALGEBRAIC() algorithm
+        case VariableKind.ALGEBRAIC() algorithm
           algebraics_lst := lowVar_ptr :: algebraics_lst;
           unknowns_lst := lowVar_ptr :: unknowns_lst;
           initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
-        case BackendExtension.STATE() algorithm
+        case VariableKind.STATE() algorithm
           states_lst := lowVar_ptr :: states_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
           initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
-        case BackendExtension.STATE_DER() algorithm
+        case VariableKind.STATE_DER() algorithm
           derivatives_lst := lowVar_ptr :: derivatives_lst;
           unknowns_lst := lowVar_ptr :: unknowns_lst;
           initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
-        case BackendExtension.DISCRETE() algorithm
+        case VariableKind.DISCRETE() algorithm
           discretes_lst := lowVar_ptr :: discretes_lst;
           unknowns_lst := lowVar_ptr :: unknowns_lst;
           initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
-        case BackendExtension.PREVIOUS() algorithm
+        case VariableKind.PREVIOUS() algorithm
           previous_lst := lowVar_ptr :: previous_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
           initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
-        case BackendExtension.PARAMETER() algorithm
+        case VariableKind.PARAMETER() algorithm
           parameters_lst := lowVar_ptr :: parameters_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
-        case BackendExtension.CONSTANT() algorithm
+        case VariableKind.CONSTANT() algorithm
           constants_lst := lowVar_ptr :: constants_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
         // always consider records known since their attributes are in the unknown section (if they are unknown)
-        case BackendExtension.RECORD() algorithm
+        case VariableKind.RECORD() algorithm
           records_lst := lowVar_ptr :: records_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
-        case BackendExtension.EXTOBJ() algorithm
+        case VariableKind.EXTOBJ() algorithm
           lowVar_ptr := BVariable.setFixed(lowVar_ptr);
           external_objects_lst := lowVar_ptr :: external_objects_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
@@ -532,20 +532,20 @@ protected
     input Variable var;
     output Pointer<Variable> var_ptr;
   protected
-    BackendExtension.VariableKind varKind;
-    BackendExtension.VariableAttributes attributes;
-    BackendExtension.Annotations annotations;
+    VariableKind varKind;
+    VariableAttributes attributes;
+    Annotations annotations;
   algorithm
     try
-      attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
-      annotations := BackendExtension.Annotations.create(var.comment);
+      attributes := VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
+      annotations := Annotations.create(var.comment);
 
       // only change varKind if unset (Iterators are set before)
       var.backendinfo := match var.backendinfo
-        case BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY()) algorithm
+        case BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-        then BackendExtension.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE());
-        else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
+        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE());
+        else BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 
       // Remove old type attribute information since it has been converted.
@@ -564,8 +564,8 @@ protected
       /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
       false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
     input Prefixes.Variability variability;
-    output BackendExtension.VariableKind varKind;
-    input output BackendExtension.VariableAttributes attributes;
+    output VariableKind varKind;
+    input output VariableAttributes attributes;
     input Type ty;
   algorithm
     varKind := match(variability, attributes, ty)
@@ -574,32 +574,32 @@ protected
         list<Pointer<Variable>> children = {};
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
-      case (NFPrefixes.Variability.CONTINUOUS, BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
+      case (NFPrefixes.Variability.CONTINUOUS, VariableAttributes.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
-      then BackendExtension.STATE(1, NONE(), false);
+      then VariableKind.STATE(1, NONE(), false);
 
       // get external object class
       case (_, _, Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()))
-      then BackendExtension.EXTOBJ(Class.constrainingClassPath(ty.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(ty.cls));
       case (_, _, Type.ARRAY(elementType = elemTy as Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())))
-      then BackendExtension.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
+      then VariableKind.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
-      case (_, _, Type.COMPLEX())                                     then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
-      case (_, _, Type.ARRAY(elementType = Type.COMPLEX()))           then BackendExtension.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
+      case (_, _, Type.COMPLEX())                                     then VariableKind.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
+      case (_, _, Type.ARRAY(elementType = Type.COMPLEX()))           then VariableKind.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
 
-      case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
-      case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();
-      case (NFPrefixes.Variability.CONTINUOUS, _, Type.ENUMERATION()) then BackendExtension.DISCRETE();
-      case (NFPrefixes.Variability.CONTINUOUS, _, _)                  then BackendExtension.ALGEBRAIC();
+      case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then VariableKind.DISCRETE();
+      case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then VariableKind.DISCRETE();
+      case (NFPrefixes.Variability.CONTINUOUS, _, Type.ENUMERATION()) then VariableKind.DISCRETE();
+      case (NFPrefixes.Variability.CONTINUOUS, _, _)                  then VariableKind.ALGEBRAIC();
 
-      case (NFPrefixes.Variability.DISCRETE, _, _)                    then BackendExtension.DISCRETE();
-      case (NFPrefixes.Variability.IMPLICITLY_DISCRETE, _, _)         then BackendExtension.DISCRETE();
+      case (NFPrefixes.Variability.DISCRETE, _, _)                    then VariableKind.DISCRETE();
+      case (NFPrefixes.Variability.IMPLICITLY_DISCRETE, _, _)         then VariableKind.DISCRETE();
 
-      case (NFPrefixes.Variability.PARAMETER, _, _)                   then BackendExtension.PARAMETER();
-      case (NFPrefixes.Variability.STRUCTURAL_PARAMETER, _, _)        then BackendExtension.PARAMETER(); // CONSTANT ?
-      case (NFPrefixes.Variability.NON_STRUCTURAL_PARAMETER, _, _)    then BackendExtension.PARAMETER();
-      case (NFPrefixes.Variability.CONSTANT, _, _)                    then BackendExtension.CONSTANT();
+      case (NFPrefixes.Variability.PARAMETER, _, _)                   then VariableKind.PARAMETER();
+      case (NFPrefixes.Variability.STRUCTURAL_PARAMETER, _, _)        then VariableKind.PARAMETER(); // CONSTANT ?
+      case (NFPrefixes.Variability.NON_STRUCTURAL_PARAMETER, _, _)    then VariableKind.PARAMETER();
+      case (NFPrefixes.Variability.CONSTANT, _, _)                    then VariableKind.CONSTANT();
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
@@ -608,7 +608,7 @@ protected
 
     // make adjustments to attributes based on variable kind
     attributes := match varKind
-      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixed(attributes, ty, true, false);
+      case VariableKind.PARAMETER() then VariableAttributes.setFixed(attributes, ty, true, false);
       else attributes;
     end match;
   end lowerVariableKind;
@@ -620,7 +620,7 @@ protected
   protected
     Option<Expression> exp_opt;
   algorithm
-    BackendExtension.BackendInfo.map(var.backendinfo, function collectIterators(variables = variables, set = set));
+    BackendInfo.map(var.backendinfo, function collectIterators(variables = variables, set = set));
     exp_opt := Binding.typedExp(var.binding);
     if isSome(exp_opt) then
       Expression.map(Util.getOption(exp_opt), function collectIterators(variables = variables, set = set));
@@ -635,9 +635,9 @@ protected
   algorithm
     var := match var
       local
-        BackendExtension.BackendInfo binfo;
-        BackendExtension.VariableKind varKind;
-      case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD())) algorithm
+        BackendInfo binfo;
+        VariableKind varKind;
+      case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
         // kabdelhak: why is this list reversed in the frontend? doesnt match input order
         varKind.children := listReverse(list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children));
         // set parent for all children
@@ -1117,7 +1117,7 @@ protected
     list<ComponentRef> inputs, outputs;
     EquationAttributes attr;
   algorithm
-    size := sum(ComponentRef.size(out) for out in alg.outputs);
+    size := sum(ComponentRef.size(out, true) for out in alg.outputs);
 
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);

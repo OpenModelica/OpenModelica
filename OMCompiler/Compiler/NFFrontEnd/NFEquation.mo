@@ -42,10 +42,12 @@ protected
   import ElementSource;
   import Equation = NFEquation;
   import Error;
+  import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
   import Call = NFCall;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   uniontype Branch
@@ -124,20 +126,21 @@ public
 
     function toFlatStream
       input Branch branch;
+      input BaseModelica.OutputFormat format;
       input String indent;
       input output IOStream.IOStream s;
     algorithm
       s := match branch
         case BRANCH()
           algorithm
-            s := IOStream.append(s, Expression.toFlatString(branch.condition));
+            s := IOStream.append(s, Expression.toFlatString(branch.condition, format));
             s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(branch.body, indent + "  ", s);
+            s := toFlatStreamList(branch.body, format, indent + "  ", s);
           then
             s;
 
         case INVALID_BRANCH()
-          then toFlatStream(branch.branch, indent, s);
+          then toFlatStream(branch.branch, format, indent, s);
       end match;
     end toFlatStream;
 
@@ -1409,6 +1412,7 @@ public
 
   function toFlatStream
     input Equation eq;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   algorithm
@@ -1417,26 +1421,26 @@ public
     s := match eq
       case EQUALITY()
         algorithm
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
         then
           s;
 
       case ARRAY_EQUALITY()
         algorithm
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
         then
           s;
 
       case CONNECT()
         algorithm
           s := IOStream.append(s, "connect(");
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1448,11 +1452,11 @@ public
 
           if isSome(eq.range) then
             s := IOStream.append(s, " in ");
-            s := IOStream.append(s, Expression.toFlatString(Util.getOption(eq.range)));
+            s := IOStream.append(s, Expression.toFlatString(Util.getOption(eq.range), format));
           end if;
 
           s := IOStream.append(s, " loop\n");
-          s := toFlatStreamList(eq.body, indent + "  ", s);
+          s := toFlatStreamList(eq.body, format, indent + "  ", s);
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end for");
         then
@@ -1461,12 +1465,12 @@ public
       case IF()
         algorithm
           s := IOStream.append(s, "if ");
-          s := Branch.toFlatStream(listHead(eq.branches), indent, s);
+          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
             s := IOStream.append(s, "elseif ");
-            s := Branch.toFlatStream(b, indent, s);
+            s := Branch.toFlatStream(b, format, indent, s);
           end for;
 
           s := IOStream.append(s, indent);
@@ -1477,12 +1481,12 @@ public
       case WHEN()
         algorithm
           s := IOStream.append(s, "when ");
-          s := Branch.toFlatStream(listHead(eq.branches), indent, s);
+          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
             s := IOStream.append(s, "elsewhen ");
-            s := Branch.toFlatStream(b, indent, s);
+            s := Branch.toFlatStream(b, format, indent, s);
           end for;
 
           s := IOStream.append(s, indent);
@@ -1493,11 +1497,11 @@ public
       case ASSERT()
         algorithm
           s := IOStream.append(s, "assert(");
-          s := IOStream.append(s, Expression.toFlatString(eq.condition));
+          s := IOStream.append(s, Expression.toFlatString(eq.condition, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.message));
+          s := IOStream.append(s, Expression.toFlatString(eq.message, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.level));
+          s := IOStream.append(s, Expression.toFlatString(eq.level, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1505,7 +1509,7 @@ public
       case TERMINATE()
         algorithm
           s := IOStream.append(s, "terminate(");
-          s := IOStream.append(s, Expression.toFlatString(eq.message));
+          s := IOStream.append(s, Expression.toFlatString(eq.message, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1513,15 +1517,15 @@ public
       case REINIT()
         algorithm
           s := IOStream.append(s, "reinit(");
-          s := IOStream.append(s, Expression.toFlatString(eq.cref));
+          s := IOStream.append(s, Expression.toFlatString(eq.cref, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(eq.reinitExp));
+          s := IOStream.append(s, Expression.toFlatString(eq.reinitExp, format));
           s := IOStream.append(s, ")");
         then
           s;
 
       case NORETCALL()
-        then IOStream.append(s, Expression.toFlatString(eq.exp));
+        then IOStream.append(s, Expression.toFlatString(eq.exp, format));
 
       else IOStream.append(s, "#UNKNOWN EQUATION#");
     end match;
@@ -1531,6 +1535,7 @@ public
 
   function toFlatStreamList
     input list<Equation> eql;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -1550,7 +1555,7 @@ public
 
       prev_multi_line := multi_line;
 
-      s := toFlatStream(eq, indent, s);
+      s := toFlatStream(eq, format, indent, s);
       s := IOStream.append(s, ";\n");
     end for;
   end toFlatStreamList;
@@ -1566,6 +1571,80 @@ public
       else false;
     end match;
   end isMultiLine;
+
+  function splitRecordEquations
+    input list<Equation> equations;
+    output list<Equation> outEquations = {};
+  algorithm
+    for eq in equations loop
+      outEquations := splitRecordEquation(eq, outEquations);
+    end for;
+
+    outEquations := listReverseInPlace(outEquations);
+  end splitRecordEquations;
+
+  function splitRecordEquation
+    "Splits an equation involving record expressions into separate equations for
+     each record field."
+    input Equation eq;
+    input output list<Equation> equations;
+  protected
+    Expression lhs, rhs;
+  algorithm
+    equations := match eq
+      case EQUALITY()
+        guard Type.isRecord(Type.arrayElementType(eq.ty))
+        algorithm
+          eq.lhs := ExpandExp.expand(eq.lhs);
+          eq.rhs := ExpandExp.expand(eq.rhs);
+
+          for i in 1:Type.recordFieldCount(Type.arrayElementType(eq.ty)) loop
+            lhs := Expression.nthRecordElement(i, eq.lhs);
+            rhs := Expression.nthRecordElement(i, eq.rhs);
+            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source) :: equations;
+          end for;
+        then
+          equations;
+
+      case ARRAY_EQUALITY()
+        guard Type.isRecord(Type.arrayElementType(eq.ty))
+        then splitRecordEquation(EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.scope, eq.source), equations);
+
+      case FOR()
+        algorithm
+          eq.body := splitRecordEquations(eq.body);
+        then
+          eq :: equations;
+
+      case IF()
+        algorithm
+          eq.branches := list(splitRecordEquationBranch(b) for b in eq.branches);
+        then
+          eq :: equations;
+
+      case WHEN()
+        algorithm
+          eq.branches := list(splitRecordEquationBranch(b) for b in eq.branches);
+        then
+          eq :: equations;
+
+      else eq :: equations;
+    end match;
+  end splitRecordEquation;
+
+  function splitRecordEquationBranch
+    input output Branch branch;
+  algorithm
+    () := match branch
+      case BRANCH()
+        algorithm
+          branch.body := splitRecordEquations(branch.body);
+        then
+          ();
+
+      else ();
+    end match;
+  end splitRecordEquationBranch;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEquation;

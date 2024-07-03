@@ -56,9 +56,9 @@ val(x, 1);
 //
 // Unknown Variables (3/3)
 // *************************
-// (1)       [ALGB] (1) Real y
-// (2)       [ALGB] (1) Real $FUN_2
-// (3)       [DER-] (1) Real $DER.x
+// (1)       [DER-] (1) Real $DER.x
+// (2)       [ALGB] (1) Real y
+// (3)       [ALGB] (1) Real $FUN_2
 //
 //
 // Equations Equations (3/3)

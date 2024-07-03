@@ -42,7 +42,6 @@ protected
   import DAE;
 
   // NF imports
-  import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -385,7 +384,7 @@ protected
           new_exp := match ty
             case Type.TUPLE() algorithm
               names   := list(Call_Aux.createName(sub_ty, new_iter, index, init) for sub_ty in ty.types);
-              tpl_lst := list(if ComponentRef.size(cref) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
+              tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
             then Expression.TUPLE(ty, tpl_lst);
             else algorithm
               name := Call_Aux.createName(ty, new_iter, index, init);

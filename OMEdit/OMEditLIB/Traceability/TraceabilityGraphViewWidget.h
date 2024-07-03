@@ -7,11 +7,13 @@
 
 #include "QWidget"
 #include "QUrl"
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebEngineView>
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebView>
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 
 class TraceabilityGraphViewWidget: public QWidget
 {
@@ -19,11 +21,13 @@ class TraceabilityGraphViewWidget: public QWidget
 public:
   TraceabilityGraphViewWidget(QWidget *pParent = 0);
 private:
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebEngineView *mpTraceabilityGraphWebView;
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebView *mpTraceabilityGraphWebView;
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   QLabel *mpTraceabilityGraphViewLabel;
 };
 

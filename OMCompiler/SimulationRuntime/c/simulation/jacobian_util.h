@@ -47,7 +47,7 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN* jac);
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);
-void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length);
+void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex);
 enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue);
 
 void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);

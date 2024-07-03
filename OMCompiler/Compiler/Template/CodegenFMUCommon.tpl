@@ -262,8 +262,8 @@ end StartString;
 template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
  "Generates code for ScalarVariable Type Real file for FMU target."
 ::=
-  let unit_ = if unit then 'unit="<%unit%>"'
-  let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"'
+  let unit_ = if unit then 'unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+  let displayUnit_ = if displayUnit then 'displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
   <<
    <%unit_%> <%displayUnit_%>
   >>
@@ -654,8 +654,8 @@ template UnitString2(SimVar simvar)
 ::=
 match simvar
 case SIMVAR(unit = unit, displayUnit = displayUnit) then
-  let unitString = if unit then ' unit="<%unit%>"'
-  let displayUnitString = if displayUnit then ' displayUnit="<%displayUnit%>"'
+  let unitString = if unit then ' unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+  let displayUnitString = if displayUnit then ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
   //'<%unitString%><%displayUnitString%>' skip displayUnit because FMI2XML fails for e.g. bar
   '<%unitString%>'
 end UnitString2;

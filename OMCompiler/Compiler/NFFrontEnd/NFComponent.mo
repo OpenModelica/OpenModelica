@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFComponent
 
+import BaseModelica;
 import Binding = NFBinding;
 import Class = NFClass;
 import NFClassTree.ClassTree;
@@ -722,6 +723,7 @@ public
   function toFlatStream
     input String name;
     input Component component;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -732,23 +734,23 @@ public
         algorithm
           s := IOStream.append(s, indent);
           s := Attributes.toFlatStream(component.attributes, component.ty, s);
-          s := IOStream.append(s, Type.toFlatString(component.ty));
+          s := IOStream.append(s, Type.toFlatString(component.ty, format));
           s := IOStream.append(s, " '");
           s := IOStream.append(s, name);
           s := IOStream.append(s, "'");
 
           ty_attrs := list((Modifier.name(a), Modifier.binding(a)) for a in
             Class.getTypeAttributes(InstNode.getClass(component.classInst)));
-          s := typeAttrsToFlatStream(ty_attrs, component.ty, s);
+          s := typeAttrsToFlatStream(ty_attrs, component.ty, format, s);
 
-          s := IOStream.append(s, Binding.toFlatString(component.binding, " = "));
+          s := IOStream.append(s, Binding.toFlatString(component.binding, format, " = "));
         then
           ();
 
       case TYPE_ATTRIBUTE()
         algorithm
           s := IOStream.append(s, name);
-          s := IOStream.append(s, Modifier.toFlatString(component.modifier, printName = false));
+          s := IOStream.append(s, Modifier.toFlatString(component.modifier, format, printName = false));
         then
           ();
     end match;
@@ -757,6 +759,7 @@ public
   function typeAttrsToFlatStream
     input list<tuple<String, Binding>> typeAttrs;
     input Type componentType;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
   protected
     Integer var_dims, binding_dims;
@@ -783,7 +786,7 @@ public
 
       s := IOStream.append(s, name);
       s := IOStream.append(s, " = ");
-      s := IOStream.append(s, Expression.toFlatString(bind_exp));
+      s := IOStream.append(s, Expression.toFlatString(bind_exp, format));
 
       ty_attrs := listRest(ty_attrs);
       if listEmpty(ty_attrs) then
@@ -799,13 +802,14 @@ public
   function toFlatString
     input String name;
     input Component component;
+    input BaseModelica.OutputFormat format;
     input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(name, IOStream.IOStreamType.LIST());
-    s := toFlatStream(name, component, indent, s);
+    s := toFlatStream(name, component, format, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;

@@ -32,6 +32,7 @@
 
 #include "indent.h"
 #include <QRegExp>
+#include <QRegularExpression>
 #include <QMessageBox>
 #include <QDebug>
 
@@ -222,10 +223,14 @@ bool Indent::lMod() {
 }
 
 QString Indent::indentedText(QMap<int, IndentationState*>* states) {
-  buffer1 = buffer1.replace(QRegExp("(==|:=|<=|>=|<>|=|<|>)"), " \\1 ");
+  buffer1 = buffer1.replace(QRegularExpression("(==|:=|<=|>=|<>|=|<|>)"), " \\1 ");
   buffer1 = buffer1.replace('\n', " <newLine> ") + " <newLine> " + " <newLine> ";
   buffer1 = buffer1.replace("//", " //");
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  QTextStream ts(&buffer1, QIODeviceBase::ReadWrite);
+#else
   QTextStream ts(&buffer1, QIODevice::ReadWrite);
+#endif
 
   //QString current, next, comment;
   QString comment;

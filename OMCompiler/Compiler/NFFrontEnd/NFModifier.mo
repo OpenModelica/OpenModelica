@@ -43,6 +43,7 @@ public
 import Absyn;
 import AbsynUtil;
 import BaseAvlTree;
+import BaseModelica;
 import Binding = NFBinding;
 import NFInstNode.InstNode;
 import SCode;
@@ -609,6 +610,7 @@ public
 
   function toFlatStreamList
     input list<Modifier> modifiers;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
     input String delimiter = ", ";
   protected
@@ -619,7 +621,7 @@ public
     end if;
 
     while true loop
-      s := toFlatStream(listHead(mods), s);
+      s := toFlatStream(listHead(mods), format, s);
       mods := listRest(mods);
 
       if listEmpty(mods) then
@@ -632,6 +634,7 @@ public
 
   function toFlatStream
     input Modifier mod;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
     input Boolean printName = true;
   protected
@@ -648,14 +651,14 @@ public
           submods := ModTable.listValues(mod.subModifiers);
           if not listEmpty(submods) then
             s := IOStream.append(s, "(");
-            s := toFlatStreamList(submods, s);
+            s := toFlatStreamList(submods, format, s);
             s := IOStream.append(s, ")");
             binding_sep := " = ";
           else
             binding_sep := if printName then " = " else "= ";
           end if;
 
-          s := IOStream.append(s, Binding.toFlatString(mod.binding, binding_sep));
+          s := IOStream.append(s, Binding.toFlatString(mod.binding, format, binding_sep));
         then
           ();
 
@@ -665,13 +668,14 @@ public
 
   function toFlatString
     input Modifier mod;
+    input BaseModelica.OutputFormat format;
     input Boolean printName = true;
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(mod, s, printName);
+    s := toFlatStream(mod, format, s, printName);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;

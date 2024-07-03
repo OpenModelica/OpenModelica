@@ -46,7 +46,6 @@
 #include <QButtonGroup>
 #include <QMessageBox>
 #include <QDesktopServices>
-#include <QDesktopWidget>
 #include <QList>
 #include <QScreen>
 #include <QStringList>
@@ -459,6 +458,8 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
     mDefaultValue = value;
   }
   QFontMetrics fm = QFontMetrics(QFont());
+  // Allow to take 70% of screen width
+  int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.7;
   bool signalsState;
   switch (mValueType) {
     case Parameter::Boolean:
@@ -488,11 +489,8 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
          */
         fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-        // Allow to take 70% of screen width
-        int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.7;
         mpValueComboBox->setMinimumWidth(qMin(qMax(fm.horizontalAdvance(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
 #else // QT_VERSION_CHECK
-        int screenWidth = QApplication::desktop()->availableGeometry().width() * 0.7;
         mpValueComboBox->setMinimumWidth(qMin(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
 #endif // QT_VERSION_CHECK
       }
@@ -516,11 +514,8 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         /* Set the minimum width so that the value text will be readable */
         fm = QFontMetrics(mpValueTextBox->font());
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-        // Allow to take 70% of screen width
-        int screenWidth = QApplication::primaryScreen()->availableGeometry().width() * 0.7;
         mpValueTextBox->setMinimumWidth(qMin(fm.horizontalAdvance(value), screenWidth) + 50);
 #else // QT_VERSION_CHECK
-        int screenWidth = QApplication::desktop()->availableGeometry().width() * 0.7;
         mpValueTextBox->setMinimumWidth(qMin(fm.width(value), screenWidth) + 50);
 #endif // QT_VERSION_CHECK
       }
@@ -930,17 +925,17 @@ void Parameter::editClassButtonClicked()
   if ((mpModelInstanceElement == NULL) ||
       (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
       (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
-      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == NULL))
+      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == QString()))
   {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Unable to find the redeclare class."), Helper::ok);
+                          tr("Unable to find the redeclare class."), QMessageBox::Ok);
   }
   // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName(), type);
   // if we fail to find the type
   if (qualifiedType.isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Unable to find the redeclare class."), Helper::ok);
+                          tr("Unable to find the redeclare class."), QMessageBox::Ok);
   } else {
     ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
     const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
@@ -1229,13 +1224,8 @@ QSize ParametersScrollArea::minimumSizeHint() const
 {
   QSize size = QWidget::sizeHint();
   // find optimal width and height
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
   int screenWidth = QApplication::primaryScreen()->availableGeometry().width() - 100;
   int screenHeight = QApplication::primaryScreen()->availableGeometry().height() - 300;
-#else // QT_VERSION_CHECK
-  int screenWidth = QApplication::desktop()->availableGeometry().width() - 100;
-  int screenHeight = QApplication::desktop()->availableGeometry().height() - 300;
-#endif // QT_VERSION_CHECK
   int widgetWidth = mpWidget->minimumSizeHint().width() + (verticalScrollBar()->isVisible() ? verticalScrollBar()->width() : 0);
   size.rwidth() = qMin(screenWidth, widgetWidth);
   int widgetHeight = mpWidget->minimumSizeHint().height() + (horizontalScrollBar()->isVisible() ? horizontalScrollBar()->height() : 0);
@@ -3067,14 +3057,14 @@ void ElementAttributes::updateElementAttributes()
   if (mpElement->getName().compare(mpNameTextBox->text()) != 0) {
     if (!mpElement->getGraphicsView()->checkElementName(mpElement->getClassName(), mpNameTextBox->text())) {
       QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
+                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), QMessageBox::Ok);
       return;
     }
   }
   // check for comma
   if (StringHandler::nameContainsComma(mpNameTextBox->text())) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), QMessageBox::Ok);
     return;
   }
   // check for invalid names
@@ -3083,7 +3073,7 @@ void ElementAttributes::updateElementAttributes()
   MainWindow::instance()->getOMCProxy()->setLoggingEnabled(true);
   if (result.isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), QMessageBox::Ok);
     return;
   }
   QString variability;
@@ -3127,7 +3117,7 @@ void ElementAttributes::updateElementAttributes()
     // update element attributes if needed
     if (attributesChanged) {
       if (!pOMCProxy->setComponentProperties(modelName, mpElement->getName(), isFinal, flow, isProtected, isReplaceAble, variability, isInner, isOuter, causality)) {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3138,7 +3128,7 @@ void ElementAttributes::updateElementAttributes()
       if (pOMCProxy->setComponentComment(modelName, mpElement->getName(), comment)) {
         attributesChanged = true;
       } else {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3149,7 +3139,7 @@ void ElementAttributes::updateElementAttributes()
       if (pOMCProxy->setComponentDimensions(modelName, mpElement->getName(), arrayIndex)) {
         attributesChanged = true;
       } else {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3159,7 +3149,7 @@ void ElementAttributes::updateElementAttributes()
       if (pOMCProxy->renameComponentInClass(modelName, mpElement->getName(), mpNameTextBox->text())) {
         attributesChanged = true;
       } else {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
         pOMCProxy->printMessagesStringInternal();
       }
     }
@@ -3238,7 +3228,7 @@ void CompositeModelSubModelAttributes::setUpDialog()
   mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Simulink));
   mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::WolframSystemModeler));
   mpSimulationToolComboBox->addItem(StringHandler::getSimulationTool(StringHandler::Other));
-  connect(mpSimulationToolComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(changeSimulationToolStartCommand(QString)));
+  connect(mpSimulationToolComboBox, SIGNAL(currentIndexChanged(int)), SLOT(changeSimulationToolStartCommand(int)));
   // Create the start command label and text box
   mpStartCommandLabel = new Label(tr("Start Command:"));
   mpStartCommandTextBox = new QLineEdit;
@@ -3331,10 +3321,11 @@ void CompositeModelSubModelAttributes::initializeDialog()
  * \brief CompositeModelSubModelAttributes::changeSimulationToolStartCommand
  * Updates the simulation tool start command.\n
  * Slot activated when mpSimulationToolComboBox currentIndexChanged signal is raised.
- * \param tool
+ * \param index
  */
-void CompositeModelSubModelAttributes::changeSimulationToolStartCommand(QString tool)
+void CompositeModelSubModelAttributes::changeSimulationToolStartCommand(int index)
 {
+  const QString tool = mpSimulationToolComboBox->itemText(index);
   mpStartCommandTextBox->setText(StringHandler::getSimulationToolStartCommand(tool, mpStartCommandTextBox->text()));
 }
 

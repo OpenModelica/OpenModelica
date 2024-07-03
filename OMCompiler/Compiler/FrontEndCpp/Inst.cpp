@@ -1,5 +1,8 @@
+#include <string>
+#include <vector>
 #include <iostream>
 #include <chrono>
+#include <utility>
 
 #include "MetaModelica.h"
 #include "Absyn/Element.h"

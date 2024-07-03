@@ -49,7 +49,6 @@
 #include <QHeaderView>
 #include <QAction>
 #include <QMenu>
-#include <QDesktopWidget>
 #include <QTcpSocket>
 #include <QMessageBox>
 #include <QTextDocumentFragment>
@@ -1029,7 +1028,7 @@ void SimulationOutputWidget::openTransformationalDebugger()
   if (QFileInfo(fileName).exists()) {
     MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
   } else {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
   }
 }
 
@@ -1043,7 +1042,7 @@ void SimulationOutputWidget::openSimulationLogFile()
   QUrl logFile (QString("file:///%1/%2.log").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()));
   if (!QDesktopServices::openUrl(logFile)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(logFile.toString()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(logFile.toString()), QMessageBox::Ok);
   }
 }
 
@@ -1217,7 +1216,7 @@ void SimulationOutputWidget::readSimulationStandardOutput()
   /* The remote embedded server does not currently disconnect connected clients when a simulation finishes.
    * This check hides the mazy network message of an open connection at shutdown.
    */
-  QRegExp rx("info/network");
+  QRegularExpression rx("info/network");
   QString stdOutput = mpSimulationProcess->readAllStandardOutput();
   if (!stdOutput.contains(rx)) {
     mSimulationStandardOutput.append(stdOutput);
@@ -1300,7 +1299,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
                             .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
-                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), Helper::ok);
+                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
     }
   } else if (url.scheme().compare("file") == 0) {
     // we know that file link is always simulation log file.

@@ -36,6 +36,7 @@ encapsulated uniontype NFVariable
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
+  import Equation = NFEquation;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
@@ -44,8 +45,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Direction;
   import NFPrefixes.AccessLevel;
   import Type = NFType;
-  import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.BackendInfo;
+  import NFBackendExtension.{BackendInfo, VariableKind};
 
 protected
   import Ceval = NFCeval;
@@ -80,7 +80,7 @@ public
     output Variable variable;
   protected
     list<ComponentRef> crefs;
-    InstNode node, child_node;
+    InstNode node, class_node;
     Component comp;
     Type ty;
     Binding binding;
@@ -88,9 +88,9 @@ public
     Attributes attr;
     Option<SCode.Comment> cmt;
     SourceInfo info;
-    BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    array<InstNode> child_nodes;
     list<Variable> children = {};
-    Option<Integer> complexSize;
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
@@ -104,18 +104,20 @@ public
     // conversion to backend process (except for iterators). NBackendDAE.lower
     if ComponentRef.isIterator(cref) then
       binding := NFBinding.EMPTY_BINDING;
-      binfo.varKind := BackendExtension.ITERATOR();
+      binfo.varKind := VariableKind.ITERATOR();
     else
       binding := Component.getImplicitBinding(comp);
     end if;
 
     // get the record children if the variable is a record
-    complexSize := Type.complexSize(ty);
-    if Util.isSome(complexSize) then
-      for i in Util.getOption(complexSize):-1:1 loop
-        child_node := Class.nthComponent(i, InstNode.getClass(node));
-        children := fromCref(ComponentRef.fromNode(child_node, InstNode.getType(child_node))) :: children;
-      end for;
+    if not Type.isExternalObject(ty) then
+      children := match Type.arrayElementType(ty)
+        case Type.COMPLEX(cls = class_node) algorithm
+          child_nodes := Class.getComponents(InstNode.getClass(class_node));
+          children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
+        then children;
+        else {};
+      end match;
     end if;
 
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, children, cmt, info, binfo);
@@ -208,21 +210,9 @@ public
     "Expands a variable into itself and its children if its complex."
     input Variable var;
     output list<Variable> children;
-  protected
-    function expandChildType
-      "helper function to inherit the array type dimensions"
-      input output Variable child;
-      input list<Dimension> dimensions;
-    algorithm
-      child.ty := Type.liftArrayLeftList(child.ty, dimensions);
-    end expandChildType;
   algorithm
     // for non-complex variables the children are empty therefore it will be returned itself
     var.children := List.flatten(list(expandChildren(v) for v in var.children));
-    if isComplexArray(var) then
-      // if the variable is an array, inherit the array dimensions
-      var.children := list(expandChildType(v, Type.arrayDims(var.ty)) for v in var.children);
-    end if;
     // return all children and the variable itself
     children := var :: var.children;
   end expandChildren;
@@ -473,7 +463,7 @@ public
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
     var.children := list(mapExp(v, fn) for v in var.children);
-    var.backendinfo := BackendExtension.BackendInfo.map(var.backendinfo, fn);
+    var.backendinfo := BackendInfo.map(var.backendinfo, fn);
   end mapExp;
 
   function mapExpShallow
@@ -560,6 +550,7 @@ public
 
   function toFlatStream
     input Variable var;
+    input BaseModelica.OutputFormat format;
     input String indent = "";
     input Boolean printBindingType = false;
     input output IOStream.IOStream s;
@@ -571,23 +562,24 @@ public
     s := IOStream.append(s, indent);
 
     s := Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
-    s := IOStream.append(s, Type.toFlatString(var.ty));
+    s := IOStream.append(s, Type.toFlatString(var.ty, format));
     s := IOStream.append(s, " ");
-    s := IOStream.append(s, ComponentRef.toFlatString(var.name));
+    s := IOStream.append(s, ComponentRef.toFlatString(var.name, format));
 
     if not listEmpty(var.typeAttributes) then
-      s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, s);
+      s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, format, s);
     elseif not listEmpty(var.children) then
-      s := toFlatStreamModifier(var.children, Binding.isBound(var.binding), printBindingType, s);
+      s := toFlatStreamModifier(var.children, Binding.isBound(var.binding), printBindingType, format, s);
     end if;
 
-    s := toFlatStreamBinding(var.binding, printBindingType, s);
+    s := toFlatStreamBinding(var.binding, printBindingType, format, s);
     s := FlatModelicaUtil.appendComment(var.comment, NFFlatModelicaUtil.ElementType.COMPONENT, s);
   end toFlatStream;
 
   function toFlatStreamBinding
     input Binding binding;
     input Boolean printBindingType;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
   algorithm
     if Binding.isBound(binding) then
@@ -595,11 +587,11 @@ public
 
       if printBindingType then
         s := IOStream.append(s, "(");
-        s := IOStream.append(s, Type.toFlatString(Binding.getType(binding)));
+        s := IOStream.append(s, Type.toFlatString(Binding.getType(binding), format));
         s := IOStream.append(s, ") ");
       end if;
 
-      s := IOStream.append(s, Binding.toFlatString(binding));
+      s := IOStream.append(s, Binding.toFlatString(binding, format));
     end if;
   end toFlatStreamBinding;
 
@@ -607,6 +599,7 @@ public
     input list<Variable> children;
     input Boolean overwrittenBinding;
     input Boolean printBindingType;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
   protected
     Boolean empty = true;
@@ -617,14 +610,14 @@ public
       ss := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
 
       if not listEmpty(child.typeAttributes) then
-        ss := Component.typeAttrsToFlatStream(child.typeAttributes, child.ty, ss);
+        ss := Component.typeAttrsToFlatStream(child.typeAttributes, child.ty, format, ss);
       elseif not listEmpty(child.children) then
         overwritten_binding := overwrittenBinding or Binding.isBound(child.binding);
-        ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, ss);
+        ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, format, ss);
       end if;
 
       if not overwrittenBinding and Binding.source(child.binding) == NFBinding.Source.MODIFIER then
-        ss := toFlatStreamBinding(child.binding, printBindingType, ss);
+        ss := toFlatStreamBinding(child.binding, printBindingType, format, ss);
       end if;
 
       if not IOStream.empty(ss) then
@@ -644,6 +637,20 @@ public
       s := IOStream.append(s, ")");
     end if;
   end toFlatStreamModifier;
+
+  function moveBinding
+    "Removes the binding of the variable, if it has one and it has at least
+     discrete variability, and creates an equation from it."
+    input output Variable var;
+    input output list<Equation> equations;
+  algorithm
+    if variability(var) >= Variability.DISCRETE and Binding.isBound(var.binding) then
+      equations := Equation.makeEquality(Expression.fromCref(var.name),
+        Binding.getExp(var.binding), var.ty, InstNode.EMPTY_NODE(),
+        ElementSource.createElementSource(var.info)) :: equations;
+      var.binding := NFBinding.EMPTY_BINDING;
+    end if;
+  end moveBinding;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

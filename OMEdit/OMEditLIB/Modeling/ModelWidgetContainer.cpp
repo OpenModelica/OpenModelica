@@ -909,7 +909,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     if (!pLibraryTreeItem->isSaved()) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.")
-                               .arg(pLibraryTreeItem->getNameStructure()), Helper::ok);
+                               .arg(pLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return false;
     } else {
       // item not to be dropped on itself; if dropping an item on itself
@@ -941,7 +941,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     // Only allow drag & drop of Modelica LibraryTreeItem on a Modelica LibraryTreeItem
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != pLibraryTreeItem->getLibraryType()) {
       QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               tr("You can only drag & drop Modelica models."), Helper::ok);
+                               tr("You can only drag & drop Modelica models."), QMessageBox::Ok);
       return false;
     }
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
@@ -979,11 +979,11 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         if (mViewType == StringHandler::Diagram) {
           QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                    GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
-                                   .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+                                   .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
         } else {
           QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                    GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
-                                   .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+                                   .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
         }
         return false;
       }
@@ -3212,7 +3212,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
     Element *pStartElement = mpConnectionLineAnnotation->getStartElement();
     MainWindow *pMainWindow = MainWindow::instance();
     if (pStartElement == pElement) {
-      QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information), GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
+      QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information), GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), QMessageBox::Ok);
       removeCurrentConnection();
     } else {
       /* Ticket:4956
@@ -3340,7 +3340,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
                 mpModelWidget->updateModelText();
               } else {
                 QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), Helper::ok);
+                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
                 removeCurrentConnection();
               }
             } else {
@@ -3410,7 +3410,7 @@ void GraphicsView::addTransition(Element *pComponent)
     Element *pStartComponent = mpTransitionLineAnnotation->getStartElement();
     if (pStartComponent == pComponent) {
       QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
-                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
+                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), QMessageBox::Ok);
       removeCurrentTransition();
     } else {
       QString startComponentName, endComponentName;
@@ -3613,7 +3613,7 @@ void GraphicsView::copyItems(bool cut)
   if (!mpModelWidget->isNewApi()) {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
-                             Helper::ok);
+                             QMessageBox::Ok);
     return;
   }
   /* Issue #9515
@@ -4041,7 +4041,7 @@ void GraphicsView::pasteItems()
   if (!mpModelWidget->isNewApi()) {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
-                             Helper::ok);
+                             QMessageBox::Ok);
     return;
   }
   QClipboard *pClipboard = QApplication::clipboard();
@@ -4547,7 +4547,11 @@ void GraphicsView::dropEvent(QDropEvent *event)
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
     QString className;
     dataStream >> className;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    if (addComponent(className, mapToScene(event->position().toPoint()))) {
+#else
     if (addComponent(className, mapToScene(event->pos()))) {
+#endif
       event->accept();
     } else {
       event->ignore();
@@ -5594,31 +5598,31 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
       mpNoLatestNewsLabel->setVisible(false);
       xml.readNext();
       if (xml.tokenType() == QXmlStreamReader::StartElement) {
-        if (xml.name() == "item") {
+        if (xml.name() == QString("item")) {
           title = "";
           link = "";
           pubDateTime = QDateTime();
           endDateTime = QDateTime();
           // read everything inside item
           xml.readNext();
-          if (xml.name() == "title") {
+          if (xml.name() == QString("title")) {
             title = xml.readElementText();
           }
           xml.readNext();
-          if (xml.name() == "link") {
+          if (xml.name() == QString("link")) {
             link = xml.readElementText();
           }
           xml.readNext();
-          if (xml.name() == "pubDate") {
+          if (xml.name() == QString("pubDate")) {
             pubDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
           }
           xml.readNext();
-          if (xml.name() == "endDate") {
+          if (xml.name() == QString("endDate")) {
             endDateTime = QDateTime::fromString(xml.readElementText(), Qt::RFC2822Date);
           }
         }
       } else if (xml.tokenType() == QXmlStreamReader::EndElement) {
-        if (xml.name() == "item") {
+        if (xml.name() == QString("item")) {
           // add the item to the list view
           QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
           listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
@@ -5785,7 +5789,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     if (!file.open(QIODevice::ReadOnly)) {
       //      QMessageBox::critical(mpLibraryWidget->MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
       //                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-      //                            .arg(file.errorString()), Helper::ok);
+      //                            .arg(file.errorString()), QMessageBox::Ok);
     } else {
       contents = QString(file.readAll());
       file.close();
@@ -6855,8 +6859,9 @@ void ModelWidget::reDrawModelWidget()
     }
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
-    // if documentation view is visible then update it
-    if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+    // if documentation view is visible and this model is the current active model then update it
+    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+    if (pModelWidget && pModelWidget == this && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
       MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
     }
     // clear the undo stack
@@ -7237,7 +7242,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream resultFile(&file);
     // set to UTF-8
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  resultFile.setEncoding(QStringConverter::Utf8);
+#else
     resultFile.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     resultFile.setGenerateByteOrderMark(false);
     // write result file header
     resultFile << "\"" << "time\",";
@@ -7396,7 +7405,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream visualFile(&file);
     // set to UTF-8
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    visualFile.setEncoding(QStringConverter::Utf8);
+#else
     visualFile.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     visualFile.setGenerateByteOrderMark(false);
 
     visualFile << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";
@@ -8140,7 +8153,7 @@ void ModelWidget::processPendingModelUpdate()
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
   if (mDiagramViewLoaded && dependsOnModel(modelName)) {
-    reDrawModelWidget(createModelInfo());
+    setRequiresUpdate(true);
   }
 }
 
@@ -9657,7 +9670,8 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
              (event->type() == QEvent::MouseButtonPress && qobject_cast<QToolButton*>(object)) ||
              (event->type() == QEvent::Shortcut && qobject_cast<QMenuBar*>(object)) ||
              (event->type() == QEvent::MouseButtonPress && qobject_cast<QTabBar*>(object)) ||
-             (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))) {
+             (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))
+             ) {
     shouldValidateText = true;
   } else if (event->type() == QEvent::FocusIn && qobject_cast<LibraryTreeView*>(object)) {
     ModelWidget *pCurrentModelWidget = getCurrentModelWidget();
@@ -10140,6 +10154,11 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  // update the model if its require update flag is set.
+  if (pModelWidget && pModelWidget->requiresUpdate()) {
+    pModelWidget->setRequiresUpdate(false);
+    pModelWidget->reDrawModelWidget(pModelWidget->createModelInfo());
+  }
   /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
    * Provided that the Documentation Browser is already visible.
    */
@@ -10184,7 +10203,7 @@ void ModelWidgetContainer::saveModelWidget()
   // if pModelWidget = 0
   if (!pModelWidget) {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
@@ -10201,7 +10220,7 @@ void ModelWidgetContainer::saveAsModelWidget()
   // if pModelWidget = 0
   if (!pModelWidget) {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("save as")), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("save as")), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
@@ -10218,7 +10237,7 @@ void ModelWidgetContainer::saveTotalModelWidget()
   // if pModelWidget = 0
   if (!pModelWidget) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
@@ -10242,7 +10261,11 @@ void ModelWidgetContainer::printModel()
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pModelWidget->getEditor());
       // set print options if text is selected
       if (pModelicaEditor->getPlainTextEdit()->textCursor().hasSelection()) {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        pPrintDialog->setOption(QAbstractPrintDialog::PrintSelection);
+#else
         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
+#endif
       }
       // open print dialog
       if (pPrintDialog->exec() == QDialog::Accepted) {

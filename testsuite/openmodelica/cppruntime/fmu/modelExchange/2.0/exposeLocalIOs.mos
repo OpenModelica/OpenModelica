@@ -120,6 +120,7 @@ readFile("modelDescription.tmp.xml");
 //   fmiVersion=\"2.0\"
 //   modelName=\"LocalIOs.System\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange

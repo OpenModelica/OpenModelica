@@ -1,8 +1,10 @@
 #ifndef PATH_H
 #define PATH_H
 
+#include <cstddef>
 #include <string>
 #include <vector>
+#include <utility>
 #include <string_view>
 #include <iosfwd>
 
@@ -22,7 +24,7 @@ namespace OpenModelica
       void push_back(std::string name) noexcept;
       void pop_back() noexcept;
 
-      size_t size() const noexcept;
+      std::size_t size() const noexcept;
       bool isIdent() const noexcept;
       bool isQualified() const noexcept;
       bool isFullyQualified() const noexcept;

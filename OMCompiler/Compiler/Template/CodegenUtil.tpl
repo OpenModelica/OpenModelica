@@ -345,13 +345,13 @@ end ScalarVariableTypeNominalAttribute;
 template ScalarVariableTypeUnitAttribute(String unit)
  "generates code for unit attribute"
 ::=
-  '<% if unit then ' unit="<%unit%>"' %>'
+  '<% if unit then ' unit="<%Util.escapeModelicaStringToXmlString(unit)%>"' %>'
 end ScalarVariableTypeUnitAttribute;
 
 template ScalarVariableTypeDisplayUnitAttribute(String displayUnit)
  "generates code for displayUnit attribute"
 ::=
-  '<% if displayUnit then ' displayUnit="<%displayUnit%>"' %>'
+  '<% if displayUnit then ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"' %>'
 end ScalarVariableTypeDisplayUnitAttribute;
 
 template MinString(DAE.Exp exp)

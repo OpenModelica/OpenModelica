@@ -53,39 +53,41 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 
-#define CONSUME_CHAR(value,res,i) \
-    if (value.at(i) == '\\') { \
-    i++; \
-    switch (value[i].toAscii()) { \
-    case '\'': res.append('\''); break; \
-    case '"':  res.append('\"'); break; \
-    case '?':  res.append('\?'); break; \
-    case '\\': res.append('\\'); break; \
-    case 'a':  res.append('\a'); break; \
-    case 'b':  res.append('\b'); break; \
-    case 'f':  res.append('\f'); break; \
-    case 'n':  res.append('\n'); break; \
-    case 'r':  res.append('\r'); break; \
-    case 't':  res.append('\t'); break; \
-    case 'v':  res.append('\v'); break; \
-    } \
+#define CONSUME_CHAR(value, res, len, i) \
+    if (value[i] == '\\' && i + 1 < len) { \
+        i++; \
+        switch (value[i].toAscii()) { \
+            case '\'': res.append('\''); break; \
+            case '"':  res.append('\"'); break; \
+            case '?':  res.append('\?'); break; \
+            case '\\': res.append('\\'); break; \
+            case 'a':  res.append('\a'); break; \
+            case 'b':  res.append('\b'); break; \
+            case 'f':  res.append('\f'); break; \
+            case 'n':  res.append('\n'); break; \
+            case 'r':  res.append('\r'); break; \
+            case 't':  res.append('\t'); break; \
+            case 'v':  res.append('\v'); break; \
+            default:   res.append('\\') \
+                          .append(value[i]); \
+        } \
     } else { \
-    res.append(value[i]); \
+        res.append(value[i]); \
     }
 
 QString unparse(QString value)
 {
     QString res;
     value = value.trimmed();
-    if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
-        value = value.mid(1, (value.length() - 2));
-        for (int i=0; i < value.length(); i++) {
-            CONSUME_CHAR(value,res,i);
+    int len = value.length();
+    if (len > 2 && value.at(0) == '\"' && value.at(len - 1) == '\"') {
+        len -= 2;
+        value = value.mid(1, len);
+        for (int i = 0; i < len; i++) {
+            CONSUME_CHAR(value, res, len, i);
         }
-        return res;
-    } else {
-        return "";
     }
+    return res;
 }
 
 int main(int argc, char *argv[])

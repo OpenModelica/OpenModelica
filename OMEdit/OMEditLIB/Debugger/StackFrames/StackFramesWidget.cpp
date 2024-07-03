@@ -444,7 +444,7 @@ void StackFramesWidget::resumeButtonClicked()
   */
 void StackFramesWidget::interruptButtonClicked()
 {
-  QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Not yet supported."), Helper::ok);
+  QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Not yet supported."), QMessageBox::Ok);
 }
 
 /*!

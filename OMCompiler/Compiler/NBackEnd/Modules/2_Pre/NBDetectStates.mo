@@ -43,7 +43,6 @@ protected
   import Absyn;
 
   // New Frontend Imports
-  import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -218,7 +217,7 @@ protected
         arguments = {Expression.CREF(cref = state_cref)}))
         algorithm
           state_var := BVariable.getVarPointer(state_cref);
-          if BVariable.isState(state_var) then
+          if BVariable.hasDerVar(state_var) then
             // this derivative was already created -> the variable should already have a pointer to its derivative
             der_cref := BVariable.getDerCref(state_cref);
             if not scalarized then

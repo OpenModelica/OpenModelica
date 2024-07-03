@@ -56,9 +56,11 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QtWebKit>
-#endif
+#endif // #ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 #include <QSplitter>
 #include <QUndoStack>
 #include <QUndoView>
@@ -584,6 +586,8 @@ public:
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
   void setHandleCollidingConnectionsNeeded(bool needed) {mHandleCollidingConnectionsNeeded = needed;}
   bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
+  void setRequiresUpdate(bool requiresUpdate) {mRequiresUpdate = requiresUpdate;}
+  bool requiresUpdate() {return mRequiresUpdate;}
 
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
@@ -678,6 +682,7 @@ private:
   QStringList mDependsOnModelsList;
   bool mHasMissingType = false;
   bool mHandleCollidingConnectionsNeeded = false;
+  bool mRequiresUpdate = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();

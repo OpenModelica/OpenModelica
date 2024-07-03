@@ -535,6 +535,23 @@ algorithm
   end for;
 end boolAndList;
 
+public function optionToString<T>
+  input Option<T> ot;
+  input FuncType f;
+  output String str;
+  partial function FuncType
+    input T t;
+    output String str;
+  end FuncType;
+protected
+  T t;
+algorithm
+  str := match ot
+    case SOME(t) then "SOME(" + f(t) + ")";
+    else "NONE()";
+  end match;
+end optionToString;
+
 public function applyOption<TI, TO>
   "Takes an option value and a function over the value. It returns in another
    option value, resulting from the application of the function on the value.

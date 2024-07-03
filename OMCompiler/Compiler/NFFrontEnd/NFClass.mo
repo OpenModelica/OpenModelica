@@ -32,6 +32,7 @@
 encapsulated uniontype NFClass
 
 import Attributes = NFAttributes;
+import BaseModelica;
 import Component = NFComponent;
 import Dimension = NFDimension;
 import Expression = NFExpression;
@@ -263,6 +264,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   algorithm
     component := ClassTree.nthComponent(index, classTree(cls));
   end nthComponent;
+
+  function getComponents
+    input Class cls;
+    output array<InstNode> comps = ClassTree.getComponents(classTree(cls));
+  end getComponents;
 
   function lookupAttributeBinding
     input String name;
@@ -833,6 +839,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   function toFlatStream
     input Class cls;
     input InstNode clsNode;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -850,7 +857,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
           s := IOStream.append(s, "\n");
 
           for comp in ClassTree.getComponents(cls.elements) loop
-            s := IOStream.append(s, InstNode.toFlatString(comp, indent + "  "));
+            s := IOStream.append(s, InstNode.toFlatString(comp, format, indent + "  "));
             s := IOStream.append(s, ";\n");
           end for;
 
@@ -887,13 +894,14 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   function toFlatString
     input Class cls;
     input InstNode clsNode;
+    input BaseModelica.OutputFormat format = BaseModelica.defaultFormat;
     input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(cls, clsNode, indent, s);
+    s := toFlatStream(cls, clsNode, format, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;

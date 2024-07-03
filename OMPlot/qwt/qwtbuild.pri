@@ -14,9 +14,34 @@
 CONFIG           += qt
 CONFIG           += warn_on
 CONFIG           += no_keywords
-# CONFIG           += silent
+CONFIG           += silent
+CONFIG           -= depend_includepath
 
-DEFINES += QT_NO_DEPRECATED_WARNINGS # not fixing those before Qwt 6.2
+# CONFIG += sanitize
+# CONFIG += pedantic
+
+# older Qt headers result in tons of warnings with modern compilers and flags
+unix:lessThan(QT_MAJOR_VERSION, 5) CONFIG += qtsystemincludes
+
+# CONFIG += c++11
+
+c++11 {
+    CONFIG           += strict_c++
+}
+
+sanitize {
+
+    CONFIG += sanitizer
+    CONFIG += sanitize_address
+    #CONFIG *= sanitize_memory
+    CONFIG *= sanitize_undefined
+}
+
+# Include the generated moc files in the corresponding cpp file
+# what increases the compile time significantly
+
+DEFINES += QWT_MOC_INCLUDE=1
+# DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
 
 ######################################################################
 # release/debug mode

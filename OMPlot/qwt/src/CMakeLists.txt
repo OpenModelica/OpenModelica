@@ -1,6 +1,7 @@
 set (QWT_HEADERS
     qwt.h
     qwt_abstract_scale_draw.h
+    qwt_axis_id.h
     qwt_clipper.h
     qwt_color_map.h
     qwt_column_symbol.h
@@ -75,6 +76,14 @@ set(QWT_SOURCES
     qwt_text.cpp
     qwt_transform.cpp
     qwt_widget_overlay.cpp
+    qwt_spline_parametrization.cpp
+    qwt_spline_curve_fitter.cpp
+    qwt_plot_abstract_canvas.cpp
+    qwt_weeding_curve_fitter.cpp
+    qwt_plot_graphicitem.cpp
+    qwt_bezier.cpp
+    qwt_spline_local.cpp
+    qwt.cpp
 )
 
 if (QWT_WITH_PLOT)

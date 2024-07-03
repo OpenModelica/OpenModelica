@@ -54,7 +54,6 @@
 #endif
 
 #include <QDockWidget>
-#include <QDesktopWidget>
 #include <QMessageBox>
 #include <QScreen>
 
@@ -171,13 +170,8 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(QWidget *pParent)
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
   mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
   int xPos = QApplication::primaryScreen()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
   int yPos = QApplication::primaryScreen()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
-#else // QT_VERSION_CHECK
-  int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::desktop()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
-#endif // QT_VERSION_CHECK
   mpTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, mpTLMCoSimulationOutputWidget->width(), mpTLMCoSimulationOutputWidget->height());
 }
 
@@ -246,19 +240,19 @@ bool TLMCoSimulationDialog::validate()
 {
   if (mpManagerProcessTextBox->text().isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          tr("Enter manager process."), Helper::ok);
+                          tr("Enter manager process."), QMessageBox::Ok);
     mpManagerProcessTextBox->setFocus();
     return false;
   }
   if (mpMonitorProcessTextBox->text().isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          tr("Enter monitor process."), Helper::ok);
+                          tr("Enter monitor process."), QMessageBox::Ok);
     mpMonitorProcessTextBox->setFocus();
     return false;
   }
   if (mpMonitorPortTextBox->text().isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          tr("Enter a monitor port."), Helper::ok);
+                          tr("Enter a monitor port."), QMessageBox::Ok);
     mpMonitorPortTextBox->setFocus();
     return false;
   }
@@ -400,7 +394,7 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
 {
   if (isTLMCoSimulationRunning()) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::TLMCOSIMULATION_ALREADY_RUNNING), Helper::ok);
+                             GUIMessages::getMessage(GUIMessages::TLMCOSIMULATION_ALREADY_RUNNING), QMessageBox::Ok);
     return;
   }
   if (validate()) {
@@ -512,7 +506,7 @@ bool CompositeModelSimulationParamsDialog::validateSimulationParams()
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), QMessageBox::Ok);
     return false;
   }
   return true;

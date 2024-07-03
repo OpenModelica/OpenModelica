@@ -34,6 +34,7 @@ readFile("modelDescription.tmp.xml");
 //   fmiVersion=\"2.0\"
 //   modelName=\"test_Bug3049\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange

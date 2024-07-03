@@ -398,7 +398,7 @@ private:
 
   void getSystemLibraries();
 private slots:
-  void getLibraryVersions(const QString &library);
+  void getLibraryVersions(int index);
   void addSystemLibrary();
   void openInstallLibraryDialog();
 };
@@ -1020,7 +1020,7 @@ private:
   QCheckBox *mpDeleteFMUDirectoryAndModelCheckBox;
 public slots:
   void selectFMUDirectory();
-  void enableIncludeSourcesCheckBox(QString modelDescriptionFilter);
+  void enableIncludeSourcesCheckBox(int index);
 };
 
 class TLMPage : public QWidget

@@ -907,6 +907,7 @@ public
 
   function toFlatStream
     input Statement stmt;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -917,9 +918,9 @@ public
     s := match stmt
       case ASSIGNMENT()
         algorithm
-          s := IOStream.append(s, Expression.toFlatString(stmt.lhs));
+          s := IOStream.append(s, Expression.toFlatString(stmt.lhs, format));
           s := IOStream.append(s, " := ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.rhs));
+          s := IOStream.append(s, Expression.toFlatString(stmt.rhs, format));
         then
           s;
 
@@ -937,11 +938,11 @@ public
 
           if isSome(stmt.range) then
             s := IOStream.append(s, " in ");
-            s := IOStream.append(s, Expression.toFlatString(Util.getOption(stmt.range)));
+            s := IOStream.append(s, Expression.toFlatString(Util.getOption(stmt.range), format));
           end if;
 
           s := IOStream.append(s, " loop\n");
-          s := toFlatStreamList(stmt.body, indent + "  ", s);
+          s := toFlatStreamList(stmt.body, format, indent + "  ", s);
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end for");
         then
@@ -953,9 +954,9 @@ public
 
           for b in stmt.branches loop
             s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b)));
+            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b), format));
             s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(Util.tuple22(b), indent + "  ", s);
+            s := toFlatStreamList(Util.tuple22(b), format, indent + "  ", s);
             s := IOStream.append(s, indent);
             str := "elseif ";
           end for;
@@ -970,9 +971,9 @@ public
 
           for b in stmt.branches loop
             s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b)));
+            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b), format));
             s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(Util.tuple22(b), indent + "  ", s);
+            s := toFlatStreamList(Util.tuple22(b), format, indent + "  ", s);
             s := IOStream.append(s, indent);
             str := "elsewhen ";
           end for;
@@ -984,11 +985,11 @@ public
       case ASSERT()
         algorithm
           s := IOStream.append(s, "assert(");
-          s := IOStream.append(s, Expression.toFlatString(stmt.condition));
+          s := IOStream.append(s, Expression.toFlatString(stmt.condition, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.message));
+          s := IOStream.append(s, Expression.toFlatString(stmt.message, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.level));
+          s := IOStream.append(s, Expression.toFlatString(stmt.level, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -996,7 +997,7 @@ public
       case TERMINATE()
         algorithm
           s := IOStream.append(s, "terminate(");
-          s := IOStream.append(s, Expression.toFlatString(stmt.message));
+          s := IOStream.append(s, Expression.toFlatString(stmt.message, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1004,22 +1005,22 @@ public
       case REINIT()
         algorithm
           s := IOStream.append(s, "reinit(");
-          s := IOStream.append(s, Expression.toFlatString(stmt.cref));
+          s := IOStream.append(s, Expression.toFlatString(stmt.cref, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.reinitExp));
+          s := IOStream.append(s, Expression.toFlatString(stmt.reinitExp, format));
           s := IOStream.append(s, ")");
         then
           s;
 
       case NORETCALL()
-        then IOStream.append(s, Expression.toFlatString(stmt.exp));
+        then IOStream.append(s, Expression.toFlatString(stmt.exp, format));
 
       case WHILE()
         algorithm
           s := IOStream.append(s, "while ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.condition));
+          s := IOStream.append(s, Expression.toFlatString(stmt.condition, format));
           s := IOStream.append(s, " loop\n");
-          s := toFlatStreamList(stmt.body, indent + "  ", s);
+          s := toFlatStreamList(stmt.body, format, indent + "  ", s);
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end while");
         then
@@ -1035,6 +1036,7 @@ public
 
   function toFlatStreamList
     input list<Statement> stmtl;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -1054,7 +1056,7 @@ public
 
       prev_multi_line := multi_line;
 
-      s := toFlatStream(stmt, indent, s);
+      s := toFlatStream(stmt, format, indent, s);
       s := IOStream.append(s, ";\n");
     end for;
   end toFlatStreamList;

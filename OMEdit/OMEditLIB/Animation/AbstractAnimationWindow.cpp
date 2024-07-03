@@ -280,7 +280,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
 
       QWidget* stateValWidget = new QWidget();
       QHBoxLayout *stateInfoLayout = new QHBoxLayout();
-      stateInfoLayout->setMargin(0);
+      stateInfoLayout->setContentsMargins(0, 0, 0, 0);
       stateInfoLayout->addWidget(stateLabel);
       stateInfoLayout->addWidget(spinBox);
       stateValWidget->setLayout(stateInfoLayout);
