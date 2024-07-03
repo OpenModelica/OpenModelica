@@ -71,6 +71,7 @@ protected
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{StateSelect, TearingSelect};
   import NFBackendExtension.VariableKind;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Type = NFType;

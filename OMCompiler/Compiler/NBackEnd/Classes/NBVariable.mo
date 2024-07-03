@@ -45,6 +45,7 @@ public
 
   //NF Imports
   import Attributes = NFAttributes;
+  import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{BackendInfo, StateSelect, VariableAttributes, VariableKind};
   import NFBinding.Binding;
   import Ceval = NFCeval;
