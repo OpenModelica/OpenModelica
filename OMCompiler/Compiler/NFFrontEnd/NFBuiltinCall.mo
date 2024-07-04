@@ -953,7 +953,7 @@ protected
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
       if not (InstContext.inAlgorithm(context) or InstContext.inFunction(context)) then
-        if arg_var > Variability.PARAMETER then
+        if arg_var > Variability.PARAMETER and not InstContext.inInstanceAPI(context) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
              List.toString(fillArg :: dimensionArgs, Expression.toString,
@@ -962,7 +962,7 @@ protected
 
         if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) then
           Structural.markExp(arg);
-          arg := Ceval.evalExp(arg);
+          arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.evalExp(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
       end if;
