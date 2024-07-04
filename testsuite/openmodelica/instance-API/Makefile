@@ -42,6 +42,7 @@ GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
 GetModelInstanceDim1.mos \
 GetModelInstanceDim2.mos \
+GetModelInstanceDim3.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \

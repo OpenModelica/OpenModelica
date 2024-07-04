@@ -508,6 +508,7 @@ public
       case COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
       case ITERATOR() then component.variability;
       case ENUM_LITERAL() then Variability.CONSTANT;
+      case INVALID_COMPONENT() then variability(component.component);
       else Variability.CONTINUOUS;
     end match;
   end variability;
