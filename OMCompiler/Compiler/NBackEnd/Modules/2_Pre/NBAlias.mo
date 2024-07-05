@@ -126,6 +126,8 @@ public
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
           (varData, eqData) := func(varData, eqData);
+          // allways apply clock alias
+          (varData, eqData) := aliasClocks(varData, eqData);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
@@ -239,7 +241,7 @@ protected
           eqData.continuous := EquationPointers.compress(eqData.continuous);
           eqData.discretes  := EquationPointers.compress(eqData.discretes);
 
-          // remove alias vars from all relevant arrays after splitting off non trivial alias vars
+          // remove alias vars from all relevant arrays
           varData.variables   := VariablePointers.removeList(alias_vars, varData.variables);
           varData.unknowns    := VariablePointers.removeList(alias_vars, varData.unknowns);
           varData.algebraics  := VariablePointers.removeList(alias_vars, varData.algebraics);
@@ -275,6 +277,50 @@ protected
       then fail();
     end match;
   end aliasDefault;
+
+  function aliasClocks
+    "STEPS:
+      1. collect alias sets (variables, equations, optional constant binding)
+      2. balance sets - choose variable to keep if necessary
+      3. match/sort set (linear w.r.t. unknowns since all equations contain two crefs at max and are simple/linear)
+      4. apply replacements
+      5. save replacements in bindings of alias variables
+    "
+      extends Module.aliasInterface;
+  algorithm
+    (varData, eqData) := match (varData, eqData)
+      local
+        UnorderedMap<ComponentRef, Expression> replacements;
+        EquationPointers newEquations;
+        list<Pointer<Variable>> alias_vars;
+
+      case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
+        algorithm
+          // -----------------------------------
+          //            1. 2. 3.
+          // -----------------------------------
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked);
+
+          // -----------------------------------
+          // 4. apply replacements
+          // 5. save replacements in bindings of alias variables
+          // -----------------------------------
+          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
+
+          // save new equations and compress affected arrays(some might have been removed)
+          eqData.clocked    := EquationPointers.compress(newEquations);
+
+          // remove alias variables from clocks and add to alias
+          varData.clocks    := VariablePointers.removeList(alias_vars, varData.clocks);
+          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+      then (varData, eqData);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end aliasClocks;
 
   function aliasCausalize
     "STEPS:

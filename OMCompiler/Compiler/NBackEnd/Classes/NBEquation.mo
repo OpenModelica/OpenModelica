@@ -4131,7 +4131,7 @@ public
     output list<Pointer<Equation>> removed_lst = {};
   algorithm
     for eq in equations loop
-    () := match Equation.getAttributes(Pointer.access(eq))
+      () := match Equation.getAttributes(Pointer.access(eq))
         case EQUATION_ATTRIBUTES(exclusively_initial = true)
           algorithm
             initials_lst := eq :: initials_lst;
@@ -4146,7 +4146,6 @@ public
         case EQUATION_ATTRIBUTES(kind = EquationKind.CLOCKED)
           algorithm
             clocked_lst := eq :: clocked_lst;
-            simulation_lst := eq :: simulation_lst;
         then ();
 
         case EQUATION_ATTRIBUTES(kind = EquationKind.DISCRETE)

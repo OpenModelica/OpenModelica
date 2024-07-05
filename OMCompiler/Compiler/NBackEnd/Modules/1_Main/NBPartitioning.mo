@@ -310,27 +310,24 @@ public
 
     bdae := match (systemType, bdae)
       local
-        list<System.System> systems;
-        EqData eqData;
-        VariablePointers variables;
-        EquationPointers equations;
+        VariablePointers variables, clocks;
+        EquationPointers equations, clocked;
 
-      case (System.SystemType.ODE, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = eqData as BEquation.EQ_DATA_SIM(simulation = equations)))
-        algorithm
-          (systems, equations) := func(systemType, variables, equations);
-          bdae.ode := list(sys for sys guard(not System.System.isEmpty(sys)) in systems);
-          eqData.simulation := equations;
-          bdae.eqData := eqData;
+      case (System.SystemType.ODE, BackendDAE.MAIN(
+        varData = BVariable.VAR_DATA_SIM(unknowns = variables, clocks = clocks),
+        eqData = BEquation.EQ_DATA_SIM(simulation = equations, clocked = clocked)))
+      algorithm
+        bdae.ode := func(systemType, variables, equations, clocks, clocked);
+        bdae.ode := list(sys for sys guard(not System.System.isEmpty(sys)) in bdae.ode);
+      then bdae;
 
-        then bdae;
-
-      case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = eqData as BEquation.EQ_DATA_SIM(initials = equations)))
-        algorithm
-          (systems, equations) := partitioningNone(systemType, variables, equations);
-          bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in systems);
-          eqData.initials := equations;
-          bdae.eqData := eqData;
-        then bdae;
+      case (System.SystemType.INI, BackendDAE.MAIN(
+        varData = BVariable.VAR_DATA_SIM(initials = variables, clocks = clocks),
+        eqData = BEquation.EQ_DATA_SIM(initials = equations, clocked = clocked)))
+      algorithm
+        bdae.init := partitioningNone(systemType, variables, equations, clocks, clocked);
+        bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in bdae.init);
+      then bdae;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
@@ -576,45 +573,46 @@ protected
     ClockedInfo info = ClockedInfo.new();
     list<Pointer<Equation>> clocked_eqns = {};
   algorithm
-    for eq_idx in UnorderedMap.valueList(equations.map) loop
+    // parse clock assignments
+    for eq_idx in UnorderedMap.valueList(clocked.map) loop
       if eq_idx > 0 then
-        eqn := EquationPointers.getEqnAt(equations, eq_idx);
-        if Equation.isClocked(eqn) then
-          // before partitioning only the equations for clocks are clocked
-          BClock.add(Pointer.access(eqn), info);
-          clocked_eqns := eqn :: clocked_eqns;
-        else
-          // non clock assignment equations - collect all variables
-          var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-
-          // collect all crefs in equation
-          _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
-
-          // find all indices of connected variables
-          var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
-          // filter indices of non existant variables (e.g. time)
-          var_indices := list(i for i guard(i > 0) in var_indices);
-
-          // unite current equation and all variables that already belong to a partition
-          part_idx := DisjointSetForest.unite(eqn_dsf, eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in var_indices));
-
-          // update connected variable partition indices
-          for i in var_indices loop
-            var_map[i] := part_idx;
-          end for;
-        end if;
+        eqn := EquationPointers.getEqnAt(clocked, eq_idx);
+        BClock.add(Pointer.access(eqn), info);
+        clocked_eqns := eqn :: clocked_eqns;
       end if;
     end for;
 
     // resolve inner sub clock dependencies
     ClockedInfo.resolveSubClocks(info);
     print(ClockedInfo.toString(info) + "\n");
-    // remove clocked equations
-    equations := EquationPointers.removeList(clocked_eqns, equations);
+
+    // non clock assignment equations - collect all variables
+    for eq_idx in UnorderedMap.valueList(equations.map) loop
+      if eq_idx > 0 then
+        eqn := EquationPointers.getEqnAt(equations, eq_idx);
+        var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
+        // collect all crefs in equation
+        _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
+
+        // find all indices of connected variables
+        var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
+        // filter indices of non existant variables (e.g. time)
+        var_indices := list(i for i guard(i > 0) in var_indices);
+
+        // unite current equation and all variables that already belong to a partition
+        part_idx := DisjointSetForest.unite(eqn_dsf, eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in var_indices));
+
+        // update connected variable partition indices
+        for i in var_indices loop
+          var_map[i] := part_idx;
+        end for;
+      end if;
+    end for;
 
     // find and report variables that could not be assigned to a partition (exclude clocks)
     marked_vars := listArray(list(var_map[var_idx] < 0 for var_idx in UnorderedMap.valueList(variables.map)));
-    single_vars := list(var_ptr for var_ptr guard(not BVariable.isClock(var_ptr)) in VariablePointers.getMarkedVars(variables, marked_vars));
+    single_vars := list(var_ptr for var_ptr in VariablePointers.getMarkedVars(variables, marked_vars));
 
     if not listEmpty(single_vars) then
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " (" + System.System.systemTypeString(systemType)
@@ -627,20 +625,16 @@ protected
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
         eqn := EquationPointers.getEqnAt(equations, eq_idx);
-        if not Equation.isClocked(eqn) then
-          name_cref := Equation.getEqnName(eqn);
-          UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, eq_idx), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
-        end if;
+        name_cref := Equation.getEqnName(eqn);
+        UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, eq_idx), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
       end if;
     end for;
 
     for var_idx in UnorderedMap.valueList(variables.map) loop
       if var_idx > 0 then
         var := VariablePointers.getVarAt(variables, var_idx);
-        if not BVariable.isClock(var) then
-          name_cref := BVariable.getVarName(var);
-          UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, var_map[var_idx]), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
-        end if;
+        name_cref := BVariable.getVarName(var);
+        UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, var_map[var_idx]), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
       end if;
     end for;
 

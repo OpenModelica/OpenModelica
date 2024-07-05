@@ -477,7 +477,6 @@ protected
 
         case VariableKind.CLOCK() algorithm
           clocks_lst := lowVar_ptr :: clocks_lst;
-          unknowns_lst := lowVar_ptr :: unknowns_lst;
         then ();
 
         case VariableKind.EXTOBJ() algorithm
@@ -692,7 +691,7 @@ protected
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,
-      equations   = equations,
+      equations   = EquationPointers.removeList(clocked_lst, equations),
       simulation  = EquationPointers.fromList(simulation_lst),
       continuous  = EquationPointers.fromList(continuous_lst),
       clocked     = EquationPointers.fromList(clocked_lst),

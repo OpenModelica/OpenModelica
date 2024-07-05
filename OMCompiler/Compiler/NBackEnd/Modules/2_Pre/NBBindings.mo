@@ -54,6 +54,7 @@ public
         VarData varData                             "Data containing variable pointers";
         EqData eqData                               "Data containing equation pointers";
         list<Pointer<Variable>> bound_vars          "list of bound unknown variables";
+        list<Pointer<Variable>> bound_clocks        "list of bound clock variables";
         list<Pointer<Equation>> binding_cont = {}   "list of created continuous binding equations";
         list<Pointer<Equation>> binding_clck = {}   "list of created clocked binding equations";
         list<Pointer<Equation>> binding_disc = {}   "list of created discrete binding equations";
@@ -65,7 +66,6 @@ public
       algorithm
         // create continuous and discrete binding equations
         bound_vars := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.unknowns));
-
         for var in bound_vars loop
           // do not create bindings for record children with bound parents! they are bound off their record variables
           skip_record_element := match BVariable.getParent(var)
@@ -74,9 +74,7 @@ public
           end match;
 
           if not skip_record_element then
-            if BVariable.isClock(var) then
-              binding_clck := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_clck;
-            elseif BVariable.isContinuous(var, false) then
+            if BVariable.isContinuous(var, false) then
               binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_cont;
             else
               binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_disc;
@@ -84,22 +82,16 @@ public
           end if;
         end for;
 
-        // create record binding equations, but only for unknown records
-        // known record binding equations will be created for initialization
-        bound_vars := list(var for var guard(BVariable.isBound(var) and not BVariable.isKnownRecord(var)) in VariablePointers.toList(varData.records));
-        for var in bound_vars loop
-          binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_rec;
+        // create clock bindings
+        bound_clocks := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.clocks));
+        for var in bound_clocks loop
+          binding_clck := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_clck;
         end for;
 
         // adding all continuous equations
         eqData.equations  := EquationPointers.addList(binding_cont, eqData.equations);
         eqData.simulation := EquationPointers.addList(binding_cont, eqData.simulation);
         eqData.continuous := EquationPointers.addList(binding_cont, eqData.continuous);
-
-        // adding all clocked equations
-        eqData.equations  := EquationPointers.addList(binding_clck, eqData.equations);
-        eqData.simulation := EquationPointers.addList(binding_clck, eqData.simulation);
-        eqData.continuous := EquationPointers.addList(binding_clck, eqData.continuous);
 
         // adding all discrete equations
         eqData.equations  := EquationPointers.addList(binding_disc, eqData.equations);
@@ -110,6 +102,16 @@ public
         eqData.equations  := EquationPointers.addList(binding_rec, eqData.equations);
         eqData.simulation := EquationPointers.addList(binding_rec, eqData.simulation);
         eqData.continuous := EquationPointers.addList(binding_rec, eqData.continuous);
+
+        // create record binding equations, but only for unknown records
+        // known record binding equations will be created for initialization
+        bound_vars := list(var for var guard(BVariable.isBound(var) and not BVariable.isKnownRecord(var)) in VariablePointers.toList(varData.records));
+        for var in bound_vars loop
+          binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_rec;
+        end for;
+
+        // adding all clocked equations
+        eqData.clocked    := EquationPointers.addList(binding_clck, eqData.clocked);
 
         bdae.eqData := eqData;
 
