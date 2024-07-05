@@ -245,6 +245,7 @@ protected
           varData.algebraics  := VariablePointers.removeList(alias_vars, varData.algebraics);
           varData.states      := VariablePointers.removeList(alias_vars, varData.states);
           varData.discretes   := VariablePointers.removeList(alias_vars, varData.discretes);
+          varData.clocks      := VariablePointers.removeList(alias_vars, varData.clocks);
           varData.initials    := VariablePointers.removeList(alias_vars, varData.initials);
 
           // categorize alias vars and sort them to the correct arrays
@@ -685,7 +686,7 @@ protected
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
           eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
           (solved_eq,_,status, invertRelation) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
-          collector := collector.fixValues(collector, BVariable.getVarName(var), solved_eq);
+          collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
@@ -1165,7 +1166,6 @@ protected
       Option<Expression> start_opt = UnorderedMap.get(var_cref, attrcollector.start_map);
     algorithm
       rhs := Equation.getRHS(solved_eq);
-
       // min:
       if Util.isSome(min_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), repl);
@@ -1202,7 +1202,6 @@ protected
         new_rhs := SimplifyExp.simplify(new_rhs);
         UnorderedMap.add(var_cref, new_rhs, attrcollector.start_map);
       end if;
-
     end fixValues;
 
   end AttributeCollector;

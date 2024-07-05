@@ -377,14 +377,19 @@ public
     end match;
   end isRecord;
 
-  function isKnownRecord extends checkVar;
+  function isClock extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      local
-        Boolean known;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(known = known))) then known;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CLOCK())) then true;
       else false;
     end match;
+  end isClock;
+
+  function isKnownRecord extends checkVar;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    b := Type.isClock(var.ty);
   end isKnownRecord;
 
   function getPrePost
@@ -1877,7 +1882,7 @@ public
       VariablePointers discretes          "Discrete variables";
       VariablePointers discrete_states    "Discrete state variables";
       VariablePointers previous           "Previous variables (pre(d) -> $PRE.d)";
-      // clocked
+      VariablePointers clocks             "clock variables";
 
       /* subset of knowns */
       VariablePointers states             "States";
@@ -2013,6 +2018,7 @@ public
               VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
               VariablePointers.toString(varData.discrete_states, "Discrete State", NONE(), false) +
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
+              VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +

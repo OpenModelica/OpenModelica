@@ -1751,6 +1751,16 @@ public
       b := Pointer.access(b_ptr);
     end isParameterEquation;
 
+    function isClocked
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match getAttributes(Pointer.access(eqn))
+        case EQUATION_ATTRIBUTES(kind = EquationKind.CLOCKED) then true;
+        else false;
+      end match;
+    end isClocked;
+
     function expIsParamOrConst
       input output Expression exp;
       input Pointer<Boolean> b_ptr;
@@ -1808,11 +1818,14 @@ public
         then fail();
       end match;
 
-      if BVariable.isContinuous(var_ptr, initial_) then
+      if BVariable.isClock(var_ptr) then
+        eqnAttr := EquationAttributes.default(EquationKind.CLOCKED, initial_, SOME(-1));
+      elseif BVariable.isContinuous(var_ptr, initial_) then
         eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_);
       else
         eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);
       end if;
+
       // simplify rhs and get potential iterators
       (iter, rhs) := Iterator.extract(rhs);
       rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
@@ -3290,7 +3303,7 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no clock index was provided for clocked equation."});
       then fail();
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " for unknown reason."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " for an unknown reason."});
       then fail();
     end match;
   end convertEquationKind;
@@ -3764,6 +3777,7 @@ public
       EquationPointers equations    "All equations";
       EquationPointers simulation   "All equations for simulation (without initial)";
       EquationPointers continuous   "Continuous equations";
+      EquationPointers clocked      "Clocked equations";
       EquationPointers discretes    "Discrete equations";
       EquationPointers initials     "(Exclusively) Initial equations";
       EquationPointers auxiliaries  "Auxiliary equations";
@@ -3821,6 +3835,7 @@ public
           // we do not want to traverse removed equations, otherwise we could break them
           eqData.simulation   := EquationPointers.map(eqData.simulation, func);
           eqData.continuous   := EquationPointers.map(eqData.continuous, func);
+          eqData.clocked      := EquationPointers.map(eqData.clocked, func);
           eqData.discretes    := EquationPointers.map(eqData.discretes, func);
           eqData.initials     := EquationPointers.map(eqData.initials, func);
           eqData.auxiliaries  := EquationPointers.map(eqData.auxiliaries, func);
@@ -3849,6 +3864,7 @@ public
           // we do not want to traverse removed equations, otherwise we could break them
           eqData.simulation   := EquationPointers.mapExp(eqData.simulation, func);
           eqData.continuous   := EquationPointers.mapExp(eqData.continuous, func);
+          eqData.clocked      := EquationPointers.mapExp(eqData.clocked, func);
           eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func);
           eqData.initials     := EquationPointers.mapExp(eqData.initials, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
@@ -3886,6 +3902,7 @@ public
             else
 
               tmp :=  tmp + EquationPointers.toString(eqData.continuous, "Continuous", NONE(), false) +
+                      EquationPointers.toString(eqData.clocked, "Clocked", NONE(), false) +
                       EquationPointers.toString(eqData.discretes, "Discrete", NONE(), false) +
                       EquationPointers.toString(eqData.initials, "(Exclusively) Initial", NONE(), false) +
                       EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false) +
@@ -4106,6 +4123,7 @@ public
     input list<Pointer<Equation>> equations;
     output list<Pointer<Equation>> simulation_lst = {};
     output list<Pointer<Equation>> continuous_lst = {};
+    output list<Pointer<Equation>> clocked_lst = {};
     output list<Pointer<Equation>> discretes_lst = {};
     output list<Pointer<Equation>> initials_lst = {};
     output list<Pointer<Equation>> auxiliaries_lst = {};
@@ -4121,6 +4139,12 @@ public
         case EQUATION_ATTRIBUTES(kind = EquationKind.CONTINUOUS)
           algorithm
             continuous_lst := eq :: continuous_lst;
+            simulation_lst := eq :: simulation_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = EquationKind.CLOCKED)
+          algorithm
+            clocked_lst := eq :: clocked_lst;
             simulation_lst := eq :: simulation_lst;
         then ();
 

@@ -62,10 +62,69 @@ protected
   import UnorderedMap;
   import UnorderedSet;
 
+public
+  type Rational = tuple<Integer, Integer>;
+  uniontype SubClock
+    record SUBCLOCK
+      Rational factor;
+      Rational shift;
+      Option<String> solver;
+    end SUBCLOCK;
+    record INFERED_SUBCLOCK
+    end INFERED_SUBCLOCK;
+end SubClock;
+
+constant SubClock DEFAULT_SUBCLOCK = SUBCLOCK((1, 1), (0, 1), NONE());
+
+uniontype ClockKind
+  record INFERRED_CLOCK
+  end INFERRED_CLOCK;
+
+  record RATIONAL_CLOCK
+    Expression intervalCounter  "integer type >= 0";
+    Expression resolution       "integer type >= 1, defaults to 1";
+  end RATIONAL_CLOCK;
+
+  record REAL_CLOCK
+    Expression interval         "real type > 0";
+  end REAL_CLOCK;
+
+  record EVENT_CLOCK
+    Expression condition;
+    Expression startInterval    "real type >= 0.0";
+  end EVENT_CLOCK;
+
+  record SOLVER_CLOCK
+    Expression c                "clock type";
+    Expression solverMethod     "string type";
+  end SOLVER_CLOCK;
+end ClockKind;
+
+uniontype BasePartition
+  record BASE_PARTITION
+    ClockKind clock;
+    Integer nSubClocks;
+  end BASE_PARTITION;
+end BasePartition;
+
+uniontype SubPartition
+  record SUB_PARTITION
+    SubClock clock;
+    Boolean holdEvents;
+    list<ComponentRef> prevVars;
+  end SUB_PARTITION;
+end SubPartition;
+
+uniontype PartitionsInfo
+  record PARTITIONS_INFO
+    array<BasePartition> basePartitions;
+    array<SubPartition> subPartitions;
+  end PARTITIONS_INFO;
+end PartitionsInfo;
+
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
 // =========================================================================
-public
   function main
     "Wrapper function for any partitioning function. This will be
      called during simulation and gets the corresponding subfunction from
@@ -317,11 +376,15 @@ protected
     )};
   end partitioningNone;
 
-  function partitioningClocked extends Module.partitioningInterface;
+  function partitioningClocked
+    "partitions all individual systems and collects the clocked systems and clocks/subclocks"
+    extends Module.partitioningInterface;
+
   protected
     DisjointSetForest eqn_dsf = DisjointSetForest.new(equations.eqArr.lastUsedIndex[1]);
     array<Integer> var_map = arrayCreate(variables.varArr.lastUsedIndex[1], -1);
     Pointer<Equation> eqn;
+    Pointer<Variable> var;
     UnorderedSet<ComponentRef> var_crefs;
     list<Integer> var_indices;
     Integer part_idx;
@@ -334,49 +397,61 @@ protected
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
         eqn := EquationPointers.getEqnAt(equations, eq_idx);
-        var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        if Equation.isClocked(eqn) then
+          // before partitioning only the equations for clocks are clocked
+          print("collecting clocked eq: " + Equation.pointerToString(eqn) + "\n");
+        else
+          // non clock assignment equations - collect all variables
+          var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
-        // collect all crefs in equation
-        _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
+          // collect all crefs in equation
+          _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
 
-        // find all indices of connected variables
-        var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
-        // filter indices of non existant variables (e.g. time)
-        var_indices := list(i for i guard(i > 0) in var_indices);
+          // find all indices of connected variables
+          var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
+          // filter indices of non existant variables (e.g. time)
+          var_indices := list(i for i guard(i > 0) in var_indices);
 
-        // unite current equation and all variables that already belong to a partition
-        part_idx := DisjointSetForest.unite(eqn_dsf, eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in var_indices));
+          // unite current equation and all variables that already belong to a partition
+          part_idx := DisjointSetForest.unite(eqn_dsf, eq_idx :: list(var_map[j] for j guard(var_map[j] > 0) in var_indices));
 
-        // update connected variable partition indices
-        for i in var_indices loop
-          var_map[i] := part_idx;
-        end for;
+          // update connected variable partition indices
+          for i in var_indices loop
+            var_map[i] := part_idx;
+          end for;
+        end if;
       end if;
     end for;
 
-    // find and report variables that could not be assigned to a partition
+    // find and report variables that could not be assigned to a partition (exclude clocks)
     marked_vars := listArray(list(var_map[var_idx] < 0 for var_idx in UnorderedMap.valueList(variables.map)));
-    single_vars := VariablePointers.getMarkedVars(variables, marked_vars);
+    single_vars := list(var_ptr for var_ptr guard(not BVariable.isClock(var_ptr)) in VariablePointers.getMarkedVars(variables, marked_vars));
 
     if not listEmpty(single_vars) then
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " (" + System.System.systemTypeString(systemType)
         + ") failed because the following variables could not be assigned to a partition:\n  {"
-        + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in single_vars), "\n") + "}"});
+        + stringDelimitList(list(BVariable.toString(Pointer.access(var_ptr)) for var_ptr in single_vars), "\n") + "}"});
       fail();
     end if;
 
-    // collect clusters
+    // collect clusters excluding clocked stuff (not considered unknowns)
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
-        name_cref := Equation.getEqnName(EquationPointers.getEqnAt(equations, eq_idx));
-        UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, eq_idx), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
+        eqn := EquationPointers.getEqnAt(equations, eq_idx);
+        if not Equation.isClocked(eqn) then
+          name_cref := Equation.getEqnName(eqn);
+          UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, eq_idx), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
+        end if;
       end if;
     end for;
 
     for var_idx in UnorderedMap.valueList(variables.map) loop
       if var_idx > 0 then
-        name_cref := BVariable.getVarName(VariablePointers.getVarAt(variables, var_idx));
-        UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, var_map[var_idx]), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
+        var := VariablePointers.getVarAt(variables, var_idx);
+        if not BVariable.isClock(var) then
+          name_cref := BVariable.getVarName(var);
+          UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, var_map[var_idx]), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
+        end if;
       end if;
     end for;
 
@@ -384,6 +459,7 @@ protected
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
       print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(systems, function System.System.toString(level = 0), "", "", "\n", "\n"));
     end if;
+
   end partitioningClocked;
 
   function collectPartitioningCrefs
@@ -420,7 +496,7 @@ protected
       then newExp;
 
       // get all variable crefs for this cref and add to set
-      case Expression.CREF() algorithm
+      case Expression.CREF() guard(not BVariable.isClock(BVariable.getVarPointer(exp.cref))) algorithm
         // extract potential record children
         children := match BVariable.getVar(exp.cref)
           local

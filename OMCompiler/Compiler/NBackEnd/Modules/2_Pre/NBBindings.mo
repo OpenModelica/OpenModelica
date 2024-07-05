@@ -55,6 +55,7 @@ public
         EqData eqData                               "Data containing equation pointers";
         list<Pointer<Variable>> bound_vars          "list of bound unknown variables";
         list<Pointer<Equation>> binding_cont = {}   "list of created continuous binding equations";
+        list<Pointer<Equation>> binding_clck = {}   "list of created clocked binding equations";
         list<Pointer<Equation>> binding_disc = {}   "list of created discrete binding equations";
         list<Pointer<Equation>> binding_rec = {}    "list of created record binding equations";
         Pointer<Variable> parent                    "optional record parent";
@@ -73,7 +74,9 @@ public
           end match;
 
           if not skip_record_element then
-            if BVariable.isContinuous(var, false) then
+            if BVariable.isClock(var) then
+              binding_clck := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_clck;
+            elseif BVariable.isContinuous(var, false) then
               binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_cont;
             else
               binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_disc;
@@ -92,6 +95,11 @@ public
         eqData.equations  := EquationPointers.addList(binding_cont, eqData.equations);
         eqData.simulation := EquationPointers.addList(binding_cont, eqData.simulation);
         eqData.continuous := EquationPointers.addList(binding_cont, eqData.continuous);
+
+        // adding all clocked equations
+        eqData.equations  := EquationPointers.addList(binding_clck, eqData.equations);
+        eqData.simulation := EquationPointers.addList(binding_clck, eqData.simulation);
+        eqData.continuous := EquationPointers.addList(binding_clck, eqData.continuous);
 
         // adding all discrete equations
         eqData.equations  := EquationPointers.addList(binding_disc, eqData.equations);
@@ -115,6 +123,8 @@ public
         if Flags.isSet(Flags.DUMP_BINDINGS) then
           print(List.toString(binding_cont, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Continuous Binding Equations (" + intString(listLength(binding_cont)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+          print(List.toString(binding_clck, function Equation.pointerToString(str = ""),
+            StringUtil.headline_4("Created Clocked Binding Equations (" + intString(listLength(binding_cont)) + "):"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_disc, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Discrete Binding Equations (" + intString(listLength(binding_disc)) + "):"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_rec, function Equation.pointerToString(str = ""),

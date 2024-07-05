@@ -105,6 +105,28 @@ public
         scalarized      = false
       );
     end default;
+
+    function toString
+      input DifferentiationArguments diffArgs;
+      output String str = "[" + diffTypeStr(diffArgs.diffType) + "]";
+    algorithm
+      if diffArgs.diffType == DifferentiationType.SIMPLE then
+        str := str + " " + ComponentRef.toString(diffArgs.diffCref);
+      end if;
+    end toString;
+
+    function diffTypeStr
+      input DifferentiationType diffType;
+      output String str;
+    algorithm
+      str := match diffType
+        case DifferentiationType.TIME       then "TIME";
+        case DifferentiationType.SIMPLE     then "SIMPLE";
+        case DifferentiationType.FUNCTION   then "FUNCTION";
+        case DifferentiationType.JACOBIAN   then "JACOBIAN";
+        else "FAIL";
+      end match;
+    end diffTypeStr;
   end DifferentiationArguments;
 
   // ================================
@@ -610,12 +632,12 @@ public
       // Types: (SIMPLE)
       //  D(x)/dx => 1
       case (Expression.CREF(), DifferentiationType.SIMPLE, _)
-        guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref)) algorithm
+        guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
       then (Expression.makeOne(exp.ty), diffArguments);
 
       // Types: (SIMPLE)
       // D(y)/dx => 0
-      case (Expression.CREF(), DifferentiationType.SIMPLE, _) algorithm
+      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
