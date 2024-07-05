@@ -320,7 +320,8 @@ public
         matrixName          = simVar.matrixName,
         variability         = NONE(),  //ToDo update this!
         initial_            = NONE(),  //ToDo update this!
-        exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE));
+        exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE),
+        relativeQuantity    = false);
     end convert;
 
     function convertList

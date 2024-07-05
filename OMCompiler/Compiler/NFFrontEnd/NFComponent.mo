@@ -321,6 +321,19 @@ public
     end match;
   end setAttributes;
 
+  function setComment
+    input Option<SCode.Comment> comment;
+    input output Component component;
+  algorithm
+    () := match component
+        case COMPONENT()
+          algorithm
+            component.comment := comment;
+        then
+          ();
+  end match;
+  end setComment;
+
   function getBinding
     input Component component;
     output Binding b;

@@ -555,7 +555,7 @@ template ScalarVariableTypeCommonAttribute2(SimVar simvar, list<SimVar> stateVar
 match simvar
 case SIMVAR(__) then
   let startString = StartString2(simvar)
-  let extraAttributes = '<%DerivativeVarIndex(simvar,stateVars)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%>'
+  let extraAttributes = '<%DerivativeVarIndex(simvar,stateVars)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%><%relativeQuantity(simvar)%>'
   <<
   <%startString%><%extraAttributes%>
   >>
@@ -659,6 +659,15 @@ case SIMVAR(unit = unit, displayUnit = displayUnit) then
   //'<%unitString%><%displayUnitString%>' skip displayUnit because FMI2XML fails for e.g. bar
   '<%unitString%>'
 end UnitString2;
+
+template relativeQuantity(SimVar simvar)
+::=
+match simvar
+case SIMVAR(relativeQuantity = relativeQuantity) then
+  match relativeQuantity
+    case true then ' relativeQuantity="true"'
+    else ''
+end relativeQuantity;
 
 template statesnumwithDummy(list<SimVar> vars)
 " return number of states without dummy vars"
