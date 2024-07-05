@@ -1,0 +1,50 @@
+// name: fmi_attributes_24.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_24.fmu fmi_attributes_24.log fmi_attributes_24.xml fmi_attributes_24_tmp.xml fmi_attributes_24_info.json
+
+loadString("
+
+  package test
+    type Tdiff = Real ( final quantity=\"ThermodynamicTemperature\", final unit=\"K\") annotation(absoluteValue=false);
+
+    model fmi_attributes_24
+      Tdiff tdiff;
+    equation
+      tdiff = 10.0;
+    end fmi_attributes_24;
+
+  end test;
+
+"); getErrorString();
+
+buildModelFMU(test.fmi_attributes_24, fileNamePrefix="fmi_attributes_24"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_24.fmu modelDescription.xml > fmi_attributes_24_tmp.xml"); getErrorString();
+
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_24_tmp.xml > fmi_attributes_24.xml"); getErrorString();
+readFile("fmi_attributes_24.xml"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// "fmi_attributes_24.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"tdiff\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"K\" relativeQuantity=\"true\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// endResult

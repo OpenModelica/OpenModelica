@@ -1875,6 +1875,7 @@ algorithm
       Component inst_comp;
       InstNode ty_node;
       Class ty;
+      SCode.Element elementDefinition;
       Boolean in_function;
       Restriction parent_res, res;
 
@@ -1928,6 +1929,15 @@ algorithm
         if not InstNode.isEmpty(ty_node) then
           ty := InstNode.getClass(ty_node);
           res := Class.restriction(ty);
+
+          /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12533
+           * check if restriction is TYPE and has named annotation absolulteValue=false, then copy the derived annotations to components annotation
+           * (e.g) type TemperatureDifference = Real (final quantity="ThermodynamicTemperature", final unit="K") annotation(absoluteValue=false);
+          */
+          elementDefinition := InstNode.definition(ty_node);
+          if (Restriction.isType(res) and SCodeUtil.optCommentHasBooleanNamedAnnotationFalse(SCodeUtil.getElementComment(elementDefinition), "absoluteValue")) then
+            InstNode.componentApply(node, Component.setComment, SCodeUtil.getElementComment(elementDefinition));
+          end if;
 
           if not InstContext.inRedeclared(context) then
             checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);

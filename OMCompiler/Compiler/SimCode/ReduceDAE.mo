@@ -2191,14 +2191,14 @@ algorithm
         //create simVar for label_1
 
         simVar_1 = SimCodeVar.SIMVAR(DAE.CREF_IDENT(name1,DAE.T_REAL_DEFAULT,{}),BackendDAE.PARAM(),"","","",p,NONE(),NONE(),SOME(DAE.RCONST(1.0)),NONE(),
-                   true,DAE.T_REAL_DEFAULT,false,NONE(),SimCodeVar.NOALIAS(),DAE.emptyElementSource,SOME(SimCodeVar.LOCAL()),NONE(),NONE(),{},false,false,NONE(),false,NONE(),false,NONE(),NONE(),NONE(),NONE());
+                   true,DAE.T_REAL_DEFAULT,false,NONE(),SimCodeVar.NOALIAS(),DAE.emptyElementSource,SOME(SimCodeVar.LOCAL()),NONE(),NONE(),{},false,false,NONE(),false,NONE(),false,NONE(),NONE(),NONE(),NONE(),false);
         param=listReverse(param);
         //add simVar_1 to parameter list
         param_1=simVar_1::param;
         p=p+1;
         //create simVar_2 to parameter list
         simVar_2 = SimCodeVar.SIMVAR(DAE.CREF_IDENT(name2,DAE.T_REAL_DEFAULT,{}),BackendDAE.PARAM(),"","","",p,NONE(),NONE(),SOME(DAE.RCONST(0.0)),NONE(),
-                   true,DAE.T_REAL_DEFAULT,false,NONE(),SimCodeVar.NOALIAS(),DAE.emptyElementSource,SOME(SimCodeVar.LOCAL()),NONE(),NONE(),{},false,false,NONE(),false,NONE(),false,NONE(),NONE(),NONE(),NONE());
+                   true,DAE.T_REAL_DEFAULT,false,NONE(),SimCodeVar.NOALIAS(),DAE.emptyElementSource,SOME(SimCodeVar.LOCAL()),NONE(),NONE(),{},false,false,NONE(),false,NONE(),false,NONE(),NONE(),NONE(),NONE(),false);
         //add simVar_2 to parameter list
         param_2=simVar_2::param_1;
         param_2=listReverse(param_2);
