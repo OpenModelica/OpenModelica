@@ -134,6 +134,18 @@ extern void System_realtimeClear(int ix)
   rt_clear(ix);
 }
 
+extern double System_realtimeAccumulate(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  return rt_accumulate(ix);
+}
+
+extern double System_realtimeAccumulated(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  return rt_accumulated(ix);
+}
+
 extern int System_realtimeNtick(int ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
