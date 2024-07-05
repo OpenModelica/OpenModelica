@@ -3432,6 +3432,7 @@ algorithm
 
   outHasEntry := match binding
     case SOME(Absyn.BOOL(value = false)) then true;
+  else false;
   end match;
 end hasBooleanNamedAnnotationFalse;
 
