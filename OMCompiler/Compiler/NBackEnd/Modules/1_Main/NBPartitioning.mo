@@ -41,6 +41,7 @@ protected
   // NF
   import NFBackendExtension.{BackendInfo, VariableKind};
   import Call = NFCall;
+  import ClockKind = NFClockKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFunction.Function;
@@ -50,7 +51,7 @@ protected
   // Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointer, EquationPointers};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import BVariable = NBVariable;
@@ -59,68 +60,239 @@ protected
   // Util
   import MetaModelica.Dangerous;
   import DoubleEnded;
+  import NBBackendUtil.Rational;
   import UnorderedMap;
   import UnorderedSet;
 
 public
-  type Rational = tuple<Integer, Integer>;
-  uniontype SubClock
-    record SUBCLOCK
+  uniontype BClock
+    record BASE_CLOCK
+      ClockKind clock;
+    end BASE_CLOCK;
+
+    record SUB_CLOCK
       Rational factor;
       Rational shift;
       Option<String> solver;
-    end SUBCLOCK;
-    record INFERED_SUBCLOCK
-    end INFERED_SUBCLOCK;
-end SubClock;
+    end SUB_CLOCK;
 
-constant SubClock DEFAULT_SUBCLOCK = SUBCLOCK((1, 1), (0, 1), NONE());
+    function toString
+      input BClock clock;
+      output String str;
+    algorithm
+    str := match clock
+      case BASE_CLOCK() then ClockKind.toDebugString(clock.clock);
+      case SUB_CLOCK()  then "SUB_CLOCK(" + Rational.toString(clock.factor) + ", " + Rational.toString(clock.shift) + ")";
+                        else "UNKNOWN_CLOCK()";
+      end match;
+    end toString;
 
-uniontype ClockKind
-  record INFERRED_CLOCK
-  end INFERRED_CLOCK;
+    function add
+      input Equation eqn;
+      input ClockedInfo info;
+    algorithm
+      _ := match (Equation.getLHS(eqn), Equation.getRHS(eqn))
+        local
+          ComponentRef clock_name;
+          Expression exp;
 
-  record RATIONAL_CLOCK
-    Expression intervalCounter  "integer type >= 0";
-    Expression resolution       "integer type >= 1, defaults to 1";
-  end RATIONAL_CLOCK;
+        case (Expression.CREF(cref = clock_name), exp) algorithm
+          create(clock_name, exp, info);
+        then ();
 
-  record REAL_CLOCK
-    Expression interval         "real type > 0";
-  end REAL_CLOCK;
+        case (exp, Expression.CREF(cref = clock_name)) algorithm
+          create(clock_name, exp, info);
+        then ();
 
-  record EVENT_CLOCK
-    Expression condition;
-    Expression startInterval    "real type >= 0.0";
-  end EVENT_CLOCK;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.toString(eqn)});
+          fail();
+        then fail();
+      end match;
+    end add;
 
-  record SOLVER_CLOCK
-    Expression c                "clock type";
-    Expression solverMethod     "string type";
-  end SOLVER_CLOCK;
-end ClockKind;
+  protected
+    function create
+      input ComponentRef clock_name;
+      input Expression exp;
+      input ClockedInfo info;
+    protected
+      BClock clock;
+      Option<ComponentRef> baseClock;
+    algorithm
+      try
+        // parse the clock and see if it depends on another clock
+        (clock, baseClock) := fromExp(exp);
+        if Util.isSome(baseClock) then
+          // sub clock
+          UnorderedMap.add(clock_name, clock, info.subClocks);
+          UnorderedMap.add(clock_name, Util.getOption(baseClock), info.subToBase);
+        else
+          // base clock
+          UnorderedMap.add(clock_name, clock, info.baseClocks);
+        end if;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(clock_name) + "."});
+        fail();
+      end try;
+    end create;
 
-uniontype BasePartition
-  record BASE_PARTITION
-    ClockKind clock;
-    Integer nSubClocks;
-  end BASE_PARTITION;
-end BasePartition;
+    function fromExp
+      input Expression exp;
+      output BClock subClock;
+      output Option<ComponentRef> baseClock;
+    algorithm
+      (subClock, baseClock) := match exp
+        local
+          ComponentRef cref;
+          Call call;
 
-uniontype SubPartition
-  record SUB_PARTITION
-    SubClock clock;
-    Boolean holdEvents;
-    list<ComponentRef> prevVars;
-  end SUB_PARTITION;
-end SubPartition;
+        case Expression.CLKCONST() algorithm
+        then (BASE_CLOCK(exp.clk), NONE());
 
-uniontype PartitionsInfo
-  record PARTITIONS_INFO
-    array<BasePartition> basePartitions;
-    array<SubPartition> subPartitions;
-  end PARTITIONS_INFO;
-end PartitionsInfo;
+        case Expression.CREF(cref = cref)
+        then (DEFAULT_SUB_CLOCK, SOME(cref));
+
+        case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+          (baseClock, subClock) := match (AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), Call.arguments(call))
+            local
+              Expression e;
+              Integer i1, i2;
+
+            // subclock: subset sampling
+            case ("subSample", {e, Expression.INTEGER(i1)}) algorithm
+              (subClock, baseClock) := fromExp(e);
+              subClock := updateSubClock(subClock, Rational.RATIONAL(i1, 1), Rational.RATIONAL(0, 1));
+            then (baseClock, subClock);
+
+            // subclock: super sampling
+            case ("superSample", {e, Expression.INTEGER(i1)}) algorithm
+              (subClock, baseClock) := fromExp(e);
+              subClock := updateSubClock(subClock, Rational.RATIONAL(1, i1), Rational.RATIONAL(0, 1));
+            then (baseClock, subClock);
+
+            // subclock: shift sampling (default 3rd argument = 1)
+            case ("shiftSample", {e, Expression.INTEGER(i1)}) algorithm
+              (subClock, baseClock) := fromExp(e);
+              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, 1));
+            then (baseClock, subClock);
+
+            // subclock: shift sampling
+            case ("shiftSample", {e, Expression.INTEGER(i1), Expression.INTEGER(i2)}) algorithm
+              (subClock, baseClock) := fromExp(e);
+              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, i2));
+            then (baseClock, subClock);
+
+            // subclock: back sampling (default 3rd argument = 1)
+            case ("backSample", {e, Expression.INTEGER(i1)}) algorithm
+              (subClock, baseClock) := fromExp(e);
+              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, 1));
+            then (baseClock, subClock);
+
+            // subclock: back sampling
+            case ("backSample", {e, Expression.INTEGER(i1), Expression.INTEGER(i2)}) algorithm
+              (subClock, baseClock) := fromExp(e);
+              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, i2));
+            then (baseClock, subClock);
+
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for exp with unhandled call: " + Expression.toString(exp) + "."});
+            then fail();
+          end match;
+        then (subClock, baseClock);
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for exp with unhandled expression kind: " + Expression.toString(exp) + "."});
+        then fail();
+      end match;
+    end fromExp;
+
+    function updateSubClock
+      input output BClock subClock;
+      input Rational factor;
+      input Rational shift;
+    algorithm
+      subClock := match subClock
+        case BClock.SUB_CLOCK() algorithm
+          subClock.shift  := Rational.add(subClock.shift, Rational.multiply(shift, subClock.factor));
+          subClock.factor := Rational.multiply(subClock.factor, factor);
+        then subClock;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(subClock) + " because of incorrect Clock."});
+        then fail();
+      end match;
+    end updateSubClock;
+  end BClock;
+
+  constant BClock DEFAULT_SUB_CLOCK = SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(0, 1), NONE());
+  type CrefLst = list<ComponentRef>;
+
+  uniontype ClockedInfo
+    record CLOCKED_INFO
+      UnorderedMap<ComponentRef, BClock> baseClocks;
+      UnorderedMap<ComponentRef, BClock> subClocks;
+      UnorderedMap<ComponentRef, ComponentRef> subToBase;
+      UnorderedMap<ComponentRef, CrefLst> baseToSub;
+    end CLOCKED_INFO;
+
+    function new
+      output ClockedInfo info = CLOCKED_INFO(
+        baseClocks  = UnorderedMap.new<BClock>(ComponentRef.hash, ComponentRef.isEqual),
+        subClocks   = UnorderedMap.new<BClock>(ComponentRef.hash, ComponentRef.isEqual),
+        subToBase   = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual),
+        baseToSub   = UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
+    end new;
+
+    function toString
+      input ClockedInfo info;
+      output String str;
+    algorithm
+      str := StringUtil.headline_2("Clocked Info") + "\n";
+      str := str + StringUtil.headline_3("Base Clocks") + UnorderedMap.toString(info.baseClocks, ComponentRef.toString, BClock.toString) + "\n\n";
+      str := str + StringUtil.headline_3("Sub Clocks") + UnorderedMap.toString(info.subClocks, ComponentRef.toString, BClock.toString) + "\n\n";
+      str := str + StringUtil.headline_3("Sub to Base Clocks") + UnorderedMap.toString(info.subToBase, ComponentRef.toString, ComponentRef.toString) + "\n\n";
+      str := str + StringUtil.headline_3("Base to Sub Clocks") + UnorderedMap.toString(info.baseToSub, ComponentRef.toString, ComponentRef.listToString) + "\n";
+    end toString;
+
+    function resolveSubClocks
+      input ClockedInfo info;
+    algorithm
+      // update sub to base clock
+      for sub_clock in UnorderedMap.keyList(info.subClocks) loop
+        resolveSubClock(sub_clock, info);
+      end for;
+      // update base to sub clocks
+      for sub_clock in UnorderedMap.keyList(info.subClocks) loop
+        addSubClock(sub_clock, info);
+      end for;
+    algorithm
+
+    end resolveSubClocks;
+
+  protected
+    function resolveSubClock
+      input ComponentRef clock_name;
+      input ClockedInfo info;
+      output ComponentRef base_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+    algorithm
+      if not UnorderedMap.contains(base_clock, info.baseClocks) then
+        // not a base, update necessary
+        base_clock := resolveSubClock(base_clock, info);
+        UnorderedMap.add(clock_name, base_clock, info.subToBase);
+      end if;
+    end resolveSubClock;
+
+    function addSubClock
+      input ComponentRef clock_name;
+      input ClockedInfo info;
+    protected
+      ComponentRef base_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+      List<ComponentRef> current_clocks;
+    algorithm
+      current_clocks := UnorderedMap.getOrDefault(base_clock, info.baseToSub, {});
+      UnorderedMap.add(base_clock, clock_name :: current_clocks, info.baseToSub);
+    end addSubClock;
+  end ClockedInfo;
 
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -138,17 +310,26 @@ end PartitionsInfo;
 
     bdae := match (systemType, bdae)
       local
+        list<System.System> systems;
+        EqData eqData;
         VariablePointers variables;
         EquationPointers equations;
 
-      case (System.SystemType.ODE, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
+      case (System.SystemType.ODE, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = eqData as BEquation.EQ_DATA_SIM(simulation = equations)))
         algorithm
-          bdae.ode := list(sys for sys guard(not System.System.isEmpty(sys)) in func(systemType, variables, equations));
+          (systems, equations) := func(systemType, variables, equations);
+          bdae.ode := list(sys for sys guard(not System.System.isEmpty(sys)) in systems);
+          eqData.simulation := equations;
+          bdae.eqData := eqData;
+
         then bdae;
 
-      case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(initials = equations)))
+      case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = eqData as BEquation.EQ_DATA_SIM(initials = equations)))
         algorithm
-          bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in partitioningNone(systemType, variables, equations));
+          (systems, equations) := partitioningNone(systemType, variables, equations);
+          bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in systems);
+          eqData.initials := equations;
+          bdae.eqData := eqData;
         then bdae;
 
       else algorithm
@@ -379,7 +560,6 @@ protected
   function partitioningClocked
     "partitions all individual systems and collects the clocked systems and clocks/subclocks"
     extends Module.partitioningInterface;
-
   protected
     DisjointSetForest eqn_dsf = DisjointSetForest.new(equations.eqArr.lastUsedIndex[1]);
     array<Integer> var_map = arrayCreate(variables.varArr.lastUsedIndex[1], -1);
@@ -393,13 +573,16 @@ protected
     Pointer<Integer> index = Pointer.create(1);
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
+    ClockedInfo info = ClockedInfo.new();
+    list<Pointer<Equation>> clocked_eqns = {};
   algorithm
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
         eqn := EquationPointers.getEqnAt(equations, eq_idx);
         if Equation.isClocked(eqn) then
           // before partitioning only the equations for clocks are clocked
-          print("collecting clocked eq: " + Equation.pointerToString(eqn) + "\n");
+          BClock.add(Pointer.access(eqn), info);
+          clocked_eqns := eqn :: clocked_eqns;
         else
           // non clock assignment equations - collect all variables
           var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -422,6 +605,12 @@ protected
         end if;
       end if;
     end for;
+
+    // resolve inner sub clock dependencies
+    ClockedInfo.resolveSubClocks(info);
+    print(ClockedInfo.toString(info) + "\n");
+    // remove clocked equations
+    equations := EquationPointers.removeList(clocked_eqns, equations);
 
     // find and report variables that could not be assigned to a partition (exclude clocks)
     marked_vars := listArray(list(var_map[var_idx] < 0 for var_idx in UnorderedMap.valueList(variables.map)));
@@ -459,7 +648,6 @@ protected
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
       print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(systems, function System.System.toString(level = 0), "", "", "\n", "\n"));
     end if;
-
   end partitioningClocked;
 
   function collectPartitioningCrefs

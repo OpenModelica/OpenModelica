@@ -110,9 +110,9 @@ public
      This function is only allowed to create systems of specialized SystemType
      by creating an adjacency matrix using provided variables and equations."
     input System.SystemType systemType;
-    input VariablePointers variables;
-    input EquationPointers equations;
     output list<System.System> systems;
+    input VariablePointers variables;
+    input output EquationPointers equations;
   end partitioningInterface;
 
 //                               CAUSALIZE

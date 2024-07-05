@@ -1208,6 +1208,7 @@ public
         case ARRAY_EQUATION()                               then eq.rhs;
         case RECORD_EQUATION()                              then eq.rhs;
         case FOR_EQUATION() guard(listLength(eq.body) == 1) then getRHS(List.first(eq.body));
+        case IF_EQUATION()                                  then IfEquationBody.getRHS(eq.body);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS was ambiguous for: " + toString(eq)});
         then fail();
