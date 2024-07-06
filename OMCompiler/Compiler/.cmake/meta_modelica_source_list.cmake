@@ -278,8 +278,8 @@ set(OMC_MM_BACKEND_SOURCES
     # "NBackend Classes";
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBackendDAE.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBEquation.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBPartition.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBStrongComponent.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBSystem.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBVariable.mo
     # "NBackend Modules";
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/NBModule.mo

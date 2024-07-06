@@ -63,7 +63,7 @@ protected
   import NBEvents.EventInfo;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
-  import System = NBSystem;
+  import Partition = NBPartition;
 
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
@@ -347,7 +347,7 @@ public
             end if;
 
             // start allSim with no return equations
-            (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBSystem.SystemType.ODE, simcode_map, equation_map);
+            (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
             init_no_ret := {};
             start := {};
             discreteVars := {};
@@ -704,7 +704,7 @@ public
     end toString;
 
     function create
-      input list<System.System> systems;
+      input list<Partition.Partition> systems;
       output Option<DaeModeData> data;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
@@ -755,7 +755,7 @@ public
     function createSparsityJacobian
       input output Option<DaeModeData> daeModeDataOpt;
       input output ModelInfo modelInfo;
-      input list<System.System> systems;
+      input list<Partition.Partition> systems;
       output SimJacobian jacobian;
       input output UnorderedMap<ComponentRef, SimVar> simcode_map;
       input output SimCodeIndices simCodeIndices;

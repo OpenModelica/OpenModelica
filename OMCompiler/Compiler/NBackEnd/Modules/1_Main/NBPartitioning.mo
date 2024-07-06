@@ -53,7 +53,7 @@ protected
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
   import StrongComponent = NBStrongComponent;
-  import System = NBSystem;
+  import Partition = NBPartition;
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
 
@@ -302,31 +302,31 @@ public
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
-    input System.SystemType systemType;
+    input Partition.Kind kind;
   protected
     Module.partitioningInterface func;
   algorithm
     func := getModule();
 
-    bdae := match (systemType, bdae)
+    bdae := match (kind, bdae)
       local
         VariablePointers variables, clocks;
         EquationPointers equations, clocked;
 
-      case (System.SystemType.ODE, BackendDAE.MAIN(
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(
         varData = BVariable.VAR_DATA_SIM(unknowns = variables, clocks = clocks),
         eqData = BEquation.EQ_DATA_SIM(simulation = equations, clocked = clocked)))
       algorithm
-        bdae.ode := func(systemType, variables, equations, clocks, clocked);
-        bdae.ode := list(sys for sys guard(not System.System.isEmpty(sys)) in bdae.ode);
+        bdae.ode := func(kind, variables, equations, clocks, clocked);
+        bdae.ode := list(sys for sys guard(not Partition.Partition.isEmpty(sys)) in bdae.ode);
       then bdae;
 
-      case (System.SystemType.INI, BackendDAE.MAIN(
+      case (NBPartition.Kind.INI, BackendDAE.MAIN(
         varData = BVariable.VAR_DATA_SIM(initials = variables, clocks = clocks),
         eqData = BEquation.EQ_DATA_SIM(initials = equations, clocked = clocked)))
       algorithm
-        bdae.init := partitioningNone(systemType, variables, equations, clocks, clocked);
-        bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in bdae.init);
+        bdae.init := partitioningNone(kind, variables, equations, clocks, clocked);
+        bdae.init := list(sys for sys guard(not Partition.Partition.isEmpty(sys)) in bdae.init);
       then bdae;
 
       else algorithm
@@ -351,21 +351,21 @@ public
   end getModule;
 
   function categorize
-    "creates ODE, ALG, ODE_EVT, ALG_EVT systems from ODE by checking
+    "creates ODE, ALG, ODE_EVT, ALG_EVT partitions from ODE by checking
     if it contains discrete equations or state equations.
     Should be evoked just before jacobian at the very end."
     extends Module.wrapper;
   algorithm
     bdae := match bdae
       local
-        DoubleEnded.MutableList<System.System> ode = DoubleEnded.MutableList.fromList({});
-        DoubleEnded.MutableList<System.System> alg = DoubleEnded.MutableList.fromList({});
-        DoubleEnded.MutableList<System.System> ode_evt = DoubleEnded.MutableList.fromList({});
-        DoubleEnded.MutableList<System.System> alg_evt = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<Partition.Partition> ode = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<Partition.Partition> alg = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<Partition.Partition> ode_evt = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<Partition.Partition> alg_evt = DoubleEnded.MutableList.fromList({});
 
       case BackendDAE.MAIN() algorithm
         for syst in bdae.ode loop
-          System.System.categorize(syst, ode, alg, ode_evt, alg_evt);
+          Partition.Partition.categorize(syst, ode, alg, ode_evt, alg_evt);
         end for;
         bdae.ode := DoubleEnded.MutableList.toListAndClear(ode);
         bdae.algebraic := DoubleEnded.MutableList.toListAndClear(alg);
@@ -419,17 +419,17 @@ protected
       end match;
     end addElement;
 
-    function toSystem
+    function toPartition
       input Cluster cluster;
       input VariablePointers variables;
       input EquationPointers equations;
-      input System.SystemType systemType;
+      input Partition.Kind kind;
       input Pointer<Integer> index;
-      output System.System system;
+      output Partition.Partition partition;
     protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
       list<ComponentRef> cidnt = UnorderedSet.toList(cluster.eqn_idnts);
-      Boolean isInit = systemType == System.SystemType.INI;
+      Boolean isInit = kind == NBPartition.Kind.INI;
       list<Pointer<Variable>> var_lst, filtered_vars;
       list<Pointer<Equation>> eqn_lst;
       VariablePointers systVariables;
@@ -443,20 +443,19 @@ protected
       systVariables := VariablePointers.fromList(filtered_vars);
       systEquations := EquationPointers.fromList(eqn_lst);
 
-      system := System.SYSTEM(
-        systemType        = systemType,
+      partition := Partition.PARTITION(
+        index             = Pointer.access(index),
+        kind              = kind,
+        association       = Partition.Association.CONTINUOUS(NONE()),
         unknowns          = systVariables,
         daeUnknowns       = NONE(),
         equations         = systEquations,
         adjacencyMatrix   = NONE(),
         matching          = NONE(),
-        strongComponents  = NONE(),
-        partitionKind     = System.PartitionKind.CONTINUOUS,
-        partitionIndex    = Pointer.access(index),
-        jacobian          = NONE()
+        strongComponents  = NONE()
       );
       Pointer.update(index, Pointer.access(index) + 1);
-    end toSystem;
+    end toPartition;
   end Cluster;
 
   // Perhaps this deserves its own place in Util/*.mo
@@ -534,28 +533,27 @@ protected
 
   function partitioningNone extends Module.partitioningInterface;
   protected
-    Boolean isInit = systemType == System.SystemType.INI;
+    Boolean isInit = kind == NBPartition.Kind.INI;
     VariablePointers clone_vars;
     EquationPointers clone_eqns;
   algorithm
     clone_vars := VariablePointers.clone(variables);
     clone_eqns := EquationPointers.clone(equations);
-    systems := {System.SYSTEM(
-      systemType        = systemType,
+    partitions := {Partition.PARTITION(
+      index             = 1,
+      kind              = kind,
+      association       = Partition.Association.CONTINUOUS(NONE()),
       unknowns          = clone_vars,
       daeUnknowns       = NONE(),
       equations         = clone_eqns,
       adjacencyMatrix   = NONE(),
       matching          = NONE(),
-      strongComponents  = NONE(),
-      partitionKind     = System.PartitionKind.CONTINUOUS,
-      partitionIndex    = 1,
-      jacobian          = NONE()
+      strongComponents  = NONE()
     )};
   end partitioningNone;
 
   function partitioningClocked
-    "partitions all individual systems and collects the clocked systems and clocks/subclocks"
+    "partitions all individual partitions and collects the clocked partitions and clocks/subclocks"
     extends Module.partitioningInterface;
   protected
     DisjointSetForest eqn_dsf = DisjointSetForest.new(equations.eqArr.lastUsedIndex[1]);
@@ -615,8 +613,8 @@ protected
     single_vars := list(var_ptr for var_ptr in VariablePointers.getMarkedVars(variables, marked_vars));
 
     if not listEmpty(single_vars) then
-      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " (" + System.System.systemTypeString(systemType)
-        + ") failed because the following variables could not be assigned to a partition:\n  {"
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " (" + Partition.Partition.kindToString(kind)
+        + ") failed because the following variables could not be assigned to Fa partition:\n  {"
         + stringDelimitList(list(BVariable.toString(Pointer.access(var_ptr)) for var_ptr in single_vars), "\n") + "}"});
       fail();
     end if;
@@ -638,9 +636,9 @@ protected
       end if;
     end for;
 
-    systems := list(Cluster.toSystem(cl, variables, equations, systemType, index) for cl in UnorderedMap.valueList(cluster_map));
+    partitions := list(Cluster.toPartition(cl, variables, equations, kind, index) for cl in UnorderedMap.valueList(cluster_map));
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(systems, function System.System.toString(level = 0), "", "", "\n", "\n"));
+      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 0), "", "", "\n", "\n"));
     end if;
   end partitioningClocked;
 

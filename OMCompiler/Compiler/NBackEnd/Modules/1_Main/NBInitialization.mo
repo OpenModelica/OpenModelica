@@ -64,8 +64,8 @@ protected
   import Module = NBModule;
   import Partitioning = NBPartitioning;
   import Replacements = NBReplacements;
-  import NBSystem;
-  import NBSystem.System;
+  import BPartition = NBPartition;
+  import NBPartition.Partition;
   import Tearing = NBTearing;
 
   // Util imports
@@ -115,17 +115,17 @@ public
         then bdae;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to create initial system!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to create initial partition!"});
         then fail();
       end match;
 
       // Modules
       modules := {
         (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Inline"),
-        (function Partitioning.main(systemType = NBSystem.SystemType.INI),  "Partitioning"),
+        (function Partitioning.main(kind = NBPartition.Kind.INI),  "Partitioning"),
         (cleanup,                                                           "Cleanup"),
-        (function Causalize.main(systemType = NBSystem.SystemType.INI),     "Causalize"),
-        (function Tearing.main(systemType = NBSystem.SystemType.INI),       "Tearing")
+        (function Causalize.main(kind = NBPartition.Kind.INI),     "Causalize"),
+        (function Tearing.main(kind = NBPartition.Kind.INI),       "Tearing")
       };
       (bdae, clocks) := BackendDAE.applyModules(bdae, modules, ClockIndexes.RT_CLOCK_NEW_BACKEND_INITIALIZATION);
 
@@ -510,29 +510,29 @@ public
       case BackendDAE.MAIN() algorithm
 
         // initial() -> false
-        bdae.ode        := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode);
-        bdae.algebraic  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.algebraic);
-        bdae.ode_event  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode_event);
-        bdae.alg_event  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.alg_event);
+        bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in Util.getOption(bdae.dae)));
         end if;
         // initial() -> true
-        bdae.init := list(System.mapEqn(sys, function cleanupInitialCall(init = true)) for sys in bdae.init);
+        bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true)) for par in bdae.init);
 
         // homotopy(actual, simplified) -> actual
-        bdae.ode        := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode);
-        bdae.algebraic  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.algebraic);
-        bdae.ode_event  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode_event);
-        bdae.alg_event  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.alg_event);
+        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in Util.getOption(bdae.dae)));
         end if;
 
         // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
-          bdae.init_0 := SOME(list(System.clone(sys, false) for sys in bdae.init));
-          bdae.init_0 := SOME(list(System.mapExp(sys, function cleanupHomotopy(init = true, hasHom = hasHom)) for sys in Util.getOption(bdae.init_0)));
+          bdae.init_0 := SOME(list(Partition.clone(par, false) for par in bdae.init));
+          bdae.init_0 := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init = true, hasHom = hasHom)) for par in Util.getOption(bdae.init_0)));
         end if;
 
       then bdae;
@@ -579,7 +579,7 @@ public
   function cleanupHomotopy
     input output Expression exp;
     input Boolean init "if init then replace with simplified, else replace with actual";
-    input Pointer<Boolean> hasHom   "output, determines if system contains homotopy()";
+    input Pointer<Boolean> hasHom   "output, determines if partition contains homotopy()";
   algorithm
     exp := match exp
       local

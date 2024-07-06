@@ -63,7 +63,7 @@ protected
   import Replacements = NBReplacements;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
-  import System = NBSystem;
+  import Partition = NBPartition;
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointers, VarData};
 
@@ -84,7 +84,7 @@ public
     "Wrapper function for any jacobian function. This will be called during
      simulation and gets the corresponding subfunction from Config."
     extends Module.wrapper;
-    input System.SystemType systemType;
+    input Partition.Kind kind;
   protected
     constant Module.jacobianInterface func = getModule();
   algorithm
@@ -93,16 +93,16 @@ public
         String name                                     "Context name for jacobian";
         VariablePointers knowns                         "Variable array of knowns";
         FunctionTree funcTree                           "Function call bodies";
-        list<System.System> oldSystems, newSystems = {} "Equation systems before and afterwards";
-        list<System.System> oldEvents, newEvents = {}   "Event Equation systems before and afterwards";
+        list<Partition.Partition> oldPartitions, newPartitions = {} "Equation partitions before and afterwards";
+        list<Partition.Partition> oldEvents, newEvents = {}   "Event Equation partitions before and afterwards";
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
-          (oldSystems, oldEvents, name) := match systemType
-            case NBSystem.SystemType.ODE    then (bdae.ode, bdae.ode_event, "ODE_JAC");
-            case NBSystem.SystemType.DAE    then (Util.getOption(bdae.dae), bdae.ode_event,"DAE_JAC");
+          (oldPartitions, oldEvents, name) := match kind
+            case NBPartition.Kind.ODE    then (bdae.ode, bdae.ode_event, "ODE_JAC");
+            case NBPartition.Kind.DAE    then (Util.getOption(bdae.dae), bdae.ode_event,"DAE_JAC");
             else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + System.System.systemTypeString(systemType)});
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
 
@@ -110,24 +110,24 @@ public
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
           end if;
 
-          for syst in listReverse(oldSystems) loop
-            (syst, funcTree) := systJacobian(syst, funcTree, knowns, name, func);
-            newEvents := syst::newEvents;
+          for part in listReverse(oldPartitions) loop
+            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
+            newEvents := part::newEvents;
           end for;
 
-          for syst in listReverse(oldEvents) loop
-            (syst, funcTree) := systJacobian(syst, funcTree, knowns, name, func);
-            newEvents := syst::newEvents;
+          for part in listReverse(oldEvents) loop
+            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
+            newEvents := part::newEvents;
           end for;
 
-          () := match systemType
-            case NBSystem.SystemType.ODE algorithm
-              bdae.ode := newSystems;
+          () := match kind
+            case NBPartition.Kind.ODE algorithm
+              bdae.ode := newPartitions;
               bdae.ode_event := newEvents;
             then ();
 
-            case NBSystem.SystemType.DAE algorithm
-              bdae.dae := SOME(newSystems);
+            case NBPartition.Kind.DAE algorithm
+              bdae.dae := SOME(newPartitions);
               bdae.ode_event := newEvents;
             then ();
           end match;
@@ -159,7 +159,7 @@ public
         name              = name,
         jacType           = JacobianType.NLS,
         seedCandidates    = variables,
-        partialCandidates = EquationPointers.getResiduals(equations),      // these have to be updated once there are inner equations in torn systems
+        partialCandidates = EquationPointers.getResiduals(equations),      // these have to be updated once there are inner equations in torn partitions
         equations         = equations,
         knowns            = VariablePointers.empty(0),      // remove them? are they necessary?
         strongComponents  = SOME(comps),
@@ -663,8 +663,8 @@ public
 protected
   // ToDo: all the DAEMode stuff is probably incorrect!
 
-  function systJacobian
-    input output System.System syst;
+  function partJacobian
+    input output Partition.Partition part;
     input output FunctionTree funcTree;
     input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
@@ -674,17 +674,17 @@ protected
     VariablePointers seedCandidates, partialCandidates;
     Option<Jacobian> jacobian                             "Resulting jacobian";
   algorithm
-    partialCandidates := syst.unknowns;
-    derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(syst.unknowns));
+    partialCandidates := part.unknowns;
+    derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(part.unknowns));
     state_vars := list(BVariable.getStateVar(var) for var in derivative_vars);
     seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, syst.equations, knowns, syst.strongComponents, funcTree, syst.systemType == NBSystem.SystemType.INI);
-    syst.jacobian := jacobian;
+    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, part.kind == NBPartition.Kind.INI);
+    part.association := Partition.Association.CONTINUOUS(jacobian);
     if Flags.isSet(Flags.JAC_DUMP) then
-      print(System.System.toString(syst, 2));
+      print(Partition.Partition.toString(part, 2));
     end if;
-  end systJacobian;
+  end partJacobian;
 
   function jacobianSymbolic extends Module.jacobianInterface;
   protected

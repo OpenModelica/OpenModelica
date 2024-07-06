@@ -45,8 +45,8 @@ public
   import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
   import NBStrongComponent.CountCollector;
-  import NBSystem;
-  import NBSystem.System;
+  import NBPartition;
+  import NBPartition.Partition;
 protected
   // Old Frontend imports
   import Absyn.Path;
@@ -91,24 +91,24 @@ protected
   import Tearing = NBTearing;
 
   // Util imports
-  import BuiltinSystem = System;
   import ClockIndexes;
   import Error;
   import ExecStat;
   import ExpandableArray;
   import Flags;
   import StringUtil;
+  import System;
 
 public
   record MAIN
-    list<System> ode                  "Systems for differential-algebraic equations";
-    list<System> algebraic            "Systems for algebraic equations";
-    list<System> ode_event            "Systems for differential-algebraic event iteration";
-    list<System> alg_event            "Systems for algebraic event iteration";
-    list<System> init                 "Systems for initialization";
-    Option<list<System>> init_0       "Systems for lambda 0 (homotopy) Initialization";
+    list<Partition> ode                  "Partitions for differential-algebraic equations";
+    list<Partition> algebraic            "Partitions for algebraic equations";
+    list<Partition> ode_event            "Partitions for differential-algebraic event iteration";
+    list<Partition> alg_event            "Partitions for algebraic event iteration";
+    list<Partition> init                 "Partitions for initialization";
+    Option<list<Partition>> init_0       "Partitions for lambda 0 (homotopy) Initialization";
     // add init_1 for lambda = 1 (test for efficency)
-    Option<list<System>> dae          "Systems for dae mode";
+    Option<list<Partition>> dae          "Partitions for dae mode";
 
     VarData varData                   "Variable data.";
     EqData eqData                     "Equation data.";
@@ -147,16 +147,16 @@ public
             tmp := tmp +  VarData.toString(bdae.varData, 2) + "\n" +
                           EqData.toString(bdae.eqData, 1);
           else
-            tmp := tmp + System.toStringList(bdae.ode, "[ODE] Differential-Algebraic: " + str);
-            tmp := tmp + System.toStringList(bdae.algebraic, "[ALG] Algebraic: " + str);
-            tmp := tmp + System.toStringList(bdae.ode_event, "[ODE_EVENT] Event Handling: " + str);
-            tmp := tmp + System.toStringList(bdae.alg_event, "[ALG_EVENT] Event Handling: " + str);
-            tmp := tmp + System.toStringList(bdae.init, "[INI] Initialization: " + str);
+            tmp := tmp + Partition.toStringList(bdae.ode, "[ODE] Differential-Algebraic: " + str);
+            tmp := tmp + Partition.toStringList(bdae.algebraic, "[ALG] Algebraic: " + str);
+            tmp := tmp + Partition.toStringList(bdae.ode_event, "[ODE_EVENT] Event Handling: " + str);
+            tmp := tmp + Partition.toStringList(bdae.alg_event, "[ALG_EVENT] Event Handling: " + str);
+            tmp := tmp + Partition.toStringList(bdae.init, "[INI] Initialization: " + str);
             if isSome(bdae.init_0) then
-              tmp := tmp + System.toStringList(Util.getOption(bdae.init_0), "[INI_0] Initialization Lambda=0: " + str);
+              tmp := tmp + Partition.toStringList(Util.getOption(bdae.init_0), "[INI_0] Initialization Lambda=0: " + str);
             end if;
             if isSome(bdae.dae) then
-              tmp := tmp + System.toStringList(Util.getOption(bdae.dae), "[DAE] DAEMode: " + str);
+              tmp := tmp + Partition.toStringList(Util.getOption(bdae.dae), "[DAE] DAEMode: " + str);
             end if;
           end if;
           tmp := tmp + Events.EventInfo.toString(bdae.eventInfo);
@@ -246,8 +246,8 @@ public
     };
 
     mainModules := {
-      (function Partitioning.main(systemType = NBSystem.SystemType.ODE),  "Partitioning"),
-      (function Causalize.main(systemType = NBSystem.SystemType.ODE),     "Causalize"),
+      (function Partitioning.main(kind = NBPartition.Kind.ODE),  "Partitioning"),
+      (function Causalize.main(kind = NBPartition.Kind.ODE),     "Causalize"),
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
       (Initialization.main,                                               "Initialization")
     };
@@ -258,10 +258,10 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
+      (function Tearing.main(kind = NBPartition.Kind.ODE),   "Tearing"),
       (Partitioning.categorize,                                       "Categorize"),
       (Solve.main,                                                    "Solve"),
-      (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian")
+      (function Jacobian.main(kind = NBPartition.Kind.ODE),  "Jacobian")
     };
 
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
@@ -301,8 +301,8 @@ public
       debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
       debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr));
       if clock_idx <> -1 then
-        BuiltinSystem.realtimeClear(clock_idx);
-        BuiltinSystem.realtimeTick(clock_idx);
+        System.realtimeClear(clock_idx);
+        System.realtimeTick(clock_idx);
         try
           bdae := func(bdae);
         else
@@ -312,7 +312,7 @@ public
           end if;
           fail();
         end try;
-        clock_time := BuiltinSystem.realtimeTock(clock_idx);
+        clock_time := System.realtimeTock(clock_idx);
         ExecStat.execStat(name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
@@ -356,19 +356,19 @@ public
 
       case MAIN() algorithm
         for syst in bdae.ode loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.algebraic loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.ode_event loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.alg_event loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.init loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         residuals := VariablePointers.fromList(var_lst);
       then residuals;
@@ -1429,7 +1429,7 @@ public
 
   function strongcomponentinfo
     input String phase;
-    input list<list<System>> systems;
+    input list<list<Partition>> systems;
   protected
     CountCollector c = CountCollector.COUNT_COLLECTOR(0,0,0,0,0,0,0,0,0,0,0);
     Pointer<CountCollector> collector_ptr = Pointer.create(c);
@@ -1437,7 +1437,7 @@ public
   algorithm
     for lst in systems loop
       for system in lst loop
-        System.mapStrongComponents(system, function StrongComponent.strongComponentInfo(collector_ptr = collector_ptr));
+        Partition.mapStrongComponents(system, function StrongComponent.strongComponentInfo(collector_ptr = collector_ptr));
       end for;
     end for;
     c := Pointer.access(collector_ptr);

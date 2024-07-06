@@ -283,8 +283,8 @@ if true then /* Suppress output */
   // "NBackend Classes"
     "../NBackEnd/Classes/NBackendDAE.mo",
     "../NBackEnd/Classes/NBEquation.mo",
+    "../NBackEnd/Classes/NBPartition.mo",
     "../NBackEnd/Classes/NBStrongComponent.mo",
-    "../NBackEnd/Classes/NBSystem.mo",
     "../NBackEnd/Classes/NBVariable.mo",
   // "NBackend Modules"
     "../NBackEnd/Modules/NBModule.mo",
