@@ -288,7 +288,7 @@ public function allEqual<T>
   "Takes a list and an equality function, and returns whether all elements in the list are equal."
   input list<T> inList;
   input CompFunc inCompFunc;
-  output Boolean outAllEqual := true;
+  output Boolean outAllEqual = true;
 
   partial function CompFunc
     "Returns true if e1 = e2, otherwise false."
@@ -298,7 +298,7 @@ public function allEqual<T>
   end CompFunc;
 
 protected
-  T e1 := first(inList);
+  T e1 = first(inList);
 algorithm
   if listLength(inList) > 1 then
     for e in inList loop
