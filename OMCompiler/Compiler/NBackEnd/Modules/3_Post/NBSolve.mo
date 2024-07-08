@@ -60,7 +60,7 @@ public
   import Replacements = NBReplacements;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
-  import NBPartition;
+  import BPartition = NBPartition;
   import NBPartition.Partition;
   import Tearing = NBTearing;
 
@@ -133,6 +133,7 @@ public
     input Pointer<Integer> implicit_index_ptr;
     input UnorderedMap<StrongComponent, list<StrongComponent>> duplicate_map;
   protected
+    BPartition.Kind kind = Partition.getKind(partition);
     type EquationPointerList = list<Pointer<Equation>>;
     UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
     list<StrongComponent> solved_comps = {};
@@ -150,8 +151,8 @@ public
           case SOME(alias_comps) then listAppend(alias_comps, solved_comps); // strong component already solved -> get alias comps
           else algorithm
             // solve strong component -> create alias comps
-            (alias_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, partition.kind, implicit_index, slicing_map);
-            UnorderedMap.add(comp, list(StrongComponent.createAlias(partition.kind, partition.index, comp_idx, c) for c in alias_comps), duplicate_map);
+            (alias_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, kind, implicit_index, slicing_map);
+            UnorderedMap.add(comp, list(StrongComponent.createAlias(kind, partition.index, comp_idx, c) for c in alias_comps), duplicate_map);
           then listAppend(alias_comps, solved_comps);
         end match;
       end for;
@@ -178,7 +179,7 @@ public
     input StrongComponent comp;
     output list<StrongComponent> solved_comps = {};
     input output FunctionTree funcTree;
-    input NBPartition.Kind kind;
+    input BPartition.Kind kind;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   protected
@@ -365,7 +366,7 @@ public
   function solveGenericEquation
     input output StrongComponent comp;
     input output FunctionTree funcTree;
-    input NBPartition.Kind kind;
+    input BPartition.Kind kind;
     output Status solve_status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -390,7 +391,7 @@ public
     input output Equation eqn;
     input Variable var;
     input output FunctionTree funcTree;
-    input NBPartition.Kind kind;
+    input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -407,7 +408,7 @@ public
     input output Slice<EquationPointer> eqn_slice;
     input list<Slice<VariablePointer>> var_slices;
     input output FunctionTree funcTree;
-    input NBPartition.Kind kind;
+    input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -476,7 +477,7 @@ public
     input output Equation eqn;
     input ComponentRef cref;
     input output FunctionTree funcTree;
-    input NBPartition.Kind kind;
+    input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -574,7 +575,7 @@ public
     input VariablePointers vars;
     input output FunctionTree funcTree;
     output Status status;
-    input NBPartition.Kind kind;
+    input BPartition.Kind kind;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   protected

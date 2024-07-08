@@ -42,11 +42,13 @@ public
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
+  import Partitioning = NBPartitioning;
   import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
   import NBStrongComponent.CountCollector;
   import NBPartition;
   import NBPartition.Partition;
+
 protected
   // Old Frontend imports
   import Absyn.Path;
@@ -86,7 +88,6 @@ protected
   import Inline = NBInline;
   import NBJacobian.JacobianType;
   import Module = NBModule;
-  import Partitioning = NBPartitioning;
   import Solve = NBSolve;
   import Tearing = NBTearing;
 
@@ -101,20 +102,22 @@ protected
 
 public
   record MAIN
-    list<Partition> ode                  "Partitions for differential-algebraic equations";
-    list<Partition> algebraic            "Partitions for algebraic equations";
-    list<Partition> ode_event            "Partitions for differential-algebraic event iteration";
-    list<Partition> alg_event            "Partitions for algebraic event iteration";
-    list<Partition> init                 "Partitions for initialization";
-    Option<list<Partition>> init_0       "Partitions for lambda 0 (homotopy) Initialization";
+    list<Partition> ode                   "Partitions for differential-algebraic equations";
+    list<Partition> algebraic             "Partitions for algebraic equations";
+    list<Partition> ode_event             "Partitions for differential-algebraic event iteration";
+    list<Partition> alg_event             "Partitions for algebraic event iteration";
+    list<Partition> clocked               "Clocked Partitions";
+    list<Partition> init                  "Partitions for initialization";
+    Option<list<Partition>> init_0        "Partitions for lambda 0 (homotopy) Initialization";
     // add init_1 for lambda = 1 (test for efficency)
-    Option<list<Partition>> dae          "Partitions for dae mode";
+    Option<list<Partition>> dae           "Partitions for dae mode";
 
-    VarData varData                   "Variable data.";
-    EqData eqData                     "Equation data.";
+    VarData varData                       "Variable data.";
+    EqData eqData                         "Equation data.";
 
-    Events.EventInfo eventInfo        "contains time and state events";
-    FunctionTree funcTree             "Function bodies.";
+    Events.EventInfo eventInfo            "contains time and state events";
+    Partitioning.ClockedInfo clockedInfo  "contains information about clocked partitions";
+    FunctionTree funcTree                 "Function bodies.";
   end MAIN;
 
   record JACOBIAN
@@ -151,6 +154,7 @@ public
             tmp := tmp + Partition.toStringList(bdae.algebraic, "[ALG] Algebraic: " + str);
             tmp := tmp + Partition.toStringList(bdae.ode_event, "[ODE_EVENT] Event Handling: " + str);
             tmp := tmp + Partition.toStringList(bdae.alg_event, "[ALG_EVENT] Event Handling: " + str);
+            tmp := tmp + Partition.toStringList(bdae.clocked, "[CLOCKED] Event Handling: " + str);
             tmp := tmp + Partition.toStringList(bdae.init, "[INI] Initialization: " + str);
             if isSome(bdae.init_0) then
               tmp := tmp + Partition.toStringList(Util.getOption(bdae.init_0), "[INI_0] Initialization Lambda=0: " + str);
@@ -160,6 +164,7 @@ public
             end if;
           end if;
           tmp := tmp + Events.EventInfo.toString(bdae.eventInfo);
+          tmp := tmp + Partitioning.ClockedInfo.toString(bdae.clockedInfo);
       then tmp;
 
       case JACOBIAN() algorithm
@@ -215,11 +220,12 @@ public
     VarData variableData;
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
+    Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
     UnorderedMap<Path, Function> functions;
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, lowerFunctions(funcTree));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcTree));
   end lower;
 
   function main
@@ -246,10 +252,10 @@ public
     };
 
     mainModules := {
-      (function Partitioning.main(kind = NBPartition.Kind.ODE),  "Partitioning"),
-      (function Causalize.main(kind = NBPartition.Kind.ODE),     "Causalize"),
+      (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
+      (function Causalize.main(kind = NBPartition.Kind.ODE),                "Causalize"),
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
-      (Initialization.main,                                               "Initialization")
+      (Initialization.main,                                                 "Initialization")
     };
 
     if Flags.getConfigBool(Flags.DAE_MODE) then
@@ -258,10 +264,10 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (function Tearing.main(kind = NBPartition.Kind.ODE),   "Tearing"),
-      (Partitioning.categorize,                                       "Categorize"),
-      (Solve.main,                                                    "Solve"),
-      (function Jacobian.main(kind = NBPartition.Kind.ODE),  "Jacobian")
+      (function Tearing.main(kind = NBPartition.Kind.ODE),    "Tearing"),
+      (Partitioning.categorize,                               "Categorize"),
+      (Solve.main,                                            "Solve"),
+      (function Jacobian.main(kind = NBPartition.Kind.ODE),   "Jacobian")
     };
 
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);

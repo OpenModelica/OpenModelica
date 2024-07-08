@@ -38,7 +38,7 @@ equation
     x6 = sample(time);
   end when;
 
-    when v then
+  when v then
     a1 = sample(time);
   end when;
   when z1 then

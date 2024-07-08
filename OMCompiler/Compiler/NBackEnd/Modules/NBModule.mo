@@ -74,6 +74,7 @@ protected
   import NBJacobian.JacobianType;
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
+  import NBPartitioning.ClockedInfo;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
   import NBEvents.EventInfo;
@@ -114,6 +115,7 @@ public
     input EquationPointers equations;
     input VariablePointers clocks;
     input EquationPointers clocked;
+    input ClockedInfo info;
     output list<Partition.Partition> partitions;
   end partitioningInterface;
 

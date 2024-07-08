@@ -111,6 +111,13 @@ public
       end match;
     end add;
 
+    function isBaseClock
+      input BClock clock;
+      output Boolean b;
+    algorithm
+      b := match clock case BASE_CLOCK() then true; else false; end match;
+    end isBaseClock;
+
   protected
     function create
       input ComponentRef clock_name;
@@ -245,14 +252,21 @@ public
 
     function toString
       input ClockedInfo info;
-      output String str;
+      output String str = "";
     algorithm
-      str := StringUtil.headline_2("Clocked Info") + "\n";
-      str := str + StringUtil.headline_3("Base Clocks") + UnorderedMap.toString(info.baseClocks, ComponentRef.toString, BClock.toString) + "\n\n";
-      str := str + StringUtil.headline_3("Sub Clocks") + UnorderedMap.toString(info.subClocks, ComponentRef.toString, BClock.toString) + "\n\n";
-      str := str + StringUtil.headline_3("Sub to Base Clocks") + UnorderedMap.toString(info.subToBase, ComponentRef.toString, ComponentRef.toString) + "\n\n";
-      str := str + StringUtil.headline_3("Base to Sub Clocks") + UnorderedMap.toString(info.baseToSub, ComponentRef.toString, ComponentRef.listToString) + "\n";
+      if not isEmpty(info) then
+        str := StringUtil.headline_2("Clocked Info") + "\n";
+        str := str + StringUtil.headline_3("Base Clocks") + UnorderedMap.toString(info.baseClocks, ComponentRef.toString, BClock.toString) + "\n\n";
+        str := str + StringUtil.headline_3("Sub Clocks") + UnorderedMap.toString(info.subClocks, ComponentRef.toString, BClock.toString) + "\n\n";
+        str := str + StringUtil.headline_3("Sub to Base Clocks") + UnorderedMap.toString(info.subToBase, ComponentRef.toString, ComponentRef.toString) + "\n\n";
+        str := str + StringUtil.headline_3("Base to Sub Clocks") + UnorderedMap.toString(info.baseToSub, ComponentRef.toString, ComponentRef.listToString) + "\n";
+      end if;
     end toString;
+
+    function isEmpty
+      input ClockedInfo info;
+      output Boolean b = UnorderedMap.isEmpty(info.baseClocks);
+    end isEmpty;
 
     function resolveSubClocks
       input ClockedInfo info;
@@ -317,7 +331,7 @@ public
         varData = BVariable.VAR_DATA_SIM(unknowns = variables, clocks = clocks),
         eqData = BEquation.EQ_DATA_SIM(simulation = equations, clocked = clocked)))
       algorithm
-        bdae.ode := func(kind, variables, equations, clocks, clocked);
+        bdae.ode := func(kind, variables, equations, clocks, clocked, bdae.clockedInfo);
         bdae.ode := list(sys for sys guard(not Partition.Partition.isEmpty(sys)) in bdae.ode);
       then bdae;
 
@@ -325,7 +339,7 @@ public
         varData = BVariable.VAR_DATA_SIM(initials = variables, clocks = clocks),
         eqData = BEquation.EQ_DATA_SIM(initials = equations, clocked = clocked)))
       algorithm
-        bdae.init := partitioningNone(kind, variables, equations, clocks, clocked);
+        bdae.init := partitioningNone(kind, variables, equations, clocks, clocked, bdae.clockedInfo);
         bdae.init := list(sys for sys guard(not Partition.Partition.isEmpty(sys)) in bdae.init);
       then bdae;
 
@@ -362,15 +376,17 @@ public
         DoubleEnded.MutableList<Partition.Partition> alg = DoubleEnded.MutableList.fromList({});
         DoubleEnded.MutableList<Partition.Partition> ode_evt = DoubleEnded.MutableList.fromList({});
         DoubleEnded.MutableList<Partition.Partition> alg_evt = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<Partition.Partition> clocked = DoubleEnded.MutableList.fromList({});
 
       case BackendDAE.MAIN() algorithm
         for syst in bdae.ode loop
-          Partition.Partition.categorize(syst, ode, alg, ode_evt, alg_evt);
+          Partition.Partition.categorize(syst, ode, alg, ode_evt, alg_evt, clocked);
         end for;
         bdae.ode := DoubleEnded.MutableList.toListAndClear(ode);
         bdae.algebraic := DoubleEnded.MutableList.toListAndClear(alg);
         bdae.ode_event := DoubleEnded.MutableList.toListAndClear(ode_evt);
         bdae.alg_event := DoubleEnded.MutableList.toListAndClear(alg_evt);
+        bdae.clocked := DoubleEnded.MutableList.toListAndClear(clocked);
       then bdae;
 
       else algorithm
@@ -424,6 +440,7 @@ protected
       input VariablePointers variables;
       input EquationPointers equations;
       input Partition.Kind kind;
+      input ClockedInfo info;
       input Pointer<Integer> index;
       output Partition.Partition partition;
     protected
@@ -432,24 +449,23 @@ protected
       Boolean isInit = kind == NBPartition.Kind.INI;
       list<Pointer<Variable>> var_lst, filtered_vars;
       list<Pointer<Equation>> eqn_lst;
-      VariablePointers systVariables;
-      EquationPointers systEquations;
+      VariablePointers partVariables;
+      EquationPointers partEquations;
       Integer var_idx;
     algorithm
       var_lst := list(BVariable.getVarPointer(cref) for cref in cvars);
       filtered_vars := list(var for var guard(VariablePointers.contains(var, variables)) in var_lst);
       eqn_lst := list(EquationPointers.getEqnByName(equations, name) for name in cidnt);
 
-      systVariables := VariablePointers.fromList(filtered_vars);
-      systEquations := EquationPointers.fromList(eqn_lst);
+      partVariables := VariablePointers.fromList(filtered_vars);
+      partEquations := EquationPointers.fromList(eqn_lst);
 
       partition := Partition.PARTITION(
         index             = Pointer.access(index),
-        kind              = kind,
-        association       = Partition.Association.CONTINUOUS(NONE()),
-        unknowns          = systVariables,
+        association       = Partition.Association.create(partEquations, kind, info),
+        unknowns          = partVariables,
         daeUnknowns       = NONE(),
-        equations         = systEquations,
+        equations         = partEquations,
         adjacencyMatrix   = NONE(),
         matching          = NONE(),
         strongComponents  = NONE()
@@ -541,8 +557,7 @@ protected
     clone_eqns := EquationPointers.clone(equations);
     partitions := {Partition.PARTITION(
       index             = 1,
-      kind              = kind,
-      association       = Partition.Association.CONTINUOUS(NONE()),
+      association       = Partition.Association.CONTINUOUS(kind, NONE()),
       unknowns          = clone_vars,
       daeUnknowns       = NONE(),
       equations         = clone_eqns,
@@ -568,7 +583,6 @@ protected
     Pointer<Integer> index = Pointer.create(1);
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
-    ClockedInfo info = ClockedInfo.new();
     list<Pointer<Equation>> clocked_eqns = {};
   algorithm
     // parse clock assignments
@@ -582,7 +596,6 @@ protected
 
     // resolve inner sub clock dependencies
     ClockedInfo.resolveSubClocks(info);
-    print(ClockedInfo.toString(info) + "\n");
 
     // non clock assignment equations - collect all variables
     for eq_idx in UnorderedMap.valueList(equations.map) loop
@@ -636,9 +649,10 @@ protected
       end if;
     end for;
 
-    partitions := list(Cluster.toPartition(cl, variables, equations, kind, index) for cl in UnorderedMap.valueList(cluster_map));
+    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, index) for cl in UnorderedMap.valueList(cluster_map));
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
       print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 0), "", "", "\n", "\n"));
+      print(ClockedInfo.toString(info));
     end if;
   end partitioningClocked;
 

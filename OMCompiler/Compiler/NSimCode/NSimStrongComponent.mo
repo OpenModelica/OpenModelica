@@ -511,6 +511,7 @@ public
     algorithm
       blcks := match partition.strongComponents
         local
+          Partition.Kind kind;
           array<StrongComponent> comps;
           Block tmp;
           list<Block> result = {};
@@ -518,11 +519,12 @@ public
 
         case SOME(comps)
           algorithm
+            kind := Partition.Partition.getKind(partition);
             for i in arrayLength(comps):-1:1 loop
-              (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, partition.kind, simcode_map, equation_map);
+              (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, kind, simcode_map, equation_map);
               // add it to the alias map
               if not StrongComponent.isAlias(comps[i]) then
-                UnorderedMap.add(AliasInfo.ALIAS_INFO(partition.kind, partition.index, i), index, simCodeIndices.alias_map);
+                UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), index, simCodeIndices.alias_map);
               end if;
               result := tmp :: result;
             end for;

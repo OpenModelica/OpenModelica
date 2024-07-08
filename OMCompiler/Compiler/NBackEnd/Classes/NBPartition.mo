@@ -42,15 +42,18 @@ public
 
 protected
   // NF imports
-  import Variable = NFVariable;
+  import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import Type = NFType;
+  import Variable = NFVariable;
 
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
+  import NBEquation.EquationArray;
   import BJacobian = NBJacobian;
   import NBEquation.EquationPointers;
-  import NBPartitioning.BClock;
+  import NBPartitioning.{BClock, ClockedInfo};
   import Jacobian = NBackendDAE.BackendDAE;
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
@@ -60,10 +63,11 @@ protected
   import StringUtil;
 
 public
-  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC);
+  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC, CLK);
 
   uniontype Association
     record CONTINUOUS
+      Kind kind;
       Option<Jacobian> jacobian "Analytic jacobian for the integrator";
     end CONTINUOUS;
     record CLOCKED
@@ -76,7 +80,7 @@ public
       output String str;
     algorithm
       str := match association
-        case CONTINUOUS() then "Continuous";
+        case CONTINUOUS() then "Continuous " + Partition.kindToString(association.kind);
         case CLOCKED()    then "Clocked";
                           else "Unknown";
       end match;
@@ -89,7 +93,7 @@ public
       str := match association
         case CONTINUOUS() algorithm
           if Util.isSome(association.jacobian) then
-            str := BJacobian.toString(Util.getOption(association.jacobian), "SIM") + "\n";
+            str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind)) + "\n";
           end if;
         then str;
         case CLOCKED() algorithm
@@ -105,12 +109,64 @@ public
           then fail();
       end match;
     end toString;
+
+    type ClockTpl = tuple<ComponentRef, BClock>;
+
+    function create
+      "create an associtation for a partition from the equation array and the clocked info"
+      input EquationPointers equations;
+      input Kind kind;
+      input ClockedInfo info;
+      output Association association;
+    protected
+      Pointer<Option<ClockTpl>> clock_ptr = Pointer.create(NONE());
+      Option<ClockTpl> clock_tpl;
+      ComponentRef name, base_name;
+      BClock clock;
+    algorithm
+      EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr));
+      clock_tpl := Pointer.access(clock_ptr);
+      if Util.isSome(clock_tpl) then
+        SOME((name, clock)) := clock_tpl;
+        if BClock.isBaseClock(clock) then
+          association := CLOCKED(clock, NONE());
+        else
+          base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
+          association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())));
+        end if;
+      else
+        association := CONTINUOUS(kind, NONE());
+      end if;
+    end create;
+
+  protected
+    function expClocked
+      "checks if an expression is a clock. used in mapping functions"
+      input output Expression exp;
+      input ClockedInfo info;
+      input Pointer<Option<ClockTpl>> clock_ptr;
+    algorithm
+      if not Util.isSome(Pointer.access(clock_ptr)) then
+        _ := match exp
+          case Expression.CREF() guard(Type.isClock(exp.ty)) algorithm
+            if UnorderedMap.contains(exp.cref, info.baseClocks) then
+              Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()))));
+            elseif UnorderedMap.contains(exp.cref, info.subClocks) then
+              Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()))));
+            else
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed becase of unhandled clock: " + Expression.toString(exp)});
+              fail();
+            end if;
+          then ();
+          else ();
+        end match;
+      end if;
+    end expClocked;
   end Association;
 
   uniontype Partition
     record PARTITION
       Integer index                                   "Partition index";
-      Kind kind                                       "Kind of partition";
       Association association                         "Clocked/Continuous";
       VariablePointers unknowns                       "Variable array of unknowns, subset of full variable array";
       Option<VariablePointers> daeUnknowns            "Variable array of unknowns in the case of dae mode";
@@ -125,8 +181,7 @@ public
       input Integer level = 0;
       output String str;
     algorithm
-      str := StringUtil.headline_2("(" + intString(partition.index) + ") " + Association.toStringShort(partition.association)
-        + " " + kindToString(partition.kind) + " Partition") + "\n";
+      str := StringUtil.headline_2("(" + intString(partition.index) + ") " + Association.toStringShort(partition.association) + " Partition") + "\n";
       str := match partition.strongComponents
         local
           array<StrongComponent> comps;
@@ -210,36 +265,40 @@ public
       input DoubleEnded.MutableList<Partition> alg;
       input DoubleEnded.MutableList<Partition> ode_evt;
       input DoubleEnded.MutableList<Partition> alg_evt;
+      input DoubleEnded.MutableList<Partition> clocked;
     protected
       Boolean algebraic, continuous;
-      Partition cont_part, disc_part;
+      Kind kind;
+      Association association;
     algorithm
       (algebraic, continuous) := isAlgebraicContinuous(partition);
-      () := match (algebraic, continuous)
-        case (true, true) algorithm
-          // algebraic continuous
-          partition.kind := Kind.ALG;
+      kind  := match (algebraic, continuous)
+        case (true, true)   then Kind.ALG;
+        case (false, true)  then Kind.ODE;
+        case (true, false)  then Kind.ALG_EVT;
+        case (false, false) then Kind.ODE_EVT;
+                            else fail();
+      end match;
+      partition.association := match (kind, partition.association)
+        case (_, Association.CLOCKED()) algorithm
+          DoubleEnded.push_back(clocked, partition);
+        then partition.association;
+        case (Kind.ALG, association as Association.CONTINUOUS()) algorithm
+          association.kind := kind;
           DoubleEnded.push_back(alg, partition);
-        then ();
-
-        case (false, true) algorithm
-          // differential continuous
-          partition.kind := Kind.ODE;
+        then association;
+        case (Kind.ODE, association as Association.CONTINUOUS()) algorithm
+          association.kind := kind;
           DoubleEnded.push_back(ode, partition);
-        then ();
-
-        case (true, false) algorithm
-          // algebraic discrete
-          partition.kind := Kind.ALG_EVT;
+        then association;
+        case (Kind.ALG_EVT, association as Association.CONTINUOUS()) algorithm
+          association.kind := kind;
           DoubleEnded.push_back(alg_evt, partition);
-        then ();
-
-        case (false, false) algorithm
-          // differential discrete
-          partition.kind := Kind.ODE_EVT;
+        then association;
+        case (Kind.ODE_EVT, association as Association.CONTINUOUS()) algorithm
+          association.kind := kind;
           DoubleEnded.push_back(ode_evt, partition);
-        then ();
-
+        then association;
         else fail();
       end match;
     end categorize;
@@ -253,6 +312,16 @@ public
         else NONE();
       end match;
     end getJacobian;
+
+    function getKind
+      input Partition part;
+      output Kind kind;
+    algorithm
+      kind := match part.association
+        case Association.CONTINUOUS(kind = kind) then kind;
+        else Kind.CLK;
+      end match;
+    end getKind;
 
     function getLoopResiduals
       input Partition part;
@@ -315,6 +384,7 @@ public
         case Kind.INI         then "INI";
         case Kind.DAE         then "DAE";
         case Kind.JAC         then "JAC";
+        case Kind.CLK         then "CLK";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition kind in match."});
         then fail();
@@ -333,6 +403,7 @@ public
         case Kind.INI         then 4;
         case Kind.DAE         then 5;
         case Kind.JAC         then 6;
+        case Kind.CLK         then 7;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition kind in match."});
         then fail();

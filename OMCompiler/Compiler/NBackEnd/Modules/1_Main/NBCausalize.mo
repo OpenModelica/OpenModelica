@@ -227,19 +227,20 @@ public
 protected
   function causalizePseudoArray extends Module.causalizeInterface;
   protected
+    BPartition.Kind kind = Partition.getKind(partition);
     VariablePointers variables;
     EquationPointers equations;
     Adjacency.Matrix full, adj_matching, adj_sorting;
     Matching matching;
     list<StrongComponent> comps;
   algorithm
-    (variables, equations, full, matching, comps) := match partition.kind
+    (variables, equations, full, matching, comps) := match kind
       local
         list<Pointer<Variable>> fixable, unfixable;
         list<Pointer<Equation>> initials, simulation;
         UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
-      case NBPartition.Kind.INI algorithm
+      case kind as NBPartition.Kind.INI algorithm
         // compress the arrays to remove gaps
         partition.unknowns   := VariablePointers.compress(partition.unknowns);
         partition.equations  := EquationPointers.compress(partition.equations);
@@ -278,7 +279,7 @@ protected
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
         en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcTree, varData, eqData, partition.kind, false, false);
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcTree, varData, eqData, kind, false, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
@@ -295,7 +296,7 @@ protected
 
         // create solvable adjacency matrix for matching
         adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, partition.kind, false);
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, kind, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);

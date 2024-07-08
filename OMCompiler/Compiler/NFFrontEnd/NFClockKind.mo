@@ -41,26 +41,26 @@ protected
   import JSON;
 
 public
-  record INFERRED_CLOCK
+  record INFERRED_CLOCK         "Clock()"
   end INFERRED_CLOCK;
 
   record RATIONAL_CLOCK
-    Expression intervalCounter " integer type >= 0 ";
-    Expression resolution      " integer type >= 1, defaults to 1 ";
+    Expression intervalCounter  " integer type >= 0 ";
+    Expression resolution       " integer type >= 1, defaults to 1 ";
   end RATIONAL_CLOCK;
 
   record REAL_CLOCK
-    Expression interval        " real type > 0 ";
+    Expression interval         " real type > 0 ";
   end REAL_CLOCK;
 
   record EVENT_CLOCK
-    Expression condition       " boolean type ";
-    Expression startInterval   " real type >= 0.0 ";
+    Expression condition        " boolean type ";
+    Expression startInterval    " real type >= 0.0 ";
   end EVENT_CLOCK;
 
   record SOLVER_CLOCK
-    Expression c               " clock type ";
-    Expression solverMethod    " string type ";
+    Expression c                " clock type ";
+    Expression solverMethod     " string type ";
   end SOLVER_CLOCK;
 
   function compare

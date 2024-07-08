@@ -673,14 +673,15 @@ protected
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
     Option<Jacobian> jacobian                             "Resulting jacobian";
+    Partition.Kind kind = Partition.Partition.getKind(part);
   algorithm
     partialCandidates := part.unknowns;
     derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(part.unknowns));
     state_vars := list(BVariable.getStateVar(var) for var in derivative_vars);
     seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, part.kind == NBPartition.Kind.INI);
-    part.association := Partition.Association.CONTINUOUS(jacobian);
+    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
+    part.association := Partition.Association.CONTINUOUS(kind, jacobian);
     if Flags.isSet(Flags.JAC_DUMP) then
       print(Partition.Partition.toString(part, 2));
     end if;
