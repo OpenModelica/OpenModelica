@@ -63,6 +63,7 @@ protected
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
+  import NBPartitioning.{BClock, ClockedInfo};
   import Tearing = NBTearing;
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
@@ -75,6 +76,8 @@ protected
   import NSimCode.SimCodeIndices;
   import NSimJacobian.SimJacobian;
   import NSimCode.Identifier;
+  import SimPartition = NSimPartition;
+  import NSimPartition.SimPartitions;
   import NSimVar.{SimVar, SimVars, VarType};
 
   // Util imports
@@ -447,17 +450,52 @@ public
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
-      Pointer<SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
+      Pointer<SimCodeIndices> indices_ptr;
       Pointer<list<SimVar>> vars_ptr = Pointer.create({});
       list<Block> tmp;
     algorithm
       for partition in listReverse(partitions) loop
+        indices_ptr := Pointer.create(simCodeIndices);
         VariablePointers.map(partition.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
         (tmp, simCodeIndices) := fromPartition(partition, Pointer.access(indices_ptr), simcode_map, equation_map);
         blcks := tmp :: blcks;
       end for;
       vars := listReverse(Pointer.access(vars_ptr));
     end createDAEModeBlocks;
+
+    function createClockedBlocks
+      input list<Partition.Partition> partitions;
+      output SimPartitions baseParts;
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input UnorderedMap<ComponentRef, Block> equation_map;
+      input ClockedInfo info;
+    protected
+      UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
+      list<Block> tmp;
+      BClock clock, baseClock;
+      Option<BClock> baseClock_opt;
+      SimPartition basePart, subPart;
+    algorithm
+      // collect all base clocks
+      for c in UnorderedMap.valueList(info.baseClocks) loop
+        UnorderedMap.add(c, {}, clock_collector);
+      end for;
+
+      // create all sub partition blocks and find the base partitions
+      for partition in listReverse(partitions) loop
+        (tmp, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
+        (clock, baseClock_opt) := Partition.Partition.getClocks(partition);
+        if Util.isSome(baseClock_opt) then
+          SOME(baseClock) := baseClock_opt;
+          subPart := SimPartition.createSubPartition(clock, tmp);
+          UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
+        end if;
+      end for;
+
+      // create base partitions
+      baseParts := SimPartition.createBasePartitions(clock_collector);
+    end createClockedBlocks;
 
     function createNoReturnBlocks
       input EquationPointers equations;

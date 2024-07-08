@@ -51,6 +51,9 @@ public
   // Util imports
   import Util;
 
+  // old imports
+  import MMath;
+
   uniontype Rational
     record RATIONAL
       Integer n;
@@ -81,6 +84,17 @@ public
       input Rational r2;
       output Rational r = finalize(r1.n*r2.n, r2.d*r2.d);
     end multiply;
+
+    function isEqual
+      input Rational r1;
+      input Rational r2;
+      output Boolean b = r1.n == r2.n and r1.d == r2.d;
+    end isEqual;
+
+    function convert
+      input Rational r;
+      output MMath.Rational oldR = MMath.RATIONAL(r.n, r.d);
+    end convert;
 
   protected
     function finalize

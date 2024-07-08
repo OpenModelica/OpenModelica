@@ -323,6 +323,19 @@ public
       end match;
     end getKind;
 
+    function getClocks
+      input Partition part;
+      output BClock clock;
+      output Option<BClock> baseClock;
+    algorithm
+      (clock, baseClock) := match part.association
+        case Association.CLOCKED(clock = clock, baseClock = baseClock) then (clock, baseClock);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. There is no clock in continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end getClocks;
+
     function getLoopResiduals
       input Partition part;
       output list<Pointer<Variable>> residuals = {};

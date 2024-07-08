@@ -64,6 +64,10 @@ protected
   import UnorderedMap;
   import UnorderedSet;
 
+  // Old imports
+  import OldDAE = DAE;
+  import OldBackendDAE = BackendDAE;
+
 public
   uniontype BClock
     record BASE_CLOCK
@@ -86,6 +90,23 @@ public
                         else "UNKNOWN_CLOCK()";
       end match;
     end toString;
+
+    function hash
+      input BClock clock;
+      output Integer i = stringHashDjb2(toString(clock));
+    end hash;
+
+    function isEqual
+      input BClock clock1;
+      input BClock clock2;
+      output Boolean b;
+    algorithm
+      b := match (clock1, clock2)
+        case (BASE_CLOCK(), BASE_CLOCK()) then ClockKind.compare(clock1.clock, clock2.clock) == 0;
+        case (SUB_CLOCK(), SUB_CLOCK()) then Rational.isEqual(clock1.factor, clock2.factor) and Rational.isEqual(clock1.shift, clock2.shift) and Util.optionEqual(clock1.solver, clock2.solver, stringEq);
+        else false;
+      end match;
+    end isEqual;
 
     function add
       input Equation eqn;
@@ -117,6 +138,33 @@ public
     algorithm
       b := match clock case BASE_CLOCK() then true; else false; end match;
     end isBaseClock;
+
+    function convertBase
+      input BClock clock;
+      output OldDAE.ClockKind oldClock;
+    algorithm
+      oldClock := match clock
+        case BASE_CLOCK() then ClockKind.toDAE(clock.clock);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non-base clock: " + toString(clock)});
+        then fail();
+      end match;
+    end convertBase;
+
+    function convertSub
+      input BClock clock;
+      output OldBackendDAE.SubClock oldClock;
+    algorithm
+      oldClock := match clock
+        case SUB_CLOCK() then OldBackendDAE.SUBCLOCK(
+          factor  = Rational.convert(clock.factor),
+          shift   = Rational.convert(clock.shift),
+          solver  = clock.solver);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non-sub clock: " + toString(clock)});
+        then fail();
+      end match;
+    end convertSub;
 
   protected
     function create
@@ -279,9 +327,11 @@ public
       for sub_clock in UnorderedMap.keyList(info.subClocks) loop
         addSubClock(sub_clock, info);
       end for;
-    algorithm
-
     end resolveSubClocks;
+
+    function resolveBaseClocks
+      "ToDo: merge equal clocks"
+    end resolveBaseClocks;
 
   protected
     function resolveSubClock

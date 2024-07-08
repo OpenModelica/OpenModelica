@@ -317,6 +317,7 @@ if true then /* Suppress output */
     "../NSimCode/NSimCodeUtil.mo",
     "../NSimCode/NSimGenericCall.mo",
     "../NSimCode/NSimJacobian.mo",
+    "../NSimCode/NSimPartition.mo",
     "../NSimCode/NSimStrongComponent.mo",
     "../NSimCode/NSimVar.mo",
 

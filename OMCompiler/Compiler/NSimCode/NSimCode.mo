@@ -69,6 +69,7 @@ protected
   import SimCodeUtil = NSimCodeUtil;
   import NSimJacobian.SimJacobian;
   import SimGenericCall = NSimGenericCall;
+  import SimPartition = NSimPartition;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo};
   import SymbolTable;
@@ -173,7 +174,7 @@ public
       list<SimStrongComponent.Block> allSim             "All simulation system blocks";
       list<list<SimStrongComponent.Block>> ode          "Only ode blocks for integrator";
       list<list<SimStrongComponent.Block>> algebraic    "Additional purely algebraic blocks";
-      //list<ClockedPartition> clockedPartitions;
+      list<SimPartition> clockedPartitions              "Clocked Partitions";
       list<SimStrongComponent.Block> nominal            "Blocks for nominal value equations";
       list<SimStrongComponent.Block> min                "Blocks for min value equations";
       list<SimStrongComponent.Block> max                "Blocks for max value equations";
@@ -241,6 +242,7 @@ public
         idx := idx + 1;
       end for;
       str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
+      str := str + List.toString(simCode.clockedPartitions, SimPartition.toString, "Clocked Partition", "", "\n", "");
       if not listEmpty(simCode.literals) then
         str := str + StringUtil.headline_3("Shared Literals");
         str := str + List.toString(simCode.literals, Expression.toString, "", "  ", "\n  ", "\n\n");
@@ -289,6 +291,7 @@ public
           ModelInfo modelInfo;
           SimCodeIndices simCodeIndices;
           UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+          list<SimPartition> clockedPartitions;
           Pointer<Integer> literals_idx = Pointer.create(0);
           list<Expression> literals;
           list<String> externalFunctionIncludes;
@@ -337,6 +340,11 @@ public
             // There is no actual need for parameter equations block
             param := {};
             algorithms := {};
+
+
+            // create clocked partitions
+            (clockedPartitions, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
+
 
             // init before everything else!
             (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, simcode_map, equation_map);
@@ -429,6 +437,7 @@ public
               allSim                    = allSim,
               ode                       = ode,
               algebraic                 = algebraic,
+              clockedPartitions         = clockedPartitions,
               nominal                   = nominal,
               min                       = min,
               max                       = max,
@@ -501,7 +510,7 @@ public
         allEquations                  = SimStrongComponent.Block.convertList(simCode.allSim),
         odeEquations                  = SimStrongComponent.Block.convertListList(simCode.ode),
         algebraicEquations            = SimStrongComponent.Block.convertListList(simCode.algebraic),
-        clockedPartitions             = {}, // ToDo: add this once clocked partitions are supported
+        clockedPartitions             = list(SimPartition.convertBase(part) for part in simCode.clockedPartitions),
         initialEquations              = SimStrongComponent.Block.convertList(simCode.init),
         initialEquations_lambda0      = SimStrongComponent.Block.convertList(simCode.init_0),
         removedInitialEquations       = SimStrongComponent.Block.convertList(simCode.init_no_ret),

@@ -67,6 +67,20 @@ public
     input ClockKind ck1;
     input ClockKind ck2;
     output Integer comp;
+  protected
+    function compareInt
+      input ClockKind kind;
+      output Integer i;
+    algorithm
+      i := match kind
+        case INFERRED_CLOCK() then 0;
+        case RATIONAL_CLOCK() then 1;
+        case REAL_CLOCK()     then 2;
+        case EVENT_CLOCK()    then 3;
+        case SOLVER_CLOCK()   then 4;
+                              else 5;
+      end match;
+    end compareInt;
   algorithm
     comp := match (ck1, ck2)
       local
@@ -94,6 +108,7 @@ public
             comp := Expression.compare(sm1, sm2);
           end if;
         then comp;
+      else if compareInt(ck1) < compareInt(ck2) then -1 else 1;
     end match;
   end compare;
 
