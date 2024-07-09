@@ -2332,6 +2332,7 @@ algorithm
       DAE.Type ty;
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
+      Boolean canceled;
   case({}, _, _, syst as BackendDAE.EQSYSTEM())
     equation
     then (BackendDAEUtil.clearEqSyst(syst));
@@ -2394,12 +2395,12 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, sy
       (rhs1, _) = ExpressionSolve.solve(lhs1, rhs1, varExp);
       (lhs1, _) = ExpressionSolve.solve(lhs2, rhs2, varExp);
 
-      (_,lhs1,rhs1) = cancelExpressions(lhs1,rhs1);
+      (canceled,lhs1,rhs1) = cancelExpressions(lhs1,rhs1);
       n = listLength(Expression.getAllCrefs(Expression.expSub(lhs1,rhs1)));
         //print("n1 "+intString(n1)+"\n");
         //print("n2 "+intString(n2)+"\n");
 
-      if n <= 2 then
+      if n <= 2 and canceled then
           //print("FROM "+BackendDump.equationString(eq1)+"\n");
           //print("AND  "+BackendDump.equationString(eq2)+"\n");
         eqNew = BackendDAE.EQUATION(lhs1,rhs1,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
