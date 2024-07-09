@@ -394,7 +394,7 @@ public
 
         // check for "sample" call
         case Expression.CALL() algorithm
-          (call, bucket, failed) := createSample(exp.call, bucket);
+          (call, bucket, failed, _) := createSample(exp.call, bucket);
           exp.call := call;
         then (exp, failed);
 
@@ -459,12 +459,17 @@ public
       input output Call call;
       input output Bucket bucket;
       output Boolean failed;
+      output Boolean clocked;
     algorithm
-      failed := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
+      (failed, clocked) := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
         local
+          Type ty;
           Integer value;
           Expression start, interval;
           TimeEvent timeEvent;
+
+        // don't create samples for clocks
+        case ("sample", {_, Expression.CREF(ty = ty)}) guard(Type.isClock(ty)) then (false, true);
 
         case ("sample", {start, interval}) algorithm
           timeEvent := SAMPLE(bucket.timeEventIndex, start, interval);
@@ -474,7 +479,7 @@ public
           end if;
           // add index to sample interface
           call := Call.setArguments(call, {Expression.INTEGER(getIndex(timeEvent) + 1), start, interval});
-        then false;
+        then (false, false);
 
         case ("sample", _) algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for sample operator: " + Call.toString(call)});
@@ -482,7 +487,7 @@ public
 
         // Maybe add funky sin/cos stuff here
 
-        else true;
+        else (true, false);
       end match;
     end createSample;
 
@@ -490,13 +495,17 @@ public
       "used only for StateEvent traversal to encapsulate sample operators"
       input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
+      input Pointer<Boolean> clocked      "true if its clocked and should not create an auxiliary";
+    protected
+      Boolean c;
     algorithm
       exp := match exp
         local
           Call call;
         case Expression.CALL(call = call) algorithm
-          (call, bucket, _) := createSample(call, bucket);
+          (call, bucket, _, c) := createSample(call, bucket);
           exp.call := call;
+          if c then Pointer.update(clocked, c); end if;
         then exp;
         else exp;
       end match;
@@ -626,9 +635,10 @@ public
       StateEvent sev;
       Pointer<Variable> aux_var;
       ComponentRef aux_cref;
+      Pointer<Boolean> clocked = Pointer.create(false);
     algorithm
       // collect possible sample events from exp
-      (exp, bucket) := Expression.mapFold(exp, TimeEvent.createSampleTraverse, bucket);
+      (exp, bucket) := Expression.mapFold(exp, function TimeEvent.createSampleTraverse(clocked = clocked), bucket);
 
       condition := Condition.CONDITION(exp, iter);
       sev_opt := UnorderedMap.get(condition, bucket.state_map);
@@ -641,7 +651,7 @@ public
         if not BVariable.isDummyVariable(sev.auxiliary) then
           exp := Expression.fromCref(BVariable.getVarName(sev.auxiliary));
         end if;
-      else
+      elseif not Pointer.access(clocked) then
         if createAux then
           // make a new auxiliary variable and return the expression which replaces the zero crossing
           (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.STATE_EVENT_STR, bucket.auxiliaryStateEventIndex, Expression.typeOf(exp), iter);
@@ -793,7 +803,7 @@ public
     protected
       Boolean failed2;
     algorithm
-      (call, bucket, failed) := TimeEvent.createSample(call, bucket);
+      (call, bucket, failed, _) := TimeEvent.createSample(call, bucket);
       if not failed then
         (exp, bucket, failed2) := create(exp, bucket, iter, createAux);
         if not failed2 then

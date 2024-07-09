@@ -497,22 +497,31 @@ protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
       list<ComponentRef> cidnt = UnorderedSet.toList(cluster.eqn_idnts);
       Boolean isInit = kind == NBPartition.Kind.INI;
+      Partition.Association association;
       list<Pointer<Variable>> var_lst, filtered_vars;
       list<Pointer<Equation>> eqn_lst;
       VariablePointers partVariables;
       EquationPointers partEquations;
       Integer var_idx;
     algorithm
+      // find all variables and equations
       var_lst := list(BVariable.getVarPointer(cref) for cref in cvars);
       filtered_vars := list(var for var guard(VariablePointers.contains(var, variables)) in var_lst);
       eqn_lst := list(EquationPointers.getEqnByName(equations, name) for name in cidnt);
 
+      // create variable and equation arrays
       partVariables := VariablePointers.fromList(filtered_vars);
       partEquations := EquationPointers.fromList(eqn_lst);
 
+      // create the association (clocked/continuous)
+      association := Partition.Association.create(partEquations, kind, info);
+
+      // replace the clocked functions
+      partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
+
       partition := Partition.PARTITION(
         index             = Pointer.access(index),
-        association       = Partition.Association.create(partEquations, kind, info),
+        association       = association,
         unknowns          = partVariables,
         daeUnknowns       = NONE(),
         equations         = partEquations,
@@ -700,6 +709,7 @@ protected
     end for;
 
     partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, index) for cl in UnorderedMap.valueList(cluster_map));
+
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
       print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 0), "", "", "\n", "\n"));
       print(ClockedInfo.toString(info));
@@ -780,6 +790,49 @@ protected
       UnorderedSet.add(cref, set);
     end if;
   end addCrefToSet;
+
+  function replaceClockedFunctions
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Expression newExp, arg;
+        Function func;
+        Call call;
+
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        newExp := match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
+          case "sample" algorithm
+            arg := match Call.arguments(exp.call)
+              // not collected samples have 2 arguments
+              case {arg, _} then arg;
+              // collected samples have 3 arguments
+              case {_, arg, _} then arg;
+              else algorithm
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+              then fail();
+            end match;
+            func := match Expression.typeOf(arg)
+              case Type.REAL()    then NFBuiltinFuncs.GET_PART_REAL;
+              case Type.INTEGER() then NFBuiltinFuncs.GET_PART_INT;
+              case Type.BOOLEAN() then NFBuiltinFuncs.GET_PART_BOOL;
+              else algorithm
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + Expression.toString(arg) + " is not of correct type."});
+              then fail();
+            end match;
+            newExp := Expression.CALL(Call.makeTypedCall(
+              fn          = func,
+              args        = {arg},
+              variability = Expression.variability(arg),
+              purity      = NFPrefixes.Purity.PURE
+            ));
+          then newExp;
+          else exp;
+        end match;
+      then newExp;
+      else exp;
+    end match;
+  end replaceClockedFunctions;
 
 annotation(__OpenModelica_Interface="backend");
 end NBPartitioning;

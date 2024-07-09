@@ -242,7 +242,7 @@ public
         idx := idx + 1;
       end for;
       str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
-      str := str + List.toString(simCode.clockedPartitions, SimPartition.toString, "Clocked Partition", "", "\n", "");
+      str := str + SimPartition.listToString(simCode.clockedPartitions, "  ", "Clocked Partitions") + "\n";
       if not listEmpty(simCode.literals) then
         str := str + StringUtil.headline_3("Shared Literals");
         str := str + List.toString(simCode.literals, Expression.toString, "", "  ", "\n  ", "\n\n");

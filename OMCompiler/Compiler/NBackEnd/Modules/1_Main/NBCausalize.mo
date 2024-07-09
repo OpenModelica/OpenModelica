@@ -83,15 +83,17 @@ public
   algorithm
     bdae := match (kind, bdae)
       local
-        list<Partition> partitions;
+        list<Partition> partitions, clocked;
         VarData varData;
         EqData eqData;
         FunctionTree funcTree;
 
-      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, clocked = clocked, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, func);
+          (clocked, varData, eqData, funcTree) := applyModule(clocked, kind, varData, eqData, funcTree, func);
           bdae.ode := partitions;
+          bdae.clocked := clocked;
           bdae.varData := varData;
           bdae.eqData := eqData;
           bdae.funcTree := funcTree;

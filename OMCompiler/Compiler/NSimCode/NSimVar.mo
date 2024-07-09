@@ -1117,6 +1117,10 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
+        case (Type.CLOCK(), _)
+          // for now do nothing here
+        then ();
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
         then fail();

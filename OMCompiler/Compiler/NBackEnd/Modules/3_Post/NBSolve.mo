@@ -104,6 +104,7 @@ public
         bdae.algebraic  := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.algebraic);
         bdae.ode_event  := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.ode_event);
         bdae.alg_event  := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.alg_event);
+        bdae.clocked    := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.clocked);
         bdae.funcTree   := Pointer.access(funcTree_ptr);
 
         /*

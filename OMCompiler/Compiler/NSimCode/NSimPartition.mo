@@ -84,13 +84,26 @@ public
     end for;
   end createBasePartitions;
 
+  function listToString
+    input list<SimPartition> parts;
+    input output String str = "";
+    input String header = "";
+  protected
+    String indent = str;
+  algorithm
+    str := if header <> "" then StringUtil.headline_3(header) else "";
+    for part in parts loop
+      str := str + toString(part, indent);
+    end for;
+  end listToString;
+
   function toString
     input SimPartition part;
-    output String str;
+    input output String str = "";
   algorithm
     str := match part
-      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, toString, "", "\n", "\n", "\n");
-      case SUB_PARTITION()  then "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = ""), "", "\n", "\n", "\n");
+      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, function toString(str = str), "", "\n", "\n", "\n");
+      case SUB_PARTITION()  then "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = str), "", "\n", "\n", "\n");
       else "[ERR-]";
     end match;
   end toString;
