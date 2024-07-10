@@ -695,7 +695,7 @@ protected
 
     if not listEmpty(single_vars) then
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " (" + Partition.Partition.kindToString(kind)
-        + ") failed because the following variables could not be assigned to Fa partition:\n  {"
+        + ") failed because the following variables could not be assigned to a partition:\n  {"
         + stringDelimitList(list(BVariable.toString(Pointer.access(var_ptr)) for var_ptr in single_vars), "\n") + "}"});
       fail();
     end if;
