@@ -128,6 +128,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // *******************************************
 //
 //
+// Created Clocked Binding Equations (0):
+// ****************************************
+//
+//
 // Created Discrete Binding Equations (0):
 // *****************************************
 //
@@ -159,6 +163,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // "
 // Created Continuous Binding Equations (0):
 // *******************************************
+//
+//
+// Created Clocked Binding Equations (0):
+// ****************************************
 //
 //
 // Created Discrete Binding Equations (0):
@@ -194,6 +202,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // *******************************************
 //
 //
+// Created Clocked Binding Equations (0):
+// ****************************************
+//
+//
 // Created Discrete Binding Equations (0):
 // *****************************************
 //
@@ -224,6 +236,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ""
 // Created Continuous Binding Equations (0):
 // *******************************************
+//
+//
+// Created Clocked Binding Equations (0):
+// ****************************************
 //
 //
 // Created Discrete Binding Equations (0):
@@ -258,6 +274,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // *******************************************
 //
 //
+// Created Clocked Binding Equations (0):
+// ****************************************
+//
+//
 // Created Discrete Binding Equations (0):
 // *****************************************
 //
@@ -288,6 +308,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ""
 // Created Continuous Binding Equations (0):
 // *******************************************
+//
+//
+// Created Clocked Binding Equations (0):
+// ****************************************
 //
 //
 // Created Discrete Binding Equations (0):
@@ -322,6 +346,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // *******************************************
 //
 //
+// Created Clocked Binding Equations (0):
+// ****************************************
+//
+//
 // Created Discrete Binding Equations (0):
 // *****************************************
 //
@@ -353,6 +381,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ""
 // Created Continuous Binding Equations (0):
 // *******************************************
+//
+//
+// Created Clocked Binding Equations (0):
+// ****************************************
 //
 //
 // Created Discrete Binding Equations (0):
@@ -389,6 +421,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // *******************************************
 //
 //
+// Created Clocked Binding Equations (0):
+// ****************************************
+//
+//
 // Created Discrete Binding Equations (0):
 // *****************************************
 //
@@ -423,6 +459,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // 	[SCAL] (1) z.im = b ($RES_BND_2)
 // 	[SCAL] (1) b = 1.0 ($RES_BND_1)
 // 	[SCAL] (1) a = 1.0 ($RES_BND_0)
+//
+// Created Clocked Binding Equations (4):
+// ****************************************
+//
 //
 // Created Discrete Binding Equations (0):
 // *****************************************
