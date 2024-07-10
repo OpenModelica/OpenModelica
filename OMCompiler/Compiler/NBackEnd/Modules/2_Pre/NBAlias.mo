@@ -861,7 +861,6 @@ protected
     list<Expression> start_lst = UnorderedMap.valueList(start_map);
     list<Expression> fixed_start_lst;
     Integer count_fixed = 0;
-    Boolean fixed_val;
     ComponentRef cref;
     Expression sval, fval;
   algorithm
@@ -874,7 +873,6 @@ protected
       end if;
     end for;
     if count_fixed == 0 then
-      fixed_val := false;
       if not List.allEqual(start_lst, Expression.isEqual) then
         if Flags.isSet(Flags.DUMP_REPL) then
           Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values.\n"
@@ -883,8 +881,6 @@ protected
           Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values. Use -d=dumprepl for more information.\n");
         end if;
       end if;
-    elseif count_fixed == 1 then
-      fixed_val := true;
     elseif count_fixed > 1 then
       fixed_start_lst := UnorderedMap.valueList(fixed_start_map);
       if not List.allEqual(fixed_start_lst, Expression.isEqual) then
