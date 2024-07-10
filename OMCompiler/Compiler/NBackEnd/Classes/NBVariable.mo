@@ -377,6 +377,16 @@ public
     end match;
   end isRecord;
 
+  function isKnownRecord extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+     local
+        Boolean known;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(known = known))) then known;
+      else false;
+    end match;
+  end isKnownRecord;
+
   function isClock extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
@@ -384,13 +394,6 @@ public
       else false;
     end match;
   end isClock;
-
-  function isKnownRecord extends checkVar;
-  protected
-    Variable var = Pointer.access(var_ptr);
-  algorithm
-    b := Type.isClock(var.ty);
-  end isKnownRecord;
 
   function getPrePost
     "gets the pre() / previous() var if its a variable / clocked variable or the other way around"

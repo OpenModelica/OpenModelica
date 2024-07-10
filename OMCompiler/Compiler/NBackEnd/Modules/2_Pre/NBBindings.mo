@@ -82,6 +82,13 @@ public
           end if;
         end for;
 
+        // create record binding equations, but only for unknown records
+        // known record binding equations will be created for initialization
+        bound_vars := list(var for var guard(BVariable.isBound(var) and not BVariable.isKnownRecord(var)) in VariablePointers.toList(varData.records));
+        for var in bound_vars loop
+          binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_rec;
+        end for;
+
         // create clock bindings
         bound_clocks := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.clocks));
         for var in bound_clocks loop
@@ -102,13 +109,6 @@ public
         eqData.equations  := EquationPointers.addList(binding_rec, eqData.equations);
         eqData.simulation := EquationPointers.addList(binding_rec, eqData.simulation);
         eqData.continuous := EquationPointers.addList(binding_rec, eqData.continuous);
-
-        // create record binding equations, but only for unknown records
-        // known record binding equations will be created for initialization
-        bound_vars := list(var for var guard(BVariable.isBound(var) and not BVariable.isKnownRecord(var)) in VariablePointers.toList(varData.records));
-        for var in bound_vars loop
-          binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_rec;
-        end for;
 
         // adding all clocked equations
         eqData.clocked    := EquationPointers.addList(binding_clck, eqData.clocked);
