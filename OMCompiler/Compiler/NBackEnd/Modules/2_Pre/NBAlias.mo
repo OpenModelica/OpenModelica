@@ -861,7 +861,6 @@ protected
     list<Expression> start_lst = UnorderedMap.valueList(start_map);
     list<Expression> fixed_start_lst;
     Integer count_fixed = 0;
-    Boolean fixed_val;
     ComponentRef cref;
     Expression sval, fval;
   algorithm
@@ -874,8 +873,7 @@ protected
       end if;
     end for;
     if count_fixed == 0 then
-      fixed_val := false;
-      if listLength(List.unique(start_lst)) > 1 then // if length = 1, then all values are the same
+      if not List.allEqual(start_lst, Expression.isEqual) then
         if Flags.isSet(Flags.DUMP_REPL) then
           Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values.\n"
                                   + AliasSet.toString(set) + "\n\tStart map after replacements:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
@@ -883,11 +881,9 @@ protected
           Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values. Use -d=dumprepl for more information.\n");
         end if;
       end if;
-    elseif count_fixed == 1 then
-      fixed_val := true;
     elseif count_fixed > 1 then
       fixed_start_lst := UnorderedMap.valueList(fixed_start_map);
-      if listLength(List.unique(fixed_start_lst)) > 1 then // if length = 1, then all values are the same
+      if not List.allEqual(fixed_start_lst, Expression.isEqual) then
         if Flags.isSet(Flags.DUMP_REPL) then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values!\n" + AliasSet.toString(set)
                            + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
@@ -896,7 +892,7 @@ protected
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values! Use -d=dumprepl for more information.\n"});
           fail();
         end if;
-      elseif listLength(List.unique(fixed_start_lst)) == 1 then
+      elseif List.allEqual(fixed_start_lst, Expression.isEqual) then
         if Flags.isSet(Flags.DUMP_REPL) then
           Error.addCompilerWarning(getInstanceName() + ": Multiple variables are fixed and have identical start values.\n"
                                   + AliasSet.toString(set) + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t"));
@@ -979,13 +975,23 @@ protected
     input AliasSet set;
   protected
     list<TearingSelect> lst_values = UnorderedMap.valueList(map);
+    TearingSelect val, first_val;
+    Boolean equal = true;
   algorithm
-    if listLength(List.unique(lst_values)) > 1 then // if length = 1, then all values are the same
-      if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addCompilerNotification("There are different TearingSelect values.\n" + AliasSet.toString(set) + "\n\tTearingSelect map after replacements:\n\t"
-                                      + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString,"\n\t"));
-      else
-        Error.addCompilerNotification("There are different TearingSelect values. Use -d=dumprepl for more information.\n");
+    if listLength(lst_values) > 0 then
+      first_val := List.first(lst_values);
+      for val in lst_values loop
+        if first_val <> val then
+          equal := false;
+        end if;
+      end for;
+      if equal == false then
+        if Flags.isSet(Flags.DUMP_REPL) then
+          Error.addCompilerNotification("There are different TearingSelect values.\n" + AliasSet.toString(set) + "\n\tTearingSelect map after replacements:\n\t"
+                                        + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString,"\n\t"));
+        else
+          Error.addCompilerNotification("There are different TearingSelect values. Use -d=dumprepl for more information.\n");
+        end if;
       end if;
     end if;
   end diffTearingSelect;
