@@ -104,8 +104,8 @@ public
     input output String str = "";
   algorithm
     str := match part
-      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, function toString(str = str), "", "\n", "\n", "\n");
-      case SUB_PARTITION()  then "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = str), "", "\n", "\n", "\n");
+      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, function toString(str = str), "", "\n", "", "\n");
+      case SUB_PARTITION()  then str + "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = str), "", "\n", "", "");
       else "[ERR-]";
     end match;
   end toString;

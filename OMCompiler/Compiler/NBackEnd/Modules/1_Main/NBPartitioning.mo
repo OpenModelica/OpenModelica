@@ -51,7 +51,7 @@ protected
   // Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationKind};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationKind, WhenEquationBody, WhenStatement};
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
   import BVariable = NBVariable;
@@ -217,37 +217,37 @@ public
             // subclock: subset sampling
             case ("subSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, Rational.RATIONAL(i1, 1), Rational.RATIONAL(0, 1));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(i1, 1), Rational.RATIONAL(0, 1), NONE()));
             then (baseClock, subClock);
 
             // subclock: super sampling
             case ("superSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, Rational.RATIONAL(1, i1), Rational.RATIONAL(0, 1));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, i1), Rational.RATIONAL(0, 1), NONE()));
             then (baseClock, subClock);
 
             // subclock: shift sampling (default 3rd argument = 1)
             case ("shiftSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, 1));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, 1), NONE()));
             then (baseClock, subClock);
 
             // subclock: shift sampling
             case ("shiftSample", {e, Expression.INTEGER(i1), Expression.INTEGER(i2)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, i2));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, i2), NONE()));
             then (baseClock, subClock);
 
             // subclock: back sampling (default 3rd argument = 1)
             case ("backSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, 1));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, 1), NONE()));
             then (baseClock, subClock);
 
             // subclock: back sampling
             case ("backSample", {e, Expression.INTEGER(i1), Expression.INTEGER(i2)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, i2));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, i2), NONE()));
             then (baseClock, subClock);
 
             else algorithm
@@ -263,17 +263,17 @@ public
     end fromExp;
 
     function updateSubClock
-      input output BClock subClock;
-      input Rational factor;
-      input Rational shift;
+      "adding the sub clock src to the sub clock dest. not symmetrical/commutative"
+      input output BClock dest;
+      input BClock src;
     algorithm
-      subClock := match subClock
-        case BClock.SUB_CLOCK() algorithm
-          subClock.shift  := Rational.add(subClock.shift, Rational.multiply(shift, subClock.factor));
-          subClock.factor := Rational.multiply(subClock.factor, factor);
-        then subClock;
+      dest := match (dest, src)
+        case (SUB_CLOCK(), SUB_CLOCK()) algorithm
+          dest.shift  := Rational.add(dest.shift, Rational.multiply(src.shift, dest.factor));
+          dest.factor := Rational.multiply(dest.factor, src.factor);
+        then dest;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(subClock) + " because of incorrect Clock."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(dest) + " and " + toString(src) + " because of incorrect clock types."});
         then fail();
       end match;
     end updateSubClock;
@@ -329,20 +329,25 @@ public
       end for;
     end resolveSubClocks;
 
-    function resolveBaseClocks
-      "ToDo: merge equal clocks"
-    end resolveBaseClocks;
-
   protected
     function resolveSubClock
       input ComponentRef clock_name;
       input ClockedInfo info;
-      output ComponentRef base_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+      output ComponentRef base_clock;
+    protected
+      ComponentRef parent_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+      BClock dest, src;
     algorithm
-      if not UnorderedMap.contains(base_clock, info.baseClocks) then
+      if not UnorderedMap.contains(parent_clock, info.baseClocks) then
         // not a base, update necessary
-        base_clock := resolveSubClock(base_clock, info);
+        base_clock := resolveSubClock(parent_clock, info);
+        // update the sub clock and add the new base clock
+        dest  := UnorderedMap.getSafe(parent_clock, info.subClocks, sourceInfo());
+        src   := UnorderedMap.getSafe(clock_name, info.subClocks, sourceInfo());
+        UnorderedMap.add(clock_name, BClock.updateSubClock(dest, src), info.subClocks);
         UnorderedMap.add(clock_name, base_clock, info.subToBase);
+      else
+        base_clock := parent_clock;
       end if;
     end resolveSubClock;
 
@@ -516,9 +521,10 @@ protected
       // create the association (clocked/continuous)
       association := Partition.Association.create(partEquations, kind, info);
 
-      // replace the clocked functions and set equations to clocked
+      // replace the clocked functions, inline clocked when equations and set equations to clocked
       if Partition.Association.isClocked(association) then
         partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
+        partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
         partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
       end if;
 
@@ -795,6 +801,7 @@ protected
   end addCrefToSet;
 
   function replaceClockedFunctions
+    "replaces sample() calls using clocks as condition with the $getPart function"
     input output Expression exp;
   algorithm
     exp := match exp
@@ -836,6 +843,24 @@ protected
       else exp;
     end match;
   end replaceClockedFunctions;
+
+  function replaceClockedWhen
+    "replace clocked when equations in clocked partitions with their body statement.
+    only works for split up when equations with a single statement and no else when."
+    input output Equation eqn;
+  algorithm
+    eqn := match eqn
+      local
+        Expression cond;
+        WhenStatement stmt;
+
+      case Equation.WHEN_EQUATION(body = WhenEquationBody.WHEN_EQUATION_BODY(condition = cond, when_stmts = {stmt}, else_when = NONE()))
+        guard(Type.isClock(Expression.typeOf(cond)))
+      then WhenStatement.toEquation(stmt, eqn.attr, false);
+
+      else eqn;
+    end match;
+  end replaceClockedWhen;
 
 annotation(__OpenModelica_Interface="backend");
 end NBPartitioning;

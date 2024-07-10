@@ -3088,6 +3088,19 @@ public
       end match;
     end toStatement;
 
+    function toEquation
+      "make assignments for assignment statements and an algorithm otherwise"
+      input WhenStatement stmt;
+      input EquationAttributes attr;
+      input Boolean init;
+      output Equation eqn;
+    algorithm
+      eqn := match stmt
+        case ASSIGN() then Equation.makeAssignmentEqn(stmt.lhs, stmt.rhs, Iterator.EMPTY(), attr);
+                      else Equation.setAttributes(Pointer.access(Equation.makeAlgorithm({toStatement(stmt)}, init)), attr);
+      end match;
+    end toEquation;
+
     function size
       input WhenStatement stmt;
       output Integer s;

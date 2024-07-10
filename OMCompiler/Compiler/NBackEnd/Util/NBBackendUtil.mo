@@ -82,7 +82,7 @@ public
     function multiply
       input Rational r1;
       input Rational r2;
-      output Rational r = finalize(r1.n*r2.n, r2.d*r2.d);
+      output Rational r = finalize(r1.n*r2.n, r1.d*r2.d);
     end multiply;
 
     function isEqual
@@ -112,7 +112,7 @@ public
       input Integer i2;
       output Integer i;
     algorithm
-      i := if i2 == 0 then i1 else intGcd(i2,intMod(i1,i2));
+      i := if i2 == 0 then i1 else intGcd(i2, intMod(i1,i2));
     end intGcd;
   end Rational;
 

@@ -41,6 +41,7 @@ protected
   // NF
   import Builtin = NFBuiltin;
   import Call = NFCall;
+  import ClockKind = NFClockKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFlatten.FunctionTree;
@@ -674,7 +675,7 @@ public
       output OldBackendDAE.ZeroCrossing oldZc;
     protected
       Condition cond;
-      StateEvent sev; // don't even need state event? only condition relevant
+      StateEvent sev;
       Option<list<OldSimIterator>> iter;
       list<ComponentRef> eqn_names;
       list<Integer> eqn_indices;
@@ -682,7 +683,7 @@ public
       (cond, sev) := sev_tpl;
       iter        := if Iterator.isEmpty(cond.iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(cond.iter)));
       eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in sev.eqns);
-      eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name in eqn_names);
+      eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names);
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
         relation_   = Expression.toDAE(cond.exp),
@@ -920,6 +921,7 @@ protected
         // collect event info and replace all conditions with auxiliary variables
         bucket_ptr := Pointer.create(bucket);
         EquationPointers.mapPtr(eqData.equations, function collectEvents(bucket_ptr = bucket_ptr, funcTree = funcTree));
+        EquationPointers.mapPtr(eqData.clocked, function collectEvents(bucket_ptr = bucket_ptr, funcTree = funcTree));
         bucket := Pointer.access(bucket_ptr);
 
         (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex);
@@ -1012,6 +1014,8 @@ protected
     exp := match exp
       local
         Bucket bucket;
+        ClockKind clk;
+        Expression condition;
 
       // logical binarys: e.g. (a and b)
       // Todo: this might not always be correct -> check with something like "contains relation?"
@@ -1032,15 +1036,20 @@ protected
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
+      // event clocks
+      case Expression.CLKCONST(clk = clk as ClockKind.EVENT_CLOCK(condition = condition)) algorithm
+        (condition, bucket) := collectEventsCondition(condition, Pointer.access(bucket_ptr), iter, eqn, funcTree, createAux);
+        clk.condition := condition;
+        exp.clk := clk;
+        Pointer.update(bucket_ptr, bucket);
+      then exp;
+
       // replace $PRE variables with auxiliaries
       // necessary if the $PRE variable is a when condition (cannot check the pre of a pre variable)
       case Expression.CALL(call = Call.TYPED_CALL(arguments = {Expression.CREF()})) guard(Call.isNamed(exp.call, "pre")) algorithm
         (exp, bucket) := CompositeEvent.add(Condition.CONDITION(exp, iter), Pointer.access(bucket_ptr), true);
         Pointer.update(bucket_ptr, bucket);
       then exp;
-
-      // replace $PRE variables with auxiliaries
-      // necessary if the $PRE variable is a when condition (cannot check the pre of a pre variable)
       case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref))) algorithm
         (exp, bucket) := CompositeEvent.add(Condition.CONDITION(exp, iter), Pointer.access(bucket_ptr), true);
         Pointer.update(bucket_ptr, bucket);
