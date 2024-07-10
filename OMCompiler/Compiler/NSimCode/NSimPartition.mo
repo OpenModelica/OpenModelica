@@ -56,7 +56,7 @@ public
   end BASE_PARTITION;
 
   record SUB_PARTITION
-    list<tuple<SimVar, Boolean /*previous*/>> vars;
+    list<tuple<SimVar, Boolean /*previous*/>> variables;
     list<Block> equations;
     list<Block> removedEquations;
     BClock subClock;
@@ -66,9 +66,11 @@ public
   function createSubPartition
     input BClock subClock;
     input list<Block> equations;
+    input list<SimVar> variables;
     output SimPartition part;
   algorithm
-    part := SUB_PARTITION({}, equations, {}, subClock, false);
+    // for now assume all variables need pre()
+    part := SUB_PARTITION(list((v, true) for v in variables), equations, {}, subClock, false);
   end createSubPartition;
 
   function createBasePartitions
@@ -139,7 +141,7 @@ public
   algorithm
     oldPart := match part
       case SUB_PARTITION() then OldSimCode.SUBPARTITION(
-        vars                = {},
+        vars                = list(SimVar.convertTpl(tpl) for tpl in part.variables),
         equations           = list(Block.convert(blck) for blck in part.equations),
         removedEquations    = list(Block.convert(blck) for blck in part.removedEquations),
         subClock            = BClock.convertSub(part.subClock),

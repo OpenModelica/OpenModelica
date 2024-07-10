@@ -87,6 +87,7 @@ public
         local
           VarData varData;
           EqData eqData;
+          EquationPointers cloned;
           UnorderedMap<ComponentRef, Iterator> cref_map = UnorderedMap.new<Iterator>(ComponentRef.hash, ComponentRef.isEqual);
 
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
@@ -100,9 +101,12 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, eqData.uniqueIndex, " External Object ");
 
-            // clone all simulation equations and add them to the initial equations. also remove/replace when equations
-            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
-            initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            // clone all simulation equations and add them to the initial equations. also remove/replace when equations and clocked functions
+            cloned := EquationPointers.clone(equations, false);
+            cloned := EquationPointers.map(cloned, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            EquationPointers.mapPtr(cloned, replaceClockedFunctionsEqn);
+
+            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), cloned);
             (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
 
             varData.variables := variables;
@@ -752,6 +756,26 @@ public
       else false;
     end match;
   end isInitialCall;
+
+  function replaceClockedFunctionsEqn
+    input output Pointer<Equation> eqn;
+  algorithm
+    if Equation.isClocked(eqn) then
+      Pointer.update(eqn, Equation.map(Pointer.access(eqn), replaceClockedFunctions));
+    end if;
+  end replaceClockedFunctionsEqn;
+
+  function replaceClockedFunctions
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "$getPart") algorithm
+      then Expression.makeZero(Expression.typeOf(exp));
+      else exp;
+    end match;
+  end replaceClockedFunctions;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;

@@ -472,8 +472,9 @@ public
       input ClockedInfo info;
     protected
       UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
-      list<Block> tmp;
-      BClock clock, baseClock;
+      list<Block> blcks;
+      list<SimVar> vars;
+      BClock clock, subClock, baseClock;
       Option<BClock> baseClock_opt;
       SimPartition basePart, subPart;
     algorithm
@@ -484,13 +485,20 @@ public
 
       // create all sub partition blocks and find the base partitions
       for partition in listReverse(partitions) loop
-        (tmp, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
-        (clock, baseClock_opt) := Partition.Partition.getClocks(partition);
+        (blcks, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
+        vars                    := SimVars.getPartitionVars(partition, simcode_map);
+        (clock, baseClock_opt)  := Partition.Partition.getClocks(partition);
         if Util.isSome(baseClock_opt) then
+          // it is a sub clock
           SOME(baseClock) := baseClock_opt;
-          subPart := SimPartition.createSubPartition(clock, tmp);
-          UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
+          subClock        := clock;
+        else
+          // it is a base clock, use the default sub clock
+          baseClock       := clock;
+          subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
+        subPart := SimPartition.createSubPartition(subClock, blcks, vars);
+        UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
       end for;
 
       // create base partitions
@@ -549,23 +557,22 @@ public
     algorithm
       blcks := match partition.strongComponents
         local
-          Partition.Kind kind;
           array<StrongComponent> comps;
+          Partition.Kind kind;
           Block tmp;
           list<Block> result = {};
           Integer index;
 
-        case SOME(comps)
-          algorithm
-            kind := Partition.Partition.getKind(partition);
-            for i in arrayLength(comps):-1:1 loop
-              (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, kind, simcode_map, equation_map);
-              // add it to the alias map
-              if not StrongComponent.isAlias(comps[i]) then
-                UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), index, simCodeIndices.alias_map);
-              end if;
-              result := tmp :: result;
-            end for;
+        case SOME(comps) algorithm
+          kind := Partition.Partition.getKind(partition);
+          for i in arrayLength(comps):-1:1 loop
+            (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, kind, simcode_map, equation_map);
+            // add it to the alias map
+            if not StrongComponent.isAlias(comps[i]) then
+              UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), index, simCodeIndices.alias_map);
+            end if;
+            result := tmp :: result;
+          end for;
         then result;
 
         else algorithm

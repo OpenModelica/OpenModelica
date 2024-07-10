@@ -66,6 +66,7 @@ public
   type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC, CLK);
 
   uniontype Association
+    type ClockTpl = tuple<ComponentRef, BClock>;
     record CONTINUOUS
       Kind kind;
       Option<Jacobian> jacobian "Analytic jacobian for the integrator";
@@ -110,8 +111,6 @@ public
       end match;
     end toString;
 
-    type ClockTpl = tuple<ComponentRef, BClock>;
-
     function create
       "create an associtation for a partition from the equation array and the clocked info"
       input EquationPointers equations;
@@ -138,6 +137,13 @@ public
         association := CONTINUOUS(kind, NONE());
       end if;
     end create;
+
+    function isClocked
+      input Association association;
+      output Boolean b;
+    algorithm
+     b := match association case CLOCKED() then true; else false; end match;
+    end isClocked;
 
   protected
     function expClocked

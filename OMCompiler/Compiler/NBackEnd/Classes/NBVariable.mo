@@ -1781,12 +1781,24 @@ public
       Expands all variables to their scalar elements."
       input output VariablePointers variables;
     protected
-      list<Pointer<Variable>> vars, new_vars = {};
+      list<Pointer<Variable>> vars;
+      Boolean flattened;
+    algorithm
+      (vars, flattened) := scalarizeList(toList(variables));
+      // only change variables if any of them have been flattened
+      if flattened then
+        variables := fromList(vars, true);
+      end if;
+    end scalarize;
+
+    function scalarizeList
+      input list<Pointer<Variable>> vars;
+      output list<Pointer<Variable>> new_vars = {};
+      output Boolean flattened = false;
+    protected
       list<Variable> scalar_vars, element_vars;
       Variable var;
-      Boolean flattened = false;
     algorithm
-      vars := toList(variables);
       for var_ptr in vars loop
         var := Pointer.access(var_ptr);
         // flatten potential arrays
@@ -1810,12 +1822,8 @@ public
           end if;
         end for;
       end for;
-
-      // only change variables if any of them have been flattened
-      if flattened then
-        variables := fromList(listReverse(new_vars), true);
-      end if;
-    end scalarize;
+      new_vars := listReverse(new_vars);
+    end scalarizeList;
 
     function varSlice
       input VariablePointers vars;

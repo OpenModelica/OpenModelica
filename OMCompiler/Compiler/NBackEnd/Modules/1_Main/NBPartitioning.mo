@@ -51,7 +51,7 @@ protected
   // Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationKind};
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
   import BVariable = NBVariable;
@@ -502,7 +502,7 @@ protected
       list<Pointer<Equation>> eqn_lst;
       VariablePointers partVariables;
       EquationPointers partEquations;
-      Integer var_idx;
+      Integer var_idx, clock_idx = Pointer.access(index);
     algorithm
       // find all variables and equations
       var_lst := list(BVariable.getVarPointer(cref) for cref in cvars);
@@ -516,11 +516,14 @@ protected
       // create the association (clocked/continuous)
       association := Partition.Association.create(partEquations, kind, info);
 
-      // replace the clocked functions
-      partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
+      // replace the clocked functions and set equations to clocked
+      if Partition.Association.isClocked(association) then
+        partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
+        partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
+      end if;
 
       partition := Partition.PARTITION(
-        index             = Pointer.access(index),
+        index             = clock_idx,
         association       = association,
         unknowns          = partVariables,
         daeUnknowns       = NONE(),

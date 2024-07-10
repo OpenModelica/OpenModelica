@@ -1033,8 +1033,28 @@ public
         case FOR_EQUATION()     algorithm eq.attr := attr; then eq;
         case WHEN_EQUATION()    algorithm eq.attr := attr; then eq;
         case AUX_EQUATION(body = SOME(body)) algorithm eq.body := SOME(setAttributes(body, attr)); then eq;
-        end match;
+      end match;
     end setAttributes;
+
+    function setKind
+      input output Equation eq;
+      input EquationKind kind;
+      input Option<Integer> clock_idx = NONE();
+    algorithm
+      eq := match eq
+        local
+          EquationAttributes tmp;
+          Equation body;
+        case SCALAR_EQUATION()  algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case ARRAY_EQUATION()   algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case RECORD_EQUATION()  algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case ALGORITHM()        algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case IF_EQUATION()      algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case FOR_EQUATION()     algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case WHEN_EQUATION()    algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case AUX_EQUATION(body = SOME(body)) algorithm eq.body := SOME(setKind(body, kind, clock_idx)); then eq;
+      end match;
+    end setKind;
 
     function getSource
       input Equation eq;
@@ -3234,6 +3254,15 @@ public
         else "";
       end match;
     end toString;
+
+    function setKind
+      input output EquationAttributes attr;
+      input EquationKind kind;
+      input Option<Integer> clock_idx = NONE();
+    algorithm
+      attr.kind := kind;
+      attr.clock_idx := clock_idx;
+    end setKind;
 
     function setResidualVar
       input output EquationAttributes attr;

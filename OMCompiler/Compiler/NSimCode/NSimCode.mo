@@ -58,6 +58,7 @@ protected
   // Backend imports
   import AliasInfo = NBStrongComponent.AliasInfo;
   import BackendDAE = NBackendDAE;
+  import NBPartitioning.ClockedInfo;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
   import NBEvents.EventInfo;
@@ -425,7 +426,7 @@ public
 
             generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -630,13 +631,30 @@ public
       input list<SimStrongComponent.Block> linearLoops;
       input list<SimStrongComponent.Block> nonlinearLoops;
       input EventInfo eventInfo;
+      input ClockedInfo clockedInfo;
       output ModelInfo modelInfo;
       input output SimCodeIndices simCodeIndices;
     protected
       VarInfo info;
     algorithm
       info := VarInfo.create(vars, eventInfo, simCodeIndices);
-      modelInfo := MODEL_INFO(name, "", "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
+      modelInfo := MODEL_INFO(
+        name                            = name,
+        description                     = "",
+        version                         = "",
+        directory                       = directory,
+        vars                            = vars,
+        varInfo                         = info,
+        functions                       = functions,
+        labels                          = {},
+        resourcePaths                   = {},
+        sortedClasses                   = {},
+        nClocks                         = listLength(UnorderedMap.toList(clockedInfo.baseClocks)),
+        nSubClocks                      = listLength(UnorderedMap.toList(clockedInfo.subClocks)),
+        nSpatialDistributions           = 0,
+        hasLargeLinearEquationSystems   = true,
+        linearLoops                     = linearLoops,
+        nonlinearLoops                  = nonlinearLoops);
     end create;
 
     function setSeedVars

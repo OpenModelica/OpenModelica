@@ -58,6 +58,9 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEvents.{EventInfo, Condition};
+  import NBPartition.Partition;
+  import Slice = NBSlice;
+  import StrongComponent = NBStrongComponent;
 
   // Old Simcode imports
   import OldSimCode = SimCode;
@@ -331,6 +334,17 @@ public
         oldSimVar_lst := convert(simVar) :: oldSimVar_lst;
       end for;
     end convertList;
+
+    function convertTpl
+      input tuple<SimVar, Boolean> tpl;
+      output tuple<OldSimCodeVar.SimVar, Boolean> oldTpl;
+    protected
+      SimVar var;
+      Boolean b;
+    algorithm
+      (var, b) := tpl;
+      oldTpl := (convert(var), b);
+    end convertTpl;
 
   protected
     function parseAttributes
@@ -1117,9 +1131,8 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
-        case (Type.CLOCK(), _)
-          // for now do nothing here
-        then ();
+        // clock variables do not exist anymore
+        case (Type.CLOCK(), _) then ();
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
@@ -1128,6 +1141,55 @@ public
       end match;
     end splitByType;
 
+    function getPartitionVars
+      input Partition partition;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output list<SimVar> part_vars;
+    algorithm
+      part_vars := match partition.strongComponents
+          local
+            array<StrongComponent> comps;
+            list<list<SimVar>> result = {};
+
+          case SOME(comps) algorithm
+            for i in 1:arrayLength(comps) loop
+              result := getStrongComponentVars(comps[i], simcode_map) :: result;
+            end for;
+          then List.flatten(result);
+
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Partition.Partition.toString(partition)});
+          then fail();
+        end match;
+    end getPartitionVars;
+
+    function getStrongComponentVars
+      input StrongComponent comp;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output list<SimVar> part_vars = {};
+    algorithm
+      part_vars := match comp
+        case StrongComponent.SINGLE_COMPONENT()   then getVars(comp.var, simcode_map);
+        case StrongComponent.MULTI_COMPONENT()    then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.vars));
+        case StrongComponent.SLICED_COMPONENT()   then getVars(Slice.getT(comp.var), simcode_map);
+        case StrongComponent.GENERIC_COMPONENT()  then getVars(BVariable.getVarPointer(comp.var_cref), simcode_map);
+        case StrongComponent.ENTWINED_COMPONENT() then List.flatten(list(getStrongComponentVars(c, simcode_map) for c in comp.entwined_slices));
+        case  StrongComponent.ALGEBRAIC_LOOP()    then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
+        case StrongComponent.ALIAS()              then getStrongComponentVars(comp.original, simcode_map);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for \n" + StrongComponent.toString(comp)});
+        then fail();
+      end match;
+    end getStrongComponentVars;
+
+  protected
+    function getVars
+      input Pointer<Variable> var;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output list<SimVar> vars = {};
+    algorithm
+      vars := list(UnorderedMap.getSafe(BVariable.getVarName(v), simcode_map, sourceInfo()) for v in VariablePointers.scalarizeList({var}));
+    end getVars;
   end SimVars;
 
   constant SimVars emptySimVars = SIMVARS(
