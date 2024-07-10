@@ -298,14 +298,18 @@ public function allEqual<T>
   end CompFunc;
 
 protected
-  T e1 = first(inList);
+  T e1;
+  list<T> rest;
 algorithm
-  if listLength(inList) > 1 then
-    for e in inList loop
-      if not inCompFunc(e1,e) then
-        outAllEqual := false;
-      end if;
-    end for;
+  if not listEmpty(inList) then
+    e1 :: rest := inList;
+    if not listEmpty(rest) then
+      for e in rest loop
+        if not inCompFunc(e1,e) then
+          outAllEqual := false;
+        end if;
+      end for;
+    end if;
   end if;
 end allEqual;
 
