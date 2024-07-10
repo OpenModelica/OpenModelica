@@ -396,10 +396,10 @@ protected
     list<Variable> vars;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
-    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, previous_lst = {}, clocks_lst = {};
+    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, clocked_states_lst = {}, previous_lst = {}, clocks_lst = {};
     list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
-    VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous, clocks;
+    VariablePointers states, derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks;
     VariablePointers inputs, parameters, constants, records, external_objects, artificials;
     UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Variable>> binding_iter_lst;
@@ -512,6 +512,7 @@ protected
     algebraics      := VariablePointers.fromList(algebraics_lst, scalarized);
     discretes       := VariablePointers.fromList(discretes_lst, scalarized);
     discrete_states := VariablePointers.fromList(discrete_states_lst, scalarized);
+    clocked_states  := VariablePointers.fromList(clocked_states_lst, scalarized);
     previous        := VariablePointers.fromList(previous_lst, scalarized);
     clocks          := VariablePointers.fromList(clocks_lst, scalarized);
 
@@ -535,7 +536,7 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                      derivatives, algebraics, discretes, discrete_states, previous, clocks,
+                      derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
                       states, inputs, parameters, constants, records, external_objects, artificials);
   end lowerVariableData;
 
@@ -1373,7 +1374,7 @@ public
           states          := intString(VariablePointers.scalarSize(varData.states)) + " (" + intString(VariablePointers.size(varData.states)) + ")";
           discretes       := intString(VariablePointers.scalarSize(varData.discretes)) + " (" + intString(VariablePointers.size(varData.discretes)) + ")";
           discrete_states := intString(VariablePointers.scalarSize(varData.discrete_states)) + " (" + intString(VariablePointers.size(varData.discrete_states)) + ")";
-          clocked_states  := "0 (0)";
+          clocked_states  := intString(VariablePointers.scalarSize(varData.clocked_states)) + " (" + intString(VariablePointers.size(varData.clocked_states)) + ")";
           clocks          := intString(VariablePointers.scalarSize(varData.clocks)) + " (" + intString(VariablePointers.size(varData.clocks)) + ")";
           inputs          := intString(VariablePointers.scalarSize(varData.top_level_inputs)) + " (" + intString(VariablePointers.size(varData.top_level_inputs)) + ")";
 
@@ -1395,7 +1396,7 @@ public
 
           if  Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
             discrete_states := discrete_states + " " + List.toString(VariablePointers.toList(varData.discrete_states), BVariable.nameString);
-            clocked_states := clocked_states + " {NOT YET AVAILABLE}";
+            clocked_states := clocked_states + " " + List.toString(VariablePointers.toList(varData.clocked_states), BVariable.nameString);
           else
             discrete_states := discrete_states + " ('-d=discreteinfo' or '-d=stateselection' for the list of discrete states)";
             clocked_states := clocked_states + " ('-d=discreteinfo' or '-d=stateselection' for the list of clocked states)";

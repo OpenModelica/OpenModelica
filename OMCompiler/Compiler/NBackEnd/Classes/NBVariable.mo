@@ -1892,6 +1892,7 @@ public
       VariablePointers algebraics         "Algebraic variables";
       VariablePointers discretes          "Discrete variables";
       VariablePointers discrete_states    "Discrete state variables";
+      VariablePointers clocked_states     "Clocked state variables";
       VariablePointers previous           "Previous variables (pre(d) -> $PRE.d)";
       VariablePointers clocks             "clock variables";
 
@@ -2028,6 +2029,7 @@ public
               VariablePointers.toString(varData.algebraics, "Algebraic", NONE(), false) +
               VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
               VariablePointers.toString(varData.discrete_states, "Discrete State", NONE(), false) +
+              VariablePointers.toString(varData.discrete_states, "Clocked State", NONE(), false) +
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
               VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +

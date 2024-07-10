@@ -212,7 +212,8 @@ public
     input output VariablePointers knowns          "Knowns";
     input output VariablePointers initials        "Initial unknowns";
     input output VariablePointers discretes       "Discrete variables";
-    input output VariablePointers discrete_states "Discrete variables";
+    input output VariablePointers discrete_states "Discrete State variables";
+    input output VariablePointers clocked_states  "Clocked State variables";
     input output VariablePointers previous        "Previous discrete variables (pre(d) -> $PRE.d)";
     input String context                          "only for debugging";
   end detectDiscreteStatesInterface;

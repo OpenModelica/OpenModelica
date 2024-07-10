@@ -342,11 +342,6 @@ public
             param := {};
             algorithms := {};
 
-
-            // create clocked partitions
-            (clockedPartitions, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
-
-
             // init before everything else!
             (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, simcode_map, equation_map);
             if isSome(bdae.init_0) then
@@ -354,6 +349,9 @@ public
             else
               init_0 := {};
             end if;
+
+            // create clocked partitions
+            (clockedPartitions, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
