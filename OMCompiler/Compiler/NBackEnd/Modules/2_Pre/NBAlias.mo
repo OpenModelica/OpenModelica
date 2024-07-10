@@ -226,7 +226,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation);
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, "Simulation");
 
           // -----------------------------------
           // 4. apply replacements
@@ -299,7 +299,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked);
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, "Clocked");
 
           // -----------------------------------
           // 4. apply replacements
@@ -330,6 +330,7 @@ protected
     "
     input VariablePointers variables;
     input EquationPointers equations;
+    input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
   protected
@@ -347,9 +348,9 @@ protected
 
     sets := getSimpleSets(map, size);
     if Flags.isSet(Flags.DUMP_REPL) then
-      print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
+      print(StringUtil.headline_2("[dumprepl] " + context + " Alias Sets:") + "\n");
       if listEmpty(sets) then
-        print("<No Alias Sets>\n\n");
+        print("<No " + context + " Alias Sets>\n\n");
       else
         for set in sets loop
           print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + AliasSet.toString(set) + "\n");

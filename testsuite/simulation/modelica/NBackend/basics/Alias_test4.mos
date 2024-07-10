@@ -21,9 +21,9 @@ simulate(Test4); getErrorString();
 // true
 // ""
 // true
-// ==========================
-// [dumprepl] Alias Sets:
-// ==========================
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
 //
 // Alias Set 1:
 // **************
@@ -46,6 +46,19 @@ simulate(Test4); getErrorString();
 // 	y	 ==> 	3.0 + time
 // 	z	 ==> 	-0.5 * x
 // 	$FUN_1	 ==> 	-0.5 * x
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
 //
 // record SimulationResult
 //     resultFile = "Test4_res.mat",
