@@ -147,11 +147,11 @@ protected
 
         // collect clocked states from clocked equations
         (variables, disc_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
-          := discreteFunc(varData.variables, eqData.clocked, varData.knowns, varData.initials, varData.discretes, varData.discrete_states, varData.clocked_states, varData.previous, "clocked equations");
+          := discreteFunc(variables, eqData.clocked, knowns, initials, discretes, discrete_states, clocked_states, previous, "clocked equations");
 
         // collect discrete states from initial equations
         (variables, init_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
-          := discreteFunc(varData.variables, eqData.initials, varData.knowns, varData.initials, varData.discretes, varData.discrete_states, varData.clocked_states, varData.previous, "initial equations");
+          := discreteFunc(variables, eqData.initials, knowns, initials, discretes, discrete_states, clocked_states, previous, "initial equations");
 
         // update variable arrays
         varData.variables         := variables;
