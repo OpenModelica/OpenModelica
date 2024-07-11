@@ -2029,7 +2029,7 @@ public
               VariablePointers.toString(varData.algebraics, "Algebraic", NONE(), false) +
               VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
               VariablePointers.toString(varData.discrete_states, "Discrete State", NONE(), false) +
-              VariablePointers.toString(varData.discrete_states, "Clocked State", NONE(), false) +
+              VariablePointers.toString(varData.clocked_states, "Clocked State", NONE(), false) +
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
               VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
