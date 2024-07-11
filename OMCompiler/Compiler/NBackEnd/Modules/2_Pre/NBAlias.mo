@@ -685,7 +685,7 @@ protected
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
           eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
           (solved_eq,_,status, invertRelation) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
-          collector := collector.fixValues(collector, BVariable.getVarName(var), solved_eq);
+          collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
@@ -1169,6 +1169,7 @@ protected
       Option<Expression> min_val_opt = UnorderedMap.get(var_cref, attrcollector.min_val_map);
       Option<Expression> max_val_opt = UnorderedMap.get(var_cref, attrcollector.max_val_map);
       Option<Expression> start_opt = UnorderedMap.get(var_cref, attrcollector.start_map);
+      Type ty;
     algorithm
       rhs := Equation.getRHS(solved_eq);
 
@@ -1191,11 +1192,16 @@ protected
       end if;
 
       // if linear factor is negative => swap min and max
-      args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
-      args.diffCref := var_cref;
-      diff_rhs := Differentiate.differentiateExpression(rhs, args);
-      diff_rhs := SimplifyExp.simplify(diff_rhs);
-      swap_min_max := Expression.isNegative(diff_rhs);
+      ty := Expression.typeOf(rhs);
+      if Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty)) then
+        args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
+        args.diffCref := var_cref;
+        diff_rhs := Differentiate.differentiateExpression(rhs, args);
+        diff_rhs := SimplifyExp.simplify(diff_rhs);
+        swap_min_max := Expression.isNegative(diff_rhs);
+      else
+        swap_min_max := false;
+      end if;
       if swap_min_max == true and Util.isSome(min_val_opt) and Util.isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
