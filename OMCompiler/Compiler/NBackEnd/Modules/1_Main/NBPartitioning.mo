@@ -526,6 +526,7 @@ protected
         partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
         partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
         partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
+        partVariables := VariablePointers.mapPtr(partVariables, function BVariable.setVarKind(varKind = VariableKind.CLOCKED()));
       end if;
 
       partition := Partition.PARTITION(

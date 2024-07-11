@@ -87,7 +87,8 @@ public
         local
           VarData varData;
           EqData eqData;
-          EquationPointers cloned;
+          EquationPointers clonedEqns;
+          VariablePointers clonedVars;
           UnorderedMap<ComponentRef, Iterator> cref_map = UnorderedMap.new<Iterator>(ComponentRef.hash, ComponentRef.isEqual);
 
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
@@ -102,16 +103,19 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, eqData.uniqueIndex, " External Object ");
 
-            // clone all simulation equations and add them to the initial equations. also remove/replace when equations and clocked functions
-            cloned := EquationPointers.clone(equations, false);
-            cloned := EquationPointers.map(cloned, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
-            EquationPointers.mapPtr(cloned, replaceClockedFunctionsEqn);
-
-            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), cloned);
+            // clone all simulation equations and add them to the initial equations. also remove/replace when equations and clocked equations
+            clonedEqns := EquationPointers.clone(equations, false);
+            clonedEqns := EquationPointers.map(clonedEqns, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            EquationPointers.mapRemovePtr(clonedEqns, Equation.isClocked);
+            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
             (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
 
+            // clone all initial variables and remove clocked variables
+            clonedVars := VariablePointers.clone(initialVars, false);
+            VariablePointers.mapRemovePtr(clonedVars, BVariable.isClocked);
+
             varData.variables := variables;
-            varData.initials := initialVars;
+            varData.initials := clonedVars;
             eqData.equations := equations;
             eqData.initials := EquationPointers.compress(initialEqs);
 
@@ -128,7 +132,7 @@ public
       modules := {
         (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Inline"),
         (function Partitioning.main(kind = NBPartition.Kind.INI),  "Partitioning"),
-        (cleanup,                                                           "Cleanup"),
+        (cleanup,                                                  "Cleanup"),
         (function Causalize.main(kind = NBPartition.Kind.INI),     "Causalize"),
         (function Tearing.main(kind = NBPartition.Kind.INI),       "Tearing")
       };
@@ -757,26 +761,6 @@ public
       else false;
     end match;
   end isInitialCall;
-
-  function replaceClockedFunctionsEqn
-    input output Pointer<Equation> eqn;
-  algorithm
-    if Equation.isClocked(eqn) then
-      Pointer.update(eqn, Equation.map(Pointer.access(eqn), replaceClockedFunctions));
-    end if;
-  end replaceClockedFunctionsEqn;
-
-  function replaceClockedFunctions
-    input output Expression exp;
-  algorithm
-    exp := match exp
-      local
-        Call call;
-      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "$getPart") algorithm
-      then Expression.makeZero(Expression.typeOf(exp));
-      else exp;
-    end match;
-  end replaceClockedFunctions;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;

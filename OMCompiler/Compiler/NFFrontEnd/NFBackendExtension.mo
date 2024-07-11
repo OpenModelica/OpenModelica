@@ -180,11 +180,10 @@ public
       Pointer<Variable> dummy_der           "corresponding dummy derivative";
     end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state selection in index reduction
     record DISCRETE end DISCRETE;
-    record DISCRETE_STATE
-      Boolean fixed                         "is fixed at first clock tick";
-    end DISCRETE_STATE;
+    record DISCRETE_STATE end DISCRETE_STATE;
     record PREVIOUS end PREVIOUS;
     record CLOCK end CLOCK;
+    record CLOCKED end CLOCKED;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
@@ -238,6 +237,7 @@ public
         case DISCRETE_STATE()     then "[DISS]";
         case PREVIOUS()           then "[PRE-]";
         case CLOCK()              then "[CLCK]";
+        case CLOCKED()            then "[CLKD]";
         case PARAMETER()          then "[PRMT]";
         case CONSTANT()           then "[CNST]";
         case ITERATOR()           then "[ITER]";
