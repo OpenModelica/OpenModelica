@@ -4681,10 +4681,12 @@ public
     output Expression oneExp;
   algorithm
     oneExp := match ty
-      case Type.REAL() then REAL(1.0);
+      case Type.REAL()    then REAL(1.0);
       case Type.INTEGER() then INTEGER(1);
-      case Type.ARRAY() then fillType(ty, makeOne(Type.arrayElementType(ty)));
-      else REAL(1.0); // backup case just for backend;
+      case Type.ARRAY()   then fillType(ty, makeOne(Type.arrayElementType(ty)));
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
+      then fail();
     end match;
   end makeOne;
 
@@ -4696,7 +4698,9 @@ public
       case Type.REAL() then REAL(-1.0);
       case Type.INTEGER() then INTEGER(-1);
       case Type.ARRAY() then fillType(ty, makeMinusOne(Type.arrayElementType(ty)));
-      else REAL(-1.0); // backup case just for backend;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
+      then fail();
     end match;
   end makeMinusOne;
 

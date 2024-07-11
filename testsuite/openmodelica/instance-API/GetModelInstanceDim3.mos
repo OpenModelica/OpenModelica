@@ -1,0 +1,174 @@
+// name: GetModelInstanceDim3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  block Table
+    parameter Real offset[:] = {0};
+  end Table;
+
+  model M
+    parameter Real table[:, :];
+    parameter Real offset[:] = fill(0, nout);
+    final parameter Integer nout = size(table, 2) - 1;
+    Table tab(final offset = offset);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"table\",
+//       \"type\": \"Real\",
+//       \"dims\": {
+//         \"absyn\": [
+//           \":\",
+//           \":\"
+//         ],
+//         \"typed\": [
+//           \":\",
+//           \":\"
+//         ]
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"offset\",
+//       \"type\": \"Real\",
+//       \"dims\": {
+//         \"absyn\": [
+//           \":\"
+//         ],
+//         \"typed\": [
+//           \"nout\"
+//         ]
+//       },
+//       \"modifiers\": \"fill(0, nout)\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"call\",
+//           \"name\": \"fill\",
+//           \"arguments\": [
+//             0,
+//             {
+//               \"$kind\": \"cref\",
+//               \"parts\": [
+//                 {
+//                   \"name\": \"nout\"
+//                 }
+//               ]
+//             }
+//           ]
+//         }
+//       },
+//       \"prefixes\": {
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"nout\",
+//       \"type\": \"Integer\",
+//       \"modifiers\": \"size(table, 2) - 1\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"binary_op\",
+//           \"lhs\": {
+//             \"$kind\": \"call\",
+//             \"name\": \"size\",
+//             \"arguments\": [
+//               {
+//                 \"$kind\": \"cref\",
+//                 \"parts\": [
+//                   {
+//                     \"name\": \"table\"
+//                   }
+//                 ]
+//               },
+//               2
+//             ]
+//           },
+//           \"op\": \"-\",
+//           \"rhs\": 1
+//         }
+//       },
+//       \"prefixes\": {
+//         \"final\": true,
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"tab\",
+//       \"type\": {
+//         \"name\": \"Table\",
+//         \"restriction\": \"block\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"offset\",
+//             \"type\": \"Real\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \":\"
+//               ],
+//               \"typed\": [
+//                 \"nout\"
+//               ]
+//             },
+//             \"modifiers\": \"{0}\",
+//             \"value\": {
+//               \"binding\": {
+//                 \"$kind\": \"cref\",
+//                 \"parts\": [
+//                   {
+//                     \"name\": \"offset\"
+//                   }
+//                 ]
+//               }
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 12
+//         }
+//       },
+//       \"modifiers\": {
+//         \"offset\": {
+//           \"final\": true,
+//           \"$value\": \"offset\"
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 11,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult
