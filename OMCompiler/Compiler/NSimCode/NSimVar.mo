@@ -58,6 +58,9 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEvents.{EventInfo, Condition};
+  import NBPartition.Partition;
+  import Slice = NBSlice;
+  import StrongComponent = NBStrongComponent;
 
   // Old Simcode imports
   import OldSimCode = SimCode;
@@ -333,6 +336,17 @@ public
       end for;
     end convertList;
 
+    function convertTpl
+      input tuple<SimVar, Boolean> tpl;
+      output tuple<OldSimCodeVar.SimVar, Boolean> oldTpl;
+    protected
+      SimVar var;
+      Boolean b;
+    algorithm
+      (var, b) := tpl;
+      oldTpl := (convert(var), b);
+    end convertTpl;
+
   protected
     function parseAttributes
       input BackendInfo backendInfo;
@@ -493,7 +507,8 @@ public
         case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
-        case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we dont differ between discrete states and discretes in the old backend. is this correct?
+        case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we dont differ between clocked, discrete states and discretes in the old backend. is this correct?
+        case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we dont differ between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();
         case VariableKind.PARAMETER()               then OldBackendDAE.PARAM();
         case VariableKind.CONSTANT()                then OldBackendDAE.CONST();
@@ -766,6 +781,7 @@ public
       list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {}, enumAlgVars = {};
       list<SimVar> discreteAlgVars2 = {}, intAlgVars2 = {}, boolAlgVars2 = {}, stringAlgVars2 = {}, enumAlgVars2 = {};
+      list<SimVar> discreteAlgVars3 = {}, intAlgVars3 = {}, boolAlgVars3 = {}, stringAlgVars3 = {}, enumAlgVars3 = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
       list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {}, enumAliasVars = {};
@@ -790,6 +806,7 @@ public
           ({nonTrivialAlias}, simCodeIndices)                                                           := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)      := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices) := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+          ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices) := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars, enumAliasVars}, simCodeIndices)    := createSimVarLists(varData.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
           ({paramVars, intParamVars, boolParamVars, stringParamVars, enumParamVars}, simCodeIndices)    := createSimVarLists(varData.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
           ({constVars, intConstVars, boolConstVars, stringConstVars, enumConstVars}, simCodeIndices)    := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
@@ -807,12 +824,12 @@ public
       simVars := SIMVARS(
         stateVars                         = stateVars,
         derivativeVars                    = derivativeVars,
-        algVars                           = listAppend(algVars, nonTrivialAlias),
-        discreteAlgVars                   = listAppend(discreteAlgVars, discreteAlgVars2),
-        intAlgVars                        = listAppend(intAlgVars, intAlgVars2),
-        boolAlgVars                       = listAppend(boolAlgVars, boolAlgVars2),
-        stringAlgVars                     = listAppend(stringAlgVars, stringAlgVars2),
-        enumAlgVars                       = listAppend(enumAlgVars, enumAlgVars2),
+        algVars                           = List.flatten({algVars, nonTrivialAlias}),
+        discreteAlgVars                   = List.flatten({discreteAlgVars, discreteAlgVars2, discreteAlgVars3}),
+        intAlgVars                        = List.flatten({intAlgVars, intAlgVars2, intAlgVars3}),
+        boolAlgVars                       = List.flatten({boolAlgVars, boolAlgVars2, boolAlgVars3}),
+        stringAlgVars                     = List.flatten({stringAlgVars, stringAlgVars2, stringAlgVars3}),
+        enumAlgVars                       = List.flatten({enumAlgVars, enumAlgVars2, enumAlgVars3}),
         inputVars                         = inputVars,
         outputVars                        = outputVars,
         aliasVars                         = aliasVars,
@@ -1118,6 +1135,9 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
+        // clock variables do not exist anymore
+        case (Type.CLOCK(), _) then ();
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
         then fail();
@@ -1125,6 +1145,55 @@ public
       end match;
     end splitByType;
 
+    function getPartitionVars
+      input Partition partition;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output list<SimVar> part_vars;
+    algorithm
+      part_vars := match partition.strongComponents
+          local
+            array<StrongComponent> comps;
+            list<list<SimVar>> result = {};
+
+          case SOME(comps) algorithm
+            for i in 1:arrayLength(comps) loop
+              result := getStrongComponentVars(comps[i], simcode_map) :: result;
+            end for;
+          then List.flatten(result);
+
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Partition.Partition.toString(partition)});
+          then fail();
+        end match;
+    end getPartitionVars;
+
+    function getStrongComponentVars
+      input StrongComponent comp;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output list<SimVar> part_vars = {};
+    algorithm
+      part_vars := match comp
+        case StrongComponent.SINGLE_COMPONENT()   then getVars(comp.var, simcode_map);
+        case StrongComponent.MULTI_COMPONENT()    then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.vars));
+        case StrongComponent.SLICED_COMPONENT()   then getVars(Slice.getT(comp.var), simcode_map);
+        case StrongComponent.GENERIC_COMPONENT()  then getVars(BVariable.getVarPointer(comp.var_cref), simcode_map);
+        case StrongComponent.ENTWINED_COMPONENT() then List.flatten(list(getStrongComponentVars(c, simcode_map) for c in comp.entwined_slices));
+        case  StrongComponent.ALGEBRAIC_LOOP()    then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
+        case StrongComponent.ALIAS()              then getStrongComponentVars(comp.original, simcode_map);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for \n" + StrongComponent.toString(comp)});
+        then fail();
+      end match;
+    end getStrongComponentVars;
+
+  protected
+    function getVars
+      input Pointer<Variable> var;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output list<SimVar> vars = {};
+    algorithm
+      vars := list(UnorderedMap.getSafe(BVariable.getVarName(v), simcode_map, sourceInfo()) for v in VariablePointers.scalarizeList({var}));
+    end getVars;
   end SimVars;
 
   constant SimVars emptySimVars = SIMVARS(

@@ -380,12 +380,28 @@ public
   function isKnownRecord extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      local
+     local
         Boolean known;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(known = known))) then known;
       else false;
     end match;
   end isKnownRecord;
+
+  function isClock extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CLOCK())) then true;
+      else false;
+    end match;
+  end isClock;
+
+  function isClocked extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CLOCKED())) then true;
+      else false;
+    end match;
+  end isClocked;
 
   function getPrePost
     "gets the pre() / previous() var if its a variable / clocked variable or the other way around"
@@ -658,7 +674,7 @@ public
 
   function setVarKind
     "use with caution: some variable kinds have extra information that needs to be correct"
-    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> varPointer;
     input VariableKind varKind;
   protected
     Variable var;
@@ -924,7 +940,7 @@ public
   protected
     Variable var = Pointer.access(varPointer);
   algorithm
-    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.DISCRETE_STATE(false));
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.DISCRETE_STATE());
     Pointer.update(varPointer, var);
   end makeDiscreteStateVar;
 
@@ -1276,7 +1292,7 @@ public
   function setBindingAsStart
     "use this if a binding is found out to be constant, remove variable to known vars (param/const)
     NOTE: this overwrites the old start value. throw error/warning if different?"
-    input output Pointer<Variable> var_ptr;
+    input Pointer<Variable> var_ptr;
   protected
     Variable var;
   algorithm
@@ -1303,7 +1319,7 @@ public
     input output Pointer<Variable> var_ptr;
     input Boolean b = true;
   algorithm
-    var_ptr := setBindingAsStart(var_ptr);
+    setBindingAsStart(var_ptr);
     var_ptr := setFixed(var_ptr, b);
   end setBindingAsStartAndFix;
 
@@ -1543,7 +1559,14 @@ public
 
     function clone
       input VariablePointers variables;
-      output VariablePointers new = fromList(toList(variables));
+      input Boolean shallow = true;
+      output VariablePointers new;
+    algorithm
+      if shallow then
+        new := fromList(toList(variables));
+      else
+        new := fromList(list(Pointer.create(Pointer.access(eqn)) for eqn in toList(variables)));
+      end if;
     end clone;
 
     function size
@@ -1776,12 +1799,24 @@ public
       Expands all variables to their scalar elements."
       input output VariablePointers variables;
     protected
-      list<Pointer<Variable>> vars, new_vars = {};
+      list<Pointer<Variable>> vars;
+      Boolean flattened;
+    algorithm
+      (vars, flattened) := scalarizeList(toList(variables));
+      // only change variables if any of them have been flattened
+      if flattened then
+        variables := fromList(vars, true);
+      end if;
+    end scalarize;
+
+    function scalarizeList
+      input list<Pointer<Variable>> vars;
+      output list<Pointer<Variable>> new_vars = {};
+      output Boolean flattened = false;
+    protected
       list<Variable> scalar_vars, element_vars;
       Variable var;
-      Boolean flattened = false;
     algorithm
-      vars := toList(variables);
       for var_ptr in vars loop
         var := Pointer.access(var_ptr);
         // flatten potential arrays
@@ -1805,12 +1840,8 @@ public
           end if;
         end for;
       end for;
-
-      // only change variables if any of them have been flattened
-      if flattened then
-        variables := fromList(listReverse(new_vars), true);
-      end if;
-    end scalarize;
+      new_vars := listReverse(new_vars);
+    end scalarizeList;
 
     function varSlice
       input VariablePointers vars;
@@ -1876,8 +1907,9 @@ public
       VariablePointers algebraics         "Algebraic variables";
       VariablePointers discretes          "Discrete variables";
       VariablePointers discrete_states    "Discrete state variables";
+      VariablePointers clocked_states     "Clocked state variables";
       VariablePointers previous           "Previous variables (pre(d) -> $PRE.d)";
-      // clocked
+      VariablePointers clocks             "clock variables";
 
       /* subset of knowns */
       VariablePointers states             "States";
@@ -2012,7 +2044,9 @@ public
               VariablePointers.toString(varData.algebraics, "Algebraic", NONE(), false) +
               VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
               VariablePointers.toString(varData.discrete_states, "Discrete State", NONE(), false) +
+              VariablePointers.toString(varData.clocked_states, "Clocked State", NONE(), false) +
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
+              VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +

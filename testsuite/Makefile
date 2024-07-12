@@ -336,6 +336,9 @@ simulationnewbackend-arrayhandling.log: omc-diff
 simulationnewbackend-basics.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/basics/ -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-clocked.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/clocked/ -f Makefile test > $@
+	@echo $@ done
 simulationnewbackend-event_handling.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/event_handling/ -f Makefile test > $@
 	@echo $@ done

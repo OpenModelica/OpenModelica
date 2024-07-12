@@ -7685,7 +7685,6 @@ algorithm
   end match;
 end allCombinations4;
 
-
 public function contains<T>
   input list<T> lst;
   input T elem;

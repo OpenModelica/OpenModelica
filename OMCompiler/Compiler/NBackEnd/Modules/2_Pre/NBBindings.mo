@@ -54,7 +54,9 @@ public
         VarData varData                             "Data containing variable pointers";
         EqData eqData                               "Data containing equation pointers";
         list<Pointer<Variable>> bound_vars          "list of bound unknown variables";
+        list<Pointer<Variable>> bound_clocks        "list of bound clock variables";
         list<Pointer<Equation>> binding_cont = {}   "list of created continuous binding equations";
+        list<Pointer<Equation>> binding_clck = {}   "list of created clocked binding equations";
         list<Pointer<Equation>> binding_disc = {}   "list of created discrete binding equations";
         list<Pointer<Equation>> binding_rec = {}    "list of created record binding equations";
         Pointer<Variable> parent                    "optional record parent";
@@ -64,7 +66,6 @@ public
       algorithm
         // create continuous and discrete binding equations
         bound_vars := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.unknowns));
-
         for var in bound_vars loop
           // do not create bindings for record children with bound parents! they are bound off their record variables
           skip_record_element := match BVariable.getParent(var)
@@ -88,6 +89,12 @@ public
           binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_rec;
         end for;
 
+        // create clock bindings
+        bound_clocks := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.clocks));
+        for var in bound_clocks loop
+          binding_clck := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_clck;
+        end for;
+
         // adding all continuous equations
         eqData.equations  := EquationPointers.addList(binding_cont, eqData.equations);
         eqData.simulation := EquationPointers.addList(binding_cont, eqData.simulation);
@@ -103,6 +110,9 @@ public
         eqData.simulation := EquationPointers.addList(binding_rec, eqData.simulation);
         eqData.continuous := EquationPointers.addList(binding_rec, eqData.continuous);
 
+        // adding all clocked equations
+        eqData.clocked    := EquationPointers.addList(binding_clck, eqData.clocked);
+
         bdae.eqData := eqData;
 
         if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
@@ -115,6 +125,8 @@ public
         if Flags.isSet(Flags.DUMP_BINDINGS) then
           print(List.toString(binding_cont, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Continuous Binding Equations (" + intString(listLength(binding_cont)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+          print(List.toString(binding_clck, function Equation.pointerToString(str = ""),
+            StringUtil.headline_4("Created Clocked Binding Equations (" + intString(listLength(binding_cont)) + "):"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_disc, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Discrete Binding Equations (" + intString(listLength(binding_disc)) + "):"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_rec, function Equation.pointerToString(str = ""),

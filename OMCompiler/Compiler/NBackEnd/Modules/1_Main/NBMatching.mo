@@ -47,7 +47,7 @@ protected
   import NBEquation.{Equation, EqData, EquationPointer, EquationPointers};
   import Module = NBModule;
   import ResolveSingularities = NBResolveSingularities;
-  import System = NBSystem;
+  import Partition = NBPartition;
   import BVariable = NBVariable;
   import NBVariable.{VarData, VariablePointer, VariablePointers};
 
@@ -86,14 +86,14 @@ public
     input output Matching matching;
     input Adjacency.Matrix adj;
     input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
+    input Boolean partially = false         "do not fail on singular partitions and return partial matching if true";
     input Boolean clear = true              "start from scratch if true";
   protected
     list<list<Integer>> marked_eqns;
   algorithm
     (matching, marked_eqns, _, _) := continue_(matching, adj, transposed, clear);
     if not partially and not listEmpty(List.flatten(marked_eqns)) then
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is structurally singular."});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the partition is structurally singular."});
       fail();
     end if;
   end regular;
@@ -102,7 +102,7 @@ public
     "author: kabdelhak
     Matching algorithm for bipartite graphs by Constantinos C. Pantelides.
     First published in doi:10.1137/0909014
-    In the case of singular systems in tries to resolve it by applying index reduction
+    In the case of singular partitions in tries to resolve it by applying index reduction
     using the dummy derivative method by Sven E. Mattsson and Gustaf Söderlind
     First published in doi:10.1137/0914043
 
@@ -110,7 +110,7 @@ public
       1. apply pantelides but carry list of singular markings (eqs)
          whenever singular - add all current marks to singular markings
       2. if done and not everything is matched -> index reduction / balance initialization
-      3. restart matching if step 2. changed the system
+      3. restart matching if step 2. changed the partition
     "
     input output Matching matching;
     input output Adjacency.Matrix adj;
@@ -120,7 +120,7 @@ public
     input output FunctionTree funcTree;
     input output VarData varData;
     input output EqData eqData;
-    input System.SystemType systemType;
+    input Partition.Kind Kind;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean clear = true              "start from scratch if true";
   protected
@@ -129,19 +129,19 @@ public
     Adjacency.MatrixStrictness matrixStrictness;
     Boolean changed;
   algorithm
-    // 1. match the system
+    // 1. match the partition
     try
       (matching, marked_eqns, mapping, matrixStrictness) := continue_(matching, adj, transposed, clear);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to match system:\n"
-        + VariablePointers.toString(vars, "system vars") + "\n"
-        + EquationPointers.toString(eqns, "system eqns") + "\n"
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to match partition:\n"
+        + VariablePointers.toString(vars, "partition vars") + "\n"
+        + EquationPointers.toString(eqns, "partition eqns") + "\n"
         + Adjacency.Matrix.toString(adj)});
       fail();
     end try;
 
-    // 2. Resolve singular systems if necessary
-    if systemType == NBSystem.SystemType.INI then
+    // 2. Resolve singular partitions if necessary
+    if Kind == NBPartition.Kind.INI then
       // ####### BALANCE INITIALIZATION #######
       (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
     else
@@ -154,12 +154,12 @@ public
       // ToDo: keep more of old information by only updating changed stuff
       adj := Adjacency.Matrix.createFull(vars, eqns);
       adj := Adjacency.Matrix.fromFull(adj, vars.map, eqns.map, eqns, matrixStrictness);
-      if systemType == NBSystem.SystemType.INI then
+      if Kind == NBPartition.Kind.INI then
         // ####### DO NOT REDO BALANCING INITIALIZATION #######
         matching := regular(EMPTY_MATCHING, adj);
       else
         // ####### REDO INDEX REDUCTION IF NECESSARY #######
-        (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, systemType, transposed);
+        (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, Kind, transposed);
       end if;
     end if;
   end singular;
@@ -175,7 +175,7 @@ public
   protected
     array<Integer> var_to_eqn, eqn_to_var;
   algorithm
-    // 1. Match the system
+    // 1. Match the partition
     (matching, marked_eqns, mapping, matrixStrictness) := match adj
       // PSEUDO ARRAY
       case Adjacency.Matrix.FINAL() algorithm
@@ -305,10 +305,10 @@ protected
     input array<list<Integer>> m;
     input array<list<Integer>> mT;
     input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
+    input Boolean partially = false         "do not fail on singular partitions and return partial matching if true";
     output Matching matching;
-    // this needs partially = true to get computed. Otherwise it fails on singular systems
-    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
+    // this needs partially = true to get computed. Otherwise it fails on singular partitions
+    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
     Integer nVars = arrayLength(mT), nEqns = arrayLength(m);
     array<Integer> var_to_eqn;
@@ -327,7 +327,7 @@ protected
       // if it is not possible index reduction needs to be applied
       if not pathFound then
         if not partially then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is structurally singular. Index Reduction is not yet supported"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the partition is structurally singular. Index Reduction is not yet supported"});
         elseif transposed then
           // if transposed the variable marks represent equations
           marked_eqns := BackendUtil.findTrueIndices(var_marks) :: marked_eqns;
@@ -394,8 +394,8 @@ protected
     input output array<Integer> ass1;
     input output array<Integer> ass2;
     input Boolean clear;
-    // this needs partially = true to get computed. Otherwise it fails on singular systems
-    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
+    // this needs partially = true to get computed. Otherwise it fails on singular partitions
+    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
     Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = BackendUtil.countElem(m);
     Integer cheap = 0, algIndx = 5 "PFPlusExternal index";

@@ -126,6 +126,8 @@ public
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
           (varData, eqData) := func(varData, eqData);
+          // allways apply clock alias
+          (varData, eqData) := aliasClocks(varData, eqData);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
@@ -224,7 +226,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation);
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, "Simulation");
 
           // -----------------------------------
           // 4. apply replacements
@@ -239,12 +241,13 @@ protected
           eqData.continuous := EquationPointers.compress(eqData.continuous);
           eqData.discretes  := EquationPointers.compress(eqData.discretes);
 
-          // remove alias vars from all relevant arrays after splitting off non trivial alias vars
+          // remove alias vars from all relevant arrays
           varData.variables   := VariablePointers.removeList(alias_vars, varData.variables);
           varData.unknowns    := VariablePointers.removeList(alias_vars, varData.unknowns);
           varData.algebraics  := VariablePointers.removeList(alias_vars, varData.algebraics);
           varData.states      := VariablePointers.removeList(alias_vars, varData.states);
           varData.discretes   := VariablePointers.removeList(alias_vars, varData.discretes);
+          varData.clocks      := VariablePointers.removeList(alias_vars, varData.clocks);
           varData.initials    := VariablePointers.removeList(alias_vars, varData.initials);
 
           // categorize alias vars and sort them to the correct arrays
@@ -254,8 +257,10 @@ protected
           // update constant start values and add to parameters
           // otherwise they would not show in the result file
           (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstOrParamAliasBinding);
-          const_vars := list(BVariable.setVarKind(var, VariableKind.PARAMETER()) for var in const_vars);
-          const_vars := list(BVariable.setBindingAsStartAndFix(var) for var in const_vars);
+          for var in const_vars loop
+            BVariable.setVarKind(var, VariableKind.PARAMETER());
+            BVariable.setBindingAsStartAndFix(var);
+          end for;
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
 
@@ -275,6 +280,50 @@ protected
     end match;
   end aliasDefault;
 
+  function aliasClocks
+    "STEPS:
+      1. collect alias sets (variables, equations, optional constant binding)
+      2. balance sets - choose variable to keep if necessary
+      3. match/sort set (linear w.r.t. unknowns since all equations contain two crefs at max and are simple/linear)
+      4. apply replacements
+      5. save replacements in bindings of alias variables
+    "
+      extends Module.aliasInterface;
+  algorithm
+    (varData, eqData) := match (varData, eqData)
+      local
+        UnorderedMap<ComponentRef, Expression> replacements;
+        EquationPointers newEquations;
+        list<Pointer<Variable>> alias_vars;
+
+      case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
+        algorithm
+          // -----------------------------------
+          //            1. 2. 3.
+          // -----------------------------------
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, "Clocked");
+
+          // -----------------------------------
+          // 4. apply replacements
+          // 5. save replacements in bindings of alias variables
+          // -----------------------------------
+          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
+
+          // save new equations and compress affected arrays(some might have been removed)
+          eqData.clocked    := EquationPointers.compress(newEquations);
+
+          // remove alias variables from clocks and add to alias
+          varData.clocks    := VariablePointers.removeList(alias_vars, varData.clocks);
+          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+      then (varData, eqData);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end aliasClocks;
+
   function aliasCausalize
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
@@ -283,6 +332,7 @@ protected
     "
     input VariablePointers variables;
     input EquationPointers equations;
+    input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
   protected
@@ -300,9 +350,9 @@ protected
 
     sets := getSimpleSets(map, size);
     if Flags.isSet(Flags.DUMP_REPL) then
-      print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
+      print(StringUtil.headline_2("[dumprepl] " + context + " Alias Sets:") + "\n");
       if listEmpty(sets) then
-        print("<No Alias Sets>\n\n");
+        print("<No " + context + " Alias Sets>\n\n");
       else
         for set in sets loop
           print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + AliasSet.toString(set) + "\n");
@@ -1172,7 +1222,6 @@ protected
       Type ty;
     algorithm
       rhs := Equation.getRHS(solved_eq);
-
       // min:
       if Util.isSome(min_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), repl);
@@ -1214,7 +1263,6 @@ protected
         new_rhs := SimplifyExp.simplify(new_rhs);
         UnorderedMap.add(var_cref, new_rhs, attrcollector.start_map);
       end if;
-
     end fixValues;
 
   end AttributeCollector;

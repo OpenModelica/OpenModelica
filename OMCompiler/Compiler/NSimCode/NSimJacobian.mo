@@ -49,7 +49,7 @@ public
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import Jacobian = NBJacobian;
-  import System = NBSystem;
+  import Partition = NBPartition;
 
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
@@ -161,15 +161,15 @@ public
 
 /*
     function fromSystems
-      input list<System.System> systems;
+      input list<System.System> partitions;
       output Option<SimJacobian> simJacobian;
       input output SimCode.SimCodeIndices indices;
     protected
       list<BackendDAE> jacobians = {};
     algorithm
-      for system in systems loop
-        if Util.isSome(system.jacobian) then
-          jacobians := Util.getOption(system.jacobian) :: jacobians;
+      for partition in partitions loop
+        if Util.isSome(partition.jacobian) then
+          jacobians := Util.getOption(partition.jacobian) :: jacobians;
         end if;
       end for;
 
@@ -181,12 +181,12 @@ public
     end fromSystems;
 
     function fromSystemsSparsity
-      input list<System.System> systems;
+      input list<System.System> partitions;
       input output Option<SimJacobian> simJacobian;
       input UnorderedMap<ComponentRef, SimVar> sim_map;
       input output SimCode.SimCodeIndices indices;
     algorithm
-      (simJacobian, indices) := match (systems, simJacobian)
+      (simJacobian, indices) := match (partitions, simJacobian)
         local
           BackendDAE jacobian;
 
@@ -194,7 +194,7 @@ public
         case ({System.SYSTEM(jacobian = NONE())}, _)          then (NONE(), indices);
         case ({System.SYSTEM(jacobian = SOME(jacobian))}, _)  then createSparsity(jacobian, Util.getOption(simJacobian), sim_map, indices);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Partitioned systems are not yet supported by this function."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Partitioned partitions are not yet supported by this function."});
         then fail();
 
       end match;
@@ -233,7 +233,7 @@ public
           sim_map := indices.generic_call_map;
           indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
           for i in arrayLength(jacobian.comps):-1:1 loop
-            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBSystem.SystemType.JAC, dummy_sim_map, dummy_eqn_map);
+            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBPartition.Kind.JAC, dummy_sim_map, dummy_eqn_map);
             columnEqns := columnEqn :: columnEqns;
           end for;
 
@@ -287,21 +287,23 @@ public
     end create;
 
     function createSimulationJacobian
-      input list<System.System> ode;
-      input list<System.System> ode_event;
+      input list<Partition.Partition> ode;
+      input list<Partition.Partition> ode_event;
       output SimJacobian simJac;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
-      list<System.System> systems = listAppend(ode, ode_event);
+      list<Partition.Partition> partitions = listAppend(ode, ode_event);
       list<BackendDAE> jacobians = {};
       BackendDAE simJacobian;
       Option<SimJacobian> simJac_opt;
+      Option<BackendDAE> jacobian;
     algorithm
-      for system in systems loop
-        // save jacobian if existant
-        if Util.isSome(system.jacobian) then
-          jacobians := Util.getOption(system.jacobian) :: jacobians;
+      for partition in partitions loop
+        // save jacobian if existent
+        jacobian := Partition.Partition.getJacobian(partition);
+        if Util.isSome(jacobian) then
+          jacobians := Util.getOption(jacobian) :: jacobians;
         end if;
       end for;
 

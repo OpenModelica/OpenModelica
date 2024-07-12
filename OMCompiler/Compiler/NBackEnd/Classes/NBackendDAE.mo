@@ -42,11 +42,13 @@ public
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
+  import Partitioning = NBPartitioning;
   import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
   import NBStrongComponent.CountCollector;
-  import NBSystem;
-  import NBSystem.System;
+  import NBPartition;
+  import NBPartition.Partition;
+
 protected
   // Old Frontend imports
   import Absyn.Path;
@@ -86,35 +88,36 @@ protected
   import Inline = NBInline;
   import NBJacobian.JacobianType;
   import Module = NBModule;
-  import Partitioning = NBPartitioning;
   import Solve = NBSolve;
   import Tearing = NBTearing;
 
   // Util imports
-  import BuiltinSystem = System;
   import ClockIndexes;
   import Error;
   import ExecStat;
   import ExpandableArray;
   import Flags;
   import StringUtil;
+  import System;
 
 public
   record MAIN
-    list<System> ode                  "Systems for differential-algebraic equations";
-    list<System> algebraic            "Systems for algebraic equations";
-    list<System> ode_event            "Systems for differential-algebraic event iteration";
-    list<System> alg_event            "Systems for algebraic event iteration";
-    list<System> init                 "Systems for initialization";
-    Option<list<System>> init_0       "Systems for lambda 0 (homotopy) Initialization";
+    list<Partition> ode                   "Partitions for differential-algebraic equations";
+    list<Partition> algebraic             "Partitions for algebraic equations";
+    list<Partition> ode_event             "Partitions for differential-algebraic event iteration";
+    list<Partition> alg_event             "Partitions for algebraic event iteration";
+    list<Partition> clocked               "Clocked Partitions";
+    list<Partition> init                  "Partitions for initialization";
+    Option<list<Partition>> init_0        "Partitions for lambda 0 (homotopy) Initialization";
     // add init_1 for lambda = 1 (test for efficency)
-    Option<list<System>> dae          "Systems for dae mode";
+    Option<list<Partition>> dae           "Partitions for dae mode";
 
-    VarData varData                   "Variable data.";
-    EqData eqData                     "Equation data.";
+    VarData varData                       "Variable data.";
+    EqData eqData                         "Equation data.";
 
-    Events.EventInfo eventInfo        "contains time and state events";
-    FunctionTree funcTree             "Function bodies.";
+    Events.EventInfo eventInfo            "contains time and state events";
+    Partitioning.ClockedInfo clockedInfo  "contains information about clocked partitions";
+    FunctionTree funcTree                 "Function bodies.";
   end MAIN;
 
   record JACOBIAN
@@ -141,25 +144,27 @@ public
 
       case MAIN()
         algorithm
-          if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event))
+          if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked))
              or not Flags.isSet(Flags.BLT_DUMP) then
             tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
             tmp := tmp +  VarData.toString(bdae.varData, 2) + "\n" +
                           EqData.toString(bdae.eqData, 1);
           else
-            tmp := tmp + System.toStringList(bdae.ode, "[ODE] Differential-Algebraic: " + str);
-            tmp := tmp + System.toStringList(bdae.algebraic, "[ALG] Algebraic: " + str);
-            tmp := tmp + System.toStringList(bdae.ode_event, "[ODE_EVENT] Event Handling: " + str);
-            tmp := tmp + System.toStringList(bdae.alg_event, "[ALG_EVENT] Event Handling: " + str);
-            tmp := tmp + System.toStringList(bdae.init, "[INI] Initialization: " + str);
+            tmp := tmp + Partition.toStringList(bdae.ode, "[ODE] Differential-Algebraic: " + str);
+            tmp := tmp + Partition.toStringList(bdae.algebraic, "[ALG] Algebraic: " + str);
+            tmp := tmp + Partition.toStringList(bdae.ode_event, "[ODE_EVENT] Event Handling: " + str);
+            tmp := tmp + Partition.toStringList(bdae.alg_event, "[ALG_EVENT] Event Handling: " + str);
+            tmp := tmp + Partition.toStringList(bdae.clocked, "[CLOCKED] Event Handling: " + str);
+            tmp := tmp + Partition.toStringList(bdae.init, "[INI] Initialization: " + str);
             if isSome(bdae.init_0) then
-              tmp := tmp + System.toStringList(Util.getOption(bdae.init_0), "[INI_0] Initialization Lambda=0: " + str);
+              tmp := tmp + Partition.toStringList(Util.getOption(bdae.init_0), "[INI_0] Initialization Lambda=0: " + str);
             end if;
             if isSome(bdae.dae) then
-              tmp := tmp + System.toStringList(Util.getOption(bdae.dae), "[DAE] DAEMode: " + str);
+              tmp := tmp + Partition.toStringList(Util.getOption(bdae.dae), "[DAE] DAEMode: " + str);
             end if;
           end if;
           tmp := tmp + Events.EventInfo.toString(bdae.eventInfo);
+          tmp := tmp + Partitioning.ClockedInfo.toString(bdae.clockedInfo);
       then tmp;
 
       case JACOBIAN() algorithm
@@ -215,11 +220,12 @@ public
     VarData variableData;
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
+    Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
     UnorderedMap<Path, Function> functions;
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, lowerFunctions(funcTree));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcTree));
   end lower;
 
   function main
@@ -246,10 +252,10 @@ public
     };
 
     mainModules := {
-      (function Partitioning.main(systemType = NBSystem.SystemType.ODE),  "Partitioning"),
-      (function Causalize.main(systemType = NBSystem.SystemType.ODE),     "Causalize"),
+      (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
+      (function Causalize.main(kind = NBPartition.Kind.ODE),                "Causalize"),
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
-      (Initialization.main,                                               "Initialization")
+      (Initialization.main,                                                 "Initialization")
     };
 
     if Flags.getConfigBool(Flags.DAE_MODE) then
@@ -258,10 +264,10 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
-      (Partitioning.categorize,                                       "Categorize"),
-      (Solve.main,                                                    "Solve"),
-      (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian")
+      (function Tearing.main(kind = NBPartition.Kind.ODE),    "Tearing"),
+      (Partitioning.categorize,                               "Categorize"),
+      (Solve.main,                                            "Solve"),
+      (function Jacobian.main(kind = NBPartition.Kind.ODE),   "Jacobian")
     };
 
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
@@ -301,8 +307,8 @@ public
       debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
       debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr));
       if clock_idx <> -1 then
-        BuiltinSystem.realtimeClear(clock_idx);
-        BuiltinSystem.realtimeTick(clock_idx);
+        System.realtimeClear(clock_idx);
+        System.realtimeTick(clock_idx);
         try
           bdae := func(bdae);
         else
@@ -312,7 +318,7 @@ public
           end if;
           fail();
         end try;
-        clock_time := BuiltinSystem.realtimeTock(clock_idx);
+        clock_time := System.realtimeTock(clock_idx);
         ExecStat.execStat(name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
@@ -356,19 +362,19 @@ public
 
       case MAIN() algorithm
         for syst in bdae.ode loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.algebraic loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.ode_event loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.alg_event loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         for syst in bdae.init loop
-          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+          var_lst := listAppend(Partition.getLoopResiduals(syst), var_lst);
         end for;
         residuals := VariablePointers.fromList(var_lst);
       then residuals;
@@ -390,10 +396,10 @@ protected
     list<Variable> vars;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
-    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, previous_lst = {};
+    list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, clocked_states_lst = {}, previous_lst = {}, clocks_lst = {};
     list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
-    VariablePointers states, derivatives, algebraics, discretes, discrete_states, previous;
+    VariablePointers states, derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks;
     VariablePointers inputs, parameters, constants, records, external_objects, artificials;
     UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Variable>> binding_iter_lst;
@@ -475,6 +481,10 @@ protected
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
+        case VariableKind.CLOCK() algorithm
+          clocks_lst := lowVar_ptr :: clocks_lst;
+        then ();
+
         case VariableKind.EXTOBJ() algorithm
           lowVar_ptr := BVariable.setFixed(lowVar_ptr);
           external_objects_lst := lowVar_ptr :: external_objects_lst;
@@ -483,7 +493,7 @@ protected
 
         /* other cases should not occur up until now */
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + BVariable.toString(var)});
         then fail();
 
       end match;
@@ -502,7 +512,9 @@ protected
     algebraics      := VariablePointers.fromList(algebraics_lst, scalarized);
     discretes       := VariablePointers.fromList(discretes_lst, scalarized);
     discrete_states := VariablePointers.fromList(discrete_states_lst, scalarized);
+    clocked_states  := VariablePointers.fromList(clocked_states_lst, scalarized);
     previous        := VariablePointers.fromList(previous_lst, scalarized);
+    clocks          := VariablePointers.fromList(clocks_lst, scalarized);
 
     inputs          := VariablePointers.fromList(inputs_lst, scalarized);
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
@@ -524,7 +536,7 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
-                      derivatives, algebraics, discretes, discrete_states, previous,
+                      derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
                       states, inputs, parameters, constants, records, external_objects, artificials);
   end lowerVariableData;
 
@@ -572,6 +584,8 @@ protected
       local
         Type elemTy;
         list<Pointer<Variable>> children = {};
+
+      case (_, _, Type.CLOCK()) then VariableKind.CLOCK();
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, VariableAttributes.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
@@ -663,7 +677,7 @@ protected
     input output VarData varData;
   protected
     UnorderedSet<VariablePointer> set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
-    list<Pointer<Equation>> equation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
+    list<Pointer<Equation>> equation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     EquationPointers equations;
     Pointer<Equation> eq;
     Pointer<Integer> idx = Pointer.create(0);
@@ -680,13 +694,14 @@ protected
     equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, VarData.getVariables(varData));
 
-    (simulation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
+    (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,
-      equations   = equations,
+      equations   = EquationPointers.removeList(clocked_lst, equations),
       simulation  = EquationPointers.fromList(simulation_lst),
       continuous  = EquationPointers.fromList(continuous_lst),
+      clocked     = EquationPointers.fromList(clocked_lst),
       discretes   = EquationPointers.fromList(discretes_lst),
       initials    = EquationPointers.fromList(initials_lst),
       auxiliaries = EquationPointers.fromList(auxiliaries_lst),
@@ -1134,7 +1149,9 @@ protected
     input Boolean init;
     output EquationAttributes attr;
   algorithm
-    if Type.isDiscrete(ty) then
+    if Type.isClock(ty) then
+      attr := EquationAttributes.default(EquationKind.CLOCKED, init, SOME(-1));
+    elseif Type.isDiscrete(ty) then
       attr := EquationAttributes.default(EquationKind.DISCRETE, init);
     else
       attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
@@ -1341,7 +1358,7 @@ public
           VarData varData;
           EqData eqData;
           String p_ode, p_alg, p_ode_e, p_alg_e, p_clk, p_ini, p_ini_0;
-          String states, discretes, discrete_states, clocked_states, inputs;
+          String states, discretes, discrete_states, clocked_states, clocks, inputs;
 
         case MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
           // collect partition size info
@@ -1357,29 +1374,32 @@ public
           states          := intString(VariablePointers.scalarSize(varData.states)) + " (" + intString(VariablePointers.size(varData.states)) + ")";
           discretes       := intString(VariablePointers.scalarSize(varData.discretes)) + " (" + intString(VariablePointers.size(varData.discretes)) + ")";
           discrete_states := intString(VariablePointers.scalarSize(varData.discrete_states)) + " (" + intString(VariablePointers.size(varData.discrete_states)) + ")";
-          clocked_states  := "0 (0)";
+          clocked_states  := intString(VariablePointers.scalarSize(varData.clocked_states)) + " (" + intString(VariablePointers.size(varData.clocked_states)) + ")";
+          clocks          := intString(VariablePointers.scalarSize(varData.clocks)) + " (" + intString(VariablePointers.size(varData.clocks)) + ")";
           inputs          := intString(VariablePointers.scalarSize(varData.top_level_inputs)) + " (" + intString(VariablePointers.size(varData.top_level_inputs)) + ")";
 
           if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
             states := states + " " + List.toString(VariablePointers.toList(varData.states), BVariable.nameString);
           else
-            states := states + " ('-d=stateselection' for list of states)";
+            states := states + " ('-d=stateselection' for the list of states)";
           end if;
 
           if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
             discretes := discretes + " " + List.toString(VariablePointers.toList(varData.discretes), BVariable.nameString);
+            clocks := clocks + " " + List.toString(VariablePointers.toList(varData.clocks), BVariable.nameString);
             inputs := inputs + " " + List.toString(VariablePointers.toList(varData.top_level_inputs), BVariable.nameString);
           else
-            discretes := discretes + " ('-d=discreteinfo' for list of discrete variables)";
-            inputs := inputs + " ('-d=discreteinfo' for list of top level inputs)";
+            discretes := discretes + " ('-d=discreteinfo' for the list of discrete variables)";
+            clocks := clocks + " ('-d=discreteinfo' for the list of clocks variables)";
+            inputs := inputs + " ('-d=discreteinfo' for the list of top level inputs)";
           end if;
 
           if  Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
             discrete_states := discrete_states + " " + List.toString(VariablePointers.toList(varData.discrete_states), BVariable.nameString);
-            clocked_states := clocked_states + " {NOT YET AVAILABLE}";
+            clocked_states := clocked_states + " " + List.toString(VariablePointers.toList(varData.clocked_states), BVariable.nameString);
           else
-            discrete_states := discrete_states + " ('-d=discreteinfo' or '-d=stateselection' for list of discrete states)";
-            clocked_states := clocked_states + " ('-d=discreteinfo' or '-d=stateselection' for list of clocked states)";
+            discrete_states := discrete_states + " ('-d=discreteinfo' or '-d=stateselection' for the list of discrete states)";
+            clocked_states := clocked_states + " ('-d=discreteinfo' or '-d=stateselection' for the list of clocked states)";
           end if;
 
           Error.addCompilerNotification(
@@ -1398,6 +1418,7 @@ public
             + " * Number of discrete states: .................... " + discrete_states + "\n"
             + " * Number of clocked states: ..................... " + clocked_states + "\n"
             + " * Number of discrete variables: ................. " + discretes + "\n"
+            + " * Number of clocks: ............................. " + clocks + "\n"
             + " * Number of top-level inputs: ................... " + inputs);
 
           // collect strong component info simulation
@@ -1415,7 +1436,7 @@ public
 
   function strongcomponentinfo
     input String phase;
-    input list<list<System>> systems;
+    input list<list<Partition>> systems;
   protected
     CountCollector c = CountCollector.COUNT_COLLECTOR(0,0,0,0,0,0,0,0,0,0,0);
     Pointer<CountCollector> collector_ptr = Pointer.create(c);
@@ -1423,7 +1444,7 @@ public
   algorithm
     for lst in systems loop
       for system in lst loop
-        System.mapStrongComponents(system, function StrongComponent.strongComponentInfo(collector_ptr = collector_ptr));
+        Partition.mapStrongComponents(system, function StrongComponent.strongComponentInfo(collector_ptr = collector_ptr));
       end for;
     end for;
     c := Pointer.access(collector_ptr);

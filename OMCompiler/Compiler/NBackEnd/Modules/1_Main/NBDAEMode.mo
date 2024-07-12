@@ -46,8 +46,8 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
+  import Partition = NBPartition;
   import Jacobian = NBJacobian;
-  import System = NBSystem;
   import Tearing = NBTearing;
 
 public
@@ -60,7 +60,7 @@ public
       // for now just copy the dae
       bdae := match bdae
         local
-          list<System.System> ode;
+          list<Partition.Partition> ode;
 
         case BackendDAE.MAIN(ode = ode)
           algorithm
@@ -73,9 +73,9 @@ public
       end match;
 
       // Modules
-      bdae := Causalize.main(bdae, NBSystem.SystemType.DAE);
-      bdae := Tearing.main(bdae, NBSystem.SystemType.DAE);
-      bdae := Jacobian.main(bdae, NBSystem.SystemType.DAE);
+      bdae := Causalize.main(bdae, NBPartition.Kind.DAE);
+      bdae := Tearing.main(bdae, NBPartition.Kind.DAE);
+      bdae := Jacobian.main(bdae, NBPartition.Kind.DAE);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;
@@ -97,19 +97,19 @@ public
 protected
   function daeModeDefault extends Module.daeModeInterface;
   protected
-    list<System.System> new_systems = {};
+    list<Partition.Partition> new_partitions = {};
   algorithm
-    for syst in systems loop
+    for part in partitions loop
       // move unknowns
-      syst.daeUnknowns := SOME(syst.unknowns);
+      part.daeUnknowns := SOME(part.unknowns);
       // convert all algebraic variables to algebraic states
-      // BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
+      // BVariable.VariablePointers.mapPtr(part.unknowns, function BVariable.makeAlgStateVar());
       // convert all residual equations to dae residuals
-      BEquation.EquationPointers.mapPtr(syst.equations, function BEquation.Equation.createResidual(new = false));
-      syst.unknowns := BEquation.EquationPointers.getResiduals(syst.equations);
-      new_systems := syst :: new_systems;
+      BEquation.EquationPointers.mapPtr(part.equations, function BEquation.Equation.createResidual(new = false));
+      part.unknowns := BEquation.EquationPointers.getResiduals(part.equations);
+      new_partitions := part :: new_partitions;
     end for;
-    systems := listReverse(new_systems);
+    partitions := listReverse(new_partitions);
   end daeModeDefault;
 
   annotation(__OpenModelica_Interface="backend");

@@ -180,10 +180,10 @@ public
       Pointer<Variable> dummy_der           "corresponding dummy derivative";
     end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state selection in index reduction
     record DISCRETE end DISCRETE;
-    record DISCRETE_STATE
-      Boolean fixed                         "is fixed at first clock tick";
-    end DISCRETE_STATE;
+    record DISCRETE_STATE end DISCRETE_STATE;
     record PREVIOUS end PREVIOUS;
+    record CLOCK end CLOCK;
+    record CLOCKED end CLOCKED;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
@@ -236,6 +236,8 @@ public
         case DISCRETE()           then "[DISC]";
         case DISCRETE_STATE()     then "[DISS]";
         case PREVIOUS()           then "[PRE-]";
+        case CLOCK()              then "[CLCK]";
+        case CLOCKED()            then "[CLKD]";
         case PARAMETER()          then "[PRMT]";
         case CONSTANT()           then "[CNST]";
         case ITERATOR()           then "[ITER]";
@@ -370,7 +372,6 @@ public
       array<VariableAttributes> childrenAttr;
     end VAR_ATTR_RECORD;
 
-    // TODO: das hier schön machen
     type VarType = enumeration(ENUMERATION, CLOCK, STRING);
 
     function toString
@@ -439,6 +440,7 @@ public
         case Type.BOOLEAN()     then createBool(attrs, is_final);
         case Type.STRING()      then createString(attrs, is_final);
         case Type.ENUMERATION() then createEnum(attrs, is_final);
+        case Type.CLOCK()       then createClock(is_final);
         case Type.COMPLEX(complexTy = complexTy as ComplexType.RECORD())
         then createRecord(attrs, complexTy.indexMap, children, is_final);
 
@@ -1260,6 +1262,11 @@ public
           quantity, min, max, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
       end if;
     end createEnum;
+
+    function createClock
+      input Boolean isFinal;
+      output VariableAttributes attributes = VAR_ATTR_CLOCK(NONE(), SOME(isFinal));
+    end createClock;
 
     function createRecord
       input list<tuple<String, Binding>> attrs;

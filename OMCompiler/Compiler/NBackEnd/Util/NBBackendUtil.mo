@@ -46,11 +46,75 @@ public
   // backend imports
   import BEquation = NBEquation;
   import NBEquation.{Equation, Frame, FrameLocation};
-  import System = NBSystem;
   import BVariable = NBVariable;
 
   // Util imports
   import Util;
+
+  // old imports
+  import MMath;
+
+  uniontype Rational
+    record RATIONAL
+      Integer n;
+      Integer d;
+    end RATIONAL;
+
+    function toString
+      input Rational r;
+      output String str = intString(r.n) + "/" + intString(r.d);
+    end toString;
+
+    function normalize
+      input output Rational r;
+    algorithm
+      if r.n == 0 then
+        r.d := 1;
+      end if;
+    end normalize;
+
+    function add
+      input Rational r1;
+      input Rational r2;
+      output Rational r = finalize(r1.n*r2.d + r2.n*r1.d, r1.d*r2.d);
+    end add;
+
+    function multiply
+      input Rational r1;
+      input Rational r2;
+      output Rational r = finalize(r1.n*r2.n, r1.d*r2.d);
+    end multiply;
+
+    function isEqual
+      input Rational r1;
+      input Rational r2;
+      output Boolean b = r1.n == r2.n and r1.d == r2.d;
+    end isEqual;
+
+    function convert
+      input Rational r;
+      output MMath.Rational oldR = MMath.RATIONAL(r.n, r.d);
+    end convert;
+
+  protected
+    function finalize
+      input Integer i1;
+      input Integer i2;
+      output Rational r;
+    protected
+      Integer d = intGcd(i1,i2);
+    algorithm
+      r := normalize(RATIONAL(intDiv(i1,d), intDiv(i2,d)));
+    end finalize;
+
+    function intGcd "returns the greatest common divisor for two Integers"
+      input Integer i1;
+      input Integer i2;
+      output Integer i;
+    algorithm
+      i := if i2 == 0 then i1 else intGcd(i2, intMod(i1,i2));
+    end intGcd;
+  end Rational;
 
   function findTrueIndices
     "returns all indices of elements that are true"

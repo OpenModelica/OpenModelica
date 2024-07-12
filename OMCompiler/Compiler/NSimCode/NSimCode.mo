@@ -58,17 +58,19 @@ protected
   // Backend imports
   import AliasInfo = NBStrongComponent.AliasInfo;
   import BackendDAE = NBackendDAE;
+  import NBPartitioning.ClockedInfo;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData};
   import NBEvents.EventInfo;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
-  import System = NBSystem;
+  import Partition = NBPartition;
 
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
   import NSimJacobian.SimJacobian;
   import SimGenericCall = NSimGenericCall;
+  import SimPartition = NSimPartition;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo};
   import SymbolTable;
@@ -173,7 +175,7 @@ public
       list<SimStrongComponent.Block> allSim             "All simulation system blocks";
       list<list<SimStrongComponent.Block>> ode          "Only ode blocks for integrator";
       list<list<SimStrongComponent.Block>> algebraic    "Additional purely algebraic blocks";
-      //list<ClockedPartition> clockedPartitions;
+      list<SimPartition> clockedPartitions              "Clocked Partitions";
       list<SimStrongComponent.Block> nominal            "Blocks for nominal value equations";
       list<SimStrongComponent.Block> min                "Blocks for min value equations";
       list<SimStrongComponent.Block> max                "Blocks for max value equations";
@@ -241,6 +243,7 @@ public
         idx := idx + 1;
       end for;
       str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
+      str := str + SimPartition.listToString(simCode.clockedPartitions, "  ", "Clocked Partitions") + "\n";
       if not listEmpty(simCode.literals) then
         str := str + StringUtil.headline_3("Shared Literals");
         str := str + List.toString(simCode.literals, Expression.toString, "", "  ", "\n  ", "\n\n");
@@ -289,6 +292,7 @@ public
           ModelInfo modelInfo;
           SimCodeIndices simCodeIndices;
           UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+          list<SimPartition> clockedPartitions;
           Pointer<Integer> literals_idx = Pointer.create(0);
           list<Expression> literals;
           list<String> externalFunctionIncludes;
@@ -346,8 +350,11 @@ public
               init_0 := {};
             end if;
 
+            // create clocked partitions
+            (clockedPartitions, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
+
             // start allSim with no return equations
-            (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBSystem.SystemType.ODE, simcode_map, equation_map);
+            (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
             init_no_ret := {};
             start := {};
             discreteVars := {};
@@ -417,7 +424,7 @@ public
 
             generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -429,6 +436,7 @@ public
               allSim                    = allSim,
               ode                       = ode,
               algebraic                 = algebraic,
+              clockedPartitions         = clockedPartitions,
               nominal                   = nominal,
               min                       = min,
               max                       = max,
@@ -501,7 +509,7 @@ public
         allEquations                  = SimStrongComponent.Block.convertList(simCode.allSim),
         odeEquations                  = SimStrongComponent.Block.convertListList(simCode.ode),
         algebraicEquations            = SimStrongComponent.Block.convertListList(simCode.algebraic),
-        clockedPartitions             = {}, // ToDo: add this once clocked partitions are supported
+        clockedPartitions             = list(SimPartition.convertBase(part) for part in simCode.clockedPartitions),
         initialEquations              = SimStrongComponent.Block.convertList(simCode.init),
         initialEquations_lambda0      = SimStrongComponent.Block.convertList(simCode.init_0),
         removedInitialEquations       = SimStrongComponent.Block.convertList(simCode.init_no_ret),
@@ -621,13 +629,30 @@ public
       input list<SimStrongComponent.Block> linearLoops;
       input list<SimStrongComponent.Block> nonlinearLoops;
       input EventInfo eventInfo;
+      input ClockedInfo clockedInfo;
       output ModelInfo modelInfo;
       input output SimCodeIndices simCodeIndices;
     protected
       VarInfo info;
     algorithm
       info := VarInfo.create(vars, eventInfo, simCodeIndices);
-      modelInfo := MODEL_INFO(name, "", "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
+      modelInfo := MODEL_INFO(
+        name                            = name,
+        description                     = "",
+        version                         = "",
+        directory                       = directory,
+        vars                            = vars,
+        varInfo                         = info,
+        functions                       = functions,
+        labels                          = {},
+        resourcePaths                   = {},
+        sortedClasses                   = {},
+        nClocks                         = listLength(UnorderedMap.toList(clockedInfo.baseClocks)),
+        nSubClocks                      = listLength(UnorderedMap.toList(clockedInfo.subClocks)),
+        nSpatialDistributions           = 0,
+        hasLargeLinearEquationSystems   = true,
+        linearLoops                     = linearLoops,
+        nonlinearLoops                  = nonlinearLoops);
     end create;
 
     function setSeedVars
@@ -704,7 +729,7 @@ public
     end toString;
 
     function create
-      input list<System.System> systems;
+      input list<Partition.Partition> systems;
       output Option<DaeModeData> data;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
@@ -755,7 +780,7 @@ public
     function createSparsityJacobian
       input output Option<DaeModeData> daeModeDataOpt;
       input output ModelInfo modelInfo;
-      input list<System.System> systems;
+      input list<Partition.Partition> systems;
       output SimJacobian jacobian;
       input output UnorderedMap<ComponentRef, SimVar> simcode_map;
       input output SimCodeIndices simCodeIndices;

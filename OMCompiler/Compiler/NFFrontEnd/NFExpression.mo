@@ -4714,6 +4714,7 @@ public
       case Type.BOOLEAN() then BOOLEAN(true);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, List.last(ty.literals), listLength(ty.literals));
       case Type.ARRAY() then fillType(ty, makeMaxValue(Type.arrayElementType(ty)));
+      else REAL(System.realMaxLit()); // backup case just for backend;
     end match;
   end makeMaxValue;
 
@@ -4727,6 +4728,7 @@ public
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
       case Type.ARRAY() then fillType(ty, makeMinValue(Type.arrayElementType(ty)));
+      else REAL(-System.realMaxLit()); // backup case just for backend;
     end match;
   end makeMinValue;
 
