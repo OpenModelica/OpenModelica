@@ -3943,7 +3943,6 @@ public
             if level == 0 then
               tmp :=  tmp + EquationPointers.toString(eqData.equations, "Simulation", NONE(), false);
             else
-
               tmp :=  tmp + EquationPointers.toString(eqData.continuous, "Continuous", NONE(), false) +
                       EquationPointers.toString(eqData.clocked, "Clocked", NONE(), false) +
                       EquationPointers.toString(eqData.discretes, "Discrete", NONE(), false) +
@@ -4071,7 +4070,7 @@ public
       input list<Pointer<Equation>> eq_lst;
       input Boolean newName = true;
     protected
-      list<Pointer<Equation>> equation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
+      list<Pointer<Equation>> equation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     algorithm
 
       eqData := match eqData
@@ -4081,10 +4080,11 @@ public
               Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
-          (simulation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := typeList(eq_lst);
+          (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := typeList(eq_lst);
           eqData.equations    := EquationPointers.addList(eq_lst, eqData.equations);
           eqData.simulation   := EquationPointers.addList(simulation_lst, eqData.simulation);
           eqData.continuous   := EquationPointers.addList(continuous_lst, eqData.continuous);
+          eqData.clocked      := EquationPointers.addList(clocked_lst, eqData.clocked);
           eqData.discretes    := EquationPointers.addList(discretes_lst, eqData.discretes);
           eqData.initials     := EquationPointers.addList(initials_lst, eqData.initials);
           eqData.auxiliaries  := EquationPointers.addList(auxiliaries_lst, eqData.auxiliaries);
