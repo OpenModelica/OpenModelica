@@ -173,6 +173,18 @@ public
       end match;
     end convertSub;
 
+    function toExp
+      input BClock clock;
+      output Expression exp;
+    algorithm
+      exp := match clock
+        case BASE_CLOCK() then Expression.CLKCONST(clock.clock);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non-base clock: " + toString(clock)});
+        then fail();
+      end match;
+    end toExp;
+
   protected
     function create
       input ComponentRef clock_name;
@@ -456,6 +468,35 @@ public
       then fail();
     end match;
   end categorize;
+
+  function extractClocks
+    "replace clock constructors in expressions with variables"
+    input output Expression exp;
+    input UnorderedMap<BClock, ComponentRef> collector;
+    input Pointer<list<Pointer<Variable>>> new_clocks;
+    input Pointer<Integer> idx;
+  algorithm
+    exp := match exp
+      local
+        BClock clock;
+        Pointer<Variable> clock_var;
+        ComponentRef clock_name;
+
+      case Expression.CLKCONST() guard(not ClockKind.isInferred(exp.clk)) algorithm
+        clock := BClock.BASE_CLOCK(exp.clk);
+        if UnorderedMap.contains(clock, collector) then
+          clock_name := UnorderedMap.getSafe(clock, collector, sourceInfo());
+        else
+          (clock_var, clock_name) := BVariable.makeClockVar(Pointer.access(idx), Expression.typeOf(exp));
+          UnorderedMap.add(clock, clock_name, collector);
+          Pointer.update(new_clocks, clock_var :: Pointer.access(new_clocks));
+          Pointer.update(idx, Pointer.access(idx) + 1);
+        end if;
+      then Expression.fromCref(clock_name);
+
+      else exp;
+    end match;
+  end extractClocks;
 
 protected
   type ClusterElementType = enumeration(EQUATION, VARIABLE);

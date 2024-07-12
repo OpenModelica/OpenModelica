@@ -105,6 +105,7 @@ public
   constant String SEED_STR                = "$SEED";
   constant String TIME_EVENT_STR          = "$TEV";
   constant String STATE_EVENT_STR         = "$SEV";
+  constant String CLOCK_STR               = "$CLK";
 
   function toString
     input Variable var;
@@ -722,6 +723,11 @@ public
     b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), FUNCTION_STR);
   end isFunctionAlias;
 
+  function isClockAlias extends checkVar;
+  algorithm
+    b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), CLOCK_STR);
+  end isClockAlias;
+
   function createTimeVar
     output Pointer<Variable> var_ptr;
   protected
@@ -1226,6 +1232,29 @@ public
     (der_cref, der_var) := BVariable.makeDerVar(cref);
     BVariable.makeStateVar(var_ptr, der_var);
   end makeAuxStateVar;
+
+  function makeClockVar
+    "Creates a clock variable if an unnamed clock is used in the system"
+    input Integer uniqueIndex         "unique identifier index";
+    input Type ty                     "equation type containing dims";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output ComponentRef cref          "new component reference";
+  protected
+    InstNode node;
+    Variable var;
+    list<Dimension> dims = Type.arrayDims(ty);
+  algorithm
+    // create inst node with dummy variable pointer and create cref from it
+    node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    // Type for residuals is always REAL() !
+    cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    // create variable and set its kind to dae_residual (change name?)
+    var := fromCref(cref);
+    // update the variable to be a seed and pass the pointer to the original variable
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.CLOCK());
+    // create the new variable pointer and safe it to the component reference
+    (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+  end makeClockVar;
 
   function getBindingVariability
     "returns the variability of the binding, fails if it has the wrong type.
@@ -2121,7 +2150,7 @@ public
     end setVariables;
 
     // used to add specific types. Fill up with Jacobian/Hessian types
-    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR, RECORD);
+    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR, RECORD, CLOCK);
 
     function addTypedList
       "can also be used to add single variables"
@@ -2176,6 +2205,10 @@ public
         case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm
           varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.CLOCK) algorithm
+          varData.clocks      := VariablePointers.addList(var_lst, varData.clocks);
         then varData;
 
         // IMPORTANT: requires the record elements to be added as children beforehand!
