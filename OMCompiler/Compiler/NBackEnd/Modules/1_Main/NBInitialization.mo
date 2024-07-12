@@ -118,7 +118,7 @@ public
             VariablePointers.mapRemovePtr(clonedVars, BVariable.isClocked);
 
             varData.variables := variables;
-            varData.initials := clonedVars;
+            varData.initials := VariablePointers.compress(clonedVars);
             eqData.equations := equations;
             eqData.initials := EquationPointers.compress(initialEqs);
 
