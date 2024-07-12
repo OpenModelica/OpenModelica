@@ -63,6 +63,16 @@ public
     Expression solverMethod     " string type ";
   end SOLVER_CLOCK;
 
+  function isInferred
+    input ClockKind ck;
+    output Boolean b;
+  algorithm
+    b := match ck
+      case INFERRED_CLOCK() then true;
+      else false;
+    end match;
+  end isInferred;
+
   function compare
     input ClockKind ck1;
     input ClockKind ck2;

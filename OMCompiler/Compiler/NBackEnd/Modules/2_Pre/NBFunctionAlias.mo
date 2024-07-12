@@ -56,6 +56,8 @@ protected
   import BEquation = NBEquation;
   import Inline = NBInline;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator};
+  import Partitioning = NBPartitioning;
+  import NBPartitioning.BClock;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
 
@@ -218,9 +220,10 @@ protected
     extends Module.functionAliasInterface;
   protected
     UnorderedMap<Call_Id, Call_Aux> map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
+    UnorderedMap<BClock, ComponentRef> clock_map;
     Pointer<Integer> index = Pointer.create(1);
-    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {};
-    list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {};
+    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck;
+    list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck;
     list<tuple<Call_Id, Call_Aux>> debug_lst_sim, debug_lst_ini;
     list<tuple<String, String>> debug_str;
     Integer debug_max_length;
@@ -284,6 +287,9 @@ protected
             new_eqns_init := new_eqn :: new_eqns_init;
           end if;
         end for;
+
+        // create clock alias equations
+        (new_eqns_clck, new_vars_clck, clock_map) := addClockedAlias(eqData.simulation, eqData.uniqueIndex);
       then ();
       else ();
     end match;
@@ -292,9 +298,11 @@ protected
     varData := VarData.addTypedList(varData, new_vars_disc, VarData.VarType.DISCRETE);
     varData := VarData.addTypedList(varData, new_vars_init, VarData.VarType.PARAMETER);
     varData := VarData.addTypedList(varData, new_vars_recd, VarData.VarType.RECORD);
+    varData := VarData.addTypedList(varData, new_vars_clck, VarData.VarType.CLOCK);
     eqData  := EqData.addTypedList(eqData, new_eqns_cont, EqData.EqType.CONTINUOUS, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_disc, EqData.EqType.DISCRETE, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_init, EqData.EqType.INITIAL, false);
+    eqData  := EqData.addTypedList(eqData, new_eqns_clck, EqData.EqType.CLOCKED, false);
 
     // dump if flag is set
     if Flags.isSet(Flags.DUMP_CSE) then
@@ -309,6 +317,10 @@ protected
       print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
       print(StringUtil.headline_3("Initial Function Alias"));
       debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_ini);
+      debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
+      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
+      print(StringUtil.headline_3("Clocked Function Alias"));
+      debug_str := list((ComponentRef.toString(Util.tuple22(tpl)), BClock.toString(Util.tuple21(tpl))) for tpl in UnorderedMap.toList(clock_map));
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
       print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
     end if;
@@ -519,6 +531,26 @@ protected
       new_vars_disc := new_var :: new_vars_disc;
     end if;
   end addAuxVar;
+
+  function addClockedAlias
+    input EquationPointers equations;
+    input Pointer<Integer> eqn_idx;
+    output list<Pointer<Equation>> clock_eqns = {};
+    output list<Pointer<Variable>> clock_vars;
+    output UnorderedMap<BClock, ComponentRef> collector = UnorderedMap.new<ComponentRef>(BClock.hash, BClock.isEqual);
+  protected
+    Pointer<list<Pointer<Variable>>> new_clocks = Pointer.create({});
+    Pointer<Integer> idx = Pointer.create(0);
+    BClock clock;
+    ComponentRef clock_name;
+  algorithm
+    EquationPointers.mapExp(equations, function Partitioning.extractClocks(collector = collector, new_clocks = new_clocks, idx = idx));
+    clock_vars := Pointer.access(new_clocks);
+    for tpl in UnorderedMap.toList(collector) loop
+      (clock, clock_name) := tpl;
+      clock_eqns := Equation.makeAssignment(Expression.fromCref(clock_name), BClock.toExp(clock), eqn_idx, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.CLOCKED, false)) :: clock_eqns;
+    end for;
+  end addClockedAlias;
 
   annotation(__OpenModelica_Interface="backend");
 end NBFunctionAlias;

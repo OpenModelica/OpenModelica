@@ -139,6 +139,13 @@ public
       b := match clock case BASE_CLOCK() then true; else false; end match;
     end isBaseClock;
 
+    function isEventClock
+      input BClock clock;
+      output Boolean b;
+    algorithm
+      b := match clock case BASE_CLOCK(clock = ClockKind.EVENT_CLOCK()) then true; else false; end match;
+    end isEventClock;
+
     function convertBase
       input BClock clock;
       output OldDAE.ClockKind oldClock;
@@ -165,6 +172,18 @@ public
         then fail();
       end match;
     end convertSub;
+
+    function toExp
+      input BClock clock;
+      output Expression exp;
+    algorithm
+      exp := match clock
+        case BASE_CLOCK() then Expression.CLKCONST(clock.clock);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non-base clock: " + toString(clock)});
+        then fail();
+      end match;
+    end toExp;
 
   protected
     function create
@@ -450,6 +469,35 @@ public
     end match;
   end categorize;
 
+  function extractClocks
+    "replace clock constructors in expressions with variables"
+    input output Expression exp;
+    input UnorderedMap<BClock, ComponentRef> collector;
+    input Pointer<list<Pointer<Variable>>> new_clocks;
+    input Pointer<Integer> idx;
+  algorithm
+    exp := match exp
+      local
+        BClock clock;
+        Pointer<Variable> clock_var;
+        ComponentRef clock_name;
+
+      case Expression.CLKCONST() guard(not ClockKind.isInferred(exp.clk)) algorithm
+        clock := BClock.BASE_CLOCK(exp.clk);
+        if UnorderedMap.contains(clock, collector) then
+          clock_name := UnorderedMap.getSafe(clock, collector, sourceInfo());
+        else
+          (clock_var, clock_name) := BVariable.makeClockVar(Pointer.access(idx), Expression.typeOf(exp));
+          UnorderedMap.add(clock, clock_name, collector);
+          Pointer.update(new_clocks, clock_var :: Pointer.access(new_clocks));
+          Pointer.update(idx, Pointer.access(idx) + 1);
+        end if;
+      then Expression.fromCref(clock_name);
+
+      else exp;
+    end match;
+  end extractClocks;
+
 protected
   type ClusterElementType = enumeration(EQUATION, VARIABLE);
 
@@ -522,8 +570,8 @@ protected
       association := Partition.Association.create(partEquations, kind, info);
 
       // replace the clocked functions, inline clocked when equations and set equations to clocked
+      partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
       if Partition.Association.isClocked(association) then
-        partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
         partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
         partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
         partVariables := VariablePointers.mapPtr(partVariables, function BVariable.setVarKind(varKind = VariableKind.CLOCKED()));
@@ -807,43 +855,61 @@ protected
   algorithm
     exp := match exp
       local
-        Expression newExp, arg;
-        Function func;
+        Expression newExp, arg, arg2;
         Call call;
 
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         newExp := match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
           case "sample" algorithm
-            arg := match Call.arguments(exp.call)
+            {arg, arg2} := match Call.arguments(exp.call)
               // not collected samples have 2 arguments
-              case {arg, _} then arg;
+              case {arg, arg2} then {arg, arg2};
               // collected samples have 3 arguments
-              case {_, arg, _} then arg;
+              case {_, arg, arg2} then {arg, arg2};
               else algorithm
                 Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-            func := match Expression.typeOf(arg)
-              case Type.REAL()    then NFBuiltinFuncs.GET_PART_REAL;
-              case Type.INTEGER() then NFBuiltinFuncs.GET_PART_INT;
-              case Type.BOOLEAN() then NFBuiltinFuncs.GET_PART_BOOL;
+            newExp := if Type.isClock(Expression.typeOf(arg2)) then replaceClockedFunctionExp(arg) else exp;
+          then newExp;
+
+          case "hold" algorithm
+            arg := match Call.arguments(exp.call)
+              // hold can only have one argument
+              case {arg} then arg;
               else algorithm
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + Expression.toString(arg) + " is not of correct type."});
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-            newExp := Expression.CALL(Call.makeTypedCall(
-              fn          = func,
-              args        = {arg},
-              variability = Expression.variability(arg),
-              purity      = NFPrefixes.Purity.PURE
-            ));
-          then newExp;
+          then replaceClockedFunctionExp(arg);
+
           else exp;
         end match;
       then newExp;
       else exp;
     end match;
   end replaceClockedFunctions;
+
+  function replaceClockedFunctionExp
+    input output Expression exp;
+  protected
+    Function func;
+  algorithm
+    func := match Expression.typeOf(exp)
+      case Type.REAL()    then NFBuiltinFuncs.GET_PART_REAL;
+      case Type.INTEGER() then NFBuiltinFuncs.GET_PART_INT;
+      case Type.BOOLEAN() then NFBuiltinFuncs.GET_PART_BOOL;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + Expression.toString(exp) + " is not of correct type."});
+      then fail();
+    end match;
+    exp := Expression.CALL(Call.makeTypedCall(
+      fn          = func,
+      args        = {exp},
+      variability = Expression.variability(exp),
+      purity      = NFPrefixes.Purity.PURE
+    ));
+  end replaceClockedFunctionExp;
 
   function replaceClockedWhen
     "replace clocked when equations in clocked partitions with their body statement.

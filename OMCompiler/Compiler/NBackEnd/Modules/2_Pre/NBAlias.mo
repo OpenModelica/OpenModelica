@@ -1124,12 +1124,11 @@ protected
     StateSelect stateSelect_val;
     TearingSelect tearingSelect_val;
   algorithm
-    if BVariable.isFunctionAlias(var_ptr) then
+    if BVariable.isFunctionAlias(var_ptr) or BVariable.isClockAlias(var_ptr) then
       rating := -10000;
     else
       name := BVariable.getVarName(var_ptr);
       rating := -ComponentRef.depth(name);
-
     end if;
 
      _ := match Pointer.access(var_ptr)

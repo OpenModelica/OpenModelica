@@ -4007,7 +4007,7 @@ public
       end match;
     end setEquations;
 
-    type EqType = enumeration(CONTINUOUS, DISCRETE, INITIAL);
+    type EqType = enumeration(CONTINUOUS, DISCRETE, CLOCKED, INITIAL);
 
     function addTypedList
       input output EqData eqData;
@@ -4037,6 +4037,15 @@ public
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
           eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
           eqData.discretes := EquationPointers.addList(eq_lst, eqData.discretes);
+        then eqData;
+
+        case (EQ_DATA_SIM(), EqType.CLOCKED) algorithm
+          if newName then
+            for eqn_ptr in eq_lst loop
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
+            end for;
+          end if;
+          eqData.clocked := EquationPointers.addList(eq_lst, eqData.clocked);
         then eqData;
 
         case (EQ_DATA_SIM(), EqType.INITIAL) algorithm

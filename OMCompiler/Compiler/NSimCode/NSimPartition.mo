@@ -67,10 +67,11 @@ public
     input BClock subClock;
     input list<Block> equations;
     input list<SimVar> variables;
+    input Boolean holdEvents;
     output SimPartition part;
   algorithm
     // for now assume all variables need pre()
-    part := SUB_PARTITION(list((v, true) for v in variables), equations, {}, subClock, false);
+    part := SUB_PARTITION(list((v, true) for v in variables), equations, {}, subClock, holdEvents);
   end createSubPartition;
 
   function createBasePartitions

@@ -45,6 +45,10 @@ simulate(simple_tuple); getErrorString();
 // ------------------------
 //
 //
+// Clocked Function Alias
+// ------------------------
+//
+//
 // [dumpBackendInline] Inlining operatations for: {NORMAL, BUILTIN_EARLY, EARLY, DEFAULT}
 // ****************************************************************************************
 // [NBInline.inlineTupleEquation] Inlining: [TUPL] (2) (x, y) = ($FUN_3, $FUN_4) ($RES_SIM_3)
