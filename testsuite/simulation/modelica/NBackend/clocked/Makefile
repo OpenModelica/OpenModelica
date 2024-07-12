@@ -7,6 +7,7 @@ shiftSample1.mos \
 backSample1.mos \
 inferredSampleVar.mos \
 subSuperSample1.mos \
+holdVar.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -15,7 +16,6 @@ absoluteClocks.mos \
 boolEventClock.mos \
 eventConstructor.mos \
 firstTick.mos \
-holdVar.mos \
 inferredConstructor1.mos \
 inferredConstructor2.mos \
 intervalBase.mos \
