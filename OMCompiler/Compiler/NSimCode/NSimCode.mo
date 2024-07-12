@@ -464,7 +464,7 @@ public
         then simCode;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end create;
@@ -561,7 +561,7 @@ public
       (directory, libs) := match simCode
         case SIM_CODE(modelInfo = MODEL_INFO(directory = directory), makefileParams = OldSimCodeFunction.MAKEFILE_PARAMS(libs = libs)) then (directory, libs);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end getDirectoryAndLibs;
@@ -667,7 +667,7 @@ public
           modelInfo.vars := vars;
         then modelInfo;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end setSeedVars;
@@ -815,7 +815,7 @@ public
 
         else
           algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end createSparsityJacobian;

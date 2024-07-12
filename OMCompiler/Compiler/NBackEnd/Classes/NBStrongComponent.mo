@@ -208,7 +208,7 @@ public
       then str;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end toString;
@@ -439,7 +439,7 @@ public
       /* are other residuals possible? */
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
 
@@ -823,7 +823,7 @@ public
       then comp;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end createPseudoScalar;

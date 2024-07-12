@@ -817,7 +817,7 @@ public
         case BVariable.VAR_DATA_HES() then ();
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
 
