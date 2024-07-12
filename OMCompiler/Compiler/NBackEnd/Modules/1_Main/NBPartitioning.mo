@@ -855,22 +855,23 @@ protected
   algorithm
     exp := match exp
       local
-        Expression newExp, arg;
+        Expression newExp, arg, arg2;
         Call call;
 
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         newExp := match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
           case "sample" algorithm
-            arg := match Call.arguments(exp.call)
+            {arg, arg2} := match Call.arguments(exp.call)
               // not collected samples have 2 arguments
-              case {arg, _} then arg;
+              case {arg, arg2} then {arg, arg2};
               // collected samples have 3 arguments
-              case {_, arg, _} then arg;
+              case {_, arg, arg2} then {arg, arg2};
               else algorithm
                 Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-          then replaceClockedFunctionExp(arg);
+            newExp := if Type.isClock(Expression.typeOf(arg2)) then replaceClockedFunctionExp(arg) else exp;
+          then newExp;
 
           case "hold" algorithm
             arg := match Call.arguments(exp.call)
