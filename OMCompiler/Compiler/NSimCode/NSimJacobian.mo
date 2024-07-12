@@ -144,7 +144,7 @@ public
           end if;
         then str;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end toString;
@@ -281,7 +281,7 @@ public
         then SOME(jac);
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end create;
@@ -341,7 +341,7 @@ public
         then (sparsity, sparsityT, coloring);
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end createSparsity;
@@ -409,7 +409,7 @@ public
       blcks := match jacobian
         case SIM_JAC() then listAppend(jacobian.constantEqns, jacobian.columnEqns);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end getJacobianBlocks;
@@ -430,7 +430,7 @@ public
       jac_map := match jacobian
         case SIM_JAC() then jacobian.jac_map;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end getJacobianHT;
@@ -468,7 +468,7 @@ public
         then oldJac;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end convert;
@@ -484,7 +484,7 @@ public
         case SOME(simJac) then SOME(convert(simJac));
         case NONE()       then NONE();
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end convertOpt;

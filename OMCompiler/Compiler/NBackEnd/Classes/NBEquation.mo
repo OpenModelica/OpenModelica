@@ -3991,7 +3991,7 @@ public
         case EqData.EQ_DATA_JAC() then eqData.uniqueIndex;
         case EqData.EQ_DATA_HES() then eqData.uniqueIndex;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end getUniqueIndex;
@@ -4061,7 +4061,7 @@ public
         // ToDo: other cases
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end addTypedList;
@@ -4094,7 +4094,7 @@ public
         // ToDo: other cases
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end addUntypedList;
@@ -4130,7 +4130,7 @@ public
         then eqData;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end removeList;
@@ -4165,7 +4165,7 @@ public
         then eqData;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end compress;

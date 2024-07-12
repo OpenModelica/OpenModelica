@@ -101,7 +101,7 @@ public
         then bdae;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end main;
@@ -291,7 +291,7 @@ public
         case SINGLE() then "time > " + Expression.toString(timeEvent.trigger);
         case SAMPLE() then "sample(" + intString(timeEvent.index) + ", " + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")";
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
       if printIndex then
@@ -548,7 +548,7 @@ public
           startExp    = Expression.toDAE(timeEvent.start),
           intervalExp = Expression.toDAE(timeEvent.interval));
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end convert;
@@ -940,7 +940,7 @@ protected
       then eventInfo;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end eventsDefault;

@@ -1390,7 +1390,7 @@ public
       then VariableKind.isTimeDependent(BackendInfo.getVarKind(var.backendinfo));
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end isTimeDependent;
@@ -2222,7 +2222,7 @@ public
         // ToDo: other cases
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end addTypedList;

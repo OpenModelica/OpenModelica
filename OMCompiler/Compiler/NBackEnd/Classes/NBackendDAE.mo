@@ -180,7 +180,7 @@ public
                               VarData.toString(bdae.varData, 1) + "\n" +
                               EqData.toString(bdae.eqData, 1);
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end toString;
@@ -194,7 +194,7 @@ public
       case JACOBIAN() then bdae.varData;
       case HESSIAN() then bdae.varData;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end getVarData;
@@ -616,7 +616,7 @@ protected
       case (NFPrefixes.Variability.CONSTANT, _, _)                    then VariableKind.CONSTANT();
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
 
@@ -1034,7 +1034,7 @@ protected
       then SOME(BEquation.WHEN_EQUATION_BODY(condition, stmts, lowerWhenEquationBody(rest)));
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
 
     end match;

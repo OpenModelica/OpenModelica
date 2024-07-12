@@ -829,7 +829,7 @@ algorithm
     then ();
 
     else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     then fail();
   end match;
 end simplifyMultarySigns;
@@ -1035,7 +1035,7 @@ algorithm
     then simplifyUnaryOp(se, op);
 
     else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     then fail();
   end match;
 

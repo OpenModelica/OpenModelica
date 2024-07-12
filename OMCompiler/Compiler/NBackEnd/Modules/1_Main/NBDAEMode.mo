@@ -77,7 +77,7 @@ public
       bdae := Tearing.main(bdae, NBPartition.Kind.DAE);
       bdae := Jacobian.main(bdae, NBPartition.Kind.DAE);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     end try;
   end main;
 
