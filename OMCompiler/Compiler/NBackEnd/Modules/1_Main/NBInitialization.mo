@@ -105,11 +105,10 @@ public
 
             // clone all simulation equations and add them to the initial equations.
             clonedEqns := EquationPointers.clone(equations, false);
-            //also remove/replace when equations and clocked equations
-            clonedEqns := EquationPointers.map(clonedEqns, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
-            EquationPointers.mapRemovePtr(clonedEqns, Equation.isClocked);
-            // add all simulation equations and remove clocked functions
             initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
+            //also remove/replace when equations and clocked equations and remove clocked functions
+            initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            EquationPointers.mapRemovePtr(initialEqs, Equation.isClocked);
             EquationPointers.mapPtr(initialEqs, replaceClockedFunctionsEqn);
 
             (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
