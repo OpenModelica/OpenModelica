@@ -103,11 +103,15 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, eqData.uniqueIndex, " External Object ");
 
-            // clone all simulation equations and add them to the initial equations. also remove/replace when equations and clocked equations
+            // clone all simulation equations and add them to the initial equations.
             clonedEqns := EquationPointers.clone(equations, false);
+            //also remove/replace when equations and clocked equations
             clonedEqns := EquationPointers.map(clonedEqns, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
             EquationPointers.mapRemovePtr(clonedEqns, Equation.isClocked);
+            // add all simulation equations and remove clocked functions
             initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
+            EquationPointers.mapPtr(initialEqs, replaceClockedFunctionsEqn);
+
             (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
 
             // clone all initial variables and remove clocked variables
@@ -743,6 +747,24 @@ public
       else {stmt};
     end match;
   end removeWhenEquationStatement;
+
+ function replaceClockedFunctionsEqn
+    input output Pointer<Equation> eqn;
+  algorithm
+    Pointer.update(eqn, Equation.map(Pointer.access(eqn), replaceClockedFunctions));
+  end replaceClockedFunctionsEqn;
+
+  function replaceClockedFunctions
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "$getPart") algorithm
+      then Expression.makeZero(Expression.typeOf(exp));
+      else exp;
+    end match;
+  end replaceClockedFunctions;
 
   function isInitialCall
     "checks if the expression is an initial call or can be simplified to be one."

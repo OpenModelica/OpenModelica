@@ -139,6 +139,13 @@ public
       b := match clock case BASE_CLOCK() then true; else false; end match;
     end isBaseClock;
 
+    function isEventClock
+      input BClock clock;
+      output Boolean b;
+    algorithm
+      b := match clock case BASE_CLOCK(clock = ClockKind.EVENT_CLOCK()) then true; else false; end match;
+    end isEventClock;
+
     function convertBase
       input BClock clock;
       output OldDAE.ClockKind oldClock;
@@ -522,8 +529,8 @@ protected
       association := Partition.Association.create(partEquations, kind, info);
 
       // replace the clocked functions, inline clocked when equations and set equations to clocked
+      partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
       if Partition.Association.isClocked(association) then
-        partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
         partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
         partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
         partVariables := VariablePointers.mapPtr(partVariables, function BVariable.setVarKind(varKind = VariableKind.CLOCKED()));
@@ -808,7 +815,6 @@ protected
     exp := match exp
       local
         Expression newExp, arg;
-        Function func;
         Call call;
 
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
@@ -823,27 +829,45 @@ protected
                 Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-            func := match Expression.typeOf(arg)
-              case Type.REAL()    then NFBuiltinFuncs.GET_PART_REAL;
-              case Type.INTEGER() then NFBuiltinFuncs.GET_PART_INT;
-              case Type.BOOLEAN() then NFBuiltinFuncs.GET_PART_BOOL;
+          then replaceClockedFunctionExp(arg);
+
+          case "hold" algorithm
+            arg := match Call.arguments(exp.call)
+              // hold can only have one argument
+              case {arg} then arg;
               else algorithm
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + Expression.toString(arg) + " is not of correct type."});
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-            newExp := Expression.CALL(Call.makeTypedCall(
-              fn          = func,
-              args        = {arg},
-              variability = Expression.variability(arg),
-              purity      = NFPrefixes.Purity.PURE
-            ));
-          then newExp;
+          then replaceClockedFunctionExp(arg);
+
           else exp;
         end match;
       then newExp;
       else exp;
     end match;
   end replaceClockedFunctions;
+
+  function replaceClockedFunctionExp
+    input output Expression exp;
+  protected
+    Function func;
+  algorithm
+    func := match Expression.typeOf(exp)
+      case Type.REAL()    then NFBuiltinFuncs.GET_PART_REAL;
+      case Type.INTEGER() then NFBuiltinFuncs.GET_PART_INT;
+      case Type.BOOLEAN() then NFBuiltinFuncs.GET_PART_BOOL;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + Expression.toString(exp) + " is not of correct type."});
+      then fail();
+    end match;
+    exp := Expression.CALL(Call.makeTypedCall(
+      fn          = func,
+      args        = {exp},
+      variability = Expression.variability(exp),
+      purity      = NFPrefixes.Purity.PURE
+    ));
+  end replaceClockedFunctionExp;
 
   function replaceClockedWhen
     "replace clocked when equations in clocked partitions with their body statement.

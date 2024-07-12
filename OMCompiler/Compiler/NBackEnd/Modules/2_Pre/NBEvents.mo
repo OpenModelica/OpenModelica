@@ -1038,10 +1038,8 @@ protected
 
       // event clocks
       case Expression.CLKCONST(clk = clk as ClockKind.EVENT_CLOCK(condition = condition)) algorithm
-        (condition, bucket) := collectEventsCondition(condition, Pointer.access(bucket_ptr), iter, eqn, funcTree, createAux);
-        clk.condition := condition;
+        clk.condition := collectEventsTraverse(condition, bucket_ptr, iter, eqn, funcTree, createAux);
         exp.clk := clk;
-        Pointer.update(bucket_ptr, bucket);
       then exp;
 
       // replace $PRE variables with auxiliaries
