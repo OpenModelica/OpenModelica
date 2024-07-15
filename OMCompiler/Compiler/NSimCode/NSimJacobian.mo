@@ -267,10 +267,12 @@ public
               for var in seedVars loop
                 cref := SimVar.getName(var);
                 UnorderedMap.add(cref, var.index, idx_map);
-                subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
-                cref := BVariable.getDerCref(cref);
-                cref := ComponentRef.mergeSubscripts(subscripts, cref);
-                UnorderedMap.add(cref, var.index, idx_map);
+                if BVariable.checkCref(cref, BVariable.isState) then
+                  subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
+                  cref := BVariable.getDerCref(cref);
+                  cref := ComponentRef.mergeSubscripts(subscripts, cref);
+                  UnorderedMap.add(cref, var.index, idx_map);
+                end if;
               end for;
             else
               for var in seedVars loop
@@ -394,8 +396,8 @@ public
     algorithm
       for col in cols loop
         (cref, dependencies) := col;
-        dep_indices := List.map(dependencies, function UnorderedMap.getSafe(map = idx_map, info = sourceInfo()));
-        simPattern := (UnorderedMap.getSafe(cref, idx_map, sourceInfo()), List.sort(dep_indices, intGt)) :: simPattern;
+        dep_indices := List.map(dependencies, function UnorderedMap.getOrFail(map = idx_map));
+        simPattern := (UnorderedMap.getOrFail(cref, idx_map), List.sort(dep_indices, intGt)) :: simPattern;
       end for;
       simPattern := List.sort(simPattern, sparsityTplSortGt);
     end createSparsityPattern;
@@ -411,7 +413,7 @@ public
       input UnorderedMap<ComponentRef, Integer> idx_map;
       output SparsityColoring simColoring;
     algorithm
-      simColoring := list(List.map(group, function UnorderedMap.getSafe(map = idx_map, info = sourceInfo())) for group in coloring.cols);
+      simColoring := list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols);
     end createSparsityColoring;
 
     function empty

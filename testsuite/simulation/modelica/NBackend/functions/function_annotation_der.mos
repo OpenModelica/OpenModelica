@@ -107,5 +107,6 @@ simulate(function_annotation_der); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern.
+// "
 // endResult
