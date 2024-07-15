@@ -261,56 +261,62 @@ public
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
 
-          idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
-          if Jacobian.isForIntegrator(jacobian.jacType) then
-            for var in seedVars loop
-              cref := SimVar.getName(var);
-              UnorderedMap.add(cref, var.index, idx_map);
-              subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
-              cref := BVariable.getDerCref(cref);
-              cref := ComponentRef.mergeSubscripts(subscripts, cref);
-              UnorderedMap.add(cref, var.index, idx_map);
-            end for;
+          try
+            idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
+            if Jacobian.isForIntegrator(jacobian.jacType) then
+              for var in seedVars loop
+                cref := SimVar.getName(var);
+                UnorderedMap.add(cref, var.index, idx_map);
+                subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
+                cref := BVariable.getDerCref(cref);
+                cref := ComponentRef.mergeSubscripts(subscripts, cref);
+                UnorderedMap.add(cref, var.index, idx_map);
+              end for;
+            else
+              for var in seedVars loop
+                cref := SimVar.getName(var);
+                UnorderedMap.add(cref, var.index, idx_map);
+                subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
+                cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
+                cref := ComponentRef.mergeSubscripts(subscripts, cref);
+                UnorderedMap.add(cref, var.index, idx_map);
+              end for;
+              for var in resVars loop
+                cref := SimVar.getName(var);
+                UnorderedMap.add(cref, var.index, idx_map);
+                subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
+                cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
+                cref := ComponentRef.mergeSubscripts(subscripts, cref);
+                UnorderedMap.add(cref, var.index, idx_map);
+              end for;
+            end if;
+
+            (sparsity, sparsityT, coloring) := createSparsity(jacobian, idx_map);
+
+            jac := SIM_JAC(
+              name                = jacobian.name,
+              jacobianIndex       = indices.jacobianIndex,
+              partitionIndex      = 0,
+              numberOfResultVars  = listLength(resVars),
+              columnEqns          = columnEqns,
+              constantEqns        = {},
+              columnVars          = resVars,
+              seedVars            = seedVars,
+              sparsity            = sparsity,
+              sparsityT           = sparsityT,
+              coloring            = coloring,
+              numColors           = listLength(coloring),
+              generic_loop_calls  = generic_loop_calls,
+              jac_map             = SOME(jac_map)
+            );
+
+            indices.jacobianIndex := indices.jacobianIndex + 1;
+            simJacobian := SOME(jac);
           else
-            for var in seedVars loop
-              cref := SimVar.getName(var);
-              UnorderedMap.add(cref, var.index, idx_map);
-              subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
-              cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-              cref := ComponentRef.mergeSubscripts(subscripts, cref);
-              UnorderedMap.add(cref, var.index, idx_map);
-            end for;
-            for var in resVars loop
-              cref := SimVar.getName(var);
-              UnorderedMap.add(cref, var.index, idx_map);
-              subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
-              cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
-              cref := ComponentRef.mergeSubscripts(subscripts, cref);
-              UnorderedMap.add(cref, var.index, idx_map);
-            end for;
-          end if;
-
-          (sparsity, sparsityT, coloring) := createSparsity(jacobian, idx_map);
-
-          jac := SIM_JAC(
-            name                = jacobian.name,
-            jacobianIndex       = indices.jacobianIndex,
-            partitionIndex      = 0,
-            numberOfResultVars  = listLength(resVars),
-            columnEqns          = columnEqns,
-            constantEqns        = {},
-            columnVars          = resVars,
-            seedVars            = seedVars,
-            sparsity            = sparsity,
-            sparsityT           = sparsityT,
-            coloring            = coloring,
-            numColors           = listLength(coloring),
-            generic_loop_calls  = generic_loop_calls,
-            jac_map             = SOME(jac_map)
-          );
-
-          indices.jacobianIndex := indices.jacobianIndex + 1;
-        then SOME(jac);
+            simJacobian := NONE();
+            Error.addCompilerWarning(getInstanceName() + " could not generate sparsity pattern.");
+          end try;
+        then simJacobian;
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
