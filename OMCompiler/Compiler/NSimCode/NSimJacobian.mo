@@ -270,7 +270,7 @@ public
                 if BVariable.checkCref(cref, BVariable.isState) then
                   subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
                   cref := BVariable.getDerCref(cref);
-                  cref := ComponentRef.mergeSubscripts(subscripts, cref);
+                  cref := ComponentRef.mergeSubscripts(subscripts, cref, true, true);
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;
               end for;
@@ -280,7 +280,7 @@ public
                 UnorderedMap.add(cref, var.index, idx_map);
                 subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
                 cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-                cref := ComponentRef.mergeSubscripts(subscripts, cref);
+                cref := ComponentRef.mergeSubscripts(subscripts, cref, true, true);
                 UnorderedMap.add(cref, var.index, idx_map);
               end for;
               for var in resVars loop
@@ -288,7 +288,7 @@ public
                 UnorderedMap.add(cref, var.index, idx_map);
                 subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
                 cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
-                cref := ComponentRef.mergeSubscripts(subscripts, cref);
+                cref := ComponentRef.mergeSubscripts(subscripts, cref, true, true);
                 UnorderedMap.add(cref, var.index, idx_map);
               end for;
             end if;
