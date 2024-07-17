@@ -806,7 +806,7 @@ void Euler::doMyZeroSearch()
                 if (tDelta <= _zeroTol)
                     notDone = false;
 
-                if (notDone == false)
+                if (!notDone)
                     break;
 
                 leftZero = 0;

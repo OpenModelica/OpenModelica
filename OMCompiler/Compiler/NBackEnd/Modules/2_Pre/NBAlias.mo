@@ -1025,17 +1025,19 @@ protected
     input AliasSet set;
   protected
     list<TearingSelect> lst_values = UnorderedMap.valueList(map);
-    TearingSelect val, first_val;
+    TearingSelect first;
+    list<TearingSelect> rest;
     Boolean equal = true;
   algorithm
-    if listLength(lst_values) > 0 then
-      first_val := List.first(lst_values);
-      for val in lst_values loop
-        if first_val <> val then
+    if not listEmpty(lst_values) then
+      first :: rest := lst_values;
+      for val in rest loop
+        if first <> val then
           equal := false;
+          break;
         end if;
       end for;
-      if equal == false then
+      if not equal then
         if Flags.isSet(Flags.DUMP_REPL) then
           Error.addCompilerNotification("There are different TearingSelect values.\n" + AliasSet.toString(set) + "\n\tTearingSelect map after replacements:\n\t"
                                         + UnorderedMap.toString(map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString,"\n\t"));
@@ -1250,7 +1252,7 @@ protected
       else
         swap_min_max := false;
       end if;
-      if swap_min_max == true and Util.isSome(min_val_opt) and Util.isSome(max_val_opt) then
+      if swap_min_max and Util.isSome(min_val_opt) and Util.isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
       end if;

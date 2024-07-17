@@ -303,13 +303,12 @@ protected
 algorithm
   if not listEmpty(inList) then
     e1 :: rest := inList;
-    if not listEmpty(rest) then
-      for e in rest loop
-        if not inCompFunc(e1,e) then
-          outAllEqual := false;
-        end if;
-      end for;
-    end if;
+    for e in rest loop
+      if not inCompFunc(e1, e) then
+        outAllEqual := false;
+        return;
+      end if;
+    end for;
   end if;
 end allEqual;
 

@@ -195,7 +195,7 @@ algorithm
         File.write(file,"\":{\"comment\":\"");
         File.writeEscape(file,var.comment,escape=JSON);
         File.write(file,"\",\"kind\":\"");
-        serializeVarKind(file,var.varKind);
+        serializeVarKind(file,var.varKind, var);
         File.write(file,"\"");
         serializeTypeName(file,var.type_);
         File.write(file,",\"unit\":\"");
@@ -1157,6 +1157,7 @@ end serializeLinearCell;
 function serializeVarKind
   input File.File file;
   input BackendDAE.VarKind varKind;
+  input SimCodeVar.SimVar var;
 algorithm
   _ := match varKind
     case BackendDAE.VARIABLE()
@@ -1245,7 +1246,7 @@ algorithm
       then ();
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed for " + SimCodeUtil.simVarString(var)});
       then fail();
   end match;
 end serializeVarKind;
