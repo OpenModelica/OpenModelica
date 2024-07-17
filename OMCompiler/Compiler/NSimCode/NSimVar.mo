@@ -527,7 +527,7 @@ public
         // ToDo maybe deprecated:
         case VariableKind.ALG_STATE()               then OldBackendDAE.ALG_STATE();
         case VariableKind.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
-        case VariableKind.DAE_RESIDUAL_VAR()        then OldBackendDAE.DAE_RESIDUAL_VAR();
+        case VariableKind.RESIDUAL_VAR()            then OldBackendDAE.DAE_RESIDUAL_VAR();
         case VariableKind.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
         case VariableKind.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
         case VariableKind.LOOP_SOLVED()             then OldBackendDAE.LOOP_SOLVED();

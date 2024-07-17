@@ -515,40 +515,40 @@ protected
   looks for variable crefs in Expressions, if more than 2 are found stop searching
   also stop if complex structures appear, e.g. IFEXP
   "
-     input Expression exp;
-     input output CrefTpl tpl;
+    input Expression exp;
+    input output CrefTpl tpl;
   algorithm
-      tpl := match exp
+    tpl := match exp
 
-        case _ guard(not tpl.cont) then FAILED_CREF_TPL;
+      case _ guard(not tpl.cont) then FAILED_CREF_TPL;
 
-        // time, parameter or constant found (nothing happens)
-        case Expression.CREF()
-          guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
-        then tpl;
+      // time, parameter or constant found (nothing happens)
+      case Expression.CREF()
+        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
+      then tpl;
 
-        // fail for multidimensional crefs and record elements for now
-        case Expression.CREF()
-          guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1 or Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref))))
-        then FAILED_CREF_TPL;
+      // fail for multidimensional crefs and record elements for now
+      case Expression.CREF()
+        guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1 or Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref))))
+      then FAILED_CREF_TPL;
 
-        // variable found
-        // 1. not time and not param or const
-        // 2. less than two previous variables
-        // 3. if it is an array, it has to be the full array. no slice replacement here
-        case Expression.CREF()
-          guard((tpl.varCount < 2) and not ComponentRef.hasSubscripts(exp.cref))
-          algorithm
-            // add the variable to the list and bump var count
-            tpl.cr_lst := exp.cref :: tpl.cr_lst;
-            tpl.varCount := tpl.varCount + 1;
-        then tpl;
+      // variable found
+      // 1. not time and not param or const
+      // 2. less than two previous variables
+      // 3. if it is an array, it has to be the full array. no slice replacement here
+      case Expression.CREF()
+        guard((tpl.varCount < 2) and not ComponentRef.hasSubscripts(exp.cref))
+        algorithm
+          // add the variable to the list and bump var count
+          tpl.cr_lst := exp.cref :: tpl.cr_lst;
+          tpl.varCount := tpl.varCount + 1;
+      then tpl;
 
-        // set the continue attribute to false if any fail case is met
-        case _ guard(findCrefsFail(exp)) then FAILED_CREF_TPL;
+      // set the continue attribute to false if any fail case is met
+      case _ guard(findCrefsFail(exp)) then FAILED_CREF_TPL;
 
-        else tpl;
-      end match;
+      else tpl;
+    end match;
   end findCrefs;
 
   function findCrefsFail

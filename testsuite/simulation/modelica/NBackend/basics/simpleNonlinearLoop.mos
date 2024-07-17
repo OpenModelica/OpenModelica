@@ -4,7 +4,7 @@
 
 loadString("
 model simpleNonlinearLoop
-  Real x(start=1.0, nominal=1.0),y(start=1.0, nominal=1.0);
+  Real x(start=1.0, nominal=1.0),y(start=-1.0, nominal=1.0);
 equation
   x = y^2 + sin(time);
   y = sin(x);

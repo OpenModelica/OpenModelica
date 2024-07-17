@@ -35,46 +35,71 @@ simulate(implicitEquation); getErrorString();
 //
 // Initial Partition
 // -------------------
-//   (3) $FUN_1 := sin(time)
-//   (2) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   (4) $FUN_1 := sin(time)
+//   (3) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{x}
 //   --(1) 0 = $FUN_1 - ((x + x ^ 3.0) - x ^ 2.0)
 //
 // Algebraic Partition 1
 // -----------------------
+//   (6) Alias of 4
 //   (5) Alias of 3
-//   (4) Alias of 2
 //
 // Event Partition
 // -----------------
+//   (6) Alias of 4
 //   (5) Alias of 3
-//   (4) Alias of 2
 //
-// Clocked Partitions
-// --------------------
+// ==========================================================
+//   SimCode Jacobian INI_NLS_JAC_1(idx = 0, partition = 0)
+// ==========================================================
+//
+// ColumnVars (size = 1)
+// ***********************
+//   (0)[JVAR] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+//
+// SeedVars (size = 1)
+// *********************
+//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1.x
+//
+// Column Equations (size = 1)
+// -----------------------------
+//   (2) $pDER_INI_NLS_JAC_1.$RES_SIM_0 := -(($SEED_INI_NLS_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1.x) - 2.0 * x * $SEED_INI_NLS_JAC_1.x)
+//
+// Sparsity Pattern Cols
+// ***********************
+//   0:	{0}
+//
+// Sparsity Pattern Rows
+// ***********************
+//   0:	{0}
+//
+// Sparsity Coloring Groups
+// **************************
+//   {0}
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+//   [EMPTY] SimCode Jacobian A(idx = 1, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 1, partition = 0)
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 2, partition = 0)
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 3, partition = 0)
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 4, partition = 0)
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 5, partition = 0)
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
 // ======================================================
 //
 //
@@ -87,8 +112,8 @@ simulate(implicitEquation); getErrorString();
 // allEquations:
 // ========================================
 //
+// 6: alias of 4
 // 5: alias of 3
-// 4: alias of 2
 // ========================================
 //
 //
@@ -101,8 +126,8 @@ simulate(implicitEquation); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
+// 6: alias of 4
 // 5: alias of 3
-// 4: alias of 2
 // ========================================
 //
 //
@@ -114,10 +139,16 @@ simulate(implicitEquation); getErrorString();
 //
 // initialEquations: (2)
 // ========================================
-// 3: $FUN_1=sin(time) [Real]
-// 2:  (NONLINEAR) index:0 jacobian: false
+// 4: $FUN_1=sin(time) [Real]
+// 3:  (NONLINEAR) index:0 jacobian: true
 // crefs: x
 // 	1: $FUN_1 - (x + x ^ 3.0 - x ^ 2.0) (RESIDUAL)
+// 	Jacobian idx: 0
+// 	2: $pDER_INI_NLS_JAC_1.$RES_SIM_0=-($SEED_INI_NLS_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1.x - 2.0 * x * $SEED_INI_NLS_JAC_1.x) [Real]
+//
+// columnVars(1)
+// ----------------------
+// index:0: $pDER_INI_NLS_JAC_1.$RES_SIM_0 (no alias)  initial: 	no arrCref index:(1) []
 //
 // ========================================
 //
@@ -162,7 +193,11 @@ simulate(implicitEquation); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
+// 	2: $pDER_INI_NLS_JAC_1.$RES_SIM_0=-($SEED_INI_NLS_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1.x - 2.0 * x * $SEED_INI_NLS_JAC_1.x) [Real]
 //
+// columnVars(1)
+// ----------------------
+// index:0: $pDER_INI_NLS_JAC_1.$RES_SIM_0 (no alias)  initial: 	no arrCref index:(1) []
 // 	Jacobian idx: 1
 //
 // 	Jacobian idx: 2
@@ -172,6 +207,8 @@ simulate(implicitEquation); getErrorString();
 // 	Jacobian idx: 4
 //
 // 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
 //
 //
 // modelInfo:

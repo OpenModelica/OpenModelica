@@ -239,7 +239,7 @@ protected
               (der_cref, der_var) := BVariable.makeDerVar(state_cref);
             end if;
             state_var := BVariable.getVarPointer(state_cref);
-            BVariable.makeStateVar(state_var, der_var);
+            BVariable.setStateDerivativeVar(state_var, der_var);
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
             Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
           end if;
@@ -557,7 +557,7 @@ protected
     input Boolean scalarized;
     output ComponentRef pre_cref;
   protected
-    Option<Pointer<Variable>> pre = BVariable.getPrePost(var_ptr);
+    Option<Pointer<Variable>> pre = BVariable.getVarPre(var_ptr);
     Pointer<Variable> pre_var;
   algorithm
     if Util.isSome(pre) then

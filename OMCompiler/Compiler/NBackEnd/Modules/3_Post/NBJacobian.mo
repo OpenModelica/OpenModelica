@@ -80,6 +80,19 @@ protected
 public
   type JacobianType = enumeration(ODE, DAE, LS, NLS);
 
+  function isForIntegrator
+    "is the jacobian used for integration (-> ture)
+     or solving algebraic systems (-> false)?"
+    input JacobianType jacType;
+    output Boolean isForIntegrator;
+  algorithm
+    isForIntegrator := match jacType
+      case JacobianType.ODE then true;
+      case JacobianType.DAE then true;
+      else false;
+    end match;
+  end isForIntegrator;
+
   function main
     "Wrapper function for any jacobian function. This will be called during
      simulation and gets the corresponding subfunction from Config."
@@ -399,7 +412,7 @@ public
           seed_vars_array     := VariablePointers.getVarNames(seedCandidates);
           partial_vars_array  := VariablePointers.getVarNames(partialCandidates);
 
-          // create a sufficiant big unordered map
+          // create a sufficient big unordered map
           map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars) + listLength(partial_vars)));
           set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars_array)));
 
@@ -489,7 +502,7 @@ public
     protected
       Boolean empty = arrayLength(sparsityColoring.cols) == 0;
     algorithm
-       if empty then
+      if empty then
         str := str + "\n<empty sparsity pattern>\n";
       end if;
       for i in 1:arrayLength(sparsityColoring.cols) loop
@@ -822,8 +835,8 @@ protected
     func := match jacType
       case JacobianType.ODE then BVariable.isStateDerivative;
       case JacobianType.DAE then BVariable.isStateDerivative;
-      case JacobianType.LS  then BVariable.isDAEResidual;
-      case JacobianType.NLS then BVariable.isDAEResidual;
+      case JacobianType.LS  then BVariable.isResidual;
+      case JacobianType.NLS then BVariable.isResidual;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
       then fail();

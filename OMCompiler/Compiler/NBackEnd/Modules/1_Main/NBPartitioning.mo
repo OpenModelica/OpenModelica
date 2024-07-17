@@ -843,7 +843,7 @@ protected
     if BVariable.isState(var_ptr) then
       UnorderedSet.add(BVariable.getDerCref(cref), set);
     elseif BVariable.isPrevious(var_ptr) then
-      UnorderedSet.add(BVariable.getPrePostCref(cref), set);
+      UnorderedSet.add(BVariable.getPartnerCref(cref, BVariable.getVarPre), set);
     else
       UnorderedSet.add(cref, set);
     end if;
