@@ -44,19 +44,19 @@
 string UnitRes::toString()
 {
   switch (result) {
-  case UNIT_OK: return "OK";
-  case UNKNOWN_TOKEN: return "Unknown token";
-  case UNKNOWN_IDENT: return "Unknown ident";
-  case PARSE_ERROR: return "Parse error";
-  case UNIT_OFFSET_ERROR: return "Offset error";
+  case UNIT_OK:               return "OK";
+  case UNKNOWN_TOKEN:         return "Unknown token";
+  case UNKNOWN_IDENT:         return "Unknown ident";
+  case PARSE_ERROR:           return "Parse error";
+  case UNIT_OFFSET_ERROR:     return "Offset error";
   case UNIT_EXPONENT_NOT_INT: return "Exponent is not an integer";
-  case UNIT_WRONG_BASE: return "Wrong base";
-  case UNIT_NOT_FOUND: return "Unit not found";
-  case PREFIX_NOT_FOUND: return "Prefix not found";
-  case INVALID_INT: return "Invalid integer";
-  case PREFIX_NOT_ALLOWED: return "Prefix not allowed";
-  case BASE_ALREADY_DEFINED: return "Base already defined";
-  case ERROR_ADDING_UNIT: return "Error adding unit";
+  case UNIT_WRONG_BASE:       return "Wrong base";
+  case UNIT_NOT_FOUND:        return "Unit not found";
+  case PREFIX_NOT_FOUND:      return "Prefix not found";
+  case INVALID_INT:           return "Invalid integer";
+  case PREFIX_NOT_ALLOWED:    return "Prefix not allowed";
+  case BASE_ALREADY_DEFINED:  return "Base already defined";
+  case ERROR_ADDING_UNIT:     return "Error adding unit";
   case UNITS_DEFINED_WITH_DIFFERENT_EXPR:
   default: return "Unknown error";
   }
@@ -120,8 +120,7 @@ string Rational::toString() {
 double Rational::toReal() {
   if (denom == 0)
     cerr << "Division by zero in << " << toString() << endl;
-  double r = (double) num / (double) denom;
-  return r;
+  return (double) num / (double) denom;
 }
 
 Rational Rational::sub(Rational q1, Rational q2) {
@@ -584,10 +583,7 @@ UnitRes UnitParser::parseExpression(Scanner& scan, Unit& unit) {
     res = parseDenominator(scan, u2);
     if (!res.Ok())
       return res;
-    res = Unit::div(u1, u2, unit);
-    if (!res.Ok())
-      return res;
-    return res;
+    return Unit::div(u1, u2, unit);
   default: break;
   }
   return UnitRes(UnitRes::UNIT_OK);
@@ -665,8 +661,7 @@ UnitRes UnitParser::parseFactor(Scanner& scan, Unit& unit) {
       scan.setpos(scanpostemp);
       return UnitRes(UnitRes::UNIT_OK);
     } else {
-      res = Unit::pow(u1, q, unit);
-      return res;
+      return Unit::pow(u1, q, unit);
     }
 
   case Scanner::TOK_PARAM: //Unit type parameter
@@ -683,7 +678,6 @@ UnitRes UnitParser::parseFactor(Scanner& scan, Unit& unit) {
     } else {
       unit.typeParamVec[str] = q;
       return UnitRes(UnitRes::UNIT_OK);
-      return res;
     }
 
   default: //Scale factor
