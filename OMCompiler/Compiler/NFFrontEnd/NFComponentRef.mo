@@ -51,6 +51,7 @@ protected
   import JSON;
   import StringUtil;
   import Variable = NFVariable;
+  import Binding = NFBinding;
 
   import ComponentRef = NFComponentRef;
 
@@ -476,6 +477,20 @@ public
       else accumTy;
     end match;
   end getSubscriptedType2;
+
+  function lookupVarAttr
+    input ComponentRef cref;
+    input String attr_name;
+    output Option<Expression> attrValue;
+  algorithm
+    attrValue := match cref
+      local
+        Pointer<Variable> v;
+      case CREF(node = InstNode.VAR_NODE(varPointer = v))
+        then Binding.typedExp(Variable.lookupTypeAttribute(attr_name, Pointer.access(v)));
+      else NONE();
+    end match;
+  end lookupVarAttr;
 
   function nodeVariability
     "Returns the variability of the component node the cref refers to."

@@ -5722,10 +5722,14 @@ case BINARY(__) then
         '(<%e1%>) / <%tvar%>'
       case SIMULATION_CONTEXT() then
         let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
-        'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+        if isZero(exp2)
+          then 'ERROR: division by literal zero'
+          else 'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
       else
         let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
-        'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
+        if isZero(exp2)
+          then 'ERROR: division by literal zero'
+          else 'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
     )
 
   case POW(__) then

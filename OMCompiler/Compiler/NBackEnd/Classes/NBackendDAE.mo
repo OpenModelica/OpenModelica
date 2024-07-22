@@ -965,10 +965,10 @@ protected
     input Boolean init;
     input output list<Pointer<Equation>> eqns = {};
   algorithm
-      eqns := match body
-        local
-          FEquation.Equation elem;
-          list<FEquation.Equation> rest;
+    eqns := match body
+      local
+        FEquation.Equation elem;
+        list<FEquation.Equation> rest;
       case {}         then eqns;
       case elem::rest then lowerIfBranchBody(rest, init, listAppend(lowerEquation(elem, init), eqns));
     end match;

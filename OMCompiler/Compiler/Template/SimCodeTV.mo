@@ -3824,6 +3824,11 @@ package Expression
     output Boolean outBoolean;
   end isAtomic;
 
+  function isZero
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end isZero;
+
   function isHalf
     input DAE.Exp inExp;
     output Boolean outBoolean;
