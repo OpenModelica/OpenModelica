@@ -4393,44 +4393,58 @@ public
     end match;
   end isMinusOne;
 
-  function isNegative
-    "this requires proper simplification to be correct"
+  function isPositive
     input Expression exp;
-    output Boolean negative;
+    output Boolean positive "true if exp is known to be > 0, otherwise false.";
+  algorithm
+    positive := match exp
+      case INTEGER() then exp.value > 0;
+      case REAL() then exp.value > 0;
+      case CAST() then isPositive(exp.exp);
+      case UNARY() then isNegative(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
+      else false;
+    end match;
+  end isPositive;
+
+  function isNegative
+    input Expression exp;
+    output Boolean negative "true if exp is known to be < 0, otherwise false.";
   algorithm
     negative := match exp
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0;
       case CAST() then isNegative(exp.exp);
-      case UNARY() then not isNegative(exp.exp);
+      case UNARY() then isPositive(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
       else false;
     end match;
   end isNegative;
 
   function isNonPositive
-    "Returns true if the expression is a number <= 0, otherwise false."
     input Expression exp;
-    output Boolean res;
+    output Boolean res "true if exp is known to be <= 0, otherwise false.";
   algorithm
     res := match exp
       case INTEGER() then exp.value <= 0;
       case REAL() then exp.value <= 0;
       case CAST() then isNonPositive(exp.exp);
       case UNARY() then isNonNegative(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
       else false;
     end match;
   end isNonPositive;
 
   function isNonNegative
-    "Returns true if the expression is a number >= 0, otherwise false."
     input Expression exp;
-    output Boolean res;
+    output Boolean res "true if exp is known to be <= 0, otherwise false.";
   algorithm
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0;
       case CAST() then isNonNegative(exp.exp);
       case UNARY() then isNonPositive(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
       else false;
     end match;
   end isNonNegative;

@@ -1151,7 +1151,7 @@ algorithm
     // Real[n, n] ^ Integer
     valid := valid and Type.isSquareMatrix(resultType);
     valid := valid and Type.isInteger(type2);
-    valid := valid and not Expression.isNegative(exp2);
+    valid := valid and not Expression.isNegative(exp2); // invalid if we know it's negative, valid if we don't know.
     op := Operator.OPERATOR(resultType, Op.POW_MATRIX);
     e2 := exp2;
   else

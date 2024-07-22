@@ -792,14 +792,14 @@ algorithm
       // check if arguments are negative
       // negate them and swap them to the other list
       for arg in listReverse(arguments) loop
-        if Expression.isNegative(arg) then
+        if Expression.isNegated(arg) then
           new_inv_arguments := Expression.negate(arg) :: new_inv_arguments;
         else
           new_arguments := arg :: new_arguments;
         end if;
       end for;
       for arg in listReverse(inv_arguments) loop
-        if Expression.isNegative(arg) then
+        if Expression.isNegated(arg) then
           new_arguments := Expression.negate(arg) :: new_arguments;
         else
           new_inv_arguments := arg :: new_inv_arguments;
@@ -811,7 +811,7 @@ algorithm
       // check if arguments are negative and negate them.
       // track if there is an even or odd number of negative arguments
       for arg in listReverse(arguments) loop
-        if Expression.isNegative(arg) then
+        if Expression.isNegated(arg) then
           new_arguments := Expression.negate(arg) :: new_arguments;
           isNegative := not isNegative;
         else
@@ -819,7 +819,7 @@ algorithm
         end if;
       end for;
       for arg in listReverse(inv_arguments) loop
-        if Expression.isNegative(arg) then
+        if Expression.isNegated(arg) then
           new_inv_arguments := Expression.negate(arg) :: new_inv_arguments;
           isNegative := not isNegative;
         else
@@ -986,11 +986,11 @@ algorithm
     // e1/(-e2) = -(e1/e2)
     // (-e1)/e2 = -(e1/e2)
     // e1/e2 = e1/e2
-    else match (Expression.isNegative(exp1), Expression.isNegative(exp1))
-      case (true, true)     then Expression.BINARY(Expression.negate(exp1), op, Expression.negate(exp2));
-      case (false, true)    then Expression.negate(Expression.BINARY(exp1, op, Expression.negate(exp2)));
-      case (true, false)    then Expression.negate(Expression.BINARY(Expression.negate(exp1), op, exp2));
-      case (false, false)   then Expression.BINARY(exp1, op, exp2);
+    else match (Expression.isNegated(exp1), Expression.isNegated(exp1))
+      case (true, true)   then Expression.BINARY(Expression.negate(exp1), op, Expression.negate(exp2));
+      case (false, true)  then Expression.negate(Expression.BINARY(exp1, op, Expression.negate(exp2)));
+      case (true, false)  then Expression.negate(Expression.BINARY(Expression.negate(exp1), op, exp2));
+      case (false, false) then Expression.BINARY(exp1, op, exp2);
     end match;
 end simplifyBinaryDiv;
 
