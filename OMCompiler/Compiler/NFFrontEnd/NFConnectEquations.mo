@@ -136,7 +136,6 @@ algorithm
   evalExp := match exp
     local
       Call call;
-      Boolean expanded;
 
     case Expression.CALL(call = call)
       then match call
@@ -146,7 +145,7 @@ algorithm
               then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, variables, ctable);
             case Absyn.IDENT("actualStream")
               algorithm
-                evalExp :=
+                (evalExp, _) :=
                 evaluateActualStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, variables, ctable);
               then
                 evalExp;
