@@ -4068,7 +4068,7 @@ algorithm
     then e1;
 
     // 0^e2 = 0
-    case (_,_) guard(isZero(e1) and expIsPositive(e2))
+    case (_,_) guard(isZero(e1) and isPositive(e2))
     then makeConstZero(typeof(e1));
 
     // (-e)^r = e^r if r is even
@@ -7720,48 +7720,37 @@ public function isPositiveOrZero
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
-      Boolean b,b1,b2,b3;
-      DAE.Exp e1,e2;
       Integer i;
       Real r;
+      DAE.Exp e1, e2;
 
     /* literals */
     case DAE.ICONST(i) then i >= 0;
     case DAE.RCONST(r) then r >= 0.0;
 
     /* e1 + e2 */
-    case DAE.BINARY(e1,DAE.ADD(),e2)
+    case DAE.BINARY(e1, DAE.ADD(), e2)
       then isPositiveOrZero(e1) and isPositiveOrZero(e2);
+
     /* e1 - e2 */
-    case DAE.BINARY(e1,DAE.SUB(),e2)
+    case DAE.BINARY(e1, DAE.SUB(), e2)
       then isPositiveOrZero(e1) and isNegativeOrZero(e2);
 
     /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
-    case DAE.BINARY(e1,DAE.MUL(),e2)
-      equation
-        b1 = (isPositiveOrZero(e1) and isPositiveOrZero(e2));
-        b2 = (isNegativeOrZero(e1) and isNegativeOrZero(e2));
-        b3 = expEqual(e1,e2);
-      then b1 or b2 or b3;
+    case DAE.BINARY(e1, DAE.MUL(), e2)
+      then (isPositiveOrZero(e1) and isPositiveOrZero(e2)) or
+        (isNegativeOrZero(e1) and isNegativeOrZero(e2)) or expEqual(e1, e2);
+
     /* e1 / e2, -e1 / -e2 */
-    case DAE.BINARY(e1,DAE.DIV(),e2)
-      equation
-        b1 = (isPositiveOrZero(e1) and isPositiveOrZero(e2));
-        b2 = (isNegativeOrZero(e1) and isNegativeOrZero(e2));
-      then b1 or b2;
+    case DAE.BINARY(e1, DAE.DIV(), e2)
+      then (isPositiveOrZero(e1) and isPositiveOrZero(e2)) or
+        (isNegativeOrZero(e1) and isNegativeOrZero(e2));
 
     /* Integer power we can say something good about */
-    case DAE.BINARY(e1,DAE.POW(),DAE.RCONST(r))
-      equation
-        i = realInt(r);
-        b1 = realEq(r,intReal(i));
-        b2 = 0 == intMod(i,2);
-        b3 = isPositiveOrZero(e1);
-        b = b2 or b3;
-      then b1 and b;
-    case DAE.BINARY(_,DAE.POW(),e2) then isEven(e2);
+    case DAE.BINARY(e1, DAE.POW(), _) then isPositiveOrZero(e1);
+    case DAE.BINARY(_, DAE.POW(), e2) then isEven(e2);
 
     /* -(x) */
     case DAE.UNARY(DAE.UMINUS(), e1) then isNegativeOrZero(e1);
@@ -7770,11 +7759,11 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT("abs"))  then true;
     case DAE.CALL(path = Absyn.IDENT("cosh")) then true;
     case DAE.CALL(path = Absyn.IDENT("exp"))  then true;
-    case DAE.CALL(path = Absyn.IDENT("sign"),  expLst = {e1}) then isPositiveOrZero(e1);
-    case DAE.CALL(path = Absyn.IDENT("sinh"),  expLst = {e1}) then isPositiveOrZero(e1);
-    case DAE.CALL(path = Absyn.IDENT("tanh"),  expLst = {e1}) then isPositiveOrZero(e1);
-    case DAE.CALL(path = Absyn.IDENT("ceil"),  expLst = {e1}) then isPositiveOrZero(e1);
-    case DAE.CALL(path = Absyn.IDENT("floor"), expLst = {e1}) then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("sign"), expLst = {e1})    then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("sinh"), expLst = {e1})    then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("tanh"), expLst = {e1})    then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("ceil"), expLst = {e1})    then isPositiveOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("floor"), expLst = {e1})   then isPositiveOrZero(e1);
     case DAE.CALL(path = Absyn.IDENT("integer"), expLst = {e1}) then isPositiveOrZero(e1);
 
     // TODO div, mod, rem, ...
@@ -7784,23 +7773,172 @@ algorithm
 end isPositiveOrZero;
 
 public function isNegativeOrZero
-"Returns true if an expression is known to be <= 0"
+  "Returns true if an expression is known to be <= 0"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
-    local Integer i; Real r; DAE.Exp e1,e2;
+  outBoolean := match inExp
+    local
+      Integer i;
+      Real r;
+      DAE.Exp e1, e2;
+
     /* literals */
     case DAE.ICONST(i) then i <= 0;
     case DAE.RCONST(r) then r <= 0.0;
-    // -(x)
-    case DAE.UNARY(DAE.UMINUS(), e1) then isPositiveOrZero(e1);
+
+    /* e1 + e2 */
+    case DAE.BINARY(e1, DAE.ADD(), e2)
+      then isNegativeOrZero(e1) and isNegativeOrZero(e2);
+
+    /* e1 - e2 */
+    case DAE.BINARY(e1, DAE.SUB(), e2)
+      then isNegativeOrZero(e1) and isPositiveOrZero(e2);
+
+    /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
+    case DAE.BINARY(e1, DAE.MUL(), e2)
+      then (isPositiveOrZero(e1) and isNegativeOrZero(e2)) or
+        (isNegativeOrZero(e1) and isPositiveOrZero(e2));
+
+    /* e1 / e2, -e1 / -e2 */
+    case DAE.BINARY(e1, DAE.DIV(), e2)
+      then (isPositiveOrZero(e1) and isNegativeOrZero(e2)) or
+        (isNegativeOrZero(e1) and isPositiveOrZero(e2));
+
     /* Integer power we can say something good about */
-    case DAE.BINARY(_,DAE.POW(),e2) guard(isOdd(e2)) then isNegativeOrZero(e2);
+    case DAE.BINARY(e1, DAE.POW(), e2) then isNegativeOrZero(e1) and isOdd(e2);
+
+    /* -(x) */
+    case DAE.UNARY(DAE.UMINUS(), e1) then isPositiveOrZero(e1);
+
+    /* builtin calls */
+    case DAE.CALL(path = Absyn.IDENT("abs"), expLst = {e1})     then isZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("cosh")) then false;
+    case DAE.CALL(path = Absyn.IDENT("exp"))  then false;
+    case DAE.CALL(path = Absyn.IDENT("sign"), expLst = {e1})    then isNegativeOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("sinh"), expLst = {e1})    then isNegativeOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("tanh"), expLst = {e1})    then isNegativeOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("ceil"), expLst = {e1})    then isNegativeOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("floor"), expLst = {e1})   then isNegativeOrZero(e1);
+    case DAE.CALL(path = Absyn.IDENT("integer"), expLst = {e1}) then isNegativeOrZero(e1);
+
+    // TODO div, mod, rem, ...
 
     else isZero(inExp);
   end match;
 end isNegativeOrZero;
+
+public function isPositive
+  "Returns true if an expression is known to be > 0"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match inExp
+    local
+      Integer i;
+      Real r;
+      DAE.Exp e1, e2;
+
+    /* literals */
+    case DAE.ICONST(i) then i > 0;
+    case DAE.RCONST(r) then r > 0.0;
+
+    /* e1 + e2 */
+    case DAE.BINARY(e1, DAE.ADD(), e2)
+      then (isPositive(e1) and isPositiveOrZero(e2)) or
+        (isZero(e1) and isPositive(e2));
+
+    /* e1 - e2 */
+    case DAE.BINARY(e1, DAE.SUB(), e2)
+      then isPositive(e1) and isNegativeOrZero(e2) or
+        (isZero(e1) and isNegative(e2));
+
+    /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
+    case DAE.BINARY(e1, DAE.MUL(), e2)
+      then (isPositive(e1) and isPositive(e2)) or
+        (isNegative(e1) and isNegative(e2));
+
+    /* e1 / e2, -e1 / -e2 */
+    case DAE.BINARY(e1, DAE.DIV(), e2)
+      then (isPositive(e1) and isPositive(e2)) or
+        (isNegative(e1) and isNegative(e2));
+
+    /* Integer power we can say something good about */
+    case DAE.BINARY(e1, DAE.POW(), _) then isPositive(e1);
+
+    /* -(x) */
+    case DAE.UNARY(DAE.UMINUS(), e1) then isNegative(e1);
+
+    /* builtin calls */
+    case DAE.CALL(path = Absyn.IDENT("abs"), expLst = {e1})   then isPositive(e1) or isNegative(e1);
+    case DAE.CALL(path = Absyn.IDENT("cosh")) then true;
+    case DAE.CALL(path = Absyn.IDENT("exp"))  then true;
+    case DAE.CALL(path = Absyn.IDENT("sign"), expLst = {e1})  then isPositive(e1);
+    case DAE.CALL(path = Absyn.IDENT("sinh"), expLst = {e1})  then isPositive(e1);
+    case DAE.CALL(path = Absyn.IDENT("tanh"), expLst = {e1})  then isPositive(e1);
+    case DAE.CALL(path = Absyn.IDENT("ceil"), expLst = {e1})  then isPositive(e1);
+
+    // TODO div, mod, rem, ...
+
+    else false;
+  end match;
+end isPositive;
+
+public function isNegative
+  "Returns true if an expression is known to be < 0"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match inExp
+    local
+      Integer i;
+      Real r;
+      DAE.Exp e1, e2;
+
+    /* literals */
+    case DAE.ICONST(i) then i < 0;
+    case DAE.RCONST(r) then r < 0.0;
+
+    /* e1 + e2 */
+    case DAE.BINARY(e1, DAE.ADD(), e2)
+      then (isNegative(e1) and isNegativeOrZero(e2)) or
+        (isZero(e1) and isNegative(e2));
+
+    /* e1 - e2 */
+    case DAE.BINARY(e1, DAE.SUB(), e2)
+      then isNegative(e1) and isPositiveOrZero(e2) or
+        (isZero(e1) and isPositive(e2));
+
+    /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
+    case DAE.BINARY(e1, DAE.MUL(), e2)
+      then (isPositive(e1) and isNegative(e2)) or
+        (isNegative(e1) and isPositive(e2));
+
+    /* e1 / e2, -e1 / -e2 */
+    case DAE.BINARY(e1, DAE.DIV(), e2)
+      then (isPositive(e1) and isNegative(e2)) or
+        (isNegative(e1) and isPositive(e2));
+
+    /* Integer power we can say something good about */
+    case DAE.BINARY(e1, DAE.POW(), e2) then isNegative(e1) and isOdd(e2);
+
+    /* -(x) */
+    case DAE.UNARY(DAE.UMINUS(), e1) then isNegative(e1);
+
+    /* builtin calls */
+    case DAE.CALL(path = Absyn.IDENT("abs"))  then false;
+    case DAE.CALL(path = Absyn.IDENT("cosh")) then false;
+    case DAE.CALL(path = Absyn.IDENT("exp"))  then false;
+    case DAE.CALL(path = Absyn.IDENT("sign"), expLst = {e1})  then isNegative(e1);
+    case DAE.CALL(path = Absyn.IDENT("sinh"), expLst = {e1})  then isNegative(e1);
+    case DAE.CALL(path = Absyn.IDENT("tanh"), expLst = {e1})  then isNegative(e1);
+    case DAE.CALL(path = Absyn.IDENT("floor"), expLst = {e1})  then isNegative(e1);
+
+    // TODO div, mod, rem, ...
+
+    else false;
+  end match;
+end isNegative;
 
 function isGreaterOrEqual
   input DAE.Exp exp1;
@@ -9097,18 +9235,6 @@ algorithm
     else false;
   end match;
 end isScalarConst;
-
-public function expIsPositive "Returns true if an expression is positive,
-Returns true in the following cases:
-constant >= 0
-
-See also isPositiveOrZero.
-"
-  input DAE.Exp e;
-  output Boolean res;
-algorithm
-  res :=isPositiveOrZero(e) and not isZero(e);
-end expIsPositive;
 
 public function isEven "returns true if const expression is even"
   input DAE.Exp e;

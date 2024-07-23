@@ -179,7 +179,7 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT("$OMC$PositiveMax"), expLst = {e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef = cr)), expr}) algorithm
       (eMin, eMax) := simplifyInStreamGetMinMaxAttributes(cr, outVars);
       ret := if Util.applyOptionOrDefault(eMin, Expression.isPositiveOrZero, false) then Expression.createZeroExpression(tp)
-        elseif Util.applyOptionOrDefault(eMax, function Expression.isGreaterOrEqual(exp1 = expr), false) then e
+        elseif Util.applyOptionOrDefault(eMax, function Expression.isGreaterOrEqual(exp1 = Expression.negate(expr)), false) then e
         else Expression.makePureBuiltinCall("max", {e, expr}, tp);
     then ret;
 
