@@ -682,7 +682,8 @@ public
             end if;
           end for;
 
-          if Util.isSome(strict.jac) then
+          // reactivate this once nonlinear loops actually work
+          if false and Util.isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();

@@ -4,6 +4,7 @@ TESTFILES = \
 ManyEvents.mos \
 ManyEventsManyConditions.mos \
 TransmissionLineModelica.mos \
+DistributionSystemModelicaIndividual.mos \
 Table.mos \
 Verification_Table.mos \
 CascadedFirstOrder.mos \
@@ -29,7 +30,6 @@ FAILINGTESTFILES = \
 CombiTimeTable.mos \
 TransmissionLineEquations.mos \
 CombiTimeTable.mos \
-DistributionSystemModelicaIndividual.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
