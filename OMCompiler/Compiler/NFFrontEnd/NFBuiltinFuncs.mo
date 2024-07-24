@@ -338,6 +338,11 @@ constant Function POSITIVE_MAX_REAL = Function.FUNCTION(Path.IDENT("$OMC$Positiv
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function INSTREAM_DIV_REAL = Function.FUNCTION(Path.IDENT("$OMC$inStreamDiv"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function IN_STREAM = Function.FUNCTION(Path.IDENT("inStream"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
