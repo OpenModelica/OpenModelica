@@ -299,7 +299,7 @@ public
           list<Expression> literals;
           list<String> externalFunctionIncludes;
           list<SimGenericCall> generic_loop_calls;
-          list<SimStrongComponent.Block> independent, allSim = {}, nominal, min, max, param, no_ret, algorithms;
+          list<SimStrongComponent.Block> independent, allSim = {}, nominal, min, max, param, no_ret, event_clocks, algorithms;
           list<SimStrongComponent.Block> event_blocks = {}, jac_blocks;
           list<SimStrongComponent.Block> init, init_0, init_no_ret, start;
           list<list<SimStrongComponent.Block>> ode, algebraic;
@@ -353,10 +353,11 @@ public
             end if;
 
             // create clocked partitions
-            (clockedPartitions, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
+            (clockedPartitions, event_clocks, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
+            no_ret := listAppend(event_clocks, no_ret);
             init_no_ret := {};
             start := {};
             discreteVars := {};
