@@ -40,12 +40,23 @@ public
 
   // simcode imports
   import NSimStrongComponent.Block;
+  import NSimCode.SimCodeIndices;
   import NSimVar.SimVar;
+
+  // frontend import
+  import BuiltinFuncs = NFBuiltinFuncs;
+  import Call = NFCall;
+  import ClockKind = NFClockKind;
+  import ComponentRef = NFComponentRef;
+  import Expression = NFExpression;
+  import Prefixes = NFPrefixes;
 
   // backend imports
   import NBPartitioning.BClock;
+  import NBEquation.{EquationKind, EquationAttributes, WhenStatement};
 
-  // import old simcode
+  // import old simcode and frontend
+  import DAE;
   import OldSimCode = SimCode;
 
   type SimPartitions = list<SimPartition>;
@@ -77,13 +88,50 @@ public
   function createBasePartitions
     input UnorderedMap<BClock, SimPartitions> clock_collector;
     output SimPartitions baseParts = {};
+    output list<Block> eventClocks = {};
+    input output SimCodeIndices simCodeIndices;
   protected
     BClock baseClock;
     SimPartitions subClocks;
+    Integer clock_idx = 1;
   algorithm
     for tpl in UnorderedMap.toList(clock_collector) loop
       (baseClock, subClocks) := tpl;
       baseParts := BASE_PARTITION(baseClock, subClocks) :: baseParts;
+    end for;
+
+    // collect all event clocks
+    for base in baseParts loop
+      _ := match base
+        local
+          ComponentRef cond;
+          DAE.ElementSource source;
+          Expression fire;
+          WhenStatement stmt;
+          EquationAttributes attr;
+          Block blck;
+
+        case BASE_PARTITION(baseClock = BClock.BASE_CLOCK(
+          clock = ClockKind.EVENT_CLOCK(condition = Expression.CREF(cref = cond))))
+        algorithm
+          // create a no-return when equation that triggers clock fire
+          // when (condition) then $_clkfire(i)
+          source  := DAE.emptyElementSource;
+          fire    := Expression.CALL(Call.makeTypedCall(
+            fn          = NFBuiltinFuncs.CLOCK_FIRE,
+            args        = {Expression.INTEGER(clock_idx)},
+            variability = NFPrefixes.Variability.CONSTANT,
+            purity      = NFPrefixes.Purity.PURE));
+          stmt    := WhenStatement.NORETCALL(fire, source);
+          attr    := EquationAttributes.default(EquationKind.EMPTY, false);
+          blck    := Block.WHEN(simCodeIndices.equationIndex, false, {cond}, {stmt}, NONE(), source, attr);
+
+          eventClocks := blck :: eventClocks;
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then ();
+        else ();
+      end match;
+      clock_idx := clock_idx + 1;
     end for;
   end createBasePartitions;
 

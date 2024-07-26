@@ -465,6 +465,7 @@ public
     function createClockedBlocks
       input list<Partition.Partition> partitions;
       output SimPartitions baseParts;
+      output list<Block> eventClocks;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
@@ -496,12 +497,12 @@ public
           baseClock       := clock;
           subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
-        subPart := SimPartition.createSubPartition(subClock, blcks, vars, BClock.isEventClock(baseClock));
+        subPart := SimPartition.createSubPartition(subClock, blcks, vars, false);
         UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
       end for;
 
       // create base partitions
-      baseParts := SimPartition.createBasePartitions(clock_collector);
+      (baseParts, eventClocks, simCodeIndices) := SimPartition.createBasePartitions(clock_collector, simCodeIndices);
     end createClockedBlocks;
 
     function createNoReturnBlocks

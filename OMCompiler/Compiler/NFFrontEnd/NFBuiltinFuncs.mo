@@ -495,6 +495,11 @@ constant Function GET_PART_BOOL = Function.FUNCTION(Path.IDENT("$getPart"),
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function CLOCK_FIRE = Function.FUNCTION(Path.IDENT("$_clkfire"),
+  InstNode.EMPTY_NODE(), {INT_PARAM}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
   "$OMC$PositiveMax",
   SCode.defaultPrefixes,
