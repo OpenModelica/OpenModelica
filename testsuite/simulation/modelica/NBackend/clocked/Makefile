@@ -8,21 +8,21 @@ backSample1.mos \
 inferredSampleVar.mos \
 subSuperSample1.mos \
 holdVar.mos \
+eventConstructor.mos \
+inferredConstructor2.mos \
+rationalConstructor1.mos \
+subSuperSample2.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
 absoluteClocks.mos \
 boolEventClock.mos \
-eventConstructor.mos \
 firstTick.mos \
 inferredConstructor1.mos \
-inferredConstructor2.mos \
 intervalBase.mos \
 noClock.mos \
-rationalConstructor1.mos \
 rationalConstructor2.mos \
-subSuperSample2.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
