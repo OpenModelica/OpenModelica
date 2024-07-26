@@ -379,8 +379,8 @@ public
               (ode, allSim, event_blocks, simCodeIndices)       := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               (algebraic, allSim, event_blocks, simCodeIndices) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               if not listEmpty(no_ret) then
-                algebraic := no_ret :: algebraic;
-                allSim := listAppend(no_ret, allSim);
+                // append them to the end, compiler won't let me do it unless i double reverse the lists
+                allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
               end if;
             end if;
 
