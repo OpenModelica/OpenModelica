@@ -1243,12 +1243,18 @@ void GraphicsView::deleteElement(Element *pElement)
         pGraphicsView->removeElementItem(pConnectorElement);
         pGraphicsView->deleteElementFromList(pConnectorElement);
         pGraphicsView->addElementToOutOfSceneList(pConnectorElement);
+        pConnectorElement->removeChildrenNew();
+        pConnectorElement->setModelComponent(nullptr);
+        pConnectorElement->setModel(nullptr);
       }
     }
     removeElementItem(pElement);
     deleteElementFromList(pElement);
     addElementToOutOfSceneList(pElement);
     deleteElementFromClass(pElement);
+    pElement->removeChildrenNew();
+    pElement->setModelComponent(nullptr);
+    pElement->setModel(nullptr);
   } else {
     mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
   }
@@ -6518,8 +6524,7 @@ void ModelWidget::createModelWidgetComponents()
       } else if (Utilities::isModelicaFile(fileInfo.suffix())) {
         mpEditor = new MetaModelicaEditor(this);
         MetaModelicaHighlighter *pMetaModelicaHighlighter;
-        pMetaModelicaHighlighter = new MetaModelicaHighlighter(OptionsDialog::instance()->getMetaModelicaEditorPage(),
-                                                               mpEditor->getPlainTextEdit());
+        pMetaModelicaHighlighter = new MetaModelicaHighlighter(OptionsDialog::instance()->getMetaModelicaEditorPage(), mpEditor->getPlainTextEdit());
         MetaModelicaEditor *pMetaModelicaEditor = dynamic_cast<MetaModelicaEditor*>(mpEditor);
         pMetaModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
