@@ -572,6 +572,7 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
   createActions();
   mpOriginItem = new OriginItem(this);
   createResizerItems();
+  updateOriginItem();
   updateToolTip();
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
@@ -726,6 +727,7 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   createActions();
   mpOriginItem = new OriginItem(this);
   createResizerItems();
+  updateOriginItem();
   updateToolTip();
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
@@ -869,6 +871,7 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   mpGraphicsView->addItem(mpOriginItem);
   createResizerItems();
   mpGraphicsView->addItem(this);
+  updateOriginItem();
   updateToolTip();
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
