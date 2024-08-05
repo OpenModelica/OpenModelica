@@ -74,6 +74,7 @@ public
     record CLOCKED
       BClock clock;
       Option<BClock> baseClock;
+      Boolean holdEvents;
     end CLOCKED;
 
     function toStringShort
@@ -112,7 +113,8 @@ public
     end toString;
 
     function create
-      "create an associtation for a partition from the equation array and the clocked info"
+      "create an associtation for a partition from the equation array and the clocked info
+      holdEvents is updated later for clocked associations"
       input EquationPointers equations;
       input Kind kind;
       input ClockedInfo info;
@@ -128,10 +130,10 @@ public
       if Util.isSome(clock_tpl) then
         SOME((name, clock)) := clock_tpl;
         if BClock.isBaseClock(clock) then
-          association := CLOCKED(clock, NONE());
+          association := CLOCKED(clock, NONE(), false);
         else
           base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
-          association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())));
+          association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), false);
         end if;
       else
         association := CONTINUOUS(kind, NONE());
@@ -333,9 +335,10 @@ public
       input Partition part;
       output BClock clock;
       output Option<BClock> baseClock;
+      output Boolean holdEvents;
     algorithm
-      (clock, baseClock) := match part.association
-        case Association.CLOCKED(clock = clock, baseClock = baseClock) then (clock, baseClock);
+      (clock, baseClock, holdEvents) := match part.association
+        case Association.CLOCKED(clock = clock, baseClock = baseClock, holdEvents = holdEvents) then (clock, baseClock, holdEvents);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. There is no clock in continuous partition:\n" + toString(part)});
         then fail();
@@ -466,6 +469,21 @@ public
         end for;
       end if;
     end removeAlias;
+
+    function updateHeldVars
+      input output Partition par;
+      input UnorderedSet<ComponentRef> held_crefs;
+    algorithm
+      par.association := match par.association
+        local
+          Association association;
+        case association as Association.CLOCKED() algorithm
+          association.holdEvents := List.any(VariablePointers.getVarNames(par.unknowns),
+            function UnorderedSet.contains(set = held_crefs));
+        then association;
+        else par.association;
+      end match;
+    end updateHeldVars;
   end Partition;
 
   annotation(__OpenModelica_Interface="backend");

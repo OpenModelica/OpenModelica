@@ -544,6 +544,7 @@ protected
       input EquationPointers equations;
       input Partition.Kind kind;
       input ClockedInfo info;
+      input UnorderedSet<ComponentRef> held_crefs;
       input Pointer<Integer> index;
       output Partition.Partition partition;
     protected
@@ -570,7 +571,7 @@ protected
       association := Partition.Association.create(partEquations, kind, info);
 
       // replace the clocked functions, inline clocked when equations and set equations to clocked
-      partEquations := EquationPointers.mapExp(partEquations, replaceClockedFunctions);
+      partEquations := EquationPointers.mapExp(partEquations, function replaceClockedFunctions(held_crefs = held_crefs));
       if Partition.Association.isClocked(association) then
         partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
         partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
@@ -701,6 +702,7 @@ protected
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
     list<Pointer<Equation>> clocked_eqns = {};
+    UnorderedSet<ComponentRef> held_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     // parse clock assignments
     for eq_idx in UnorderedMap.valueList(clocked.map) loop
@@ -766,7 +768,10 @@ protected
       end if;
     end for;
 
-    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, index) for cl in UnorderedMap.valueList(cluster_map));
+    // get the actual partitions from the clusters
+    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs, index) for cl in UnorderedMap.valueList(cluster_map));
+    // update the clocked partitions if one of their variables is in a hold() function
+    partitions := list(Partition.Partition.updateHeldVars(part, held_crefs) for part in partitions);
 
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
       print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 0), "", "", "\n", "\n"));
@@ -850,8 +855,9 @@ protected
   end addCrefToSet;
 
   function replaceClockedFunctions
-    "replaces sample() calls using clocks as condition with the $getPart function"
+    "replaces sample() and hold() calls using clocks as condition with the $getPart function"
     input output Expression exp;
+    input UnorderedSet<ComponentRef> held_crefs;
   algorithm
     exp := match exp
       local
@@ -876,7 +882,9 @@ protected
           case "hold" algorithm
             arg := match Call.arguments(exp.call)
               // hold can only have one argument
-              case {arg} then arg;
+              case {arg as Expression.CREF()} algorithm
+                UnorderedSet.add(arg.cref, held_crefs);
+              then arg;
               else algorithm
                 Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();

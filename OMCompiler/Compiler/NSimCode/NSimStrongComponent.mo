@@ -475,6 +475,7 @@ public
       list<Block> blcks;
       list<SimVar> vars;
       BClock clock, subClock, baseClock;
+      Boolean holdEvents;
       Option<BClock> baseClock_opt;
       SimPartition basePart, subPart;
     algorithm
@@ -485,9 +486,9 @@ public
 
       // create all sub partition blocks and find the base partitions
       for partition in listReverse(partitions) loop
-        (blcks, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
-        vars                    := SimVars.getPartitionVars(partition, simcode_map);
-        (clock, baseClock_opt)  := Partition.Partition.getClocks(partition);
+        (blcks, simCodeIndices)             := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
+        vars                                := SimVars.getPartitionVars(partition, simcode_map);
+        (clock, baseClock_opt, holdEvents)  := Partition.Partition.getClocks(partition);
         if Util.isSome(baseClock_opt) then
           // it is a sub clock
           SOME(baseClock) := baseClock_opt;
@@ -497,7 +498,7 @@ public
           baseClock       := clock;
           subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
-        subPart := SimPartition.createSubPartition(subClock, blcks, vars, false);
+        subPart := SimPartition.createSubPartition(subClock, blcks, vars, holdEvents);
         UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
       end for;
 

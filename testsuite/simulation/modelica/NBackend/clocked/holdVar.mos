@@ -34,7 +34,7 @@ val(x, 0.6);      // 3.0
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
 // |                 | |       | | | | solverMethod: none
-// |                 | |       | | | | holdEvents: false
+// |                 | |       | | | | holdEvents: true
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.300000
