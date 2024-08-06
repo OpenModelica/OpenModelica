@@ -36,6 +36,7 @@
 #include "qwt_symbol.h"
 
 #include <QToolTip>
+#include <QtMath>
 
 using namespace OMPlot;
 

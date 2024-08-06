@@ -36,6 +36,7 @@ encapsulated uniontype NFVariable
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
+  import Equation = NFEquation;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
@@ -44,8 +45,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Direction;
   import NFPrefixes.AccessLevel;
   import Type = NFType;
-  import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.BackendInfo;
+  import NFBackendExtension.{BackendInfo, VariableKind};
 
 protected
   import Ceval = NFCeval;
@@ -88,7 +88,7 @@ public
     Attributes attr;
     Option<SCode.Comment> cmt;
     SourceInfo info;
-    BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
     array<InstNode> child_nodes;
     list<Variable> children = {};
   algorithm
@@ -104,7 +104,7 @@ public
     // conversion to backend process (except for iterators). NBackendDAE.lower
     if ComponentRef.isIterator(cref) then
       binding := NFBinding.EMPTY_BINDING;
-      binfo.varKind := BackendExtension.ITERATOR();
+      binfo.varKind := VariableKind.ITERATOR();
     else
       binding := Component.getImplicitBinding(comp);
     end if;
@@ -463,7 +463,7 @@ public
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
     var.children := list(mapExp(v, fn) for v in var.children);
-    var.backendinfo := BackendExtension.BackendInfo.map(var.backendinfo, fn);
+    var.backendinfo := BackendInfo.map(var.backendinfo, fn);
   end mapExp;
 
   function mapExpShallow
@@ -637,6 +637,20 @@ public
       s := IOStream.append(s, ")");
     end if;
   end toFlatStreamModifier;
+
+  function moveBinding
+    "Removes the binding of the variable, if it has one and it has at least
+     discrete variability, and creates an equation from it."
+    input output Variable var;
+    input output list<Equation> equations;
+  algorithm
+    if variability(var) >= Variability.DISCRETE and Binding.isBound(var.binding) then
+      equations := Equation.makeEquality(Expression.fromCref(var.name),
+        Binding.getExp(var.binding), var.ty, InstNode.EMPTY_NODE(),
+        ElementSource.createElementSource(var.info)) :: equations;
+      var.binding := NFBinding.EMPTY_BINDING;
+    end if;
+  end moveBinding;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

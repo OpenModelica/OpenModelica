@@ -10,8 +10,8 @@ omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." O
 omc_option(OM_OMEDIT_ENABLE_QTWEBENGINE "Enable building of OMEdit with QtWebEngine instead of QtWebkit" OFF)
 omc_option(OM_OMEDIT_ENABLE_LIBXML2 "Enable building of OMEdit with LibXml2 instead of XmlPatterns." OFF)
 
-set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
 find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml OpenGL Network Svg REQUIRED)
+
 if (OM_OMEDIT_ENABLE_QTWEBENGINE OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebEngineWidgets REQUIRED)
 else ()
@@ -22,6 +22,10 @@ if (OM_OMEDIT_ENABLE_LIBXML2 OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   find_package(LibXml2 REQUIRED)
 else ()
   find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS XmlPatterns REQUIRED)
+endif ()
+
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  find_package(Qt6 COMPONENTS OpenGLWidgets Core5Compat REQUIRED)
 endif ()
 
 find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)

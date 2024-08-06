@@ -7,6 +7,11 @@ multary_simplification.mos \
 parameterSystem.mos \
 Alias.mos \
 Alias2.mos \
+Alias_test1.mos \
+Alias_test2.mos \
+Alias_test3.mos \
+Alias_test4.mos \
+Alias_test5.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
 underdetermined_init.mos \

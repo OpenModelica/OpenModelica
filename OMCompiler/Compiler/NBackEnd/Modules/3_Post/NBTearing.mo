@@ -64,7 +64,7 @@ protected
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
   import Sorting = NBSorting;
-  import System = NBSystem;
+  import Partition = NBPartition;
 
   //Util imports
   import BackendUtil = NBBackendUtil;
@@ -112,41 +112,41 @@ public
     called during simulation and gets the corresponding subfunction from
     Config."
     extends Module.wrapper;
-    input System.SystemType systemType;
+    input Partition.Kind kind;
   protected
     constant list<Module.tearingInterface> funcs = getModule();
     FunctionTree funcTree;
   algorithm
     if Flags.isSet(Flags.TEARING_DUMP) then
-      print(StringUtil.headline_1("[" + System.System.systemTypeString(systemType) + "] Tearing") + "\n");
+      print(StringUtil.headline_1("[" + Partition.Partition.kindToString(kind) + "] Tearing") + "\n");
     end if;
-    bdae := match (systemType, bdae)
+    bdae := match (kind, bdae)
       local
-        list<System.System> systems;
+        list<Partition.Partition> partitions;
         Pointer<Integer> eq_index;
 
-      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, eq_index, systemType);
-          bdae.ode := systems;
+          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
+          bdae.ode := partitions;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, eq_index, systemType);
-          bdae.init := systems;
+          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
+          bdae.init := partitions;
           if Util.isSome(bdae.init_0) then
-            (systems, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), funcs, funcTree, eq_index, systemType);
-            bdae.init_0 := SOME(systems);
+            (partitions, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), funcs, funcTree, eq_index, kind);
+            bdae.init_0 := SOME(partitions);
           end if;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, funcs, funcTree, eq_index, systemType);
-          bdae.dae := SOME(systems);
+          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
+          bdae.dae := SOME(partitions);
           bdae.funcTree := funcTree;
       then bdae;
 
@@ -158,7 +158,7 @@ public
     input output StrongComponent comp     "the suspected algebraic loop.";
     input output FunctionTree funcTree    "Function call bodies";
     input output Integer index            "current unique loop index";
-    input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
+    input Partition.Kind kind = NBPartition.Kind.ODE   "partition type";
   protected
     // dummy adjacency matrix, dont need it for implicit
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
@@ -174,7 +174,7 @@ public
           linear  = false,
           mixed   = false,
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
+      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
@@ -184,7 +184,7 @@ public
           linear  = false,
           mixed   = false,
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), systemType);
+      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       // do nothing otherwise
       else (comp, dummy, funcTree, index);
@@ -234,39 +234,39 @@ public
 protected
   // Traverser function
   function tearingTraverser
-    input list<System.System> systems;
+    input list<Partition.Partition> partitions;
     input list<Module.tearingInterface> funcs;
-    output list<System.System> new_systems = {};
+    output list<Partition.Partition> new_partitions = {};
     input output FunctionTree funcTree;
     input Pointer<Integer> eq_index;
-    input System.SystemType systemType;
+    input Partition.Kind kind;
   protected
     array<StrongComponent> strongComponents;
     StrongComponent tmp;
     Integer idx = 0;
     Adjacency.Matrix full "full adjacency matrix containing solvability info";
   algorithm
-    for syst in systems loop
-      if isSome(syst.strongComponents) and isSome(syst.adjacencyMatrix) then
-        SOME(strongComponents) := syst.strongComponents;
-        SOME(full) := syst.adjacencyMatrix;
+    for part in partitions loop
+      if isSome(part.strongComponents) and isSome(part.adjacencyMatrix) then
+        SOME(strongComponents) := part.strongComponents;
+        SOME(full) := part.adjacencyMatrix;
         for i in 1:arrayLength(strongComponents) loop
           // each module has a list of functions that need to be applied
           tmp := strongComponents[i];
           for func in funcs loop
-            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, syst.unknowns, syst.equations, eq_index, systemType);
+            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, part.unknowns, part.equations, eq_index, kind);
           end for;
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
             arrayUpdate(strongComponents, i, tmp);
           end if;
         end for;
-        syst.strongComponents := SOME(strongComponents);
-        syst.adjacencyMatrix := SOME(full);
+        part.strongComponents := SOME(strongComponents);
+        part.adjacencyMatrix := SOME(full);
       end if;
-      new_systems := syst :: new_systems;
+      new_partitions := part :: new_partitions;
     end for;
-    new_systems := listReverse(new_systems);
+    new_partitions := listReverse(new_partitions);
   end tearingTraverser;
 
   function initialize extends Module.tearingInterface;
@@ -294,7 +294,7 @@ protected
         e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in eqns_lst));
 
         // refining the adjacency matrix by updating solvability information using differentiation
-        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set, systemType == NBSystem.SystemType.INI);
+        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
         comp.linear       := checkLinearity(full, v, e);
       then (comp, full, index);
       else (comp, full, index);
@@ -335,8 +335,8 @@ protected
           equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
           comps     = arrayAppend(strict.innerEquations,listArray(residual_comps)),
           funcTree  = funcTree,
-          name      = System.System.systemTypeString(systemType) + tag + intString(index),
-          init      = systemType == NBSystem.SystemType.INI);
+          name      = Partition.Partition.kindToString(kind) + tag + intString(index),
+          init      = kind == NBPartition.Kind.INI);
         strict.jac := jacobian;
         comp.strict := strict;
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -369,7 +369,7 @@ protected
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = systemType == NBSystem.SystemType.INI));
+        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = kind == NBPartition.Kind.INI));
         (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
         num_vars := sum(BVariable.size(var) for var in disc_vars);
         num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);

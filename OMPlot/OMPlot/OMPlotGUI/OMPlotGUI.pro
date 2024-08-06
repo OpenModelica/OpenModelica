@@ -4,34 +4,19 @@
 #
 #-------------------------------------------------
 
-QT += core gui svg
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT *= printsupport widgets
+QT += core gui svg printsupport widgets
+equals(QT_MAJOR_VERSION, 6) {
+  QT += core5compat
 }
 
 # Set the C++ standard.
-CONFIG += c++1z
+CONFIG += c++17
 
 TARGET = OMPlot
 TEMPLATE = app
-CONFIG += console
+CONFIG += cmdline
 
 SOURCES += main.cpp
-
-HEADERS += OMPlot.h \
-  PlotZoomer.h \
-  Legend.h \
-  PlotPanner.h \
-  PlotPicker.h \
-  PlotGrid.h \
-  PlotCurve.h \
-  PlotWindow.h \
-  PlotApplication.h \
-  PlotWindowContainer.h \
-  PlotMainWindow.h \
-  ScaleDraw.h \
-  LogScaleEngine.h \
-  LinearScaleEngine.h
 
 win32 {
   _cxx = $$(CXX)
@@ -44,10 +29,10 @@ win32 {
 
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   CONFIG(debug, debug|release){
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd -lOpenModelicaRuntimeC -lomcgc
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd -lOpenModelicaRuntimeC
   }
   else {
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwt -lOpenModelicaRuntimeC -lomcgc
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwt -lOpenModelicaRuntimeC
   }
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot/qwt $$(OMBUILDDIR)/include/omc/c
 } else {

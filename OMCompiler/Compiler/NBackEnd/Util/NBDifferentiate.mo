@@ -105,6 +105,28 @@ public
         scalarized      = false
       );
     end default;
+
+    function toString
+      input DifferentiationArguments diffArgs;
+      output String str = "[" + diffTypeStr(diffArgs.diffType) + "]";
+    algorithm
+      if diffArgs.diffType == DifferentiationType.SIMPLE then
+        str := str + " " + ComponentRef.toString(diffArgs.diffCref);
+      end if;
+    end toString;
+
+    function diffTypeStr
+      input DifferentiationType diffType;
+      output String str;
+    algorithm
+      str := match diffType
+        case DifferentiationType.TIME       then "TIME";
+        case DifferentiationType.SIMPLE     then "SIMPLE";
+        case DifferentiationType.FUNCTION   then "FUNCTION";
+        case DifferentiationType.JACOBIAN   then "JACOBIAN";
+        else "FAIL";
+      end match;
+    end diffTypeStr;
   end DifferentiationArguments;
 
   // ================================
@@ -391,10 +413,10 @@ public
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       print(indent + "### debugDifferentiation | " + name + " ###\n");
       print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
-      exp := differentiateExpression(exp, diffArguments);
+      (exp, diffArguments) := differentiateExpression(exp, diffArguments);
       print(indent + "[AFTER ] " + Expression.toString(exp) + "\n\n");
     else
-      exp := differentiateExpression(exp, diffArguments);
+      (exp, diffArguments) := differentiateExpression(exp, diffArguments);
     end if;
   end differentiateExpressionDump;
 
@@ -576,7 +598,7 @@ public
         if UnorderedMap.contains(strippedCref, jacobianHT) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
-          derCref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(exp.cref)), derCref);
+          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
@@ -610,12 +632,12 @@ public
       // Types: (SIMPLE)
       //  D(x)/dx => 1
       case (Expression.CREF(), DifferentiationType.SIMPLE, _)
-        guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref)) algorithm
+        guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
       then (Expression.makeOne(exp.ty), diffArguments);
 
       // Types: (SIMPLE)
       // D(y)/dx => 0
-      case (Expression.CREF(), DifferentiationType.SIMPLE, _) algorithm
+      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
@@ -660,7 +682,7 @@ public
           // add derivative to new_vars
           diffArguments.new_vars := der_ptr :: diffArguments.new_vars;
           // update algebraic variable to be a state
-          BVariable.makeStateVar(var_ptr, der_ptr);
+          BVariable.setStateDerivativeVar(var_ptr, der_ptr);
       then (Expression.fromCref(derCref), diffArguments);
 
       // -------------------------------------
@@ -689,7 +711,7 @@ public
         if UnorderedMap.contains(strippedCref, jacobianHT) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
-          derCref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(exp.cref)), derCref);
+          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
@@ -850,7 +872,6 @@ public
         Type ty;
         DifferentiationType diffType;
 
-      // DELAY
       // d/dz delay(x, delta) = (dt/dz - d delta/dz) * delay(der(x), delta)
       case (Expression.CALL()) guard(name == "delay")
       algorithm
@@ -901,8 +922,9 @@ public
         end match;
       then ret;
 
-      // NO_EVENT
-      case (Expression.CALL()) guard(name == "noEvent")
+      // Functions with one argument that differentiate "through"
+      // d/dz f(x) -> f(dx/dz)
+      case (Expression.CALL()) guard(List.contains({"sum", "pre", "noEvent"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -914,8 +936,9 @@ public
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
-      // MIN, MAX, HOMOTOPY
-      case (Expression.CALL()) guard(List.contains({"min", "max", "homotopy"}, name, stringEqual))
+      // Functions with two arguments that differentiate "through"
+      // df(x,y)/dz = f(dx/dz, dy/dz)
+      case (Expression.CALL()) guard(List.contains({"homotopy", "$OMC$inStreamDiv"}, name, stringEqual))
       algorithm
         (arg1, arg2) := match Call.arguments(exp.call)
           case {arg1, arg2} then (arg1, arg2);
@@ -938,7 +961,7 @@ public
       then exp;
 
       // SEMI LINEAR
-      // d sL(x, m1, m2)/dt = sL(x, dm1/dt, dm2/dt) + dx/dt * if (x>=0) then m1 else m2
+      // d sL(x, m1, m2)/dz = sL(x, dm1/dz, dm2/dz) + dx/dz * (if x >= 0 then m1 else m2)
       case (Expression.CALL()) guard(name == "semiLinear")
       algorithm
         (arg1, arg2, arg3) := match Call.arguments(exp.call)
@@ -948,31 +971,61 @@ public
           then fail();
         end match;
 
-        // dx/dt, dm1/dt, dm2/dt
+        // dx/dz, dm1/dz, dm2/dz
         (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
         (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
         (diffArg3, diffArguments) := differentiateExpression(arg3, diffArguments);
 
-        // sL(x, dm1/dt, dm2/dt)
+        // sL(x, dm1/dz, dm2/dz)
         exp.call := Call.setArguments(exp.call, {arg1, diffArg2, diffArg3});
         ret := exp;
 
-        // only add second part if derivative is nonzero
+        // only add second part if dx/dz is nonzero
         if not Expression.isZero(diffArg1) then
           ty    := Expression.typeOf(diffArg1);
           // x >= 0
           ret1  := Expression.RELATION(arg1, Operator.makeGreaterEq(ty), Expression.makeZero(ty));
-          // if (x>=0) then m1 else m2
+          // if x >= 0 then m1 else m2
           ret1  := Expression.IF(ty, ret1, arg2, arg3);
-          // dx/dt * if (x>=0) then m1 else m2
+          // dx/dz * (if x >= 0 then m1 else m2)
           ret2  := Expression.MULTARY({diffArg1, ret1}, {}, mulOp);
-          // sL(x, dm1/dt, dm2/dt) + dx/dt * if (x>=0) then m1 else m2
+          // sL(x, dm1/dz, dm2/dz) + dx/dz * (if x >= 0 then m1 else m2)
           ret   := Expression.MULTARY({ret, ret2}, {}, addOp);
         end if;
       then ret;
 
+      // d/dz min(x,y) = if x < y then dx/dz else dy/dz
+      // d/dz max(x,y) = if x > y then dx/dz else dy/dz
+      // FIXME at x = y the derivative may not be well-defined
+      case (Expression.CALL()) guard(name == "min" or name == "max")
+      algorithm
+        (arg1, arg2) := match Call.arguments(exp.call)
+          case {arg1, arg2} then (arg1, arg2);
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+
+        // dx/dz, dy/dz
+        (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+
+        ty := Expression.typeOf(diffArg1);
+        if Expression.isZero(diffArg1) and Expression.isZero(diffArg2) then
+          ret := Expression.makeZero(ty);
+        else
+          // condition x < y or x > y
+          ret1 := Expression.RELATION(
+            arg1,
+            if name == "min" then Operator.makeLess(ty) else Operator.makeGreater(ty),
+            arg2);
+          // if condition then dx/dz else dy/dz
+          ret := Expression.IF(ty, ret1, diffArg1, diffArg2);
+        end if;
+      then ret;
+
       // Builtin function call with one argument
-      // df(y)/dx = df/dy * dy/dx
+      // df(x)/dz = df/dx * dx/dz
       case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
       algorithm
         arg1 := match Call.arguments(exp.call)
@@ -981,17 +1034,17 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
-        // differentiate the call
-        (ret, diffArguments) := differentiateBuiltinCall1Arg(name, arg1, diffArguments);
+        // differentiate the call df/dx
+        ret := differentiateBuiltinCall1Arg(name, arg1);
         if not Expression.isZero(ret) then
-          // differentiate the argument (inner derivative)
-          diffArg1 := differentiateExpression(arg1, diffArguments);
+          // differentiate the argument (inner derivative) dx/dz
+          (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
           ret := Expression.MULTARY({ret, diffArg1}, {}, mulOp);
         end if;
       then ret;
 
       // Builtin function call with two arguments
-      // df(y,z)/dx = df/dy * dy/dx + df/dz * dz/dx
+      // df(x,y)/dz = df/dx * dx/dz + df/dy * dy/dz
       case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 2)
       algorithm
         (arg1, arg2) := match Call.arguments(exp.call)
@@ -1001,13 +1054,13 @@ public
           then fail();
         end match;
         // differentiate the call
-        (ret1, ret2) := differentiateBuiltinCall2Arg(name, arg1, arg2); // df/dy and df/dz
-        diffArg1 := differentiateExpression(arg1, diffArguments);       // dy/dx
-        diffArg2 := differentiateExpression(arg2, diffArguments);       // dz/dx
-        ret1 := Expression.MULTARY({ret1, diffArg1}, {}, mulOp);        // df/dy * dy/dx
-        ret2 := Expression.MULTARY({ret2, diffArg2}, {}, mulOp);        // df/dz * dz/dx
-        ret := Expression.MULTARY({ret1,ret2}, {}, addOp);              // df/dy * dy/dx + df/dz * dz/dx
-     then ret;
+        (ret1, ret2) := differentiateBuiltinCall2Arg(name, arg1, arg2);             // df/dx and df/dy
+        (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);  // dx/dz
+        (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);  // dy/dz
+        ret1 := Expression.MULTARY({ret1, diffArg1}, {}, mulOp);                    // df/dx * dx/dz
+        ret2 := Expression.MULTARY({ret2, diffArg2}, {}, mulOp);                    // df/dy * dy/dz
+        ret := Expression.MULTARY({ret1,ret2}, {}, addOp);                          // df/dx * dx/dz + df/dy * dy/dz
+      then ret;
 
       // try some simple known cases
       case (Expression.CALL()) algorithm
@@ -1030,7 +1083,6 @@ public
     input String name;
     input Expression arg;
     output Expression derFuncCall;
-    input output DifferentiationArguments diffArguments;
   protected
     // these probably need to be adapted to the size and type of arg
     Operator.SizeClassification sizeClass = NFOperator.SizeClassification.SCALAR;
@@ -1047,16 +1099,6 @@ public
       case ("ceil")     then Expression.makeZero(Type.REAL());
       case ("floor")    then Expression.makeZero(Type.REAL());
       case ("integer")  then Expression.makeZero(Type.INTEGER());
-
-      // sum(arg) -> sum(d arg)
-      case ("sum") algorithm
-        (ret, diffArguments) := differentiateExpression(arg, diffArguments);
-      then Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.SUM,
-          args        = {ret},
-          variability = Expression.variability(arg),
-          purity      = NFPrefixes.Purity.PURE
-        ));
 
       // abs(arg) -> sign(arg)
       case ("abs") then Expression.CALL(Call.makeTypedCall(
@@ -1170,16 +1212,6 @@ public
           purity      = NFPrefixes.Purity.PURE));                             // log(10)
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {arg, ret}, mulOp); // 1/(arg*log(10))
       then ret;
-
-      // pre(arg) -> pre(d arg)
-      case ("pre") algorithm
-        (ret, diffArguments) := differentiateExpression(arg, diffArguments);
-      then Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.PRE,
-          args        = {ret},
-          variability = Expression.variability(arg),
-          purity      = NFPrefixes.Purity.PURE
-        ));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
@@ -1665,8 +1697,8 @@ public
               )},
               {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))},           // / g^2
               mulOp
-           ),
-           diffArguments);
+            ),
+            diffArguments);
 
       // Power (POW, POW_EW, ...) with base zero
       // (0^r)' = 0

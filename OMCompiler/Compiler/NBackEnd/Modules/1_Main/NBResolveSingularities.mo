@@ -38,7 +38,7 @@ public
 
 protected
   // NF imports
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.{BackendInfo, VariableAttributes};
   import ComponentRef = NFComponentRef;
   import NFFlatten.FunctionTree;
 
@@ -596,7 +596,7 @@ protected
       then ({}, {});
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;*/
   end getConstraintsAndCandidates;
@@ -633,9 +633,9 @@ protected
   algorithm
     prio := match Pointer.access(candidate)
       local
-        BackendExtension.VariableAttributes attributes;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
-      then match BackendExtension.VariableAttributes.getStateSelect(attributes)
+        VariableAttributes attributes;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes))
+      then match VariableAttributes.getStateSelect(attributes)
         case NFBackendExtension.StateSelect.NEVER   then -200;
         case NFBackendExtension.StateSelect.AVOID   then -100;
         case NFBackendExtension.StateSelect.DEFAULT then 0;

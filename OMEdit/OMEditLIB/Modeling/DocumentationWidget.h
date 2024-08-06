@@ -39,11 +39,13 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebEngineView>
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebView>
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 #include <QToolBar>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -80,11 +82,14 @@ public:
     InfoHeader
   };
   DocumentationWidget(QWidget *pParent = 0);
+#ifndef OM_DISABLE_DOCUMENTATION
   ~DocumentationWidget();
   QAction* getPreviousAction() {return mpPreviousAction;}
   QAction* getNextAction() {return mpNextAction;}
   DocumentationViewer* getDocumentationViewer() {return mpDocumentationViewer;}
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
+#ifndef OM_DISABLE_DOCUMENTATION
   void execCommand(const QString &commandName);
   void execCommand(const QString &commandName, const QString &valueArgument);
   bool queryCommandState(const QString &commandName);
@@ -104,8 +109,12 @@ private:
   QAction *mpEditInfoHeaderAction;
   QAction *mpSaveAction;
   QAction *mpCancelAction;
+#else // #ifndef OM_DISABLE_DOCUMENTATION
+  bool isEditingDocumentation() const {return false;}
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   DocumentationViewer *mpDocumentationViewer;
   QFrame *mpDocumentationViewerFrame;
+#ifndef OM_DISABLE_DOCUMENTATION
   QWidget *mpEditorsWidget;
   QTabBar *mpTabBar;
   QWidget *mpHTMLEditorWidget;
@@ -176,19 +185,25 @@ public slots:
   void removeLink();
   void updateHTMLSourceEditor();
   void updateDocumentationHistory();
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 };
 
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 class DocumentationViewer : public QWebEngineView
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 class DocumentationViewer : public QWebView
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#else // #ifndef OM_DISABLE_DOCUMENTATION
+class DocumentationViewer : public QWidget
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 {
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
 public:
   DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
+#ifndef OM_DISABLE_DOCUMENTATION
   void setFocusInternal();
 private:
   void createActions();
@@ -203,12 +218,13 @@ public slots:
 protected:
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   virtual QWebEngineView* createWindow(QWebEnginePage::WebWindowType type) override;
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   virtual void keyPressEvent(QKeyEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   bool mIsContentEditable;
 };
 

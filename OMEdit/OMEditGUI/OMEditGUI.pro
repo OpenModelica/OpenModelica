@@ -28,15 +28,12 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent
-}
+include(../OMEdit.config.pre.pri)
 
-# Set the C++ standard.
-CONFIG += c++1z
+DESTDIR = ../bin
+ICON = ../OMEditLIB/Resources/icons/omedit.icns
+QMAKE_INFO_PLIST = Info.plist
 
-TARGET = OMEdit
 TEMPLATE = app
 
 PRE_TARGETDEPS += ../bin/libOMEdit.a
@@ -45,18 +42,8 @@ LIBS += -L../bin -lOMEdit
 
 OMEDIT_ROOT = ../
 
-DEFINES += OM_HAVE_PTHREADS
-
 # Windows libraries and includes
 win32 {
-  _cxx = $$(CXX)
-  contains(_cxx, clang++) {
-    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
-    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
-    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
-    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
-  }
-
   include(OMEditGUI.win.config.pri)
   RC_FILE = rc_omedit.rc
 } else { # Unix libraries and includes
@@ -68,25 +55,6 @@ INCLUDEPATH += ../ \
   ../OMEditLIB/CrashReport \
   $$OPENMODELICAHOME/include/omc/c
 
-# Don't show the warnings from included headers.
-# Don't add a space between for and open parenthesis below. Qt4 complains about it.
-for(path, INCLUDEPATH) {
-  QMAKE_CXXFLAGS += -isystem $${path}
-}
-
 SOURCES += main.cpp
 
-# Please read the warnings. They are like vegetables; good for you even if you hate them.
-CONFIG += warn_on
-win32 {
-  # -Wno-clobbered is not recognized by clang
-  !contains(_cxx, clang++) {
-    QMAKE_CXXFLAGS += -Wno-clobbered
-  }
-}
-
-DESTDIR = ../bin
-
-ICON = ../OMEditLIB/Resources/icons/omedit.icns
-
-QMAKE_INFO_PLIST = Info.plist
+include(../OMEdit.config.post.pri)

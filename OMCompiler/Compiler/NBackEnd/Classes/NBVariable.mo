@@ -46,7 +46,7 @@ public
   //NF Imports
   import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
+  import NFBackendExtension.{BackendInfo, StateSelect, VariableAttributes, VariableKind};
   import NFBinding.Binding;
   import Ceval = NFCeval;
   import Class = NFClass;
@@ -89,8 +89,8 @@ public
 
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
-    {}, {}, NONE(), SCodeUtil.dummyInfo, BackendExtension.BACKEND_INFO(
-    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE()));
+    {}, {}, NONE(), SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -105,6 +105,7 @@ public
   constant String SEED_STR                = "$SEED";
   constant String TIME_EVENT_STR          = "$TEV";
   constant String STATE_EVENT_STR         = "$SEV";
+  constant String CLOCK_STR               = "$CLK";
 
   function toString
     input Variable var;
@@ -188,19 +189,20 @@ public
     Pointer.update(var_ptr, var);
   end makeVarPtrCyclic;
 
-  function connectPrePostVar
-    "sets the pre() var for the variable and also sets the variable pointer at the pre() variable"
+  function connectPartners
+    "sets the partner for the variable and also sets the variable pointer at the partner variable"
     input Pointer<Variable> var_ptr;
-    input Pointer<Variable> pre_ptr;
+    input Pointer<Variable> par_ptr;
+    input BackendInfo.setPartner func;
   protected
     Variable var = Pointer.access(var_ptr);
-    Variable pre = Pointer.access(pre_ptr);
+    Variable par = Pointer.access(par_ptr);
   algorithm
-    var.backendinfo := BackendInfo.setPrePost(var.backendinfo, SOME(pre_ptr));
-    pre.backendinfo := BackendInfo.setPrePost(pre.backendinfo, SOME(var_ptr));
+    var.backendinfo := func(var.backendinfo, SOME(par_ptr));
+    par.backendinfo := func(par.backendinfo, SOME(var_ptr));
     Pointer.update(var_ptr, var);
-    Pointer.update(pre_ptr, pre);
-  end connectPrePostVar;
+    Pointer.update(par_ptr, par);
+  end connectPartners;
 
   function getVar
     input ComponentRef cref;
@@ -292,7 +294,7 @@ public
   function isState extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE())) then true;
       else false;
     end match;
   end isState;
@@ -300,7 +302,7 @@ public
   function isStateDerivative extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE_DER())) then true;
       else false;
     end match;
   end isStateDerivative;
@@ -308,7 +310,7 @@ public
   function isAlgebraic extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.ALGEBRAIC())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.ALGEBRAIC())) then true;
       else false;
     end match;
   end isAlgebraic;
@@ -316,7 +318,7 @@ public
   function isStart extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.START())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.START())) then true;
       else false;
     end match;
   end isStart;
@@ -324,7 +326,7 @@ public
   function isTime extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.TIME())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.TIME())) then true;
       else false;
     end match;
   end isTime;
@@ -335,11 +337,11 @@ public
     b := match Pointer.access(var_ptr)
       local
         Variable var;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))  then false;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))        then false;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))        then false;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT()))        then false;
-      case var as Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE_STATE()))   then false;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE()))         then false;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PREVIOUS()))         then false;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT()))         then false;
+      case var as Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
       then init and Type.isContinuous(var.ty);
       else true;
     end match;
@@ -348,7 +350,7 @@ public
   function isDiscreteState extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE_STATE())) then true;
       else false;
     end match;
   end isDiscreteState;
@@ -356,7 +358,7 @@ public
   function isDiscrete extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE())) then true;
       else false;
     end match;
   end isDiscrete;
@@ -364,7 +366,7 @@ public
   function isPrevious extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PREVIOUS())) then true;
       else false;
     end match;
   end isPrevious;
@@ -372,7 +374,7 @@ public
   function isRecord extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.RECORD())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD())) then true;
       else false;
     end match;
   end isRecord;
@@ -380,45 +382,79 @@ public
   function isKnownRecord extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      local
+     local
         Boolean known;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.RECORD(known = known))) then known;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(known = known))) then known;
       else false;
     end match;
   end isKnownRecord;
 
-  function getPrePost
-    "gets the pre() / previous() var if its a variable / clocked variable or the other way around"
+  function isClock extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CLOCK())) then true;
+      else false;
+    end match;
+  end isClock;
+
+  function isClocked extends checkVar;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CLOCKED())) then true;
+      else false;
+    end match;
+  end isClocked;
+
+  partial function getVarPartner
     input Pointer<Variable> var_ptr;
-    output Option<Pointer<Variable>> pre_post;
+    output Option<Pointer<Variable>> partner;
   protected
     Variable var = Pointer.access(var_ptr);
-  algorithm
-    pre_post := var.backendinfo.pre_post;
-  end getPrePost;
+  end getVarPartner;
 
-  function getPrePostCref
-    "only use if you are sure there is a pre-post variable"
-    input ComponentRef cref;
-    output ComponentRef pre_post;
-  protected
-    Option<Pointer<Variable>> pre_post_opt;
+  function getVarPre
+    "Gets the pre() / previous() var if its a variable / clocked variable or the other way around."
+    extends getVarPartner;
   algorithm
-    pre_post_opt := getPrePost(getVarPointer(cref));
-    if Util.isSome(pre_post_opt) then
-      pre_post := getVarName(Util.getOption(pre_post_opt));
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because it had no pre or post variable."});
-      fail();
-    end if;
-  end getPrePostCref;
+    partner := var.backendinfo.var_pre;
+  end getVarPre;
+
+  function getVarSeed
+    "Gets the SEED var to the variable or the other way around."
+    extends getVarPartner;
+  algorithm
+    partner := var.backendinfo.var_seed;
+  end getVarSeed;
+
+  function getVarPDer
+    "Gets the partial derivative of a residual or the other way around."
+    extends getVarPartner;
+  algorithm
+    partner := var.backendinfo.var_pder;
+  end getVarPDer;
+
+  function getPartnerCref
+    "Like getVarPartner but for cref. Fails if there is no partner."
+    input ComponentRef cref;
+    input getVarPartner func;
+    output ComponentRef partner_cref;
+  algorithm
+    partner_cref := match func(getVarPointer(cref))
+      local
+        Pointer<Variable> partner;
+      case SOME(partner) then getVarName(partner);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because " + ComponentRef.toString(cref) + " has no partner variable."});
+      then fail();
+    end match;
+  end getPartnerCref;
 
   function hasStartAttr extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
       local
         VariableAttributes attr;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attr))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attr))
         then Util.isSome(VariableAttributes.getStartAttribute(attr));
       else false;
     end match;
@@ -428,13 +464,13 @@ public
     "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
     extends checkVar;
   algorithm
-    b := not isPrevious(var_ptr) and Util.isSome(getPrePost(var_ptr));
+    b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
   end hasPre;
 
   function isDummyState extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_STATE())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DUMMY_STATE())) then true;
       else false;
     end match;
   end isDummyState;
@@ -442,7 +478,7 @@ public
   function isDummyDer extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_DER())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DUMMY_DER())) then true;
       else false;
     end match;
   end isDummyDer;
@@ -450,8 +486,8 @@ public
   function isParamOrConst extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))  then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT()))   then true;
       else false;
     end match;
   end isParamOrConst;
@@ -459,7 +495,7 @@ public
   function isConst extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT())) then true;
       else false;
     end match;
   end isConst;
@@ -467,25 +503,25 @@ public
   function isKnown extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))  then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT()))   then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE()))      then true;
       else false;
     end match;
   end isKnown;
 
-  function isDAEResidual extends checkVar;
+  function isResidual extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DAE_RESIDUAL_VAR())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RESIDUAL_VAR())) then true;
       else false;
     end match;
-  end isDAEResidual;
+  end isResidual;
 
   function isSeed extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.SEED_VAR())) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.SEED_VAR())) then true;
       else false;
     end match;
   end isSeed;
@@ -511,11 +547,11 @@ public
     b := match Pointer.access(var_ptr)
       local
         Expression fixed;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))))        then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))))        then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))))      then Expression.isAllTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)))) then Expression.isAllTrue(fixed);
       else false;
     end match;
   end isFixed;
@@ -526,12 +562,12 @@ public
     extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))             then not isFixed(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.ALGEBRAIC()))         then not isFixed(var_ptr) and hasStartAttr(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))          then not isFixed(var_ptr) or hasPre(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))    then not isFixed(var_ptr) or hasPre(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))         then not isFixed(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))          then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE()))          then not isFixed(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.ALGEBRAIC()))      then not isFixed(var_ptr) and hasStartAttr(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE()))       then not isFixed(var_ptr) or hasPre(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE_STATE())) then not isFixed(var_ptr) or hasPre(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))      then not isFixed(var_ptr);
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PREVIOUS()))       then true;
       else false;
     end match;
   end isFixable;
@@ -539,12 +575,12 @@ public
   function isStateSelect
     "checks if a variable has a certain StateSelect attribute"
     extends checkVar;
-    input BackendExtension.StateSelect stateSelect;
+    input StateSelect stateSelect;
   algorithm
     b := match Pointer.access(var_ptr)
       local
         VariableAttributes attributes;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes))
       then VariableAttributes.getStateSelect(attributes) == stateSelect;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(Pointer.access(var_ptr))});
@@ -563,7 +599,7 @@ public
   algorithm
     var := match var
       local
-        BackendExtension.BackendInfo backendinfo;
+        BackendInfo backendinfo;
       case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
         backendinfo.attributes := variableAttributes;
         var.backendinfo := backendinfo;
@@ -571,15 +607,100 @@ public
     end match;
   end setVariableAttributes;
 
+  function setMin
+    input output Variable var;
+    input Option<Expression> min_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setMin(variableAttributes, min_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setMin;
+
+  function setMax
+    input output Variable var;
+    input Option<Expression> max_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setMax(variableAttributes, max_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setMax;
+
+  function setStartAttribute
+    input output Variable var;
+    input Expression start_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(variableAttributes, start_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setStartAttribute;
+
+  function setStateSelect
+    input output Variable var;
+    input BackendExtension.StateSelect stateSelect_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setStateSelect(variableAttributes, stateSelect_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setStateSelect;
+
+  function setTearingSelect
+    input output Variable var;
+    input BackendExtension.TearingSelect tearingSelect_val;
+    input Boolean overwrite = false;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
+
+        backendinfo.attributes := BackendExtension.VariableAttributes.setTearingSelect(variableAttributes, tearingSelect_val, overwrite);
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setTearingSelect;
+
   function setVarKind
     "use with caution: some variable kinds have extra information that needs to be correct"
-    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> varPointer;
     input VariableKind varKind;
   protected
     Variable var;
   algorithm
     var := Pointer.access(varPointer);
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, varKind);
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
     Pointer.update(varPointer, var);
   end setVarKind;
 
@@ -590,7 +711,7 @@ public
   protected
     Variable var = Pointer.access(varPointer);
   algorithm
-    var.backendinfo := BackendExtension.BackendInfo.setParent(var.backendinfo, parent);
+    var.backendinfo := BackendInfo.setParent(var.backendinfo, parent);
     Pointer.update(varPointer, var);
   end setParent;
 
@@ -611,7 +732,7 @@ public
     extends checkVar;
   algorithm
     b := match Pointer.access(var_ptr)
-      case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY())) then true;
+      case NFVariable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY())) then true;
       else false;
     end match;
   end isDummyVariable;
@@ -621,6 +742,11 @@ public
     b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), FUNCTION_STR);
   end isFunctionAlias;
 
+  function isClockAlias extends checkVar;
+  algorithm
+    b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), CLOCK_STR);
+  end isClockAlias;
+
   function createTimeVar
     output Pointer<Variable> var_ptr;
   protected
@@ -629,7 +755,7 @@ public
     (var_ptr, _) := makeVarPtrCyclic(var, var.name);
   end createTimeVar;
 
-  function makeStateVar
+  function setStateDerivativeVar
     "Updates a variable pointer to be a state, requires the pointer to its derivative."
     input Pointer<Variable> varPointer;
     input Pointer<Variable> derivative;
@@ -637,9 +763,9 @@ public
     Variable var;
   algorithm
     var := Pointer.access(varPointer);
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE(1, SOME(derivative), true));
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE(1, SOME(derivative), true));
     Pointer.update(varPointer, var);
-  end makeStateVar;
+  end setStateDerivativeVar;
 
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.
@@ -650,7 +776,7 @@ public
   algorithm
     if isAlgebraic(varPointer) then
       var := Pointer.access(varPointer);
-      var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.ALG_STATE());
+      var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.ALG_STATE());
       Pointer.update(varPointer, var);
     end if;
   end makeAlgStateVar;
@@ -675,7 +801,7 @@ public
           der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(cref)));
           // make the actual derivative variable and make cref and the variable cyclic
           var := fromCref(ComponentRef.stripSubscriptsAll(der_cref), Variable.attributes(Pointer.access(state)));
-          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
       then ();
 
@@ -690,7 +816,7 @@ public
     output Pointer<Variable> state_var;
   algorithm
     state_var := match Pointer.access(der_var)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state_var)))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE_DER(state = state_var)))
       then state_var;
       else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(der_var) + " because of wrong variable kind."});
@@ -708,7 +834,7 @@ public
         Pointer<Variable> state, derivative;
         Variable stateVar;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = derivative)) then match Pointer.access(derivative)
-        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state)))
+        case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE_DER(state = state)))
           algorithm
             stateVar := Pointer.access(state);
         then stateVar.name;
@@ -727,7 +853,7 @@ public
     output Boolean b;
   algorithm
     b := match Pointer.access(state_var)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(_)))) then true;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE(derivative = SOME(_)))) then true;
       else false;
     end match;
   end hasDerVar;
@@ -737,7 +863,7 @@ public
     output Pointer<Variable> der_var;
   algorithm
     der_var := match Pointer.access(state_var)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(der_var))))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE(derivative = SOME(der_var))))
       then der_var;
       else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(state_var) + " because of wrong variable kind."});
@@ -755,7 +881,7 @@ public
         Pointer<Variable> state, derivative;
         Variable derVar;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = state)) then match Pointer.access(state)
-        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(derivative))))
+        case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE(derivative = SOME(derivative))))
           algorithm
             derVar := Pointer.access(derivative);
         then derVar.name;
@@ -777,7 +903,7 @@ public
     children := match Pointer.access(var)
       local
         VariableKind varKind;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = varKind as BackendExtension.RECORD()))
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD()))
       then varKind.children;
       else {};
     end match;
@@ -790,17 +916,17 @@ public
     Variable var;
   algorithm
     var := Pointer.access(varPointer);
-    var.backendinfo := match BackendExtension.BackendInfo.getVarKind(var.backendinfo)
+    var.backendinfo := match BackendInfo.getVarKind(var.backendinfo)
       local
         VariableKind varKind;
         Variable der_var;
 
-      case varKind as BackendExtension.STATE(derivative = SOME(derivative)) algorithm
+      case varKind as VariableKind.STATE(derivative = SOME(derivative)) algorithm
         // also update the derivative to be a dummy derivative
         der_var := Pointer.access(derivative);
-        der_var.backendinfo := BackendExtension.BackendInfo.setVarKind(der_var.backendinfo, BackendExtension.DUMMY_DER(varPointer));
+        der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(varPointer));
         Pointer.update(derivative, der_var);
-      then BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DUMMY_STATE(derivative));
+      then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(derivative));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(getVarName(varPointer)) + "."});
@@ -819,7 +945,7 @@ public
         Pointer<Variable> dummy_state, dummy_derivative;
         Variable dummy_derVar;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = dummy_state)) then match Pointer.access(dummy_state)
-        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_STATE(dummy_der = dummy_derivative)))
+        case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DUMMY_STATE(dummy_der = dummy_derivative)))
           algorithm
             dummy_derVar := Pointer.access(dummy_derivative);
         then dummy_derVar.name;
@@ -839,7 +965,7 @@ public
   protected
     Variable var = Pointer.access(varPointer);
   algorithm
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE_STATE(false));
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.DISCRETE_STATE());
     Pointer.update(varPointer, var);
   end makeDiscreteStateVar;
 
@@ -861,9 +987,9 @@ public
           qual.name := PREVIOUS_STR;
           pre_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           pre := fromCref(pre_cref, Variable.attributes(Pointer.access(var_ptr)));
-          pre.backendinfo := BackendExtension.BackendInfo.setVarKind(pre.backendinfo, BackendExtension.PREVIOUS());
+          pre.backendinfo := BackendInfo.setVarKind(pre.backendinfo, VariableKind.PREVIOUS());
           (pre_ptr, pre_cref) := makeVarPtrCyclic(pre, pre_cref);
-          connectPrePostVar(var_ptr, pre_ptr);
+          connectPartners(var_ptr, pre_ptr, BackendInfo.setVarPre);
       then ();
 
       else algorithm
@@ -884,19 +1010,26 @@ public
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
+        Option<Pointer<Variable>> ovar;
         Variable var;
-      case qual as InstNode.VAR_NODE()
-        algorithm
-          // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref);
+      case qual as InstNode.VAR_NODE() algorithm
+        // get the variable pointer from the old cref to later on link back to it
+        old_var_ptr := getVarPointer(cref);
+        ovar := getVarSeed(old_var_ptr);
+        if isSome(ovar) then
+          var_ptr := Util.getOption(ovar);
+          cref := getVarName(var_ptr);
+        else
           // prepend the seed str and the matrix name and create the new cref
           qual.name := SEED_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
           // update the variable to be a seed and pass the pointer to the original variable
-          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.SEED_VAR(old_var_ptr));
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.SEED_VAR());
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+          connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+        end if;
       then ();
 
       else algorithm
@@ -909,29 +1042,38 @@ public
     "Creates a partial derivative variable pointer from a cref. Used in NBJacobian and NBHessian
     to represent generic gradient equations.
     e.g: (speed, 'Jac') -> $pDer_Jac.speed"
-    input ComponentRef cref           "old component reference";
+    input output ComponentRef cref    "old component reference to new component reference";
     input String name                 "name of the matrix this partial derivative belongs to";
     input Boolean isTmp               "sets variable kind for tmpVar or resultVar accordingly";
-    output ComponentRef pder_cref     "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
-  protected
-    VariableKind varKind = if isTmp then BackendExtension.JAC_TMP_VAR() else BackendExtension.JAC_VAR();
   algorithm
     () := match ComponentRef.node(cref)
       local
         InstNode qual;
+        Pointer<Variable> res_ptr;
+        Option<Pointer<Variable>> ovar;
+        VariableKind varKind;
         Variable var;
 
       // regular case for jacobians
       case qual as InstNode.VAR_NODE() algorithm
-        // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
-        qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
-        pder_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-        var := fromCref(pder_cref, Variable.attributes(getVar(cref)));
-        // update the variable kind and pass the pointer to the original variable
-        var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, varKind);
-        // create the new variable pointer and safe it to the component reference
-        (var_ptr, pder_cref) := makeVarPtrCyclic(var, pder_cref);
+        res_ptr := getVarPointer(cref);
+        ovar := getVarPDer(res_ptr);
+        if isSome(ovar) then
+          var_ptr := Util.getOption(ovar);
+          cref := getVarName(var_ptr);
+        else
+          varKind := if isTmp then VariableKind.JAC_TMP_VAR() else VariableKind.JAC_VAR();
+          // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
+          qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+          var := fromCref(cref, Variable.attributes(Pointer.access(res_ptr)));
+          // update the variable kind and pass the pointer to the original variable
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+          // create the new variable pointer and safe it to the component reference
+          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+          connectPartners(res_ptr, var_ptr, BackendInfo.setVarPDer);
+        end if;
       then ();
 
       else algorithm
@@ -954,7 +1096,7 @@ public
         // prepend the seed str, matrix name locally not needed
         qual.name := FUNCTION_DERIVATIVE_STR + "_" + qual.name;
         cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
-     then cref;
+      then cref;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
@@ -983,7 +1125,7 @@ public
           start_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(start_cref, Variable.attributes(getVar(cref)));
           // update the variable to be a seed and pass the pointer to the original variable
-          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.START(old_var_ptr));
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
           // create the new variable pointer and safe it to the component reference
           var_ptr := Pointer.create(var);
           start_cref := BackendDAE.lowerComponentReferenceInstNode(start_cref, var_ptr);
@@ -1015,7 +1157,7 @@ public
     // create variable and set its kind to dae_residual (change name?)
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DAE_RESIDUAL_VAR(uniqueIndex));
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.RESIDUAL_VAR());
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeResidualVar;
@@ -1054,8 +1196,8 @@ public
     // create variable
     var := fromCref(var_cref, NFAttributes.IMPL_DISCRETE_ATTR);
     // update the variable to be discrete and pass the pointer to the original variable
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
-    var.backendinfo := BackendExtension.BackendInfo.setHideResult(var.backendinfo, true);
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.DISCRETE());
+    var.backendinfo := BackendInfo.setHideResult(var.backendinfo, true);
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeEventVar;
@@ -1078,8 +1220,8 @@ public
       input Boolean makeParam;
     algorithm
       // update the variable kind and set hideResult = true
-      var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, VariableKind.fromType(Variable.typeOf(var), makeParam));
-      var.backendinfo := BackendExtension.BackendInfo.setHideResult(var.backendinfo, true);
+      var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.fromType(Variable.typeOf(var), makeParam));
+      var.backendinfo := BackendInfo.setHideResult(var.backendinfo, true);
     end updateBackendInfo;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
@@ -1119,12 +1261,35 @@ public
       var := fromCref(cref);
     end if;
     // update the variable to be a seed and pass the pointer to the original variable
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.ALGEBRAIC());
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.ALGEBRAIC());
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-    (der_cref, der_var) := BVariable.makeDerVar(cref);
-    BVariable.makeStateVar(var_ptr, der_var);
+    (der_cref, der_var) := makeDerVar(cref);
+    setStateDerivativeVar(var_ptr, der_var);
   end makeAuxStateVar;
+
+  function makeClockVar
+    "Creates a clock variable if an unnamed clock is used in the system"
+    input Integer uniqueIndex         "unique identifier index";
+    input Type ty                     "equation type containing dims";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output ComponentRef cref          "new component reference";
+  protected
+    InstNode node;
+    Variable var;
+    list<Dimension> dims = Type.arrayDims(ty);
+  algorithm
+    // create inst node with dummy variable pointer and create cref from it
+    node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    // Type for residuals is always REAL() !
+    cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+    // create variable and set its kind to dae_residual (change name?)
+    var := fromCref(cref);
+    // update the variable to be a seed and pass the pointer to the original variable
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.CLOCK());
+    // create the new variable pointer and safe it to the component reference
+    (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+  end makeClockVar;
 
   function getBindingVariability
     "returns the variability of the binding, fails if it has the wrong type.
@@ -1167,16 +1332,17 @@ public
   function setFixed
     input output Pointer<Variable> var_ptr;
     input Boolean b = true;
+    input Boolean overwrite = false;
   protected
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
     var := match var
       local
-        BackendExtension.BackendInfo binfo;
+        BackendInfo binfo;
 
-      case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b);
+      case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO()) algorithm
+        binfo.attributes := VariableAttributes.setFixed(binfo.attributes, var.ty, b, overwrite);
         var.backendinfo := binfo;
       then var;
 
@@ -1190,19 +1356,19 @@ public
   function setBindingAsStart
     "use this if a binding is found out to be constant, remove variable to known vars (param/const)
     NOTE: this overwrites the old start value. throw error/warning if different?"
-    input output Pointer<Variable> var_ptr;
+    input Pointer<Variable> var_ptr;
   protected
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
     var := match var
       local
-        BackendExtension.BackendInfo binfo;
+        BackendInfo binfo;
         Expression start;
 
-      case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
+      case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
-        binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start);
+        binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start, true);
         var.backendinfo := binfo;
       then var;
 
@@ -1217,7 +1383,7 @@ public
     input output Pointer<Variable> var_ptr;
     input Boolean b = true;
   algorithm
-    var_ptr := setBindingAsStart(var_ptr);
+    setBindingAsStart(var_ptr);
     var_ptr := setFixed(var_ptr, b);
   end setBindingAsStartAndFix;
 
@@ -1256,10 +1422,10 @@ public
         Variable var;
 
       case var as Variable.VARIABLE()
-      then VariableKind.isTimeDependent(BackendExtension.BackendInfo.getVarKind(var.backendinfo));
+      then VariableKind.isTimeDependent(BackendInfo.getVarKind(var.backendinfo));
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end isTimeDependent;
@@ -1431,7 +1597,7 @@ public
           if func(var_ptr) then
             variables := remove(var_ptr, variables);
           end if;
-         end if;
+        end if;
       end for;
       variables := compress(variables);
     end mapRemovePtr;
@@ -1457,7 +1623,14 @@ public
 
     function clone
       input VariablePointers variables;
-      output VariablePointers new = fromList(toList(variables));
+      input Boolean shallow = true;
+      output VariablePointers new;
+    algorithm
+      if shallow then
+        new := fromList(toList(variables));
+      else
+        new := fromList(list(Pointer.create(Pointer.access(eqn)) for eqn in toList(variables)));
+      end if;
     end clone;
 
     function size
@@ -1690,12 +1863,24 @@ public
       Expands all variables to their scalar elements."
       input output VariablePointers variables;
     protected
-      list<Pointer<Variable>> vars, new_vars = {};
+      list<Pointer<Variable>> vars;
+      Boolean flattened;
+    algorithm
+      (vars, flattened) := scalarizeList(toList(variables));
+      // only change variables if any of them have been flattened
+      if flattened then
+        variables := fromList(vars, true);
+      end if;
+    end scalarize;
+
+    function scalarizeList
+      input list<Pointer<Variable>> vars;
+      output list<Pointer<Variable>> new_vars = {};
+      output Boolean flattened = false;
+    protected
       list<Variable> scalar_vars, element_vars;
       Variable var;
-      Boolean flattened = false;
     algorithm
-      vars := toList(variables);
       for var_ptr in vars loop
         var := Pointer.access(var_ptr);
         // flatten potential arrays
@@ -1719,12 +1904,8 @@ public
           end if;
         end for;
       end for;
-
-      // only change variables if any of them have been flattened
-      if flattened then
-        variables := fromList(listReverse(new_vars), true);
-      end if;
-    end scalarize;
+      new_vars := listReverse(new_vars);
+    end scalarizeList;
 
     function varSlice
       input VariablePointers vars;
@@ -1759,7 +1940,7 @@ public
     algorithm
       var := Pointer.access(var_ptr);
       // create hash only from backendinfo
-      hash := stringHashDjb2Mod(BackendExtension.BackendInfo.toString(var.backendinfo), mod);
+      hash := stringHashDjb2Mod(BackendInfo.toString(var.backendinfo), mod);
       Pointer.update(hash_lst_ptr, (hash, var_ptr) :: Pointer.access(hash_lst_ptr));
     end createSortHashTpl;
   end VariablePointers;
@@ -1790,8 +1971,9 @@ public
       VariablePointers algebraics         "Algebraic variables";
       VariablePointers discretes          "Discrete variables";
       VariablePointers discrete_states    "Discrete state variables";
+      VariablePointers clocked_states     "Clocked state variables";
       VariablePointers previous           "Previous variables (pre(d) -> $PRE.d)";
-      // clocked
+      VariablePointers clocks             "clock variables";
 
       /* subset of knowns */
       VariablePointers states             "States";
@@ -1832,7 +2014,7 @@ public
 
     record VAR_DATA_HES
       "Only to be used for Hessians."
-      VariablePointers variables                 "All hessian variables";
+      VariablePointers variables          "All hessian variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";
@@ -1926,7 +2108,9 @@ public
               VariablePointers.toString(varData.algebraics, "Algebraic", NONE(), false) +
               VariablePointers.toString(varData.discretes, "Discrete", NONE(), false) +
               VariablePointers.toString(varData.discrete_states, "Discrete State", NONE(), false) +
+              VariablePointers.toString(varData.clocked_states, "Clocked State", NONE(), false) +
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
+              VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
@@ -2001,7 +2185,7 @@ public
     end setVariables;
 
     // used to add specific types. Fill up with Jacobian/Hessian types
-    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR, RECORD);
+    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR, RECORD, CLOCK);
 
     function addTypedList
       "can also be used to add single variables"
@@ -2058,6 +2242,10 @@ public
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
         then varData;
 
+        case (VAR_DATA_SIM(), VarType.CLOCK) algorithm
+          varData.clocks      := VariablePointers.addList(var_lst, varData.clocks);
+        then varData;
+
         // IMPORTANT: requires the record elements to be added as children beforehand!
         case (VAR_DATA_SIM(), VarType.RECORD) algorithm
           varData.variables   := VariablePointers.addList(var_lst, varData.variables);
@@ -2069,7 +2257,7 @@ public
         // ToDo: other cases
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end addTypedList;

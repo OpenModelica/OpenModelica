@@ -206,8 +206,10 @@ algorithm
   // Collect a tree of all functions that are still used in the flat model.
   functions := Flatten.collectFunctions(flatModel);
 
-  // Dump the flat model to a string if dumpFlat = true.
-  flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+  // Dump the flat model to a string if dumpFlat = true and --baseModelicaOptions=scalarize is not set.
+  if not Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize") then
+    flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+  end if;
 
   InstUtil.dumpFlatModelDebug("simplify", flatModel, functions);
   InstUtil.printStructuralParameters(flatModel);
@@ -224,6 +226,10 @@ algorithm
   flatModel := InstUtil.replaceEmptyArrays(flatModel);
   InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
+  // Dump the flat model to a string if dumpFlat = true and --baseModelicaOptions=scalarize is set.
+  if Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize") then
+    flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+  end if;
 
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
     // Combine the binaries to multaries. For now only on new backend
@@ -1869,6 +1875,7 @@ algorithm
       Component inst_comp;
       InstNode ty_node;
       Class ty;
+      SCode.Element elementDefinition;
       Boolean in_function;
       Restriction parent_res, res;
 
@@ -1922,6 +1929,15 @@ algorithm
         if not InstNode.isEmpty(ty_node) then
           ty := InstNode.getClass(ty_node);
           res := Class.restriction(ty);
+
+          /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12533
+           * check if restriction is TYPE and has named annotation absolulteValue=false, then copy the derived annotations to components annotation
+           * (e.g) type TemperatureDifference = Real (final quantity="ThermodynamicTemperature", final unit="K") annotation(absoluteValue=false);
+          */
+          elementDefinition := InstNode.definition(ty_node);
+          if (Restriction.isType(res) and SCodeUtil.optCommentHasBooleanNamedAnnotationFalse(SCodeUtil.getElementComment(elementDefinition), "absoluteValue")) then
+            InstNode.componentApply(node, Component.setComment, SCodeUtil.getElementComment(elementDefinition));
+          end if;
 
           if not InstContext.inRedeclared(context) then
             checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);

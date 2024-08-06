@@ -45,6 +45,10 @@ simulate(simple_tuple); getErrorString();
 // ------------------------
 //
 //
+// Clocked Function Alias
+// ------------------------
+//
+//
 // [dumpBackendInline] Inlining operatations for: {NORMAL, BUILTIN_EARLY, EARLY, DEFAULT}
 // ****************************************************************************************
 // [NBInline.inlineTupleEquation] Inlining: [TUPL] (2) (x, y) = ($FUN_3, $FUN_4) ($RES_SIM_3)
@@ -55,9 +59,9 @@ simulate(simple_tuple); getErrorString();
 // [NBInline.inlineTupleEquation] Inlining: [TUPL] (2) (_, z3) = ($FUN_5, $FUN_6) ($RES_SIM_0)
 // -- Result: [SCAL] (1) z3 = $FUN_6 ($RES_$AUX_13)
 //
-// ==========================
-// [dumprepl] Alias Sets:
-// ==========================
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
 //
 // Alias Set 1:
 // **************
@@ -107,6 +111,19 @@ simulate(simple_tuple); getErrorString();
 // 	z1	 ==> 	z2
 // 	$FUN_2	 ==> 	b
 // 	$FUN_1	 ==> 	a
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
 //

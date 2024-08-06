@@ -338,6 +338,11 @@ constant Function POSITIVE_MAX_REAL = Function.FUNCTION(Path.IDENT("$OMC$Positiv
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function INSTREAM_DIV_REAL = Function.FUNCTION(Path.IDENT("$OMC$inStreamDiv"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function IN_STREAM = Function.FUNCTION(Path.IDENT("inStream"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
@@ -474,6 +479,26 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
 
 constant ComponentRef CLOCK_CREF =
   ComponentRef.CREF(CLOCK_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+
+constant Function GET_PART_REAL = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function GET_PART_INT = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {INT_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function GET_PART_BOOL = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {BOOL_PARAM}, {BOOL_PARAM}, {}, {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function CLOCK_FIRE = Function.FUNCTION(Path.IDENT("$_clkfire"),
+  InstNode.EMPTY_NODE(), {INT_PARAM}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
   "$OMC$PositiveMax",

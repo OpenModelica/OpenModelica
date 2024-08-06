@@ -34,6 +34,7 @@
 #ifndef CEDITOR_H
 #define CEDITOR_H
 
+#include <QRegExp>
 #include <QSyntaxHighlighter>
 #include <QPlainTextEdit>
 

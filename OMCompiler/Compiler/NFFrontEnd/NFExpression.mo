@@ -1875,7 +1875,7 @@ public
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
       case SUBSCRIPTED_EXP() then "(" + toString(exp.exp) + ")" + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
-      case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
+      case RECORD_ELEMENT() then "(" + toString(exp.recordExp) + ")." + exp.fieldName;
       case MUTABLE() then toString(Mutable.access(exp.exp));
       case SHARED_LITERAL() then "LITERAL(" + intString(exp.index) + ", " + toString(exp.exp) + ")";
       case EMPTY() then "#EMPTY#";
@@ -1974,8 +1974,8 @@ public
       case BOX() then "BOX(" + toFlatString(exp.exp, format) + ")";
 
       case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format);
-      case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format) + "[" + intString(exp.index) + "]";
-      case RECORD_ELEMENT() then toFlatString(exp.recordExp, format) + "[field: " + exp.fieldName + "]";
+      case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
+      case RECORD_ELEMENT() then "(" + toFlatString(exp.recordExp, format) + ")." + exp.fieldName;
       case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);
       case SHARED_LITERAL() then "[literal: " + intString(exp.index) + ", " + toString(exp.exp) + "]";
       case EMPTY() then "#EMPTY#";
@@ -4393,44 +4393,58 @@ public
     end match;
   end isMinusOne;
 
-  function isNegative
-    "this requires proper simplification to be correct"
+  function isPositive
     input Expression exp;
-    output Boolean negative;
+    output Boolean positive "true if exp is known to be > 0, otherwise false.";
+  algorithm
+    positive := match exp
+      case INTEGER() then exp.value > 0;
+      case REAL() then exp.value > 0;
+      case CAST() then isPositive(exp.exp);
+      case UNARY() then isNegative(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
+      else false;
+    end match;
+  end isPositive;
+
+  function isNegative
+    input Expression exp;
+    output Boolean negative "true if exp is known to be < 0, otherwise false.";
   algorithm
     negative := match exp
       case INTEGER() then exp.value < 0;
       case REAL() then exp.value < 0;
       case CAST() then isNegative(exp.exp);
-      case UNARY() then not isNegative(exp.exp);
+      case UNARY() then isPositive(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
       else false;
     end match;
   end isNegative;
 
   function isNonPositive
-    "Returns true if the expression is a number <= 0, otherwise false."
     input Expression exp;
-    output Boolean res;
+    output Boolean res "true if exp is known to be <= 0, otherwise false.";
   algorithm
     res := match exp
       case INTEGER() then exp.value <= 0;
       case REAL() then exp.value <= 0;
       case CAST() then isNonPositive(exp.exp);
       case UNARY() then isNonNegative(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
       else false;
     end match;
   end isNonPositive;
 
   function isNonNegative
-    "Returns true if the expression is a number >= 0, otherwise false."
     input Expression exp;
-    output Boolean res;
+    output Boolean res "true if exp is known to be <= 0, otherwise false.";
   algorithm
     res := match exp
       case INTEGER() then exp.value >= 0;
       case REAL() then exp.value >= 0;
       case CAST() then isNonNegative(exp.exp);
       case UNARY() then isNonPositive(exp.exp);
+      case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
       else false;
     end match;
   end isNonNegative;
@@ -4681,9 +4695,12 @@ public
     output Expression oneExp;
   algorithm
     oneExp := match ty
-      case Type.REAL() then REAL(1.0);
+      case Type.REAL()    then REAL(1.0);
       case Type.INTEGER() then INTEGER(1);
-      case Type.ARRAY() then fillType(ty, makeOne(Type.arrayElementType(ty)));
+      case Type.ARRAY()   then fillType(ty, makeOne(Type.arrayElementType(ty)));
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
+      then fail();
     end match;
   end makeOne;
 
@@ -4695,6 +4712,9 @@ public
       case Type.REAL() then REAL(-1.0);
       case Type.INTEGER() then INTEGER(-1);
       case Type.ARRAY() then fillType(ty, makeMinusOne(Type.arrayElementType(ty)));
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
+      then fail();
     end match;
   end makeMinusOne;
 
@@ -4708,6 +4728,7 @@ public
       case Type.BOOLEAN() then BOOLEAN(true);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, List.last(ty.literals), listLength(ty.literals));
       case Type.ARRAY() then fillType(ty, makeMaxValue(Type.arrayElementType(ty)));
+      else REAL(System.realMaxLit()); // backup case just for backend;
     end match;
   end makeMaxValue;
 
@@ -4721,6 +4742,7 @@ public
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
       case Type.ARRAY() then fillType(ty, makeMinValue(Type.arrayElementType(ty)));
+      else REAL(-System.realMaxLit()); // backup case just for backend;
     end match;
   end makeMinValue;
 

@@ -60,7 +60,8 @@ public
   import Replacements = NBReplacements;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
-  import NBSystem.{System, SystemType};
+  import BPartition = NBPartition;
+  import NBPartition.Partition;
   import Tearing = NBTearing;
 
   type Status = enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE);
@@ -95,14 +96,15 @@ public
         funcTree_ptr    := Pointer.create(bdae.funcTree);
         // The order here is important. Whatever comes first is declared the "original", same components afterwards will be alias
         // Has to be the same order as in SimCode!
-        bdae.init       := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.init);
+        bdae.init       := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.init);
         if Util.isSome(bdae.init_0) then
-          bdae.init_0   := SOME(list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in Util.getOption(bdae.init_0)));
+          bdae.init_0   := SOME(list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in Util.getOption(bdae.init_0)));
         end if;
-        bdae.ode        := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.ode);
-        bdae.algebraic  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.algebraic);
-        bdae.ode_event  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.ode_event);
-        bdae.alg_event  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.alg_event);
+        bdae.ode        := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.ode);
+        bdae.algebraic  := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.algebraic);
+        bdae.ode_event  := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.ode_event);
+        bdae.alg_event  := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.alg_event);
+        bdae.clocked    := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map) for par in bdae.clocked);
         bdae.funcTree   := Pointer.access(funcTree_ptr);
 
         /*
@@ -121,17 +123,18 @@ public
       then bdae;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end main;
 
-  function solveSystem
-    input output System system;
+  function solvePartition
+    input output Partition partition;
     input Pointer<FunctionTree> funcTree_ptr;
     input Pointer<Integer> implicit_index_ptr;
     input UnorderedMap<StrongComponent, list<StrongComponent>> duplicate_map;
   protected
+    BPartition.Kind kind = Partition.getKind(partition);
     type EquationPointerList = list<Pointer<Equation>>;
     UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
     list<StrongComponent> solved_comps = {};
@@ -142,19 +145,19 @@ public
     ComponentRef name;
     list<Pointer<Equation>> sliced_eqns;
   algorithm
-    if Util.isSome(system.strongComponents) then
-      for comp in Util.getOption(system.strongComponents) loop
+    if Util.isSome(partition.strongComponents) then
+      for comp in Util.getOption(partition.strongComponents) loop
         solved_comps := match UnorderedMap.get(comp, duplicate_map)
           local list<StrongComponent> alias_comps;
           case SOME(alias_comps) then listAppend(alias_comps, solved_comps); // strong component already solved -> get alias comps
           else algorithm
             // solve strong component -> create alias comps
-            (alias_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, system.systemType, implicit_index, slicing_map);
-            UnorderedMap.add(comp, list(StrongComponent.createAlias(system.systemType, system.partitionIndex, comp_idx, c) for c in alias_comps), duplicate_map);
+            (alias_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, kind, implicit_index, slicing_map);
+            UnorderedMap.add(comp, list(StrongComponent.createAlias(kind, partition.index, comp_idx, c) for c in alias_comps), duplicate_map);
           then listAppend(alias_comps, solved_comps);
         end match;
       end for;
-      system.strongComponents := SOME(listArray(listReverse(solved_comps)));
+      partition.strongComponents := SOME(listArray(listReverse(solved_comps)));
       // update sliced eqn names
       for tpl in UnorderedMap.toList(slicing_map) loop
         (name, sliced_eqns) := tpl;
@@ -168,16 +171,16 @@ public
       Pointer.update(funcTree_ptr, funcTree);
       Pointer.update(implicit_index_ptr, implicit_index);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot solve system without strong components: " + System.toString(system) + "\n\n"});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot solve partition without strong components: " + Partition.toString(partition) + "\n\n"});
       fail();
     end if;
-  end solveSystem;
+  end solvePartition;
 
   function solveStrongComponent
     input StrongComponent comp;
     output list<StrongComponent> solved_comps = {};
     input output FunctionTree funcTree;
-    input SystemType systemType;
+    input BPartition.Kind kind;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   protected
@@ -204,16 +207,16 @@ public
           list<StrongComponent> tmp, inner_comps = {};
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
-          (eqn, funcTree, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree, systemType, implicit_index, slicing_map);
+          (eqn, funcTree, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree, kind, implicit_index, slicing_map);
         then ({StrongComponent.SINGLE_COMPONENT(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (eqn_slice, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(comp.eqn, comp.vars, funcTree, systemType, implicit_index, slicing_map);
+          (eqn_slice, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(comp.eqn, comp.vars, funcTree, kind, implicit_index, slicing_map);
         then ({StrongComponent.MULTI_COMPONENT(comp.vars, eqn_slice, solve_status)}, solve_status);
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
           for inner_comp in listReverse(arrayList(strict.innerEquations)) loop
-            (tmp, funcTree, implicit_index) := solveStrongComponent(inner_comp, funcTree, systemType, implicit_index, slicing_map);
+            (tmp, funcTree, implicit_index) := solveStrongComponent(inner_comp, funcTree, kind, implicit_index, slicing_map);
             inner_comps := listAppend(tmp, inner_comps);
           end for;
           strict.innerEquations := listArray(inner_comps);
@@ -222,7 +225,7 @@ public
         then ({comp}, Status.IMPLICIT);
 
         case StrongComponent.SLICED_COMPONENT(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
-          (generic_comp, funcTree, solve_status, implicit_index) := solveGenericEquation(comp, funcTree, systemType, implicit_index, slicing_map);
+          (generic_comp, funcTree, solve_status, implicit_index) := solveGenericEquation(comp, funcTree, kind, implicit_index, slicing_map);
         then ({generic_comp}, solve_status);
 
         /* currently not used */
@@ -231,7 +234,7 @@ public
           (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(eqn_ptr, eqn_slice.indices, SOME(comp.var_cref), funcTree);
           if slicing_status == NBEquation.SlicingStatus.FAILURE then
             // if slicing failed -> scalarize;
-            (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree, systemType, implicit_index, slicing_map);
+            (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree, kind, implicit_index, slicing_map);
             Pointer.update(eqn_ptr, eqn);
             sizes := Equation.sizes(eqn_ptr);
             replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
@@ -261,7 +264,7 @@ public
           (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
 
           if solve_status < Status.UNSOLVABLE then
-            (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcTree, systemType, implicit_index, slicing_map);
+            (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcTree, kind, implicit_index, slicing_map);
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
             comp.status := solve_status;
           end if;
@@ -270,7 +273,7 @@ public
         case StrongComponent.SLICED_COMPONENT() algorithm
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
-          (eqn, funcTree, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcTree, systemType, implicit_index, slicing_map);
+          (eqn, funcTree, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcTree, kind, implicit_index, slicing_map);
           comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
           comp.status := solve_status;
         then ({comp}, solve_status);
@@ -278,7 +281,7 @@ public
         /* for now handle all entwined equations generically and don't try to solve */
         case StrongComponent.ENTWINED_COMPONENT() algorithm
           for slice in comp.entwined_slices loop
-            (generic_comp, funcTree, solve_status, implicit_index) := solveGenericEquation(slice, funcTree, systemType, implicit_index, slicing_map);
+            (generic_comp, funcTree, solve_status, implicit_index) := solveGenericEquation(slice, funcTree, kind, implicit_index, slicing_map);
             // make loop on any solve_status != explicit
             entwined_slices := generic_comp :: entwined_slices;
           end for;
@@ -302,7 +305,7 @@ public
             // first solve all equation bodies accordingly
             for slice in comp.entwined_slices loop
               StrongComponent.SLICED_COMPONENT(var_cref = var_cref, eqn = eqn_slice) := slice;
-              (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), var_cref, funcTree, systemType, implicit_index, slicing_map);
+              (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), var_cref, funcTree, kind, implicit_index, slicing_map);
               Pointer.update(eqn_ptr, eqn);
             end for;
             replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
@@ -351,7 +354,7 @@ public
         comp        = List.first(solved_comps),
         funcTree    = funcTree,
         index       = implicit_index,
-        systemType  = systemType
+        kind  = kind
       );
       solved_comps := {implicit_comp};
     elseif solve_status > Status.EXPLICIT then
@@ -364,7 +367,7 @@ public
   function solveGenericEquation
     input output StrongComponent comp;
     input output FunctionTree funcTree;
-    input SystemType systemType;
+    input BPartition.Kind kind;
     output Status solve_status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -374,7 +377,7 @@ public
         Slice<EquationPointer> eqn_slice;
         Equation eqn;
       case StrongComponent.SLICED_COMPONENT(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
-        (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree, systemType, implicit_index, slicing_map);
+        (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree, kind, implicit_index, slicing_map);
         // if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
         eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
       then (StrongComponent.GENERIC_COMPONENT(comp.var_cref, eqn_slice), Status.EXPLICIT);
@@ -389,7 +392,7 @@ public
     input output Equation eqn;
     input Variable var;
     input output FunctionTree funcTree;
-    input SystemType systemType;
+    input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -398,7 +401,7 @@ public
       // empty variable name implies equation without return value
       (eqn, status) := (eqn, Status.EXPLICIT);
     else
-      (eqn, funcTree, status, implicit_index, _) := solveEquation(eqn, var.name, funcTree, systemType, implicit_index, slicing_map);
+      (eqn, funcTree, status, implicit_index, _) := solveEquation(eqn, var.name, funcTree, kind, implicit_index, slicing_map);
     end if;
   end solveSingleStrongComponent;
 
@@ -406,7 +409,7 @@ public
     input output Slice<EquationPointer> eqn_slice;
     input list<Slice<VariablePointer>> var_slices;
     input output FunctionTree funcTree;
-    input SystemType systemType;
+    input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -414,6 +417,7 @@ public
     Equation eqn = Pointer.access(Slice.getT(eqn_slice));
   algorithm
     (eqn_slice, funcTree, status) := match eqn
+
       local
         list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
         Equation solved_eqn;
@@ -423,7 +427,7 @@ public
         UnorderedSet<ComponentRef> record_crefs;
 
       case Equation.IF_EQUATION() algorithm
-        (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, systemType, implicit_index, slicing_map);
+        (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, kind, implicit_index, slicing_map);
         eqn.body := if_body;
       then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), funcTree, status);
 
@@ -475,7 +479,7 @@ public
     input output Equation eqn;
     input ComponentRef cref;
     input output FunctionTree funcTree;
-    input SystemType systemType;
+    input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
@@ -491,7 +495,7 @@ public
       case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
         // create indexed variable to trick matching algorithm to solve for it
         indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref), cref);
-        (body_slice, funcTree, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcTree, systemType, implicit_index, slicing_map);
+        (body_slice, funcTree, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcTree, kind, implicit_index, slicing_map);
         eqn.body := {Pointer.access(Slice.getT(body_slice))};
       then (eqn, funcTree, status, false);
 
@@ -573,7 +577,7 @@ public
     input VariablePointers vars;
     input output FunctionTree funcTree;
     output Status status;
-    input SystemType systemType;
+    input BPartition.Kind kind;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   protected
@@ -585,7 +589,7 @@ public
     (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
     // solve each strong component explicitely and save equations to branch
     for comp in comps loop
-      (solved_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, systemType, implicit_index, slicing_map);
+      (solved_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, kind, implicit_index, slicing_map);
       for solved_comp in solved_comps loop
         new_then_eqns := StrongComponent.toSolvedEquation(solved_comp) :: new_then_eqns;
       end for;
@@ -593,7 +597,7 @@ public
     body.then_eqns := listReverse(new_then_eqns);
     // if there is an else branch -> go deeper
     if Util.isSome(body.else_if) then
-      (else_if, funcTree, status, implicit_index) := solveIfBody(Util.getOption(body.else_if), vars, funcTree, systemType, implicit_index, slicing_map);
+      (else_if, funcTree, status, implicit_index) := solveIfBody(Util.getOption(body.else_if), vars, funcTree, kind, implicit_index, slicing_map);
       body.else_if := SOME(else_if);
     else
       // StrongComponent.toSolvedEquation fails for everything that is not explicitely solvable so at this point one can assume it is

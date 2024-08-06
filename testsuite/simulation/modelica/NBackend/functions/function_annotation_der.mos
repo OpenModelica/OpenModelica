@@ -61,6 +61,14 @@ simulate(function_annotation_der); getErrorString();
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b) * $SEED_ODE_JAC.b ($RES_$AUX_6)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.b = f(a, 0, k, k) ($RES_SIM_2)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.b = df(a, 0, k, k, $pDER_ODE_JAC.a, 0.0) ($RES_SIM_2)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.c = f(a, 0, k, b) ($RES_SIM_1)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.c = df(a, 0, k, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b) ($RES_SIM_1)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $DER.d = f(a, 0, b, b) ($RES_SIM_0)
 //
 // [BEFORE] function 'f'
@@ -92,14 +100,6 @@ simulate(function_annotation_der); getErrorString();
 //
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.d = $fDER1.f(a, 0, b, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b, $SEED_ODE_JAC.b) ($RES_SIM_0)
 //
-// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.c = f(a, 0, k, b) ($RES_SIM_1)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.c = df(a, 0, k, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b) ($RES_SIM_1)
-//
-// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.b = f(a, 0, k, k) ($RES_SIM_2)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.b = df(a, 0, k, k, $pDER_ODE_JAC.a, 0.0) ($RES_SIM_2)
-//
 // record SimulationResult
 //     resultFile = "function_annotation_der_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'function_annotation_der', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -107,5 +107,6 @@ simulate(function_annotation_der); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern.
+// "
 // endResult

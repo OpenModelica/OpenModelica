@@ -51,6 +51,7 @@ protected
   import JSON;
   import StringUtil;
   import Variable = NFVariable;
+  import Binding = NFBinding;
 
   import ComponentRef = NFComponentRef;
 
@@ -325,11 +326,12 @@ public
 
   function firstName
     input ComponentRef cref;
+    input Boolean baseModelica = false;
     output String name;
   algorithm
     name := match cref
       case CREF() then InstNode.name(cref.node);
-      case WILD() then "_";
+      case WILD() then if baseModelica then "" else "_";
       case STRING() then cref.name;
       else "";
     end match;
@@ -475,6 +477,20 @@ public
       else accumTy;
     end match;
   end getSubscriptedType2;
+
+  function lookupVarAttr
+    input ComponentRef cref;
+    input String attr_name;
+    output Option<Expression> attrValue;
+  algorithm
+    attrValue := match cref
+      local
+        Pointer<Variable> v;
+      case CREF(node = InstNode.VAR_NODE(varPointer = v))
+        then Binding.typedExp(Variable.lookupTypeAttribute(attr_name, Pointer.access(v)));
+      else NONE();
+    end match;
+  end lookupVarAttr;
 
   function nodeVariability
     "Returns the variability of the component node the cref refers to."
@@ -1233,9 +1249,9 @@ public
     list<Subscript> subs;
     ComponentRef cr;
   algorithm
-    str := firstName(cref);
+    str := firstName(cref, baseModelica = true);
 
-    if str == "time" or str == "_" then
+    if str == "time" or str == "" then
       return;
     end if;
 
@@ -1246,7 +1262,7 @@ public
     if format.scalarizeMode == BaseModelica.ScalarizeMode.NOT_SCALARIZED then
       while not listEmpty(crefs) loop
         cr :: crefs := crefs;
-        strl := firstName(cr) :: strl;
+        strl := firstName(cr, baseModelica = true) :: strl;
         subs := listAppend(getSubscripts(cr), subs);
 
         if format.recordMode == BaseModelica.RecordMode.WITH_RECORDS and isCref(cr) and
@@ -1268,7 +1284,7 @@ public
     else
       while not listEmpty(crefs) loop
         cr :: crefs := crefs;
-        strl := firstName(cr) :: strl;
+        strl := firstName(cr, baseModelica = true) :: strl;
         subs := getSubscripts(cr);
 
         if not listEmpty(subs) and
@@ -1362,13 +1378,69 @@ public
 
   function hash
     input ComponentRef cref;
-    output Integer hash = stringHashDjb2(toString(cref));
+    output Integer hash;
+  protected
+    Integer h;
+
+    function hash_rest
+      input ComponentRef cref;
+      input output Integer hash;
+    algorithm
+      hash := match cref
+        case CREF()
+          algorithm
+            hash := stringHashDjb2Continue(InstNode.name(cref.node), hash);
+
+            if not listEmpty(cref.subscripts) then
+              hash := stringHashDjb2Continue(Subscript.toStringList(cref.subscripts), hash);
+            end if;
+          then
+            hash_rest(cref.restCref, hash);
+
+        case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
+        else hash;
+      end match;
+    end hash_rest;
+  algorithm
+    hash := match cref
+      case CREF()
+        algorithm
+          h := stringHashDjb2(InstNode.name(cref.node));
+
+          if not listEmpty(cref.subscripts) then
+            h := stringHashDjb2Continue(Subscript.toStringList(cref.subscripts), h);
+          end if;
+        then
+          hash_rest(cref.restCref, h);
+
+      case WILD() then stringHashDjb2("_");
+      case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
+      else 0;
+    end match;
   end hash;
 
   function hashStrip
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
-    output Integer hash = stringHashDjb2(toString(stripSubscriptsAll(cref)));
+    output Integer hash;
+  protected
+    function hash_rest
+      input ComponentRef cref;
+      input output Integer hash;
+    algorithm
+      hash := match cref
+        case CREF() then hash_rest(cref.restCref, stringHashDjb2Continue(InstNode.name(cref.node), hash));
+        case STRING() then hash_rest(cref.restCref, stringHashDjb2Continue(cref.name, hash));
+        else hash;
+      end match;
+    end hash_rest;
+  algorithm
+    hash := match cref
+      case CREF() then hash_rest(cref.restCref, stringHashDjb2(InstNode.name(cref.node)));
+      case WILD() then stringHashDjb2("_");
+      case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
+      else 0;
+    end match;
   end hashStrip;
 
   function toPath

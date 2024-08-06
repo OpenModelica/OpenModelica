@@ -38,7 +38,6 @@ encapsulated package NBInitialization
 protected
   // NF imports
   import Algorithm = NFAlgorithm;
-  import BackendExtension = NFBackendExtension;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -65,8 +64,8 @@ protected
   import Module = NBModule;
   import Partitioning = NBPartitioning;
   import Replacements = NBReplacements;
-  import NBSystem;
-  import NBSystem.System;
+  import BPartition = NBPartition;
+  import NBPartition.Partition;
   import Tearing = NBTearing;
 
   // Util imports
@@ -88,6 +87,8 @@ public
         local
           VarData varData;
           EqData eqData;
+          EquationPointers clonedEqns;
+          VariablePointers clonedVars;
           UnorderedMap<ComponentRef, Iterator> cref_map = UnorderedMap.new<Iterator>(ComponentRef.hash, ComponentRef.isEqual);
 
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
@@ -97,17 +98,27 @@ public
             (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex, "State");
             (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex, "Discretes");
             (variables, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, equations, initialEqs, eqData.uniqueIndex, "Discrete States");
+            (variables, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, equations, initialEqs, eqData.uniqueIndex, "Clocked States");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex, " ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, eqData.uniqueIndex, " External Object ");
 
-            // clone all simulation equations and add them to the initial equations. also remove/replace when equations
-            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
+            // clone all simulation equations and add them to the initial equations.
+            clonedEqns := EquationPointers.clone(equations, false);
+            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
+            //also remove/replace when equations and clocked equations and remove clocked functions
             initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            EquationPointers.mapRemovePtr(initialEqs, Equation.isClocked);
+            EquationPointers.mapPtr(initialEqs, replaceClockedFunctionsEqn);
+
             (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
 
+            // clone all initial variables and remove clocked variables
+            clonedVars := VariablePointers.clone(initialVars, false);
+            VariablePointers.mapRemovePtr(clonedVars, BVariable.isClocked);
+
             varData.variables := variables;
-            varData.initials := initialVars;
+            varData.initials := VariablePointers.compress(clonedVars);
             eqData.equations := equations;
             eqData.initials := EquationPointers.compress(initialEqs);
 
@@ -116,17 +127,17 @@ public
         then bdae;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to create initial system!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to create initial partition!"});
         then fail();
       end match;
 
       // Modules
       modules := {
         (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Inline"),
-        (function Partitioning.main(systemType = NBSystem.SystemType.INI),  "Partitioning"),
-        (cleanup,                                                           "Cleanup"),
-        (function Causalize.main(systemType = NBSystem.SystemType.INI),     "Causalize"),
-        (function Tearing.main(systemType = NBSystem.SystemType.INI),       "Tearing")
+        (function Partitioning.main(kind = NBPartition.Kind.INI),  "Partitioning"),
+        (cleanup,                                                  "Cleanup"),
+        (function Causalize.main(kind = NBPartition.Kind.INI),     "Causalize"),
+        (function Tearing.main(kind = NBPartition.Kind.INI),       "Tearing")
       };
       (bdae, clocks) := BackendDAE.applyModules(bdae, modules, ClockIndexes.RT_CLOCK_NEW_BACKEND_INITIALIZATION);
 
@@ -166,7 +177,7 @@ public
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
       print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
-       StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+        StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createStartEquations;
 
@@ -235,7 +246,7 @@ public
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
       print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
-       StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+        StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
     end if;
   end createWhenReplacementEquations;
 
@@ -248,7 +259,7 @@ public
     ComponentRef cref;
     Iterator iter;
     Pointer<Variable> var_ptr;
-    Option<Pointer<Variable>> pre_post;
+    Option<Pointer<Variable>> var_pre;
     ComponentRef pre;
     list<Subscript> subscripts;
     EquationKind kind;
@@ -256,10 +267,10 @@ public
   algorithm
     (cref, iter) := tpl;
     var_ptr := BVariable.getVarPointer(cref);
-    pre_post := BVariable.getPrePost(var_ptr);
-    if Util.isSome(pre_post) then
+    var_pre := BVariable.getVarPre(var_ptr);
+    if Util.isSome(var_pre) then
       subscripts := ComponentRef.subscriptsAllFlat(cref);
-      pre := BVariable.getVarName(Util.getOption(pre_post));
+      pre := BVariable.getVarName(Util.getOption(var_pre));
       pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
       kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
       eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
@@ -283,18 +294,18 @@ public
     output Pointer<Variable> start_var;
     output ComponentRef start_name;
   protected
-    Option<Pointer<Variable>> pre_post = BVariable.getPrePost(var_ptr);
+    Option<Pointer<Variable>> var_pre = BVariable.getVarPre(var_ptr);
     Pointer<Variable> disc_state_var;
     ComponentRef merged_name;
   algorithm
-    if BVariable.isPrevious(var_ptr) and Util.isSome(pre_post) then
+    if BVariable.isPrevious(var_ptr) and Util.isSome(var_pre) then
       // for previous change the rhs to the start value of the discrete state
-      merged_name := BVariable.getVarName(Util.getOption(pre_post));
+      merged_name := BVariable.getVarName(Util.getOption(var_pre));
       merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true);
-    elseif Util.isSome(pre_post) then
+    elseif Util.isSome(var_pre) then
       // for vars with previous change the lhs cref to the $PRE cref
       merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
-      var_ptr := Util.getOption(pre_post);
+      var_ptr := Util.getOption(var_pre);
       name := BVariable.getVarName(var_ptr);
       name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
     else
@@ -449,7 +460,7 @@ public
     EquationKind kind;
   algorithm
     if not BVariable.isPrevious(var_ptr) then
-      pre := BVariable.getPrePost(var_ptr);
+      pre := BVariable.getVarPre(var_ptr);
       if Util.isSome(pre) then
         kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
         pre_eq := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var_ptr)), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
@@ -478,7 +489,7 @@ public
   algorithm
     var_ptr := Slice.getT(var_slice);
     if not BVariable.isPrevious(var_ptr) then
-      pre := BVariable.getPrePost(var_ptr);
+      pre := BVariable.getVarPre(var_ptr);
       if Util.isSome(pre) then
         name    := BVariable.getVarName(var_ptr);
         dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
@@ -511,29 +522,29 @@ public
       case BackendDAE.MAIN() algorithm
 
         // initial() -> false
-        bdae.ode        := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode);
-        bdae.algebraic  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.algebraic);
-        bdae.ode_event  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.ode_event);
-        bdae.alg_event  := list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in bdae.alg_event);
+        bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(System.mapEqn(sys, function cleanupInitialCall(init = false)) for sys in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in Util.getOption(bdae.dae)));
         end if;
         // initial() -> true
-        bdae.init := list(System.mapEqn(sys, function cleanupInitialCall(init = true)) for sys in bdae.init);
+        bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true)) for par in bdae.init);
 
         // homotopy(actual, simplified) -> actual
-        bdae.ode        := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode);
-        bdae.algebraic  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.algebraic);
-        bdae.ode_event  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.ode_event);
-        bdae.alg_event  := list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in bdae.alg_event);
+        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(System.mapExp(sys, function cleanupHomotopy(init = false, hasHom = hasHom)) for sys in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in Util.getOption(bdae.dae)));
         end if;
 
         // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
-          bdae.init_0 := SOME(list(System.clone(sys, false) for sys in bdae.init));
-          bdae.init_0 := SOME(list(System.mapExp(sys, function cleanupHomotopy(init = true, hasHom = hasHom)) for sys in Util.getOption(bdae.init_0)));
+          bdae.init_0 := SOME(list(Partition.clone(par, false) for par in bdae.init));
+          bdae.init_0 := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init = true, hasHom = hasHom)) for par in Util.getOption(bdae.init_0)));
         end if;
 
       then bdae;
@@ -580,7 +591,7 @@ public
   function cleanupHomotopy
     input output Expression exp;
     input Boolean init "if init then replace with simplified, else replace with actual";
-    input Pointer<Boolean> hasHom   "output, determines if system contains homotopy()";
+    input Pointer<Boolean> hasHom   "output, determines if partition contains homotopy()";
   algorithm
     exp := match exp
       local
@@ -735,6 +746,24 @@ public
       else {stmt};
     end match;
   end removeWhenEquationStatement;
+
+ function replaceClockedFunctionsEqn
+    input output Pointer<Equation> eqn;
+  algorithm
+    Pointer.update(eqn, Equation.map(Pointer.access(eqn), replaceClockedFunctions));
+  end replaceClockedFunctionsEqn;
+
+  function replaceClockedFunctions
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "$getPart") algorithm
+      then Expression.makeZero(Expression.typeOf(exp));
+      else exp;
+    end match;
+  end replaceClockedFunctions;
 
   function isInitialCall
     "checks if the expression is an initial call or can be simplified to be one."

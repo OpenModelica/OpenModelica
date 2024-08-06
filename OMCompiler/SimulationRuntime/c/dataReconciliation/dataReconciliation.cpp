@@ -934,7 +934,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
           col0 = true;
           names.push_back(temp.c_str());
           Sxrowcount++;
-          if (flag == false)
+          if (!flag)
           {
             Sxcolscount++;
           }
@@ -945,7 +945,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
           //logfile << "xdata" << temp << " double" << atof(temp.c_str()) <<"\n";
           col1 = true;
           xdata.push_back(atof(temp.c_str()));
-          if (flag == false)
+          if (!flag)
           {
             Sxcolscount++;
           }
@@ -956,7 +956,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
           //logfile << "sxdata" << temp << " double" << atof(temp.c_str()) <<"\n";
           col2 = true;
           sxdata.push_back(atof(temp.c_str()));
-          if (flag == false)
+          if (!flag)
           {
             Sxcolscount++;
           }
@@ -1638,7 +1638,7 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
     }
 
     // user error variable of interest in correlation input file does not correspond to variable of interest
-    if (flag == false)
+    if (!flag)
     {
       noEntry.push_back(headers[i]);
     }
@@ -2071,7 +2071,7 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
     }
 
     // user error variable of interest , has no entry in measurement input file
-    if (flag == false)
+    if (!flag)
     {
       noEntry.push_back(knowns[i]);
     }

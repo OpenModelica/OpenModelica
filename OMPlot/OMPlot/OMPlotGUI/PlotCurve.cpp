@@ -36,6 +36,8 @@
 #include "qwt_painter.h"
 #endif
 #include "qwt_symbol.h"
+#include "qwt_scale_map.h"
+#include "qwt_point_polar.h"
 
 using namespace OMPlot;
 

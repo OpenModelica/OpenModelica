@@ -564,7 +564,7 @@ void PlotWindowContainer::clearPlotWindow()
   PlotWindow *pPlotWindow = getCurrentWindow();
   if (!pPlotWindow) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             tr("No plot window is active for clearing curves."), Helper::ok);
+                             tr("No plot window is active for clearing curves."), QMessageBox::Ok);
     return;
   }
   removePlotCurves(pPlotWindow);
@@ -580,15 +580,15 @@ void PlotWindowContainer::exportVariables()
 {
   PlotWindow *pPlotWindow = getCurrentWindow();
   if (!pPlotWindow) {
-    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("No plot window is active for exporting variables."), Helper::ok);
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("No plot window is active for exporting variables."), QMessageBox::Ok);
     return;
   }
   if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
-    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot export parametric plot."), Helper::ok);
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot export parametric plot."), QMessageBox::Ok);
     return;
   }
   if (pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
-    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("No variables are selected for exporting."), Helper::ok);
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("No variables are selected for exporting."), QMessageBox::Ok);
     return;
   }
 
@@ -606,7 +606,7 @@ void PlotWindowContainer::exportVariables()
         timeVector = pPlotCurve->mXAxisVector;
       }
       if (filePath.compare(pPlotCurve->getAbsoluteFilePath()) != 0) {
-        QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Not possible to export variables from different result files."), Helper::ok);
+        QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Not possible to export variables from different result files."), QMessageBox::Ok);
         return;
       }
       headers << QString("\"%1\"").arg(pPlotCurve->getYVariable());

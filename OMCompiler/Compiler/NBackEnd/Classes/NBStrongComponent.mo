@@ -58,8 +58,8 @@ protected
   import Solve = NBSolve;
   import Sorting = NBSorting;
   import NBSorting.SuperNode;
-  import BSystem = NBSystem;
-  import NBSystem.{System, SystemType};
+  import BPartition = NBPartition;
+  import NBPartition.{Partition};
   import Tearing = NBTearing;
   import NBVariable.{VariablePointer, VariablePointers};
 
@@ -73,25 +73,25 @@ protected
 public
   uniontype AliasInfo
     record ALIAS_INFO
-      SystemType systemType     "The partition type";
+      BPartition.Kind kind       "The partition kind";
       Integer partitionIndex    "the partition index";
       Integer componentIndex    "The index in that strong component array";
     end ALIAS_INFO;
 
     function toString
       input AliasInfo info;
-      output String str = System.systemTypeString(info.systemType) + "[" + intString(info.partitionIndex) + " | " + intString(info.componentIndex) + "]";
+      output String str = Partition.kindToString(info.kind) + "[" + intString(info.partitionIndex) + " | " + intString(info.componentIndex) + "]";
     end toString;
 
     function hash
       input AliasInfo info;
-      output Integer i = System.systemTypeInteger(info.systemType) + info.partitionIndex*13 + info.componentIndex*31;
+      output Integer i = Partition.kindToInteger(info.kind) + info.partitionIndex*13 + info.componentIndex*31;
     end hash;
 
     function isEqual
       input AliasInfo info1;
       input AliasInfo info2;
-      output Boolean b = (info1.componentIndex == info2.componentIndex) and (info1.partitionIndex == info2.partitionIndex) and (info1.systemType == info2.systemType);
+      output Boolean b = (info1.componentIndex == info2.componentIndex) and (info1.partitionIndex == info2.partitionIndex) and (info1.kind == info2.kind);
     end isEqual;
   end AliasInfo;
 
@@ -208,7 +208,7 @@ public
       then str;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end toString;
@@ -360,7 +360,7 @@ public
     Integer arr_idx;
     Slice.IntLst scal_indices;
     list<StrongComponent> entwined_slices = {};
-     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
+    list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
   algorithm
     // collect individual buckets again
     for idx in eqn_indices loop
@@ -389,13 +389,13 @@ public
   end createPseudoEntwined;
 
   function createAlias
-    input SystemType systemType;
+    input BPartition.Kind kind;
     input Integer partitionIndex;
     input Pointer<Integer> index_ptr;
     input StrongComponent orig_comp;
     output StrongComponent alias_comp;
   algorithm
-    alias_comp := ALIAS(ALIAS_INFO(systemType, partitionIndex, Pointer.access(index_ptr)), orig_comp);
+    alias_comp := ALIAS(ALIAS_INFO(kind, partitionIndex, Pointer.access(index_ptr)), orig_comp);
     Pointer.update(index_ptr, Pointer.access(index_ptr) + 1);
   end createAlias;
 
@@ -439,7 +439,7 @@ public
       /* are other residuals possible? */
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
 
@@ -823,7 +823,7 @@ public
       then comp;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end createPseudoScalar;

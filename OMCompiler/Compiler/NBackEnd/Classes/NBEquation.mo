@@ -43,7 +43,7 @@ public
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendDAE = NBackendDAE;
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.VariableAttributes;
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
@@ -55,6 +55,7 @@ public
   import Operator = NFOperator;
   import NFPrefixes.{Variability, Purity};
   import SimplifyExp = NFSimplifyExp;
+  import SimplifyModel = NFSimplifyModel;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -84,6 +85,7 @@ public
   constant String SIMULATION_STR  = "SIM";
   constant String START_STR       = "SRT";
   constant String PRE_STR         = "PRE";
+  constant String TMP_STR         = "TMP";
 
   type EquationPointer = Pointer<Equation> "mainly used for mapping purposes";
 
@@ -730,7 +732,7 @@ public
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eq)});
         then fail();
-     end match;
+      end match;
     end source;
 
     function info
@@ -1031,8 +1033,28 @@ public
         case FOR_EQUATION()     algorithm eq.attr := attr; then eq;
         case WHEN_EQUATION()    algorithm eq.attr := attr; then eq;
         case AUX_EQUATION(body = SOME(body)) algorithm eq.body := SOME(setAttributes(body, attr)); then eq;
-        end match;
+      end match;
     end setAttributes;
+
+    function setKind
+      input output Equation eq;
+      input EquationKind kind;
+      input Option<Integer> clock_idx = NONE();
+    algorithm
+      eq := match eq
+        local
+          EquationAttributes tmp;
+          Equation body;
+        case SCALAR_EQUATION()  algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case ARRAY_EQUATION()   algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case RECORD_EQUATION()  algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case ALGORITHM()        algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case IF_EQUATION()      algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case FOR_EQUATION()     algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case WHEN_EQUATION()    algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
+        case AUX_EQUATION(body = SOME(body)) algorithm eq.body := SOME(setKind(body, kind, clock_idx)); then eq;
+      end match;
+    end setKind;
 
     function getSource
       input Equation eq;
@@ -1206,6 +1228,7 @@ public
         case ARRAY_EQUATION()                               then eq.rhs;
         case RECORD_EQUATION()                              then eq.rhs;
         case FOR_EQUATION() guard(listLength(eq.body) == 1) then getRHS(List.first(eq.body));
+        case IF_EQUATION()                                  then IfEquationBody.getRHS(eq.body);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS was ambiguous for: " + toString(eq)});
         then fail();
@@ -1326,7 +1349,9 @@ public
           eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
         then eq;
         // ToDo: implement the following correctly:
-        case ALGORITHM()       then eq;
+        case ALGORITHM() algorithm
+          eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
+        then eq;
         case IF_EQUATION()     then eq;
         case FOR_EQUATION()    then eq;
         case WHEN_EQUATION() algorithm
@@ -1375,7 +1400,7 @@ public
     function setResidualVar
       input output Equation eqn;
       input Pointer<Variable> residualVar;
-   algorithm
+    algorithm
        // update equation attributes
       eqn := match eqn
         case SCALAR_EQUATION() algorithm
@@ -1747,6 +1772,16 @@ public
       b := Pointer.access(b_ptr);
     end isParameterEquation;
 
+    function isClocked
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match getAttributes(Pointer.access(eqn))
+        case EQUATION_ATTRIBUTES(kind = EquationKind.CLOCKED) then true;
+        else false;
+      end match;
+    end isClocked;
+
     function expIsParamOrConst
       input output Expression exp;
       input Pointer<Boolean> b_ptr;
@@ -1797,18 +1832,21 @@ public
         case qual as Binding.UNTYPED_BINDING()  then qual.bindingExp;
         case qual as Binding.FLAT_BINDING()     then qual.bindingExp;
         case qual as Binding.UNBOUND() algorithm
-          start := BackendExtension.VariableAttributes.getStartAttribute(var.backendinfo.attributes);
+          start := VariableAttributes.getStartAttribute(var.backendinfo.attributes);
         then Util.getOptionOrDefault(start, Expression.makeZero(ComponentRef.getSubscriptedType(var.name, true)));
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toDebugString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
       end match;
 
-      if BVariable.isContinuous(var_ptr, initial_) then
+      if BVariable.isClock(var_ptr) then
+        eqnAttr := EquationAttributes.default(EquationKind.CLOCKED, initial_, SOME(-1));
+      elseif BVariable.isContinuous(var_ptr, initial_) then
         eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_);
       else
         eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);
       end if;
+
       // simplify rhs and get potential iterators
       (iter, rhs) := Iterator.extract(rhs);
       rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
@@ -2158,7 +2196,7 @@ public
           if listLength(lhs_lst) == listLength(rhs_lst) then
             for tpl in List.zip(lhs_lst, rhs_lst) loop
               (lhs, rhs) := tpl;
-               stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
+              stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
             end for;
           else
             stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
@@ -3050,6 +3088,19 @@ public
       end match;
     end toStatement;
 
+    function toEquation
+      "make assignments for assignment statements and an algorithm otherwise"
+      input WhenStatement stmt;
+      input EquationAttributes attr;
+      input Boolean init;
+      output Equation eqn;
+    algorithm
+      eqn := match stmt
+        case ASSIGN() then Equation.makeAssignmentEqn(stmt.lhs, stmt.rhs, Iterator.EMPTY(), attr);
+                      else Equation.setAttributes(Pointer.access(Equation.makeAlgorithm({toStatement(stmt)}, init)), attr);
+      end match;
+    end toEquation;
+
     function size
       input WhenStatement stmt;
       output Integer s;
@@ -3217,6 +3268,15 @@ public
       end match;
     end toString;
 
+    function setKind
+      input output EquationAttributes attr;
+      input EquationKind kind;
+      input Option<Integer> clock_idx = NONE();
+    algorithm
+      attr.kind := kind;
+      attr.clock_idx := clock_idx;
+    end setKind;
+
     function setResidualVar
       input output EquationAttributes attr;
       input Pointer<Variable> residualVar;
@@ -3286,7 +3346,7 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no clock index was provided for clocked equation."});
       then fail();
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " for unknown reason."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " for an unknown reason."});
       then fail();
     end match;
   end convertEquationKind;
@@ -3503,7 +3563,7 @@ public
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           func(ExpandableArray.get(i, equations.eqArr));
-         end if;
+        end if;
       end for;
     end mapPtr;
 
@@ -3549,7 +3609,7 @@ public
           if func(eq_ptr) then
             equations := remove(eq_ptr, equations);
           end if;
-         end if;
+        end if;
       end for;
       equations := compress(equations);
     end mapRemovePtr;
@@ -3760,6 +3820,7 @@ public
       EquationPointers equations    "All equations";
       EquationPointers simulation   "All equations for simulation (without initial)";
       EquationPointers continuous   "Continuous equations";
+      EquationPointers clocked      "Clocked equations";
       EquationPointers discretes    "Discrete equations";
       EquationPointers initials     "(Exclusively) Initial equations";
       EquationPointers auxiliaries  "Auxiliary equations";
@@ -3817,6 +3878,7 @@ public
           // we do not want to traverse removed equations, otherwise we could break them
           eqData.simulation   := EquationPointers.map(eqData.simulation, func);
           eqData.continuous   := EquationPointers.map(eqData.continuous, func);
+          eqData.clocked      := EquationPointers.map(eqData.clocked, func);
           eqData.discretes    := EquationPointers.map(eqData.discretes, func);
           eqData.initials     := EquationPointers.map(eqData.initials, func);
           eqData.auxiliaries  := EquationPointers.map(eqData.auxiliaries, func);
@@ -3845,6 +3907,7 @@ public
           // we do not want to traverse removed equations, otherwise we could break them
           eqData.simulation   := EquationPointers.mapExp(eqData.simulation, func);
           eqData.continuous   := EquationPointers.mapExp(eqData.continuous, func);
+          eqData.clocked      := EquationPointers.mapExp(eqData.clocked, func);
           eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func);
           eqData.initials     := EquationPointers.mapExp(eqData.initials, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
@@ -3880,8 +3943,8 @@ public
             if level == 0 then
               tmp :=  tmp + EquationPointers.toString(eqData.equations, "Simulation", NONE(), false);
             else
-
               tmp :=  tmp + EquationPointers.toString(eqData.continuous, "Continuous", NONE(), false) +
+                      EquationPointers.toString(eqData.clocked, "Clocked", NONE(), false) +
                       EquationPointers.toString(eqData.discretes, "Discrete", NONE(), false) +
                       EquationPointers.toString(eqData.initials, "(Exclusively) Initial", NONE(), false) +
                       EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false) +
@@ -3927,7 +3990,7 @@ public
         case EqData.EQ_DATA_JAC() then eqData.uniqueIndex;
         case EqData.EQ_DATA_HES() then eqData.uniqueIndex;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end getUniqueIndex;
@@ -3943,7 +4006,7 @@ public
       end match;
     end setEquations;
 
-    type EqType = enumeration(CONTINUOUS, DISCRETE, INITIAL);
+    type EqType = enumeration(CONTINUOUS, DISCRETE, CLOCKED, INITIAL);
 
     function addTypedList
       input output EqData eqData;
@@ -3975,6 +4038,15 @@ public
           eqData.discretes := EquationPointers.addList(eq_lst, eqData.discretes);
         then eqData;
 
+        case (EQ_DATA_SIM(), EqType.CLOCKED) algorithm
+          if newName then
+            for eqn_ptr in eq_lst loop
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
+            end for;
+          end if;
+          eqData.clocked := EquationPointers.addList(eq_lst, eqData.clocked);
+        then eqData;
+
         case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
           if newName then
             for eqn_ptr in eq_lst loop
@@ -3988,7 +4060,7 @@ public
         // ToDo: other cases
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end addTypedList;
@@ -3998,7 +4070,7 @@ public
       input list<Pointer<Equation>> eq_lst;
       input Boolean newName = true;
     protected
-      list<Pointer<Equation>> equation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
+      list<Pointer<Equation>> equation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     algorithm
 
       eqData := match eqData
@@ -4008,10 +4080,11 @@ public
               Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
-          (simulation_lst, continuous_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := typeList(eq_lst);
+          (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := typeList(eq_lst);
           eqData.equations    := EquationPointers.addList(eq_lst, eqData.equations);
           eqData.simulation   := EquationPointers.addList(simulation_lst, eqData.simulation);
           eqData.continuous   := EquationPointers.addList(continuous_lst, eqData.continuous);
+          eqData.clocked      := EquationPointers.addList(clocked_lst, eqData.clocked);
           eqData.discretes    := EquationPointers.addList(discretes_lst, eqData.discretes);
           eqData.initials     := EquationPointers.addList(initials_lst, eqData.initials);
           eqData.auxiliaries  := EquationPointers.addList(auxiliaries_lst, eqData.auxiliaries);
@@ -4021,7 +4094,7 @@ public
         // ToDo: other cases
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end addUntypedList;
@@ -4057,7 +4130,7 @@ public
         then eqData;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end removeList;
@@ -4092,7 +4165,7 @@ public
         then eqData;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
     end compress;
@@ -4102,13 +4175,14 @@ public
     input list<Pointer<Equation>> equations;
     output list<Pointer<Equation>> simulation_lst = {};
     output list<Pointer<Equation>> continuous_lst = {};
+    output list<Pointer<Equation>> clocked_lst = {};
     output list<Pointer<Equation>> discretes_lst = {};
     output list<Pointer<Equation>> initials_lst = {};
     output list<Pointer<Equation>> auxiliaries_lst = {};
     output list<Pointer<Equation>> removed_lst = {};
   algorithm
     for eq in equations loop
-    () := match Equation.getAttributes(Pointer.access(eq))
+      () := match Equation.getAttributes(Pointer.access(eq))
         case EQUATION_ATTRIBUTES(exclusively_initial = true)
           algorithm
             initials_lst := eq :: initials_lst;
@@ -4118,6 +4192,11 @@ public
           algorithm
             continuous_lst := eq :: continuous_lst;
             simulation_lst := eq :: simulation_lst;
+        then ();
+
+        case EQUATION_ATTRIBUTES(kind = EquationKind.CLOCKED)
+          algorithm
+            clocked_lst := eq :: clocked_lst;
         then ();
 
         case EQUATION_ATTRIBUTES(kind = EquationKind.DISCRETE)

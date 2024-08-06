@@ -2314,7 +2314,11 @@ namespace ModelInstance
     } else {
       mName = str.left(i);
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      for (const auto& sub: QStringView(str).mid(i + 1, str.size() - i - 2).split(',')) {
+#else
       for (const auto& sub: str.midRef(i + 1, str.size() - i - 2).split(',')) {
+#endif
         mSubScripts.append(sub.toString());
       }
     }

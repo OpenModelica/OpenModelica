@@ -44,7 +44,7 @@ public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
 public constant Integer RT_CLOCK_BUILD_MODEL = 10;
 public constant Integer RT_CLOCK_EXECSTAT = 11;
-public constant Integer RT_CLOCK_EXECSTAT_CUMULATIVE = 12;
+
 public constant Integer RT_CLOCK_FRONTEND = 13;
 public constant Integer RT_CLOCK_BACKEND = 14;
 public constant Integer RT_CLOCK_SIMCODE = 15;
@@ -75,7 +75,6 @@ algorithm
     case RT_CLOCK_SIMULATE_SIMULATION         then "SSI";
     case RT_CLOCK_BUILD_MODEL                 then "BLD";
     case RT_CLOCK_EXECSTAT                    then "EXS";
-    case RT_CLOCK_EXECSTAT_CUMULATIVE         then "EXC";
     case RT_CLOCK_FRONTEND                    then "FRT";
     case RT_CLOCK_BACKEND                     then "BCK";
     case RT_CLOCK_SIMCODE                     then "SCD";

@@ -141,7 +141,9 @@ namespace IAEX
     void forwardAction( int );          // Added 2006-04-27 AF
 
   public slots:
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     void setSource(const QUrl &name);      // Changed 2005-11-03 AF
+#endif
 
   protected:
     void mousePressEvent(QMouseEvent *event);      // Added 2005-11-01 AF
@@ -149,6 +151,11 @@ namespace IAEX
     void insertFromMimeData(const QMimeData *source);  // Added 2006-01-23 AF
     void keyPressEvent(QKeyEvent *event );        // Added 2006-01-30 AF
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    // QTextBrowser interface
+  protected:
+    virtual void doSetSource(const QUrl &name, QTextDocument::ResourceType type) override;
+#endif
   };
 
 }

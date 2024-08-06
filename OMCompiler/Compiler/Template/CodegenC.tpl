@@ -3206,52 +3206,49 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
 ::=
   match sparsepattern
   case {} then
-     let emptySparse = generateStaticEmptySparseData(indexName, systemType)
-     <<
-     <%emptySparse%>
-     >>
+    generateStaticEmptySparseData(indexName, systemType)
   case _ then
-      let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
-      let sizeleadindex = listLength(sparsepattern)
-      let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
-      let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-      let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
-      <<
+    let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
+    let sizeleadindex = listLength(sparsepattern)
+    let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
+    let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
+    let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
+    <<
 
-      OMC_DISABLE_OPT
-      void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
-      {
-        int i=0;
-        <%colPtr%>
-        <%rowIndex%>
-        /* sparsity pattern available */
-        inSysData->isPatternAvailable = TRUE;
-        inSysData->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
+    OMC_DISABLE_OPT
+    void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
+    {
+      int i=0;
+      <%colPtr%>
+      <%rowIndex%>
+      /* sparsity pattern available */
+      inSysData->isPatternAvailable = TRUE;
+      inSysData->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
-        /* write lead index of compressed sparse column */
-        memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
+      /* write lead index of compressed sparse column */
+      memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
 
-        for(i=2;i<<%sizeleadindex%>+1;++i)
-          inSysData->sparsePattern->leadindex[i] += inSysData->sparsePattern->leadindex[i-1];
+      for(i=2;i<<%sizeleadindex%>+1;++i)
+        inSysData->sparsePattern->leadindex[i] += inSysData->sparsePattern->leadindex[i-1];
 
-        /* call sparse index */
-        memcpy(inSysData->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
+      /* call sparse index */
+      memcpy(inSysData->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
 
-        /* write color array */
-        <%colorString%>
+      /* write color array */
+      <%colorString%>
+    }
+
+    void freeSparsePattern<%indexName%>(<%systemType%>* inSysData)
+    {
+      if (inSysData->isPatternAvailable) {
+        freeSparsePattern(inSysData->sparsePattern);
+        free(inSysData->sparsePattern);
+        inSysData->sparsePattern = NULL;
+        inSysData->isPatternAvailable = FALSE;
       }
-
-      void freeSparsePattern<%indexName%>(<%systemType%>* inSysData)
-      {
-        if (inSysData->isPatternAvailable) {
-          freeSparsePattern(inSysData->sparsePattern);
-          free(inSysData->sparsePattern);
-          inSysData->sparsePattern = NULL;
-          inSysData->isPatternAvailable = FALSE;
-        }
-      }
-      >>
-   end match
+    }
+    >>
+  end match
 end generateStaticSparseData;
 
 template generateStaticEmptyNonlinearData(String indexName, String systemType)
@@ -3272,50 +3269,45 @@ template generateStaticNonlinearData(String indexName, String systemType, Nonlin
 ::=
   match nonlinearpattern
   case {} then
-      <<
-      void initializeNonlinearPattern<%indexName%>(<%systemType%>* inSysData)
-      {
-        /* no nonlinear pattern available */
-      }
-      >>
+    generateStaticEmptyNonlinearData(indexName, systemType)
   case _ then
-      let number_vars = listLength(nonlinearpatternT)
-      let number_eqns = listLength(nonlinearpattern)
-      let number_nonlinear = lengthListElements(unzipSecond(nonlinearpattern))
-      let index_var = genSPCRSPtr(listLength(nonlinearpatternT), nonlinearpatternT, "index_var")
-      let index_eqn = genSPCRSPtr(listLength(nonlinearpatternT), nonlinearpatternT, "index_eqn")
-      let columns = genSPCRSRows(lengthListElements(unzipSecond(nonlinearpatternT)), nonlinearpatternT, "columns")
-      let rows = genSPCRSRows(lengthListElements(unzipSecond(nonlinearpattern)), nonlinearpattern, "rows")
-      <<
-      OMC_DISABLE_OPT
-      void initializeNonlinearPattern<%indexName%>(<%systemType%>* inSysData)
-      {
-        int i=0;
-        inSysData->nonlinearPattern = (NONLINEAR_PATTERN*) malloc(sizeof(NONLINEAR_PATTERN));
-        inSysData->nonlinearPattern->numberOfVars = <%number_vars%>;
-        inSysData->nonlinearPattern->numberOfEqns = <%number_eqns%>;
-        inSysData->nonlinearPattern->numberOfNonlinear = <%number_nonlinear%>;
-        inSysData->nonlinearPattern->indexVar = (unsigned int*) malloc((<%number_vars%>+1)*sizeof(unsigned int));
-        inSysData->nonlinearPattern->indexEqn = (unsigned int*) malloc((<%number_eqns%>+1)*sizeof(unsigned int));
-        inSysData->nonlinearPattern->columns = (unsigned int*) malloc(<%number_nonlinear%>*sizeof(unsigned int));
-        inSysData->nonlinearPattern->rows = (unsigned int*) malloc(<%number_nonlinear%>*sizeof(unsigned int));
-        /* initialize and accumulate index vectors */
-        <%index_var%>
-        <%index_eqn%>
-        memcpy(inSysData->nonlinearPattern->indexVar, index_var, (<%number_vars%>+1)*sizeof(unsigned int));
-        memcpy(inSysData->nonlinearPattern->indexEqn, index_eqn, (<%number_eqns%>+1)*sizeof(unsigned int));
-        for(i=2;i<<%number_vars%>+1;++i)
-          inSysData->nonlinearPattern->indexVar[i] += inSysData->nonlinearPattern->indexVar[i-1];
-        for(i=2;i<<%number_eqns%>+1;++i)
-          inSysData->nonlinearPattern->indexEqn[i] += inSysData->nonlinearPattern->indexEqn[i-1];
-        /* initialize columns and rows */
-        <%columns%>
-        <%rows%>
-        memcpy(inSysData->nonlinearPattern->columns, columns, <%number_nonlinear%>*sizeof(unsigned int));
-        memcpy(inSysData->nonlinearPattern->rows, rows, <%number_nonlinear%>*sizeof(unsigned int));
-      }
-      >>
-   end match
+    let number_vars = listLength(nonlinearpatternT)
+    let number_eqns = listLength(nonlinearpattern)
+    let number_nonlinear = lengthListElements(unzipSecond(nonlinearpattern))
+    let index_var = genSPCRSPtr(listLength(nonlinearpatternT), nonlinearpatternT, "index_var")
+    let index_eqn = genSPCRSPtr(listLength(nonlinearpatternT), nonlinearpatternT, "index_eqn")
+    let columns = genSPCRSRows(lengthListElements(unzipSecond(nonlinearpatternT)), nonlinearpatternT, "columns")
+    let rows = genSPCRSRows(lengthListElements(unzipSecond(nonlinearpattern)), nonlinearpattern, "rows")
+    <<
+    OMC_DISABLE_OPT
+    void initializeNonlinearPattern<%indexName%>(<%systemType%>* inSysData)
+    {
+      int i=0;
+      inSysData->nonlinearPattern = (NONLINEAR_PATTERN*) malloc(sizeof(NONLINEAR_PATTERN));
+      inSysData->nonlinearPattern->numberOfVars = <%number_vars%>;
+      inSysData->nonlinearPattern->numberOfEqns = <%number_eqns%>;
+      inSysData->nonlinearPattern->numberOfNonlinear = <%number_nonlinear%>;
+      inSysData->nonlinearPattern->indexVar = (unsigned int*) malloc((<%number_vars%>+1)*sizeof(unsigned int));
+      inSysData->nonlinearPattern->indexEqn = (unsigned int*) malloc((<%number_eqns%>+1)*sizeof(unsigned int));
+      inSysData->nonlinearPattern->columns = (unsigned int*) malloc(<%number_nonlinear%>*sizeof(unsigned int));
+      inSysData->nonlinearPattern->rows = (unsigned int*) malloc(<%number_nonlinear%>*sizeof(unsigned int));
+      /* initialize and accumulate index vectors */
+      <%index_var%>
+      <%index_eqn%>
+      memcpy(inSysData->nonlinearPattern->indexVar, index_var, (<%number_vars%>+1)*sizeof(unsigned int));
+      memcpy(inSysData->nonlinearPattern->indexEqn, index_eqn, (<%number_eqns%>+1)*sizeof(unsigned int));
+      for(i=2;i<<%number_vars%>+1;++i)
+        inSysData->nonlinearPattern->indexVar[i] += inSysData->nonlinearPattern->indexVar[i-1];
+      for(i=2;i<<%number_eqns%>+1;++i)
+        inSysData->nonlinearPattern->indexEqn[i] += inSysData->nonlinearPattern->indexEqn[i-1];
+      /* initialize columns and rows */
+      <%columns%>
+      <%rows%>
+      memcpy(inSysData->nonlinearPattern->columns, columns, <%number_nonlinear%>*sizeof(unsigned int));
+      memcpy(inSysData->nonlinearPattern->rows, rows, <%number_nonlinear%>*sizeof(unsigned int));
+    }
+    >>
+  end match
 end generateStaticNonlinearData;
 
 template generateStaticInitialData(list<ComponentRef> crefs, String indexName)

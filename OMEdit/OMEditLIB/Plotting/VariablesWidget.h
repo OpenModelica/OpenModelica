@@ -272,7 +272,7 @@ public slots:
   void unitChanged(const QModelIndex &index);
   void simulationTimeChanged(int value);
   void valueEntered(const QModelIndex &index);
-  void timeUnitChanged(QString unit);
+  void timeUnitChanged(int index);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);
   void findVariables();

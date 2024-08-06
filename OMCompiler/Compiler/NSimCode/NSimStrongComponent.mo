@@ -40,7 +40,6 @@ protected
   import DAE;
 
   // NF imports
-  import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
@@ -60,10 +59,10 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointer, EquationPointers, WhenEquationBody, WhenStatement, IfEquationBody, Iterator, SlicingStatus};
-  import Jacobian = NBJacobian;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
-  import System = NBSystem;
+  import Partition = NBPartition;
+  import NBPartitioning.{BClock, ClockedInfo};
   import Tearing = NBTearing;
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
@@ -76,6 +75,8 @@ protected
   import NSimCode.SimCodeIndices;
   import NSimJacobian.SimJacobian;
   import NSimCode.Identifier;
+  import SimPartition = NSimPartition;
+  import NSimPartition.SimPartitions;
   import NSimVar.{SimVar, SimVars, VarType};
 
   // Util imports
@@ -381,7 +382,7 @@ public
     end listToString;
 
     function createBlocks
-      input list<System.System> systems;
+      input list<Partition.Partition> partitions;
       output list<list<Block>> blcks = {};
       input output list<Block> all_blcks;
       input output SimCodeIndices simCodeIndices;
@@ -390,8 +391,8 @@ public
     protected
       list<Block> tmp;
     algorithm
-      for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, simcode_map, equation_map);
+      for partition in partitions loop
+        (tmp, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         blcks := tmp :: blcks;
         all_blcks := listAppend(tmp, all_blcks);
       end for;
@@ -399,7 +400,7 @@ public
     end createBlocks;
 
     function createDiscreteBlocks
-      input list<System.System> systems;
+      input list<Partition.Partition> partitions;
       input output list<list<Block>> blcks;
       input output list<Block> all_blcks;
       input output list<Block> event_dependencies;
@@ -409,8 +410,8 @@ public
     protected
       list<Block> tmp;
     algorithm
-      for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, simcode_map, equation_map);
+      for partition in partitions loop
+        (tmp, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         // add all
         all_blcks := listAppend(tmp, all_blcks);
         // filter all when equations and add to blcks (ode or algebraic)
@@ -424,7 +425,7 @@ public
     end createDiscreteBlocks;
 
     function createInitialBlocks
-      input list<System.System> systems;
+      input list<Partition.Partition> partitions;
       output list<Block> blcks;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
@@ -433,38 +434,83 @@ public
       list<Block> tmp;
       list<list<Block>> tmp_lst = {};
     algorithm
-      for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, simcode_map, equation_map);
+      for partition in partitions loop
+        (tmp, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         tmp_lst := tmp :: tmp_lst;
       end for;
       blcks := List.flatten(tmp_lst);
     end createInitialBlocks;
 
     function createDAEModeBlocks
-      input list<System.System> systems;
+      input list<Partition.Partition> partitions;
       output list<list<Block>> blcks = {};
       output list<SimVar> vars = {};
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
-      Pointer<SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
+      Pointer<SimCodeIndices> indices_ptr;
       Pointer<list<SimVar>> vars_ptr = Pointer.create({});
       list<Block> tmp;
     algorithm
-      for system in listReverse(systems) loop
-        VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
-        (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr), simcode_map, equation_map);
+      for partition in listReverse(partitions) loop
+        indices_ptr := Pointer.create(simCodeIndices);
+        VariablePointers.map(partition.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
+        (tmp, simCodeIndices) := fromPartition(partition, Pointer.access(indices_ptr), simcode_map, equation_map);
         blcks := tmp :: blcks;
       end for;
       vars := listReverse(Pointer.access(vars_ptr));
     end createDAEModeBlocks;
 
+    function createClockedBlocks
+      input list<Partition.Partition> partitions;
+      output SimPartitions baseParts;
+      output list<Block> eventClocks;
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input UnorderedMap<ComponentRef, Block> equation_map;
+      input ClockedInfo info;
+    protected
+      UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
+      list<Block> blcks;
+      list<SimVar> vars;
+      BClock clock, subClock, baseClock;
+      Boolean holdEvents;
+      Option<BClock> baseClock_opt;
+      SimPartition basePart, subPart;
+    algorithm
+      // collect all base clocks
+      for c in UnorderedMap.valueList(info.baseClocks) loop
+        UnorderedMap.add(c, {}, clock_collector);
+      end for;
+
+      // create all sub partition blocks and find the base partitions
+      for partition in listReverse(partitions) loop
+        (blcks, simCodeIndices)             := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
+        vars                                := SimVars.getPartitionVars(partition, simcode_map);
+        (clock, baseClock_opt, holdEvents)  := Partition.Partition.getClocks(partition);
+        if Util.isSome(baseClock_opt) then
+          // it is a sub clock
+          SOME(baseClock) := baseClock_opt;
+          subClock        := clock;
+        else
+          // it is a base clock, use the default sub clock
+          baseClock       := clock;
+          subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
+        end if;
+        subPart := SimPartition.createSubPartition(subClock, blcks, vars, holdEvents);
+        UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
+      end for;
+
+      // create base partitions
+      (baseParts, eventClocks, simCodeIndices) := SimPartition.createBasePartitions(clock_collector, simCodeIndices);
+    end createClockedBlocks;
+
     function createNoReturnBlocks
       input EquationPointers equations;
       output list<Block> blcks = {};
       input output SimCodeIndices simCodeIndices;
-      input System.SystemType systemType;
+      input Partition.Kind kind;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
@@ -479,10 +525,10 @@ public
               ComponentRef cref;
 
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
-            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map, equation_map);
+            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
             case Equation.WHEN_EQUATION()
-            then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map, equation_map);
+            then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
             case Equation.ALGORITHM()
             then createAlgorithm(eqn, simCodeIndices, equation_map);
@@ -503,44 +549,45 @@ public
       end for;
     end createNoReturnBlocks;
 
-    function fromSystem
-      input System.System system;
+    function fromPartition
+      input Partition.Partition partition;
       output list<Block> blcks;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     algorithm
-      blcks := match system.strongComponents
+      blcks := match partition.strongComponents
         local
           array<StrongComponent> comps;
+          Partition.Kind kind;
           Block tmp;
           list<Block> result = {};
           Integer index;
 
-        case SOME(comps)
-          algorithm
-            for i in arrayLength(comps):-1:1 loop
-              (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, system.systemType, simcode_map, equation_map);
-              // add it to the alias map
-              if not StrongComponent.isAlias(comps[i]) then
-                UnorderedMap.add(AliasInfo.ALIAS_INFO(system.systemType, system.partitionIndex, i), index, simCodeIndices.alias_map);
-              end if;
-              result := tmp :: result;
-            end for;
+        case SOME(comps) algorithm
+          kind := Partition.Partition.getKind(partition);
+          for i in arrayLength(comps):-1:1 loop
+            (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, kind, simcode_map, equation_map);
+            // add it to the alias map
+            if not StrongComponent.isAlias(comps[i]) then
+              UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), index, simCodeIndices.alias_map);
+            end if;
+            result := tmp :: result;
+          end for;
         then result;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + System.System.toString(system)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Partition.Partition.toString(partition)});
         then fail();
       end match;
-    end fromSystem;
+    end fromPartition;
 
     function fromStrongComponent
       input StrongComponent comp;
       output Block blck;
       input output SimCodeIndices simCodeIndices;
       output Integer index;
-      input System.SystemType systemType;
+      input Partition.Kind kind;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     algorithm
@@ -570,11 +617,11 @@ public
           Identifier ident;
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
-          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, kind, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(Slice.getT(comp.eqn)), comp.status, simCodeIndices, systemType, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(Slice.getT(comp.eqn)), comp.status, simCodeIndices, kind, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
@@ -585,7 +632,7 @@ public
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
           eqn := Pointer.access(Slice.getT(comp.eqn));
-          (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, systemType, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, kind, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.GENERIC_COMPONENT() algorithm
@@ -603,7 +650,7 @@ public
           // create generic index list calls for entwined for-loop equations
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           for slice in comp.entwined_slices loop
-            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, systemType, simcode_map, equation_map);
+            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map);
             UnorderedMap.add(getGenericEquationName(slice), getGenericAssignIndex(single_call), entwined_index_map);
             single_calls := single_call :: single_calls;
           end for;
@@ -618,7 +665,7 @@ public
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
           for i in 1:arrayLength(strict.innerEquations) loop
-            (tmp, simCodeIndices, _) := fromStrongComponent(strict.innerEquations[i], simCodeIndices, systemType, simcode_map, equation_map);
+            (tmp, simCodeIndices, _) := fromStrongComponent(strict.innerEquations[i], simCodeIndices, kind, simcode_map, equation_map);
             eqns := tmp :: eqns;
           end for;
           for slice in strict.residual_eqns loop
@@ -638,7 +685,7 @@ public
           end for;
 
           // reactivate this once nonlinear loops actually work
-          if Util.isSome(strict.jac) and false then
+          if false and Util.isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
@@ -746,7 +793,7 @@ public
       input Solve.Status status;
       output Block blck;
       input output SimCodeIndices simCodeIndices;
-      input System.SystemType systemType;
+      input Partition.Kind kind;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     algorithm
@@ -777,7 +824,7 @@ public
         then tmp;
 
         case (BEquation.IF_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
-          (branches, simCodeIndices) := createIfBody(eqn.body, {}, simCodeIndices, systemType, simcode_map, equation_map);
+          (branches, simCodeIndices) := createIfBody(eqn.body, {}, simCodeIndices, kind, simcode_map, equation_map);
           tmp := IF(simCodeIndices.equationIndex, listReverse(branches), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
@@ -791,7 +838,7 @@ public
 
         // fallback implicit solving
         case (_, NBSolve.Status.IMPLICIT) algorithm
-          (tmp, simCodeIndices) := createImplicitEquation(var, eqn, simCodeIndices, systemType, simcode_map, equation_map);
+          (tmp, simCodeIndices) := createImplicitEquation(var, eqn, simCodeIndices, kind, simcode_map, equation_map);
          then tmp;
 
         else algorithm
@@ -808,7 +855,7 @@ public
       input Equation eqn;
       output Block blck;
       input output SimCodeIndices simCodeIndices;
-      input System.SystemType systemType;
+      input Partition.Kind kind;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
@@ -819,10 +866,10 @@ public
         comp        = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
         funcTree    = FunctionTreeImpl.EMPTY(),
         index       = simCodeIndices.implicitIndex,
-        systemType  = systemType
+        kind  = kind
       );
       simCodeIndices.implicitIndex := index;
-      (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, systemType, simcode_map, equation_map);
+      (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);
     end createImplicitEquation;
 
     function createWhenBody
@@ -853,7 +900,7 @@ public
       input IfEquationBody body;
       input output list<tuple<Expression, list<Block>>> branches;
       input output SimCodeIndices simCodeIndices;
-      input System.SystemType systemType;
+      input Partition.Kind kind;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
@@ -863,12 +910,12 @@ public
     algorithm
       comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in body.then_eqns);
       for comp in listReverse(comps) loop
-        (blck, simCodeIndices, _) := Block.fromStrongComponent(comp, simCodeIndices, systemType, simcode_map, equation_map);
+        (blck, simCodeIndices, _) := Block.fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);
         blcks := blck :: blcks;
       end for;
       branches := (body.condition, blcks) :: branches;
       if Util.isSome(body.else_if) then
-        (branches, simCodeIndices) := createIfBody(Util.getOption(body.else_if), branches, simCodeIndices, systemType, simcode_map, equation_map);
+        (branches, simCodeIndices) := createIfBody(Util.getOption(body.else_if), branches, simCodeIndices, kind, simcode_map, equation_map);
       end if;
     end createIfBody;
 

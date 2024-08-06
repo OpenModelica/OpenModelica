@@ -718,14 +718,14 @@ public function getuid
 end getuid;
 
 public function realtimeTick
-"Tock returns the time since the last tock; undefined if tick was never called.
+"Store current time in timer.
 The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   external "C" System_realtimeTick(clockIndex) annotation(Library = "omcruntime");
 end realtimeTick;
 
 public function realtimeTock
-"Tock returns the time since the last tock, undefined if tick was never called.
+"Tock returns the time since the last tick, undefined if tick was never called.
 The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   output Real outTime;
@@ -738,6 +738,22 @@ The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   external "C" System_realtimeClear(clockIndex) annotation(Library = "omcruntime");
 end realtimeClear;
+
+public function realtimeAccumulate
+"Accumulates the timer.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Real outTime;
+  external "C" outTime = System_realtimeAccumulate(clockIndex) annotation(Library = "omcruntime");
+end realtimeAccumulate;
+
+public function realtimeAccumulated
+"Returns the time accumulated from intervals between ticks and tocks.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Real outTime;
+  external "C" outTime = System_realtimeAccumulated(clockIndex) annotation(Library = "omcruntime");
+end realtimeAccumulated;
 
 public function realtimeNtick
 "Returns the number of ticks since last clear.
@@ -995,7 +1011,9 @@ function iconv "The iconv() function converts one multibyte characters from one 
 external "C" result=SystemImpl__iconv(string,from,to,true /* Print errors */) annotation(Library = {"omcruntime"});
 end iconv;
 
-function snprintff "sprintf format string that takes one double as argument"
+function snprintff
+  "snprintf format string that takes one double as argument
+   and the maximum length of the formatted string as another argument."
   input String format;
   input Integer maxlen;
   input Real val;
@@ -1004,8 +1022,8 @@ external "C" str=System_snprintff(format,maxlen,val) annotation(Library = {"omcr
 end snprintff;
 
 function sprintff
-  "sprintf format string that takes one double as argument, but unlike snprintff
-   it takes no buffer size as argument.
+  "sprintf format string that takes one double as argument,
+   but unlike snprintff it takes no string length as argument.
 
    NOTE: This function doesn't actually call sprintf, since that would be unsafe.
          It instead calls snprintf with a fixed buffer size that should be enough

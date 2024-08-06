@@ -284,6 +284,34 @@ algorithm
   end match;
 end isEqualOnTrue;
 
+public function allEqual<T>
+  "Takes a list and an equality function, and returns whether all elements in the list are equal."
+  input list<T> inList;
+  input CompFunc inCompFunc;
+  output Boolean outAllEqual = true;
+
+  partial function CompFunc
+    "Returns true if e1 = e2, otherwise false."
+    input T e1;
+    input T e2;
+    output Boolean res;
+  end CompFunc;
+
+protected
+  T e1;
+  list<T> rest;
+algorithm
+  if not listEmpty(inList) then
+    e1 :: rest := inList;
+    for e in rest loop
+      if not inCompFunc(e1, e) then
+        outAllEqual := false;
+        return;
+      end if;
+    end for;
+  end if;
+end allEqual;
+
 public function compare<T1, T2>
   "Returns -1 if list1 is shorter than list2 or 1 if list1 is longer than list2.
    If both lists are of equal length it applies the given compare function to
@@ -7655,7 +7683,6 @@ algorithm
       then acc;
   end match;
 end allCombinations4;
-
 
 public function contains<T>
   input list<T> lst;

@@ -26,6 +26,7 @@
 #include <QString>
 #include <QList>
 #include <QMap>
+#include <QRegExp>
 #include <QVariant>
 #include <time.h>
 

@@ -1097,5 +1097,22 @@ public
     end match;
   end expandGeneric2;
 
+  function expandCallArgs
+    input output Expression exp;
+  protected
+    Call call;
+  algorithm
+    () := match exp
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        algorithm
+          call.arguments := list(expand(arg) for arg in call.arguments);
+          exp.call := call;
+        then
+          ();
+
+      else ();
+    end match;
+  end expandCallArgs;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpandExp;

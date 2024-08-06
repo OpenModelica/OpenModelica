@@ -229,7 +229,7 @@ OMS::OMS( QWidget* parent )
   mainFrame_->setPalette( palette );
 
   layout_ = new QVBoxLayout( mainFrame_ );
-  layout_->setMargin( 0 );
+  layout_->setContentsMargins(0, 0, 0, 0);
   layout_->setSpacing( 5 );
 
   mpSettings->sync();
@@ -839,7 +839,9 @@ QSettings* OMS::getApplicationSettings()
   if (!init) {
     init = 1;
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, organization, application);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     pSettings->setIniCodec(utf8.toStdString().data());
+#endif
   }
   return pSettings;
 }

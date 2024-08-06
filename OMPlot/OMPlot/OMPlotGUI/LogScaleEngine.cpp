@@ -36,6 +36,10 @@
 #include "LinearScaleEngine.h"
 
 #include "qwt_math.h"
+#include "qwt_interval.h"
+#include "qwt_transform.h"
+
+#include <QtMath>
 
 using namespace OMPlot;
 
@@ -91,7 +95,7 @@ void LogScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &
     linearScaler.autoScale( maxNumSteps, x1, x2, stepSize );
 
     QwtInterval linearInterval = QwtInterval( x1, x2 ).normalized();
-    linearInterval = linearInterval.limited( LOG_MIN, LOG_MAX );
+    linearInterval = linearInterval.limited(QwtLogTransform::LogMin, QwtLogTransform::LogMax);
 
     if ( linearInterval.maxValue() / linearInterval.minValue() < logBase )
     {
@@ -112,8 +116,8 @@ void LogScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &
   }
 
   double logRef = 1.0;
-  if ( reference() > LOG_MIN / 2 )
-    logRef = qMin( reference(), LOG_MAX / 2 );
+  if (reference() > QwtLogTransform::LogMin / 2)
+    logRef = qMin(reference(), QwtLogTransform::LogMax / 2);
 
   if ( testAttribute( QwtScaleEngine::Symmetric ) )
   {
@@ -124,7 +128,7 @@ void LogScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &
   if ( testAttribute( QwtScaleEngine::IncludeReference ) )
     interval = interval.extend( logRef );
 
-  interval = interval.limited( LOG_MIN, LOG_MAX );
+  interval = interval.limited(QwtLogTransform::LogMin, QwtLogTransform::LogMax);
 
   if ( interval.width() == 0.0 || LinearScaleEngine::fuzzyCompare(interval.minValue(), interval.maxValue()) ) {
     interval = buildInterval( interval.minValue() );
