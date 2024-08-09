@@ -3571,7 +3571,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
   if (MainWindow::instance()->isNewApiProfiling()) {
     const QString api = icon ? "getModelInstanceAnnotation" : "getModelInstance";
     double elapsed = (double)timer.elapsed() / 1000.0;
-    MainWindow::instance()->writeNewApiProfiling(QString("Time for %1 %2 secs").arg(api, QString::number(elapsed, 'f', 6)));
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for %1(%2) %3 secs").arg(api, className, QString::number(elapsed, 'f', 6)));
   }
 
   printMessagesStringInternal();
