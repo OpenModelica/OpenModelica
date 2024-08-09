@@ -187,7 +187,7 @@ public:
   bool addClassAnnotation(QString className, QString annotation);
   QString getDefaultComponentName(QString className);
   QString getDefaultComponentPrefixes(QString className);
-  bool addComponent(QString name, QString className, QString componentName, QString placementAnnotation);
+  bool addComponent(QString name, QString componentName, QString className, QString placementAnnotation);
   bool deleteComponent(QString name, QString componentName);
   bool renameComponent(QString className, QString oldName, QString newName);
   bool updateComponent(QString name, QString className, QString componentName, QString placementAnnotation);

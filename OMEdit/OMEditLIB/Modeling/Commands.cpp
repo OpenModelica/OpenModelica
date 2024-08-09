@@ -1592,9 +1592,11 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
  * \param oldModelInfo
  * \param newModelInfo
  * \param commandText
+ * \param commandType
  * \param pParent
  */
-OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText, UndoCommand *pParent)
+OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText,
+                               CommandType commandType, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -1606,6 +1608,7 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
   mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(mpParentContainingLibraryTreeItem->getNameStructure());
   mNewModelInfo = newModelInfo;
   setText(commandText);
+  mCommandType = commandType;
 }
 
 /*!
@@ -1615,7 +1618,21 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
 void OMCUndoCommand::redoInternal()
 {
   MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
-  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
+  switch (mCommandType) {
+    case AddElement:
+      if (mUndoCalledOnce) {
+        for (int i = mOldModelInfo.mDiagramElementsList.size(); i < mNewModelInfo.mDiagramElementsList.size(); ++i) {
+          //Element *pElement = mNewModelInfo.mDiagramElementsList.at(i);
+          GraphicsView::createModelInstanceComponent(mpLibraryTreeItem->getModelWidget()->getModelInstance(), mComponentName, mComponentClassName);
+        }
+        mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo, false);
+      }
+      break;
+    case Normal:
+    default:
+      mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
+      break;
+  }
 }
 
 /*!
@@ -1624,6 +1641,22 @@ void OMCUndoCommand::redoInternal()
  */
 void OMCUndoCommand::undo()
 {
+  mUndoCalledOnce = true;
   MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
-  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
+  switch (mCommandType) {
+    case AddElement:
+      for (int i = mOldModelInfo.mDiagramElementsList.size(); i < mNewModelInfo.mDiagramElementsList.size(); ++i) {
+        Element *pElement = mNewModelInfo.mDiagramElementsList.at(i);
+        pElement->removeChildrenNew();
+        mpLibraryTreeItem->getModelWidget()->getModelInstance()->deleteElement(pElement->getModelComponent());
+        pElement->setModelComponent(nullptr);
+        pElement->setModel(nullptr);
+      }
+      mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo, false);
+      break;
+    case Normal:
+    default:
+      mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
+      break;
+  }
 }

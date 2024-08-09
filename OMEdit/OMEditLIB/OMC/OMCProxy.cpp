@@ -2074,13 +2074,13 @@ QString OMCProxy::getDefaultComponentPrefixes(QString className)
 /*!
   Adds a component to the model.
   \param name - the component name
-  \param className - the component fully qualified name.
-  \param componentName - the name of the component to add.
+  \param componentName - the component fully qualified name.
+  \param className - the name of the class where to add component.
   \return true on success.
   */
-bool OMCProxy::addComponent(QString name, QString className, QString componentName, QString placementAnnotation)
+bool OMCProxy::addComponent(QString name, QString componentName, QString className, QString placementAnnotation)
 {
-  sendCommand("addComponent(" + name + ", " + className + "," + componentName + "," + placementAnnotation + ")");
+  sendCommand("addComponent(" + name + "," + componentName + "," + className + "," + placementAnnotation + ")");
   if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
@@ -3571,7 +3571,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
   if (MainWindow::instance()->isNewApiProfiling()) {
     const QString api = icon ? "getModelInstanceAnnotation" : "getModelInstance";
     double elapsed = (double)timer.elapsed() / 1000.0;
-    MainWindow::instance()->writeNewApiProfiling(QString("Time for %1 %2 secs").arg(api, QString::number(elapsed, 'f', 6)));
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for %1(%2) %3 secs").arg(api, className, QString::number(elapsed, 'f', 6)));
   }
 
   printMessagesStringInternal();

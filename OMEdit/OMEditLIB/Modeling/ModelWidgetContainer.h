@@ -246,6 +246,7 @@ public:
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool performElementCreationChecks(const QString &nameStructure, bool partial, QString *name, QString *defaultPrefix);
+  static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className);
   static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className, bool isConnector);
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
@@ -554,6 +555,7 @@ public:
   ~ModelWidget();
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
+  bool isGetModelInstanceSkipped() const {return mGetModelInstanceSkipped;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
@@ -602,7 +604,7 @@ public:
   void drawModel(const ModelInfo &modelInfo);
   void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
 
-  void loadModelInstance(bool icon, const ModelInfo &modelInfo);
+  void loadModelInstance(bool icon, const ModelInfo &modelInfo, bool callGetModelInstance);
   void loadDiagramViewNAPI();
   void loadDiagramView();
   void loadConnections();
@@ -615,7 +617,7 @@ public:
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
-  void reDrawModelWidget(const ModelInfo &modelInfo);
+  void reDrawModelWidget(const ModelInfo &modelInfo, bool callGetModelInstance = true);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
@@ -642,6 +644,7 @@ public:
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
+  bool mGetModelInstanceSkipped = false;
   LibraryTreeItem *mpLibraryTreeItem;
   QToolButton *mpIconViewToolButton;
   QToolButton *mpDiagramViewToolButton;

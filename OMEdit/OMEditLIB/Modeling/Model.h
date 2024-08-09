@@ -575,6 +575,7 @@ private:
     Model(const QJsonObject &jsonObject, Element *pParentElement = 0);
     virtual ~Model();
     void deserialize();
+    void deserializeElements(const QJsonArray elements);
 
     Element *getParentElement() const {return mpParentElement;}
     Extend *getParentExtend() const;
@@ -598,6 +599,7 @@ private:
     Annotation *getAnnotation() const;
     void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
     void addElement(Element *pElement) {mElements.append(pElement);}
+    void deleteElement(Element *pElement);
     const QList<Element *> &getElements() const {return mElements;}
     QList<Element *> getComponents() const;
     size_t componentCount() const;
