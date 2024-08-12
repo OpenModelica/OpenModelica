@@ -106,7 +106,7 @@ std::string ErrorMessage::getMessage_(int warningsAsErrors)
       }
       message_.replace(str_pos, 2, *tok);
       str_pos += tok->size();
-      *tok++;
+      ++tok;
     } else if(index_symbol >= '0' && index_symbol <= '9') {
       index = index_symbol - '0' - 1;
 
