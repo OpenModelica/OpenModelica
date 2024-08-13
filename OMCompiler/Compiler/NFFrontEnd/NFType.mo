@@ -441,16 +441,12 @@ public
   end isEmptyArray;
 
   function isSingleElementArray
+    "Checks if the given type is an array type where all dimensions have size 1."
     input Type ty;
-    output Boolean isSingleElement;
+    output Boolean res;
   algorithm
-    isSingleElement := match ty
-      local
-        Dimension d;
-
-      case ARRAY(dimensions = {d})
-        then Dimension.isKnown(d) and Dimension.size(d) == 1;
-
+    res := match ty
+      case ARRAY() then List.all(ty.dimensions, Dimension.isOne);
       else false;
     end match;
   end isSingleElementArray;
