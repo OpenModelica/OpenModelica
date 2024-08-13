@@ -1309,12 +1309,6 @@ namespace ModelInstance
     }
   }
 
-  void Model::deleteElement(Element *pElement)
-  {
-    mElements.removeOne(pElement);
-    delete pElement;
-  }
-
   /*!
    * \brief Model::getComponents
    * Returns all components of the model, including inherited ones.
