@@ -1596,7 +1596,7 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
  * \param pParent
  */
 OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText,
-                               CommandType commandType, UndoCommand *pParent)
+                               bool skipGetModelInstance, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -1608,7 +1608,7 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
   mNewModelText = MainWindow::instance()->getOMCProxy()->listFile(mpParentContainingLibraryTreeItem->getNameStructure());
   mNewModelInfo = newModelInfo;
   setText(commandText);
-  mCommandType = commandType;
+  mSkipGetModelInstance = skipGetModelInstance;
 }
 
 /*!
@@ -1618,20 +1618,8 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
 void OMCUndoCommand::redoInternal()
 {
   MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
-  switch (mCommandType) {
-    case AddElement:
-      if (mUndoCalledOnce) {
-        for (int i = mOldModelInfo.mDiagramElementsList.size(); i < mNewModelInfo.mDiagramElementsList.size(); ++i) {
-          //Element *pElement = mNewModelInfo.mDiagramElementsList.at(i);
-          GraphicsView::createModelInstanceComponent(mpLibraryTreeItem->getModelWidget()->getModelInstance(), mComponentName, mComponentClassName);
-        }
-        mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo, false);
-      }
-      break;
-    case Normal:
-    default:
-      mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
-      break;
+  if (!mSkipGetModelInstance || mUndoCalledOnce) {
+    mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
   }
 }
 
@@ -1643,20 +1631,5 @@ void OMCUndoCommand::undo()
 {
   mUndoCalledOnce = true;
   MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
-  switch (mCommandType) {
-    case AddElement:
-      for (int i = mOldModelInfo.mDiagramElementsList.size(); i < mNewModelInfo.mDiagramElementsList.size(); ++i) {
-        Element *pElement = mNewModelInfo.mDiagramElementsList.at(i);
-        pElement->removeChildrenNew();
-        mpLibraryTreeItem->getModelWidget()->getModelInstance()->deleteElement(pElement->getModelComponent());
-        pElement->setModelComponent(nullptr);
-        pElement->setModel(nullptr);
-      }
-      mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo, false);
-      break;
-    case Normal:
-    default:
-      mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
-      break;
-  }
+  mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }

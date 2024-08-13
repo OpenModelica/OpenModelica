@@ -429,16 +429,10 @@ private:
 class OMCUndoCommand : public UndoCommand
 {
 public:
-  enum CommandType {
-    Normal,
-    AddElement
-  };
   OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText,
-                 CommandType commandType = Normal, UndoCommand *pParent = 0);
+                 bool skipGetModelInstance = false, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
-  void setComponentName(const QString &componentName) {mComponentName = componentName;}
-  void setComponentClassName(const QString &componentName) {mComponentClassName = componentName;}
 private:
   LibraryTreeItem *mpLibraryTreeItem;
   LibraryTreeItem *mpParentContainingLibraryTreeItem;
@@ -446,9 +440,7 @@ private:
   ModelInfo mOldModelInfo;
   QString mNewModelText;
   ModelInfo mNewModelInfo;
-  CommandType mCommandType;
-  QString mComponentName;
-  QString mComponentClassName;
+  bool mSkipGetModelInstance = false;
   bool mUndoCalledOnce = false;
 };
 

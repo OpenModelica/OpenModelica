@@ -1797,13 +1797,7 @@ void Element::reDrawElementNew()
   createStateElement();
   drawElement();
   prepareGeometryChange();
-  /* We skip calling getModelInstance for some actions in those cases we don't read the placement annotation
-   * since it will be empty.
-   * This is done as part of #11920 to improve the performance of simple actions.
-   */
-  if (!mpGraphicsView->getModelWidget()->isGetModelInstanceSkipped()) {
-    mTransformation.parseTransformation(mpModelComponent->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
-  }
+  mTransformation.parseTransformation(mpModelComponent->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
   setTransform(mTransformation.getTransformationMatrix());
   updateConnections();
   updateToolTip();

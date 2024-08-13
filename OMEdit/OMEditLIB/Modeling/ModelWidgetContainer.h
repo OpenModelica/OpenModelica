@@ -555,7 +555,6 @@ public:
   ~ModelWidget();
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
-  bool isGetModelInstanceSkipped() const {return mGetModelInstanceSkipped;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
@@ -604,7 +603,7 @@ public:
   void drawModel(const ModelInfo &modelInfo);
   void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
 
-  void loadModelInstance(bool icon, const ModelInfo &modelInfo, bool callGetModelInstance);
+  void loadModelInstance(bool icon, const ModelInfo &modelInfo);
   void loadDiagramViewNAPI();
   void loadDiagramView();
   void loadConnections();
@@ -617,7 +616,7 @@ public:
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
-  void reDrawModelWidget(const ModelInfo &modelInfo, bool callGetModelInstance = true);
+  void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
@@ -644,7 +643,6 @@ public:
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
-  bool mGetModelInstanceSkipped = false;
   LibraryTreeItem *mpLibraryTreeItem;
   QToolButton *mpIconViewToolButton;
   QToolButton *mpDiagramViewToolButton;

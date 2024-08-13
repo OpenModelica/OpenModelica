@@ -999,10 +999,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           if (pComponent) {
             addElementToView(pComponent, false, true, true, position, "", true);
             ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-            OMCUndoCommand *pOMCUndoCommand = new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element", OMCUndoCommand::AddElement);
-            pOMCUndoCommand->setComponentName(name);
-            pOMCUndoCommand->setComponentClassName(pLibraryTreeItem->getNameStructure());
-            mpModelWidget->getUndoStack()->push(pOMCUndoCommand);
+            mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element", true));
             mpModelWidget->updateModelText();
           } else {
             MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to add component <b>%1</b>.").arg(name),
@@ -4349,7 +4346,7 @@ void GraphicsView::deleteItems()
     ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
     emit deleteSignal();
     ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-    mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, QString("Delete items")));
+    mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, QString("Delete items"), true));
   } else {
     emit deleteSignal();
   }
@@ -5770,9 +5767,8 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     createUndoStack();
 
     if (isNewApi()) {
-      loadModelInstance(true, ModelInfo(), true);
+      loadModelInstance(true, ModelInfo());
     } else {
-
       getModelInheritedClasses();
       drawModelInheritedClassShapes(this, StringHandler::Icon);
       getModelIconDiagramShapes(StringHandler::Icon);
@@ -6175,32 +6171,23 @@ void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, boo
  * Calls getModelInstance and draws the model.
  * \param icon
  * \param modelInfo
- * \param callGetModelInstance
  */
-void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo, bool callGetModelInstance)
+void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
 {
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
   QElapsedTimer timer;
   timer.start();
   // call getModelInstance
-  if (callGetModelInstance) {
-    const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", false, icon);
-    // set the new ModelInstance
-    mpModelInstance = new ModelInstance::Model(jsonObject);
-    if (MainWindow::instance()->isNewApiProfiling()) {
-      double elapsed = (double)timer.elapsed() / 1000.0;
-      MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
-    }
-  } else {
-    if (MainWindow::instance()->isNewApiProfiling()) {
-      double elapsed = (double)timer.elapsed() / 1000.0;
-      MainWindow::instance()->writeNewApiProfiling(QString("Skipped calling getModelInstance. Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
-    }
+  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", false, icon);
+  // set the new ModelInstance
+  mpModelInstance = new ModelInstance::Model(jsonObject);
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    double elapsed = (double)timer.elapsed() / 1000.0;
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
   }
   timer.restart();
   // drawing
-  mGetModelInstanceSkipped = !callGetModelInstance;
   drawModel(modelInfo);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
@@ -6209,7 +6196,7 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo, bool 
   }
 
   // delete the old ModelInstance
-  if (callGetModelInstance && pOldModelInstance) {
+  if (pOldModelInstance) {
     delete pOldModelInstance;
   }
 }
@@ -6231,7 +6218,7 @@ void ModelWidget::loadDiagramViewNAPI()
     if (mpDiagramGraphicsView) {
       mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
     }
-    loadModelInstance(false, ModelInfo(), true);
+    loadModelInstance(false, ModelInfo());
     mpLibraryTreeItem->handleIconUpdated();
   }
 }
@@ -6871,9 +6858,9 @@ void ModelWidget::reDrawModelWidget()
     }
     if (isNewApi()) {
       if (mDiagramViewLoaded) {
-        loadModelInstance(false, ModelInfo(), true);
+        loadModelInstance(false, ModelInfo());
       } else {
-        loadModelInstance(true, ModelInfo(), true);
+        loadModelInstance(true, ModelInfo());
       }
     } else {
       // Draw icon view
@@ -6924,7 +6911,7 @@ void ModelWidget::reDrawModelWidget()
   QApplication::restoreOverrideCursor();
 }
 
-void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo, bool callGetModelInstance)
+void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   // Remove all elements from the scene
@@ -6953,7 +6940,7 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo, bool callGetMode
   if (mpDiagramGraphicsView) {
     mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
   }
-  loadModelInstance(false, modelInfo, callGetModelInstance);
+  loadModelInstance(false, modelInfo);
   // update the icon
   mpLibraryTreeItem->handleIconUpdated();
   updateViewButtonsBasedOnAccess();
