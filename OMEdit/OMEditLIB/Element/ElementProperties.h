@@ -179,6 +179,7 @@ private:
   void enableDisableUnitComboBox(const QString &value);
   void updateValueBinding(const FlatModelica::Expression expression);
   bool isValueModifiedHelper() const;
+  void resetUnitCombobox();
 public slots:
   void editClassButtonClicked();
   void fileSelectorButtonClicked();
