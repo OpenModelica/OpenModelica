@@ -741,7 +741,7 @@ protected
 
           // If the argument is an array with a single element we can just
           // return that element instead of making a min/max call.
-          if Type.dimensionCount(ty1) == 1 and Type.isSingleElementArray(ty1) then
+          if Type.isSingleElementArray(ty1) then
             callExp := Expression.applySubscript(Subscript.first(listHead(Type.arrayDims(ty1))), arg1);
             return;
           end if;

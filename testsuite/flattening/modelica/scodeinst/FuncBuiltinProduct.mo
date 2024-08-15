@@ -24,6 +24,6 @@ end FuncBuiltinProduct;
 //   Real x[1];
 //   Real x[2];
 //   Real x[3];
-//   Real r5 = product(x);
+//   Real r5 = x[1] * x[2] * x[3];
 // end FuncBuiltinProduct;
 // endResult

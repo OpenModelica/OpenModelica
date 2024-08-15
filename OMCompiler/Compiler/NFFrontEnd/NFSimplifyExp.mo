@@ -263,8 +263,8 @@ algorithm
     case "max"             then simplifyMinMax(args, call, isMin = false);
     case "min"             then simplifyMinMax(args, call, isMin = true);
     case "ones"            then simplifyFill(Expression.INTEGER(1), args, call, expand);
-    case "product"         then simplifySumProduct(listHead(args), call, expand = Flags.getConfigBool(Flags.PARMODAUTO), isSum = false);
-    case "sum"             then simplifySumProduct(listHead(args), call, expand = Flags.getConfigBool(Flags.PARMODAUTO), isSum = true);
+    case "product"         then simplifySumProduct(listHead(args), call, expand, isSum = false);
+    case "sum"             then simplifySumProduct(listHead(args), call, expand, isSum = true);
     case "transpose"       then simplifyTranspose(listHead(args), call, expand);
     case "vector"          then simplifyVector(listHead(args), call);
     case "zeros"           then simplifyFill(Expression.INTEGER(0), args, call, expand);
@@ -334,9 +334,7 @@ protected
   Type ty;
   Operator op;
 algorithm
-  if expand or Expression.isArray(arg) then
-    // Try to sum/multiply the elements of the argument if expand = true or the
-    // argument is an array (sum/product({x, y, z}) => x + y + z).
+  if expand then
     (exp, expanded) := ExpandExp.expand(arg);
 
     if expanded then
@@ -355,14 +353,6 @@ algorithm
         end for;
       end if;
 
-      return;
-    end if;
-  elseif Type.isSingleElementArray(Expression.typeOf(arg)) then
-    // sum/product(x) => x[1] if x only contains a single element.
-    (exp, expanded) := ExpandExp.expand(arg);
-
-    if expanded then
-      exp := Expression.arrayScalarElement(exp);
       return;
     end if;
   end if;
