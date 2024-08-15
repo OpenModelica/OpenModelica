@@ -4398,6 +4398,16 @@ public
     end match;
   end isMinusOne;
 
+  function isNaN
+    input Expression nan;
+    output Boolean b;
+  algorithm
+    b := match nan
+      case BINARY() then Operator.getMathClassification(nan.operator) == NFOperator.MathClassification.DIVISION and isZero(nan.exp1) and isZero(nan.exp2);
+      else false;
+    end match;
+  end isNaN;
+
   function isPositive
     input Expression exp;
     output Boolean positive "true if exp is known to be > 0, otherwise false";
@@ -4453,6 +4463,21 @@ public
       else false;
     end match;
   end isNonNegative;
+
+  function isGreaterOrEqual
+    input Expression lhs;
+    input Expression rhs;
+    output Boolean res "true if we know that lhs >= rhs, otherwise false";
+  algorithm
+    res := match (lhs, rhs)
+      case (REAL(), REAL()) then lhs.value >= rhs.value;
+      case (CREF(), _) then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(lhs.cref, "min"), function isGreaterOrEqual(rhs=rhs), false);
+      case (_, CREF()) then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(rhs.cref, "max"), function isGreaterOrEqual(lhs=lhs), false);
+      case (UNARY(exp = CREF()), _) then isGreaterOrEqual(negate(rhs), lhs.exp);
+      case (_, UNARY(exp = CREF())) then isGreaterOrEqual(rhs.exp, negate(lhs));
+      else false;
+    end match;
+  end isGreaterOrEqual;
 
   function isScalar
     input Expression exp;
@@ -4722,6 +4747,15 @@ public
       then fail();
     end match;
   end makeMinusOne;
+
+  function makeNaN
+    input Type ty;
+    output Expression nan;
+  protected
+    Expression zero = Expression.makeZero(ty);
+  algorithm
+    nan := BINARY(zero, Operator.makeDiv(ty), zero);
+  end makeNaN;
 
   function makeMaxValue
     input Type ty;

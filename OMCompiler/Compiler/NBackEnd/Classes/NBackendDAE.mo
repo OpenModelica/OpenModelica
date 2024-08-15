@@ -248,6 +248,7 @@ public
       (simplify,           "simplify1"),
       (Alias.main,         "Alias"),
       (simplify,           "simplify2"), // TODO simplify in Alias only
+      (simplifyStream,     "Simplify Stream"),
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
     };
@@ -360,6 +361,28 @@ public
       else bdae;
     end match;
   end simplify;
+
+  function simplifyStream
+    // TODO this does the same as `simplify`
+    // except it calls `SimplifyExp.simplifyStream`,
+    // maybe we can merge those
+    input output BackendDAE bdae;
+  algorithm
+    bdae := match bdae
+      local
+        EqData eqData;
+      case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
+        eqData.equations := EquationPointers.map(
+          eqData.equations,
+          function Equation.simplify(
+            name = getInstanceName(),
+            indent = "",
+            simplifyExp = SimplifyExp.simplifyStream));
+        bdae.eqData := EqData.compress(eqData);
+      then bdae;
+      else bdae;
+    end match;
+  end simplifyStream;
 
   function getLoopResiduals
     input BackendDAE bdae;

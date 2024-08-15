@@ -464,6 +464,8 @@ protected
         b := match AbsynUtil.pathFirstIdent(path)
           case "integer" then true;
           case "String" then true;
+          case "$OMC$PositiveMax" then true;
+          case "$OMC$inStreamDiv" then true;
           else false;
         end match;
       end if;
