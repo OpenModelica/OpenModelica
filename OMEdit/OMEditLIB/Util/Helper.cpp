@@ -47,7 +47,8 @@ QString Helper::OpenModelicaHome = "";
 QString Helper::ModelicaPath = "";
 QString Helper::userHomeDirectory = "";
 QString Helper::OMCServerName = "OMEdit";
-QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)";
+QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp *.bmo);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)"
+                              ";;Base Modelica Files (*.bmo)";
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
