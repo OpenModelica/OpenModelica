@@ -166,16 +166,17 @@ public
   algorithm
     info := InstNode.info(fnDer.derivedFn);
     Expression.INTEGER(order) := fnDer.order;
-    orderMod := SCode.NAMEMOD("order", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.INTEGER(order)), info));
+    orderMod := SCode.NAMEMOD("order", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.INTEGER(order)), NONE(), info));
 
     subMods := {};
 
     for tpl in fnDer.conditions loop
       (_, id, condition) := tpl;
-      subMods := SCode.NAMEMOD(conditionToString(condition), SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(id, {}))), info)) :: subMods;
+      subMods := SCode.NAMEMOD(conditionToString(condition), SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(id, {}))), NONE(), info)) :: subMods;
     end for;
 
-    mod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), orderMod::subMods, SOME(Absyn.CREF(Absyn.CREF_IDENT(AbsynUtil.pathString(InstNode.scopePath(fnDer.derivativeFn)),{}))), info);
+    mod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), orderMod::subMods,
+             SOME(Absyn.CREF(Absyn.CREF_IDENT(AbsynUtil.pathString(InstNode.scopePath(fnDer.derivativeFn)),{}))), NONE(), info);
     subMod := SCode.NAMEMOD("derivative", mod);
   end toSubMod;
 

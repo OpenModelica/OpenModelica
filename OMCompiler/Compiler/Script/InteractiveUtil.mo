@@ -1684,7 +1684,7 @@ algorithm
 
             (cache, c, env2) := Lookup.lookupClassIdent(cache, inEnv, ann_name);
             smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod,
-              Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+              Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
             (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(),
               smod, false, Mod.COMPONENT(ann_name), AbsynUtil.dummyInfo);
 
@@ -1712,7 +1712,7 @@ algorithm
             end try;
 
             smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
-              SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+              SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
             (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy,
               DAE.NOPRE(), smod, false, Mod.COMPONENT(ann_name), info);
 

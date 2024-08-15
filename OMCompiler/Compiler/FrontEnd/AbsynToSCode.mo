@@ -424,7 +424,7 @@ algorithm
       equation
         checkTypeSpec(t, info);
         // fprintln(Flags.TRANSLATE, "translating derived class: " + Dump.unparseTypeSpec(t));
-        mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info) "TODO: attributes of derived classes";
+        mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info) "TODO: attributes of derived classes";
         scodeAttr = translateAttributes(attr, {});
         scodeCmt = translateComment(cmt);
       then
@@ -483,7 +483,7 @@ algorithm
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
         cos = translateClassdefConstraints(parts);
-        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
+        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
         scodeCmt = translateCommentList(ann, cmtString);
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,scodeCmt);
@@ -976,7 +976,7 @@ algorithm
 
     case Absyn.ANNOTATION(elementArgs = args)
       equation
-        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
+        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
 
       then
         if SCodeUtil.isEmptyMod(m) then NONE() else SOME(SCode.ANNOTATION(m));
@@ -1167,14 +1167,14 @@ algorithm
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
         ann = translateAnnotation(absann);
       then
         {SCode.EXTENDS(path,vis,mod,ann,info)};
@@ -1192,7 +1192,7 @@ algorithm
           // fprintln(Flags.TRANSLATE, "translating component: " + n + " final: " + SCodeUtil.finalStr(SCodeUtil.boolFinal(finalPrefix)));
           setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
           setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
-          mod := translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+          mod := translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
           prl1 := translateParallelism(parallelism);
           var1 := translateVariability(variability);
           // PR. This adds the arraydimension that may be specified together with the type of the component.
@@ -1215,7 +1215,7 @@ algorithm
                 inName := "$in_"+n;
                 attr1 := SCode.ATTR(tot_dim,ct,prl1,var1,Absyn.INPUT(),isf);
                 attr2 := SCode.ATTR(tot_dim,ct,prl1,var1,Absyn.OUTPUT(),isf);
-                mod2 := SCode.MOD(SCode.FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(inName,{}))), info);
+                mod2 := SCode.MOD(SCode.FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(inName,{}))), NONE(), info);
               then SCode.COMPONENT(n,prefixes,attr2,t,mod2,cmt,cond,info) :: SCode.COMPONENT(inName,prefixes,attr1,t,mod,cmt,cond,info) :: xs_1;
             else SCode.COMPONENT(n,prefixes,SCode.ATTR(tot_dim,ct,prl1,var1,di,isf),t,mod,cmt,cond,info) :: xs_1;
           end match;
@@ -1352,7 +1352,7 @@ algorithm
         Absyn.EXTENDS(path = cc_path, elementArg = eltargs), comment = cmt))
       equation
         mod = Absyn.CLASSMOD(eltargs, Absyn.NOMOD());
-        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
+        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
         cc_cmt = translateComment(cmt);
       then
         SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, cc_cmt));
@@ -1687,6 +1687,7 @@ public function translateMod
   input Option<Absyn.Modification> inMod;
   input SCode.Final finalPrefix;
   input SCode.Each eachPrefix;
+  input Option<String> comment;
   input SourceInfo info;
   output SCode.Mod outMod;
 protected
@@ -1709,7 +1710,7 @@ algorithm
 
   outMod := match (subs, binding, finalPrefix, eachPrefix)
     case ({}, NONE(), SCode.NOT_FINAL(), SCode.NOT_EACH()) then SCode.NOMOD();
-    else SCode.MOD(finalPrefix, eachPrefix, subs, binding, info);
+    else SCode.MOD(finalPrefix, eachPrefix, subs, binding, comment, info);
   end match;
 end translateMod;
 
@@ -1726,7 +1727,7 @@ algorithm
       case Absyn.MODIFICATION()
         algorithm
           smod := translateMod(arg.modification, SCodeUtil.boolFinal(arg.finalPrefix),
-            translateEach(arg.eachPrefix), arg.info);
+            translateEach(arg.eachPrefix), arg.comment, arg.info);
 
           if not SCodeUtil.isEmptyMod(smod) then
             sub := translateSub(arg.path, smod, arg.info);
@@ -1775,7 +1776,7 @@ algorithm
     case (Absyn.QUALIFIED(name = i,path = path),mod,_)
       equation
         sub = translateSub(path, mod, info);
-        mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE(),info);
+        mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE(),NONE(),info);
       then SCode.NAMEMOD(i,mod);
   end match;
 end translateSub;
