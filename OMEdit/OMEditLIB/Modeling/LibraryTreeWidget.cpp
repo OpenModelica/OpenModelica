@@ -4248,7 +4248,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
     fileInfo = QFileInfo(targetFileName);
   }
 
-  if (fileInfo.suffix().compare("mo") == 0 && !loadExternalModel) {
+  if ((fileInfo.suffix().compare("mo") == 0 || fileInfo.suffix().compare("bmo") == 0) && !loadExternalModel) {
     openModelicaFile(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("mol") == 0 && !loadExternalModel) {
     openEncrytpedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress);
