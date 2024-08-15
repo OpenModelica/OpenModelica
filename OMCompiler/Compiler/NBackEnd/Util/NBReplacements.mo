@@ -326,7 +326,6 @@ public
         // inline possible record constructors
         //body_exp := Expression.map(body_exp, function applyFuncTupleExp(variables = variables));
 
-
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
           print("-- Result: " + Expression.toString(body_exp) + "\n\n");
