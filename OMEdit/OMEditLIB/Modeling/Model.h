@@ -487,6 +487,7 @@ private:
     bool mEach = false;
     QString mValue;
     bool mValueDefined = false;
+    QString mComment;
     Element *mpElement = 0;
     QList<Modifier*> mModifiers;
 

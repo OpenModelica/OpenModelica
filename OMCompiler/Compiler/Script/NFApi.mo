@@ -2158,6 +2158,10 @@ algorithm
           json := JSON.addPair("each", JSON.makeBoolean(true), json);
         end if;
 
+        if isChoices and isSome(mod.comment) then
+          json := JSON.addPair("comment", JSON.makeString(Util.getOption(mod.comment)), json);
+        end if;
+
         if isSome(mod.binding) then
           binding_json := JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding)));
 

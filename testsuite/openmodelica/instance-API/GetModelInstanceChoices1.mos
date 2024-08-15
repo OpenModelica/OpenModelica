@@ -40,9 +40,18 @@ getErrorString();
 //       \"annotation\": {
 //         \"choices\": {
 //           \"choice\": [
-//             \"1.0\",
-//             \"2.0\",
-//             \"3.0\"
+//             {
+//               \"comment\": \"A\",
+//               \"$value\": \"1.0\"
+//             },
+//             {
+//               \"comment\": \"B\",
+//               \"$value\": \"2.0\"
+//             },
+//             {
+//               \"comment\": \"C\",
+//               \"$value\": \"3.0\"
+//             }
 //           ],
 //           \"checkBox\": true
 //         }
