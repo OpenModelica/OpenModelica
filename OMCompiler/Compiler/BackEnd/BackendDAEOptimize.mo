@@ -115,7 +115,7 @@ end simplifyAllExpressions;
 // =============================================================================
 // simplifyInStream
 //
-// OM introduces $OMC$PosetiveMax which can simplified using min or max attribute
+// OM introduces $OMC$PositiveMax which can simplified using min or max attribute
 // see Modelica spec for inStream
 // author: Vitalij Ruge
 // see. #3885, 4441, 5104

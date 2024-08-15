@@ -1959,6 +1959,8 @@ algorithm
     case "booleanClock" then evalBooleanClock(args);
     case "solverClock" then evalSolverClock(args);
     case "getInstanceName" then evalGetInstanceName(listHead(args));
+    case "$OMC$PositiveMax" then evalPositiveMax(listGet(args,1),listGet(args,2));
+    case "$OMC$inStreamDiv" then listHead(args);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -2462,6 +2464,16 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), {exp1, exp2}, sourceInfo()); then fail();
   end match;
 end evalBuiltinMax2;
+
+function evalPositiveMax
+  input Expression flow_exp;
+  input Expression eps;
+  output Expression result;
+algorithm
+  result := if Expression.isNonPositive(flow_exp)
+    then Expression.makeZero(Expression.typeOf(flow_exp))
+    else evalBuiltinMax2(flow_exp, eps);
+end evalPositiveMax;
 
 function evalBuiltinMin
   input list<Expression> args;
