@@ -503,7 +503,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = x[$i1 + 1] + $FUN_1[$i1] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[$i1] = x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
@@ -549,7 +549,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = x[$i1 + 1] + $FUN_1[$i1] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[$i1] = x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
@@ -595,7 +595,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (10) ($RES_SIM_1)
 // 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) x[$i1] = x[$i1 + 1] + $FUN_1[$i1] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[$i1] = x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
 // 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //

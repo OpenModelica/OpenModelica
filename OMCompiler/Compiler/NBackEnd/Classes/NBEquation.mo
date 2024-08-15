@@ -1327,46 +1327,22 @@ public
       input output Equation eq;
       input String name = "";
       input String indent = "";
+      input SimplifyFunc simplifyExp = function SimplifyExp.simplifyDump(includeScope = true, name = name, indent = indent);
+
+      partial function SimplifyFunc
+        input output Expression exp;
+      end SimplifyFunc;
+    protected
+      // FIXME a polymorphic `apply<TI, TO>` does not work for some reason
+      function apply extends MapFuncExpWrapper;
+      algorithm
+        e := func(e);
+      end apply;
     algorithm
       if Flags.isSet(Flags.DUMP_SIMPLIFY) and not stringEqual(indent, "") then
         print("\n");
       end if;
-      eq := match eq
-        local
-          Equation new_eq;
-          WhenEquationBody body;
-
-        case SCALAR_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, true, name, indent);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
-        then eq;
-        case ARRAY_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, true, name, indent);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
-        then eq;
-        case RECORD_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, true, name, indent);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, true, name, indent);
-        then eq;
-        // ToDo: implement the following correctly:
-        case ALGORITHM() algorithm
-          eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
-        then eq;
-        case IF_EQUATION()     then eq;
-        case FOR_EQUATION()    then eq;
-        case WHEN_EQUATION() algorithm
-          new_eq := match WhenEquationBody.simplify(SOME(eq.body), name, indent)
-            case SOME(body) algorithm
-              eq.body := body;
-            then eq;
-            else Equation.DUMMY_EQUATION();
-          end match;
-        then new_eq;
-        case AUX_EQUATION()    then eq;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + toString(eq)});
-        then fail();
-      end match;
+      eq := map(eq, simplifyExp, mapFunc = apply);
     end simplify;
 
     function createName

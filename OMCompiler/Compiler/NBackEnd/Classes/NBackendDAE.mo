@@ -70,6 +70,7 @@ protected
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -345,7 +346,15 @@ public
       local
         EqData eqData;
       case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
-        eqData.equations := EquationPointers.map(eqData.equations, function Equation.simplify(name = getInstanceName(), indent = ""));
+        eqData.equations := EquationPointers.map(
+          eqData.equations,
+          function Equation.simplify(
+            name = getInstanceName(),
+            indent = "",
+            simplifyExp = function SimplifyExp.simplifyDump(
+              includeScope = true,
+              name = getInstanceName(),
+              indent = "")));
         bdae.eqData := EqData.compress(eqData);
       then bdae;
       else bdae;

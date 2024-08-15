@@ -980,7 +980,7 @@ algorithm
   outExp :=
     if Expression.isOne(exp2) then exp1
     elseif Expression.isMinusOne(exp2) then Expression.negate(exp1)
-    elseif Expression.isZero(exp1) and not Expression.isZero(exp2) then exp1
+    elseif Expression.isZero(exp1) and Expression.isNonZero(exp2) then exp1
     // fix minus signs
     // (-e1)/(-e2) = e1/e2
     // e1/(-e2) = -(e1/e2)

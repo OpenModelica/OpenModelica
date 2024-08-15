@@ -378,7 +378,7 @@ public
         Expression e;
       case BOOLEAN(true) then true;
       case ARRAY() then Array.all(exp.elements, isAllTrue);
-      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then Expression.isAllTrue(e);
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then isAllTrue(e);
       else false;
     end match;
   end isAllTrue;
@@ -398,9 +398,9 @@ public
     output Boolean b;
   algorithm
     b := match exp
-      case Expression.CREF() then true;
-      case Expression.UNARY(exp = Expression.CREF()) then true;
-      case Expression.LUNARY(exp = Expression.CREF()) then true;
+      case CREF() then true;
+      case UNARY(exp = CREF()) then true;
+      case LUNARY(exp = CREF()) then true;
       else false;
     end match;
   end isTrivialCref;
@@ -4367,6 +4367,11 @@ public
     end match;
   end isZero;
 
+  function isNonZero
+    input Expression exp;
+    output Boolean res = isPositive(exp) or isNegative(exp);
+  end isNonZero;
+
   function isOne
     input Expression exp;
     output Boolean isOne;
@@ -4395,11 +4400,11 @@ public
 
   function isPositive
     input Expression exp;
-    output Boolean positive "true if exp is known to be > 0, otherwise false.";
+    output Boolean positive "true if exp is known to be > 0, otherwise false";
   algorithm
     positive := match exp
       case INTEGER() then exp.value > 0;
-      case REAL() then exp.value > 0;
+      case REAL() then exp.value > 0.0;
       case CAST() then isPositive(exp.exp);
       case UNARY() then isNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
@@ -4409,11 +4414,11 @@ public
 
   function isNegative
     input Expression exp;
-    output Boolean negative "true if exp is known to be < 0, otherwise false.";
+    output Boolean negative "true if exp is known to be < 0, otherwise false";
   algorithm
     negative := match exp
       case INTEGER() then exp.value < 0;
-      case REAL() then exp.value < 0;
+      case REAL() then exp.value < 0.0;
       case CAST() then isNegative(exp.exp);
       case UNARY() then isPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
@@ -4423,11 +4428,11 @@ public
 
   function isNonPositive
     input Expression exp;
-    output Boolean res "true if exp is known to be <= 0, otherwise false.";
+    output Boolean res "true if exp is known to be <= 0, otherwise false";
   algorithm
     res := match exp
       case INTEGER() then exp.value <= 0;
-      case REAL() then exp.value <= 0;
+      case REAL() then exp.value <= 0.0;
       case CAST() then isNonPositive(exp.exp);
       case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
@@ -4437,11 +4442,11 @@ public
 
   function isNonNegative
     input Expression exp;
-    output Boolean res "true if exp is known to be <= 0, otherwise false.";
+    output Boolean res "true if exp is known to be <= 0, otherwise false";
   algorithm
     res := match exp
       case INTEGER() then exp.value >= 0;
-      case REAL() then exp.value >= 0;
+      case REAL() then exp.value >= 0.0;
       case CAST() then isNonNegative(exp.exp);
       case UNARY() then isNonPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
@@ -6089,7 +6094,7 @@ public
         algorithm
           json := JSON.emptyObject();
           json := JSON.addPair("$kind", JSON.makeString("enum"), json);
-          json := JSON.addPair("name", JSON.makeString(Expression.toString(exp)), json);
+          json := JSON.addPair("name", JSON.makeString(toString(exp)), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
         then
           json;
@@ -6363,7 +6368,7 @@ public
           Pointer.update(idx_ptr, idx + 1);
           UnorderedMap.add(exp, idx, map);
         end if;
-        new_exp := Expression.SHARED_LITERAL(idx, exp);
+        new_exp := SHARED_LITERAL(idx, exp);
       then new_exp;
 
       else exp;
