@@ -203,7 +203,7 @@ algorithm
 
           (stripped_mod, graphics_mod) := AbsynUtil.stripGraphicsAndInteractionModification(mod);
 
-          smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+          smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
@@ -947,7 +947,7 @@ algorithm
     // doesn't matter much which scope it is, it just needs some scope or the
     // instantiation will fail later).
     smod := AbsynToSCode.translateMod(SOME(amod),
-      SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), AbsynUtil.dummyInfo);
+      SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
     outMod := Modifier.create(smod, "", NFModifier.ModifierScope.COMPONENT(""), scope);
   else
     outMod := Modifier.NOMOD();
@@ -2357,7 +2357,7 @@ algorithm
   Absyn.ElementArg.MODIFICATION(modification = SOME(amod)) :=
     Parser.stringMod("dummy" + modifier);
   smod := AbsynToSCode.translateMod(SOME(amod),
-    SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), AbsynUtil.dummyInfo);
+    SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
   json := dumpJSONSCodeMod_impl(smod, InstNode.EMPTY_NODE());
   jsonString := Values.STRING(JSON.toString(json, prettyPrint));
 end modifierToJSON;

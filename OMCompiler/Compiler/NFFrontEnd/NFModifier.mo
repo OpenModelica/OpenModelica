@@ -313,7 +313,7 @@ public
           then
             mod;
 
-        else SCode.Mod.MOD(SCode.Final.FINAL(), SCode.Each.NOT_EACH(), {}, NONE(), info);
+        else SCode.Mod.MOD(SCode.Final.FINAL(), SCode.Each.NOT_EACH(), {}, NONE(), NONE(), info);
       end match;
     end if;
   end patchElementModFinal;

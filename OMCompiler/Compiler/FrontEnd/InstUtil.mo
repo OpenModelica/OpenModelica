@@ -2478,6 +2478,7 @@ algorithm
       SCode.Mod m,m2;
       SCode.SubMod sm;
       SourceInfo info;
+      Option<String> cmt;
 
     // outer B(redeclare X = Y), inner B(redeclare Y = Z) -> B(redeclare X = Z)
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(nDerivedInner))))))
@@ -2495,18 +2496,18 @@ algorithm
       then (SCode.REDECL(f, e, cls),true);
 
     // a mod with a name mod
-    case (_, SCode.MOD(f, e, SCode.NAMEMOD(name, m as SCode.REDECL())::rest, b, info))
+    case (_, SCode.MOD(f, e, SCode.NAMEMOD(name, m as SCode.REDECL())::rest, b, cmt, info))
       equation
         // lookup the class mod in the outer
         m2 = chainRedeclare_dispatch(inModOuter, m);
-        (SCode.MOD(subModLst = subs),_) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, info));
-      then (SCode.MOD(f, e, SCode.NAMEMOD(name, m2)::subs, b, info), true);
+        (SCode.MOD(subModLst = subs),_) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, cmt, info));
+      then (SCode.MOD(f, e, SCode.NAMEMOD(name, m2)::subs, b, cmt, info), true);
 
     // something else, move along!
-    case (_, SCode.MOD(f, e, sm::rest, b, info))
+    case (_, SCode.MOD(f, e, sm::rest, b, cmt, info))
       equation
-        (SCode.MOD(subModLst = subs), change) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, info));
-      then (SCode.MOD(f, e, sm::subs, b, info), change);
+        (SCode.MOD(subModLst = subs), change) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, cmt, info));
+      then (SCode.MOD(f, e, sm::subs, b, cmt, info), change);
 
     else (inModInner, false);
 
@@ -4737,50 +4738,20 @@ end isInlineFunc2;
 public function stripFuncOutputsMod "strips the assignment modification of the component declared as output"
   input SCode.Element elem;
   output SCode.Element stripped_elem;
+protected
+  SCode.Mod mod;
 algorithm
-  stripped_elem := matchcontinue(elem)
-    local
-      SCode.Ident id;
-      Absyn.InnerOuter inOut;
-      SCode.Final finPre;
-      SCode.Replaceable repPre;
-      SCode.Visibility vis;
-      SCode.Redeclare redecl;
-      SCode.Attributes attr;
-      Absyn.TypeSpec typeSpc;
-      SCode.Comment comm;
-      Option<Absyn.Exp> cond;
-      SourceInfo info;
-      SCode.Final modFinPre;
-      SCode.Each modEachPre;
-      list<SCode.SubMod> modSubML;
-      SCode.Element e;
-      SCode.Mod modBla;
-      SourceInfo mod_info;
-
-    case (      SCode.COMPONENT(
-          name = id,
-          prefixes = SCode.PREFIXES(
-            visibility = vis,
-            redeclarePrefix = redecl,
-            finalPrefix = finPre,
-            innerOuter = inOut,
-            replaceablePrefix = repPre),
-          attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()),
-          typeSpec = typeSpc,
-          modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, binding = SOME(_), info = mod_info),
-          comment = comm, condition = cond, info = info))
-      equation
-        modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE(),mod_info);
+  stripped_elem := match elem
+    case SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT()),
+                         modifications = mod as SCode.MOD(binding = SOME(_)))
+      algorithm
+        mod.binding := NONE();
+        elem.modifications := mod;
       then
-        SCode.COMPONENT(
-          id,
-          SCode.PREFIXES(vis,redecl,finPre,inOut,repPre),
-          attr,typeSpc,modBla,comm,cond,info);
+        elem;
 
-    case (e) then (e);
-
-  end matchcontinue;
+    else elem;
+  end match;
 end stripFuncOutputsMod;
 
 public function checkExternalFunction "
@@ -6376,6 +6347,7 @@ algorithm
       Option<Absyn.Exp> eq;
       SourceInfo info;
       SCode.Final f;
+      Option<String> cmt;
 
     case SCode.NOMOD() then mod;
 
@@ -6384,11 +6356,11 @@ algorithm
         element2 = traverseModAddFinal3(element1);
       then if referenceEq(element1,element2) then mod else SCode.REDECL(SCode.FINAL(),each_,element2);
 
-    case(SCode.MOD(f,each_,subs1,eq,info))
+    case(SCode.MOD(f,each_,subs1,eq,cmt,info))
       equation
         subs2 = List.mapCheckReferenceEq(subs1, traverseModAddFinal4);
       then
-        if valueEq(SCode.FINAL(),f) and referenceEq(subs1, subs2) then mod else SCode.MOD(SCode.FINAL(),each_,subs2,eq,info);
+        if valueEq(SCode.FINAL(),f) and referenceEq(subs1, subs2) then mod else SCode.MOD(SCode.FINAL(),each_,subs2,eq,cmt,info);
 
     else
       equation
@@ -6500,27 +6472,24 @@ protected function traverseModAddDims4
   input Boolean inIsTop;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inCache,inEnv,inPrefix,inMod,inExps,inIsTop)
+  outMod := match(inCache,inEnv,inPrefix,inMod,inExps)
   local
     FCore.Cache cache;
     FCore.Graph env;
     DAE.Prefix pre;
     SCode.Mod mod;
-    SCode.Final f;
-    list<SCode.SubMod> submods,submods2;
+    list<SCode.SubMod> submods2;
     Option<Absyn.Exp> binding;
     list<list<Absyn.Exp>> exps;
-    list<Option<Absyn.Exp>> expOpts;
-    SourceInfo info;
 
-    case (_,_,_,SCode.NOMOD(),_,_) then inMod;
-    case (_,_,_,SCode.REDECL(),_,_) then inMod;  // Though redeclarations may need some processing as well
-    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods, binding, info),exps,_)
+    case (_,_,_,SCode.NOMOD(),_) then inMod;
+    case (_,_,_,SCode.REDECL(),_) then inMod;  // Though redeclarations may need some processing as well
+    case (cache,env,pre,SCode.MOD(eachPrefix = SCode.NOT_EACH()),exps)
       equation
-        submods2 = traverseModAddDims5(cache,env,pre,submods,exps);
-        binding = insertSubsInBinding(binding, exps);
+        submods2 = traverseModAddDims5(cache,env,pre,inMod.subModLst,exps);
+        binding = insertSubsInBinding(inMod.binding, exps);
       then
-        SCode.MOD(f, SCode.NOT_EACH(),submods2, binding, info);
+        SCode.MOD(inMod.finalPrefix, SCode.NOT_EACH(),submods2, binding, inMod.comment, inMod.info);
   end match;
 end traverseModAddDims4;
 
@@ -7172,7 +7141,7 @@ algorithm
       equation
         str = if isSome(str1) then str1 else str2;
         mods = listAppend(mods1,mods2);
-      then SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),mods,NONE(),info))),str);
+      then SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),mods,NONE(),NONE(),info))),str);
     case (SCode.COMMENT(ann1,str1),SCode.COMMENT(ann2,str2))
       equation
         str = if isSome(str1) then str1 else str2;
@@ -8295,18 +8264,13 @@ algorithm
     SCode.Comment comment;
     Option<Absyn.Exp> condition;
     SCode.SourceInfo info;
+    SCode.Mod mod;
 
     Absyn.ArrayDim arrayDims;
     SCode.ConnectorType connectorType;
     SCode.Parallelism parallelism;
     SCode.Variability variability;
     Absyn.Direction direction;
-
-    SCode.Final finalPrefix "final prefix";
-    SCode.Each  eachPrefix "each prefix";
-    list<SCode.SubMod> subModLst;
-    Option<Absyn.Exp> binding;
-    SCode.SourceInfo info2;
 
     DAE.Mod daeMod;
 
@@ -8316,23 +8280,21 @@ algorithm
             SCode.ATTR(arrayDims,connectorType,parallelism,
                        variability, direction, Absyn.FIELD()
             ), typeSpec,
-            SCode.MOD(finalPrefix, eachPrefix,subModLst,binding,info2)/*modifications*/,
+            mod as SCode.MOD()/*modifications*/,
             comment, condition, info),daeMod)
       equation
         listMember(name, fieldNamesP) = true;
 
         //remove domain from the subModLst:
-        subModLst = List.filterOnFalse(subModLst,isSubModDomainOrStart);
+        mod.subModLst = List.filterOnFalse(mod.subModLst,isSubModDomainOrStart);
 
         ghostL = (SCode.COMPONENT(stringAppend(name,"$ghostL"), prefixes,
               SCode.ATTR(arrayDims,connectorType,parallelism,
-             variability, direction, Absyn.NONFIELD()), typeSpec,
-             SCode.MOD(finalPrefix, eachPrefix,subModLst,binding,info2),
+             variability, direction, Absyn.NONFIELD()), typeSpec, mod,
              comment, condition, info),daeMod);
         ghostR = (SCode.COMPONENT(stringAppend(name,"$ghostR"), prefixes,
              SCode.ATTR(arrayDims,connectorType,parallelism,
-             variability, direction, Absyn.NONFIELD()), typeSpec,
-             SCode.MOD(finalPrefix, eachPrefix,subModLst,binding,info2),
+             variability, direction, Absyn.NONFIELD()), typeSpec, mod,
              comment, condition, info),daeMod);
       then
         ghostL::ghostR::inGhosts;

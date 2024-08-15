@@ -51,19 +51,16 @@ constant SourceInfo dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0);
 
 function stripSubmod
   "Removes all submodifiers from the Mod."
-  input SCode.Mod inMod;
-  output SCode.Mod outMod;
+  input output SCode.Mod mod;
 algorithm
-  outMod := match(inMod)
-    local
-      SCode.Final fp;
-      SCode.Each ep;
-      Option<Absyn.Exp> binding;
-      SourceInfo info;
+  () := match mod
+    case SCode.MOD()
+      algorithm
+        mod.subModLst := {};
+      then
+        ();
 
-    case SCode.MOD(fp, ep, _, binding, info)
-      then SCode.MOD(fp, ep, {}, binding, info);
-    else inMod;
+    else ();
   end match;
 end stripSubmod;
 
@@ -2595,7 +2592,7 @@ public function prependSubModToMod
 algorithm
   mod := match mod
     case SCode.NOMOD()
-      then SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {subMod}, NONE(), Error.dummyInfo);
+      then SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {subMod}, NONE(), NONE(), Error.dummyInfo);
     case SCode.MOD()
       algorithm
         mod.subModLst := subMod :: mod.subModLst;
@@ -3488,25 +3485,22 @@ algorithm
   outComment := match(inAnnotation, inComment)
     local
       Option<String> cmt;
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> mods1, mods2;
-      Option<Absyn.Exp> b;
-      SourceInfo info;
+      list<SCode.SubMod> mods1;
+      SCode.Mod mod;
 
     case (_, SCode.COMMENT(NONE(), cmt))
       then SCode.COMMENT(SOME(inAnnotation), cmt);
 
     case (SCode.ANNOTATION(modification = SCode.MOD(subModLst = mods1)),
-          SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt))
+          SCode.COMMENT(SOME(SCode.ANNOTATION(modification = mod as SCode.MOD())), cmt))
       algorithm
         if not check_replace then
-          mods2 := listAppend(mods1, mods2);
+          mod.subModLst := listAppend(mods1, mod.subModLst);
         else
-          mods2 := listAppend(mods1, List.filterOnTrue(mods2, function isNotElem(mods = mods1)));
+          mod.subModLst := listAppend(mods1, List.filterOnTrue(mod.subModLst, function isNotElem(mods = mods1)));
         end if;
       then
-        SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt);
+        SCode.COMMENT(SOME(SCode.ANNOTATION(mod)), cmt);
 
   end match;
 end appendAnnotationToComment;
@@ -4756,12 +4750,13 @@ algorithm
       Option<Absyn.Exp> b1, b2, b;
       SourceInfo i1, i2;
       SCode.Mod m;
+      Option<String> cmt;
 
     case (_, SCode.NOMOD()) then inNewMod;
     case (SCode.NOMOD(), _) then inOldMod;
     case (SCode.REDECL(), _) then inNewMod;
 
-    case (SCode.MOD(f1, e1, sl1, b1, i1),
+    case (SCode.MOD(f1, e1, sl1, b1, cmt, i1),
           SCode.MOD(f2, e2, sl2, b2, _))
       equation
         b = mergeBindings(b1, b2);
@@ -4771,7 +4766,7 @@ algorithm
         elseif referenceEq(b, b2) and referenceEq(sl, sl2) and valueEq(f1, f2) and valueEq(e1, e2) then
           m = inOldMod;
         else
-          m = SCode.MOD(f1, e1, sl, b, i1);
+          m = SCode.MOD(f1, e1, sl, b, cmt, i1);
         end if;
       then
         m;
@@ -5722,22 +5717,20 @@ public function mergeSCodeMods
 algorithm
   outMod := match (inModOuter, inModInner)
     local
-      SCode.Final f1, f2;
-      SCode.Each e1, e2;
-      list<SCode.SubMod> subMods1, subMods2;
-      Option<Absyn.Exp> b1, b2;
-      SourceInfo info;
+      list<SCode.SubMod> subMods;
+      Option<Absyn.Exp> binding;
 
     case (SCode.NOMOD(), _) then inModInner;
     case (_, SCode.NOMOD()) then inModOuter;
 
-    case (SCode.MOD(f1, e1, subMods1, b1, info),
-          SCode.MOD(_, _, subMods2, b2, _))
+    case (SCode.MOD(),
+          SCode.MOD())
       equation
-        subMods2 = listAppend(subMods1, subMods2);
-        b1 = if isSome(b1) then b1 else b2;
+        subMods = listAppend(inModOuter.subModLst, inModInner.subModLst);
+        binding = if isSome(inModOuter.binding) then inModOuter.binding else inModInner.binding;
       then
-        SCode.MOD(f1, e1, subMods2, b1, info);
+        SCode.MOD(inModOuter.finalPrefix, inModOuter.eachPrefix, subMods,
+          binding, inModOuter.comment, inModOuter.info);
 
   end match;
 end mergeSCodeMods;

@@ -121,6 +121,7 @@ uniontype Mod "- Modifications"
     Each  eachPrefix "each prefix";
     list<SubMod> subModLst;
     Option<Absyn.Exp> binding;
+    Option<String> comment;
     SourceInfo info;
   end MOD;
 

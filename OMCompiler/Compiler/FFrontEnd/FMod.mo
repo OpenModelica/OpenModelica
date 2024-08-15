@@ -188,37 +188,31 @@ protected function mergeSubModsInSameScope
   input list<String> inElementName;
   input ModScope inModScope;
   output SCode.SubMod outMod;
+protected
+  String scope, name;
+  list<SCode.SubMod> submods;
+  SourceInfo info1, info2;
+  SCode.Mod mod1 = inMod1.mod, mod2 = inMod2.mod;
 algorithm
-  outMod := match(inMod1, inMod2, inElementName, inModScope)
-    local
-      String id, scope, name;
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> submods1, submods2;
-      Option<Absyn.Exp> binding;
-      SourceInfo info1, info2;
-      SCode.Mod mod1, mod2;
-
+  outMod := match(mod1, mod2)
     // The second modifier has no binding, use the binding from the first.
-    case (SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods1, binding, info1)),
-          SCode.NAMEMOD(mod = SCode.MOD(subModLst = submods2, binding = NONE())), _, _)
+    case (SCode.MOD(), SCode.MOD(binding = NONE()))
       equation
-        submods1 = List.fold2(submods1, compactSubMod, inModScope,
-          inElementName, submods2);
+        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
-        SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods1, binding, info1));
+        SCode.NAMEMOD(inMod1.ident, SCode.MOD(mod1.finalPrefix, mod1.eachPrefix,
+          submods, mod1.binding, mod1.comment, mod1.info));
 
     // The first modifier has no binding, use the binding from the second.
-    case (SCode.NAMEMOD(mod = SCode.MOD(subModLst = submods1, binding = NONE())),
-          SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods2, binding, info2)), _, _)
+    case (SCode.MOD(binding = NONE()), SCode.MOD())
       equation
-        submods1 = List.fold2(submods1, compactSubMod, inModScope,
-          inElementName, submods2);
+        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
-        SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods1, binding, info2));
+        SCode.NAMEMOD(inMod2.ident, SCode.MOD(mod2.finalPrefix, mod2.eachPrefix,
+          submods, mod2.binding, mod2.comment, mod2.info));
 
-    // The first modifier has no binding, use the binding from the second.
-    case (SCode.NAMEMOD(mod = mod1), SCode.NAMEMOD(mod = mod2), _, _)
+    // Both modifiers have a binding.
+    else
       equation
         info1 = SCodeUtil.getModifierInfo(mod1);
         info2 = SCodeUtil.getModifierInfo(mod2);

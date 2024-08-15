@@ -435,7 +435,7 @@ public
             else
               modLibDir := SCodeUtil.filterSubMods(mod, function SCodeUtil.filterGivenSubModNames(namesToKeep={"LibraryDirectory"}));
               if SCodeUtil.isEmptyMod(modLibDir) then
-                modLibDir := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {SCode.NAMEMOD("LibraryDirectory", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.STRING("modelica://" + AbsynUtil.pathFirstIdent(scopeName) + "/Resources/Library")), Error.dummyInfo))}, NONE(), Error.dummyInfo);
+                modLibDir := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {SCode.NAMEMOD("LibraryDirectory", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.STRING("modelica://" + AbsynUtil.pathFirstIdent(scopeName) + "/Resources/Library")), NONE(), Error.dummyInfo))}, NONE(), NONE(), Error.dummyInfo);
               end if;
             end if;
             if SCodeUtil.isEmptyMod(modInc) then
@@ -443,7 +443,7 @@ public
             else
               modIncDir := SCodeUtil.filterSubMods(mod, function SCodeUtil.filterGivenSubModNames(namesToKeep={"IncludeDirectory"}));
               if SCodeUtil.isEmptyMod(modLibDir) then
-                modLibDir := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {SCode.NAMEMOD("IncludeDirectory", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.STRING("modelica://" + AbsynUtil.pathFirstIdent(scopeName) + "/Resources/Include")), Error.dummyInfo))}, NONE(), Error.dummyInfo);
+                modLibDir := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {SCode.NAMEMOD("IncludeDirectory", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.STRING("modelica://" + AbsynUtil.pathFirstIdent(scopeName) + "/Resources/Include")), NONE(), Error.dummyInfo))}, NONE(), NONE(), Error.dummyInfo);
               end if;
             end if;
             ann.modification := SCodeUtil.mergeSCodeMods(SCodeUtil.mergeSCodeMods(modLib, modLibDir), SCodeUtil.mergeSCodeMods(modInc, modIncDir));

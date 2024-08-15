@@ -416,6 +416,7 @@ public
           eachPrefix  = SCode.NOT_EACH(),
           subModLst   = {SCode.SubMod.NAMEMOD(name, mod)},
           binding     = NONE(),
+          comment     = NONE(),
           info        = sourceInfo()));
         var.comment := SCodeUtil.appendAnnotationToCommentOption(anno, var.comment, true);
       end if;

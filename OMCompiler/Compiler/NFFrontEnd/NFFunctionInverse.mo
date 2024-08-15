@@ -100,9 +100,9 @@ public
   algorithm
     call_exp := Expression.toAbsyn(fnInv.inverseCall);
     inv_mod := SCode.SubMod.NAMEMOD(ComponentRef.firstName(fnInv.inputParam),
-      SCode.Mod.MOD(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), {}, SOME(call_exp), fnInv.info));
+      SCode.Mod.MOD(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), {}, SOME(call_exp), NONE(), fnInv.info));
     subMod := SCode.SubMod.NAMEMOD("inverse",
-      SCode.Mod.MOD(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), {inv_mod}, NONE(), fnInv.info));
+      SCode.Mod.MOD(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), {inv_mod}, NONE(), NONE(), fnInv.info));
   end toSubMod;
 
 protected

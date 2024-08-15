@@ -76,13 +76,14 @@ algorithm
       SCode.Each ep;
       SourceInfo i;
       Option<Absyn.Exp> binding;
+      Option<String> cmt;
 
-    case (SCode.MOD(fp, ep, sl, binding, i), _)
+    case (SCode.MOD(fp, ep, sl, binding, cmt, i), _)
       equation
         binding = if onlyRedeclares then NONE() else constantBindingOrNone(binding);
         sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares);
       then
-        SCode.MOD(fp, ep, sl, binding, i);
+        SCode.MOD(fp, ep, sl, binding, cmt, i);
 
     case (SCode.REDECL(), _) then inMod;
 
@@ -145,7 +146,7 @@ algorithm
     case (SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::rest, redecls)
       equation
         submods = makeElementsIntoSubMods(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
-        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), info);
+        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), NONE(), info);
         mod = SCodeUtil.mergeSCodeMods(redeclareMod, mod);
         out = addRedeclareAsElementsToExtends(rest, redecls);
       then
@@ -255,13 +256,14 @@ algorithm
       SCode.Each ep;
       SourceInfo i;
       Option<Absyn.Exp> binding;
+      Option<String> cmt;
 
-    case (SCode.MOD(fp, ep, sl, binding, i), _)
+    case (SCode.MOD(fp, ep, sl, binding, cmt, i), _)
       equation
         binding = removeReferenceInBinding(binding, inCref);
         sl = removeSelfReferenceFromSubMod(sl, inCref);
       then
-        SCode.MOD(fp, ep, sl, binding, i);
+        SCode.MOD(fp, ep, sl, binding, cmt, i);
 
     case (SCode.REDECL(), _) then inMod;
 
@@ -327,6 +329,7 @@ protected
   Option<Absyn.Exp> binding;
   SourceInfo info;
   Boolean changed;
+  Option<String> cmt;
 algorithm
   outMod := match inMod
     case SCode.REDECL(f, e, el)
@@ -335,10 +338,10 @@ algorithm
       then
         if referenceEq(el, el1) then inMod else SCode.REDECL(f, e, el1);
 
-    case SCode.MOD(f, e, submod, binding, info)
+    case SCode.MOD(f, e, submod, binding, cmt, info)
       equation
         (submod, changed) = List.mapFold(submod, expandEnumerationSubMod, false);
-      then if changed then SCode.MOD(f, e, submod, binding, info) else inMod;
+      then if changed then SCode.MOD(f, e, submod, binding, cmt, info) else inMod;
 
     else inMod;
   end match;

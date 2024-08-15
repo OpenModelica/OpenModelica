@@ -458,13 +458,14 @@ algorithm
       Option<Absyn.Exp> opt_exp;
       SCode.Element el;
       SourceInfo info;
+      Option<String> cmt;
 
-    case (SCode.MOD(fp, ep, sub_mods, opt_exp, info), _, _)
+    case (SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info), _, _)
       equation
         opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
         sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
       then
-        SCode.MOD(fp, ep, sub_mods, opt_exp, info);
+        SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info);
 
     case (SCode.REDECL(fp, ep, el), _, _)
       equation
