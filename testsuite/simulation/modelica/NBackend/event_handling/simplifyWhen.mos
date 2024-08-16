@@ -1,0 +1,24 @@
+// name: simplifyWhen
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model SimplifyWhen
+  Integer n;
+equation
+  when {time > 0.5, initial()} then
+    n = integer(time);
+  end when;
+end SimplifyWhen;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+buildModel(SimplifyWhen); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"SimplifyWhen","SimplifyWhen_init.xml"}
+// ""
+// endResult

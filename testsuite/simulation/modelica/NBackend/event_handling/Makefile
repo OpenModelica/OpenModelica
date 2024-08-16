@@ -4,6 +4,7 @@ TESTFILES = \
 compositeEvent.mos \
 eventSystem.mos \
 hybridSys.mos \
+simplifyWhen.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
