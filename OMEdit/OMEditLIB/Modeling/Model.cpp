@@ -761,7 +761,7 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::toString(bool skipTopLevel) const
+  QString Modifier::toString(bool skipTopLevel, bool includeComment) const
   {
     if (mpElement) {
       return mpElement->toString(skipTopLevel);
@@ -782,7 +782,7 @@ namespace ModelInstance
       if (!mValue.isEmpty()) {
         value.append(mName.isEmpty() ? mValue : " = " % mValue);
       }
-      if (!mComment.isEmpty()) {
+      if (includeComment && !mComment.isEmpty()) {
         value.append(" \"" % mComment % "\"");
       }
 
@@ -1763,11 +1763,20 @@ namespace ModelInstance
     }
   }
 
-  QStringList Choices::getChoicesStringList() const
+  QStringList Choices::getChoicesValueStringList() const
   {
     QStringList choices;
     foreach (auto *pChoice, mChoices) {
       choices.append(pChoice->toString());
+    }
+    return choices;
+  }
+
+  QStringList Choices::getChoicesCommentStringList() const
+  {
+    QStringList choices;
+    foreach (auto *pChoice, mChoices) {
+      choices.append(pChoice->toString(false, true));
     }
     return choices;
   }
