@@ -4,12 +4,10 @@
 
 loadString("
 model SimplifyWhen
-  Real x(start=0, fixed=true);
   Integer n;
 equation
-  der(x) = 1;
-  when {x > 0.5, initial()} then
-    n = integer(x);
+  when {time > 0.5, initial()} then
+    n = integer(time);
   end when;
 end SimplifyWhen;
 "); getErrorString();
