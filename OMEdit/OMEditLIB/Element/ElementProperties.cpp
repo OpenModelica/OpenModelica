@@ -684,7 +684,7 @@ void Parameter::createValueWidget()
   }
   QString constrainedByClassName = QStringLiteral("$Any");
   QString replaceable = "", replaceableText = "", replaceableChoice = "", parentClassName = "", restriction = "", elementName = "";
-  QStringList enumerationLiterals, enumerationLiteralsDisplay, replaceableChoices, choices;
+  QStringList enumerationLiterals, enumerationLiteralsDisplay, replaceableChoices, choices, choicesComment;
 
   switch (mValueType) {
     case Parameter::Boolean:
@@ -740,7 +740,8 @@ void Parameter::createValueWidget()
           }
         }
         if (mpModelInstanceElement->getAnnotation()->getChoices()) {
-          choices = mpModelInstanceElement->getAnnotation()->getChoices()->getChoicesStringList();
+          choices = mpModelInstanceElement->getAnnotation()->getChoices()->getChoicesValueStringList();
+          choicesComment = mpModelInstanceElement->getAnnotation()->getChoices()->getChoicesCommentStringList();
         }
         parentClassName = mpElementParameters->getElementParentClassName();
         if (mpModelInstanceElement->getModel()) {
@@ -772,7 +773,7 @@ void Parameter::createValueWidget()
         QString choice = choices[i];
         QString comment;
         if (MainWindow::instance()->isNewApi()) {
-          comment = choice;
+          comment = i < choicesComment.size() ? choicesComment[i] : choice;
         } else {
           comment = StringHandler::removeFirstLastQuotes(FlatModelica::Parser::getModelicaComment(choice));
         }

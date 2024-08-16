@@ -365,7 +365,8 @@ private:
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
     const QList<Modifier*> &getChoices() const {return mChoices;}
-    QStringList getChoicesStringList() const;
+    QStringList getChoicesValueStringList() const;
+    QStringList getChoicesCommentStringList() const;
   private:
     Model *mpParentModel;
     BooleanAnnotation mCheckBox;
@@ -468,7 +469,7 @@ private:
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
-    QString toString(bool skipTopLevel = false) const;
+    QString toString(bool skipTopLevel = false, bool includeComment = false) const;
     Modifier *getModifier(const QString &modifier) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
