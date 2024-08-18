@@ -39,6 +39,7 @@
 #include "om_pm_model.hpp"
 
 #include <cstring>
+#include <fstream>
 // #include <pugixml.hpp>
 
 #include "json.hpp"
