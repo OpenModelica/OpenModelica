@@ -57,6 +57,7 @@ getElementAnnotation.mos \
 getIconAnnotation.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
+getSimulationOptions3.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 IllegalGraphics.mos\
