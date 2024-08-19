@@ -1352,9 +1352,27 @@ public
           Equation new_eq;
           WhenEquationBody body;
 
-        case SCALAR_EQUATION()  then eq;
-        case ARRAY_EQUATION()   then eq;
-        case RECORD_EQUATION()  then eq;
+        case SCALAR_EQUATION() algorithm
+          if Expression.isEqual(eq.lhs, eq.rhs) then
+            eq.lhs := Expression.makeZero(eq.ty);
+            eq.rhs := Expression.makeZero(eq.ty);
+          end if;
+        then eq;
+
+        case ARRAY_EQUATION() algorithm
+          if Expression.isEqual(eq.lhs, eq.rhs) then
+            eq.lhs := Expression.makeZero(eq.ty);
+            eq.rhs := Expression.makeZero(eq.ty);
+          end if;
+        then eq;
+
+        case RECORD_EQUATION() algorithm
+          if Expression.isEqual(eq.lhs, eq.rhs) then
+            eq.lhs := Expression.makeZero(eq.ty);
+            eq.rhs := Expression.makeZero(eq.ty);
+          end if;
+        then eq;
+
         case ALGORITHM() algorithm
           eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
         then eq;

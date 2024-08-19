@@ -243,7 +243,6 @@ public
   algorithm
     // if we filter dump for equations
     if listEmpty(followEquations) then
-      print("list empty\n");
       eq_filter_opt := NONE();
     else
       print(List.toString(followEquations, Util.id, "[debugFilterEquations] filtering for equations: ") + "\n\n");
@@ -256,9 +255,9 @@ public
       (Bindings.main,      "Bindings"),
       (FunctionAlias.main, "FunctionAlias"),
       (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
-      (simplify,           "simplify1"),
+      (function simplify(init = false), "Simplify 1"),
       (Alias.main,         "Alias"),
-      (simplify,           "simplify2"), // TODO simplify in Alias only
+      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
       (simplifyStream,     "Simplify Stream"),
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
@@ -359,20 +358,25 @@ public
   function simplify
     "ToDo: add simplification for bindings"
     input output BackendDAE bdae;
-  algorithm
-    bdae := match bdae
-      local
-        EqData eqData;
-      case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
-        eqData.equations := EquationPointers.map(
-          eqData.equations,
-          function Equation.simplify(
+    input Boolean init;
+  protected
+    BEquation.MapFuncEqn func = function Equation.simplify(
             name = getInstanceName(),
             indent = "",
             simplifyExp = function SimplifyExp.simplifyDump(
               includeScope = true,
               name = getInstanceName(),
-              indent = "")));
+              indent = ""));
+  algorithm
+    bdae := match bdae
+      local
+        EqData eqData;
+      case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
+        if init then
+          eqData.initials := EquationPointers.map(eqData.initials, func);
+        else
+          eqData.equations := EquationPointers.map(eqData.equations, func);
+        end if;
         bdae.eqData := EqData.compress(eqData);
       then bdae;
       else bdae;
@@ -1521,11 +1525,9 @@ public
         String tmp = "";
 
       case MAIN() algorithm
-        if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked)) then
-          tmp := StringUtil.headline_1("[debugFollowEquations]: " + str) + "\n";
-          tmp := tmp + EqData.toString(bdae.eqData, 1, eq_filter_opt);
-          print(tmp);
-        end if;
+        tmp := StringUtil.headline_1("[debugFollowEquations]: " + str) + "\n";
+        tmp := tmp + EqData.toString(bdae.eqData, 1, eq_filter_opt);
+        print(tmp);
       then ();
       else ();
     end match;
