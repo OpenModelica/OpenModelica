@@ -665,7 +665,7 @@ algorithm
     comp_name := AbsynUtil.pathRest(inComponentName);
     comp_rest := comp_name;
 
-    // Try to find the submod whose path matches the best. If the have a
+    // Try to find the submod whose path matches the best. If we have a
     // component name a.b.c, then first check a.b.c, then a.b, then a.
     while true loop
       if AbsynUtil.pathEqual(comp_name, AbsynUtil.elementArgName(submod)) then
@@ -688,7 +688,8 @@ algorithm
 
           case Absyn.REDECLARATION()
             algorithm
-              rest_submods := List.append_reverse(inNewMod.elementArgLst, rest_submods);
+              submod.elementSpec := setSubmodifierInElementSpec(comp_rest, inNewMod, submod.elementSpec);
+              rest_submods := submod :: rest_submods;
             then
               ();
 
@@ -696,7 +697,7 @@ algorithm
         end match;
 
         outSubMods := List.append_reverse(outSubMods, rest_submods);
-return;
+        return;
       end if;
 
       if AbsynUtil.pathIsIdent(comp_name) then
