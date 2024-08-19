@@ -81,6 +81,8 @@ public
     EquationPointers equations, initialEqs;
     list<tuple<Module.wrapper, String>> modules;
     list<tuple<String, Real>> clocks;
+    list<String> followEquations = Flags.getConfigStringList(Flags.DEBUG_FOLLOW_EQUATIONS);
+    Option<UnorderedSet<String>> eq_filter_opt;
   algorithm
     try
       bdae := match bdae
@@ -131,15 +133,23 @@ public
         then fail();
       end match;
 
+      // if we filter dump for equations
+      if listEmpty(followEquations) then
+        eq_filter_opt := NONE();
+      else
+        eq_filter_opt := SOME(UnorderedSet.fromList(followEquations, stringHashDjb2, stringEqual));
+      end if;
+
       // Modules
       modules := {
+        (function BackendDAE.simplify(init = true), "Simplify"),
         (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Inline"),
         (function Partitioning.main(kind = NBPartition.Kind.INI),  "Partitioning"),
         (cleanup,                                                  "Cleanup"),
         (function Causalize.main(kind = NBPartition.Kind.INI),     "Causalize"),
         (function Tearing.main(kind = NBPartition.Kind.INI),       "Tearing")
       };
-      (bdae, clocks) := BackendDAE.applyModules(bdae, modules, ClockIndexes.RT_CLOCK_NEW_BACKEND_INITIALIZATION);
+      (bdae, clocks) := BackendDAE.applyModules(bdae, modules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_INITIALIZATION);
 
       if Flags.isSet(Flags.DUMP_BACKEND_CLOCKS) then
         if not listEmpty(clocks) then

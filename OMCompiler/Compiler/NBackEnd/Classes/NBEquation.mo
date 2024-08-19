@@ -1352,9 +1352,27 @@ public
           Equation new_eq;
           WhenEquationBody body;
 
-        case SCALAR_EQUATION()  then eq;
-        case ARRAY_EQUATION()   then eq;
-        case RECORD_EQUATION()  then eq;
+        case SCALAR_EQUATION() algorithm
+          if Expression.isEqual(eq.lhs, eq.rhs) then
+            eq.lhs := Expression.makeZero(eq.ty);
+            eq.rhs := Expression.makeZero(eq.ty);
+          end if;
+        then eq;
+
+        case ARRAY_EQUATION() algorithm
+          if Expression.isEqual(eq.lhs, eq.rhs) then
+            eq.lhs := Expression.makeZero(eq.ty);
+            eq.rhs := Expression.makeZero(eq.ty);
+          end if;
+        then eq;
+
+        case RECORD_EQUATION() algorithm
+          if Expression.isEqual(eq.lhs, eq.rhs) then
+            eq.lhs := Expression.makeZero(eq.ty);
+            eq.rhs := Expression.makeZero(eq.ty);
+          end if;
+        then eq;
+
         case ALGORITHM() algorithm
           eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
         then eq;
@@ -3390,31 +3408,46 @@ public
       input output String str = "";
       input Option<array<tuple<Integer,Integer>>> mapping_opt = NONE();
       input Boolean printEmpty = true;
+      input Option<UnorderedSet<String>> filter_opt = NONE();
     protected
       Integer luI = lastUsedIndex(equations);
       Integer length, scal_start, current_index = 1;
       String index;
       Boolean useMapping = Util.isSome(mapping_opt);
+      Boolean filterEqs = Util.isSome(filter_opt);
       array<tuple<Integer,Integer>> mapping;
+      UnorderedSet<String> filter;
+      Pointer<Equation> eqn;
     algorithm
+      // check if mapping is used
       if useMapping then
         length := 15;
         mapping := Util.getOption(mapping_opt);
       else
         length := 10;
       end if;
+
+      // check if filter is used
+      if filterEqs then
+        filter := Util.getOption(filter_opt);
+        str := "Filtered " + str;
+      end if;
+
       if printEmpty or luI > 0 then
         str := StringUtil.headline_4(str + " Equations (" + intString(EquationPointers.size(equations)) + "/" + intString(scalarSize(equations)) + ")");
         for i in 1:luI loop
           if ExpandableArray.occupied(i, equations.eqArr) then
-            if useMapping then
-              (scal_start, _) := mapping[current_index];
-              index := "(" + intString(current_index) + "|" + intString(scal_start) + ")";
-            else
-              index := "(" + intString(current_index) + ")";
+            eqn := ExpandableArray.get(i, equations.eqArr);
+            if not filterEqs or UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(eqn)), filter) then
+              if useMapping then
+                (scal_start, _) := mapping[current_index];
+                index := "(" + intString(current_index) + "|" + intString(scal_start) + ")";
+              else
+                index := "(" + intString(current_index) + ")";
+              end if;
+              index := index + StringUtil.repeat(" ", length - stringLength(index));
+              str := str + Equation.toString(Pointer.access(eqn), index) + "\n";
             end if;
-            index := index + StringUtil.repeat(" ", length - stringLength(index));
-            str := str + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), index) + "\n";
             current_index := current_index + 1;
           end if;
         end for;
@@ -3937,6 +3970,7 @@ public
     function toString
       input EqData eqData;
       input Integer level = 0;
+      input Option<UnorderedSet<String>> filter_opt = NONE();
       output String str;
     algorithm
       str := match eqData
@@ -3948,37 +3982,37 @@ public
             tmp := "Equation Data Simulation (scalar simulation equations: " + intString(EquationPointers.scalarSize(eqData.simulation)) + ")";
             tmp := StringUtil.headline_2(tmp) + "\n";
             if level == 0 then
-              tmp :=  tmp + EquationPointers.toString(eqData.equations, "Simulation", NONE(), false);
+              tmp :=  tmp + EquationPointers.toString(eqData.equations, "Simulation", NONE(), false, filter_opt);
             else
-              tmp :=  tmp + EquationPointers.toString(eqData.continuous, "Continuous", NONE(), false) +
-                      EquationPointers.toString(eqData.clocked, "Clocked", NONE(), false) +
-                      EquationPointers.toString(eqData.discretes, "Discrete", NONE(), false) +
-                      EquationPointers.toString(eqData.initials, "(Exclusively) Initial", NONE(), false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false) +
-                      EquationPointers.toString(eqData.removed, "Removed", NONE(), false);
+              tmp :=  tmp + EquationPointers.toString(eqData.continuous, "Continuous", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.clocked, "Clocked", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.discretes, "Discrete", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.initials, "(Exclusively) Initial", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.removed, "Removed", NONE(), false, filter_opt);
             end if;
         then tmp;
 
         case EQ_DATA_JAC()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", NONE(), false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", NONE(), false, filter_opt);
             else
-              tmp :=  EquationPointers.toString(eqData.results, "Residual", NONE(), false) +
-                      EquationPointers.toString(eqData.temporary, "Inner", NONE(), false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false);
+              tmp :=  EquationPointers.toString(eqData.results, "Residual", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.temporary, "Inner", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false, filter_opt);
             end if;
         then tmp;
 
         case EQ_DATA_HES()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(eqData.equations, "Hessian", NONE(), false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Hessian", NONE(), false, filter_opt);
             else
               tmp :=  StringUtil.headline_4("Result Equation") + "\n" +
                       Equation.toString(Pointer.access(eqData.result)) + "\n" +
-                      EquationPointers.toString(eqData.temporary, "Temporary Inner", NONE(), false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false);
+                      EquationPointers.toString(eqData.temporary, "Temporary Inner", NONE(), false, filter_opt) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", NONE(), false, filter_opt);
             end if;
         then tmp;
 
