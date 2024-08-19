@@ -1242,17 +1242,25 @@ end simplifyLogicBinaryOr;
 function simplifyLogicUnary
   input output Expression unaryExp;
 protected
-  Expression e, se;
+  Expression e, se, newExp;
   Operator op;
 algorithm
-  Expression.LUNARY(op, e) := unaryExp;
-  se := simplify(e);
+  unaryExp := match unaryExp
+    case Expression.LUNARY(_, Expression.LUNARY(_, e))
+    then simplify(e);
 
-  if Expression.isLiteral(se) then
-    unaryExp := Ceval.evalLogicUnaryOp(se, op);
-  elseif not referenceEq(e, se) then
-    unaryExp := Expression.LUNARY(op, se);
-  end if;
+    case Expression.LUNARY(op, e) algorithm
+      se := simplify(e);
+
+      if Expression.isLiteral(se) then
+        newExp := Ceval.evalLogicUnaryOp(se, op);
+      elseif not referenceEq(e, se) then
+        newExp := Expression.LUNARY(op, se);
+      else
+        newExp := unaryExp;
+      end if;
+    then newExp;
+  end match;
 end simplifyLogicUnary;
 
 function simplifyRelation

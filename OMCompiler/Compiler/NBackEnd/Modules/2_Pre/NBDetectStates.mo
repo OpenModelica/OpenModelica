@@ -484,6 +484,16 @@ protected
         print(List.toString(acc_clocked_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
       end if;
     end if;
+
+    if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
+      print(StringUtil.headline_4("[discreteinfo] pre() and previous() variables from " + context + ":"));
+      if listEmpty(acc_previous) then
+        print("\t<no pre/previous variables>\n\n");
+      else
+        print(List.toString(acc_previous, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+      end if;
+    end if;
+
   end updateDiscreteStatesAndPrevious;
 
   function collectDiscreteStatesFromWhen

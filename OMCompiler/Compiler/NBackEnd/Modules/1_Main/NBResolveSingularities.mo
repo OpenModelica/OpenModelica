@@ -708,7 +708,7 @@ protected
       s4 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
           + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = "")) + "\n";
     end if;
-    str := s1 + s2 + s3 + s4;
+    str := s1 + s2 + s3 + s4 + "\n";
   end toStringUnmatched;
 
   annotation(__OpenModelica_Interface="backend");
