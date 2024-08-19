@@ -1017,6 +1017,7 @@ protected
         ClockKind clk;
         Expression condition;
 
+      // logical unarys: e.g. not a
       case Expression.LUNARY() algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcTree, createAux);
         Pointer.update(bucket_ptr, bucket);
