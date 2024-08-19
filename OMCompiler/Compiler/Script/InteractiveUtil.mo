@@ -6058,17 +6058,19 @@ algorithm
         // Check if we have any more inherited annotations.
         extends_path :: extends_paths := extends_paths;
         for a in listRest(extends_oannl) loop
-          SOME(extends_ann2) := a;
-          if not valueEq(extends_ann, extends_ann2) then
-            // Found an inherited annotation that's not equal to the first one, print a warning.
-            Error.addMessage(Error.CONFLICTING_INHERITED_ANNOTATIONS,
-              {annotationName, AbsynUtil.pathString(modelPath),
-               Dump.unparseModificationStr(extends_ann), AbsynUtil.pathString(extends_path),
-               Dump.unparseModificationStr(extends_ann2), AbsynUtil.pathString(listHead(extends_paths))});
-            break;
-          end if;
+          if isSome(a) then
+            SOME(extends_ann2) := a;
+            if not valueEq(extends_ann, extends_ann2) then
+              // Found an inherited annotation that's not equal to the first one, print a warning.
+              Error.addMessage(Error.CONFLICTING_INHERITED_ANNOTATIONS,
+                {annotationName, AbsynUtil.pathString(modelPath),
+                 Dump.unparseModificationStr(extends_ann), AbsynUtil.pathString(extends_path),
+                 Dump.unparseModificationStr(extends_ann2), AbsynUtil.pathString(listHead(extends_paths))});
+              break;
+            end if;
 
-          extends_paths := listRest(extends_paths);
+            extends_paths := listRest(extends_paths);
+          end if;
         end for;
       end if;
 
