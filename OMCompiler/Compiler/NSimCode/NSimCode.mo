@@ -386,7 +386,6 @@ public
 
             // add all entwined equations to all sim
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
-            init := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in init)), init);
 
             // ToDo add event system
             inlineEquations := {};

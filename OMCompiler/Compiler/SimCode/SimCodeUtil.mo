@@ -138,8 +138,21 @@ public function sortEqSystems
   input list<SimCode.SimEqSystem> eqs;
   output list<SimCode.SimEqSystem> outEqs;
 algorithm
-  outEqs := List.sort(eqs,compareEqSystems);
+  outEqs := List.flatten(list(expandEntwined(eq) for eq in eqs));
+  outEqs := List.sort(outEqs, compareEqSystems);
 end sortEqSystems;
+
+protected function expandEntwined
+  "expands entwined equations to their body equation systems
+  used for serializing"
+  input SimCode.SimEqSystem eq;
+  output list<SimCode.SimEqSystem> eqs;
+algorithm
+  eqs := match eq
+    case SimCode.SES_ENTWINED_ASSIGN() then eq :: eq.single_calls;
+    else {eq};
+  end match;
+end expandEntwined;
 
 protected function simulationFindLiterals
   "Finds all literal expressions in functionsa"
