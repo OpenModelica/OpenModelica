@@ -1017,6 +1017,12 @@ protected
         ClockKind clk;
         Expression condition;
 
+      // logical unarys: e.g. not a
+      case Expression.LUNARY() algorithm
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcTree, createAux);
+        Pointer.update(bucket_ptr, bucket);
+      then exp;
+
       // logical binarys: e.g. (a and b)
       // Todo: this might not always be correct -> check with something like "contains relation?"
       case Expression.LBINARY() algorithm
