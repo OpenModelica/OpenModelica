@@ -238,7 +238,18 @@ public
     list<tuple<String, Real>> preOptClocks;
     list<tuple<String, Real>> mainClocks;
     list<tuple<String, Real>> postOptClocks;
+    list<String> followEquations = Flags.getConfigStringList(Flags.DEBUG_FOLLOW_EQUATIONS);
+    Option<UnorderedSet<String>> eq_filter_opt;
   algorithm
+    // if we filter dump for equations
+    if listEmpty(followEquations) then
+      print("list empty\n");
+      eq_filter_opt := NONE();
+    else
+      print(List.toString(followEquations, Util.id, "[debugFilterEquations] filtering for equations: ") + "\n\n");
+      eq_filter_opt := SOME(UnorderedSet.fromList(followEquations, stringHashDjb2, stringEqual));
+    end if;
+
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
@@ -272,9 +283,10 @@ public
       (function Jacobian.main(kind = NBPartition.Kind.ODE),   "Jacobian")
     };
 
-    (bdae, preOptClocks)  := applyModules(bdae, preOptModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
-    (bdae, mainClocks)    := applyModules(bdae, mainModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
-    (bdae, postOptClocks) := applyModules(bdae, postOptModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
+    (bdae, preOptClocks)  := applyModules(bdae, preOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
+    (bdae, mainClocks)    := applyModules(bdae, mainModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
+    (bdae, postOptClocks) := applyModules(bdae, postOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
+
     if Flags.isSet(Flags.DUMP_BACKEND_CLOCKS) then
       if not listEmpty(preOptClocks) then
         print(StringUtil.headline_4("Pre-Opt Backend Clocks:"));
@@ -296,6 +308,7 @@ public
   function applyModules
     input output BackendDAE bdae;
     input list<tuple<Module.wrapper, String>> modules;
+    input Option<UnorderedSet<String>> eq_filter_opt;
     input Integer clock_idx;
     output list<tuple<String, Real>> module_clocks = {};
   protected
@@ -333,6 +346,10 @@ public
 
       if Flags.isSet(Flags.OPT_DAE_DUMP) or (Flags.isSet(Flags.BLT_DUMP) and (name == "Causalize" or name == "Solve")) then
         print(toString(bdae, "(" + name + ")"));
+      end if;
+
+      if Util.isSome(eq_filter_opt) then
+        debugFollowEquations(bdae, eq_filter_opt, "(" + name + ")");
       end if;
     end for;
 
@@ -1492,6 +1509,27 @@ public
       + " * Number of for-loop strong components: ......... " + for_sc + "\n"
       + " * Number of algebraic-loop strong components: ... " + alg_sc);
   end strongcomponentinfo;
+
+
+  function debugFollowEquations
+    input BackendDAE bdae;
+    input Option<UnorderedSet<String>> eq_filter_opt = NONE();
+    input String str;
+  algorithm
+    _ := match bdae
+      local
+        String tmp = "";
+
+      case MAIN() algorithm
+        if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked)) then
+          tmp := StringUtil.headline_1("[debugFollowEquations]: " + str) + "\n";
+          tmp := tmp + EqData.toString(bdae.eqData, 1, eq_filter_opt);
+          print(tmp);
+        end if;
+      then ();
+      else ();
+    end match;
+  end debugFollowEquations;
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

@@ -1469,6 +1469,10 @@ constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOption
     })),
   Gettext.gettext("Enables optional Base Modelica options."));
 
+constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquations",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
+  Gettext.gettext("Takes a list of equation names and prints the corresponding equations after each stage of the backend process."));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;
