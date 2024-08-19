@@ -1115,6 +1115,42 @@ protected
     print("Mean = "+String(mean_val));
   end mean;
 
+  function optionMinMax
+    "Collects min and max attributes if available."
+    input Pointer<Variable> var_ptr;
+    input Option<Expression> attr_min, attr_max;
+    input output AttributeCollector attrcollector;
+  protected
+    Expression min_val, max_val;
+  algorithm
+    if Util.isSome(attr_min) then
+      min_val := Util.getOption(attr_min);
+      UnorderedMap.add(BVariable.getVarName(var_ptr), min_val, attrcollector.min_val_map);
+    end if;
+    if Util.isSome(attr_max) then
+      max_val := Util.getOption(attr_max);
+      UnorderedMap.add(BVariable.getVarName(var_ptr), max_val, attrcollector.max_val_map);
+    end if;
+  end optionMinMax;
+
+  function optionStartFixed
+    "Collects start and fixed attributes if available."
+    input Pointer<Variable> var_ptr;
+    input Option<Expression> attr_start, attr_fixed;
+    input output AttributeCollector attrcollector;
+  protected
+    Expression start_val, fixed_val;
+  algorithm
+    if Util.isSome(attr_start) then
+      start_val := Util.getOption(attr_start);
+      UnorderedMap.add(BVariable.getVarName(var_ptr), start_val, attrcollector.start_map);
+    end if;
+    if Util.isSome(attr_fixed) then
+      fixed_val := Util.getOption(attr_fixed);
+      UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
+    end if;
+  end optionStartFixed;
+
   function rateVar
     "Rates a variable based on attributes"
     input Pointer<Variable> var_ptr;
@@ -1122,7 +1158,7 @@ protected
     input output AttributeCollector attrcollector;
   protected
     ComponentRef name;
-    Expression min_val, max_val, start_val, fixed_val, nominal_val;
+    Expression nominal_val;
     StateSelect stateSelect_val;
     TearingSelect tearingSelect_val;
   algorithm
@@ -1139,23 +1175,8 @@ protected
           BackendExtension.VariableAttributes attr;
 
       case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_REAL())) algorithm
-
-        if Util.isSome(attr.min) then
-          min_val := Util.getOption(attr.min);
-          UnorderedMap.add(BVariable.getVarName(var_ptr), min_val, attrcollector.min_val_map);
-        end if;
-        if Util.isSome(attr.max) then
-          max_val := Util.getOption(attr.max);
-          UnorderedMap.add(BVariable.getVarName(var_ptr), max_val, attrcollector.max_val_map);
-        end if;
-        if Util.isSome(attr.start) then
-          start_val := Util.getOption(attr.start);
-          UnorderedMap.add(BVariable.getVarName(var_ptr), start_val, attrcollector.start_map);
-        end if;
-        if Util.isSome(attr.fixed) then
-          fixed_val := Util.getOption(attr.fixed);
-          UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
-        end if;
+        attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
+        attrcollector := optionMinMax(var_ptr, attr.start, attr.fixed, attrcollector);
         if Util.isSome(attr.nominal) then
           nominal_val := Util.getOption(attr.nominal);
           UnorderedMap.add(BVariable.getVarName(var_ptr), nominal_val, attrcollector.nominal_map);
@@ -1171,10 +1192,17 @@ protected
           tearingSelect_val := Util.getOption(attr.tearingSelect);
           UnorderedMap.add(BVariable.getVarName(var_ptr), tearingSelect_val, attrcollector.tearingSelect_map);
         end if;
-
       then ();
 
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.DISCRETE())) then ();
+      case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_INT())) algorithm
+        attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
+        attrcollector := optionMinMax(var_ptr, attr.start, attr.fixed, attrcollector);
+      then ();
+
+      case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_BOOL())) algorithm
+        attrcollector := optionMinMax(var_ptr, attr.start, attr.fixed, attrcollector);
+      then ();
+
       else ();
     end match;
   end rateVar;
