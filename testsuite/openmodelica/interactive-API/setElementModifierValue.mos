@@ -29,6 +29,10 @@ setElementModifierValue(M, classwithReplaceable.otherClass, $Code((redeclare Cla
 getErrorString();
 list(M);
 
+setElementModifierValue(M, classwithReplaceable.otherClass.testClass, $Code(=Real));
+getErrorString();
+list(M);
+
 setElementModifierValue(M, classwithReplaceable, $Code((A = 1, B = 2)));
 getErrorString();
 list(M);
@@ -78,31 +82,37 @@ list(M);
 // true
 // ""
 // "model M
-//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), A = 1, B = 2);
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass = Real \"C\"));
 //   Class c;
 // end M;"
 // true
 // ""
 // "model M
-//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), final A, B = 2);
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass = Real \"C\"), A = 1, B = 2);
 //   Class c;
 // end M;"
 // true
 // ""
 // "model M
-//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), A(fixed = true), B = 2);
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass = Real \"C\"), final A, B = 2);
 //   Class c;
 // end M;"
 // true
 // ""
 // "model M
-//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), B = 2);
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass = Real \"C\"), A(fixed = true), B = 2);
 //   Class c;
 // end M;"
 // true
 // ""
 // "model M
-//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass \"C\"), B = 2);
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass = Real \"C\"), B = 2);
+//   Class c;
+// end M;"
+// true
+// ""
+// "model M
+//   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass = Real \"C\"), B = 2);
 //   Class c(x(each fixed = true));
 // end M;"
 // endResult
