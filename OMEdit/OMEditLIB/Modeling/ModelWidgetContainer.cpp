@@ -6880,9 +6880,6 @@ void ModelWidget::reDrawModelWidget()
       mElementsLoaded = false;
       // get the model elements
       loadElements();
-      // invalidate the simulation options
-      mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
-      mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
       // Draw diagram view
       if (mDiagramViewLoaded) {
         // reset flags
@@ -6892,6 +6889,9 @@ void ModelWidget::reDrawModelWidget()
         loadConnections();
       }
     }
+    // invalidate the simulation options
+    mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
+    mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
     // if documentation view is visible and this model is the current active model then update it
