@@ -3121,10 +3121,10 @@ match system
                 tmp /= <%iter%>_size;
                 >>;separator="\n")
             <<
-            const int idx_lst[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+            const int idx_lst_<%res_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
             for(int i_=0; i_<<%idx_len%>; i_++)
             {
-              int tmp = idx_lst[i_];
+              int tmp = idx_lst_<%res_index%>[i_];
               <%iter_%>
               <%preExp%>res[<%res_index%>+i_] = <%expPart%>;
             }
