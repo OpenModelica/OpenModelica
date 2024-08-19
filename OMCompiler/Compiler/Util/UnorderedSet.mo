@@ -671,6 +671,23 @@ public
     end for;
   end sym_difference;
 
+  function isDisjoint
+    input UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+    output Boolean b = true;
+  algorithm
+    if Mutable.access(set1.size) > Mutable.access(set2.size) then
+      b := isDisjoint(set2, set1);
+    else
+      for t in toList(set1) loop
+        if contains(t, set2) then
+          b := false;
+          return;
+        end if;
+      end for;
+    end if;
+  end isDisjoint;
+
 protected
   function find
     "Tries to find a key in the set, returning the key as an option, and the

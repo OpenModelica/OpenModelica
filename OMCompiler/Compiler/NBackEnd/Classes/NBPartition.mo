@@ -478,8 +478,7 @@ public
         local
           Association association;
         case association as Association.CLOCKED() algorithm
-          association.holdEvents := List.any(VariablePointers.getVarNames(par.unknowns),
-            function UnorderedSet.contains(set = held_crefs));
+          association.holdEvents := not UnorderedSet.isDisjoint(held_crefs, UnorderedMap.keySet(par.unknowns.map));
         then association;
         else par.association;
       end match;

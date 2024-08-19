@@ -43,6 +43,7 @@ protected
   import MetaModelica.Dangerous.*;
   import Util;
   import IOStream;
+  import UnorderedSet;
 
 public
   partial function Hash
@@ -477,6 +478,27 @@ public
     input UnorderedMap<K, V> map;
     output Vector<V> values = Vector.copy(map.values);
   end valueVector;
+
+  function keySet
+    "Returns the keys as an UnorderedSet"
+    input UnorderedMap<K, V> map;
+    output UnorderedSet<K> set;
+  protected
+    Integer bucket_count = Vector.size(map.buckets);
+    array<list<K>> buckets;
+  algorithm
+    buckets := arrayCreate(bucket_count, {});
+    for h in 1:bucket_count loop
+      arrayUpdateNoBoundsChecking(buckets, h,
+        list(Vector.getNoBounds(map.keys, i) for i in Vector.get(map.buckets, h)));
+    end for;
+
+    set := UnorderedSet.UNORDERED_SET(
+      Mutable.create(buckets),
+      Mutable.create(Vector.size(map.keys)),
+      map.hashFn,
+      map.eqFn);
+  end keySet;
 
   function fold<FT>
     "Folds over the values in the map."
