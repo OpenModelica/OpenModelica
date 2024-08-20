@@ -1176,7 +1176,7 @@ protected
 
       case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_REAL())) algorithm
         attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
-        attrcollector := optionMinMax(var_ptr, attr.start, attr.fixed, attrcollector);
+        attrcollector := optionStartFixed(var_ptr, attr.start, attr.fixed, attrcollector);
         if Util.isSome(attr.nominal) then
           nominal_val := Util.getOption(attr.nominal);
           UnorderedMap.add(BVariable.getVarName(var_ptr), nominal_val, attrcollector.nominal_map);
@@ -1196,11 +1196,11 @@ protected
 
       case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_INT())) algorithm
         attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
-        attrcollector := optionMinMax(var_ptr, attr.start, attr.fixed, attrcollector);
+        attrcollector := optionStartFixed(var_ptr, attr.start, attr.fixed, attrcollector);
       then ();
 
       case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_BOOL())) algorithm
-        attrcollector := optionMinMax(var_ptr, attr.start, attr.fixed, attrcollector);
+        attrcollector := optionStartFixed(var_ptr, attr.start, attr.fixed, attrcollector);
       then ();
 
       else ();
