@@ -234,6 +234,10 @@ public
     input VariablePointers vars;
     input EquationPointers eqns;
     output list<StrongComponent> comps = {};
+  protected
+    Option<Adjacency.Mapping> mapping_opt;
+    Option<array<tuple<Integer,Integer>>> eqn_AtS   "eqn: arr_idx -> start_idx/length";
+    Option<array<tuple<Integer,Integer>>> var_AtS   "var: arr_idx -> start_idx/length";
   algorithm
     try
       comps := match adj
@@ -277,9 +281,16 @@ public
         then fail();
       end match;
     else
+      mapping_opt := Adjacency.Matrix.getMappingOpt(adj);
+      (eqn_AtS, var_AtS) := match mapping_opt
+        local
+          Adjacency.Mapping mapping;
+        case SOME(mapping) then (SOME(mapping.eqn_AtS), SOME(mapping.var_AtS));
+        else (NONE(), NONE());
+      end match;
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to sort system:\n"
-        + VariablePointers.toString(vars, "system vars") + "\n"
-        + EquationPointers.toString(eqns, "system eqns") + "\n"
+        + VariablePointers.toString(vars, "System", var_AtS) + "\n"
+        + EquationPointers.toString(eqns, "System", eqn_AtS) + "\n"
         + Matching.toString(matching)});
       fail();
     end try;
@@ -349,14 +360,15 @@ public
     end ARRAY_BUCKET;
 
     function toString
+      "increment index by 1 to have it consistent with index plots"
       input SuperNode node;
       output String str;
     algorithm
       str := match node
-        case SINGLE()           then "[" + intString(node.index) + "] single ";
-        case ELEMENT()          then "[" + intString(node.index) + "] scalar element of (" + intString(node.parent) + ")";
-        case ALGEBRAIC_LOOP()   then "[" + intString(node.index) + "] algebraic loop " + List.toString(node.eqn_indices, intString);
-        case ARRAY_BUCKET()     then "[" + intString(node.index) + "] array bucket " + List.toString(node.eqn_indices, intString);
+        case SINGLE()           then "[" + intString(node.index + 1) + "] single ";
+        case ELEMENT()          then "[" + intString(node.index + 1) + "] scalar element of (" + intString(node.parent + 1) + ")";
+        case ALGEBRAIC_LOOP()   then "[" + intString(node.index + 1) + "] algebraic loop " + List.toString(list(i + 1 for i in node.eqn_indices), intString);
+        case ARRAY_BUCKET()     then "[" + intString(node.index + 1) + "] array bucket " + List.toString(list(i + 1 for i in node.eqn_indices), intString);
                                 else "ERROR";
       end match;
     end toString;

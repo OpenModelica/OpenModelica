@@ -386,7 +386,7 @@ public
   function createStartEquationSlice
     "creates a start equation for a sliced variable.
     usually results in a for equation, but might be scalarized if that is not possible."
-    input Slice<VariablePointer> state;
+    input Slice<VariablePointer> var_slice;
     input Pointer<list<Pointer<Variable>>> ptr_start_vars;
     input Pointer<list<Pointer<Equation>>> ptr_start_eqs;
     input Pointer<Integer> idx;
@@ -398,36 +398,21 @@ public
     EquationKind kind;
     Iterator iterator;
   algorithm
-    var_ptr := Slice.getT(state);
+    var_ptr := Slice.getT(var_slice);
     name    := BVariable.getVarName(var_ptr);
     start_exp := match BVariable.getStartAttribute(var_ptr)
       local
         Expression e;
-        list<InstNode> iterators;
-        UnorderedMap<ComponentRef, Expression> replacements;
-        list<Dimension> dims;
-        list<ComponentRef> iter_crefs;
-        list<Expression> ranges;
+        Call array_constructor;
         list<Subscript> subscripts;
         list<tuple<ComponentRef, Expression>> frames;
-        Call array_constructor;
+        UnorderedMap<ComponentRef, Expression> replacements;
         InstNode old_iter;
         ComponentRef new_iter;
 
       // convert array constructor to for-equation if elements are not a literal
       case SOME(Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR(exp = e))) guard not Expression.isLiteral(e) algorithm
-
-        // make unique iterators for the new for-loop
-        dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
-        (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-        iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
-        iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
-        subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
-        frames      := List.zip(iter_crefs, ranges);
-        iterator    := Iterator.fromFrames(frames);
-
-        // create start variable name with subscripts and create start expression
-        (var_ptr, name, _ , _) := createStartVar(var_ptr, name, subscripts);
+        (var_ptr, name, _, _, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         for tpl in List.zip(array_constructor.iters, frames) loop
           ((old_iter, _), (new_iter, _)) := tpl;
@@ -437,29 +422,66 @@ public
 
       // use the start attribute itself if it is not a literal
       case SOME(e) guard not Expression.isLiteral(e) algorithm
-        (var_ptr, name, _, _) := createStartVar(var_ptr, name, {});
-        iterator := Iterator.EMPTY();
+        if Slice.isFull(var_slice) then
+          (var_ptr, name, _, _) := createStartVar(var_ptr, name, {});
+          iterator := Iterator.EMPTY();
+        else
+          (var_ptr, name, _, _, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
+          e := Expression.applySubscripts(subscripts, e);
+        end if;
       then e;
 
+      // create a start variable if it is a literal
       else algorithm
-        // create a start variable if it is a literal
-        (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
-        Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
-        iterator := Iterator.EMPTY();
+        if Slice.isFull(var_slice) then
+          (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
+          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+          iterator := Iterator.EMPTY();
+        else
+          (var_ptr, name, start_var, start_name, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
+          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+        end if;
       then Expression.fromCref(start_name);
     end match;
 
     // make the new start equation
     kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
     start_eq := Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true));
-    if not listEmpty(state.indices) then
+    if not listEmpty(var_slice.indices) then
       // empty list indicates full array, slice otherwise
-      (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
+      (start_eq, _, _) := Equation.slice(start_eq, var_slice.indices, NONE(), FunctionTreeImpl.EMPTY());
     end if;
     Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
   end createStartEquationSlice;
 
-  function createPreEquation
+  protected function createIteratedStartCref
+    input output Pointer<Variable> var_ptr;
+    input output ComponentRef name;
+    output Pointer<Variable> start_var;
+    output ComponentRef start_cref;
+    output list<Subscript> subscripts;
+    output list<tuple<ComponentRef, Expression>> frames;
+    output Iterator iterator;
+  protected
+    list<Dimension> dims;
+    list<InstNode> iterators;
+    list<Expression> ranges;
+    list<ComponentRef> iter_crefs;
+  algorithm
+    // make unique iterators for the new for-loop
+    dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
+    (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
+    iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
+    iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
+    subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
+    frames      := List.zip(iter_crefs, ranges);
+    iterator    := Iterator.fromFrames(frames);
+
+    // create start variable name with subscripts and create start expression
+    (var_ptr, name, start_var , start_cref) := createStartVar(var_ptr, name, subscripts);
+  end createIteratedStartCref;
+
+  public function createPreEquation
     "creates d = $PRE.d equations"
     input Pointer<Variable> var_ptr;
     input Pointer<list<Pointer<Equation>>> ptr_pre_eqs;
