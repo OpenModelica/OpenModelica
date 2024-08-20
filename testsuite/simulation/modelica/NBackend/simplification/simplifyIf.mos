@@ -1,0 +1,89 @@
+// name: simplifyIf
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model SimplifyIf
+  Integer n;
+  Boolean b = true;
+equation
+  if initial() then
+    n = 1;
+  elseif time > 0.5 then
+    n = 2;
+  elseif b then
+    n = 3;
+  else
+    n = 4;
+  end if;
+end SimplifyIf;
+"); getErrorString();
+setCommandLineOptions("--newBackend -d=dumpSimplify"); getErrorString();
+buildModel(SimplifyIf); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if initial() then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif time > 0.5 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] elseif true then
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] else
+//   [----]   [SCAL] (1) n = 4 ($RES_SIM_4)
+//   [----] end if;
+// [AFTER ]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if initial() then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif time > 0.5 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
+//
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if false then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif $TEV_0 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
+// [AFTER ]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if $TEV_0 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
+//
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if true then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif $TEV_0 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
+// [AFTER ]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if true then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] else
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] end if;
+//
+// {"SimplifyIf","SimplifyIf_init.xml"}
+// ""
+// endResult

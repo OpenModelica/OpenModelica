@@ -1,9 +1,8 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-compositeEvent.mos \
-eventSystem.mos \
-hybridSys.mos \
+simplifyIf.mos\
+simplifyWhen.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

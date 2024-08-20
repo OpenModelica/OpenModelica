@@ -11,7 +11,7 @@ equation
   end when;
 end SimplifyWhen;
 "); getErrorString();
-setCommandLineOptions("--newBackend"); getErrorString();
+setCommandLineOptions("--newBackend -d=dumpSimplify"); getErrorString();
 buildModel(SimplifyWhen); getErrorString();
 
 // Result:
@@ -19,6 +19,18 @@ buildModel(SimplifyWhen); getErrorString();
 // ""
 // true
 // ""
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [WHEN] (1) ($RES_SIM_0)
+//   [----] when {$TEV_0, false} then
+//   [----]   n := integer(time)
+//   [----] end when;
+// [AFTER ]
+//   [WHEN] (1) ($RES_SIM_0)
+//   [----] when $TEV_0 then
+//   [----]   n := integer(time)
+//   [----] end when;
+//
 // {"SimplifyWhen","SimplifyWhen_init.xml"}
 // ""
 // endResult

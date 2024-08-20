@@ -701,7 +701,7 @@ public
           tupl_recd_str := if Type.isTuple(eq.ty) then "[TUPL] " else "[RECD] ";
         then str + tupl_recd_str + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
         case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr, " ") + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
-        case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s + EquationAttributes.toString(eq.attr, " "));
+        case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s + EquationAttributes.toString(eq.attr, " ") + "\n");
         case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr, " "));
         case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] " + s + EquationAttributes.toString(eq.attr, " ") + "\n");
         case AUX_EQUATION()    then str + "[AUX-] " + s + "Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
@@ -1338,6 +1338,7 @@ public
       algorithm
         e := func(e);
       end apply;
+      Equation old_eq;
     algorithm
       if Flags.isSet(Flags.DUMP_SIMPLIFY) and not stringEqual(indent, "") then
         print("\n");
@@ -1347,10 +1348,10 @@ public
       eq := map(eq, simplifyExp, mapFunc = apply);
 
       // simplify equation structure
+      old_eq := eq;
       eq := match eq
         local
           Equation new_eq;
-          WhenEquationBody body;
 
         case SCALAR_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
@@ -1376,8 +1377,22 @@ public
         case ALGORITHM() algorithm
           eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
         then eq;
+
         case WHEN_EQUATION() algorithm
           new_eq := match WhenEquationBody.simplify(SOME(eq.body))
+            local
+              WhenEquationBody body;
+            case SOME(body) algorithm
+              eq.body := body;
+            then eq;
+            else Equation.DUMMY_EQUATION();
+          end match;
+        then new_eq;
+
+        case IF_EQUATION() algorithm
+          new_eq := match IfEquationBody.simplify(SOME(eq.body))
+            local
+              IfEquationBody body;
             case SOME(body) algorithm
               eq.body := body;
             then eq;
@@ -1387,13 +1402,18 @@ public
 
         // ToDo: implement the following correctly:
 
-        case IF_EQUATION()      then eq;
         case FOR_EQUATION()     then eq;
         case AUX_EQUATION()     then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + toString(eq)});
         then fail();
       end match;
+
+      if Flags.isSet(Flags.DUMP_SIMPLIFY) and not isEqual(old_eq, eq) then
+        print(indent + "### dumpSimplify | " + name + " ###\n");
+        print(indent + "[BEFORE]\n" + toString(old_eq, indent + "  ") + "\n");
+        print(indent + "[AFTER ]\n" + toString(eq, indent + "  ") + "\n\n");
+      end if;
     end simplify;
 
     function createName
@@ -2297,20 +2317,21 @@ public
       input String elseStr = "";
       input Boolean selfCall = false;
       output String str;
-    protected
-      IfEquationBody elseIf;
     algorithm
+      str := elseStr;
+      if not selfCall then
+        str := str + indent;
+      end if;
       if not Expression.isEnd(body.condition) then
-        str := elseStr + "if " + Expression.toString(body.condition) + " then\n";
+        str := str + "if " + Expression.toString(body.condition) + " then\n";
       else
-        str := elseStr + "\n";
+        str := str + "\n";
       end if;
       for eqn in body.then_eqns loop
         str := str + Equation.toString(Pointer.access(eqn), indent + "  ") + "\n";
       end for;
       if isSome(body.else_if) then
-        SOME(elseIf) := body.else_if;
-        str := str + toString(elseIf, indent, indent + "else", true);
+        str := str + toString(Util.getOption(body.else_if), indent, indent + "else", true);
       end if;
       if not selfCall then
         str := str + indent + "end if;";
@@ -2507,6 +2528,60 @@ public
       end for;
     end split;
 
+    function simplify
+      input output Option<IfEquationBody> body;
+      input Integer depth = 1;
+      input Boolean done = false;
+    algorithm
+      body := match body
+        local
+          IfEquationBody b;
+          Expression condition;
+          list<Expression> conditions;
+
+        case SOME(b) algorithm
+          if done then
+            b.condition := Expression.END();
+            b.else_if := NONE();
+          end if;
+          // if the condition is True -> cut later unreachable branches
+          if Expression.isTrue(b.condition) then
+            // FIXME can't yet handle removing the IF altogether so at least two branches have to remain.
+            if depth >= 2 then
+              b.condition := Expression.END();
+              b.else_if := NONE();
+            else
+              b.else_if := simplify(b.else_if, depth + 1, true);
+            end if;
+          else
+            b.else_if := simplify(b.else_if, depth + 1);
+          end if;
+          // if the condition is False -> skip this unreachable branch
+          // FIXME can't yet handle removing the IF altogether so at least two branches have to remain.
+          if Expression.isFalse(b.condition) and depth - 1 + numberOfBranches(b.else_if) >= 2 then
+            body := b.else_if;
+          else
+            body := SOME(b);
+          end if;
+        then body;
+
+        // NONE() stays NONE()
+        else body;
+      end match;
+    end simplify;
+
+    function numberOfBranches
+      input Option<IfEquationBody> body;
+      output Integer numBranches;
+    algorithm
+      numBranches := match body
+        local
+          IfEquationBody b;
+        case SOME(b) then 1 + numberOfBranches(b.else_if);
+        else 0;
+      end match;
+    end numberOfBranches;
+
     function isRecordOrTupleEquation
       "only checks first layer body if it returns multiple variables"
       input IfEquationBody body;
@@ -2585,20 +2660,17 @@ public
       input String elseStr = "";
       input Boolean selfCall = false;
       output String str;
-    protected
-      WhenEquationBody elseWhen;
     algorithm
       str := elseStr;
       if not selfCall then
         str := str + indent;
       end if;
-      str := str + "when " + Expression.toString(body.condition) + " then \n";
+      str := str + "when " + Expression.toString(body.condition) + " then\n";
       for stmt in body.when_stmts loop
         str := str + WhenStatement.toString(stmt, indent + "  ") + "\n";
       end for;
       if isSome(body.else_when) then
-        SOME(elseWhen) := body.else_when;
-        str := str + toString(elseWhen, indent, indent +"else ", true);
+        str := str + toString(Util.getOption(body.else_when), indent, indent + "else", true);
       end if;
       if not selfCall then
         str := str + indent + "end when;";
@@ -2631,7 +2703,7 @@ public
       input WhenEquationBody body2;
       output Boolean b;
     algorithm
-      b := List.all(List.zip(body1.when_stmts, body2.when_stmts), WhenStatement.isEqualTpl) and Util.optionEqual(body1.else_when, body2.else_when, isEqual);
+      b := Expression.isEqual(body1.condition, body2.condition) and List.all(List.zip(body1.when_stmts, body2.when_stmts), WhenStatement.isEqualTpl) and Util.optionEqual(body1.else_when, body2.else_when, isEqual);
     end isEqual;
 
     function getBodyAttributes
