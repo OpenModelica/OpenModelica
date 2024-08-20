@@ -1338,7 +1338,7 @@ public
       algorithm
         e := func(e);
       end apply;
-      Equation old_eq = eq;
+      Equation old_eq;
     algorithm
       if Flags.isSet(Flags.DUMP_SIMPLIFY) and not stringEqual(indent, "") then
         print("\n");
@@ -1348,6 +1348,7 @@ public
       eq := map(eq, simplifyExp, mapFunc = apply);
 
       // simplify equation structure
+      old_eq := eq;
       eq := match eq
         local
           Equation new_eq;
