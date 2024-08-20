@@ -1338,6 +1338,7 @@ public
       algorithm
         e := func(e);
       end apply;
+      Equation old_eq = eq;
     algorithm
       if Flags.isSet(Flags.DUMP_SIMPLIFY) and not stringEqual(indent, "") then
         print("\n");
@@ -1404,6 +1405,11 @@ public
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + toString(eq)});
         then fail();
       end match;
+      if Flags.isSet(Flags.DUMP_SIMPLIFY) and not isEqual(old_eq, eq)then
+        print(indent + "### dumpSimplify | " + name + " ###\n");
+        print(indent + "[BEFORE] " + toString(old_eq) + "\n");
+        print(indent + "[AFTER ] " + toString(eq) + "\n\n");
+      end if;
     end simplify;
 
     function createName
@@ -2521,6 +2527,7 @@ public
     function simplify
       input output Option<IfEquationBody> body;
       input Integer depth = 1;
+      input Boolean done = false;
     algorithm
       body := match body
         local
@@ -2529,11 +2536,19 @@ public
           list<Expression> conditions;
 
         case SOME(b) algorithm
-          // if the condition is True -> cut later unreachable branches
-          // FIXME can't yet handle removing the IF altogether so at least two branches have to remain.
-          if Expression.isTrue(b.condition) and depth >= 2 then
+          if done then
             b.condition := Expression.END();
             b.else_if := NONE();
+          end if;
+          // if the condition is True -> cut later unreachable branches
+          if Expression.isTrue(b.condition) then
+            // FIXME can't yet handle removing the IF altogether so at least two branches have to remain.
+            if depth >= 2 then
+              b.condition := Expression.END();
+              b.else_if := NONE();
+            else
+              b.else_if := simplify(b.else_if, depth + 1, true);
+            end if;
           else
             b.else_if := simplify(b.else_if, depth + 1);
           end if;
@@ -2684,7 +2699,7 @@ public
       input WhenEquationBody body2;
       output Boolean b;
     algorithm
-      b := List.all(List.zip(body1.when_stmts, body2.when_stmts), WhenStatement.isEqualTpl) and Util.optionEqual(body1.else_when, body2.else_when, isEqual);
+      b := Expression.isEqual(body1.condition, body2.condition) and List.all(List.zip(body1.when_stmts, body2.when_stmts), WhenStatement.isEqualTpl) and Util.optionEqual(body1.else_when, body2.else_when, isEqual);
     end isEqual;
 
     function getBodyAttributes
