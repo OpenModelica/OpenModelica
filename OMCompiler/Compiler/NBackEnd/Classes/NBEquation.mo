@@ -1377,6 +1377,7 @@ public
         case ALGORITHM() algorithm
           eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
         then eq;
+
         case WHEN_EQUATION() algorithm
           new_eq := match WhenEquationBody.simplify(SOME(eq.body))
             local
@@ -1387,6 +1388,7 @@ public
             else Equation.DUMMY_EQUATION();
           end match;
         then new_eq;
+
         case IF_EQUATION() algorithm
           new_eq := match IfEquationBody.simplify(SOME(eq.body))
             local
@@ -1406,6 +1408,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + toString(eq)});
         then fail();
       end match;
+
       if Flags.isSet(Flags.DUMP_SIMPLIFY) and not isEqual(old_eq, eq) then
         print(indent + "### dumpSimplify | " + name + " ###\n");
         print(indent + "[BEFORE]\n" + toString(old_eq, indent + "  ") + "\n");
