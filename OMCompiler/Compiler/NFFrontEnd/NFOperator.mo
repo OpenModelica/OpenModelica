@@ -339,6 +339,8 @@ public
       case Op.MUL_VECTOR_MATRIX then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.MUL_MATRIX_VECTOR then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
+      case Op.ADD_EW            then DAE.ADD_ARR(ty);
+      case Op.SUB_EW            then DAE.SUB_ARR(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
       case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
@@ -808,6 +810,8 @@ public
       case (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY)            then Op.DIV_SCALAR_ARRAY;
       case (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY)            then Op.POW_SCALAR_ARRAY;
 
+      case (MathClassification.ADDITION,        SizeClassification.MATRIX)                  then Op.ADD_EW;
+      case (MathClassification.SUBTRACTION,     SizeClassification.MATRIX)                  then Op.SUB_EW;
       case (MathClassification.POWER,           SizeClassification.MATRIX)                  then Op.POW_MATRIX;
       case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX)                  then Op.MATRIX_PRODUCT;
       case (MathClassification.MULTIPLICATION,  SizeClassification.VECTOR_MATRIX)           then Op.MUL_VECTOR_MATRIX;
