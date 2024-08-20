@@ -20,14 +20,16 @@ buildModel(SimplifyWhen); getErrorString();
 // true
 // ""
 // ### dumpSimplify |  ###
-// [BEFORE] [WHEN] (1) ($RES_SIM_0)
-// [----] when {$TEV_0, false} then
-// [----]   n := integer(time)
-// [----] end when;
-// [AFTER ] [WHEN] (1) ($RES_SIM_0)
-// [----] when $TEV_0 then
-// [----]   n := integer(time)
-// [----] end when;
+// [BEFORE]
+//   [WHEN] (1) ($RES_SIM_0)
+//   [----] when {$TEV_0, false} then
+//   [----]   n := integer(time)
+//   [----] end when;
+// [AFTER ]
+//   [WHEN] (1) ($RES_SIM_0)
+//   [----] when $TEV_0 then
+//   [----]   n := integer(time)
+//   [----] end when;
 //
 // {"SimplifyWhen","SimplifyWhen_init.xml"}
 // ""

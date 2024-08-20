@@ -27,56 +27,62 @@ buildModel(SimplifyIf); getErrorString();
 // true
 // ""
 // ### dumpSimplify | NBackendDAE.simplify ###
-// [BEFORE] [-IF-] (1) ($RES_SIM_0)
-// [----] if initial() then
-// [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
-// [----] elseif time > 0.5 then
-// [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
-// [----] elseif true then
-// [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
-// [----] else
-// [----]   [SCAL] (1) n = 4 ($RES_SIM_4)
-// [----] end if;
-// [AFTER ] [-IF-] (1) ($RES_SIM_0)
-// [----] if initial() then
-// [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
-// [----] elseif time > 0.5 then
-// [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
-// [----] else
-// [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
-// [----] end if;
+// [BEFORE]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if initial() then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif time > 0.5 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] elseif true then
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] else
+//   [----]   [SCAL] (1) n = 4 ($RES_SIM_4)
+//   [----] end if;
+// [AFTER ]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if initial() then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif time > 0.5 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
 //
 // ### dumpSimplify |  ###
-// [BEFORE] [-IF-] (1) ($RES_SIM_0)
-// [----] if false then
-// [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
-// [----] elseif $TEV_0 then
-// [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
-// [----] else
-// [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
-// [----] end if;
-// [AFTER ] [-IF-] (1) ($RES_SIM_0)
-// [----] if $TEV_0 then
-// [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
-// [----] else
-// [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
-// [----] end if;
+// [BEFORE]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if false then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif $TEV_0 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
+// [AFTER ]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if $TEV_0 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
 //
 // ### dumpSimplify |  ###
-// [BEFORE] [-IF-] (1) ($RES_SIM_0)
-// [----] if true then
-// [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
-// [----] elseif $TEV_0 then
-// [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
-// [----] else
-// [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
-// [----] end if;
-// [AFTER ] [-IF-] (1) ($RES_SIM_0)
-// [----] if true then
-// [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
-// [----] else
-// [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
-// [----] end if;
+// [BEFORE]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if true then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] elseif $TEV_0 then
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] else
+//   [----]   [SCAL] (1) n = 3 ($RES_SIM_3)
+//   [----] end if;
+// [AFTER ]
+//   [-IF-] (1) ($RES_SIM_0)
+//   [----] if true then
+//   [----]   [SCAL] (1) n = 1 ($RES_SIM_1)
+//   [----] else
+//   [----]   [SCAL] (1) n = 2 ($RES_SIM_2)
+//   [----] end if;
 //
 // {"SimplifyIf","SimplifyIf_init.xml"}
 // ""

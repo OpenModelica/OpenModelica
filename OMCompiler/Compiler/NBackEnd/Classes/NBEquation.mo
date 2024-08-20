@@ -1405,10 +1405,10 @@ public
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + toString(eq)});
         then fail();
       end match;
-      if Flags.isSet(Flags.DUMP_SIMPLIFY) and not isEqual(old_eq, eq)then
+      if Flags.isSet(Flags.DUMP_SIMPLIFY) and not isEqual(old_eq, eq) then
         print(indent + "### dumpSimplify | " + name + " ###\n");
-        print(indent + "[BEFORE] " + toString(old_eq) + "\n");
-        print(indent + "[AFTER ] " + toString(eq) + "\n\n");
+        print(indent + "[BEFORE]\n" + toString(old_eq, indent + "  ") + "\n");
+        print(indent + "[AFTER ]\n" + toString(eq, indent + "  ") + "\n\n");
       end if;
     end simplify;
 
