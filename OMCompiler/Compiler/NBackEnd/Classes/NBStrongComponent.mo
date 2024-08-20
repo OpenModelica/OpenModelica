@@ -736,7 +736,6 @@ public
     comp := match comp_indices
       local
         Integer i, var_scal_idx, var_arr_idx, size;
-        ComponentRef cref;
         Pointer<Variable> var;
         Pointer<Equation> eqn;
         list<Slice<VariablePointer>> comp_vars;
@@ -746,56 +745,50 @@ public
         Slice<EquationPointer> eqn_slice;
 
       // Size 1 strong component
-      // - case 1: sliced equation because of sliced variable
-      // - case 2: single strong component
+      // - case 1: sliced equation because of for-equation
+      // - case 2: multi components for when/if and algorithm although its size 1
+      // - case 3: single or sliced strong component
       case {i} algorithm
         var_scal_idx := eqn_to_var[i];
         var_arr_idx := mapping.var_StA[var_scal_idx];
         var := VariablePointers.getVarAt(vars, var_arr_idx);
         eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
         (_, size) := mapping.var_AtS[var_arr_idx];
-        if size > 1 or Equation.isForEquation(eqn) then
-          // case 1: create the scalar variable and make sliced equation
-          cref := VariablePointers.varSlice(vars, var_scal_idx, mapping);
-          try
-            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-          else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-            fail();
-          end try;
-          comp := SLICED_COMPONENT(cref, var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
-        else
-          // case 2: just create a single strong component
-          comp := match Pointer.access(eqn)
-            case Equation.WHEN_EQUATION()   then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-            case Equation.IF_EQUATION()     then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-            case Equation.ALGORITHM()       then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-                                            else SINGLE_COMPONENT(var, eqn, NBSolve.Status.UNPROCESSED);
-          end match;
-        end if;
+
+        comp := match Pointer.access(eqn)
+          // - case 1: sliced equation because of for-equation
+          case _ guard(Equation.isForEquation(eqn)) algorithm
+              try
+                ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+              else
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+                fail();
+              end try;
+          then SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
+
+          // - case 2: multi components for when/if and algorithm although its size 1
+          case Equation.WHEN_EQUATION()   then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+          case Equation.IF_EQUATION()     then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+          case Equation.ALGORITHM()       then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+
+          // - case 3: single or sliced strong component
+          else algorithm
+            try
+              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+            else
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+              fail();
+            end try;
+          then createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice);
+        end match;
       then comp;
 
       // Size > 1 strong component
       case _ algorithm
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
-          case ({var_slice}, {eqn_slice}) guard(
-            not Equation.isForEquation(Slice.getT(eqn_slice))
-            and not Equation.isAlgorithm(Slice.getT(eqn_slice)))
-            algorithm
-            if Slice.isFull(var_slice) then
-              comp := SINGLE_COMPONENT(
-                var       = Slice.getT(var_slice),
-                eqn       = Slice.getT(eqn_slice),
-                status    = NBSolve.Status.UNPROCESSED);
-            else
-              comp := SLICED_COMPONENT(
-                var_cref  = BVariable.getVarName(Slice.getT(var_slice)),
-                var       = var_slice,
-                eqn       = eqn_slice,
-                status    = NBSolve.Status.UNPROCESSED);
-            end if;
-          then comp;
+          case ({var_slice}, {eqn_slice}) guard(not (Equation.isForEquation(Slice.getT(eqn_slice)) or Equation.isAlgorithm(Slice.getT(eqn_slice))))
+          then createSliceOrSingle(BVariable.getVarName(Slice.getT(var_slice)), var_slice, eqn_slice);
 
           // for equations that are not algebraic loops are caught earlier! Any for equation
           // getting to this point is an actual algebraic loop
@@ -827,6 +820,26 @@ public
       then fail();
     end match;
   end createPseudoScalar;
+
+  function createSliceOrSingle
+    input ComponentRef cref;
+    input Slice<VariablePointer> var_slice;
+    input Slice<EquationPointer> eqn_slice;
+    output StrongComponent comp;
+  algorithm
+    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) then
+      comp := SINGLE_COMPONENT(
+        var       = Slice.getT(var_slice),
+        eqn       = Slice.getT(eqn_slice),
+        status    = NBSolve.Status.UNPROCESSED);
+    else
+      comp := SLICED_COMPONENT(
+        var_cref  = cref,
+        var       = var_slice,
+        eqn       = eqn_slice,
+        status    = NBSolve.Status.UNPROCESSED);
+    end if;
+  end createSliceOrSingle;
 
   // ############################################################
   //                Protected Functions and Types

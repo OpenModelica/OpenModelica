@@ -160,6 +160,8 @@ public
     "checks whether variability is valid. Prevents things like `Integer i = time;`"
     input Partition partition;
     output Boolean violated = false;
+  protected
+    String err;
   algorithm
     if isSome(partition.strongComponents) then
       for scc in Util.getOption(partition.strongComponents) loop
@@ -172,9 +174,12 @@ public
             if not Type.isEqual(ty1, ty2) then
               // The variability of the equation must be greater or equal to that of the variable it solves.
               // See MLS section 3.8 Variability of Expressions
-              Error.addMessage(Error.COMPILER_ERROR, {getInstanceName() + " failed. The following strong component has conflicting types: "
-                + Type.toString(ty1) + " != " + Type.toString(ty2)
-                + "\n" + StrongComponent.toString(scc)});
+              err := getInstanceName() + " failed. The following strong component has conflicting types: "
+                + Type.toString(ty1) + " != " + Type.toString(ty2) + "\n" + StrongComponent.toString(scc);
+              if Flags.isSet(Flags.BLT_DUMP) then
+                err := err + "\n" + Partition.toString(partition);
+              end if;
+              Error.addMessage(Error.COMPILER_ERROR, {err});
               violated := true;
             end if;
           then ();
