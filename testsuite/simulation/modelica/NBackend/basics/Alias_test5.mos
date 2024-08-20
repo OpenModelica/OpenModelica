@@ -2,7 +2,7 @@
 // keywords: NewBackend, Alias
 // status: correct
 // Throws two warnings: 1. The quotient of the greatest and lowest nominal values is greater than the nominal threshold.
-//                      2. No variables are fixed and they have different start values.
+//                      2. Alias set with conflicting unfixed start values detected.
 
 loadString("
   model Test5
@@ -77,7 +77,7 @@ simulate(Test5); getErrorString();
 // 	Nominal map after replacements:
 // 	(x, 2.0)
 // 	(z, 1e7)
-// Warning: NBAlias.setStartFixed: No variables are fixed and they have different start values.
+// Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
