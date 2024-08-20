@@ -4942,7 +4942,8 @@ public
         stop  := start + slice_stop * step;
         start := start + slice_start * step;
         step  := slice_step * step;
-      then RANGE(range.ty, INTEGER(start), SOME(INTEGER(step)), INTEGER(stop));
+        range := RANGE(range.ty, INTEGER(start), SOME(INTEGER(step)), INTEGER(stop));
+      then retype(range);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
