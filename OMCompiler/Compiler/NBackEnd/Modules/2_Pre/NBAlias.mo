@@ -925,10 +925,10 @@ protected
     if count_fixed == 0 then
       if not List.allEqual(start_lst, Expression.isEqual) then
         if Flags.isSet(Flags.DUMP_REPL) then
-          Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values.\n"
+          Error.addCompilerWarning(getInstanceName() + ": Alias set with conflicting unfixed start values detected.\n"
                                   + AliasSet.toString(set) + "\n\tStart map after replacements:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
         else
-          Error.addCompilerWarning(getInstanceName() + ": No variables are fixed and they have different start values. Use -d=dumprepl for more information.\n");
+          Error.addCompilerWarning(getInstanceName() + ": Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.\n");
         end if;
       end if;
     elseif count_fixed > 1 then
@@ -1228,11 +1228,17 @@ protected
     algorithm
       array_maps := listArray({attrcollector.min_val_map, attrcollector.max_val_map, attrcollector.start_map, attrcollector.fixed_map, attrcollector.nominal_map});
       array_names := listArray({"Min map", "Max map", "Start map", "Fixed map", "Nominal map"});
-      for i in 1:arrayLength(array_names) loop
-        str := str + arrayGet(array_names, i) + ":\n\t"+ UnorderedMap.toString(array_maps[i], ComponentRef.toString, Expression.toString, "\n\t") + "\n";
+      for i in 1:arrayLength(array_maps) loop
+        if UnorderedMap.isEmpty(array_maps[i]) == false then
+          str := str + arrayGet(array_names, i) + ":\n\t"+ UnorderedMap.toString(array_maps[i], ComponentRef.toString, Expression.toString, "\n\t") + "\n";
+        end if;
       end for;
-      str := str + "StateSelect map" + ":\n\t"+ UnorderedMap.toString(attrcollector.stateSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString, "\n\t") + "\n";
-      str := str + "TearingSelect map" + ":\n\t"+ UnorderedMap.toString(attrcollector.tearingSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString, "\n\t") + "\n";
+      if UnorderedMap.isEmpty(attrcollector.stateSelect_map) == false then
+        str := str + "StateSelect map" + ":\n\t"+ UnorderedMap.toString(attrcollector.stateSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.stateSelectString, "\n\t") + "\n";
+      end if;
+      if UnorderedMap.isEmpty(attrcollector.tearingSelect_map) == false then
+        str := str + "TearingSelect map" + ":\n\t"+ UnorderedMap.toString(attrcollector.tearingSelect_map, ComponentRef.toString, BackendExtension.VariableAttributes.tearingSelectString, "\n\t") + "\n";
+      end if;
     end toString;
 
     function fixValues
