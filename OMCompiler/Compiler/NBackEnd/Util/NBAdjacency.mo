@@ -1318,14 +1318,16 @@ public
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
-        try
+        if arrayLength(dep.skips) >= depth then
           // this might scale badly, try to unique the lists in the end or always use sets here
           arrayUpdate(dep.skips, depth, UnorderedSet.unique_list(sk :: dep.skips[depth], Util.id, intEq));
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref " + ComponentRef.toString(cref)
-            + " was saved with depth " + intString(arrayLength(dep.skips)) + " but depth " + intString(depth) + " was requested."});
-          fail();
-        end try;
+          if Flags.isSet(Flags.FAILTRACE) then
+            Error.addCompilerWarning(getInstanceName() + ": Cref " + ComponentRef.toString(cref)
+            + " was saved with depth " + intString(arrayLength(dep.skips)) + " but depth " + intString(depth) + " was requested.");
+          end if;
+        end if;
+
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
