@@ -181,12 +181,7 @@ The browser also contains the slider and animation buttons. These controls
 are used for variable graphics and schematic animation of models i.e.,
 DynamicSelect annotation. They are also used for debugging of state machines.
 Open the :ref:`omedit-diagram-window` for animation. It is only possible
-to animate one model at a time. This is achieved by marking the result
-file active in the Variables Browser. The animation only read the values
-from the active result file. It is possible to simulate several models.
-In that case, the user will see a list of result files in the Variables Browser.
-The user can switch between different result files by right clicking
-on the result file and selecting **Set Active** in the context menu.
+to animate one model at a time.
 
 .. figure :: media/omedit-variables-browser.png
 
@@ -2191,13 +2186,6 @@ The controls allows the easy manipulation of the visualization,
 The visualization is based on the simulation result file.
 All three formats of the simulation result file are supported i.e., mat, csv and plt
 where mat is a matlab file format, csv is a comma separated file and plt is an ordered text file.
-
-It is only possible to debug one state machine at a time.
-This is achieved by marking the result file active in the Variables Browser.
-The visualization only read the values from the active result file.
-It is possible to simulate several state machine models.
-In that case, the user will see a list of result files in the Variables Browser.
-The user can switch between different result files by right clicking on the result file and selecting *Set Active* in the context menu.
 
 Using OMEdit as Text Editor
 ---------------------------
