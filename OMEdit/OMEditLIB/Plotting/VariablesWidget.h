@@ -82,8 +82,6 @@ public:
   bool isMainArrayProtected() const;
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
-  bool isActive() const {return mActive;}
-  void setActive();
   QIcon getVariableTreeItemIcon(QString name) const;
   void insertChild(int position, VariablesTreeItem *pVariablesTreeItem);
   VariablesTreeItem* child(int row);
@@ -124,8 +122,6 @@ private:
   QList<IntStringPair> mDefinedIn;
   QString mInfoFileName;
   bool mExistInResultFile;
-protected:
-  bool mActive;
 };
 
 class VariablesTreeView;
@@ -146,7 +142,6 @@ class VariablesTreeModel : public QAbstractItemModel
 public:
   VariablesTreeModel(VariablesTreeView *pVariablesTreeView = 0);
   VariablesTreeItem* getRootVariablesTreeItem() {return mpRootVariablesTreeItem;}
-  VariablesTreeItem* getActiveVariablesTreeItem() {return mpActiveVariablesTreeItem;}
   int columnCount(const QModelIndex &parent = QModelIndex()) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
@@ -157,6 +152,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   VariablesTreeItem* findVariablesTreeItemOneLevel(const QString &name, VariablesTreeItem *pVariablesTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  VariablesTreeItem* findVariablesTreeItemFromClassNameTopLevel(const QString &className) const;
   void updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem);
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
@@ -167,7 +163,6 @@ public:
 private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
-  VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
   QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
@@ -182,7 +177,6 @@ signals:
   void variableTreeItemRemoved(QString variable);
 public slots:
   void removeVariableTreeItem();
-  void setVariableTreeItemActive();
   void filterDependencies();
   void openTransformationsBrowser();
 };
@@ -235,6 +229,7 @@ public:
   void updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions);
   void initializeVisualization();
   void updateVisualization();
+  void deInitializeVisualization();
   void updatePlotWindows();
   void updateBrowserTime(double time);
   double readVariableValue(QString variable, double time);
@@ -263,7 +258,7 @@ private:
   csv_data *mpCSVData;
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
-  void openResultFile(double &startTime, double &stopTime);
+  void openResultFile(VariablesTreeItem *pVariablesTreeItem, double &startTime, double &stopTime);
   void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
