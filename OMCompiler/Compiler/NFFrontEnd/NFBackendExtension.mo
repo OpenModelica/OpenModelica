@@ -489,7 +489,7 @@ public
           attributes.startOrigin  := Util.applyOption(attributes.startOrigin, function Expression.map(func = func));
         then attributes;
 
-        case VAR_ATTR_INT() algorithm
+        case VAR_ATTR_BOOL() algorithm
           attributes.quantity     := Util.applyOption(attributes.quantity, function Expression.map(func = func));
           attributes.start        := Util.applyOption(attributes.start, function Expression.map(func = func));
           attributes.fixed        := Util.applyOption(attributes.fixed, function Expression.map(func = func));
