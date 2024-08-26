@@ -2638,19 +2638,16 @@ public
     end WHEN_EQUATION_BODY;
 
     function fromFlatList
-      input list<tuple<Expression, list<WhenStatement>>> flat_list;
-      output Option<WhenEquationBody> body;
+      input list<tuple<Expression, list<WhenStatement>>> flat_list "given in reverse order";
+      input output Option<WhenEquationBody> body = NONE();
     algorithm
       body := match flat_list
         local
           Expression condition;
           list<WhenStatement> stmts;
           list<tuple<Expression, list<WhenStatement>>> tail;
-          Option<WhenEquationBody> else_when;
-        case (condition, stmts) :: tail algorithm
-          else_when := fromFlatList(tail);
-        then SOME(WHEN_EQUATION_BODY(condition, stmts, else_when));
-        else NONE();
+        case (condition, stmts) :: tail then fromFlatList(tail, SOME(WHEN_EQUATION_BODY(condition, stmts, body)));
+        else body;
       end match;
     end fromFlatList;
 

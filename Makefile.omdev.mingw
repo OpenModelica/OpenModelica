@@ -112,6 +112,7 @@ omsimulator:
 	cd OMSimulator/build && cmake .. \
 		-G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE=ON \
+		-DOPENMODELICA_MAKEFILE_BUILD=true \
 		-DCMAKE_INSTALL_PREFIX=../install
 	$(MAKE) -C OMSimulator/build/ install
 	cp -vpPR OMSimulator/install/include/OMSimulator/ $(OMBUILDDIR)/include/omc

@@ -26,7 +26,8 @@ val(phase_Start, 1.1);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
+// "
 // 10.0
 // 2.353351017981785
 // 1.0

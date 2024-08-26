@@ -7,7 +7,9 @@ model SimplifyWhen
   Integer n;
 equation
   when {time > 0.5, initial()} then
-    n = integer(time);
+    n = 1;
+  elsewhen false then
+    n = 2;
   end when;
 end SimplifyWhen;
 "); getErrorString();
@@ -19,16 +21,30 @@ buildModel(SimplifyWhen); getErrorString();
 // ""
 // true
 // ""
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE]
+//   [WHEN] (1) ($RES_SIM_0)
+//   [----] when {time > 0.5, initial()} then
+//   [----]   n := 1
+//   [----] elsewhen false then
+//   [----]   n := 2
+//   [----] end when;
+// [AFTER ]
+//   [WHEN] (1) ($RES_SIM_0)
+//   [----] when {time > 0.5, initial()} then
+//   [----]   n := 1
+//   [----] end when;
+//
 // ### dumpSimplify |  ###
 // [BEFORE]
 //   [WHEN] (1) ($RES_SIM_0)
 //   [----] when {$TEV_0, false} then
-//   [----]   n := integer(time)
+//   [----]   n := 1
 //   [----] end when;
 // [AFTER ]
 //   [WHEN] (1) ($RES_SIM_0)
 //   [----] when $TEV_0 then
-//   [----]   n := integer(time)
+//   [----]   n := 1
 //   [----] end when;
 //
 // {"SimplifyWhen","SimplifyWhen_init.xml"}
