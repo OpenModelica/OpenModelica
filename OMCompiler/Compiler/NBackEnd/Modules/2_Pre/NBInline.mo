@@ -138,6 +138,50 @@ public
     end match;
   end inlineForEquation;
 
+  function inlineArrayEquation
+    "inlines array equations of the form {a, b, c , ...} = {d, e, f, ...}
+    to a = d; and so on. Also inlines them if inside for-equation or nested arrays.
+    ToDo: inside When/If"
+    input output Equation eqn;
+    input Pointer<Integer> index;
+    input Iterator iter;
+    input Pointer<list<Pointer<Equation>>> array_eqns;
+  algorithm
+    eqn := match eqn
+      local
+        Expression lhs, rhs;
+        Equation body;
+        Pointer<Equation> new_eqn;
+        Pointer<list<Pointer<Equation>>> new_array_eqns;
+        Equation inlined;
+        list<Pointer<Equation>> eqns;
+
+      case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.ARRAY()) algorithm
+        eqns := Pointer.access(array_eqns);
+        for i in 1: arrayLength(lhs.elements) loop
+          new_array_eqns := Pointer.create({});
+          new_eqn := Equation.makeAssignment(lhs.elements[i], rhs.elements[i], index, NBEquation.SIMULATION_STR, iter, eqn.attr);
+          inlined := inlineArrayEquation(Pointer.access(new_eqn), index, iter, new_array_eqns);
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+            print("-- Result: " + Equation.toString(inlined) + "\n");
+          end if;
+          eqns := match inlined
+            case Equation.DUMMY_EQUATION() then listAppend(eqns, Pointer.access(new_array_eqns));
+            else new_eqn :: eqns;
+          end match;
+        end for;
+        Pointer.update(array_eqns, eqns);
+      then Equation.DUMMY_EQUATION();
+
+      case Equation.FOR_EQUATION(body = {body}) algorithm
+        body := inlineArrayEquation(body, index, eqn.iter, array_eqns);
+      then if Equation.isDummy(body) then body else eqn;
+
+      else eqn;
+    end match;
+  end inlineArrayEquation;
+
   function functionInlineable
     "returns true if the function can be inlined"
     input Function fn;
@@ -196,7 +240,7 @@ protected
 
     // replace record constucters after functions because record operator
     // functions will produce record constructors once inlined
-    eqData  := inlineRecordsTuples(eqData, variables);
+    eqData  := inlineRecordsTuplesArrays(eqData, variables);
 
     // collect new iterators from replaced function bodies
     set     := UnorderedSet.new(BVariable.hash, BVariable.equalName);
@@ -219,7 +263,7 @@ protected
     end if;
   end collectInlineFunctions;
 
-  function inlineRecordsTuples
+  function inlineRecordsTuplesArrays
     "does not inline simple record equalities"
     input output EqData eqData;
     input VariablePointers variables;
@@ -229,9 +273,10 @@ protected
   algorithm
     eqData := EqData.map(eqData, function inlineRecordEquation(iter = Iterator.EMPTY(), variables = variables, record_eqns = new_eqns, index = index, inlineSimple = false));
     eqData := EqData.map(eqData, function inlineTupleEquation(index = index, iter = Iterator.EMPTY(), tuple_eqns = new_eqns));
+    eqData := EqData.map(eqData, function inlineArrayEquation(index = index, iter = Iterator.EMPTY(), array_eqns = new_eqns));
     eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
     eqData := EqData.compress(eqData);
-  end inlineRecordsTuples;
+  end inlineRecordsTuplesArrays;
 
   function inlineRecordEquation
     "tries to inline a record equation. Removes the old equation by making it a dummy
