@@ -162,6 +162,10 @@ public
           new_array_eqns := Pointer.create({});
           new_eqn := Equation.makeAssignment(lhs.elements[i], rhs.elements[i], index, NBEquation.SIMULATION_STR, iter, eqn.attr);
           inlined := inlineArrayEquation(Pointer.access(new_eqn), index, iter, new_array_eqns);
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+            print("-- Result: " + Equation.toString(inlined) + "\n");
+          end if;
           eqns := match inlined
             case Equation.DUMMY_EQUATION() then listAppend(eqns, Pointer.access(new_array_eqns));
             else new_eqn :: eqns;
@@ -170,7 +174,9 @@ public
         Pointer.update(array_eqns, eqns);
       then Equation.DUMMY_EQUATION();
 
-      case Equation.FOR_EQUATION(body = {body}) then inlineArrayEquation(body, index, eqn.iter, array_eqns);
+      case Equation.FOR_EQUATION(body = {body}) algorithm
+        body := inlineArrayEquation(body, index, eqn.iter, array_eqns);
+      then if Equation.isDummy(body) then body else eqn;
 
       else eqn;
     end match;
