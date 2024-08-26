@@ -1300,12 +1300,17 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
   /* Issue #8758
    * Whenever unit = "K", we also add "degC" even if it is not defined as displayUnits.
    */
+  /* Issue #12340
+   * Whenever unit = "m/s", we also add "km/h" even if it is not defined as displayUnits.
+   */
   if (unit.compare(QStringLiteral("rad/s")) == 0) {
     displayUnit << "rpm";
   } else if (unit.compare(QStringLiteral("J")) == 0) {
     displayUnit << "Wh";
   } else if (unit.compare(QStringLiteral("K")) == 0) {
     displayUnit << "degC";
+  } else if (unit.compare(QStringLiteral("m/s")) == 0) {
+    displayUnit << "km/h";
   }
 }
 
