@@ -796,7 +796,6 @@ public
       case (MathClassification.MULTIPLICATION,  SizeClassification.ELEMENT_WISE)            then Op.MUL_EW;
       case (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE)            then Op.DIV_EW;
       case (MathClassification.POWER,           SizeClassification.ELEMENT_WISE)            then Op.POW_EW;
-      case (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR)            then Op.MUL_ARRAY_SCALAR;
 
       case (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR)            then Op.ADD_ARRAY_SCALAR;
       case (MathClassification.SUBTRACTION,     SizeClassification.ARRAY_SCALAR)            then Op.SUB_ARRAY_SCALAR;
