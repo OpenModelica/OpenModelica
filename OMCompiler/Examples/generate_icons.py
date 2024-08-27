@@ -458,7 +458,7 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['rotation'] = float(g[3])
             graphicsObj['extent'] = [[float(g[4]), float(g[5])], [float(g[6]), float(g[7])]]
 
-            if not g[9]:
+            if g[9]:
                 graphicsObj['href'] = "data:image;base64,"+g[9].strip('"')
             else:
                 fname = ask_omc('uriToFilename', g[8], parsed=False).strip().strip('"')
@@ -565,35 +565,37 @@ def getGraphicsWithPortsForClass(modelicaClass):
 
                     g['coordinateSystem']['extent'] = [[minX, minY], [maxX, maxY]]
 
-                    index_delta = 7
-                    if comp_annotation[10] == "-":
-                        # fallback to diagram annotations
-                        index_delta = 0
+                    #print(comp_annotation)
+                    if comp_annotation[0] == "true":
+                        index_delta = 7
+                        if comp_annotation[10] == "-":
+                            # fallback to diagram annotations
+                            index_delta = 0
 
-                    for i in [1,2,7]:
-                        if comp_annotation[i + index_delta] == "-":
-                            comp_annotation[i + index_delta] = 0
-                    origin_x = float(comp_annotation[1 + index_delta])
-                    origin_y = float(comp_annotation[2 + index_delta])
-                    x0 = float(comp_annotation[3 + index_delta])
-                    y0 = float(comp_annotation[4 + index_delta])
-                    x1 = float(comp_annotation[5 + index_delta])
-                    y1 = float(comp_annotation[6 + index_delta])
+                        for i in [1,2,7]:
+                            if comp_annotation[i + index_delta] == "-":
+                                comp_annotation[i + index_delta] = 0
+                        origin_x = float(comp_annotation[1 + index_delta])
+                        origin_y = float(comp_annotation[2 + index_delta])
+                        x0 = float(comp_annotation[3 + index_delta])
+                        y0 = float(comp_annotation[4 + index_delta])
+                        x1 = float(comp_annotation[5 + index_delta])
+                        y1 = float(comp_annotation[6 + index_delta])
 
-                    if comp_annotation[7 + index_delta] == "":
-                        rotation = 0.0
-                    else:
-                        rotation = float(comp_annotation[7 + index_delta])
+                        if comp_annotation[7 + index_delta] == "":
+                            rotation = 0.0
+                        else:
+                            rotation = float(comp_annotation[7 + index_delta])
 
-                    g['transformation'] = {}
-                    g['transformation']['origin'] = [origin_x, origin_y]
-                    g['transformation']['extent'] = [[x0, y0], [x1, y1]]
-                    if isinstance(rotation,dict):
-                        g['transformation']['rotation'] = 0.0
-                    else:
-                        g['transformation']['rotation'] = rotation
+                        g['transformation'] = {}
+                        g['transformation']['origin'] = [origin_x, origin_y]
+                        g['transformation']['extent'] = [[x0, y0], [x1, y1]]
+                        if isinstance(rotation,dict):
+                            g['transformation']['rotation'] = 0.0
+                        else:
+                            g['transformation']['rotation'] = rotation
 
-                    graphics['ports'].append(g)
+                        graphics['ports'].append(g)
 
     return graphics
 
@@ -1343,11 +1345,12 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates
 def getBaseClasses(modelica_class, base_classes):
     inheritance_cnt = ask_omc('getInheritanceCount', modelica_class)
 
-    for i in range(1, inheritance_cnt + 1):
-        base_class = ask_omc('getNthInheritedClass', modelica_class + ', ' + str(i))
-        if base_class not in base_classes:
-            base_classes.append(base_class)
-            getBaseClasses(base_class, base_classes)
+    if inheritance_cnt:
+        for i in range(1, inheritance_cnt + 1):
+            base_class = ask_omc('getNthInheritedClass', modelica_class + ', ' + str(i))
+            if base_class not in base_classes:
+                base_classes.append(base_class)
+                getBaseClasses(base_class, base_classes)
 
 
 def main():
