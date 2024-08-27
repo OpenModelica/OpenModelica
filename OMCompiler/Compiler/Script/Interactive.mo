@@ -8757,7 +8757,7 @@ algorithm
         res = deleteEquationInEqlist(xs, c1, c2);
         loopRes = deleteEquationInEqlist(forEqList, c1, c2);
 
-        if listLength(loopRes) > 0 then
+        if not listEmpty(loopRes) then
           loopRes = { Absyn.EQUATIONITEM(Absyn.EQ_FOR(forIterator, loopRes), NONE(), AbsynUtil.dummyInfo) };
         end if;
       then
