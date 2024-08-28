@@ -580,6 +580,14 @@ algorithm
         setGlobalRoot(Global.instNFInstCacheIndex, cache);
 
         break;
+      else
+        if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
+          // class reloaded, wipe the cache!
+          cache := {};
+          setGlobalRoot(Global.instNFInstCacheIndex, cache);
+
+          break;
+        end if;
       end if;
     end for;
   end if;
@@ -762,6 +770,14 @@ algorithm
         setGlobalRoot(Global.instNFLookupCacheIndex, cache);
 
         break;
+      else
+        if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
+          // class reloaded, wipe the cache!
+          cache := {};
+          setGlobalRoot(Global.instNFLookupCacheIndex, cache);
+
+          break;
+        end if;
       end if;
     end for;
   end if;
