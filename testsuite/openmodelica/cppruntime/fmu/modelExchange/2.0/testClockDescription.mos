@@ -66,7 +66,14 @@ readFile("modelDescription.tmp.xml");
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"SubClocks\">
+//     modelIdentifier=\"SubClocks\"
+//     needsExecutionTool=\"false\"
+//     completedIntegratorStepNotNeeded=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canNotUseMemoryManagementFunctions=\"false\"
+//     canGetAndSetFMUstate=\"false\"
+//     canSerializeFMUstate=\"false\"
+//     providesDirectionalDerivative = \"false\">
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <Clocks>

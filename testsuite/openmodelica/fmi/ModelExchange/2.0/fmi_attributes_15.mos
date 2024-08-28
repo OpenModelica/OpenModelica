@@ -43,7 +43,14 @@ readFile("fmi_attributes_15_tmp.xml")
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"fmi_attributes_15\">
+//     modelIdentifier=\"fmi_attributes_15\"
+//     needsExecutionTool=\"false\"
+//     completedIntegratorStepNotNeeded=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canNotUseMemoryManagementFunctions=\"false\"
+//     canGetAndSetFMUstate=\"true\"
+//     canSerializeFMUstate=\"true\"
+//     providesDirectionalDerivative=\"false\">
 //     <SourceFiles>
 //       <File name=\"fmi_attributes_15.c\" />
 //       <File name=\"fmi_attributes_15_functions.c\" />
