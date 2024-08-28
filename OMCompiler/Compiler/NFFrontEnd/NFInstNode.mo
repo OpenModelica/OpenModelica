@@ -1542,12 +1542,6 @@ uniontype InstNode
     else
       same := false;
     end try;
-
-    // TODO: This is wrong, but removing it breakes some expandable connectors
-    //       at the moment.
-    if not same then
-      same := name(node1) == name(node2);
-    end if;
   end isSame;
 
   function checkIdentical

@@ -2186,7 +2186,7 @@ protected
 algorithm
   expected_ty := Dimension.subscriptType(dimension);
   (subscriptExp, outType, mk) := TypeCheck.matchTypes(subscriptType,
-    expected_ty, subscriptExp, allowUnknown = true);
+    expected_ty, subscriptExp, NFTypeCheck.ALLOW_UNKNOWN);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessage(Error.SUBSCRIPT_TYPE_MISMATCH,
@@ -2212,42 +2212,50 @@ protected
   Type ty1 = Type.UNKNOWN(), ty2, ty3;
   list<Type> tys = {};
   MatchKind mk;
-  Integer n=1;
+  Integer array_len, idx;
   InstContext.Type next_context;
 algorithm
   next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+  array_len := arrayLength(elements);
 
-  for e in elements loop
-    (exp, ty2, var, pur) := typeExp(e, next_context, info);
-    variability := Prefixes.variabilityMax(var, variability);
-    purity := Prefixes.purityMin(pur, purity);
+  if array_len > 0 then
+    (exp, ty1, variability, purity) := typeExp(arrayGet(elements, 1), next_context, info);
+    expl := exp :: expl;
+    tys := ty1 :: tys;
 
-    (, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, exp, allowUnknown = true);
-    if TypeCheck.isIncompatibleMatch(mk) then
-      // Try the other way around to get the super-type of the array
-      (, ty3, mk) := TypeCheck.matchTypes(ty1, ty2, exp, allowUnknown = false);
-      if TypeCheck.isCompatibleMatch(mk) then
+    for i in 2:array_len loop
+      (exp, ty2, var, pur) := typeExp(arrayGet(elements, i), next_context, info);
+      variability := Prefixes.variabilityMax(var, variability);
+      purity := Prefixes.purityMin(pur, purity);
+
+      (, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, exp, NFTypeCheck.IGNORE_DIMENSIONS_IN_RECORDS);
+      if TypeCheck.isIncompatibleMatch(mk) then
+        // Try the other way around to get the super-type of the array
+        (, ty3, mk) := TypeCheck.matchTypes(ty1, ty2, exp, NFTypeCheck.IGNORE_DIMENSIONS_IN_RECORDS);
+        if TypeCheck.isCompatibleMatch(mk) then
+          ty1 := ty3;
+        end if;
+      else
         ty1 := ty3;
       end if;
-    else
-      ty1 := ty3;
-    end if;
-    expl := exp :: expl;
-    tys := ty2 :: tys;
-    n := n+1;
-  end for;
+      expl := exp :: expl;
+      tys := ty2 :: tys;
+    end for;
+  end if;
+
   // Give the actual error-messages here after we got the super-type of the array
+  idx := array_len;
   for e in expl loop
     ty2::tys := tys;
-    (exp, , mk) := TypeCheck.matchTypes(ty2, ty1, e);
+    (exp, , mk) := TypeCheck.matchTypes(ty2, ty1, e, NFTypeCheck.IGNORE_DIMENSIONS_IN_RECORDS);
     expl2 := exp::expl2;
-    n := n-1;
     if not InstContext.inAnnotation(context) then // forget errors when handling annotations
       if TypeCheck.isIncompatibleMatch(mk) then
-        Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
+        Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(idx), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
         fail();
       end if;
     end if;
+    idx := idx-1;
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
@@ -3122,7 +3130,7 @@ algorithm
   // the connection handling.
   if not (lhs_deleted or rhs_deleted) and
      not (Type.isExpandableConnector(lhs_ty) or Type.isExpandableConnector(rhs_ty)) then
-    (lhs, rhs, _, mk) := TypeCheck.matchExpressions(lhs, lhs_ty, rhs, rhs_ty, allowUnknown = true);
+    (lhs, rhs, _, mk) := TypeCheck.matchExpressions(lhs, lhs_ty, rhs, rhs_ty, NFTypeCheck.ALLOW_UNKNOWN);
 
     if TypeCheck.isIncompatibleMatch(mk) then
       // TODO: Better error message.
@@ -3292,7 +3300,7 @@ algorithm
         (e2, ty2) := typeExp(st.rhs, InstContext.set(context, NFInstContext.RHS), info);
 
         // TODO: Should probably only be allowUnknown = true if in a function.
-        (e2, _, mk) := TypeCheck.matchTypes(ty2, ty1, e2, allowUnknown = true);
+        (e2, _, mk) := TypeCheck.matchTypes(ty2, ty1, e2, NFTypeCheck.ALLOW_UNKNOWN);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
