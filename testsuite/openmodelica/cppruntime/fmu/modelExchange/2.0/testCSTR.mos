@@ -69,7 +69,14 @@ getErrorString();
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"CSTRModel\" providesDirectionalDerivative=\"true\">
+//     modelIdentifier=\"CSTRModel\"
+//     needsExecutionTool=\"false\"
+//     completedIntegratorStepNotNeeded=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canNotUseMemoryManagementFunctions=\"false\"
+//     canGetAndSetFMUstate=\"false\"
+//     canSerializeFMUstate=\"false\"
+//     providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <UnitDefinitions>
 //     <Unit name=\"s\">

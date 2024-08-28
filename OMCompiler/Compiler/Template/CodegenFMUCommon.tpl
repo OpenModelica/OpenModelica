@@ -58,10 +58,16 @@ template ModelExchange(SimCode simCode, list<String> sourceFiles)
 match simCode
 case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
-  let pdd = if providesDirectionalDerivative(simCode) then ' providesDirectionalDerivative="true"' else ''
   <<
   <ModelExchange
-    modelIdentifier="<%modelIdentifier%>"<%pdd%>>
+    modelIdentifier="<%modelIdentifier%>"
+    needsExecutionTool="false"
+    completedIntegratorStepNotNeeded="false"
+    canBeInstantiatedOnlyOncePerProcess="false"
+    canNotUseMemoryManagementFunctions="false"
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUstate="true"' else 'canGetAndSetFMUstate="false"'%>
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUstate="true"' else 'canSerializeFMUstate="false"'%>
+    <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
     <%SourceFiles(sourceFiles)%>
   </ModelExchange>
   >>
