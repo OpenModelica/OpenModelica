@@ -63,8 +63,7 @@ readFile("modelDescription.tmp.xml");
 //     canNotUseMemoryManagementFunctions=\"false\"
 //     canGetAndSetFMUstate=\"false\"
 //     canSerializeFMUstate=\"false\"
-//     providesDirectionalDerivative=\"false\"
-//     >
+//     providesDirectionalDerivative=\"false\">
 //     <SourceFiles>
 //       <File name=\"testDID.c\" />
 //       <File name=\"testDID_functions.c\" />

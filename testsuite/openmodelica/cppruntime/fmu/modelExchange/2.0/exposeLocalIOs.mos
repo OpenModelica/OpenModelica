@@ -131,7 +131,7 @@ readFile("modelDescription.tmp.xml");
 //     canNotUseMemoryManagementFunctions=\"false\"
 //     canGetAndSetFMUstate=\"false\"
 //     canSerializeFMUstate=\"false\"
-//     providesDirectionalDerivative = \"false\">
+//     providesDirectionalDerivative=\"false\">
 //   </ModelExchange>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />

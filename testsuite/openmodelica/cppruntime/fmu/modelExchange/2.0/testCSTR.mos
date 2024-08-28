@@ -76,7 +76,7 @@ getErrorString();
 //     canNotUseMemoryManagementFunctions=\"false\"
 //     canGetAndSetFMUstate=\"false\"
 //     canSerializeFMUstate=\"false\"
-//     providesDirectionalDerivative = \"true\">
+//     providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <UnitDefinitions>
 //     <Unit name=\"s\">
