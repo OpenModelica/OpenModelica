@@ -270,7 +270,7 @@ public
       ty::tys2 := tys2;
       pos := pos-1;
       ty2 := Type.setArrayElementType(ty, resTy);
-      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, ty2, arg, allowUnknown = true);
+      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, ty2, arg, NFTypeCheck.ALLOW_UNKNOWN);
       if TypeCheck.isIncompatibleMatch(mk) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "cat", "arg", Expression.toString(arg), Type.toString(ty), Type.toString(ty2)}, info);
       end if;
@@ -317,7 +317,7 @@ public
     for arg in args2 loop
       ty::tys2 := tys2;
       pos := pos-1;
-      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, resTyToMatch, arg, allowUnknown=true);
+      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, resTyToMatch, arg, NFTypeCheck.ALLOW_UNKNOWN);
       if TypeCheck.isIncompatibleMatch(mk) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "cat", "arg", Expression.toString(arg), Type.toString(ty), Type.toString(resTyToMatch)}, info);
       end if;
@@ -879,7 +879,7 @@ protected
     // Second argument must be Real, array of allowed expressions or record
     // containing only components of allowed expressions.
     // TODO: Also handle records here.
-    (arg2, ty, mk) := TypeCheck.matchTypes(ty2, Type.setArrayElementType(ty2, Type.REAL()), arg2, true);
+    (arg2, ty, mk) := TypeCheck.matchTypes(ty2, Type.setArrayElementType(ty2, Type.REAL()), arg2, NFTypeCheck.ALLOW_UNKNOWN);
 
     if not TypeCheck.isValidArgumentMatch(mk) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,

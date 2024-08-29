@@ -139,6 +139,23 @@ function isValidPlugCompatibleMatch
                      ;
 end isValidPlugCompatibleMatch;
 
+type MatchOptions = Integer;
+constant MatchOptions DEFAULT_OPTIONS              = 0;
+constant MatchOptions ALLOW_UNKNOWN                = intBitLShift(1, 0);
+constant MatchOptions IGNORE_DIMENSIONS            = intBitLShift(1, 1);
+constant MatchOptions IGNORE_DIMENSIONS_IN_RECORDS = intBitLShift(1, 2);
+
+function setOption
+  input MatchOptions currentOptions;
+  input MatchOptions newOption;
+  output MatchOptions newOptions = intBitOr(currentOptions, newOption);
+end setOption;
+
+function getOption
+  input MatchOptions options;
+  input MatchOptions option;
+  output Boolean isSet = intBitAnd(options, option) > 0;
+end getOption;
 
 function checkBinaryOperation
   input Expression exp1;
@@ -415,7 +432,7 @@ protected
   MatchKind mk;
 algorithm
   // For addition or subtraction both sides must have the same type.
-  (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+  (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
 
   if not isCompatibleMatch(mk) then
     printUnresolvableTypeError(Expression.BINARY(e1, op, e2), {type1, type2}, info);
@@ -732,10 +749,10 @@ protected
   Type ty;
 algorithm
   if Type.isArray(type1) and Type.isArray(type2) then
-    (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+    (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
   else
     (e1, e2, _, mk) := matchExpressions(exp1, Type.arrayElementType(type1),
-                                        exp2, Type.arrayElementType(type2), true);
+                                        exp2, Type.arrayElementType(type2), ALLOW_UNKNOWN);
   end if;
 
   if not isCompatibleMatch(mk) then
@@ -911,7 +928,7 @@ protected
   Variability var;
   Type ty;
 algorithm
-  (e1, _, mk) := matchTypes(paramType1, type1, exp1, false);
+  (e1, _, mk) := matchTypes(paramType1, type1, exp1);
 
   // We only want overloaded constructors when trying to implicitly construct.
   // Default constructors are not considered.
@@ -920,7 +937,7 @@ algorithm
       scope, NFInstContext.NO_CONTEXT, paramInfo2);
     e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
     (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
-    (_, _, mk) := matchTypes(paramType2, ty, e2, false);
+    (_, _, mk) := matchTypes(paramType2, ty, e2);
 
     if mk == MatchKind.EXACT then
       matchedFns := (fn, if reverseArgs then {e2, e1} else {e1, e2}, var) :: matchedFns;
@@ -946,7 +963,7 @@ protected
   MatchKind mk;
   Boolean valid;
 algorithm
-  (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+  (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
   valid := isCompatibleMatch(mk);
 
   valid := match Type.arrayElementType(resultType)
@@ -976,7 +993,7 @@ protected
   MatchKind mk;
   Boolean valid;
 algorithm
-  (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+  (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
   valid := isCompatibleMatch(mk);
 
   valid := match Type.arrayElementType(resultType)
@@ -1011,7 +1028,7 @@ protected
 algorithm
   ty1 := Type.arrayElementType(type1);
   ty2 := Type.arrayElementType(type2);
-  (e1, e2, resultType, mk) := matchExpressions(exp1, ty1, exp2, ty2, true);
+  (e1, e2, resultType, mk) := matchExpressions(exp1, ty1, exp2, ty2, ALLOW_UNKNOWN);
   valid := isCompatibleMatch(mk);
 
   valid := match resultType
@@ -1090,9 +1107,9 @@ protected
 algorithm
   // Division always returns a Real value, so instead of checking if the types
   // are compatible with each other we check if each type is compatible with Real.
-  (e1, ty1, mk) := matchTypes(type1, Type.setArrayElementType(type1, Type.REAL()), exp1, true);
+  (e1, ty1, mk) := matchTypes(type1, Type.setArrayElementType(type1, Type.REAL()), exp1, ALLOW_UNKNOWN);
   valid := isCompatibleMatch(mk);
-  (e2, ty2, mk) := matchTypes(type2, Type.setArrayElementType(type2, Type.REAL()), exp2, true);
+  (e2, ty2, mk) := matchTypes(type2, Type.setArrayElementType(type2, Type.REAL()), exp2, ALLOW_UNKNOWN);
   valid := valid and isCompatibleMatch(mk);
 
   // Division is always element-wise, the only difference between / and ./ is
@@ -1109,7 +1126,7 @@ algorithm
     case (true , _    , true)
       algorithm
         // If both operands are arrays, check that their dimensions are compatible.
-        (_, _, mk) := matchArrayTypes(ty1, ty2, e1, true);
+        (_, _, mk) := matchArrayTypes(ty1, ty2, e1, ALLOW_UNKNOWN);
         valid := valid and isCompatibleMatch(mk);
       then
         (ty1, Operator.makeDiv(ty1));
@@ -1144,7 +1161,7 @@ protected
   Operator op;
 algorithm
   // The first operand of ^ should be Real.
-  (e1, resultType, mk) := matchTypes(type1, Type.setArrayElementType(type1, Type.REAL()), exp1, true);
+  (e1, resultType, mk) := matchTypes(type1, Type.setArrayElementType(type1, Type.REAL()), exp1, ALLOW_UNKNOWN);
   valid := isCompatibleMatch(mk);
 
   if Type.isArray(resultType) then
@@ -1156,7 +1173,7 @@ algorithm
     e2 := exp2;
   else
     // Real ^ Real
-    (e2, _, mk) := matchTypes(type2, Type.REAL(), exp2, true);
+    (e2, _, mk) := matchTypes(type2, Type.REAL(), exp2, ALLOW_UNKNOWN);
     valid := valid and isCompatibleMatch(mk);
     op := Operator.OPERATOR(resultType, Op.POW);
   end if;
@@ -1185,9 +1202,9 @@ protected
 algorithm
   // Exponentiation always returns a Real value, so instead of checking if the types
   // are compatible with each other we check if each type is compatible with Real.
-  (e1, ty1, mk) := matchTypes(type1, Type.setArrayElementType(type1, Type.REAL()), exp1, true);
+  (e1, ty1, mk) := matchTypes(type1, Type.setArrayElementType(type1, Type.REAL()), exp1, ALLOW_UNKNOWN);
   valid := isCompatibleMatch(mk);
-  (e2, ty2, mk) := matchTypes(type2, Type.setArrayElementType(type2, Type.REAL()), exp2, true);
+  (e2, ty2, mk) := matchTypes(type2, Type.setArrayElementType(type2, Type.REAL()), exp2, ALLOW_UNKNOWN);
   valid := valid and isCompatibleMatch(mk);
 
   (resultType, op) := match (Type.isArray(ty1), Type.isArray(ty2))
@@ -1201,7 +1218,7 @@ algorithm
     else
       algorithm
         // If both operands are arrays, check that their dimensions are compatible.
-        (_, _, mk) := matchArrayTypes(ty1, ty2, e1, true);
+        (_, _, mk) := matchArrayTypes(ty1, ty2, e1, ALLOW_UNKNOWN);
         valid := valid and isCompatibleMatch(mk);
       then
         (ty1, Operator.makePow(ty1));
@@ -1235,12 +1252,12 @@ algorithm
 
   if is_arr1 and is_arr2 then
     // The expressions must be type compatible if they are both arrays.
-    (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+    (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
   else
     // Otherwise it's enough if their element types are compatible.
     ty1 := Type.arrayElementType(type1);
     ty2 := Type.arrayElementType(type2);
-    (e1, e2, resultType, mk) := matchExpressions(exp1, ty1, exp2, ty2, true);
+    (e1, e2, resultType, mk) := matchExpressions(exp1, ty1, exp2, ty2, ALLOW_UNKNOWN);
   end if;
 
   valid := isCompatibleMatch(mk);
@@ -1393,7 +1410,7 @@ algorithm
   end if;
 
 
-  (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+  (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
   outExp := Expression.LBINARY(e1, Operator.setType(resultType, operator), e2);
 
   if not isCompatibleMatch(mk) or
@@ -1504,7 +1521,7 @@ function matchExpressions
   input Type type1;
   input output Expression exp2;
   input Type type2;
-  input Boolean allowUnknown = false;
+  input MatchOptions options = DEFAULT_OPTIONS;
         output Type compatibleType;
         output MatchKind matchKind;
 algorithm
@@ -1520,7 +1537,7 @@ algorithm
     // If the types are not of the same kind we might need to type cast one of
     // the expressions to make them compatible.
     (exp1, exp2, compatibleType, matchKind) :=
-      matchExpressions_cast(exp1, type1, exp2, type2, allowUnknown);
+      matchExpressions_cast(exp1, type1, exp2, type2, options);
     return;
   end if;
 
@@ -1542,20 +1559,20 @@ algorithm
     case Type.ARRAY()
       algorithm
         (exp1, exp2, compatibleType, matchKind) :=
-          matchArrayExpressions(exp1, type1, exp2, type2, allowUnknown);
+          matchArrayExpressions(exp1, type1, exp2, type2, options);
       then
         compatibleType;
 
     case Type.TUPLE()
       algorithm
         (exp2, compatibleType, matchKind) :=
-          matchTupleTypes(type2, type1, exp2, allowUnknown);
+          matchTupleTypes(type2, type1, exp2, options);
       then
         compatibleType;
 
     case Type.UNKNOWN()
       algorithm
-        matchKind := if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+        matchKind := if getOption(options, ALLOW_UNKNOWN) then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
       then
         type1;
 
@@ -1563,14 +1580,14 @@ algorithm
       algorithm
         // TODO: This needs more work to handle e.g. type casting of complex expressions.
         (exp1, compatibleType, matchKind) :=
-          matchComplexTypes(type1, type2, exp1, allowUnknown);
+          matchComplexTypes(type1, type2, exp1, options);
       then
         compatibleType;
 
     case Type.METABOXED()
       algorithm
         (exp1, exp2, compatibleType, matchKind) :=
-          matchBoxedExpressions(exp1, type1, exp2, type2, allowUnknown);
+          matchBoxedExpressions(exp1, type1, exp2, type2, options);
       then
         compatibleType;
 
@@ -1587,9 +1604,7 @@ function matchTypes
   input Type actualType;
   input Type expectedType;
   input output Expression expression;
-  input Boolean allowUnknown = false; // TODO: This allowUnknown is currently used for two different things.
-                                      // Allowing matches againest unknown types AND also allowing matching
-                                      // when dim sizes are unknown. These should be separated.
+  input MatchOptions options = DEFAULT_OPTIONS;
         output Type compatibleType;
         output MatchKind matchKind;
 algorithm
@@ -1605,7 +1620,7 @@ algorithm
     // If the types are not of the same kind we might need to type cast the
     // expression to make it compatible.
     (expression, compatibleType, matchKind) :=
-      matchTypes_cast(actualType, expectedType, expression, allowUnknown);
+      matchTypes_cast(actualType, expectedType, expression, options);
     return;
   end if;
 
@@ -1631,41 +1646,41 @@ algorithm
     case Type.ARRAY()
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchArrayTypes(actualType, expectedType, expression, allowUnknown);
+          matchArrayTypes(actualType, expectedType, expression, options);
       then
         compatibleType;
 
     case Type.TUPLE()
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchTupleTypes(actualType, expectedType, expression, allowUnknown);
+          matchTupleTypes(actualType, expectedType, expression, options);
       then
         compatibleType;
 
     case Type.UNKNOWN()
       algorithm
-        matchKind := if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+        matchKind := if getOption(options, ALLOW_UNKNOWN) then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
       then
         actualType;
 
     case Type.COMPLEX()
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchComplexTypes(actualType, expectedType, expression, allowUnknown);
+          matchComplexTypes(actualType, expectedType, expression, options);
       then
         compatibleType;
 
     case Type.FUNCTION()
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchFunctionTypes(actualType, expectedType, expression, allowUnknown);
+          matchFunctionTypes(actualType, expectedType, expression, options);
       then
         compatibleType;
 
     case Type.METABOXED()
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchTypes(actualType.ty, Type.unbox(expectedType), Expression.unbox(expression), allowUnknown);
+          matchTypes(actualType.ty, Type.unbox(expectedType), Expression.unbox(expression), options);
         expression := Expression.box(expression);
         compatibleType := Type.box(compatibleType);
       then
@@ -1674,7 +1689,7 @@ algorithm
     case Type.CONDITIONAL_ARRAY()
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchConditionalArrayTypes(actualType, expectedType, expression, allowUnknown);
+          matchConditionalArrayTypes(actualType, expectedType, expression, options);
       then
         compatibleType;
 
@@ -1692,7 +1707,7 @@ function matchExpressions_cast
   input Type type1;
   input output Expression exp2;
   input Type type2;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -1751,7 +1766,7 @@ algorithm
       algorithm
         exp2 := Expression.tupleElement(exp2, compatibleType, 1);
         (exp2, compatibleType, matchKind) :=
-          matchTypes(compatibleType, type1, exp2, allowUnknown);
+          matchTypes(compatibleType, type1, exp2, options);
 
         if isCompatibleMatch(matchKind) then
           matchKind := MatchKind.CAST;
@@ -1760,22 +1775,22 @@ algorithm
         (compatibleType, matchKind);
 
     case (Type.UNKNOWN(), _)
-      then (type2, if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE);
+      then (type2, if getOption(options, ALLOW_UNKNOWN) then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE);
 
     case (_, Type.UNKNOWN())
-      then (type1, if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE);
+      then (type1, if getOption(options, ALLOW_UNKNOWN) then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE);
 
     case (Type.METABOXED(), _)
       algorithm
         (exp1, exp2, compatibleType, matchKind) :=
-          matchExpressions(Expression.unbox(exp1), type1.ty, exp2, type2, allowUnknown);
+          matchExpressions(Expression.unbox(exp1), type1.ty, exp2, type2, options);
       then
         (compatibleType, matchKind);
 
     case (_, Type.METABOXED())
       algorithm
         (exp1, exp2, compatibleType, matchKind) :=
-          matchExpressions(exp1, type1, Expression.unbox(exp2), type2.ty, allowUnknown);
+          matchExpressions(exp1, type1, Expression.unbox(exp2), type2.ty, options);
       then
         (compatibleType, matchKind);
 
@@ -1794,14 +1809,14 @@ algorithm
     case (Type.CONDITIONAL_ARRAY(), _)
       algorithm
         (exp1, exp2, compatibleType, matchKind) :=
-          matchConditionalArrayExp(exp1, type1, exp2, type2, allowUnknown);
+          matchConditionalArrayExp(exp1, type1, exp2, type2, options);
       then
         (compatibleType, matchKind);
 
     case (_, Type.CONDITIONAL_ARRAY())
       algorithm
         (exp2, exp1, compatibleType, matchKind) :=
-          matchConditionalArrayExp(exp2, type2, exp1, type1, allowUnknown);
+          matchConditionalArrayExp(exp2, type2, exp1, type1, options);
       then
         (compatibleType, matchKind);
 
@@ -1813,7 +1828,7 @@ function matchComplexTypes
   input Type actualType;
   input Type expectedType;
   input output Expression expression;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType = actualType;
         output MatchKind matchKind = MatchKind.NOT_COMPATIBLE;
 protected
@@ -1827,11 +1842,11 @@ protected
   list<Expression> elements, matched_elements = {};
   MatchKind mk;
   Component comp1, comp2;
+  MatchOptions opt = options;
 algorithm
   Type.COMPLEX(cls = anode) := actualType;
   Type.COMPLEX(cls = enode) := expectedType;
 
-  // TODO: revise this.
   if InstNode.isSame(anode, enode) then
     matchKind := MatchKind.EXACT;
     return;
@@ -1839,6 +1854,10 @@ algorithm
 
   cls1 := InstNode.getClass(anode);
   cls2 := InstNode.getClass(enode);
+
+  if getOption(opt, IGNORE_DIMENSIONS_IN_RECORDS) then
+    opt := setOption(opt, IGNORE_DIMENSIONS);
+  end if;
 
   () := match (cls1, cls2, expression)
 
@@ -1863,7 +1882,7 @@ algorithm
             if Component.isTyped(comp2) then
               e :: elements := elements;
               comp1 := InstNode.component(comps1[i]);
-              (e, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), e, allowUnknown);
+              (e, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), e, opt);
               matched_elements := e :: matched_elements;
 
               if mk == MatchKind.CAST then
@@ -1890,11 +1909,11 @@ algorithm
     case (Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR())),
           Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR())), _)
       algorithm
-        matchKind := matchComponentList(cty1.potentials, cty2.potentials, allowUnknown);
+        matchKind := matchComponentList(cty1.potentials, cty2.potentials, options);
         if matchKind <> MatchKind.NOT_COMPATIBLE then
-          matchKind := matchComponentList(cty1.flows, cty2.flows, allowUnknown);
+          matchKind := matchComponentList(cty1.flows, cty2.flows, options);
           if matchKind <> MatchKind.NOT_COMPATIBLE then
-            matchKind := matchComponentList(cty1.streams, cty2.streams, allowUnknown);
+            matchKind := matchComponentList(cty1.streams, cty2.streams, options);
           end if;
         end if;
 
@@ -1922,7 +1941,7 @@ algorithm
 
             if Component.isTyped(comp2) then
               comp1 := InstNode.component(comps1[i]);
-              (_, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), expression, allowUnknown);
+              (_, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), expression, opt);
 
               if not isValidPlugCompatibleMatch(mk) then
                 matchKind := MatchKind.NOT_COMPATIBLE;
@@ -1946,7 +1965,7 @@ end matchComplexTypes;
 function matchComponentList
   input list<InstNode> comps1;
   input list<InstNode> comps2;
-  input Boolean allowUnknown;
+  input MatchOptions options;
   output MatchKind matchKind;
 protected
   InstNode c2;
@@ -1964,7 +1983,7 @@ algorithm
         return;
       end if;
 
-      (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, allowUnknown);
+      (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, options);
 
       if matchKind == MatchKind.NOT_COMPATIBLE then
         return;
@@ -1979,7 +1998,7 @@ function matchFunctionTypes
   input Type actualType;
   input Type expectedType;
   input output Expression expression;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType = actualType;
         output MatchKind matchKind = MatchKind.EXACT;
 protected
@@ -2000,12 +2019,12 @@ algorithm
     return;
   end if;
 
-  if not matchFunctionParameters(outputs1, outputs2, allowUnknown) then
+  if not matchFunctionParameters(outputs1, outputs2, options) then
     matchKind := MatchKind.NOT_COMPATIBLE;
     return;
   end if;
 
-  if not matchFunctionParameters(inputs1, inputs2, allowUnknown) then
+  if not matchFunctionParameters(inputs1, inputs2, options) then
     matchKind := MatchKind.NOT_COMPATIBLE;
     return;
   end if;
@@ -2035,7 +2054,7 @@ end matchFunctionTypes;
 function matchFunctionParameters
   input list<InstNode> params1;
   input list<InstNode> params2;
-  input Boolean allowUnknown;
+  input MatchOptions options;
   output Boolean matching = true;
 protected
   list<InstNode> pl1 = params1, pl2 = params2;
@@ -2057,7 +2076,7 @@ algorithm
     end if;
 
     (_, _, mk) := matchTypes(Type.unbox(InstNode.getType(p1)),
-      Type.unbox(InstNode.getType(p2)), dummy, allowUnknown);
+      Type.unbox(InstNode.getType(p2)), dummy, options);
 
     if mk <> MatchKind.EXACT then
       matching := false;
@@ -2085,7 +2104,7 @@ function matchArrayExpressions
   input Type type1;
   input output Expression exp2;
   input Type type2;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -2097,18 +2116,17 @@ algorithm
 
   // Check that the element types are compatible.
   (exp1, exp2, compatibleType, matchKind) :=
-    matchExpressions(exp1, ety1, exp2, ety2, allowUnknown);
+    matchExpressions(exp1, ety1, exp2, ety2, options);
 
   // If the element types are compatible, check the dimensions too.
-  (compatibleType, matchKind) :=
-    matchArrayDims(dims1, dims2, compatibleType, matchKind, allowUnknown);
+  (compatibleType, matchKind) := matchArrayDims(dims1, dims2, compatibleType, matchKind, options);
 end matchArrayExpressions;
 
 function matchArrayTypes
   input Type arrayType1;
   input Type arrayType2;
   input output Expression expression;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -2120,11 +2138,10 @@ algorithm
 
   // Check that the element types are compatible.
   (expression, compatibleType, matchKind) :=
-    matchTypes(ety1, ety2, expression, allowUnknown);
+    matchTypes(ety1, ety2, expression, options);
 
   // If the element types are compatible, check the dimensions too.
-  (compatibleType, matchKind) :=
-    matchArrayDims(dims1, dims2, compatibleType, matchKind, allowUnknown);
+  (compatibleType, matchKind) := matchArrayDims(dims1, dims2, compatibleType, matchKind, options);
 end matchArrayTypes;
 
 function matchArrayDims
@@ -2132,7 +2149,7 @@ function matchArrayDims
   input list<Dimension> dims2;
   input output Type ty;
   input output MatchKind matchKind;
-  input Boolean allowUnknown;
+  input MatchOptions options;
 protected
   list<Dimension> rest_dims2 = dims2, cdims = {};
   Dimension dim2;
@@ -2151,9 +2168,9 @@ algorithm
   // The dimensions of both array types must be compatible.
   for dim1 in dims1 loop
     dim2 :: rest_dims2 := rest_dims2;
-    (dim1, compat) := matchDimensions(dim1, dim2, allowUnknown);
+    (dim1, compat) := matchDimensions(dim1, dim2);
 
-    if not compat then
+    if not compat and not getOption(options, IGNORE_DIMENSIONS) then
       matchKind := MatchKind.NOT_COMPATIBLE;
       break;
     end if;
@@ -2167,7 +2184,6 @@ end matchArrayDims;
 function matchDimensions
   input Dimension dim1;
   input Dimension dim2;
-  input Boolean allowUnknown;
   output Dimension compatibleDim;
   output Boolean compatible;
 algorithm
@@ -2192,7 +2208,7 @@ function matchTupleTypes
   input Type tupleType1;
   input Type tupleType2;
   input output Expression expression;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType = tupleType1;
         output MatchKind matchKind = MatchKind.EXACT;
 protected
@@ -2215,7 +2231,7 @@ algorithm
       continue;
     end if;
 
-    (_, _, matchKind) := matchTypes(ty1, ty2, expression, allowUnknown);
+    (_, _, matchKind) := matchTypes(ty1, ty2, expression, options);
 
     if matchKind <> MatchKind.EXACT then
       break;
@@ -2228,7 +2244,7 @@ function matchBoxedExpressions
   input Type type1;
   input output Expression exp2;
   input Type type2;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -2238,7 +2254,7 @@ algorithm
   e2 := Expression.unbox(exp2);
 
   (e1, e2, compatibleType, matchKind) :=
-    matchExpressions(e1, Type.unbox(type1), e2, Type.unbox(type2), allowUnknown);
+    matchExpressions(e1, Type.unbox(type1), e2, Type.unbox(type2), options);
 
   if isCastMatch(matchKind) then
     exp1 := Expression.box(e1);
@@ -2253,7 +2269,7 @@ function matchConditionalArrayExp
   input Type condType;
   input output Expression otherExp;
   input Type otherType;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -2268,10 +2284,10 @@ algorithm
   if branch == NFType.Branch.NONE then
     // If no branch has already been selected as the correct branch, check both of them.
     (e1_1, e2_1, comp_ty1, mk1) :=
-      matchExpressions(condExp, true_ty, otherExp, otherType, allowUnknown);
+      matchExpressions(condExp, true_ty, otherExp, otherType, options);
 
     (e1_2, e2_2, comp_ty2, mk2) :=
-      matchExpressions(condExp, false_ty, otherExp, otherType, allowUnknown);
+      matchExpressions(condExp, false_ty, otherExp, otherType, options);
 
     compat1 := isCompatibleMatch(mk1);
     compat2 := isCompatibleMatch(mk2);
@@ -2307,11 +2323,11 @@ algorithm
   else
     if branch == NFType.Branch.TRUE then
       (condExp, otherExp, compatibleType, matchKind) :=
-        matchExpressions(condExp, true_ty, otherExp, otherType, allowUnknown);
+        matchExpressions(condExp, true_ty, otherExp, otherType, options);
       cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, branch);
     else
       (condExp, otherExp, compatibleType, matchKind) :=
-        matchExpressions(condExp, false_ty, otherExp, otherType, allowUnknown);
+        matchExpressions(condExp, false_ty, otherExp, otherType, options);
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
     end if;
 
@@ -2325,7 +2341,7 @@ function matchConditionalArrayTypes
   input Type actualType;
   input Type expectedType;
   input output Expression exp;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -2341,7 +2357,7 @@ algorithm
     case Expression.IF()
       algorithm
         (true_exp, true_ty, matchKind) :=
-          matchTypes(actual_true_ty, expected_true_ty, exp.trueBranch, allowUnknown);
+          matchTypes(actual_true_ty, expected_true_ty, exp.trueBranch, options);
 
         if not isCompatibleMatch(matchKind) then
           compatibleType := actualType;
@@ -2349,7 +2365,7 @@ algorithm
         end if;
 
         (false_exp, false_ty, matchKind) :=
-          matchTypes(actual_false_ty, expected_false_ty, exp.falseBranch, allowUnknown);
+          matchTypes(actual_false_ty, expected_false_ty, exp.falseBranch, options);
 
         if not isCompatibleMatch(matchKind) then
           compatibleType := actualType;
@@ -2367,7 +2383,7 @@ function matchConditionalArrayTypes_cast
   input Type condType;
   input Type expectedType;
   input output Expression exp;
-  input Boolean allowUnknown;
+  input MatchOptions options;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -2380,8 +2396,8 @@ algorithm
 
   if branch == NFType.Branch.NONE then
     // If no branch has already been selected as the correct branch, check both of them.
-    (e1, comp_ty1, mk1) := matchTypes(true_ty, expectedType, exp, allowUnknown);
-    (e2, comp_ty2, mk2) := matchTypes(false_ty, expectedType, exp, allowUnknown);
+    (e1, comp_ty1, mk1) := matchTypes(true_ty, expectedType, exp, options);
+    (e2, comp_ty2, mk2) := matchTypes(false_ty, expectedType, exp, options);
 
     (compatibleType, matchKind) := match (isCompatibleMatch(mk1), isCompatibleMatch(mk2))
       // Both branches matched, one of them is probably itself of a conditional
@@ -2413,10 +2429,10 @@ algorithm
     end match;
   else
     if branch == NFType.Branch.TRUE then
-      (exp, compatibleType, matchKind) := matchTypes(true_ty, expectedType, exp, allowUnknown);
+      (exp, compatibleType, matchKind) := matchTypes(true_ty, expectedType, exp, options);
       cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, branch);
     else
-      (exp, compatibleType, matchKind) := matchTypes(false_ty, expectedType, exp, allowUnknown);
+      (exp, compatibleType, matchKind) := matchTypes(false_ty, expectedType, exp, options);
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
     end if;
 
@@ -2430,7 +2446,7 @@ function matchTypes_cast
   input Type actualType;
   input Type expectedType;
   input output Expression expression;
-  input Boolean allowUnknown = false;
+  input MatchOptions options = DEFAULT_OPTIONS;
         output Type compatibleType;
         output MatchKind matchKind;
 protected
@@ -2465,7 +2481,7 @@ algorithm
     case (Type.TUPLE(types = _ :: _), _)
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchTypes(listHead(actualType.types), expectedType, expression, allowUnknown);
+          matchTypes(listHead(actualType.types), expectedType, expression, options);
 
         if isCompatibleMatch(matchKind) then
           expression := match expression
@@ -2482,24 +2498,24 @@ algorithm
     // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
     case (Type.UNKNOWN(), _)
       then (expectedType,
-        if allowUnknown then MatchKind.UNKNOWN_ACTUAL else MatchKind.NOT_COMPATIBLE);
+        if getOption(options, ALLOW_UNKNOWN) then MatchKind.UNKNOWN_ACTUAL else MatchKind.NOT_COMPATIBLE);
 
     case (_, Type.UNKNOWN())
       then (actualType,
-        if allowUnknown then MatchKind.UNKNOWN_EXPECTED else MatchKind.NOT_COMPATIBLE);
+        if getOption(options, ALLOW_UNKNOWN) then MatchKind.UNKNOWN_EXPECTED else MatchKind.NOT_COMPATIBLE);
 
     case (Type.METABOXED(), _)
       algorithm
         expression := Expression.unbox(expression);
         (expression, compatibleType, matchKind) :=
-          matchTypes(actualType.ty, expectedType, expression, allowUnknown);
+          matchTypes(actualType.ty, expectedType, expression, options);
       then
         (compatibleType, if isCompatibleMatch(matchKind) then MatchKind.CAST else matchKind);
 
     case (_, Type.METABOXED())
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchTypes(actualType, expectedType.ty, expression, allowUnknown);
+          matchTypes(actualType, expectedType.ty, expression, options);
         expression := Expression.box(expression);
         compatibleType := Type.box(compatibleType);
       then
@@ -2525,7 +2541,7 @@ algorithm
     case (Type.CONDITIONAL_ARRAY(), _)
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchConditionalArrayTypes_cast(actualType, expectedType, expression, allowUnknown);
+          matchConditionalArrayTypes_cast(actualType, expectedType, expression, options);
       then
         (compatibleType, matchKind);
 
@@ -2858,7 +2874,7 @@ algorithm
     case Binding.TYPED_BINDING(bindingExp = exp)
       algorithm
         (bind_ty, comp_ty) := elaborateBindingType(exp, component, binding.bindingType, componentType);
-        (exp, ty, ty_match) := matchTypes(bind_ty, comp_ty, exp, true);
+        (exp, ty, ty_match) := matchTypes(bind_ty, comp_ty, exp, ALLOW_UNKNOWN);
 
         if not isValidAssignmentMatch(ty_match) then
           binding.bindingExp := Expression.expandSplitIndices(exp);
@@ -2999,7 +3015,7 @@ algorithm
   else
     (_, _, mk) := matchTypes(Type.arrayElementType(bindingType),
                              Type.arrayElementType(componentType),
-                             Expression.EMPTY(bindingType), true);
+                             Expression.EMPTY(bindingType), ALLOW_UNKNOWN);
 
     if not InstContext.inAnnotation(context) then // forget errors when handling annotations
       if isValidAssignmentMatch(mk) then
@@ -3124,7 +3140,7 @@ function matchIfBranches
   input Type trueType;
   input output Expression falseBranch;
   input Type falseType;
-  input Boolean allowUnknown = false;
+  input MatchOptions options = DEFAULT_OPTIONS;
         output Type compatibleType;
         output MatchKind matchKind;
 algorithm
@@ -3138,7 +3154,7 @@ algorithm
         // Check that both branches have the same element type.
         (trueBranch, falseBranch, compatibleType, matchKind) :=
           matchExpressions(trueBranch, trueType.elementType,
-                           falseBranch, falseType.elementType, allowUnknown);
+                           falseBranch, falseType.elementType, options);
 
         if isIncompatibleMatch(matchKind) then
           return;
@@ -3146,8 +3162,7 @@ algorithm
 
         // Check that both branches have the same dimensions.
         (compatibleType, matchKind) :=
-          matchArrayDims(trueType.dimensions, falseType.dimensions,
-                         compatibleType, matchKind, allowUnknown);
+          matchArrayDims(trueType.dimensions, falseType.dimensions, compatibleType, matchKind, options);
 
         if isIncompatibleMatch(matchKind) and
            listLength(trueType.dimensions) == listLength(falseType.dimensions) then
@@ -3166,7 +3181,7 @@ algorithm
       algorithm
         (trueBranch, falseBranch, compatibleType, matchKind) :=
           matchExpressions(trueBranch, Type.arrayElementType(trueType),
-                           falseBranch, Type.arrayElementType(falseType), allowUnknown);
+                           falseBranch, Type.arrayElementType(falseType), options);
 
         if isIncompatibleMatch(matchKind) then
           return;
@@ -3181,7 +3196,7 @@ algorithm
     else
       algorithm
         (trueBranch, falseBranch, compatibleType, matchKind) :=
-          matchExpressions(trueBranch, trueType, falseBranch, falseType, allowUnknown);
+          matchExpressions(trueBranch, trueType, falseBranch, falseType, options);
       then
         (compatibleType, matchKind);
 

@@ -1337,7 +1337,7 @@ uniontype Function
 
       // Check if the type of the argument and the input parameter matches exactly.
       input_ty := Component.getType(comp);
-      (arg_exp, ty, mk) := TypeCheck.matchTypes(arg_ty, input_ty, arg_exp, allowUnknown = true);
+      (arg_exp, ty, mk) := TypeCheck.matchTypes(arg_ty, input_ty, arg_exp, NFTypeCheck.ALLOW_UNKNOWN);
       matched := TypeCheck.isValidArgumentMatch(mk);
 
       if not matched and vectorize then
@@ -1415,7 +1415,7 @@ uniontype Function
     // Check that the argument and the input parameter are type compatible when
     // the dimensions to vectorize over has been removed from the argument's type.
     rest_ty := Type.liftArrayLeftList(Type.arrayElementType(argTy), rest_dims);
-    (argExp, argTy, matchKind) := TypeCheck.matchTypes(rest_ty, inputTy, argExp, allowUnknown = false);
+    (argExp, argTy, matchKind) := TypeCheck.matchTypes(rest_ty, inputTy, argExp);
   end matchArgVectorized;
 
   function fillUnknownVectorizedDims
@@ -1745,7 +1745,7 @@ uniontype Function
         // For each slot that's filled, type check the argument and add it to
         // the arguments of the partial function application.
         SOME(ty_arg) := slot.arg;
-        (arg, _, mk) := TypeCheck.matchTypes(ty_arg.ty, InstNode.getType(slot.node), ty_arg.value, true);
+        (arg, _, mk) := TypeCheck.matchTypes(ty_arg.ty, InstNode.getType(slot.node), ty_arg.value, NFTypeCheck.ALLOW_UNKNOWN);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH,

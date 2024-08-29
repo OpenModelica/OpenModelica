@@ -473,7 +473,7 @@ algorithm
   // Check that the types match now that the connectors have been augmented.
   e1 := Expression.CREF(ty1, Connector.name(c1));
   e2 := Expression.CREF(ty2, Connector.name(c2));
-  (_, _, _, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2, allowUnknown = true);
+  (_, _, _, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2, NFTypeCheck.ALLOW_UNKNOWN);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessageAndFail(Error.CONNECT_TYPE_MISMATCH,
