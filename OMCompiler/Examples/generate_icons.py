@@ -458,7 +458,7 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['rotation'] = float(g[3])
             graphicsObj['extent'] = [[float(g[4]), float(g[5])], [float(g[6]), float(g[7])]]
 
-            if g[9]:
+            if g[9] != '""':
                 graphicsObj['href'] = "data:image;base64,"+g[9].strip('"')
             else:
                 fname = ask_omc('uriToFilename', g[8], parsed=False).strip().strip('"')
