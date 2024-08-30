@@ -1,0 +1,17 @@
+// name: Alias_test6
+// keywords: NewBackend, Alias
+// status: correct
+// function: Testing array equations.
+
+loadString("
+  model Test6
+    Real[2] a, b, c;
+  equation
+    a = b;
+    c = b + a;
+    b = {1,2};
+  end Test6;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(Test6); getErrorString();
