@@ -3129,7 +3129,8 @@ algorithm
   // Expandable connectors can only be type checked after they've been augmented during
   // the connection handling.
   if not (lhs_deleted or rhs_deleted) and
-     not (Type.isExpandableConnector(lhs_ty) or Type.isExpandableConnector(rhs_ty)) then
+     not (Type.isExpandableConnector(Type.arrayElementType(lhs_ty)) or
+          Type.isExpandableConnector(Type.arrayElementType(rhs_ty))) then
     (lhs, rhs, _, mk) := TypeCheck.matchExpressions(lhs, lhs_ty, rhs, rhs_ty, NFTypeCheck.ALLOW_UNKNOWN);
 
     if TypeCheck.isIncompatibleMatch(mk) then
