@@ -1859,10 +1859,10 @@ algorithm
     opt := setOption(opt, IGNORE_DIMENSIONS);
   end if;
 
-  () := match (cls1, cls2, expression)
+  () := match (cls1, actualType, cls2, expectedType, expression)
 
-    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)),
-          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)),
+    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)), _,
+          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _,
           Expression.RECORD(elements = elements))
       algorithm
         matchKind := MatchKind.PLUG_COMPATIBLE;
@@ -1906,8 +1906,8 @@ algorithm
       then
         ();
 
-    case (Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR())),
-          Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR())), _)
+    case (_, Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR()),
+          _, Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR()), _)
       algorithm
         matchKind := matchComponentList(cty1.potentials, cty2.potentials, options);
         if matchKind <> MatchKind.NOT_COMPATIBLE then
@@ -1923,8 +1923,8 @@ algorithm
       then
         ();
 
-    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)),
-          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _)
+    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)), _,
+          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _, _)
       algorithm
         matchKind := MatchKind.PLUG_COMPATIBLE;
 
