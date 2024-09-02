@@ -522,98 +522,99 @@ def getGraphicsWithPortsForClass(modelicaClass):
                 component_name = componentInfo[1]
 
                 if ask_omc('isConnector', class_name):
-                    comp_annotation = componentPlacement(componentAnnotationsList[i])
-                    if (comp_annotation):
-                        # base class graphics for ports
-                        g_base = []
-                        base_classes = []
-                        getBaseClasses(class_name, base_classes)
+                    if (i < len(componentAnnotationsList)):
+                        comp_annotation = componentPlacement(componentAnnotationsList[i])
+                        if (comp_annotation):
+                            # base class graphics for ports
+                            g_base = []
+                            base_classes = []
+                            getBaseClasses(class_name, base_classes)
 
-                        for base_class in base_classes:
-                            graphics_base = getGraphicsForClass(base_class)
-                            g_base.append(graphics_base)
+                            for base_class in base_classes:
+                                graphics_base = getGraphicsForClass(base_class)
+                                g_base.append(graphics_base)
 
-                        g = getGraphicsForClass(class_name)
+                            g = getGraphicsForClass(class_name)
 
-                        g_this = g['graphics']
+                            g_this = g['graphics']
 
-                        g['graphics'] = []
-                        for g_b in g_base:
-                            for g_i in g_b['graphics']:
-                                g['graphics'].append(g_i)
-                        for g_b in g_this:
-                            g['graphics'].append(g_b)
+                            g['graphics'] = []
+                            for g_b in g_base:
+                                for g_i in g_b['graphics']:
+                                    g['graphics'].append(g_i)
+                            for g_b in g_this:
+                                g['graphics'].append(g_b)
 
-                        g['id'] = component_name
-                        g['className'] = class_name
+                            g['id'] = component_name
+                            g['className'] = class_name
 
-                        g['desc'] = componentInfo[2]
+                            g['desc'] = componentInfo[2]
 
-                        g['classDesc'] = ask_omc('getClassComment', class_name).strip().strip('"')
+                            g['classDesc'] = ask_omc('getClassComment', class_name).strip().strip('"')
 
-                        minX = g['coordinateSystem']['extent'][0][0]
-                        minY = g['coordinateSystem']['extent'][0][1]
-                        maxX = g['coordinateSystem']['extent'][1][0]
-                        maxY = g['coordinateSystem']['extent'][1][1]
+                            minX = g['coordinateSystem']['extent'][0][0]
+                            minY = g['coordinateSystem']['extent'][0][1]
+                            maxX = g['coordinateSystem']['extent'][1][0]
+                            maxY = g['coordinateSystem']['extent'][1][1]
 
-                        for gs in g['graphics']:
-                            # use default values if it is not there
-                            if not 'extent' in gs:
-                                gs['extent'] = [[-100, -100], [100, 100]]
+                            for gs in g['graphics']:
+                                # use default values if it is not there
+                                if not 'extent' in gs:
+                                    gs['extent'] = [[-100, -100], [100, 100]]
 
-                            if not 'origin' in gs:
-                                gs['origin'] = [0, 0]
+                                if not 'origin' in gs:
+                                    gs['origin'] = [0, 0]
 
-                            if minX > gs['extent'][0][0] + gs['origin'][0]:
-                                minX = gs['extent'][0][0] + gs['origin'][0]
-                            if minX > gs['extent'][1][0] + gs['origin'][0]:
-                                minX = gs['extent'][1][0] + gs['origin'][0]
-                            if minY > gs['extent'][0][1] + gs['origin'][1]:
-                                minY = gs['extent'][0][1] + gs['origin'][1]
-                            if minY > gs['extent'][1][1] + gs['origin'][1]:
-                                minY = gs['extent'][1][1] + gs['origin'][1]
-                            if maxX < gs['extent'][1][0] + gs['origin'][0]:
-                                maxX = gs['extent'][1][0] + gs['origin'][0]
-                            if maxX < gs['extent'][0][0] + gs['origin'][0]:
-                                maxX = gs['extent'][0][0] + gs['origin'][0]
-                            if maxY < gs['extent'][1][1] + gs['origin'][1]:
-                                maxY = gs['extent'][1][1] + gs['origin'][1]
-                            if maxY < gs['extent'][0][1] + gs['origin'][1]:
-                                maxY = gs['extent'][0][1] + gs['origin'][1]
+                                if minX > gs['extent'][0][0] + gs['origin'][0]:
+                                    minX = gs['extent'][0][0] + gs['origin'][0]
+                                if minX > gs['extent'][1][0] + gs['origin'][0]:
+                                    minX = gs['extent'][1][0] + gs['origin'][0]
+                                if minY > gs['extent'][0][1] + gs['origin'][1]:
+                                    minY = gs['extent'][0][1] + gs['origin'][1]
+                                if minY > gs['extent'][1][1] + gs['origin'][1]:
+                                    minY = gs['extent'][1][1] + gs['origin'][1]
+                                if maxX < gs['extent'][1][0] + gs['origin'][0]:
+                                    maxX = gs['extent'][1][0] + gs['origin'][0]
+                                if maxX < gs['extent'][0][0] + gs['origin'][0]:
+                                    maxX = gs['extent'][0][0] + gs['origin'][0]
+                                if maxY < gs['extent'][1][1] + gs['origin'][1]:
+                                    maxY = gs['extent'][1][1] + gs['origin'][1]
+                                if maxY < gs['extent'][0][1] + gs['origin'][1]:
+                                    maxY = gs['extent'][0][1] + gs['origin'][1]
 
-                        g['coordinateSystem']['extent'] = [[minX, minY], [maxX, maxY]]
+                            g['coordinateSystem']['extent'] = [[minX, minY], [maxX, maxY]]
 
-                        #print(comp_annotation)
-                        if comp_annotation[0] == "true":
-                            index_delta = 7
-                            if comp_annotation[10] == "-":
-                                # fallback to diagram annotations
-                                index_delta = 0
+                            #print(comp_annotation)
+                            if comp_annotation[0] == "true":
+                                index_delta = 7
+                                if comp_annotation[10] == "-":
+                                    # fallback to diagram annotations
+                                    index_delta = 0
 
-                            for i in [1,2,7]:
-                                if comp_annotation[i + index_delta] == "-":
-                                    comp_annotation[i + index_delta] = 0
-                            origin_x = toFloat(comp_annotation[1 + index_delta])
-                            origin_y = toFloat(comp_annotation[2 + index_delta])
-                            x0 = toFloat(comp_annotation[3 + index_delta])
-                            y0 = toFloat(comp_annotation[4 + index_delta])
-                            x1 = toFloat(comp_annotation[5 + index_delta])
-                            y1 = toFloat(comp_annotation[6 + index_delta])
+                                for i in [1,2,7]:
+                                    if comp_annotation[i + index_delta] == "-":
+                                        comp_annotation[i + index_delta] = 0
+                                origin_x = toFloat(comp_annotation[1 + index_delta])
+                                origin_y = toFloat(comp_annotation[2 + index_delta])
+                                x0 = toFloat(comp_annotation[3 + index_delta])
+                                y0 = toFloat(comp_annotation[4 + index_delta])
+                                x1 = toFloat(comp_annotation[5 + index_delta])
+                                y1 = toFloat(comp_annotation[6 + index_delta])
 
-                            if comp_annotation[7 + index_delta] == "":
-                                rotation = 0.0
-                            else:
-                                rotation = toFloat(comp_annotation[7 + index_delta])
+                                if comp_annotation[7 + index_delta] == "":
+                                    rotation = 0.0
+                                else:
+                                    rotation = toFloat(comp_annotation[7 + index_delta])
 
-                            g['transformation'] = {}
-                            g['transformation']['origin'] = [origin_x, origin_y]
-                            g['transformation']['extent'] = [[x0, y0], [x1, y1]]
-                            if isinstance(rotation,dict):
-                                g['transformation']['rotation'] = 0.0
-                            else:
-                                g['transformation']['rotation'] = rotation
+                                g['transformation'] = {}
+                                g['transformation']['origin'] = [origin_x, origin_y]
+                                g['transformation']['extent'] = [[x0, y0], [x1, y1]]
+                                if isinstance(rotation,dict):
+                                    g['transformation']['rotation'] = 0.0
+                                else:
+                                    g['transformation']['rotation'] = rotation
 
-                            graphics['ports'].append(g)
+                                graphics['ports'].append(g)
 
     return graphics
 
