@@ -879,5 +879,35 @@ public
     end match;
   end hasTypeOrigin;
 
+  function expandEach
+    "Expands the raw binding with each for a component x into
+     fill(binding, size(x, 1), size(x, 2), ...)"
+    input output Binding binding;
+    input InstNode node;
+  protected
+    list<Absyn.Exp> args;
+    Absyn.Exp node_exp;
+    constant Absyn.ComponentRef size_name = Absyn.ComponentRef.CREF_IDENT("size", {});
+    constant Absyn.ComponentRef fill_name = Absyn.ComponentRef.CREF_IDENT("fill", {});
+  algorithm
+    () := match binding
+      case RAW_BINDING(eachType = EachType.EACH)
+        algorithm
+          node_exp := Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(InstNode.name(node), {}));
+          args := {};
+
+          for i in InstNode.dimensionCount(node):-1:1 loop
+            args := AbsynUtil.makeCall(size_name, {node_exp, Absyn.Exp.INTEGER(i)}) :: args;
+          end for;
+
+          args := binding.bindingExp :: args;
+          binding.bindingExp := AbsynUtil.makeCall(fill_name, args);
+        then
+          ();
+
+      else ();
+    end match;
+  end expandEach;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

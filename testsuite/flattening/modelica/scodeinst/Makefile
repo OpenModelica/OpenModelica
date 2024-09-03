@@ -1167,6 +1167,7 @@ UnboundParameter2.mo \
 UnboundParameter3.mo \
 UnboundParameter4.mo \
 UnboundParameter5.mo \
+UnboundParameter6.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \

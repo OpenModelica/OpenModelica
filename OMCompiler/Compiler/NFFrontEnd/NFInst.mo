@@ -2298,6 +2298,9 @@ function updateParameterBinding
 protected
   Component comp;
   Binding binding;
+  Expression exp;
+  Absyn.Exp aexp;
+  list<Absyn.Exp> args;
 algorithm
   comp := InstNode.component(node);
 
@@ -2315,6 +2318,11 @@ algorithm
     end if;
 
     binding := Binding.unpropagate(binding, node);
+
+    if Binding.isEach(binding) then
+      binding := Binding.expandEach(binding, node);
+    end if;
+
     comp := Component.setBinding(binding, comp);
     InstNode.updateComponent(comp, node);
   end if;
