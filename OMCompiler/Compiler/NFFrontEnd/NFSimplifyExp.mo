@@ -366,15 +366,15 @@ algorithm
   end if;
 end simplifyInStreamDiv;
 
-function simplifyStream
+function removeStream
   "Removes all internal calls related to stream connectors,
   i.e. $OMC$inStreamDiv and $OMC$PositiveMax."
   input output Expression exp;
 algorithm
-  exp := Expression.mapReverse(exp, removeInStream);
-end simplifyStream;
+  exp := Expression.mapReverse(exp, removeInStreamDiv);
+end removeStream;
 
-function removeInStream
+function removeInStreamDiv
   input output Expression exp;
 algorithm
   exp := match exp
@@ -388,7 +388,7 @@ algorithm
       then simplifyInStreamDiv(res :: listRest(call.arguments), call, true);
     else exp;
   end match;
-end removeInStream;
+end removeInStreamDiv;
 
 function removePositiveMax
   input output Expression exp;
