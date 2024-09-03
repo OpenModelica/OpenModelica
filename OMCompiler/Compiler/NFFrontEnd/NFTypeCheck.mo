@@ -55,7 +55,7 @@ import Types;
 import Operator = NFOperator;
 import Type = NFType;
 import Class = NFClass;
-import ClassTree = NFClassTree;
+import NFClassTree.ClassTree;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
@@ -1565,8 +1565,8 @@ algorithm
 
     case Type.TUPLE()
       algorithm
-        (exp2, compatibleType, matchKind) :=
-          matchTupleTypes(type2, type1, exp2, options);
+        (exp1, compatibleType, matchKind) :=
+          matchTupleTypes(type1, type1, exp1, options);
       then
         compatibleType;
 
@@ -1762,11 +1762,11 @@ algorithm
     // function call returning a tuple, in which case only the first element of the
     // tuple is used. exp1 should never be a tuple here, since any tuple expression
     // not alone on the rhs of an equation is "tuple subscripted" by Typing.typeExp.
-    case (_, Type.TUPLE(types = compatibleType :: _))
+    case (Type.TUPLE(types = compatibleType :: _), _)
       algorithm
-        exp2 := Expression.tupleElement(exp2, compatibleType, 1);
-        (exp2, compatibleType, matchKind) :=
-          matchTypes(compatibleType, type1, exp2, options);
+        exp1 := Expression.tupleElement(exp1, compatibleType, 1);
+        (exp1, compatibleType, matchKind) :=
+          matchTypes(compatibleType, type2, exp1, options);
 
         if isCompatibleMatch(matchKind) then
           matchKind := MatchKind.CAST;
@@ -1833,16 +1833,20 @@ function matchComplexTypes
         output MatchKind matchKind = MatchKind.NOT_COMPATIBLE;
 protected
   Class cls1, cls2;
+  ClassTree ctree;
   InstNode anode, enode;
   array<InstNode> comps1, comps2;
   Absyn.Path path;
   Type ty;
   ComplexType cty1, cty2;
   Expression e;
-  list<Expression> elements, matched_elements = {};
+  list<Expression> matched_elements = {};
+  array<Expression> elem_arr;
   MatchKind mk;
   Component comp1, comp2;
   MatchOptions opt = options;
+  Integer idx;
+  list<Dimension> dims;
 algorithm
   Type.COMPLEX(cls = anode) := actualType;
   Type.COMPLEX(cls = enode) := expectedType;
@@ -1860,52 +1864,6 @@ algorithm
   end if;
 
   () := match (cls1, actualType, cls2, expectedType, expression)
-
-    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)), _,
-          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _,
-          Expression.RECORD(elements = elements))
-      algorithm
-        matchKind := MatchKind.PLUG_COMPATIBLE;
-
-        if arrayLength(comps1) <> arrayLength(comps2) or
-           arrayLength(comps1) <> listLength(elements) then
-          matchKind := MatchKind.NOT_COMPATIBLE;
-        else
-          for i in 1:arrayLength(comps1) loop
-            if InstNode.name(comps1[i]) <> InstNode.name(comps2[i]) then
-              matchKind := MatchKind.NOT_COMPATIBLE;
-              break;
-            end if;
-
-            comp2 := InstNode.component(comps2[i]);
-
-            if Component.isTyped(comp2) then
-              e :: elements := elements;
-              comp1 := InstNode.component(comps1[i]);
-              (e, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), e, opt);
-              matched_elements := e :: matched_elements;
-
-              if mk == MatchKind.CAST then
-                matchKind := mk;
-              elseif not isValidPlugCompatibleMatch(mk) then
-                matchKind := MatchKind.NOT_COMPATIBLE;
-                break;
-              end if;
-            end if;
-          end for;
-
-          if matchKind == MatchKind.CAST then
-            expression.elements := listReverse(matched_elements);
-          end if;
-        end if;
-
-        if matchKind <> MatchKind.NOT_COMPATIBLE then
-          matchKind := MatchKind.PLUG_COMPATIBLE;
-        end if;
-
-      then
-        ();
-
     case (_, Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR()),
           _, Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR()), _)
       algorithm
@@ -1923,32 +1881,40 @@ algorithm
       then
         ();
 
-    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)), _,
+    case (Class.INSTANCED_CLASS(elements = ctree as ClassTree.FLAT_TREE(components = comps1)), _,
           Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _, _)
       algorithm
-        matchKind := MatchKind.PLUG_COMPATIBLE;
-
+        // Both types must contain the same number of components.
         if arrayLength(comps1) <> arrayLength(comps2) then
           matchKind := MatchKind.NOT_COMPATIBLE;
-        else
-          for i in 1:arrayLength(comps1) loop
-            if InstNode.name(comps1[i]) <> InstNode.name(comps2[i]) then
-              matchKind := MatchKind.NOT_COMPATIBLE;
-              break;
-            end if;
+          return;
+        end if;
 
-            comp2 := InstNode.component(comps2[i]);
+        matchKind := MatchKind.PLUG_COMPATIBLE;
 
-            if Component.isTyped(comp2) then
-              comp1 := InstNode.component(comps1[i]);
-              (_, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), expression, opt);
+        // Create an array of record element expressions.
+        elem_arr := match expression
+          case Expression.RECORD() then listArray(expression.elements);
+          else
+            algorithm
+              elem_arr := arrayCreateNoInit(arrayLength(comps1), Expression.INTEGER(0));
+              dims := Type.arrayDims(Expression.typeOf(expression));
 
-              if not isValidPlugCompatibleMatch(mk) then
-                matchKind := MatchKind.NOT_COMPATIBLE;
-                break;
-              end if;
-            end if;
-          end for;
+              for i in arrayLength(comps1):-1:1 loop
+                ty := Component.getType(InstNode.component(comps1[i]));
+                ty := Type.liftArrayRightList(ty, dims);
+                elem_arr[i] := Expression.RECORD_ELEMENT(expression, i, InstNode.name(comps1[i]), ty);
+              end for;
+            then
+              elem_arr;
+        end match;
+
+        // Match the expressions against the expected component types.
+        (matched_elements, matchKind) := matchComplexComponents(comps1, comps2, elem_arr, ctree, opt);
+
+        // Cast the result to the expected record type if necessary.
+        if matchKind == MatchKind.CAST then
+          expression := typeCastRecord(matched_elements, enode, expectedType, expression);
         end if;
       then
         ();
@@ -1961,6 +1927,125 @@ algorithm
 
   end match;
 end matchComplexTypes;
+
+function matchComplexComponents
+  input array<InstNode> actualComponents;
+  input array<InstNode> expectedComponents;
+  input array<Expression> expressions;
+  input ClassTree classTree;
+  input MatchOptions options;
+  output list<Expression> matchedExpressions = {};
+  output MatchKind matchKind = MatchKind.PLUG_COMPATIBLE;
+protected
+  InstNode anode, enode;
+  Component acomp, ecomp;
+  Integer idx;
+  Expression e;
+  MatchKind mk;
+algorithm
+  if arrayLength(actualComponents) <> arrayLength(expectedComponents) or
+     arrayLength(actualComponents) <> arrayLength(expressions) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+    return;
+  end if;
+
+  for i in 1:arrayLength(actualComponents) loop
+    enode := expectedComponents[i];
+    ecomp := InstNode.component(enode);
+
+    if Component.isTyped(ecomp) then
+      anode := actualComponents[i];
+
+      // The records must have the same named components, but they don't need to
+      // be in the same order.
+      if InstNode.name(anode) == InstNode.name(enode) then
+        // If the names match we can use the index as is.
+        idx := i;
+      else
+        // Otherwise look the index of the component up in the actual type.
+        try
+          idx := ClassTree.lookupComponentIndex(InstNode.name(enode), classTree);
+        else
+          // The records do not have the same named components and are incompatible.
+          matchKind := MatchKind.NOT_COMPATIBLE;
+          return;
+        end try;
+
+        anode := actualComponents[idx];
+      end if;
+
+      // If the components aren't in the same order then we need to type cast
+      // the record expression to the expected record type.
+      if i <> idx then
+        matchKind := MatchKind.CAST;
+      end if;
+
+      // Match the type of the component to the expected type.
+      acomp := InstNode.component(anode);
+      e := expressions[idx];
+      (e, _, mk) := matchTypes(Component.getType(acomp), Component.getType(ecomp), e, options);
+      matchedExpressions := e :: matchedExpressions;
+
+      if mk == MatchKind.CAST then
+        matchKind := mk;
+      elseif not isValidPlugCompatibleMatch(mk) then
+        matchKind := MatchKind.NOT_COMPATIBLE;
+        break;
+      end if;
+    end if;
+  end for;
+
+  matchedExpressions := listReverseInPlace(matchedExpressions);
+end matchComplexComponents;
+
+function typeCastRecord
+  input list<Expression> expressions;
+  input InstNode node;
+  input Type expectedType;
+  input output Expression expression;
+protected
+  Type ty;
+  list<Dimension> dims;
+  list<Expression> ranges;
+  InstNode iter;
+  list<InstNode> iters;
+  Subscript sub;
+  list<Subscript> subs;
+  Integer i;
+algorithm
+  ty := Expression.typeOf(expression);
+
+  if Type.isArray(ty) then
+    dims := Type.arrayDims(ty);
+    ranges := {};
+    iters := {};
+    subs := {};
+    i := 1;
+
+    for d in listReverse(dims) loop
+      if Dimension.isUnknown(d) then
+        ranges := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1),
+          NONE(), Expression.SIZE(expression, SOME(Expression.INTEGER(i)))) :: ranges;
+      else
+        ranges := Dimension.toRange(d) :: ranges;
+      end if;
+
+      iter := InstNode.newIndexedIterator(i, Type.INTEGER(), InstNode.info(node));
+      iters := iter :: iters;
+      sub := Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())));
+      subs := sub :: subs;
+      i := i + 1;
+    end for;
+
+    expression := Expression.RECORD(InstNode.scopePath(node), expectedType,
+      list(Expression.applySubscripts(subs, e) for e in expressions));
+    expression := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty,
+      Expression.variability(expression), Expression.purity(expression), expression,
+      list((i, r) threaded for i in iters, r in ranges)));
+  else
+    expression := Expression.RECORD(InstNode.scopePath(node), expectedType, expressions);
+  end if;
+end typeCastRecord;
 
 function matchComponentList
   input list<InstNode> comps1;
