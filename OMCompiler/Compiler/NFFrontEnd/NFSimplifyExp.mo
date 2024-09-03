@@ -385,7 +385,6 @@ algorithm
       guard "$OMC$inStreamDiv" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn))
       algorithm
         res := simplify(Expression.map(listHead(call.arguments), removePositiveMax), true);
-        print(getInstanceName() + ": " + Expression.toString(res) + "\n");
       then simplifyInStreamDiv(res :: listRest(call.arguments), call, true);
     else exp;
   end match;
