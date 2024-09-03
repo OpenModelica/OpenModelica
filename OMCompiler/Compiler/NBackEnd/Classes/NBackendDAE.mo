@@ -258,7 +258,7 @@ public
       (function simplify(init = false), "Simplify 1"),
       (Alias.main,         "Alias"),
       (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
-      (simplifyStream,     "Simplify Stream"),
+      (removeStream,       "Remove Stream"),
       (DetectStates.main,  "Detect States"),
       (Events.main,        "Events")
     };
@@ -383,9 +383,9 @@ public
     end match;
   end simplify;
 
-  function simplifyStream
+  function removeStream
     // TODO this does the same as `simplify`
-    // except it calls `SimplifyExp.simplifyStream`,
+    // except it calls `SimplifyExp.removeStream`,
     // maybe we can merge those
     input output BackendDAE bdae;
   algorithm
@@ -398,12 +398,12 @@ public
           function Equation.simplify(
             name = getInstanceName(),
             indent = "",
-            simplifyExp = SimplifyExp.simplifyStream));
+            simplifyExp = SimplifyExp.removeStream));
         bdae.eqData := EqData.compress(eqData);
       then bdae;
       else bdae;
     end match;
-  end simplifyStream;
+  end removeStream;
 
   function getLoopResiduals
     input BackendDAE bdae;
