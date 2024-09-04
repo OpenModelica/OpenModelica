@@ -364,9 +364,10 @@ public
   protected
     ComponentRef cref;
     Expression arg;
+    list<Subscript> subscripts;
     list<Pointer<Variable>> arg_children;
     list<Expression> children_args;
-    list<ComponentRef> children;
+    list<ComponentRef> children, tmp;
     Call call;
     Function fn;
   algorithm
@@ -380,8 +381,10 @@ public
 
         // if the argument is a cref, get its children
         case Expression.CREF() algorithm
-          arg_children := BVariable.getRecordChildren(BVariable.getVarPointer(arg.cref));
-        then list(Expression.fromCref(BVariable.getVarName(child)) for child in arg_children);
+          subscripts    := ComponentRef.subscriptsAllFlat(arg.cref);
+          arg_children  := BVariable.getRecordChildren(BVariable.getVarPointer(arg.cref));
+          tmp           := list(ComponentRef.mergeSubscripts(subscripts, BVariable.getVarName(child))  for child in arg_children);
+        then list(Expression.fromCref(child) for child in tmp);
 
         // if it is a basic record, take its elements
         case Expression.RECORD()  then arg.elements;
