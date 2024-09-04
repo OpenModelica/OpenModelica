@@ -121,6 +121,7 @@ algorithm
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
                                         else exp;
   end match;
+  exp := Expression.setType(Type.simplify(Expression.typeOf(exp)), exp);
 end simplify;
 
 function simplifyOpt

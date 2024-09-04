@@ -199,18 +199,16 @@ public
   function size
     input Dimension dim;
     output Integer size;
-  protected
-    Dimension simple = simplify(dim);
   algorithm
-    size := match simple
+    size := match dim
       local
         Type ty;
 
-      case INTEGER() then simple.size;
+      case INTEGER() then dim.size;
       case BOOLEAN() then 2;
       case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
       else algorithm
-        Error.assertion(false, getInstanceName() + " could not get size of: " + toString(simple), sourceInfo());
+        Error.assertion(false, getInstanceName() + " could not get size of: " + toString(dim), sourceInfo());
       then fail();
     end match;
   end size;
@@ -603,7 +601,11 @@ public
     input output Dimension dim;
   algorithm
     dim := match dim
-      case EXP() then fromExp(dim.exp, Expression.variability(dim.exp));
+      local
+        Expression simple;
+      case EXP() algorithm
+        simple := SimplifyExp.simplify(dim.exp);
+      then fromExp(simple, Expression.variability(simple));
       else dim;
     end match;
   end simplify;
