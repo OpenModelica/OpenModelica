@@ -207,6 +207,11 @@ public
       case INTEGER() then dim.size;
       case BOOLEAN() then 2;
       case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
+      else algorithm
+        if Flags.isSet(Flags.FAILTRACE) then
+          Error.addCompilerWarning(getInstanceName() + " could not get size of: " + toString(dim));
+        end if;
+      then fail();
     end match;
   end size;
 
@@ -597,14 +602,13 @@ public
   function simplify
     input output Dimension dim;
   algorithm
-    () := match dim
-      case EXP()
-        algorithm
-          dim.exp := SimplifyExp.simplify(dim.exp);
-        then
-          ();
-
-      else ();
+    dim := match dim
+      local
+        Expression simple;
+      case EXP() algorithm
+        simple := SimplifyExp.simplify(dim.exp);
+      then fromExp(simple, Expression.variability(simple));
+      else dim;
     end match;
   end simplify;
 
