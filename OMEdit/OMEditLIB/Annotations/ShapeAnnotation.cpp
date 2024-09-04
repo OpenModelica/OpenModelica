@@ -1118,19 +1118,35 @@ void ShapeAnnotation::updateDynamicSelect(double time)
       || (mpParentComponent && mpParentComponent->getGraphicsView() && mpParentComponent->getGraphicsView()->isVisualizationView())) {
     bool updated = false;
 
-    updated |= mVisible.update(time, mpParentComponent);
-    updated |= mOrigin.update(time, mpParentComponent);
-    updated |= mRotation.update(time, mpParentComponent);
-    updated |= mLineColor.update(time, mpParentComponent);
-    updated |= mFillColor.update(time, mpParentComponent);
-    updated |= mLineThickness.update(time, mpParentComponent);
-    updated |= mArrowSize.update(time, mpParentComponent);
-    updated |= mExtent.update(time, mpParentComponent);
-    updated |= mRadius.update(time, mpParentComponent);
-    updated |= mStartAngle.update(time, mpParentComponent);
-    updated |= mEndAngle.update(time, mpParentComponent);
-    updated |= mFontSize.update(time, mpParentComponent);
-    updated |= mTextString.update(time, mpParentComponent);
+    if (MainWindow::instance()->isNewApi()) {
+      updated |= mVisible.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mOrigin.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mRotation.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mLineColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mFillColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mLineThickness.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mArrowSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mExtent.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mRadius.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mStartAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mEndAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mFontSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+      updated |= mTextString.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    } else {
+      updated |= mVisible.update(time, mpParentComponent);
+      updated |= mOrigin.update(time, mpParentComponent);
+      updated |= mRotation.update(time, mpParentComponent);
+      updated |= mLineColor.update(time, mpParentComponent);
+      updated |= mFillColor.update(time, mpParentComponent);
+      updated |= mLineThickness.update(time, mpParentComponent);
+      updated |= mArrowSize.update(time, mpParentComponent);
+      updated |= mExtent.update(time, mpParentComponent);
+      updated |= mRadius.update(time, mpParentComponent);
+      updated |= mStartAngle.update(time, mpParentComponent);
+      updated |= mEndAngle.update(time, mpParentComponent);
+      updated |= mFontSize.update(time, mpParentComponent);
+      updated |= mTextString.update(time, mpParentComponent);
+    }
 
     if (updated) {
       applyTransformation();

@@ -1853,9 +1853,10 @@ void VariablesWidget::initializeVisualization()
  * Reads the variable value at specific time.
  * \param variable
  * \param time
- * \return
+ * \param reportError
+ * \return variable value
  */
-double VariablesWidget::readVariableValue(QString variable, double time)
+QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double time, bool reportError)
 {
   double value = 0.0;
   bool found = false;
@@ -1904,11 +1905,12 @@ double VariablesWidget::readVariableValue(QString variable, double time)
     textStream.seek(0);
   }
 
-  if (!found) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "No result for variable " + variable + " in result file.", Helper::simulationKind, Helper::warningLevel));
+  if (reportError && !found) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "No result for variable " + variable + " in result file.",
+                                                          Helper::simulationKind, Helper::warningLevel));
   }
 
-  return value;
+  return qMakePair(value, found);
 }
 
 /*!
