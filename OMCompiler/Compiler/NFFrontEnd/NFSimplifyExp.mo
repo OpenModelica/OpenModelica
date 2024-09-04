@@ -78,6 +78,8 @@ end simplifyDump;
 function simplify
   input output Expression exp;
   input Boolean includeScope = false;
+protected
+  Type old, new;
 algorithm
   exp := match exp
     case Expression.CREF()
@@ -121,6 +123,13 @@ algorithm
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
                                         else exp;
   end match;
+
+  // simplify dimensions
+  old := Expression.typeOf(exp);
+  new := Type.simplify(old);
+  if not referenceEq(old, new) then
+    exp := Expression.setType(new, exp);
+  end if;
 end simplify;
 
 function simplifyOpt
@@ -867,7 +876,6 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for expression: " + Expression.toString(exp)});
     then fail();
   end match;
-  exp := Expression.setType(Type.simplify(Expression.typeOf(exp)), exp);
 end simplifyMultary;
 
 function simplifyMultarySigns
@@ -940,8 +948,6 @@ algorithm
   if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) and not Expression.hasArrayCall(binaryExp) then
     binaryExp := ExpandExp.expand(binaryExp);
   end if;
-
-  binaryExp := Expression.setType(Type.simplify(Expression.typeOf(binaryExp)), binaryExp);
 end simplifyBinary;
 
 function simplifyBinaryOp
