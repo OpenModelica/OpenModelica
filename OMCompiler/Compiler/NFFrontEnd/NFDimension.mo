@@ -208,7 +208,9 @@ public
       case BOOLEAN() then 2;
       case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
       else algorithm
-        Error.assertion(false, getInstanceName() + " could not get size of: " + toString(dim), sourceInfo());
+        if Flags.isSet(Flags.FAILTRACE) then
+          Error.addCompilerWarning(getInstanceName() + " could not get size of: " + toString(dim));
+        end if;
       then fail();
     end match;
   end size;
