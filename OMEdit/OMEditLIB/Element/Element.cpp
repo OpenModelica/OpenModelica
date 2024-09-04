@@ -4031,11 +4031,11 @@ void Element::updateDynamicSelect(double time)
 {
   // state machine debugging
   if ((mpGraphicsView->getModelWidget()->isNewApi() && mpModel && mpModel->getAnnotation()->isState()) || (mpLibraryTreeItem && mpLibraryTreeItem->isState())) {
-    double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
-    setActiveState(value);
+    QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
+    setActiveState(value.first);
     foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
       if (pTransitionLineAnnotation && pTransitionLineAnnotation->getEndElement() && pTransitionLineAnnotation->getEndElement()->getName().compare(getName()) == 0) {
-        pTransitionLineAnnotation->setActiveState(value);
+        pTransitionLineAnnotation->setActiveState(value.first);
       }
     }
   } else { // DynamicSelect

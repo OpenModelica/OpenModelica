@@ -232,7 +232,7 @@ public:
   void deInitializeVisualization();
   void updatePlotWindows();
   void updateBrowserTime(double time);
-  double readVariableValue(QString variable, double time);
+  QPair<double, bool> readVariableValue(QString variable, double time, bool reportError = true);
   void closeResultFile();
 private:
   TreeSearchFilters *mpTreeSearchFilters;
