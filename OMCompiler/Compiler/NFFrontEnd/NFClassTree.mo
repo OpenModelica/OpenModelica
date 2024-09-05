@@ -112,7 +112,10 @@ public
     end EMPTY_TREE;
 
     function fromSCode
-      "Creates a new class tree from a list of SCode elements."
+      "Creates a new class tree from a list of SCode elements. Imports are not
+       added to the lookup tree here to avoid depdendency issues and should
+       instead be initialized by calling initImports once the class tree has
+       been added to the node it belongs to."
       input list<SCode.Element> elements;
       input Boolean isClassExtends;
       input InstNode parent;
@@ -198,19 +201,7 @@ public
             then
               ();
 
-          // An unqualified import clause. We need to know which names are
-          // imported by the clause, so it needs to be instantiated.
-          case SCode.IMPORT(imp = Absyn.Import.UNQUAL_IMPORT(), info = info)
-            algorithm
-              imps := Import.instUnqualified(e.imp, parent, info, imps);
-            then
-              ();
-
-          // A qualified import clause. Since the import itself gives the name
-          // of the imported element we can delay resolving the path until we
-          // need it (i.e. when the name is used). Doing so avoids some
-          // dependency issues, like when a package is imported into one of it's
-          // enclosing scopes.
+          // An import, save it as it is and deal with it in initImports later.
           case SCode.IMPORT()
             algorithm
               imps := Import.UNRESOLVED_IMPORT(e.imp, parent, e.info) :: imps;
@@ -226,17 +217,53 @@ public
         end match;
       end for;
 
-
-      // Add all the imported names to the lookup tree.
-      imps_arr := listArray(imps);
-      i := 1;
-      for e in imps loop
-        ltree := addImport(e, i, ltree, imps_arr);
-        i := i + 1;
-      end for;
-
-      tree := PARTIAL_TREE(ltree, clss, comps, exts, imps_arr, dups);
+      tree := PARTIAL_TREE(ltree, clss, comps, exts, listArray(imps), dups);
     end fromSCode;
+
+    function initImports
+      "Initializes imports by resolving unqualified imports and adding all of
+       the imports to the lookup tree. To allow a package to import itself with
+       an unqualified import this needs to be done after the class tree created
+       by fromSCode has been added to the package node."
+      input output ClassTree tree;
+      input InstNode parent;
+    protected
+      array<Import> imports;
+      list<Import> init_imports;
+      Import imp;
+      LookupTree.Tree ltree;
+    algorithm
+      () := match tree
+        case PARTIAL_TREE(tree = ltree, imports = imports)
+          guard not arrayEmpty(imports)
+          algorithm
+            init_imports := {};
+
+            // Instantiate unqualified imports, since we need to know which names they import.
+            // The names of qualified imports are given by the imports themselves, so we can
+            // delay resolving them until they're used to avoid some dependency issues
+            // (like when a package is imported into one of its enclosing scopes).
+            for imp in imports loop
+              init_imports := match imp
+                case Import.UNRESOLVED_IMPORT(imp = Absyn.Import.UNQUAL_IMPORT())
+                  then Import.instUnqualified(imp.imp, parent, imp.info, init_imports);
+                else imp :: init_imports;
+              end match;
+            end for;
+
+            imports := listArray(init_imports);
+            for i in arrayLength(imports):-1:1 loop
+              ltree := addImport(imports[i], i, ltree, imports);
+            end for;
+
+            tree.imports := imports;
+            tree.tree := ltree;
+          then
+            ();
+
+        else ();
+      end match;
+    end initImports;
 
     function fromEnumeration
       "Creates a class tree for an enumeration type."

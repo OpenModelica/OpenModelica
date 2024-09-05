@@ -527,6 +527,8 @@ algorithm
       algorithm
         c := partialInstClass2(InstNode.definition(node), node);
         node := InstNode.updateClass(c, node);
+        c := Class.initImports(c, node);
+        node := InstNode.updateClass(c, node);
       then
         ();
 
