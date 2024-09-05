@@ -783,6 +783,7 @@ ImportSubPackage2.mo \
 ImportUnqualified1.mo \
 ImportUnqualified2.mo \
 ImportUnqualified3.mo \
+ImportUnqualified4.mo \
 ImpureCall1.mo \
 Inline1.mo \
 Inline2.mo \

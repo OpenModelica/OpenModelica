@@ -162,6 +162,21 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     cls := PARTIAL_CLASS(tree, Modifier.NOMOD(), Modifier.NOMOD(), prefixes);
   end fromSCode;
 
+  function initImports
+    input output Class cls;
+    input InstNode parent;
+  algorithm
+    () := match cls
+      case PARTIAL_CLASS()
+        algorithm
+          cls.elements := ClassTree.initImports(cls.elements, parent);
+        then
+          ();
+
+      else ();
+    end match;
+  end initImports;
+
   function fromEnumeration
     input list<SCode.Enum> literals;
     input Type enumType;
