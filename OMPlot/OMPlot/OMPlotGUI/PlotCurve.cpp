@@ -252,6 +252,29 @@ void PlotCurve::toggleVisibility(bool visibility)
 }
 
 /*!
+ * \brief PlotCurve::resetPrefixUnit
+ * Resets the unit prefix.
+ */
+void PlotCurve::resetPrefixUnit()
+{
+  if (!mXUnitPrefix.isEmpty()) {
+    for (int i = 0 ; i < mXAxisVector.size() ; i++) {
+      updateXAxisValue(i, mXAxisVector.at(i) * qPow(10, mXExponent));
+    }
+  }
+  mXUnitPrefix = "";
+  mXExponent = 0;
+
+  if (!mYUnitPrefix.isEmpty()) {
+    for (int i = 0 ; i < mYAxisVector.size() ; i++) {
+      updateYAxisValue(i, mYAxisVector.at(i) * qPow(10, mYExponent));
+    }
+  }
+  mYUnitPrefix = "";
+  mYExponent = 0;
+}
+
+/*!
  * \brief PlotCurve::plotData
  * Plot the curve data.
  * Finds the upper and lower bounds and add the prefix if auto prefix units is on.
@@ -292,7 +315,7 @@ void PlotCurve::plotData(bool toggleSign)
         // update if unit prefix is not empty.
         if (!mXUnitPrefix.isEmpty()) {
           for (int i = 0 ; i < mXAxisVector.size() ; i++) {
-            mXAxisVector.replace(i, mXAxisVector.at(i) / qPow(10, mXExponent));
+            updateXAxisValue(i, mXAxisVector.at(i) / qPow(10, mXExponent));
           }
         }
       }
@@ -308,21 +331,7 @@ void PlotCurve::plotData(bool toggleSign)
       }
     } else {
       // revert the values when there is no perfixUnits.
-      if (!mXUnitPrefix.isEmpty()) {
-        for (int i = 0 ; i < mXAxisVector.size() ; i++) {
-          updateXAxisValue(i, mXAxisVector.at(i) * qPow(10, mXExponent));
-        }
-      }
-      mXUnitPrefix = "";
-      mXExponent = 0;
-
-      if (!mYUnitPrefix.isEmpty()) {
-        for (int i = 0 ; i < mYAxisVector.size() ; i++) {
-          updateYAxisValue(i, mYAxisVector.at(i) * qPow(10, mYExponent));
-        }
-      }
-      mYUnitPrefix = "";
-      mYExponent = 0;
+      resetPrefixUnit();
     }
   }
   setSamples(mXAxisVector, mYAxisVector);
