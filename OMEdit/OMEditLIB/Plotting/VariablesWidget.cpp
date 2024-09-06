@@ -2295,11 +2295,13 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         const QString yVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getYVariable());
         if (yVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
+          // reset prefix unit
+          pPlotCurve->resetPrefixUnit();
           for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
             pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
-          pPlotCurve->plotData();
           pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+          pPlotCurve->plotData();
           if (!(pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric())) {
             break;
           }
@@ -2310,8 +2312,8 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
             for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
-            pPlotCurve->plotData();
             pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+            pPlotCurve->plotData();
           }
         }
       }
