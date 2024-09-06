@@ -1,13 +1,19 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-multary_simplification.mos \
-simplifyIf.mos\
-simplifyWhen.mos\
+Alias.mos \
+Alias2.mos \
+Alias_test1.mos \
+Alias_test2.mos \
+Alias_test3.mos \
+Alias_test4.mos \
+Alias_test5.mos \
+Alias_test6.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+Alias3.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

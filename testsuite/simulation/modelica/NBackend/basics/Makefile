@@ -3,15 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 emptyModel.mos \
 helloWorld.mos \
-multary_simplification.mos \
 parameterSystem.mos \
-Alias.mos \
-Alias2.mos \
-Alias_test1.mos \
-Alias_test2.mos \
-Alias_test3.mos \
-Alias_test4.mos \
-Alias_test5.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
 underdetermined_init.mos \
@@ -21,7 +13,6 @@ variability.mos \
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-Alias3.mos \
 simpleForLoop.mos \
 minimalTearing.mos \
 solveSingleEquation.mos \

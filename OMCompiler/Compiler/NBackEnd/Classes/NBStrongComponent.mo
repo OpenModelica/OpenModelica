@@ -343,6 +343,7 @@ public
       eqn         = Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices))),
       status      = NBSolve.Status.UNPROCESSED
     );
+    // FIXME ph: this returns SLICED_COMPONENT but I think it should return SINGLE_COMPONENT if the whole variable is matched
   end createPseudoSlice;
 
   function createPseudoEntwined
