@@ -321,14 +321,15 @@ public
     input list<Integer> eqn_scal_indices;
     input EquationPointers eqns;
     input Adjacency.Mapping mapping;
+    input Boolean independent = false   "true if scalar equations can be solved in any order";
     output StrongComponent slice;
   protected
     Pointer<Equation> eqn_ptr;
-    Integer first_eqn;
+    Integer first_eqn, eqn_len;
   algorithm
     // get and save sliced equation
     eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
-    (first_eqn, _) := mapping.eqn_AtS[eqn_arr_idx];
+    (first_eqn, eqn_len) := mapping.eqn_AtS[eqn_arr_idx];
 
 /*
     // mark all scalar indices
@@ -336,14 +337,21 @@ public
       arrayUpdate(bucket.marks, scal_idx, true);
     end for;
 */
-    // variable slice necessary? if yes fill it!
-    slice := SLICED_COMPONENT(
-      var_cref    = cref_to_solve,
-      var         = Slice.SLICE(BVariable.getVarPointer(cref_to_solve), {}),
-      eqn         = Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices))),
-      status      = NBSolve.Status.UNPROCESSED
-    );
-    // FIXME ph: this returns SLICED_COMPONENT but I think it should return SINGLE_COMPONENT if the whole variable is matched
+    if listLength(eqn_scal_indices) == eqn_len and independent then
+      slice := SINGLE_COMPONENT(
+        var       = BVariable.getVarPointer(cref_to_solve),
+        eqn       = eqn_ptr,
+        status    = NBSolve.Status.UNPROCESSED
+      );
+    else
+      // variable slice necessary? if yes fill it!
+      slice := SLICED_COMPONENT(
+        var_cref  = cref_to_solve,
+        var       = Slice.SLICE(BVariable.getVarPointer(cref_to_solve), {}),
+        eqn       = Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices))),
+        status    = NBSolve.Status.UNPROCESSED
+      );
+    end if;
   end createPseudoSlice;
 
   function createPseudoEntwined

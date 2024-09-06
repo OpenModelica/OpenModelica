@@ -522,6 +522,7 @@ public
           array<list<Integer>> m_local;
           array<Integer> var_to_eqn_local, eqn_to_var_local;
           list<StrongComponent> local_comps = {};
+          Boolean indep = true;
 
         // a single scalar equation that has nothing to do with arrays
         case {SINGLE()}
@@ -540,6 +541,7 @@ public
           // copy adjacency matrix and matching from full system
           for i in node.eqn_indices loop
             m_local[i] := m[i];
+            indep := indep and listLength(m[i]) == 1;
             eqn_to_var_local[i] := eqn_to_var[i];
             var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
           end for;
@@ -553,7 +555,7 @@ public
               the body turned out to still have strong components:\n"
               + List.toString(node_comp, SuperNode.toString, "", "\t", "\n\t", "\n")});
           end if;
-        then StrongComponent.createPseudoSlice(mapping.eqn_StA[List.first(node.eqn_indices)], node.cref_to_solve, sorted_body_indices, eqns, mapping);
+        then StrongComponent.createPseudoSlice(mapping.eqn_StA[List.first(node.eqn_indices)], node.cref_to_solve, sorted_body_indices, eqns, mapping, indep);
 
         // entwined array equations
         case _ guard(not List.any(node_comp, isNotArrayBucket)) algorithm
