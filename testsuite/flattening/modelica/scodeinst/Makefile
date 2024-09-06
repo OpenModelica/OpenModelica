@@ -1006,6 +1006,9 @@ RecordConstructor3.mo \
 RecordConstructor4.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
+RecordOrder1.mo \
+RecordOrder2.mo \
+RecordOrder3.mo \
 RecordUnknownDim1.mo \
 RecursiveConstants1.mo \
 RecursiveExtends1.mo \

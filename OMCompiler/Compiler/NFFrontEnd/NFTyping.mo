@@ -3502,11 +3502,11 @@ algorithm
 
   (e1, ty1) := typeExp(lhsExp, InstContext.set(context, NFInstContext.LHS), info);
   (e2, ty2) := typeExp(rhsExp, InstContext.set(context, NFInstContext.RHS), info);
-  (e1, e2, ty, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2);
+  (e2, e1, ty, mk) := TypeCheck.matchExpressions(e2, ty2, e1, ty1);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR,
-      {Expression.toString(e1) + " = " + Expression.toString(e2),
+      {Expression.toString(lhsExp) + " = " + Expression.toString(rhsExp),
        Type.toString(ty1) + " = " + Type.toString(ty2)}, info);
     fail();
   end if;
