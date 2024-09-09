@@ -62,7 +62,7 @@
 
 using namespace OMPlot;
 
-PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation)
+PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, int toolbarIconSize)
   : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
 {
   /* set the widget background white. so that the plot is more useable in books and publications. */
@@ -75,7 +75,7 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiv
   setAutoFillBackground(true);
   setPalette(p);
   // setup the main window widget
-  setUpWidget();
+  setUpWidget(toolbarIconSize);
   // Keep default legend font since greek-mu for micro is not displayed correctly with monospaced font.
   setLegendFont(mpPlot->legend()->font());
   // initialize plot by reading all parameters passed to it
@@ -92,12 +92,12 @@ PlotWindow::~PlotWindow()
 
 }
 
-void PlotWindow::setUpWidget()
+void PlotWindow::setUpWidget(int toolbarIconSize)
 {
   // create an instance of qwt plot
   mpPlot = new Plot(this);
   // set up the toolbar
-  setupToolbar();
+  setupToolbar(toolbarIconSize);
   // set the default values
   // set the plot title
   setTitle(tr("Plot by OpenModelica"));
@@ -284,10 +284,14 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
   } else {throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));}
 }
 
-void PlotWindow::setupToolbar()
+void PlotWindow::setupToolbar(int toolbarIconSize)
 {
   QToolBar *toolBar = new QToolBar(this);
   setContextMenuPolicy(Qt::NoContextMenu);
+  // if toolbarIconSize is not defined then its 0. In that case don't set the icon size.
+  if (toolbarIconSize > 0) {
+    setIconSize(QSize(toolbarIconSize, toolbarIconSize));
+  }
   // Interactive Simulation
   if (mIsInteractiveSimulation) {
     //start tool button

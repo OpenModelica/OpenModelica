@@ -279,7 +279,7 @@ void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget)
 void PlotWindowContainer::addPlotWindow()
 {
   try {
-    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, false, OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value());
     pPlotWindow->setPlotType(PlotWindow::PLOT);
     pPlotWindow->setWindowTitle(getUniqueName("Plot : "));
     pPlotWindow->setTitle("");
@@ -315,7 +315,7 @@ void PlotWindowContainer::addPlotWindow()
 void PlotWindowContainer::addParametricPlotWindow()
 {
   try {
-    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, false, OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value());
     pPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
     pPlotWindow->setWindowTitle(getUniqueName("Parametric Plot : "));
     pPlotWindow->setTitle("");
@@ -350,7 +350,7 @@ void PlotWindowContainer::addParametricPlotWindow()
 void PlotWindowContainer::addArrayPlotWindow()
 {
   try {
-    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, false, OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value());
     pPlotWindow->setPlotType(PlotWindow::PLOTARRAY);
     pPlotWindow->setWindowTitle(getUniqueName("Array Plot : "));
     pPlotWindow->setTitle("");
@@ -392,7 +392,7 @@ void PlotWindowContainer::addArrayPlotWindow()
 PlotWindow* PlotWindowContainer::addInteractivePlotWindow(QString owner, int port)
 {
   try {
-    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true);
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true, OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value());
     pPlotWindow->setPlotType(PlotWindow::PLOTINTERACTIVE);
     pPlotWindow->setInteractiveOwner(owner);
     pPlotWindow->setInteractivePort(port);
@@ -434,7 +434,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(QString owner, int por
 void PlotWindowContainer::addArrayParametricPlotWindow()
 {
   try {
-    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, false, OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value());
     pPlotWindow->setPlotType(PlotWindow::PLOTARRAYPARAMETRIC);
     pPlotWindow->setWindowTitle(getUniqueName("Array Parametric Plot : "));
     pPlotWindow->setTitle("");
