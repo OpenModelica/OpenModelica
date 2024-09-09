@@ -130,11 +130,11 @@ private:
   bool mPrefixUnits;
   QMdiSubWindow *mpSubWindow;
 public:
-  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
+  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false, int toolbarIconSize = 0);
 
   ~PlotWindow();
 
-  void setUpWidget();
+  void setUpWidget(int toolbarIconSize);
   void initializePlot(QStringList arguments);
   void setVariablesList(QStringList variables);
   void setPlotType(PlotType type);
@@ -147,7 +147,7 @@ public:
   PlotType getPlotType() const {return mPlotType;}
   void initializeFile(QString file);
   void getStartStopTime(double &start, double &stop);
-  void setupToolbar();
+  void setupToolbar(int toolbarIconSize);
   void plot(PlotCurve *pPlotCurve = 0);
   void plotParametric(PlotCurve *pPlotCurve = 0);
   void plotArray(double time, PlotCurve *pPlotCurve = 0);
