@@ -4677,7 +4677,7 @@ algorithm
     case (BackendDAE.STATEORDER(ht,_))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        if listLength(tplLst) > 0 then
+        if not listEmpty(tplLst) then
           print("State Order: (");
           str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
           len = listLength(tplLst);

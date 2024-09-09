@@ -1506,11 +1506,11 @@ algorithm
       Operator inv_op, fixed_op;
 
     case Expression.MULTARY() algorithm
-      if listLength(exp.arguments) > 0 then
+      if not listEmpty(exp.arguments) then
         // it has arguments, take the first one and start with it
         new_exp :: args := exp.arguments;
         inv_args    := exp.inv_arguments;
-      elseif listLength(exp.inv_arguments) > 0 then
+      elseif not listEmpty(exp.inv_arguments) then
         // it has no arguments but inverse arguments
         if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
           // take the first one out and negate it

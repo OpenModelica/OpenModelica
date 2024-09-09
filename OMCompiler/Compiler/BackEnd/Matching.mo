@@ -5661,7 +5661,7 @@ algorithm
         unmatched_eqs := getUnassigned(ne, ass1_1, {});
 
         if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))+"_unmatched "+intString(listLength(unmatched_eqs))); end if;
-        if Flags.isSet(Flags.BLT_DUMP) and listLength(unmatched_eqs) > 0 then print("unmatched equations: "+stringDelimitList(List.map(unmatched_eqs,intString),", ")+"\n\n"); end if;
+        if Flags.isSet(Flags.BLT_DUMP) and not listEmpty(unmatched_eqs) then print("unmatched equations: "+stringDelimitList(List.map(unmatched_eqs,intString),", ")+"\n\n"); end if;
 
         /*
           -------------------------------------
@@ -5686,7 +5686,7 @@ algorithm
         else
           (syst, meqns1, ass1_1, ass2_1) := (syst, meqns1, ass1_1, ass2_1);
         end if;
-        if Flags.isSet(Flags.BLT_DUMP) and listLength(meqns1) > 0
+        if Flags.isSet(Flags.BLT_DUMP) and not listEmpty(meqns1)
           then print("Index Reduction neccessary!\n"
                      + "MSS subsets:\n " + stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n\n");
         end if;

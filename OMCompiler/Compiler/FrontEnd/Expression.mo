@@ -11785,7 +11785,7 @@ public function hasZeroDimension
 protected
   list<Integer> intDims;
 algorithm
-  if listLength(inDims) == 0 then
+  if listEmpty(inDims)then
     hasZeroDimension := true;
     return;
   end if;

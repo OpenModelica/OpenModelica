@@ -125,7 +125,7 @@ algorithm
 
         // This function can so far only handle functions with at most one
         // statement and output and no local variables.
-        if listLength(body) > 1 or listLength(outputs) <> 1 or listLength(locals) > 0 then
+        if listLength(body) > 1 or listLength(outputs) <> 1 or not listEmpty(locals) then
           exp := Expression.CALL(call);
           return;
         end if;
