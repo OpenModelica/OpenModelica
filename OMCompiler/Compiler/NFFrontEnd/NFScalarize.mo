@@ -181,31 +181,31 @@ protected
   list<BackendInfo> backend_attributes;
 algorithm
   try
-  vars := listReverse(vars);
-  crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name));
-  elem_ty             := Type.arrayElementType(var.ty);
-  backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
-  if Binding.isBound(var.binding) then
-    binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true);
-    bind_var          := Binding.variability(var.binding);
-    bind_src          := Binding.source(var.binding);
-    for cr in listReverse(crefs) loop
-      (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-      binding := Binding.makeFlat(exp, bind_var, bind_src);
-      binfo :: backend_attributes := backend_attributes;
-      vars := Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
-    end for;
-  else
-    for cr in listReverse(crefs) loop
-      binfo :: backend_attributes := backend_attributes;
-      vars := Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
-    end for;
-  end if;
-  // filter sliced variables
-  // ToDo: do this more efficiently and not create them in the first place
-  if not (listEmpty(indices) or listLength(indices) == listLength(vars)) then
-    vars := List.keepPositions(vars, indices);
-  end if;
+    vars := listReverse(vars);
+    crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name));
+    elem_ty             := Type.arrayElementType(var.ty);
+    backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
+    if Binding.isBound(var.binding) then
+      binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true);
+      bind_var          := Binding.variability(var.binding);
+      bind_src          := Binding.source(var.binding);
+      for cr in listReverse(crefs) loop
+        (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+        binding := Binding.makeFlat(exp, bind_var, bind_src);
+        binfo :: backend_attributes := backend_attributes;
+        vars := Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
+      end for;
+    else
+      for cr in listReverse(crefs) loop
+        binfo :: backend_attributes := backend_attributes;
+        vars := Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
+      end for;
+    end if;
+    // filter sliced variables
+    // ToDo: do this more efficiently and not create them in the first place
+    if not (listEmpty(indices) or listLength(indices) == listLength(vars)) then
+      vars := List.keepPositions(vars, indices);
+    end if;
   else
     Error.assertion(false, getInstanceName() + " failed for: " + Variable.toString(var), sourceInfo());
   end try;

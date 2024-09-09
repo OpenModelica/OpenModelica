@@ -325,11 +325,11 @@ public
     output StrongComponent slice;
   protected
     Pointer<Equation> eqn_ptr;
-    Integer first_eqn, eqn_len;
+    Integer first_eqn, eqn_size;
   algorithm
     // get and save sliced equation
     eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
-    (first_eqn, eqn_len) := mapping.eqn_AtS[eqn_arr_idx];
+    (first_eqn, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
 
 /*
     // mark all scalar indices
@@ -337,7 +337,7 @@ public
       arrayUpdate(bucket.marks, scal_idx, true);
     end for;
 */
-    if listLength(eqn_scal_indices) == eqn_len and independent then
+    if listLength(eqn_scal_indices) == eqn_size and independent then
       slice := SINGLE_COMPONENT(
         var       = BVariable.getVarPointer(cref_to_solve),
         eqn       = eqn_ptr,
