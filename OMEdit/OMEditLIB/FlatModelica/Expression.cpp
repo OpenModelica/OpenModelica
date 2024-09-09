@@ -2905,7 +2905,7 @@ namespace FlatModelica
       return e1.enumIndex() == e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() == e2.intValue();
-    } else if (e1.isReal() && e2.isReal()) {
+    } else if (e1.isNumber() && e2.isNumber()) {
       return e1.realValue() == e2.realValue();
     } else {
       return false;
@@ -2928,7 +2928,7 @@ namespace FlatModelica
       return e1.enumIndex() != e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() != e2.intValue();
-    } else if (e1.isReal() && e2.isReal()) {
+    } else if (e1.isNumber() && e2.isNumber()) {
       return e1.realValue() != e2.realValue();
     } else {
       return false;
@@ -2951,7 +2951,7 @@ namespace FlatModelica
       return e1.enumIndex() < e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() < e2.intValue();
-    } else if (e1.isReal() && e2.isReal()) {
+    } else if (e1.isNumber() && e2.isNumber()) {
       return e1.realValue() < e2.realValue();
     } else {
       return false;
@@ -2974,7 +2974,7 @@ namespace FlatModelica
       return e1.enumIndex() <= e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() <= e2.intValue();
-    } else if (e1.isReal() && e2.isReal()) {
+    } else if (e1.isNumber() && e2.isNumber()) {
       return e1.realValue() <= e2.realValue();
     } else {
       return false;
@@ -2997,7 +2997,7 @@ namespace FlatModelica
       return e1.enumIndex() > e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() > e2.intValue();
-    } else if (e1.isReal() && e2.isReal()) {
+    } else if (e1.isNumber() && e2.isNumber()) {
       return e1.realValue() > e2.realValue();
     } else {
       return false;
@@ -3020,7 +3020,7 @@ namespace FlatModelica
       return e1.enumIndex() >= e2.enumIndex();
     } else if (e1.isInteger() && e2.isInteger()) {
       return e1.intValue() >= e2.intValue();
-    } else if (e1.isReal() && e2.isReal()) {
+    } else if (e1.isNumber() && e2.isNumber()) {
       return e1.realValue() >= e2.realValue();
     } else {
       return false;
