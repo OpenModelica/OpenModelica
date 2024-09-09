@@ -1,0 +1,137 @@
+// name: exposeLocalIOsArray
+// keywords: FMI input output
+// status: correct
+// teardown_command: rm -f *LocalIOsArray.System* modelDescription.tmp.xml
+
+setCommandLineOptions("--simCodeTarget=Cpp");
+setCommandLineOptions("--exposeLocalIOs=1"); getErrorString();
+
+loadString("
+package LocalIOsArray
+
+  connector RealOutput = output Real;
+
+  model Component
+    RealOutput y;
+  equation
+    y = time;
+  end Component;
+
+  model System
+    Component component;
+    Component[2] componentArray;
+  end System;
+
+end LocalIOsArray;
+");
+getErrorString();
+
+buildModelFMU(LocalIOsArray.System, version="2.0", fileNamePrefix="LocalIOsArray.System"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq LocalIOsArray.System.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// "LocalIOsArray.System.fmu"
+// ""
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"LocalIOsArray.System\"
+//   description=\"\"
+//   version=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"LocalIOsArray_System\"
+//     needsExecutionTool=\"false\"
+//     completedIntegratorStepNotNeeded=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canNotUseMemoryManagementFunctions=\"false\"
+//     canGetAndSetFMUstate=\"false\"
+//     canSerializeFMUstate=\"false\"
+//     providesDirectionalDerivative=\"false\">
+//   </ModelExchange>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"'component.y'\"
+//     valueReference=\"0\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"'componentArray[1].y'\"
+//     valueReference=\"1\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"'componentArray[2].y'\"
+//     valueReference=\"2\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"component.y\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"componentArray[1].y\"
+//     valueReference=\"1\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"componentArray[2].y\"
+//     valueReference=\"2\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Outputs>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult
