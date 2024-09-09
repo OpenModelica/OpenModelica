@@ -2388,7 +2388,6 @@ algorithm
       attributes := tlio_var.attributes;
       if attributes.direction == Direction.NONE then
         tlio_var := variable; // same attributes like start, unit
-        tlio_var.name := ComponentRef.combineSubscripts(tlio_var.name);
         tlio_var.binding := UNBOUND(); // value is defined with tlio_eql
         // find new name in global scope, starting with quoted identifier
         cref := tlio_var.name;
