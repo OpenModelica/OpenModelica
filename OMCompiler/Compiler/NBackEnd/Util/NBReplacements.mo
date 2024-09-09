@@ -323,8 +323,6 @@ public
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
         body_exp := SimplifyExp.combineBinaries(body_exp);
         body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
-        // inline possible record constructors
-        //body_exp := Expression.map(body_exp, function applyFuncTupleExp(variables = variables));
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
@@ -335,26 +333,6 @@ public
       else exp;
     end match;
   end applyFuncExp;
-
-  function applyFuncTupleExp
-    input output Expression exp;
-    input VariablePointers variables;
-  protected
-    Type ty;
-    Option<Integer> sz;
-    list<Expression> inlined_record = {};
-  algorithm
-    ty := Expression.typeOf(exp);
-    sz := Type.complexSize(ty);
-
-    // if the call returns a record constructor, it has to be inlined
-    if Util.isSome(sz) then
-      for i in Util.getOption(sz):-1:1 loop
-        inlined_record := Inline.inlineRecordExp(exp, i, variables) :: inlined_record;
-      end for;
-      exp := Expression.TUPLE(ty, inlined_record);
-    end if;
-  end applyFuncTupleExp;
 
   function addInputArgTpl
     "adds an input to argument replacement and also adds

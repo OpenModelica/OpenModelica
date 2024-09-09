@@ -51,6 +51,7 @@ protected
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
 
   // NB imports
@@ -138,50 +139,6 @@ public
     end match;
   end inlineForEquation;
 
-  function inlineArrayEquation
-    "inlines array equations of the form {a, b, c , ...} = {d, e, f, ...}
-    to a = d; and so on. Also inlines them if inside for-equation or nested arrays.
-    ToDo: inside When/If"
-    input output Equation eqn;
-    input Pointer<Integer> index;
-    input Iterator iter;
-    input Pointer<list<Pointer<Equation>>> array_eqns;
-  algorithm
-    eqn := match eqn
-      local
-        Expression lhs, rhs;
-        Equation body;
-        Pointer<Equation> new_eqn;
-        Pointer<list<Pointer<Equation>>> new_array_eqns;
-        Equation inlined;
-        list<Pointer<Equation>> eqns;
-
-      case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.ARRAY()) algorithm
-        eqns := Pointer.access(array_eqns);
-        for i in 1: arrayLength(lhs.elements) loop
-          new_array_eqns := Pointer.create({});
-          new_eqn := Equation.makeAssignment(lhs.elements[i], rhs.elements[i], index, NBEquation.SIMULATION_STR, iter, eqn.attr);
-          inlined := inlineArrayEquation(Pointer.access(new_eqn), index, iter, new_array_eqns);
-          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
-            print("-- Result: " + Equation.toString(inlined) + "\n");
-          end if;
-          eqns := match inlined
-            case Equation.DUMMY_EQUATION() then listAppend(eqns, Pointer.access(new_array_eqns));
-            else new_eqn :: eqns;
-          end match;
-        end for;
-        Pointer.update(array_eqns, eqns);
-      then Equation.DUMMY_EQUATION();
-
-      case Equation.FOR_EQUATION(body = {body}) algorithm
-        body := inlineArrayEquation(body, index, eqn.iter, array_eqns);
-      then if Equation.isDummy(body) then body else eqn;
-
-      else eqn;
-    end match;
-  end inlineArrayEquation;
-
   function functionInlineable
     "returns true if the function can be inlined"
     input Function fn;
@@ -197,19 +154,6 @@ public
     end if;
   end functionInlineable;
 
-  function inlineRecords
-    "also inlines simple record equalities"
-    input output EqData eqData;
-    input VariablePointers variables;
-  protected
-    Pointer<Integer> index = EqData.getUniqueIndex(eqData);
-    Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
-  algorithm
-    eqData := EqData.map(eqData, function inlineRecordEquation(iter = Iterator.EMPTY(), variables = variables, record_eqns = new_eqns, index = index, inlineSimple = true));
-    eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
-    eqData := EqData.compress(eqData);
-  end inlineRecords;
-
   function inlineRecordSliceEquation
     input Slice<Pointer<Equation>> slice;
     input VariablePointers variables;
@@ -219,7 +163,7 @@ public
   protected
     Pointer<list<Pointer<Equation>>> record_eqns = Pointer.create({});
   algorithm
-    inlineRecordEquation(Pointer.access(Slice.getT(slice)), Iterator.EMPTY(), variables, record_eqns, index, inlineSimple);
+    inlineRecordTupleArrayEquation(Pointer.access(Slice.getT(slice)), Iterator.EMPTY(), variables, record_eqns, index, inlineSimple);
     // somehow split slice.indices
     slices := list(Slice.SLICE(eqn, {}) for eqn in Pointer.access(record_eqns));
   end inlineRecordSliceEquation;
@@ -271,131 +215,207 @@ protected
     Pointer<Integer> index = EqData.getUniqueIndex(eqData);
     Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
   algorithm
-    eqData := EqData.map(eqData, function inlineRecordEquation(iter = Iterator.EMPTY(), variables = variables, record_eqns = new_eqns, index = index, inlineSimple = false));
-    eqData := EqData.map(eqData, function inlineTupleEquation(index = index, iter = Iterator.EMPTY(), tuple_eqns = new_eqns));
-    eqData := EqData.map(eqData, function inlineArrayEquation(index = index, iter = Iterator.EMPTY(), array_eqns = new_eqns));
+    eqData := EqData.map(eqData, function inlineRecordTupleArrayEquation(iter = Iterator.EMPTY(), variables = variables, new_eqns = new_eqns, index = index, inlineSimple = false));
     eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
     eqData := EqData.compress(eqData);
   end inlineRecordsTuplesArrays;
+
+protected
+  function inlineRecordTupleArrayEquation
+    input output Equation eqn;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input Pointer<Integer> index;
+    input Boolean inlineSimple;
+  algorithm
+    try
+      eqn := match eqn
+        local
+          Equation new_eqn, body;
+          Expression lhs, rhs;
+          list<Expression> elements;
+          Integer size;
+
+        // don't inline simple cref equalities
+        case Equation.RECORD_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()) guard(not inlineSimple) then eqn;
+        case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF())  guard(not inlineSimple) then eqn;
+
+        // try to inline other record equations. try catch to be sure to not discard
+        case Equation.RECORD_EQUATION(ty = Type.COMPLEX()) then inlineRecordEquation(eqn, eqn.lhs, eqn.rhs, iter, eqn.attr, eqn.recordSize, variables, new_eqns, index, inlineSimple);
+
+        // only if record size is not NONE()
+        case Equation.ARRAY_EQUATION(recordSize = SOME(size)) then inlineRecordEquation(eqn, eqn.lhs, eqn.rhs, iter, eqn.attr, size, variables, new_eqns, index, inlineSimple);
+
+        // inlining potential tuple equations
+        case Equation.RECORD_EQUATION() then inlineTupleEquation(eqn, eqn.lhs, eqn.rhs, eqn.attr, iter, variables, new_eqns, index);
+
+        // {...} = {...} array equation
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.ARRAY()) algorithm
+        then inlineArrayEquation(eqn, lhs.elements, rhs.elements, eqn.attr, iter, variables, new_eqns, index);
+
+        // CREF = {...} array equation
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.ARRAY()) algorithm
+          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, lhs) for i in 1:arrayLength(rhs.elements));
+        then inlineArrayEquation(eqn, listArray(elements), rhs.elements, eqn.attr, iter, variables, new_eqns, index);
+
+        // {...} = CREF array equation
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.CREF()) algorithm
+          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs) for i in 1:arrayLength(lhs.elements));
+        then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, index);
+
+        // apply on for-equation. assumed to be split up
+        case Equation.FOR_EQUATION(body = {body}) algorithm
+          new_eqn := inlineRecordTupleArrayEquation(body, eqn.iter, variables, new_eqns, index, inlineSimple);
+          new_eqn := if Equation.isDummy(new_eqn) then new_eqn else eqn;
+        then new_eqn;
+
+        // nothing happens
+        else eqn;
+      end match;
+    else
+      if Flags.isSet(Flags.FAILTRACE) then
+        Error.addCompilerWarning("Failed to inline following equation:\n" + Equation.toString(eqn));
+      end if;
+    end try;
+  end inlineRecordTupleArrayEquation;
 
   function inlineRecordEquation
     "tries to inline a record equation. Removes the old equation by making it a dummy
     and appends new equations to the mutable list.
     EquationPointers.compress() should be used afterwards to remove the dummy equations."
     input output Equation eqn;
-    input Iterator iter;
-    input VariablePointers variables;
-    input Pointer<list<Pointer<Equation>>> record_eqns;
-    input Pointer<Integer> index;
-    input Boolean inlineSimple;
-  algorithm
-    eqn := match eqn
-      local
-        Equation new_eqn;
-        Integer size;
-        String str;
-
-      // don't inline simple cref equalities
-      case Equation.RECORD_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()) guard(not inlineSimple) then eqn;
-      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF())  guard(not inlineSimple) then eqn;
-
-      // try to inline other record equations. try catch to be sure to not discard
-      case Equation.RECORD_EQUATION(ty = Type.COMPLEX()) algorithm
-        try
-          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-            str := "[" + getInstanceName() + "] Inlining: ";
-            if Iterator.isEmpty(iter) then
-              str := str + Equation.toString(eqn);
-            else
-              str := str + "\n" + Equation.forEquationToString(iter, {eqn}, "", "[----] ", "[FOR-] " + "(" + intString(Equation.size(Pointer.create(eqn)) * Iterator.size(iter)) + ")" + EquationAttributes.toString(eqn.attr, " "));
-            end if;
-            print(str + "\n");
-          end if;
-          new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, iter, eqn.attr, eqn.recordSize, variables, record_eqns, index, inlineSimple);
-          if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("\n"); end if;
-        else
-          // inlining failed, keep old equation
-          new_eqn := eqn;
-        end try;
-      then new_eqn;
-
-      // only if record size is not NONE()
-      case Equation.ARRAY_EQUATION(recordSize = SOME(size)) algorithm
-        try
-          if Flags.isSet(Flags.DUMPBACKENDINLINE) then print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n"); end if;
-          new_eqn := inlineRecordEquationWork(eqn.lhs, eqn.rhs, iter, eqn.attr, size, variables, record_eqns, index, inlineSimple);
-        else
-          // inlining failed, keep old equation
-          new_eqn := eqn;
-        end try;
-      then new_eqn;
-
-      // iterate over body equations of for-loop
-      case Equation.FOR_EQUATION() algorithm
-        new_eqn := inlineRecordEquation(List.first(eqn.body), eqn.iter, variables, record_eqns, index, inlineSimple);
-        new_eqn := if Equation.isDummy(new_eqn) then new_eqn else eqn;
-      then new_eqn;
-
-      else eqn;
-    end match;
-  end inlineRecordEquation;
-
-  function inlineRecordEquationWork
     input Expression lhs;
     input Expression rhs;
     input Iterator iter;
     input EquationAttributes attr;
     input Integer recordSize;
     input VariablePointers variables;
-    input Pointer<list<Pointer<Equation>>> record_eqns;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
     input Pointer<Integer> index;
     input Boolean inlineSimple;
-    output Equation new_eqn;
   protected
-    list<Pointer<Equation>> tmp_eqns;
-    Pointer<Equation> tmp_eqn;
-    Pointer<list<Pointer<Equation>>> tmp_eqns_ptr;
     Expression new_lhs, new_rhs;
+    list<Pointer<Equation>> eqns;
   algorithm
-    tmp_eqns := Pointer.access(record_eqns);
+    if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+    end if;
+    eqns := Pointer.access(new_eqns);
     for i in 1:recordSize loop
-      new_lhs := inlineRecordExp(lhs, i, variables);
-      new_rhs := inlineRecordExp(rhs, i, variables);
-
-      // create new equation
-      tmp_eqn := Equation.makeAssignment(new_lhs, new_rhs, index, NBEquation.SIMULATION_STR, iter, attr);
-
-      // if the equation still has a record type, inline it further
-      if Equation.isRecordEquation(tmp_eqn) then
-        tmp_eqns_ptr := Pointer.create(tmp_eqns);
-        _ := inlineRecordEquation(Pointer.access(tmp_eqn), iter, variables, tmp_eqns_ptr, index, inlineSimple);
-        tmp_eqns := Pointer.access(tmp_eqns_ptr);
-      else
-        tmp_eqns := tmp_eqn :: tmp_eqns;
-        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-          print("-- Result: " + Equation.toString(Pointer.access(tmp_eqn)) + "\n");
-        end if;
-      end if;
+      new_lhs := inlineRecordConstructorExp(lhs, i, variables);
+      new_rhs := inlineRecordConstructorExp(rhs, i, variables);
+      eqns    := createInlinedEquation(eqns, new_lhs, new_rhs, attr, iter, variables, index);
     end for;
-    Pointer.update(record_eqns, tmp_eqns);
-    new_eqn := Equation.DUMMY_EQUATION();
-  end inlineRecordEquationWork;
+    Pointer.update(new_eqns, eqns);
+    eqn := Equation.DUMMY_EQUATION();
+  end inlineRecordEquation;
 
-public
-  function inlineRecordExp
+  function inlineTupleEquation
+    "online inlines of LHS and RHS are of type Tuple"
+    input output Equation eqn;
+    input Expression LHS;
+    input Expression RHS;
+    input EquationAttributes attr;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input Pointer<Integer> index;
+  protected
+    list<Pointer<Equation>> eqns;
+    list<Expression> lhs_elems, rhs_elems;
+    Expression lhs, rhs;
+    Pointer<Equation> tmp_eqn;
+  algorithm
+    lhs_elems := getElementList(LHS);
+    rhs_elems := getElementList(RHS);
+    if not listEmpty(lhs_elems) and listLength(lhs_elems) == listLength(rhs_elems) then
+      if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+        print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+      end if;
+      eqns := Pointer.access(new_eqns);
+      for tpl in List.zip(lhs_elems, rhs_elems) loop
+        (lhs, rhs) := tpl;
+        // skip wild cref assignments
+        if not (Expression.isWildCref(lhs) or Expression.isWildCref(rhs)) then
+          eqns := createInlinedEquation(eqns, lhs, rhs, attr, iter, variables, index);
+        end if;
+      end for;
+      Pointer.update(new_eqns, eqns);
+      eqn := Equation.DUMMY_EQUATION();
+    end if;
+  end inlineTupleEquation;
+
+  function inlineArrayEquation
+    "inlines array equations of the form {a, b, c , ...} = {d, e, f, ...}
+    to a = d; and so on. Also inlines them if inside for-equation or nested arrays.
+    ToDo: inside When/If"
+    input output Equation eqn;
+    input array<Expression> lhs_elements;
+    input array<Expression> rhs_elements;
+    input EquationAttributes attr;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input Pointer<Integer> index;
+  protected
+    Pointer<list<Pointer<Equation>>> tmp_eqns;
+    Equation inlined;
+    list<Pointer<Equation>> eqns;
+    Pointer<Equation> new_eqn;
+  algorithm
+    if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+    end if;
+    eqns := Pointer.access(new_eqns);
+    for i in 1: arrayLength(lhs_elements) loop
+      eqns := createInlinedEquation(eqns, lhs_elements[i], rhs_elements[i], attr, iter, variables, index);
+    end for;
+    Pointer.update(new_eqns, eqns);
+    eqn := Equation.DUMMY_EQUATION();
+  end inlineArrayEquation;
+
+  function createInlinedEquation
+    "used for inlining record, tuple and array equations.
+    tries to create new equation from lhs and rhs and applying
+    the inlining methods on the results"
+    input output list<Pointer<Equation>> eqns;
+    input Expression lhs;
+    input Expression rhs;
+    input EquationAttributes attr;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<Integer> index;
+  protected
+    Pointer<list<Pointer<Equation>>> tmp_eqns = Pointer.create({});
+    Equation inlined;
+    Pointer<Equation> new_eqn;
+  algorithm
+    new_eqn := Equation.makeAssignment(lhs, rhs, index, NBEquation.SIMULATION_STR, iter, attr);
+    inlined := inlineRecordTupleArrayEquation(Pointer.access(new_eqn), iter, variables, tmp_eqns, index, false);
+    eqns := match inlined
+      case Equation.DUMMY_EQUATION() then listAppend(eqns, Pointer.access(tmp_eqns));
+      else algorithm
+        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+          print("-- Result: " + Equation.toString(inlined) + "\n");
+        end if;
+      then new_eqn :: eqns;
+    end match;
+  end createInlinedEquation;
+
+  function inlineRecordConstructorExp
     "inlines record constructors in a single expression"
     input output Expression exp;
     input Integer index;
     input VariablePointers variables;
   algorithm
     exp := Expression.nthRecordElement(index, exp);
-    // lower indexed record constructor elements
+   // lower indexed record constructor elements
     exp := Expression.map(exp, inlineRecordConstructorElements);
     // lower the new component references of record attributes
     exp := Expression.map(exp, function BackendDAE.lowerComponentReferenceExp(variables = variables));
-  end inlineRecordExp;
+  end inlineRecordConstructorExp;
 
-protected
   function inlineRecordConstructorElements
     "removes indexed constructor element calls
     Constructor(a,b,c)[2] --> b"
@@ -419,68 +439,14 @@ protected
           new_exp := exp;
         end if;
       then new_exp;
+
       else exp;
     end match;
   end inlineRecordConstructorElements;
 
-  function inlineTupleEquation
-    "inlines equations of the form TPL1 = TPL2 which is not modelica standard but can be created
-    by the function alias module and need to be removed afterwards"
-    input output Equation eqn;
-    input Pointer<Integer> index;
-    input Iterator iter;
-    input Pointer<list<Pointer<Equation>>> tuple_eqns;
-  algorithm
-    eqn := match eqn
-      local
-        list<Pointer<Equation>> eqns;
-        list<Expression> lhs_elems, rhs_elems;
-        Expression lhs, rhs;
-        Pointer<Equation> tmp_eqn;
-        Equation new_eqn, body_eqn;
-
-      case Equation.RECORD_EQUATION() algorithm
-        lhs_elems := getElementList(eqn.lhs);
-        rhs_elems := getElementList(eqn.rhs);
-        if not listEmpty(lhs_elems) and listLength(lhs_elems) == listLength(rhs_elems) then
-          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-            print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
-          end if;
-          eqns := Pointer.access(tuple_eqns);
-          for tpl in List.zip(lhs_elems, rhs_elems) loop
-            (lhs, rhs) := tpl;
-            if not (Expression.isWildCref(lhs) or Expression.isWildCref(rhs)) then
-              tmp_eqn := Equation.makeAssignment(lhs, rhs, index, NBVariable.AUXILIARY_STR, iter, eqn.attr);
-              if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-                print("-- Result: " + Equation.toString(Pointer.access(tmp_eqn)) + "\n");
-              end if;
-              eqns := tmp_eqn :: eqns;
-            end if;
-          end for;
-          Pointer.update(tuple_eqns, eqns);
-          new_eqn := Equation.DUMMY_EQUATION();
-        else
-          new_eqn := eqn;
-        end if;
-      then new_eqn;
-
-      // inline tuple equations in for loops
-      case Equation.FOR_EQUATION(body = {body_eqn}) algorithm
-        body_eqn := inlineTupleEquation(body_eqn, index, eqn.iter, tuple_eqns);
-        if Equation.isDummy(body_eqn) then
-          new_eqn := Equation.DUMMY_EQUATION();
-        else
-          new_eqn := eqn;
-        end if;
-      then new_eqn;
-
-      // ToDo: inline tuple in if and when
-
-      else eqn;
-    end match;
-  end inlineTupleEquation;
-
   function getElementList
+    "used for inlining tuple equations
+    returns the tuple elements of an expression"
     input Expression exp;
     output list<Expression> elements;
   algorithm
@@ -502,7 +468,6 @@ protected
       else {};
     end match;
   end getElementList;
-
 
   annotation(__OpenModelica_Interface="backend");
 end NBInline;

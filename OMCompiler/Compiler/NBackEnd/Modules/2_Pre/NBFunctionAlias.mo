@@ -433,9 +433,7 @@ protected
   protected
     Function fn = Call.typedFunction(call);
   algorithm
-    b := not Inline.functionInlineable(fn)
-     and not Function.isSpecialBuiltin(fn)
-     and not replaceException(fn);
+    b := not (Inline.functionInlineable(fn) or Function.isSpecialBuiltin(fn) or replaceException(fn));
   end checkCallReplacement;
 
   function replaceException

@@ -1145,7 +1145,7 @@ protected
           then field;
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
-              + " for type " + Type.toString(ty) + " is requested, but the cref is not part of a record:" + ComponentRef.toString(cref) + "."});
+              + " for type " + Type.toString(ty) + " is requested, but the cref is not part of a record: " + ComponentRef.toString(cref) + "."});
           then fail();
         end match;
         // see if there is nested skips

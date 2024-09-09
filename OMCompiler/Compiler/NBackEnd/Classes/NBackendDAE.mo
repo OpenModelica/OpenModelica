@@ -253,8 +253,8 @@ public
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
-      (FunctionAlias.main, "FunctionAlias"),
       (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
+      (FunctionAlias.main, "FunctionAlias"),
       (function simplify(init = false), "Simplify 1"),
       (Alias.main,         "Alias"),
       (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
@@ -705,8 +705,7 @@ protected
         BackendInfo binfo;
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        // kabdelhak: why is this list reversed in the frontend? doesnt match input order
-        varKind.children := listReverse(list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children));
+        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children);
         // set parent for all children
         varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
         binfo.varKind := varKind;
