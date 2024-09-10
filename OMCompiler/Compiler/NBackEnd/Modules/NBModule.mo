@@ -255,6 +255,7 @@ public
     input output VarData varData              "Data containing variable pointers, for lowering purposes";
     input FunctionTree funcTree               "function tree for differentiation (solve)";
     input list<DAE.InlineType> inline_types   "Inline types for which to inline at the current state";
+    input Boolean init                        "true if for initial partition";
   end inlineInterface;
 
 // =========================================================================
