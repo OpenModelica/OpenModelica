@@ -560,7 +560,7 @@ algorithm
               (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
                 vis, outerBinding, prefix, {}, sections, deletedVars, settings);
             then flattenSimpleComponent(comp_node, c, vis, outerBinding,
-              Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
+              Class.getTypeAttributes(cls), prefix, vars, sections, settings, listReverse(children));
 
           else
             algorithm
@@ -1131,7 +1131,7 @@ algorithm
   // if we don't scalarize flatten the class and vectorize it
   (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), deletedVars, settings);
 
-  for v in vrs loop
+  for v in listReverse(vrs) loop
     v.ty := Type.liftArrayLeftList(v.ty, dimensions);
     vars := v :: vars;
   end for;
