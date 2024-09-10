@@ -143,7 +143,7 @@ public
       // Modules
       modules := {
         (function BackendDAE.simplify(init = true), "Simplify"),
-        (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Inline"),
+        (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}, init = true), "Inline"),
         (function Partitioning.main(kind = NBPartition.Kind.INI),  "Partitioning"),
         (cleanup,                                                  "Cleanup"),
         (function Causalize.main(kind = NBPartition.Kind.INI),     "Causalize"),

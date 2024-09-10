@@ -240,6 +240,7 @@ public
     list<tuple<String, Real>> postOptClocks;
     list<String> followEquations = Flags.getConfigStringList(Flags.DEBUG_FOLLOW_EQUATIONS);
     Option<UnorderedSet<String>> eq_filter_opt;
+    list<DAE.InlineType> inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()};
   algorithm
     // if we filter dump for equations
     if listEmpty(followEquations) then
@@ -254,7 +255,7 @@ public
     preOptModules := {
       (Bindings.main,      "Bindings"),
       (FunctionAlias.main, "FunctionAlias"),
-      (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
+      (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
       (function simplify(init = false), "Simplify 1"),
       (Alias.main,         "Alias"),
       (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
@@ -266,7 +267,7 @@ public
     mainModules := {
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
       (function Causalize.main(kind = NBPartition.Kind.ODE),                "Causalize"),
-      (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}), "After Index Reduction Inline"),
+      (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
       (Initialization.main,                                                 "Initialization")
     };
 

@@ -77,6 +77,7 @@ public
      the given input."
     extends Module.wrapper;
     input list<DAE.InlineType> inline_types;
+    input Boolean init;
   algorithm
     bdae := match bdae
       local
@@ -88,7 +89,7 @@ public
             print(StringUtil.headline_4("[dumpBackendInline] Inlining operatations for: "
               + List.toString(inline_types, DAEDump.dumpInlineTypeBackendStr)));
           end if;
-          (eqData, varData) := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types);
+          (eqData, varData) := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types, init);
           bdae.eqData := eqData;
           bdae.varData := varData;
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
@@ -182,9 +183,13 @@ protected
     // apply replacements
     eqData  := Replacements.replaceFunctions(eqData, variables, replacements);
 
-    // replace record constucters after functions because record operator
-    // functions will produce record constructors once inlined
-    eqData  := inlineRecordsTuplesArrays(eqData, variables);
+    // do not inline records tuples and arrays after causalization
+    // ToDo: do it properly on strong components, cannot remove equations here
+    if not List.any(inline_types, function DAEUtil.inlineTypeEqual(it2 = DAE.AFTER_INDEX_RED_INLINE())) then
+      // replace record constucters after functions because record operator
+      // functions will produce record constructors once inlined
+      eqData  := inlineRecordsTuplesArrays(eqData, variables, init);
+    end if;
 
     // collect new iterators from replaced function bodies
     set     := UnorderedSet.new(BVariable.hash, BVariable.equalName);
@@ -211,13 +216,26 @@ protected
     "does not inline simple record equalities"
     input output EqData eqData;
     input VariablePointers variables;
+    input Boolean init;
   protected
     Pointer<Integer> index = EqData.getUniqueIndex(eqData);
     Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
   algorithm
-    eqData := EqData.map(eqData, function inlineRecordTupleArrayEquation(iter = Iterator.EMPTY(), variables = variables, new_eqns = new_eqns, index = index, inlineSimple = false));
-    eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
-    eqData := EqData.compress(eqData);
+    if init then
+      eqData := match eqData
+        case EqData.EQ_DATA_SIM() algorithm
+          eqData.initials := EquationPointers.map(eqData.initials, function inlineRecordTupleArrayEquation(iter = Iterator.EMPTY(), variables = variables, new_eqns = new_eqns, index = index, inlineSimple = false));
+          eqData.initials := EquationPointers.addList(Pointer.access(new_eqns), eqData.initials);
+          eqData.initials := EquationPointers.compress(eqData.initials);
+        then eqData;
+
+        else eqData;
+      end match;
+    else
+      eqData := EqData.map(eqData, function inlineRecordTupleArrayEquation(iter = Iterator.EMPTY(), variables = variables, new_eqns = new_eqns, index = index, inlineSimple = false));
+      eqData := EqData.addUntypedList(eqData, Pointer.access(new_eqns), false);
+      eqData := EqData.compress(eqData);
+    end if;
   end inlineRecordsTuplesArrays;
 
 protected

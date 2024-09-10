@@ -3649,7 +3649,14 @@ public
     protected
       Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
+      list<String> followEquations = Flags.getConfigStringList(Flags.DEBUG_FOLLOW_EQUATIONS);
+      Boolean debug = not listEmpty(followEquations);
+      UnorderedSet<String> debug_eqns;
     algorithm
+      if debug then
+        debug_eqns := UnorderedSet.fromList(followEquations, stringHashDjb2, stringEq);
+      end if;
+
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           eq_ptr := ExpandableArray.get(i, equations.eqArr);
@@ -3657,6 +3664,9 @@ public
           new_eq := func(eq);
           if not referenceEq(eq, new_eq) then
             // Do not update the expandable array entry, but the pointer itself
+            if debug and UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(eq_ptr)), debug_eqns) then
+              print("[debugFollowEquations] The equation:\n" + Equation.toString(eq) + "\nGets replaced by:\n"  + Equation.toString(new_eq) + "\n");
+            end if;
             Pointer.update(eq_ptr, new_eq);
           end if;
         end if;
