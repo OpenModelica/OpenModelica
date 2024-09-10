@@ -89,12 +89,10 @@ public
     input toStringT func;
     input Integer maxLength = 10;
     output String str;
-  protected
-    String sliceStr;
   algorithm
     str := func(slice.t);
     if maxLength > 0 and not listEmpty(slice.indices) then
-      str := str + "\n\t slice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = 10);
+      str := str + "\n\tslice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = maxLength);
     end if;
   end toString;
 

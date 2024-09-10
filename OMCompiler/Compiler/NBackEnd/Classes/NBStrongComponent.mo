@@ -468,8 +468,8 @@ public
   end fromSolvedEquationSlice;
 
   function toSolvedEquation
-    "creates a solved equation for an explicitely solved strong component.
-    fails if it is not solved explicitely."
+    "creates a solved equation for an explicitly solved strong component.
+    fails if it is not solved explicitly."
     input StrongComponent comp;
     output Pointer<Equation> eqn;
   algorithm
@@ -480,7 +480,7 @@ public
       case GENERIC_COMPONENT()                                then Slice.getT(comp.eqn);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component could not be
-        solved explicitely:\n" + toString(comp)});
+        solved explicitly:\n" + toString(comp)});
       then fail();
     end match;
   end toSolvedEquation;
