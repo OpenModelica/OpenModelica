@@ -18,8 +18,8 @@ end VectorizeBindings4;
 // Result:
 // class VectorizeBindings4
 //   final parameter Real p = 3.0;
-//   Real[4, 5, 6] a.X(start = fill(20.0, 4, 5, 6), fixed = fill(true, 4, 5, 6));
-//   final parameter Real[4, 5, 6] a.p2 = fill(6.0, 4, 5, 6);
 //   final parameter Real[4, 5, 6] a.p1 = fill(15.0, 4, 5, 6);
+//   final parameter Real[4, 5, 6] a.p2 = fill(6.0, 4, 5, 6);
+//   Real[4, 5, 6] a.X(start = fill(20.0, 4, 5, 6), fixed = fill(true, 4, 5, 6));
 // end VectorizeBindings4;
 // endResult

@@ -19,9 +19,9 @@ end MergeComponents6;
 
 // Result:
 // class MergeComponents6
-//   parameter Real[2] $A1.y = {4.0, 8.0};
 //   parameter Real[2] $A1.x = {3.0, 7.0};
-//   Real[2] $A2.y = {2.0, 6.0};
+//   parameter Real[2] $A1.y = {4.0, 8.0};
 //   Real[2] $A2.x = {1.0, 5.0};
+//   Real[2] $A2.y = {2.0, 6.0};
 // end MergeComponents6;
 // endResult

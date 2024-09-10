@@ -82,17 +82,17 @@ end NonScalarizedWithoutRecords1;
 //     Real 'w';
 //   end 'm.R2';
 //
-//   record 'ma.R2'
-//     'ma.R1' 'r';
-//     'ma.R1'[3] 'ra';
-//     Real 'w';
-//   end 'ma.R2';
-//
 //   record 'ma.R1'
 //     Real 'x';
 //     Real 'y';
 //     Real[3] 'z';
 //   end 'ma.R1';
+//
+//   record 'ma.R2'
+//     'ma.R1' 'r';
+//     'ma.R1'[3] 'ra';
+//     Real 'w';
+//   end 'ma.R2';
 //
 //   model 'NonScalarizedWithoutRecords1'
 //     constant 'R1' 'cr1' = 'R1'(0.0, 0.0, {0.0, 0.0, 0.0});
@@ -107,12 +107,12 @@ end NonScalarizedWithoutRecords1;
 //     'm.R1'[3] 'm.ra1';
 //     'm.R2' 'm.r2';
 //     'm.R2'[3] 'm.ra2';
-//     'ma.R2'[3, 3] 'ma.ra2';
-//     'ma.R2'[3] 'ma.r2';
-//     'ma.R1'[3, 3] 'ma.ra1';
-//     'ma.R1'[3] 'ma.r1';
-//     constant 'ma.R2'[3] 'ma.cr2' = {'ma.R2'('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), fill('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 3), 0.0) for '$ma1' in 1:3};
 //     constant 'ma.R1'[3] 'ma.cr1' = fill('ma.R1'(0.0, 0.0, fill(0.0, 3)), 3);
+//     constant 'ma.R2'[3] 'ma.cr2' = {'ma.R2'('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), fill('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 3), 0.0) for '$ma1' in 1:3};
+//     'ma.R1'[3] 'ma.r1';
+//     'ma.R1'[3, 3] 'ma.ra1';
+//     'ma.R2'[3] 'ma.r2';
+//     'ma.R2'[3, 3] 'ma.ra2';
 //   equation
 //     'm.r1' = 'm.R1'(0.0, 0.0, {0.0, 0.0, 0.0});
 //     'm.r1.x' = 0.0;

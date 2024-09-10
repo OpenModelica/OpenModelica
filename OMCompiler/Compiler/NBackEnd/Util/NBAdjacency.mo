@@ -1706,18 +1706,6 @@ public
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
       then set;
 
-      // add skips for records
-      case Expression.RECORD() algorithm
-        ind := 1;
-        for elem in exp.elements loop
-          set1 := collectDependencies(elem, depth + 1, map, dep_map, sol_map, rep_set);
-          Dependency.skipList(UnorderedSet.toList(set1), depth + 1, ind, dep_map);
-          sets := set1 :: sets;
-          ind := ind + 1;
-        end for;
-        set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
-      then set;
-
       // reduce the dependency for these
       case Expression.SUBSCRIPTED_EXP() algorithm
         set := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
@@ -1846,6 +1834,17 @@ public
         if isTuple then
           Dependency.skipList(UnorderedSet.toList(set), depth + 1, 0, dep_map);
         end if;
+      then set;
+
+      // for not inlined record constructors set the dependency to full reduction (+ repetition) and solvability to implicit
+      case Expression.RECORD() algorithm
+        for arg in exp.elements loop
+          sets := collectDependencies(arg, depth, map, dep_map, sol_map, rep_set) :: sets;
+        end for;
+        set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
+        Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
+        Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
+        addRepetitions(set, rep_set);
       then set;
 
       // nothing is solvable from ranges

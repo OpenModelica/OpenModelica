@@ -24,10 +24,10 @@ end M3;
 
 // Result:
 // class M3
-//   parameter Real[3, 10, 10] m2.m11.p = fill(2.0, 3, 10, 10);
-//   Real[3, 10, 10] m2.m11.x;
 //   parameter Real[3, 10] m2.m1.p = fill(2.0, 3, 10);
 //   Real[3, 10] m2.m1.x(start = fill(1.0, 3, 10), fixed = fill(true, 3, 10));
+//   parameter Real[3, 10, 10] m2.m11.p = fill(2.0, 3, 10, 10);
+//   Real[3, 10, 10] m2.m11.x;
 // equation
 //   for $i1 in 1:3 loop
 //     for $i1 in 1:10 loop

@@ -27,8 +27,8 @@ end S;
 // Result:
 // class S
 //   final parameter Integer N = 3;
-//   Real[3] m.port.i;
 //   Real[3] m.port.v;
+//   Real[3] m.port.i;
 // equation
 //   m[2].port.v = m[3].port.v;
 //   m[2].port.v = m[1].port.v;

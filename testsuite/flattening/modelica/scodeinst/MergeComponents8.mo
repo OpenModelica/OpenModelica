@@ -24,10 +24,10 @@ end MergeComponents8;
 
 // Result:
 // class MergeComponents8
-//   Real[2] $A1.x;
-//   Real[2] $A1.y;
-//   Real[2] $A1.u;
 //   parameter Real[2] $A1.p = {$Real2[1], $Real2[2]};
+//   Real[2] $A1.u;
+//   Real[2] $A1.y;
+//   Real[2] $A1.x;
 //   parameter Real[2] $Real2 = {1.0, 2.0};
 // equation
 //   for $i1 in 1:2 loop

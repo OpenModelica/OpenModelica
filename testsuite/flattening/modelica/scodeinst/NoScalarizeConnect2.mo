@@ -21,9 +21,9 @@ end NoScalarizeConnect2;
 
 // Result:
 // class NoScalarizeConnect2
-//   Real[3] c.s;
-//   Real[3] c.f;
 //   Real[3] c.e;
+//   Real[3] c.f;
+//   Real[3] c.s;
 //   Real x;
 // equation
 //   for $i1 in 1:3 loop
