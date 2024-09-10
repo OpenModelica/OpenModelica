@@ -52,6 +52,7 @@ protected
   import NFFlatten.FunctionTree;
 
   // Util imports
+  import BackendUtil = NBBackendUtil;
   import UnorderedMap;
 
 public
@@ -256,7 +257,7 @@ public
 
           // phase 1 tarjan
           buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.modes);
-          comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
+          comps_indices := tarjanScalar(adj.m, matching);
 
           // phase 2 tarjan
           (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, eqns.map, comps_indices, buckets);
@@ -266,8 +267,8 @@ public
           () := match phase2_adj
             case Adjacency.Matrix.FINAL() algorithm
               // phase 3 tarjan
-              phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
-              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
+              phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching);
+              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, matching, vars, eqns) for comp in phase2_indices);
             then ();
 
             else algorithm
@@ -300,16 +301,15 @@ public
     "author: lochel, kabdelhak
     This sorting algorithm only considers equations e that have a matched variable v with e = var_to_eqn[v]."
     input array<list<Integer>> m          "normal adjacency matrix";
-    input array<Integer> var_to_eqn       "eqn := var_to_eqn[var]";
-    input array<Integer> eqn_to_var       "var := eqn_to_var[eqn]";
+    input Matching matching               "eqn <-> var";
     output list<list<Integer>> comps = {} "eqn indices";
   protected
     Integer index = 0;
     list<Integer> stack = {};
     array<Integer> number, lowlink;
     array<Boolean> onStack;
-    Integer N = arrayLength(var_to_eqn);
-    Integer M = arrayLength(eqn_to_var);
+    Integer N = arrayLength(matching.var_to_eqn);
+    Integer M = arrayLength(matching.eqn_to_var);
     Integer eqn;
   algorithm
     number := arrayCreate(M, -1);
@@ -318,9 +318,9 @@ public
 
     // loop over all variables and find their component
     for var in 1:N loop
-      eqn := var_to_eqn[var];
+      eqn := matching.var_to_eqn[var];
       if eqn > 0 and number[eqn] == -1 then
-        (stack, index, comps) := strongConnect(m, var_to_eqn, eqn, stack, index, number, lowlink, onStack, comps);
+        (stack, index, comps) := strongConnect(m, matching.var_to_eqn, eqn, stack, index, number, lowlink, onStack, comps);
       end if;
     end for;
 
@@ -506,8 +506,7 @@ public
       input array<SuperNode> super_nodes;
       input array<list<Integer>> m;
       input Adjacency.Mapping mapping;
-      input array<Integer> var_to_eqn;
-      input array<Integer> eqn_to_var;
+      input Matching matching;
       input VariablePointers vars;
       input EquationPointers eqns;
       output StrongComponent comp;
@@ -520,71 +519,63 @@ public
         local
           SuperNode node;
           array<list<Integer>> m_local;
-          array<Integer> var_to_eqn_local, eqn_to_var_local;
-          list<StrongComponent> local_comps = {};
+          Matching matching_local;
           Boolean indep = true;
+          UnorderedSet<Integer> vars_local;
+          Integer eqn_arr_idx, var_arr_idx;
 
         // a single scalar equation that has nothing to do with arrays
         case {SINGLE()}
-        then StrongComponent.createPseudoScalar(comp_indices, eqn_to_var, mapping, vars, eqns);
+        then StrongComponent.createPseudoScalar(comp_indices, matching.eqn_to_var, mapping, vars, eqns);
 
         // a single strong component from phase I
         case {node as ALGEBRAIC_LOOP()}
-        then StrongComponent.createPseudoScalar(node.eqn_indices, eqn_to_var, mapping, vars, eqns);
+        then StrongComponent.createPseudoScalar(node.eqn_indices, matching.eqn_to_var, mapping, vars, eqns);
 
         // a single array equation
         case {node as ARRAY_BUCKET()} algorithm
-          // create local system to determine in what order the equations have to be solved
-          m_local := arrayCreate(arrayLength(m), {});
-          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
-          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
-          // copy adjacency matrix and matching from full system
-          for i in node.eqn_indices loop
-            m_local[i] := m[i];
-            indep := indep and listLength(m[i]) == 1;
-            eqn_to_var_local[i] := eqn_to_var[i];
-            var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
-          end for;
-          // sort the scalar components
-          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
+          // sort local system to determine in what order the equations have to be solved
+          (m_local, matching_local) := BackendUtil.getLocalSystem(m, matching, node.eqn_indices);
+          sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := List.flatten(sorted_body_components);
           // if new strong components of size > 1 were created it is an error, this should
           // have occured in sorting phase I
           if not listLength(sorted_body_components) == listLength(sorted_body_indices) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " crucially failed for the following Phase II strong component because
-              the body turned out to still have strong components:\n"
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName()
+              + " crucially failed for the following Phase II strong component"
+              + " because the body turned out to still have strong components:\n"
               + List.toString(node_comp, SuperNode.toString, "", "\t", "\n\t", "\n")});
           end if;
-        then StrongComponent.createPseudoSlice(mapping.eqn_StA[List.first(node.eqn_indices)], node.cref_to_solve, sorted_body_indices, eqns, mapping, indep);
+
+          // check for independence of the element equations
+          // if locally each variable occurs in only one equation, then they are all independent
+          for i in node.eqn_indices loop
+            indep := indep and listLength(m_local[i]) == 1;
+          end for;
+          eqn_arr_idx := mapping.eqn_StA[List.first(node.eqn_indices)];
+          var_arr_idx := mapping.var_StA[matching.eqn_to_var[List.first(node.eqn_indices)]];
+        then StrongComponent.createPseudoSlice(var_arr_idx, eqn_arr_idx, node.cref_to_solve, sorted_body_indices, matching.eqn_to_var, eqns, mapping, indep);
 
         // entwined array equations
         case _ guard(not List.any(node_comp, isNotArrayBucket)) algorithm
-          m_local := arrayCreate(arrayLength(m), {});
-          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
-          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
-          for node in node_comp loop
-            for i in getEqnIndices(node) loop
-              m_local[i] := m[i];
-              eqn_to_var_local[i] := eqn_to_var[i];
-              var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
-            end for;
-          end for;
-          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
+          // sort local system to determine in what order the equations have to be solved
+          (m_local, matching_local) := BackendUtil.getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)));
+          sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := List.flatten(sorted_body_components);
 
           if listLength(sorted_body_components) == listLength(sorted_body_indices) then
             // create entwined for loop if there was no algebraic loop
-            comp := StrongComponent.createPseudoEntwined(sorted_body_indices, eqn_to_var, mapping, vars, eqns, node_comp);
+            comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
           else
             // create algebraic loop
-            comp := StrongComponent.createPseudoScalar(sorted_body_indices, eqn_to_var, mapping, vars, eqns);
+            comp := StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);
           end if;
         then comp;
 
         // create algebraic loop (body components not actually sorted)
         else algorithm
           sorted_body_indices := List.flatten(list(getEqnIndices(n) for n in node_comp));
-        then StrongComponent.createPseudoScalar(sorted_body_indices, eqn_to_var, mapping, vars, eqns);
+        then StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);
       end match;
     end collapse;
 
