@@ -588,7 +588,7 @@ public
   algorithm
     // causalize this branch equations for the unknowns
     (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
-    // solve each strong component explicitely and save equations to branch
+    // solve each strong component explicitly and save equations to branch
     for comp in comps loop
       (solved_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, kind, implicit_index, slicing_map);
       for solved_comp in solved_comps loop
@@ -601,7 +601,7 @@ public
       (else_if, funcTree, status, implicit_index) := solveIfBody(Util.getOption(body.else_if), vars, funcTree, kind, implicit_index, slicing_map);
       body.else_if := SOME(else_if);
     else
-      // StrongComponent.toSolvedEquation fails for everything that is not explicitely solvable so at this point one can assume it is
+      // StrongComponent.toSolvedEquation fails for everything that is not explicitly solvable so at this point one can assume it is
       status := Status.EXPLICIT;
     end if;
   end solveIfBody;

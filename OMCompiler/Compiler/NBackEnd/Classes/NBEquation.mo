@@ -118,6 +118,11 @@ public
     input output ComponentRef c;
   end MapFuncCref;
 
+  partial function checkEqn
+    input Pointer<Equation> eqn_ptr;
+    output Boolean b;
+  end checkEqn;
+
   uniontype Iterator
     record SINGLE
       ComponentRef name           "the name of the iterator";
@@ -1682,39 +1687,31 @@ public
       b := match eqn case DUMMY_EQUATION() then true; else false; end match;
     end isDummy;
 
-    function isDiscrete
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isDiscrete extends checkEqn;
     protected
       EquationAttributes attr;
     algorithm
-      attr := getAttributes(Pointer.access(eqn));
+      attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.kind == EquationKind.DISCRETE;
     end isDiscrete;
 
-    function isContinuous
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isContinuous extends checkEqn;
     protected
       EquationAttributes attr;
     algorithm
-      attr := getAttributes(Pointer.access(eqn));
+      attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.kind == EquationKind.CONTINUOUS;
     end isContinuous;
 
-    function isInitial
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isInitial extends checkEqn;
     protected
       EquationAttributes attr;
     algorithm
-      attr := getAttributes(Pointer.access(eqn));
+      attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.exclusively_initial;
     end isInitial;
 
-    function isWhenEquation
-      input Pointer<Equation> eqn_ptr;
-      output Boolean b;
+    function isWhenEquation extends checkEqn;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
     algorithm
@@ -1725,41 +1722,33 @@ public
       end match;
     end isWhenEquation;
 
-    function isIfEquation
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isIfEquation extends checkEqn;
     algorithm
-      b := match Pointer.access(eqn)
+      b := match Pointer.access(eqn_ptr)
         case IF_EQUATION() then true;
         else false;
       end match;
     end isIfEquation;
 
-    function isForEquation
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isForEquation extends checkEqn;
     algorithm
-      b := match Pointer.access(eqn)
+      b := match Pointer.access(eqn_ptr)
         case FOR_EQUATION() then true;
         else false;
       end match;
     end isForEquation;
 
-    function isArrayEquation
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isArrayEquation extends checkEqn;
     algorithm
-      b := match Pointer.access(eqn)
+      b := match Pointer.access(eqn_ptr)
         case ARRAY_EQUATION() then true;
         else false;
       end match;
     end isArrayEquation;
 
-    function isRecordOrTupleEquation
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isRecordOrTupleEquation extends checkEqn;
     algorithm
-      b := match Pointer.access(eqn)
+      b := match Pointer.access(eqn_ptr)
         local
           WhenEquationBody when_body;
           IfEquationBody if_body;
@@ -1774,11 +1763,9 @@ public
       end match;
     end isRecordOrTupleEquation;
 
-    function isRecordEquation
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isRecordEquation extends checkEqn;
     algorithm
-      b := match Pointer.access(eqn)
+      b := match Pointer.access(eqn_ptr)
         local
           Equation e;
         case e as RECORD_EQUATION() then not Type.isTuple(e.ty);
@@ -1787,11 +1774,9 @@ public
       end match;
     end isRecordEquation;
 
-    function isTupleEquation
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isTupleEquation extends checkEqn;
     algorithm
-      b := match Pointer.access(eqn)
+      b := match Pointer.access(eqn_ptr)
         local
           Equation e;
         case e as RECORD_EQUATION() then Type.isTuple(e.ty);
@@ -1799,11 +1784,9 @@ public
       end match;
     end isTupleEquation;
 
-    function isAlgorithm
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isAlgorithm extends checkEqn;
     algorithm
-      b := match Pointer.access(eqn)
+      b := match Pointer.access(eqn_ptr)
         case ALGORITHM() then true;
         else false;
       end match;
@@ -1819,11 +1802,9 @@ public
       b := Pointer.access(b_ptr);
     end isParameterEquation;
 
-    function isClocked
-      input Pointer<Equation> eqn;
-      output Boolean b;
+    function isClocked extends checkEqn;
     algorithm
-      b := match getAttributes(Pointer.access(eqn))
+      b := match getAttributes(Pointer.access(eqn_ptr))
         case EQUATION_ATTRIBUTES(kind = EquationKind.CLOCKED) then true;
         else false;
       end match;
@@ -3714,11 +3695,7 @@ public
       "Traverses all equation pointers and may invoke to remove the equation pointer
       (does not affect other instances of the equation)"
       input output EquationPointers equations;
-      input MapFunc func;
-      partial function MapFunc
-        input Pointer<Equation> e;
-        output Boolean delete;
-      end MapFunc;
+      input checkEqn func;
     protected
       Pointer<Equation> eq_ptr;
     algorithm

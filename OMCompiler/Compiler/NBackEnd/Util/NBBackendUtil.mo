@@ -144,22 +144,6 @@ public
     gt := if i1 > i2 then true else false;
   end indexTplGt;
 
-  function compareCombine
-    "combines two integer values for tree management.
-    Only returns 0 if both are 0"
-    input Integer i1;
-    input Integer i2;
-    output Integer comp;
-  algorithm
-    if i1 == 0 and i2 == 0 then
-      comp := 0;
-    elseif i1 > i2 then
-      comp := 1;
-    else
-      comp := -1;
-    end if;
-  end compareCombine;
-
   public function noNameHashEq
     input BEquation.Equation eq;
     input Integer mod;
@@ -183,7 +167,7 @@ public
       case Expression.STRING() then stringHashDjb2Mod(exp.value, mod);
       case Expression.BOOLEAN() then Util.boolInt(exp.value);
       case Expression.ENUM_LITERAL() then exp.index; // ty !!
-      case Expression.CLKCONST () then 0; // clk !!
+      case Expression.CLKCONST() then 0; // clk !!
       case Expression.CREF() algorithm
         var := BVariable.getVar(exp.cref);
       then stringHashDjb2Mod(BackendInfo.toString(var.backendinfo), mod);

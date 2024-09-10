@@ -127,7 +127,7 @@ public
           // add the new replacement rule
           UnorderedMap.add(varName, SimplifyExp.simplifyDump(replace_exp, true, getInstanceName()), replacements);
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitly: " + StrongComponent.toString(comp)});
           fail();
         end if;
       then ();
