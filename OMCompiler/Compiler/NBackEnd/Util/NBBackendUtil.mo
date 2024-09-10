@@ -46,6 +46,7 @@ public
   // backend imports
   import BEquation = NBEquation;
   import NBEquation.{Equation, Frame, FrameLocation};
+  import Matching = NBMatching;
   import BVariable = NBVariable;
 
   // Util imports
@@ -306,6 +307,32 @@ public
       end match;
     end if;
   end isContinuousFold;
+
+  function getLocalSystem
+    input array<list<Integer>> m          "global adjacency matrix";
+    input Matching matching               "global matching";
+    input list<Integer> eqn_indices       "global equation indices to keep";
+    output array<list<Integer>> m_loc;
+    output Matching matching_loc;
+  protected
+    array<Integer> var_to_eqn = arrayCreate(arrayLength(matching.var_to_eqn), -1);
+    array<Integer> eqn_to_var = arrayCreate(arrayLength(matching.eqn_to_var), -1);
+    UnorderedSet<Integer> vars_set = UnorderedSet.new(Util.id, intEq, arrayLength(var_to_eqn));
+  algorithm
+    // TODO create smaller system with local indices and return a map to go back to global indices
+    m_loc := arrayCreate(arrayLength(m), {});
+    // copy matching from full system
+    for i in eqn_indices loop
+      eqn_to_var[i] := matching.eqn_to_var[i];
+      var_to_eqn[eqn_to_var[i]] := matching.var_to_eqn[eqn_to_var[i]];
+      UnorderedSet.add(eqn_to_var[i], vars_set);
+    end for;
+    // filter only local edges of adjacency matrix
+    for i in eqn_indices loop
+      m_loc[i] := list(j for j guard UnorderedSet.contains(j, vars_set) in m[i]);
+    end for;
+    matching_loc := MATCHING(var_to_eqn, eqn_to_var);
+  end getLocalSystem;
 
   annotation(__OpenModelica_Interface="backend");
 end NBBackendUtil;

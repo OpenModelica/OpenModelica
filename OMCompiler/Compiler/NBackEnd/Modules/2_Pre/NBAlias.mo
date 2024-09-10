@@ -391,6 +391,10 @@ protected
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
       // ToDo: ARRAY_EQUATION RECORD_EQUATION (AUX_EQUATION?)
+      case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
+        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+      then crefTpl;
       else crefTpl;
     end match;
 
@@ -527,9 +531,9 @@ protected
         guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
       then tpl;
 
-      // fail for multidimensional crefs and record elements for now
+      // fail for record elements for now
       case Expression.CREF()
-        guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1 or Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref))))
+        guard(Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref))))
       then FAILED_CREF_TPL;
 
       // variable found

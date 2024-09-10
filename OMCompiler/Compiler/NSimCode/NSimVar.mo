@@ -559,10 +559,8 @@ public
       output Alias alias;
     algorithm
       alias := match binding
-        local
-          Expression exp;
-        case Binding.TYPED_BINDING(bindingExp = exp) algorithm
-        then getAlias(exp);
+        case Binding.TYPED_BINDING()  then getAlias(binding.bindingExp);
+        case Binding.FLAT_BINDING()   then getAlias(binding.bindingExp);
         else NO_ALIAS();
       end match;
     end fromBinding;
@@ -966,8 +964,8 @@ public
       input VariablePointers vars;
       output list<list<SimVar>> simVars = {};
       input output SimCode.SimCodeIndices simCodeIndices;
-      input SplitType splitType = SplitType.NONE;
-      input VarType varType = VarType.SIMULATION;
+      input SplitType splitType;
+      input VarType varType;
     protected
       VariablePointers scalar_vars;
       Pointer<list<SimVar>> acc = Pointer.create({});

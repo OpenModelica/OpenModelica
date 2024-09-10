@@ -56,6 +56,7 @@ simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
 simulationdaemode.log \
+simulationnewbackend-alias.log \
 simulationnewbackend-arrayhandling.log \
 simulationnewbackend-basics.log \
 simulationnewbackend-event_handling.log \
@@ -329,6 +330,9 @@ simulationconnectors.log: omc-diff
 	@echo $@ done
 simulationdaemode.log: omc-diff
 	$(MAKE) -C simulation/modelica/daemode -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-alias.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/alias/ -f Makefile test > $@
 	@echo $@ done
 simulationnewbackend-arrayhandling.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/array_handling/ -f Makefile test > $@

@@ -64,8 +64,8 @@ public
   //                MATCHING
   // =======================================
   record MATCHING
-    array<Integer> var_to_eqn;
-    array<Integer> eqn_to_var;
+    array<Integer> var_to_eqn   "eqn := var_to_eqn[var]";
+    array<Integer> eqn_to_var   "var := eqn_to_var[eqn]";
   end MATCHING;
 
   constant Matching EMPTY_MATCHING = MATCHING(listArray({}), listArray({}));

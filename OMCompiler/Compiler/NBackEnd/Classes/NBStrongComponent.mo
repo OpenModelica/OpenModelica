@@ -316,33 +316,39 @@ public
   end removeAlias;
 
   function createPseudoSlice
+    input Integer var_arr_idx;
     input Integer eqn_arr_idx;
     input ComponentRef cref_to_solve;
     input list<Integer> eqn_scal_indices;
+    input array<Integer> eqn_to_var;
     input EquationPointers eqns;
     input Adjacency.Mapping mapping;
-    output StrongComponent slice;
+    input Boolean independent = false   "true if scalar equations can be solved in any order";
+    output StrongComponent comp;
   protected
+    Pointer<Variable> var_ptr;
     Pointer<Equation> eqn_ptr;
-    Integer first_eqn;
+    Integer first_var, var_size, first_eqn, eqn_size;
+    Slice<VariablePointer>var_slice;
+    Slice<EquationPointer>eqn_slice;
+    list<Integer> var_scal_indices;
   algorithm
-    // get and save sliced equation
+    // get and save sliced variable and equation
+    var_ptr := BVariable.getVarPointer(cref_to_solve);
     eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
-    (first_eqn, _) := mapping.eqn_AtS[eqn_arr_idx];
+    (first_var, var_size) := mapping.var_AtS[var_arr_idx];
+    (first_eqn, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+    var_scal_indices := list(eqn_to_var[e] for e in eqn_scal_indices);
 
-/*
-    // mark all scalar indices
-    for scal_idx in eqn_scal_indices loop
-      arrayUpdate(bucket.marks, scal_idx, true);
-    end for;
-*/
-    // variable slice necessary? if yes fill it!
-    slice := SLICED_COMPONENT(
-      var_cref    = cref_to_solve,
-      var         = Slice.SLICE(BVariable.getVarPointer(cref_to_solve), {}),
-      eqn         = Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices))),
-      status      = NBSolve.Status.UNPROCESSED
-    );
+    if independent and Equation.isArrayEquation(eqn_ptr) and listLength(eqn_scal_indices) == eqn_size and listLength(var_scal_indices) == var_size then
+      var_slice := Slice.SLICE(var_ptr, {});
+      eqn_slice := Slice.SLICE(eqn_ptr, {});
+    else
+      var_slice := Slice.SLICE(var_ptr, list(idx - first_var for idx in listReverse(var_scal_indices)));
+      eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices)));
+    end if;
+
+    comp := createSliceOrSingle(cref_to_solve, var_slice, eqn_slice);
   end createPseudoSlice;
 
   function createPseudoEntwined
@@ -357,7 +363,7 @@ public
     UnorderedMap<Integer, Slice.IntLst> elem_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq);
     UnorderedMap<Integer, ComponentRef> cref_map = UnorderedMap.new<ComponentRef>(Util.id, intEq);
     list<tuple<Integer, Slice.IntLst>> flat_map;
-    Integer arr_idx;
+    Integer eqn_arr_idx, var_arr_idx;
     Slice.IntLst scal_indices;
     list<StrongComponent> entwined_slices = {};
     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
@@ -378,8 +384,9 @@ public
 
     // create individual slices
     for tpl in UnorderedMap.toList(elem_map) loop
-      (arr_idx, scal_indices) := tpl;
-      entwined_slices := createPseudoSlice(arr_idx, UnorderedMap.getSafe(arr_idx, cref_map, sourceInfo()), scal_indices, eqns, mapping) :: entwined_slices;
+      (eqn_arr_idx, scal_indices) := tpl;
+      var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
+      entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;
     end for;
 
     // create scalar list for fallback
