@@ -253,8 +253,8 @@ public
     // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
     preOptModules := {
       (Bindings.main,      "Bindings"),
-      (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
       (FunctionAlias.main, "FunctionAlias"),
+      (function Inline.main(inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()}), "Early Inline"),
       (function simplify(init = false), "Simplify 1"),
       (Alias.main,         "Alias"),
       (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
