@@ -114,7 +114,7 @@ void signalHandler(int signalNumber)
       stackTrace.append(QString("%1\n").arg(symbollist[i]));
 
       char syscom[PATH_MAX];
-      sprintf(syscom,"addr2line %p -e %s > addr2lineOutput.txt", addrlist[i], qApp->applicationFilePath().toStdString().c_str());
+      snprintf(syscom,PATH_MAX, "addr2line %p -e %s > addr2lineOutput.txt", addrlist[i], qApp->applicationFilePath().toStdString().c_str());
       system(syscom);
       QFile file(QString("addr2lineOutput.txt"));
       if (file.open(QIODevice::ReadOnly)) {

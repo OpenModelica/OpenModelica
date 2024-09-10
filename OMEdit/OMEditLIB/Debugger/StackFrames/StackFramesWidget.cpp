@@ -136,9 +136,9 @@ char* StackFrameItem::omcHexToString(const char* str)
   const char _omcQuot[]="_omcQuot_";
   if (*str != '\'') return NULL;
   len = strlen(str)-2;
-  res = (char*) malloc(2*len+offset+64);
+  res = (char*) malloc(2*len+offset);
   cur = res;
-  cur += sprintf(cur,"%s",_omcQuot);
+  cur += snprintf(cur,offset,"%s",_omcQuot);
   for (i=0; i<len; i++) {
     unsigned char c = str[i+1];
     *cur = lookupTbl[c/16];
