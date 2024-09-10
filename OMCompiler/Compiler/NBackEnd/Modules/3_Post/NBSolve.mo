@@ -260,14 +260,9 @@ public
         case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
           // array equation solved for the a sliced variable.
           // get all slices of the variable ocurring in the equation and select the slice that fits the indices
-          eqn := Pointer.access(Slice.getT(eqn_slice));
-          (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
-
-          if solve_status < Status.UNSOLVABLE then
-            (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcTree, kind, implicit_index, slicing_map);
-            comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
-            comp.status := solve_status;
-          end if;
+          (eqn_slice, funcTree, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcTree, kind, implicit_index, slicing_map);
+          comp.eqn := eqn_slice;
+          comp.status := solve_status;
         then ({comp}, solve_status);
 
         case StrongComponent.SLICED_COMPONENT() algorithm
@@ -374,12 +369,18 @@ public
   algorithm
     (comp, solve_status) := match comp
       local
+        Slice<VariablePointer> var_slice;
         Slice<EquationPointer> eqn_slice;
         Equation eqn;
-      case StrongComponent.SLICED_COMPONENT(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+
+      case StrongComponent.SLICED_COMPONENT(var= var_slice, eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
         (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree, kind, implicit_index, slicing_map);
-        // if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
-        eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+        if solve_status < Status.UNSOLVABLE then
+          eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+        else
+          (eqn_slice, funcTree, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcTree, kind, implicit_index, slicing_map);
+        end if;
+        // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
       then (StrongComponent.GENERIC_COMPONENT(comp.var_cref, eqn_slice), Status.EXPLICIT);
 
       else algorithm
@@ -793,6 +794,27 @@ protected
       end if;
     end if;
   end getVarSlice;
+
+  function solveForVarSlice
+    input output Slice<EquationPointer> eqn_slice;
+    input Slice<VariablePointer> var_slice;
+    input output FunctionTree funcTree;
+    input BPartition.Kind kind;
+    input output Integer implicit_index;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    output Status solve_status;
+  protected
+    Equation eqn;
+    ComponentRef var_cref;
+  algorithm
+    eqn := Pointer.access(Slice.getT(eqn_slice));
+    (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
+
+    if solve_status < Status.UNSOLVABLE then
+      (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcTree, kind, implicit_index, slicing_map);
+      eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+    end if;
+  end solveForVarSlice;
 
   annotation(__OpenModelica_Interface="backend");
 end NBSolve;

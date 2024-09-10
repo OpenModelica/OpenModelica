@@ -807,8 +807,8 @@ algorithm
     then Expression.makeOne(operator.ty);
 
     // multary with only one argument
-    case Expression.MULTARY(arguments = {tmp}, inv_arguments = {})
-    then tmp;
+    case Expression.MULTARY(arguments = {tmp}, inv_arguments = {}) algorithm
+    then simplify(tmp);
 
     // non-empty multaries
     case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator) algorithm
