@@ -20,7 +20,7 @@ end MergeComponents5;
 
 // Result:
 // class MergeComponents5
-//   Real[3, 3] $A31.y = {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}};
 //   Real[3, 3] $A31.x = fill({1.0, 2.0, 3.0}, 3);
+//   Real[3, 3] $A31.y = {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}};
 // end MergeComponents5;
 // endResult

@@ -19,8 +19,8 @@ end MergeComponents1;
 
 // Result:
 // class MergeComponents1
-//   Real[3] $A1.z = {3.0, 6.0, 9.0};
-//   Real[3] $A1.y = {2.0, 5.0, 8.0};
 //   Real[3] $A1.x = {1.0, 4.0, 7.0};
+//   Real[3] $A1.y = {2.0, 5.0, 8.0};
+//   Real[3] $A1.z = {3.0, 6.0, 9.0};
 // end MergeComponents1;
 // endResult

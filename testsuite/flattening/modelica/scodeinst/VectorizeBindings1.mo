@@ -17,7 +17,7 @@ end VectorizeBindings1;
 // Result:
 // class VectorizeBindings1
 //   parameter Real p = 2.0;
-//   parameter Real[2, 3] m.q = fill(2.0, 2, 3);
 //   parameter Real[2, 3] m.p = fill(2.0 * p, 2, 3);
+//   parameter Real[2, 3] m.q = fill(2.0, 2, 3);
 // end VectorizeBindings1;
 // endResult

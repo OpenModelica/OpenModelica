@@ -36,14 +36,14 @@ end ArrayConnect1;
 //   Real S.p.f;
 //   Real S.n.e;
 //   Real S.n.f;
-//   Real[10] R.n.f;
-//   Real[10] R.n.e;
-//   Real[10] R.p.f;
 //   Real[10] R.p.e;
-//   Real[10] C.n.f;
-//   Real[10] C.n.e;
-//   Real[10] C.p.f;
+//   Real[10] R.p.f;
+//   Real[10] R.n.e;
+//   Real[10] R.n.f;
 //   Real[10] C.p.e;
+//   Real[10] C.p.f;
+//   Real[10] C.n.e;
+//   Real[10] C.n.f;
 //   Real G.p.e;
 //   Real G.p.f;
 //   Real G.n.e;
@@ -51,19 +51,19 @@ end ArrayConnect1;
 // equation
 //   R[1].p.e = S.p.e;
 //   S.p.f + R[1].p.f = 0.0;
+//   G.p.e = S.n.e;
 //   for $i1 in 1:10 loop
 //     C[$i1].n.e = S.n.e;
 //   end for;
-//   G.p.e = S.n.e;
-//   S.n.f + G.p.f + sum(C[:].n.f) = 0.0;
+//   S.n.f + sum(C[:].n.f) + G.p.f = 0.0;
 //   for $i1 in 1:9 loop
-//     C[$i1].p.e = R[$i1].n.e;
+//     C[$i1].p.e = R[$i1 + 1].p.e;
+//   end for;
+//   for $i1 in 1:9 loop
+//     R[$i1].n.e = R[$i1 + 1].p.e;
 //   end for;
 //   for $i1 in 2:10 loop
-//     R[$i1].p.e = R[$i1 - 1].n.e;
-//   end for;
-//   for $i1 in 1:9 loop
-//     R[$i1].n.f + R[$i1 + 1].p.f + C[$i1].p.f = 0.0;
+//     R[$i1].p.f + R[$i1 - 1].n.f + C[$i1 - 1].p.f = 0.0;
 //   end for;
 //   C[10].p.e = R[10].n.e;
 //   R[10].n.f + C[10].p.f = 0.0;

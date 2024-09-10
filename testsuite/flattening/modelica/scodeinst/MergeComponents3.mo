@@ -22,8 +22,8 @@ end MergeComponents3;
 //   Real a2.x = 4.0;
 //   Real a2.y = 5.0;
 //   Real a2.z = 6.0;
-//   Real[2] $A1.z = {3.0, 9.0};
-//   Real[2] $A1.y(start = {5.0, 3.0}) = {2.0, 8.0};
 //   Real[2] $A1.x = {1.0, 7.0};
+//   Real[2] $A1.y(start = {5.0, 3.0}) = {2.0, 8.0};
+//   Real[2] $A1.z = {3.0, 9.0};
 // end MergeComponents3;
 // endResult

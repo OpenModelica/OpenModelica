@@ -47,11 +47,11 @@ end SD;
 //   model 'SD'
 //     parameter Integer 'N' = 3;
 //     parameter Real[3] 'p' = {1.0, 1.5, 2.0};
-//     Real[3] 'c.c.f';
-//     Real[3] 'c.c.e';
-//     Real[3, {3, 4, 5}] 'c.x';
-//     parameter Real[3] 'c.p' = 'p'[:];
 //     parameter Integer[3] 'c.N' = {3, 4, 5};
+//     parameter Real[3] 'c.p' = 'p'[:];
+//     Real[3, {3, 4, 5}] 'c.x';
+//     Real[3] 'c.c.e';
+//     Real[3] 'c.c.f';
 //     parameter Real 's.p' = 3.0;
 //     Real 's.c.e';
 //     Real 's.c.f';
