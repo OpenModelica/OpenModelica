@@ -37,19 +37,15 @@ simulate(record_inlining); getErrorString();
 // [NBInline.inlineRecordEquation] Inlining: [RECD] (2) a = Complex.'constructor'.fromReal($FUN_1, $FUN_2) ($RES_SIM_3)
 // -- Result: [SCAL] (1) a.re = $FUN_1 ($RES_SIM_7)
 // -- Result: [SCAL] (1) a.im = $FUN_2 ($RES_SIM_8)
-//
 // [NBInline.inlineRecordEquation] Inlining: [RECD] (2) b = Complex.'constructor'.fromReal(time, $FUN_3) ($RES_SIM_2)
 // -- Result: [SCAL] (1) b.re = time ($RES_SIM_9)
 // -- Result: [SCAL] (1) b.im = $FUN_3 ($RES_SIM_10)
-//
 // [NBInline.inlineRecordEquation] Inlining: [RECD] (2) c = Complex.'constructor'.fromReal(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re) ($RES_SIM_1)
 // -- Result: [SCAL] (1) c.re = a.re * b.re - a.im * b.im ($RES_SIM_11)
 // -- Result: [SCAL] (1) c.im = a.re * b.im + a.im * b.re ($RES_SIM_12)
-//
 // [NBInline.inlineRecordEquation] Inlining: [RECD] (2) d = Complex.'constructor'.fromReal(exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re), exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re)) ($RES_SIM_0)
 // -- Result: [SCAL] (1) d.re = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re) ($RES_SIM_13)
 // -- Result: [SCAL] (1) d.im = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re) ($RES_SIM_14)
-//
 //
 // [dumpBackendInline] Inlining operatations for: {AFTER_INDEX_RED}
 // ******************************************************************
