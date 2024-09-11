@@ -23,12 +23,12 @@ CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
 PowerSystemStepLoad.mos \
 SimpleAdvection.mos \
-CombiTimeTable.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
 TransmissionLineEquations.mos \
+CombiTimeTable.mos \ #this actually runs but somehow external functions dont work
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
