@@ -1922,8 +1922,8 @@ public
       (start, size) := mapping.var_AtS[arr];
       var := VariablePointers.getVarAt(vars, arr);
       Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
-      sizes := listReverse(list(Dimension.size(dim) for dim in Type.arrayDims(ty)));
-      vals := Slice.indexToLocation(scal-start, sizes);
+      sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
+      vals := listReverse(Slice.indexToLocation(scal-start, sizes));
       cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
     end varSlice;
 
