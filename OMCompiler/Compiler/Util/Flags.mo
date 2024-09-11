@@ -222,7 +222,7 @@ constant DebugFlag PATTERNM_MOVE_LAST_EXP = DEBUG_FLAG(24, "patternmMoveLastExp"
 constant DebugFlag EXPERIMENTAL_REDUCTIONS = DEBUG_FLAG(25, "experimentalReductions", false,
   Gettext.gettext("Turns on custom reduction functions (OpenModelica extension)."));
 constant DebugFlag EVAL_PARAM = DEBUG_FLAG(26, "evaluateAllParameters", false,
-  Gettext.gettext("Evaluates all parameters if set."));
+  Gettext.gettext("Evaluates all parameters if set, except the ones that have annotation(Evaluate = false)."));
 constant DebugFlag TYPES = DEBUG_FLAG(27, "types", false,
   Gettext.gettext("Prints extra failtrace from Types."));
 constant DebugFlag SHOW_STATEMENT = DEBUG_FLAG(28, "showStatement", false,
