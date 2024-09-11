@@ -1536,15 +1536,20 @@ protected
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     output list<Integer> scal_lst                           "scalar indices of cref";
   protected
-    ComponentRef stripped;
+    ComponentRef c;
     Integer var_arr_idx, var_start;
     list<Integer> sizes;
     list<Expression> subs;
   algorithm
-    stripped        := if listEmpty(frames) then cref else ComponentRef.stripSubscriptsAll(cref);
-    var_arr_idx     := UnorderedMap.getSafe(stripped, map, sourceInfo());
+    // try to get array index, if it fails, strip the subscripts
+    (var_arr_idx, c)  := match UnorderedMap.get(cref, map)
+      case SOME(var_arr_idx) then (var_arr_idx, cref);
+      else algorithm
+        c := ComponentRef.stripSubscriptsAll(cref);
+      then (UnorderedMap.getSafe(c, map, sourceInfo()), c);
+    end match;
     (var_start, _)  := mapping.var_AtS[var_arr_idx];
-    sizes           := ComponentRef.sizes(stripped, false);
+    sizes           := ComponentRef.sizes(c, false);
     subs            := ComponentRef.subscriptsToExpression(cref, true);
     scal_lst        := listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
   end getCrefInFrameIndices;
