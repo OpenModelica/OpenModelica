@@ -967,6 +967,7 @@ protected
     array<ExpressionIterator> arr_iter;
     ExpressionIterator iter;
     Expression exp;
+    Integer index = 1;
   algorithm
     // if there are no values to compare, return
     if listEmpty(lst_values) then return; end if;
@@ -979,6 +980,7 @@ protected
 
     // create expression iterators and loop while there is a next element
     arr_iter := listArray(list(ExpressionIterator.fromExp(e) for e in lst_values));
+
     while ExpressionIterator.hasNext(arr_iter[1]) loop
       // get all single expressions and compare
       current := {};
@@ -987,7 +989,8 @@ protected
         arrayUpdate(arr_iter, i, iter);
         current := exp :: current;
       end for;
-      checkNominalThresholdSingle(current, map, set);
+      checkNominalThresholdSingle(current, map, set, index);
+      index := index + 1;
     end while;
   end checkNominalThreshold;
 
@@ -996,6 +999,7 @@ protected
     input list<Expression> lst_values;
     input UnorderedMap<ComponentRef, Expression> map;
     input AliasSet set;
+    input Integer index;
   protected
     list<Expression> constants, rest;
     list<Real> real_constants;
@@ -1008,7 +1012,7 @@ protected
       // non literal nominal values are not allowed
       if Flags.isSet(Flags.DUMP_REPL) then
         Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed.\n" + AliasSet.toString(set)
-                          + "\n\tNominal map after replacements:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
+                          + "\n\tNominal map after replacements (violating index = " + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
         fail();
       else
         Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed. Use -d=dumprepl for more information.\n");
@@ -1022,7 +1026,7 @@ protected
     if nom_quotient > NOMINAL_THRESHOLD then
       if Flags.isSet(Flags.DUMP_REPL) then
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ".\n"
-                                + AliasSet.toString(set) + "\n\tNominal map after replacements:\n\t"
+                                + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting index = " + intString(index) + "):\n\t"
                                 + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
       else
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ". Use -d=dumprepl for more information.\n");
