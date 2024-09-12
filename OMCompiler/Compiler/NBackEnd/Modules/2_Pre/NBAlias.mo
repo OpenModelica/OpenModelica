@@ -971,14 +971,16 @@ protected
     // if there are no values to compare, return
     if listEmpty(lst_values) then return; end if;
 
+    // all expressions have to be of same size
     if not List.allEqual(list(Type.sizeOf(Expression.typeOf(e)) for e in lst_values), intEq) then
       Error.addCompilerWarning(getInstanceName() + " failed because array nominal values have different size. Use -d=dumprepl for more information.\n");
       fail();
     end if;
 
+    // create expression iterators and loop while there is a next element
     arr_iter := listArray(list(ExpressionIterator.fromExp(e) for e in lst_values));
-
     while ExpressionIterator.hasNext(arr_iter[1]) loop
+      // get all single expressions and compare
       current := {};
       for i in 1:arrayLength(arr_iter) loop
         (iter, exp) := ExpressionIterator.next(arr_iter[i]);
@@ -990,6 +992,7 @@ protected
   end checkNominalThreshold;
 
   function checkNominalThresholdSingle
+    "check the nominal of each single value"
     input list<Expression> lst_values;
     input UnorderedMap<ComponentRef, Expression> map;
     input AliasSet set;
