@@ -122,7 +122,7 @@ public
           (e, expanded) := ExpandExp.expand(exp, backend);
         then
           if expanded then
-            (if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend)) else
+            (if Expression.isEqual(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend)) else
             NONE_ITERATOR();
 
     end match;

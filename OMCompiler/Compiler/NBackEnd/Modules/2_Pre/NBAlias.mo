@@ -1015,11 +1015,11 @@ protected
         fail();
       end if;
     end try;
-    real_constants := list(Expression.realValue(val) for val in constants);
+    real_constants := list(abs(Expression.realValue(val)) for val in constants);
     nom_min := List.minElement(real_constants, realLt);
     nom_max := List.maxElement(real_constants, realLt);
     nom_quotient := nom_max / nom_min;
-    if abs(nom_quotient) > NOMINAL_THRESHOLD then
+    if nom_quotient > NOMINAL_THRESHOLD then
       if Flags.isSet(Flags.DUMP_REPL) then
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ".\n"
                                 + AliasSet.toString(set) + "\n\tNominal map after replacements:\n\t"
