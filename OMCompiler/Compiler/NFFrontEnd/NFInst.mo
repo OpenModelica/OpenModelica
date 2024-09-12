@@ -124,11 +124,11 @@ constant InstSettings DEFAULT_SETTINGS = InstSettings.SETTINGS(
     mergeExtendsSections = true
   );
 
-//function Inst_test
-//  input SCode.Program program;
-//  output SCode.Program res;
-//  external "C" res=Inst_test(program);
-//end Inst_test;
+function Inst_test
+  input SCode.Program program;
+  output SCode.Program res;
+  external "C" res=Inst_test(program) annotation(Library = "omcruntimecpp");
+end Inst_test;
 
 function instClassInProgram
   "Instantiates a class given by its fully qualified path, with the result being

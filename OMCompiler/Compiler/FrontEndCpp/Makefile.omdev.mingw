@@ -1,0 +1,32 @@
+# Makefile for Compiler/FrontEndCpp compilation of OMC using MSYS UCRT
+
+# Test if the needed variables are there...
+.testvariables:
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo See OpenModelica/OMCompiler/README.Windows.md
+	ABORT
+endif
+ifndef MSYSTEM_PREFIX
+$(error Environment variable MSYSTEM_PREFIX not set. Is this a msys2 shell?)
+endif
+
+OMDEV           = $(shell cygpath $$OMDEV)
+MSYSTEM_PREFIX  = $(shell cygpath $$MSYSTEM_PREFIX)
+
+TOP_DIR=../../
+OMBUILDDIR = ../../../build
+GCINCLUDE = -DGC_WIN32_PTHREADS -I../../3rdParty/gc/include
+OMC_CONFIG_INC = $(top_builddir)
+
+OMC=$(OMBUILDDIR)/bin/omc
+SHREXT=.a
+OMPCC = gcc -fopenmp
+
+SHELL	= /bin/sh
+CC	= gcc
+CXX = g++
+override CFLAGS += -Werror=implicit-function-declaration -Wall -Wno-unused-variable -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(GCINCLUDE) -I"$(TOP_DIR)/3rdParty/libffi/install/include/" -DWIN32_LEAN_AND_MEAN
+override CXXFLAGS += -std=c++17 $(CFLAGS)
+
+include Makefile.common
