@@ -73,7 +73,7 @@ protected
 public
   uniontype AliasInfo
     record ALIAS_INFO
-      BPartition.Kind kind       "The partition kind";
+      BPartition.Kind kind      "The partition kind";
       Integer partitionIndex    "the partition index";
       Integer componentIndex    "The index in that strong component array";
     end ALIAS_INFO;
