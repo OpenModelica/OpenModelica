@@ -3687,9 +3687,12 @@ let &sub = buffer ""
     case SIMULATION_CONTEXT(__) then
       match when
         case STMT_WHEN(__) then
-          let if_conditions = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+          let if_conditions = if not listEmpty(conditions) then (conditions |> e =>
+            let cond = daeExp(crefExp(e), context, &sub, &varDecls, &auxFunction)
+            let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &auxFunction)
+            '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
           let statements = (statementLst |> stmt => algStatement(stmt, context, &varDecls, &auxFunction);separator="\n")
-          let else_clause = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
+          let else_clause = algStatementWhenElse(elseWhen, context, &varDecls, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
           {
@@ -3704,16 +3707,18 @@ let &sub = buffer ""
   end match
 end algStmtWhen;
 
-
-template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls, Text &auxFunction)
+template algStatementWhenElse(Option<DAE.Statement> stmt, Context context, Text &varDecls, Text &auxFunction)
  "Helper to algStmtWhen."
 ::=
 let &sub = buffer ""
 match stmt
 case SOME(when as STMT_WHEN(__)) then
-  let else_conditions = if not listEmpty(when.conditions) then (when.conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+  let else_conditions = if not listEmpty(when.conditions) then (when.conditions |> e =>
+    let cond = daeExp(crefExp(e), context, &sub, &varDecls, &auxFunction)
+    let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &auxFunction)
+    '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
   let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationDiscrete, &varDecls, &auxFunction);separator="\n")
-  let else = algStatementWhenElse(when.elseWhen, &varDecls, &auxFunction)
+  let else = algStatementWhenElse(when.elseWhen, context, &varDecls, &auxFunction)
   <<
   else if(<%else_conditions%>)
   {

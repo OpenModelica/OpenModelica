@@ -840,14 +840,12 @@ public
         case (SCALAR_EQUATION(), SCALAR_EQUATION()) then Expression.isEqual(eqn1.lhs, eqn2.lhs) and Expression.isEqual(eqn1.rhs, eqn2.rhs);
         case (ARRAY_EQUATION(), ARRAY_EQUATION())   then Expression.isEqual(eqn1.lhs, eqn2.lhs) and Expression.isEqual(eqn1.rhs, eqn2.rhs);
         case (RECORD_EQUATION(), RECORD_EQUATION()) then Expression.isEqual(eqn1.lhs, eqn2.lhs) and Expression.isEqual(eqn1.rhs, eqn2.rhs);
-        // ToDo: This is wrong! implement the Algorithm.isEqual!
-        // case (ALGORITHM(), ALGORITHM()) then Algorithm.isEqual(eqn1.alg, eqn2.alg);
-        case (ALGORITHM(), ALGORITHM())            then equalName(Pointer.create(eqn1), Pointer.create(eqn2));
-        case (IF_EQUATION(), IF_EQUATION())        then IfEquationBody.isEqual(eqn1.body, eqn2.body);
-        case (FOR_EQUATION(), FOR_EQUATION())      then Iterator.isEqual(eqn1.iter, eqn2.iter) and List.all(List.zip(eqn1.body, eqn2.body), isEqualTpl);
-        case (WHEN_EQUATION(), WHEN_EQUATION())    then WhenEquationBody.isEqual(eqn1.body, eqn2.body);
-        case (AUX_EQUATION(), AUX_EQUATION())      then BVariable.equalName(eqn1.auxiliary, eqn2.auxiliary) and Util.optionEqual(eqn1.body, eqn2.body, isEqual);
-        case (DUMMY_EQUATION(), DUMMY_EQUATION())  then true;
+        case (ALGORITHM(), ALGORITHM())             then Algorithm.isEqual(eqn1.alg, eqn2.alg);
+        case (IF_EQUATION(), IF_EQUATION())         then IfEquationBody.isEqual(eqn1.body, eqn2.body);
+        case (FOR_EQUATION(), FOR_EQUATION())       then Iterator.isEqual(eqn1.iter, eqn2.iter) and List.all(List.zip(eqn1.body, eqn2.body), isEqualTpl);
+        case (WHEN_EQUATION(), WHEN_EQUATION())     then WhenEquationBody.isEqual(eqn1.body, eqn2.body);
+        case (AUX_EQUATION(), AUX_EQUATION())       then BVariable.equalName(eqn1.auxiliary, eqn2.auxiliary) and Util.optionEqual(eqn1.body, eqn2.body, isEqual);
+        case (DUMMY_EQUATION(), DUMMY_EQUATION())   then true;
         else false;
       end match;
     end isEqual;

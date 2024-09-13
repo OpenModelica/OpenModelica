@@ -128,6 +128,49 @@ public
     DAE.ElementSource source;
   end FAILURE;
 
+  function isEqual
+    input Statement stmt1;
+    input Statement stmt2;
+    output Boolean b;
+  protected
+    function branchEqual
+      input tuple<Expression, list<Statement>> branch1;
+      input tuple<Expression, list<Statement>> branch2;
+      output Boolean b;
+    protected
+      Expression e1, e2;
+      list<Statement> b1, b2;
+    algorithm
+      (e1, b1) := branch1;
+      (e2, b2) := branch2;
+      b := Expression.isEqual(e1,e2) and List.isEqualOnTrue(b1, b2, isEqual);
+    end branchEqual;
+  algorithm
+    b := match (stmt1, stmt2)
+      case (ASSIGNMENT(), ASSIGNMENT()) then Expression.isEqual(stmt1.lhs, stmt2.lhs)
+        and Expression.isEqual(stmt1.rhs, stmt2.rhs);
+      case (FUNCTION_ARRAY_INIT(), FUNCTION_ARRAY_INIT()) then stringEqual(stmt1.name, stmt2.name);
+      case (FOR(), FOR()) then InstNode.nameEqual(stmt1.iterator, stmt2.iterator)
+        and Util.optionEqual(stmt1.range, stmt2.range, Expression.isEqual)
+        and List.isEqualOnTrue(stmt1.body, stmt2.body, isEqual);
+      case (IF(), IF()) then List.isEqualOnTrue(stmt1.branches, stmt2.branches, branchEqual);
+      case (WHEN(), WHEN()) then List.isEqualOnTrue(stmt1.branches, stmt2.branches, branchEqual);
+      case (ASSERT(), ASSERT()) then Expression.isEqual(stmt1.condition, stmt2.condition)
+        and Expression.isEqual(stmt1.message, stmt2.message)
+        and Expression.isEqual(stmt1.level, stmt2.level);
+      case (TERMINATE(), TERMINATE()) then Expression.isEqual(stmt1.message, stmt2.message);
+      case (REINIT(), REINIT()) then Expression.isEqual(stmt1.cref, stmt2.cref)
+        and Expression.isEqual(stmt1.reinitExp, stmt2.reinitExp);
+      case (NORETCALL(), NORETCALL()) then Expression.isEqual(stmt1.exp, stmt2.exp);
+      case (WHILE(), WHILE()) then Expression.isEqual(stmt1.condition, stmt2.condition)
+        and List.isEqualOnTrue(stmt1.body, stmt2.body, isEqual);
+      case (RETURN(), RETURN()) then true;
+      case (BREAK(), BREAK()) then true;
+      case (FAILURE(), FAILURE()) then List.isEqualOnTrue(stmt1.body, stmt2.body, isEqual);
+      else false;
+    end match;
+  end isEqual;
+
   function makeAssignment
     input Expression lhs;
     input Expression rhs;
