@@ -13,8 +13,8 @@ extern record_description Absyn_NamedArg_NAMEDARG__desc;
 
 FunctionArgsList::FunctionArgsList(MetaModelica::Record value)
   : _args{value[0].mapVector<Expression>()},
-    _namedArgs{value[1].mapVector<NamedArg>([](MetaModelica::Record v) {
-      return std::make_pair(v[0].toString(), v[1]); })
+    _namedArgs{value[1].mapVector([](MetaModelica::Record v) {
+      return NamedArg(v[0].toString(), v[1]); })
     }
 {
 

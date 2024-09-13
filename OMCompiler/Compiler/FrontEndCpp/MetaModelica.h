@@ -7,10 +7,12 @@
 #include <string_view>
 #include <iosfwd>
 #include <optional>
+#include <functional>
 #include <memory>
 #include <initializer_list>
 #include <iterator>
 #include <vector>
+#include <type_traits>
 
 struct record_description;
 
@@ -84,7 +86,8 @@ namespace OpenModelica
         template<typename T> std::vector<T> mapVector() const;
         // Converts an Array or List value to an std::vector<T> using f(value)
         // for each value in the array/list.
-        template<typename T, typename ConvertFunc> std::vector<T> mapVector(ConvertFunc f) const;
+        template<typename ConvertFunc, typename T = typename std::invoke_result<ConvertFunc, Value>::type>
+        std::vector<T> mapVector(ConvertFunc f) const;
 
         // Converts the value using the corresponding Value::toX method for T.
         template<typename T> T to() const;
@@ -267,7 +270,7 @@ namespace OpenModelica
           return v;
         }
 
-        template<typename T, typename ConvertFunc>
+        template<typename ConvertFunc, typename T = typename std::invoke_result<ConvertFunc, Value>::type>
         std::vector<T> mapVector(ConvertFunc f) const
         {
           std::vector<T> v;
@@ -346,7 +349,7 @@ namespace OpenModelica
           return v;
         }
 
-        template<typename T, typename ConvertFunc>
+        template<typename ConvertFunc, typename T = typename std::invoke_result<ConvertFunc, Value>::type>
         std::vector<T> mapVector(ConvertFunc f) const
         {
           std::vector<T> v;
@@ -454,10 +457,10 @@ namespace OpenModelica
       return isList() ? toList().mapVector<T>() : toArray().mapVector<T>();
     }
 
-    template<typename T, typename ConvertFunc>
+    template<typename ConvertFunc, typename T>
     std::vector<T> Value::mapVector(ConvertFunc f) const
     {
-      return isList() ? toList().mapVector<T>(f) : toArray().mapVector<T>(f);
+      return isList() ? toList().mapVector(f) : toArray().mapVector(f);
     }
 
     template<typename T>
