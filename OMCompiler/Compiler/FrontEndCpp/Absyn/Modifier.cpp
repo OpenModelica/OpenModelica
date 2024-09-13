@@ -105,7 +105,7 @@ void Modifier::print(std::ostream &os, std::string_view name) const noexcept
 BindingModifier::BindingModifier(MetaModelica::Record value)
   : _final{value[0]},
     _each{value[1]},
-    _subMods{value[2].mapVector<Modifier::SubMod>([](MetaModelica::Record v) {
+    _subMods{value[2].mapVector([](MetaModelica::Record v) {
       return Modifier::SubMod{v[0].toString(), v[1]};
     })},
     _binding{value[3].mapOptional<Expression>()},
