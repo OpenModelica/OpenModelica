@@ -1007,7 +1007,7 @@ protected
 algorithm
   for b in listReverse(whenBranches) loop
     co := Util.tuple21(b);
-    conditions := UnorderedSet.toList(Expression.extractCrefs(co));
+    conditions := list(c for c guard(Type.isBoolean(ComponentRef.getSubscriptedType(c))) in UnorderedSet.toList(Expression.extractCrefs(co)));
     cond := Expression.toDAE(co);
     stmts := convertStatements(Util.tuple22(b));
     when_stmt := SOME(DAE.Statement.STMT_WHEN(cond, list(ComponentRef.toDAE(c) for c in conditions), false, stmts, when_stmt, source));

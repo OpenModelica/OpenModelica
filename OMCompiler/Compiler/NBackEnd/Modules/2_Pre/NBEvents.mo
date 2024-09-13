@@ -236,6 +236,30 @@ public
       auxiliary_vars := aux_var :: auxiliary_vars;
     end createAux;
 
+    function createAuxStatements
+      input output list<Statement> new_stmts;
+      input Pointer<Bucket> bucket_ptr;
+      input VariablePointers variables;
+    protected
+      Bucket bucket = Pointer.access(bucket_ptr);
+      Statement new_stmt;
+      Condition cond;
+      ComponentRef aux, lhs_cref;
+    algorithm
+      if Util.isSome(bucket.aux_stmts) then
+        // add all new statements to the algorithm body
+        for tpl in Util.getOption(bucket.aux_stmts) loop
+          (cond, aux) := tpl;
+          aux               := ComponentRef.mapSubscripts(aux, function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
+          new_stmt          := Statement.makeAssignment(Expression.fromCref(aux), cond.exp, ComponentRef.getSubscriptedType(aux), DAE.emptyElementSource);
+          new_stmts         := new_stmt :: new_stmts;
+        end for;
+        // remove the current statements because they have been added
+        bucket.aux_stmts   := NONE();
+        Pointer.update(bucket_ptr, bucket);
+      end if;
+    end createAuxStatements;
+
     function empty
       output EventInfo eventInfo;
     algorithm
@@ -595,6 +619,7 @@ public
       input output Statement stmt;
       input Pointer<Bucket> bucket_ptr;
       input Pointer<Equation> eqn;
+      input VariablePointers variables;
       input FunctionTree funcTree;
       input list<Frame> frames = {};
     algorithm
@@ -604,11 +629,19 @@ public
           Expression range;
           list<Frame> new_frames;
           Iterator iter;
+          Statement new_stmt;
+          list<Statement> new_stmts;
 
         case Statement.FOR(range = SOME(range)) algorithm
+          new_stmts := {};
           name := ComponentRef.fromNode(stmt.iterator, Type.INTEGER());
           new_frames := (name, range) :: frames;
-          stmt.body := list(fromStatement(elem, bucket_ptr, eqn, funcTree, new_frames) for elem in stmt.body);
+          for elem in stmt.body loop
+            new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcTree, new_frames);
+            new_stmts := new_stmt :: new_stmts;
+            new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
+          end for;
+          stmt.body := listReverse(new_stmts);
         then stmt;
 
         else algorithm
@@ -979,10 +1012,6 @@ protected
     BEquation.MapFuncExp collector;
     Algorithm alg;
     list<Statement> new_stmts;
-    Statement new_stmt;
-    Bucket bucket;
-    Condition cond;
-    ComponentRef aux, lhs_cref;
   algorithm
     // create the traverser function
     iter := Equation.getForIterator(eqn);
@@ -997,26 +1026,14 @@ protected
       case Equation.ALGORITHM(alg = alg) algorithm
         new_stmts := {};
         for stmt in alg.statements loop
-          stmt := StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr, funcTree);
-          bucket := Pointer.access(bucket_ptr);
+          stmt := StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr, variables, funcTree);
+          new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
           new_stmts := stmt :: new_stmts;
-          if Util.isSome(bucket.aux_stmts) then
-            // add all new statements to the algorithm body
-            for tpl in Util.getOption(bucket.aux_stmts) loop
-              (cond, aux) := tpl;
-              aux               := ComponentRef.mapSubscripts(aux, function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
-              new_stmt          := Statement.makeAssignment(Expression.fromCref(aux), cond.exp, ComponentRef.getSubscriptedType(aux), DAE.emptyElementSource);
-              new_stmts         := new_stmt :: new_stmts;
-            end for;
-            // remove the current statements because they have been added
-            bucket.aux_stmts   := NONE();
-            Pointer.update(bucket_ptr, bucket);
-            // save all the new stuff in our algorithm
-            alg.statements  := new_stmts;
-            eqn.alg         := Algorithm.setInputsOutputs(alg);
-            eqn.size        := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
-          end if;
         end for;
+        // save all the new stuff in our algorithm
+        alg.statements  := listReverse(new_stmts);
+        eqn.alg         := Algorithm.setInputsOutputs(alg);
+        eqn.size        := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
       then eqn;
 
       // For when equations only map the condition and not the body
