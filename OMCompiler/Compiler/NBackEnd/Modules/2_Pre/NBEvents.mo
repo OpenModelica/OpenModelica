@@ -1015,7 +1015,6 @@ protected
             alg.statements  := new_stmts;
             eqn.alg         := Algorithm.setInputsOutputs(alg);
             eqn.size        := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
-            print("new outputs: " + List.toString(eqn.alg.outputs, ComponentRef.toString) + "\n");
           end if;
         end for;
       then eqn;
