@@ -220,7 +220,7 @@ public
       // --------------------------------------------------------
       // for both static and dynamic state selection all matched states are regarded dummys
       for dummy in dummy_states loop
-        if listLength(dummy.indices) == 0 then
+        if listEmpty(dummy.indices) then
           dummy_derivatives := BVariable.makeDummyState(Slice.getT(dummy)) :: dummy_derivatives;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing during index reduction is not yet supported.\n"

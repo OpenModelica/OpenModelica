@@ -857,11 +857,11 @@ protected
     Real max_val;
   algorithm
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
-    if listLength(constants) <> 0 then
+    if not listEmpty(constants) then
       max_val := List.maxElement(list(Expression.realValue(val) for val in constants), realLt);
       rest := Expression.REAL(max_val) :: rest;
     end if;
-    if listLength(rest) == 0 then // constants and rest are empty
+    if listEmpty(rest) then // constants and rest are empty
       max_exp := NONE();
     elseif listLength(rest) == 1 then // one constant or one rest
       max_exp := SOME(List.first(rest));
@@ -886,11 +886,11 @@ protected
     Real min_val;
   algorithm
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
-    if listLength(constants) <> 0 then
+    if not listEmpty(constants) then
       min_val := List.minElement(list(Expression.realValue(val) for val in constants), realLt);
       rest := Expression.REAL(min_val) :: rest;
     end if;
-    if listLength(rest) == 0 then // constants and rest are empty
+    if listEmpty(rest) then // constants and rest are empty
       min_exp := NONE();
     elseif listLength(rest) == 1 then // one constant or one rest
       min_exp := SOME(List.first(rest));
@@ -1099,7 +1099,7 @@ protected
     StateSelect sval, state_select = StateSelect.NEVER;
     ComponentRef compref, cref;
   algorithm
-    if listLength(lst_values) == 0 then
+    if listEmpty(lst_values) then
       chosen_val := NONE();
       chosen_cref := NONE();
     elseif listLength(lst_values) == 1 then
@@ -1127,7 +1127,7 @@ protected
     list<TearingSelect> lst_values = UnorderedMap.valueList(map);
     TearingSelect tearing_select;
   algorithm
-    if listLength(lst_values) == 0 then
+    if listEmpty(lst_values) then
       chosen_val := NONE();
     elseif listLength(lst_values) == 1 then
       chosen_val := SOME(List.first(lst_values));

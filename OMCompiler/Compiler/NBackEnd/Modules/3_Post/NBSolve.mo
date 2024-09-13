@@ -789,7 +789,7 @@ protected
         (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), eqn);
       else
         // todo: choose best slice of list if more than one.
-        // only fail for listLength == 0
+        // only fail for listEmpty
         solve_status := Status.UNSOLVABLE;
       end if;
     end if;
