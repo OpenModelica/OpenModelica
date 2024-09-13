@@ -74,6 +74,7 @@ protected
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import ExpressionIterator = NFExpressionIterator;
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -814,14 +815,14 @@ protected
     input list<Pointer<Variable>> var_lst;
     input Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
     output list<Pointer<Variable>> acc = {};
-    output AttributeCollector attrcollector = ATTRIBUTE_COLLECTOR(UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
-                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
-                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
-                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
-                                                                  UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
-                                                                  UnorderedMap.new<StateSelect>(ComponentRef.hash, ComponentRef.isEqual),
-                                                                  UnorderedMap.new<TearingSelect>(ComponentRef.hash, ComponentRef.isEqual)
-                                                                  );
+    output AttributeCollector attrcollector = ATTRIBUTE_COLLECTOR(
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<StateSelect>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<TearingSelect>(ComponentRef.hash, ComponentRef.isEqual));
   protected
     Pointer<Variable> var;
     Variable cur_var;
@@ -962,13 +963,48 @@ protected
     input UnorderedMap<ComponentRef, Expression> map;
     input AliasSet set;
   protected
-    list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
+    list<Expression> current, lst_values = UnorderedMap.valueList(map);
+    array<ExpressionIterator> arr_iter;
+    ExpressionIterator iter;
+    Expression exp;
+    Integer index = 1;
+  algorithm
+    // if there are no values to compare, return
+    if listEmpty(lst_values) then return; end if;
+
+    // all expressions have to be of same size
+    if not List.allEqual(list(Type.sizeOf(Expression.typeOf(e)) for e in lst_values), intEq) then
+      Error.addCompilerWarning(getInstanceName() + " failed because array nominal values have different size. Use -d=dumprepl for more information.\n");
+      fail();
+    end if;
+
+    // create expression iterators and loop while there is a next element
+    arr_iter := listArray(list(ExpressionIterator.fromExp(e) for e in lst_values));
+
+    while ExpressionIterator.hasNext(arr_iter[1]) loop
+      // get all single expressions and compare
+      current := {};
+      for i in 1:arrayLength(arr_iter) loop
+        (iter, exp) := ExpressionIterator.next(arr_iter[i]);
+        arrayUpdate(arr_iter, i, iter);
+        current := exp :: current;
+      end for;
+      checkNominalThresholdSingle(current, map, set, index);
+      index := index + 1;
+    end while;
+  end checkNominalThreshold;
+
+  function checkNominalThresholdSingle
+    "check the nominal of each single value"
+    input list<Expression> lst_values;
+    input UnorderedMap<ComponentRef, Expression> map;
+    input AliasSet set;
+    input Integer index;
+  protected
+    list<Expression> constants, rest;
     list<Real> real_constants;
     Real nom_min, nom_max, nom_quotient;
   algorithm
-    if listEmpty(lst_values) then
-      return;
-    end if;
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
     try
       List.assertIsEmpty(rest);
@@ -976,27 +1012,28 @@ protected
       // non literal nominal values are not allowed
       if Flags.isSet(Flags.DUMP_REPL) then
         Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed.\n" + AliasSet.toString(set)
-                          + "\n\tNominal map after replacements:\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
+                          + "\n\tNominal map after replacements (violating index = " + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
         fail();
       else
         Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed. Use -d=dumprepl for more information.\n");
         fail();
       end if;
     end try;
-    real_constants := list(Expression.realValue(val) for val in constants);
+    real_constants := list(abs(Expression.realValue(val)) for val in constants);
     nom_min := List.minElement(real_constants, realLt);
     nom_max := List.maxElement(real_constants, realLt);
     nom_quotient := nom_max / nom_min;
-    if abs(nom_quotient) > NOMINAL_THRESHOLD then
+    if nom_quotient > NOMINAL_THRESHOLD then
       if Flags.isSet(Flags.DUMP_REPL) then
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ".\n"
-                                + AliasSet.toString(set) + "\n\tNominal map after replacements:\n\t"
+                                + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting index = " + intString(index) + "):\n\t"
                                 + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
       else
         Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ". Use -d=dumprepl for more information.\n");
       end if;
     end if;
-  end checkNominalThreshold;
+  end checkNominalThresholdSingle;
+
 
   function stateSelectAlways
     "Throws an error if multiple variables have StateSelect = always."
@@ -1258,6 +1295,7 @@ protected
       Option<Expression> min_val_opt = UnorderedMap.get(var_cref, attrcollector.min_val_map);
       Option<Expression> max_val_opt = UnorderedMap.get(var_cref, attrcollector.max_val_map);
       Option<Expression> start_opt = UnorderedMap.get(var_cref, attrcollector.start_map);
+      Option<Expression> nominal_opt = UnorderedMap.get(var_cref, attrcollector.nominal_map);
       Type ty;
     algorithm
       rhs := Equation.getRHS(solved_eq);
@@ -1301,6 +1339,14 @@ protected
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         new_rhs := SimplifyExp.simplify(new_rhs);
         UnorderedMap.add(var_cref, new_rhs, attrcollector.start_map);
+      end if;
+
+      // nominal:
+      if Util.isSome(nominal_opt) then
+        UnorderedMap.add(var_cref, Util.getOption(nominal_opt), repl);
+        new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
+        new_rhs := SimplifyExp.simplify(new_rhs);
+        UnorderedMap.add(var_cref, new_rhs, attrcollector.nominal_map);
       end if;
     end fixValues;
 
