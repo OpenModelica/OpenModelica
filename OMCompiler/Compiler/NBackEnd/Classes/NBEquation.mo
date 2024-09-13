@@ -3224,7 +3224,7 @@ public
       stmt := match stmt
         local
           MapFuncCref funcCref;
-          Expression lhs, rhs, value, condition;
+          Expression lhs, rhs, value, condition, message;
           ComponentRef stateVar;
 
         case ASSIGN()
@@ -3259,6 +3259,10 @@ public
             condition := mapFunc(stmt.condition, funcExp);
             if not referenceEq(condition, stmt.condition) then
               stmt.condition := condition;
+            end if;
+            message := mapFunc(stmt.message, funcExp);
+            if not referenceEq(message, stmt.message) then
+              stmt.message := message;
             end if;
         then stmt;
 
