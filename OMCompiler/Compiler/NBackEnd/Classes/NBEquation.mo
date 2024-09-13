@@ -2881,7 +2881,7 @@ public
         case SOME(b as WHEN_EQUATION_BODY(condition = condition as Expression.ARRAY())) algorithm
           b.else_when := simplify(b.else_when);
           conditions := list(elem for elem guard(not Expression.isFalse(elem)) in arrayList(condition.elements));
-          if listLength(conditions) == 0 then
+          if listEmpty(conditions) then
             body := b.else_when;
           elseif listLength(conditions) == 1 then
             b.condition := listHead(conditions);
