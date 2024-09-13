@@ -1,0 +1,89 @@
+#
+# Makefile for Compiler/FrontEndCpp
+#
+
+top_builddir=../..
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib
+builddir_inc=$(OMBUILDDIR)/include
+builddir_doc=$(OMBUILDDIR)/doc
+builddir_share=$(OMBUILDDIR)/share
+
+detected_OS ?= $(shell uname -s)
+ifeq (MINGW,$(findstring MINGW,$(detected_OS)))
+	configUnix =
+else
+	configUnix = $(OMC_CONFIG_INC)/omc_config.unix.h
+endif
+
+FRONTEND_CPP_OBJ = \
+	Inst.o \
+	MetaModelica.o \
+	Path.o \
+	Prefixes.o \
+	Restriction.o \
+	SourceInfo.o \
+
+FRONTEND_CPP_ABSYN_OBJ = \
+	Absyn/Algorithm.o \
+	Absyn/Annotation.o \
+	Absyn/Class.o \
+	Absyn/ClassDef.o \
+	Absyn/Comment.o \
+	Absyn/Component.o \
+	Absyn/ComponentRef.o \
+	Absyn/ConstrainingClass.o \
+	Absyn/DefineUnit.o \
+	Absyn/Element.o \
+	Absyn/ElementAttributes.o \
+	Absyn/ElementPrefixes.o \
+	Absyn/Equation.o \
+	Absyn/Expression.o \
+	Absyn/Extends.o \
+	Absyn/ExternalDecl.o \
+	Absyn/FunctionArgs.o \
+	Absyn/FunctionArgsList.o \
+	Absyn/FunctionArgsIter.o \
+	Absyn/Import.o \
+	Absyn/ImportPath.o \
+	Absyn/Iterator.o \
+	Absyn/Modifier.o \
+	Absyn/Operator.o \
+	Absyn/Statement.o \
+	Absyn/Subscript.o \
+	Absyn/TypeSpec.o
+
+all: install
+.PHONY: all install
+
+install: libomcfrontendcpp.a
+	cp libomcfrontendcpp.a $(builddir_lib)/$(TRIPLE)/omc/
+
+# If we are using the Makefiles then assume we have PThreads available.
+CPPFLAGS += -DOM_HAVE_PTHREADS
+
+OBJEXT=.o
+
+libomcfrontendcpp.a : $(FRONTEND_CPP_OBJ) $(FRONTEND_CPP_ABSYN_OBJ)
+	rm -f $@
+	$(AR) -s -r $@ $(FRONTEND_CPP_OBJ) $(FRONTEND_CPP_ABSYN_OBJ)
+
+libomcfrontendcpp.dylib : $(FRONTEND_CPP_OBJ) $(FRONTEND_CPP_ABSYN_OBJ)
+	rm -f $@
+	$(CXX) -shared $(RPATH) -install_name @rpath/$@ -o $@ $(FRONTEND_CPP_OBJ) $(FRONTEND_CPP_ABSYN_OBJ) $(LDFLAGS) $(CXXFLAGS)
+	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib $@
+	test ! `uname` = Darwin || install_name_tool -change libsuitesparseconfig.dylib @rpath/libsuitesparseconfig.dylib $@
+
+libomcfrontendcpp.so : $(FRONTEND_CPP_OBJ) $(FRONTEND_CPP_ABSYN_OBJ)
+	rm -f $@
+	$(CXX) -shared $(RPATH) -o $@ $(FRONTEND_CPP_OBJ) $(FRONTEND_CPP_ABSYN_OBJ) $(LDFLAGS)
+
+%.o: %.c
+	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS) -I..
+%.o: %.cpp
+	$(CXX) -c -o "$@" "$<" $(CXXFLAGS) $(CPPFLAGS) -I.. -I.
+
+clean:
+	$(RM) -rf *.a *.o
+
+reallyclean: clean
