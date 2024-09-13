@@ -232,7 +232,8 @@ public
         aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, "EVT", Iterator.fromFrames(List.zip(iter, range)), EquationAttributes.default(EquationKind.DISCRETE, false));
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end if;
-      // allways add the variable
+      // remove all subscripts from the variable name
+      BVariable.setVarName(aux_var, ComponentRef.stripSubscriptsAll(BVariable.getVarName(aux_var)));
       auxiliary_vars := aux_var :: auxiliary_vars;
     end createAux;
 
