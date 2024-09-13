@@ -2830,6 +2830,10 @@ void Element::createClassShapes()
 void Element::createActions()
 {
   // Parameters Action
+  mpShowComponentAction = new QAction("Show Component", mpGraphicsView);
+  mpShowComponentAction->setStatusTip(tr("Shows the component"));
+  connect(mpShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
+  // Parameters Action
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
@@ -3921,6 +3925,15 @@ void Element::moveCtrlRight()
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(1, 0);
   updateElementTransformations(oldTransformation, true);
+}
+
+/*!
+ * \brief Element::showComponent
+ * Opens the component for hierarchical editing.
+ */
+void Element::showComponent()
+{
+  mpGraphicsView->getModelWidget()->showComponent(mpModel, true);
 }
 
 /*!

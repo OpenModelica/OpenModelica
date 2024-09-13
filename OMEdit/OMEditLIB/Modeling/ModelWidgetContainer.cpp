@@ -3829,6 +3829,8 @@ void GraphicsView::modelicaOneComponentContextMenu(Element *pComponent, QMenu *p
   pMenu->addAction(pComponent->getParametersAction());
   pMenu->addAction(pComponent->getAttributesAction());
   pMenu->addSeparator();
+  pMenu->addAction(pComponent->getShowComponentAction());
+  pMenu->addSeparator();
   pMenu->addAction(pComponent->getOpenClassAction());
   pMenu->addSeparator();
   pMenu->addAction(mpDeleteAction);
@@ -4923,9 +4925,13 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
         pRootComponent->handleOMSElementDoubleClick();
       } else {
         removeCurrentTransition();
+        bool shiftModifier = QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier);
+        bool controlModifier = QApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
         /* ticket:4401 Open component class with shift + double click */
-        if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
+        if (!controlModifier && shiftModifier) {
           pRootComponent->openClass();
+        } else if (controlModifier && !shiftModifier) {
+          pRootComponent->showComponent();
         } else {
           pRootComponent->showParameters();
         }
@@ -6482,6 +6488,39 @@ void ModelWidget::createModelWidgetComponents()
     pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
     pViewButtonsHorizontalLayout->setSpacing(0);
     pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
+    // back tool button
+    mpBackToolButton = new QToolButton;
+    mpBackToolButton->setText(tr("Back"));
+    mpBackToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/previous.svg"));
+    mpBackToolButton->setToolTip(tr("Back"));
+    mpBackToolButton->setAutoRaise(true);
+    mpBackToolButton->setEnabled(false);
+    connect(mpBackToolButton, SIGNAL(clicked()), SLOT(backComponent()));
+    // forward tool button
+    mpForwardToolButton = new QToolButton;
+    mpForwardToolButton->setText(tr("Forward"));
+    mpForwardToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
+    mpForwardToolButton->setToolTip(tr("Forward"));
+    mpForwardToolButton->setAutoRaise(true);
+    mpForwardToolButton->setEnabled(false);
+    connect(mpForwardToolButton, SIGNAL(clicked()), SLOT(forwardComponent()));
+    // back tool button
+    mpExitToolButton = new QToolButton;
+    mpExitToolButton->setText(tr("Exit"));
+    mpExitToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/delete.svg"));
+    mpExitToolButton->setToolTip(tr("Exit Component"));
+    mpExitToolButton->setAutoRaise(true);
+    mpExitToolButton->setEnabled(false);
+    connect(mpExitToolButton, SIGNAL(clicked()), SLOT(exitComponent()));
+    // frame to contain component mode buttons
+    QHBoxLayout *pComponentModeButtonsHorizontalLayout = new QHBoxLayout;
+    pComponentModeButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+    pComponentModeButtonsHorizontalLayout->setSpacing(0);
+    pComponentModeButtonsHorizontalLayout->addWidget(mpBackToolButton);
+    pComponentModeButtonsHorizontalLayout->addWidget(mpForwardToolButton);
+    pComponentModeButtonsHorizontalLayout->addWidget(mpExitToolButton);
+    QFrame *pComponentModeButtonsFrame = new QFrame;
+    pComponentModeButtonsFrame->setLayout(pComponentModeButtonsHorizontalLayout);
     // set Project Status Bar lables
     mpReadOnlyLabel = mpLibraryTreeItem->isReadOnly() ? new Label(Helper::readOnly) : new Label(tr("Writable"));
     mpModelicaTypeLabel = new Label;
@@ -6519,6 +6558,7 @@ void ModelWidget::createModelWidgetComponents()
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
+      mpModelStatusBar->addPermanentWidget(pComponentModeButtonsFrame);
       mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpLibraryTreeItem->getRestriction()));
       mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
       // modelica text editor
@@ -6822,8 +6862,9 @@ void ModelWidget::clearGraphicsViews()
 /*!
  * \brief ModelWidget::reDrawModelWidget
  * Redraws the ModelWidget.
+ * \param skipLoadModelInstance
  */
-void ModelWidget::reDrawModelWidget()
+void ModelWidget::reDrawModelWidget(bool skipLoadModelInstance)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   clearGraphicsViews();
@@ -6857,10 +6898,14 @@ void ModelWidget::reDrawModelWidget()
       mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
     }
     if (isNewApi()) {
-      if (mDiagramViewLoaded) {
-        loadModelInstance(false, ModelInfo());
+      if (skipLoadModelInstance) {
+        if (mDiagramViewLoaded) {
+          loadModelInstance(false, ModelInfo());
+        } else {
+          loadModelInstance(true, ModelInfo());
+        }
       } else {
-        loadModelInstance(true, ModelInfo());
+        drawModel(ModelInfo());
       }
     } else {
       // Draw icon view
@@ -8215,6 +8260,35 @@ ModelInfo ModelWidget::createModelInfo() const
 }
 
 /*!
+ * \brief ModelWidget::showComponent
+ * Opens the component represented by passed ModelInstance in editing mode.
+ * \param pModelInstance
+ * \param addToList
+ */
+void ModelWidget::showComponent(ModelInstance::Model *pModelInstance, bool addToList)
+{
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  if (mModelInstancesPos < 0) {
+    mpRootModelInstance = mpModelInstance;
+  }
+  clearGraphicsViews();
+  // reset the CoOrdinateSystem
+  mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+  mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+  if (addToList) {
+    while (mModelInstanceList.count() > (mModelInstancesPos+1)) {
+      mModelInstanceList.removeLast();
+    }
+    mModelInstanceList.append(pModelInstance);
+    mModelInstancesPos++;
+  }
+  mpModelInstance = pModelInstance;
+  drawModel(ModelInfo());
+  updateComponentModeButtons();
+  QApplication::restoreOverrideCursor();
+}
+
+/*!
  * \brief ModelWidget::createUndoStack
  * Creates the undo stack.
  */
@@ -9251,6 +9325,32 @@ bool ModelWidget::dependsOnModel(const QString &modelName)
 }
 
 /*!
+ * \brief ModelWidget::updateComponentModeButtons
+ * Enables/disables the back, forward and exit buttons.
+ */
+void ModelWidget::updateComponentModeButtons()
+{
+  // back button
+  if (mModelInstancesPos > 0) {
+    mpBackToolButton->setDisabled(false);
+  } else {
+    mpBackToolButton->setDisabled(true);
+  }
+  // forward button
+  if (mModelInstanceList.count() == (mModelInstancesPos + 1)) {
+    mpForwardToolButton->setDisabled(true);
+  } else {
+    mpForwardToolButton->setDisabled(false);
+  }
+  // exit button
+  if (mModelInstancesPos > -1) {
+    mpExitToolButton->setDisabled(false);
+  } else {
+    mpExitToolButton->setDisabled(true);
+  }
+}
+
+/*!
  * \brief ModelWidget::showIconView
  * \param checked
  * Slot activated when mpIconViewToolButton toggled SIGNAL is raised. Shows the icon view.
@@ -9349,6 +9449,48 @@ void ModelWidget::showTextView(bool checked)
   }
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
   updateUndoRedoActions();
+}
+
+/*!
+ * \brief ModelWidget::backComponent
+ * Slot activated when mpBackToolButton clicked SIGNAL is raised.
+ * Moves back in component mode.
+ */
+void ModelWidget::backComponent()
+{
+  if (mModelInstancesPos > 0) {
+    mModelInstancesPos--;
+    showComponent(mModelInstanceList.at(mModelInstancesPos), false);
+  }
+  updateComponentModeButtons();
+}
+
+/*!
+ * \brief ModelWidget::forwardComponent
+ * Slot activated when mpForwardToolButton clicked SIGNAL is raised.
+ * Moves forward in component mode.
+ */
+void ModelWidget::forwardComponent()
+{
+  if ((mModelInstancesPos + 1) < mModelInstanceList.count()) {
+    mModelInstancesPos++;
+    showComponent(mModelInstanceList.at(mModelInstancesPos), false);
+  }
+  updateComponentModeButtons();
+}
+
+/*!
+ * \brief ModelWidget::exitComponent
+ * Slot activated when mpExitToolButton clicked SIGNAL is raised.
+ * Exits the component mode.
+ */
+void ModelWidget::exitComponent()
+{
+  mModelInstanceList.clear();
+  mModelInstancesPos = -1;
+  mpModelInstance = mpRootModelInstance;
+  reDrawModelWidget(true);
+  updateComponentModeButtons();
 }
 
 /*!

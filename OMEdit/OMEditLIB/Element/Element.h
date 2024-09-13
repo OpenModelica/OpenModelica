@@ -245,6 +245,7 @@ public:
   ResizerItem* getTopRightResizerItem() {return mpTopRightResizerItem;}
   ResizerItem* getBottomRightResizerItem() {return mpBottomRightResizerItem;}
   OriginItem* getOriginItem() {return mpOriginItem;}
+  QAction* getShowComponentAction() {return mpShowComponentAction;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
@@ -339,6 +340,7 @@ private:
   RectangleAnnotation *mpDefaultElementRectangle;
   TextAnnotation *mpDefaultElementText;
   RectangleAnnotation *mpStateElementRectangle;
+  QAction *mpShowComponentAction;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
@@ -437,6 +439,7 @@ public slots:
   void moveRight();
   void moveShiftRight();
   void moveCtrlRight();
+  void showComponent();
   void showParameters();
   void showAttributes();
   void fetchInterfaceData();
