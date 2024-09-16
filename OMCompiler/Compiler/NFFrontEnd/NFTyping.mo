@@ -63,6 +63,7 @@ import Attributes = NFAttributes;
 import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
+import Config;
 import ComponentRef = NFComponentRef;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
@@ -2006,6 +2007,7 @@ algorithm
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
         if Component.hasCondition(InstNode.component(cref.node)) and
+           not Config.languageStandardAtLeast(Config.LanguageStandard.experimental) and
            (not InstContext.inConnect(context) or InstContext.inSubscript(context)) and not InstContext.inRelaxed(context) then
           Error.addStrictMessage(Error.CONDITIONAL_COMPONENT_INVALID_CONTEXT,
             {InstNode.name(cref.node)}, info);
