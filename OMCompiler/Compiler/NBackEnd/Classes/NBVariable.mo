@@ -593,6 +593,16 @@ public
     output VariableAttributes variableAttributes = var.backendinfo.attributes;
   end getVariableAttributes;
 
+  function getNominal
+    input Variable var;
+    output Expression nominal;
+  algorithm
+    nominal := match VariableAttributes.getNominal(getVariableAttributes(var))
+      case SOME(nominal) then nominal;
+      else Expression.makeOne(var.ty);
+    end match;
+  end getNominal;
+
   function setVariableAttributes
     input output Variable var;
     input VariableAttributes variableAttributes;
