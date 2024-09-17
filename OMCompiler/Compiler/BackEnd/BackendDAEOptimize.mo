@@ -5835,7 +5835,7 @@ algorithm
           //get their predecessor tasks, the corresponding comps and add their equations
           predecessors := HpcOmTaskGraph.getAllSuccessors(stateTasks1,taskGraphT);
           addComps := List.map1(listAppend(stateTasks1,predecessors),List.getIndexFirst,comps);
-          eqLstNew := List.unique(listAppend(eqLstNew,BackendDAEUtil.getStrongComponentEquations(addComps,eqs,vars)));
+          eqLstNew := listAppend(BackendDAEUtil.getStrongComponentEquations(addComps,eqs,vars), eqLstNew);
         end if;
       end while;
       stateTasks := Dangerous.listReverseInPlace(stateTasks);

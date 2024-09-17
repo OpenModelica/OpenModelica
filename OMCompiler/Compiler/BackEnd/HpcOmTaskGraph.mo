@@ -111,6 +111,9 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
   end TASKGRAPHMETA;
 end TaskGraphMeta;
 
+type VariableType = enumeration(INTEGER, REAL, BOOLEAN, STRING);
+type VariableList = tuple<list<Integer>, list<Integer>, list<Integer>, list<Integer>>; //variables <int, float, bool, string>
+
 //----------------------------------------------------------
 //  Functions to build the task graph from the BLT structure
 //----------------------------------------------------------
@@ -448,7 +451,7 @@ protected
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
   BackendDAE.Variables orderedVars;
-  BackendDAE.Variables globalKnownVars, localKnownVars;
+  BackendDAE.Variables globalKnownVars, localKnownVars, knownVars;
   BackendDAE.EquationArray orderedEqs;
   TaskGraph graphIn;
   TaskGraph graphTmp;
@@ -462,12 +465,12 @@ protected
   array<Integer> nodeMark;
   tuple<list<Integer>, list<tuple<Integer, Integer>>, list<Integer>, list<Integer>> unsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc,stringVarIdc>
   list<Integer> eventVarLst;
-  array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccs; //required variables <int, float, bool, string>
   Integer componentIndex, numberOfComps;
   list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx, refCountInt, refCountFloat, refCountBool, refCountString>
   String compName;
   list<Integer> paramVars;
   array<list<Integer>> compParamMapping;
+  UnorderedMap<Integer, VariableList> requiredSccs;
 algorithm
   (adjacencyMatrix,isyst,ishared,numberOfComps) := iSystInfo;
   BackendDAE.SHARED(globalKnownVars=globalKnownVars, localKnownVars=localKnownVars) := ishared;
@@ -479,19 +482,53 @@ algorithm
   compNames := arrayUpdate(compNames,componentIndex,compName);
   _ := HpcOmBenchmark.benchSystem();
 
-  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,adjacencyMatrix,orderedVars,BackendVariable.addVariables(globalKnownVars,localKnownVars),orderedEqs,eventVarLst,iAnalyzeParameters);
+  // The known vars are only used if iAnalyzeParameters is true, skip this
+  // potentially very expensive operation otherwise.
+  if iAnalyzeParameters then
+    knownVars := BackendVariable.addVariables(globalKnownVars, localKnownVars);
+  else
+    knownVars := globalKnownVars;
+  end if;
+
+  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,adjacencyMatrix,orderedVars,knownVars,orderedEqs,eventVarLst,iAnalyzeParameters);
   compParamMapping := arrayUpdate(compParamMapping, componentIndex, paramVars);
-  requiredSccs := arrayCreate(numberOfComps,({},{},{},{})); //create a ref-counter for each component
-  requiredSccs := List.fold2(List.map1(Util.tuple41(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(Util.tuple42(unsolvedVars),fillSccList,2,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(List.map1(Util.tuple43(unsolvedVars),Util.makeTuple,1),fillSccList,3,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(List.map1(Util.tuple44(unsolvedVars),Util.makeTuple,1),fillSccList,4,varCompMapping,requiredSccs);
-  ((_,requiredSccs_RefCount)) := Array.fold(requiredSccs, convertRefArrayToList, (1,{}));
+
+  requiredSccs := UnorderedMap.new<VariableList>(Util.id, intEq);
+  for intVar in Util.tuple41(unsolvedVars) loop
+    fillRequiredSccs((intVar, 1), VariableType.INTEGER, varCompMapping, requiredSccs);
+  end for;
+
+  for floatVar in Util.tuple42(unsolvedVars) loop
+    fillRequiredSccs(floatVar, VariableType.REAL, varCompMapping, requiredSccs);
+  end for;
+
+  for boolVar in Util.tuple43(unsolvedVars) loop
+    fillRequiredSccs((boolVar, 1), VariableType.BOOLEAN, varCompMapping, requiredSccs);
+  end for;
+
+  for stringVar in Util.tuple44(unsolvedVars) loop
+    fillRequiredSccs((stringVar, 1), VariableType.STRING, varCompMapping, requiredSccs);
+  end for;
+
+  requiredSccs_RefCount := createRequiredSccsRefCount(requiredSccs);
   (commCosts,commCostsOfNode) := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
   graphTmp := fillAdjacencyList(graphIn,componentIndex,commCostsOfNode,1);
   graphTmp := Array.map1(graphTmp,List.sort,intGt);
   graphInfoOut := (graphTmp,inComps,compParamMapping,commCosts,compNames,nodeMark,componentIndex+1);
 end createTaskGraph1;
+
+protected function createRequiredSccsRefCount
+  input UnorderedMap<Integer, VariableList> requiredSccs;
+  output list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccsRefCount = {};
+protected
+  Integer scc_idx;
+  list<Integer> int_vars, float_vars, bool_vars, string_vars;
+algorithm
+  for e in UnorderedMap.toList(requiredSccs) loop
+    (scc_idx, (int_vars, float_vars, bool_vars, string_vars)) := e;
+    requiredSccsRefCount := (scc_idx, int_vars, float_vars, bool_vars, string_vars) :: requiredSccsRefCount;
+  end for;
+end createRequiredSccsRefCount;
 
 protected function updateCommCostBySccRef "author: marcusw
   Updates the given commCosts-array with the values of the refCount-list."
@@ -875,72 +912,32 @@ algorithm
   end matchcontinue;
 end isWhenEquation;
 
-protected function fillSccList "author: marcusw
-  This function appends the scc, which solves the given variable, to the requiredsccs-list."
-  input tuple<Integer,Integer> iVariable; //<varIdx, [derived = 0, not derived = 1]>
-  input Integer iVarType; //<1 = int, 2 = float, 3 = bool, 4 = string>
-  input array<tuple<Integer,Integer,Integer>> iVarCompMapping; //<sccIdx, eqSysIdx, offset>
-  input array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> iRequiredSccs; //<int vars, float vars, bool vars>
-  output array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> oRequiredSccs;
-algorithm
-  oRequiredSccs := match(iVariable,iVarType,iVarCompMapping,iRequiredSccs)
-    local
-      Integer varIdx, sccIdx;
-      list<Integer> integerVars,floatVars,booleanVars,stringVars;
-      array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> tmpRequiredSccs;
-    case ((varIdx,1),1,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        integerVars = varIdx::integerVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-    case ((varIdx,1),2,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        floatVars = varIdx::floatVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-    case ((varIdx,1),3,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        booleanVars = varIdx::booleanVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-    case ((varIdx,1),4,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        stringVars = varIdx::stringVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-   else iRequiredSccs;
-  end match;
-end fillSccList;
-
-protected function convertRefArrayToList "author: marcusw
-  Append the reference values for the given scc to the result list, if the reference counter is not zero."
-  input tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> iRefCountValues; //<referenceInt, referenceFloat, referenceBool,referenceString>
-  input tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>>> iList; //the current index and the current ref-list (<sccIdx, refCountInt, refCountFloat, refCountBool, refCountString>)
-  output tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>>> oList;
+protected function fillRequiredSccs
+  input tuple<Integer, Integer> var; // <varIdx, [0 if derived, 1 if not]>
+  input VariableType varType;
+  input array<tuple<Integer, Integer, Integer>> varMapping;
+  input UnorderedMap<Integer, tuple<list<Integer>, list<Integer>, list<Integer>, list<Integer>>> requiredSccs;
 protected
-  Integer curIdx;
-  list<Integer> integerVars,floatVars,booleanVars,stringVars;
-  tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>> tmpTuple;
-  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> curList;
+  Integer var_idx, scc_idx, not_derived;
+  list<Integer> integerVars, floatVars, booleanVars, stringVars;
 algorithm
-  oList := match(iRefCountValues,iList)
-    case(({},{},{},{}),(curIdx,curList))
-      then ((curIdx+1,curList));
-    case((integerVars,floatVars,booleanVars,stringVars),(curIdx,curList))
-      equation
-        tmpTuple = (curIdx,integerVars,floatVars,booleanVars,stringVars);
-        curList = tmpTuple::curList;
-      then ((curIdx+1,curList));
-   end match;
-end convertRefArrayToList;
+  (var_idx, not_derived) := var;
+
+  if not_derived == 1 then
+    (scc_idx, _, _) := varMapping[var_idx];
+    (integerVars, floatVars, booleanVars, stringVars) :=
+      UnorderedMap.getOrDefault(scc_idx, requiredSccs, ({}, {}, {}, {}));
+
+    () := match varType
+      case VariableType.INTEGER algorithm integerVars := var_idx::integerVars; then ();
+      case VariableType.REAL    algorithm floatVars := var_idx::floatVars;     then ();
+      case VariableType.BOOLEAN algorithm booleanVars := var_idx::booleanVars; then ();
+      case VariableType.STRING  algorithm stringVars := var_idx::stringVars;   then ();
+    end match;
+
+    UnorderedMap.add(scc_idx, (integerVars, floatVars, booleanVars, stringVars), requiredSccs);
+  end if;
+end fillRequiredSccs;
 
 protected function getUnsolvedVarsBySCC "author: marcusw, waurich
   Returns all required variables which are not solved inside the given component."
