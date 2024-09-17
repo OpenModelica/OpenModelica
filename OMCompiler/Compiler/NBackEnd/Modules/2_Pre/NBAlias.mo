@@ -527,9 +527,9 @@ protected
 
       case _ guard(not tpl.cont) then FAILED_CREF_TPL;
 
-      // time or constant found (nothing happens)
+      // time, parameter or constant found (nothing happens)
       case Expression.CREF()
-        guard(BVariable.isConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
+        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
       then tpl;
 
       // fail for record elements for now
