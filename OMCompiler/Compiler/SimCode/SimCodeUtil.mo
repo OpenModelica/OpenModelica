@@ -8578,9 +8578,10 @@ algorithm
     end if;
   elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
     // All protected model variables will be filtered out in addition
-    // to --fmiFilter=internal.
+    // to --fmiFilter=internal (with minor exceptions. e.g.
+    // for state sets.clocked states and previous vars)
     if not (ComponentReference.isInternalCref(var.varName) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
-      if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
+      if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var) and not ComponentReference.isPreviousCref(var.varName))) then
         exportVar := SOME(var.varName);
       end if;
     end if;
