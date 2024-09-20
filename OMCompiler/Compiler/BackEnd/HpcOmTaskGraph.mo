@@ -186,6 +186,7 @@ algorithm
   //print("createTaskGraph0 varCompMapping created\n");
   compDescs := getEquationStrings(comps,iSyst);  //gets the description i.e. the whole equation, for every component
   ((tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,_)) := List.fold(comps, function createTaskGraph1(iSystInfo=(adjacencyMatrix,iSyst,iShared,listLength(comps)),iVarInfo=(varCompMapping,eqCompMapping,{}),iAnalyzeParameters=iAnalyzeParameters),(tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,1));
+  tmpGraph := Array.mapNoCopy(tmpGraph, function List.sort(inCompFunc = intGt));
   // gather the metadata
   tmpGraphData := TASKGRAPHMETA(inComps, varCompMapping, eqCompMapping, compParamMapping, compNames, compDescs, exeCosts, commCosts, nodeMark, compInformations);
   if(intGt(eqSysIdx,1)) then
@@ -513,7 +514,6 @@ algorithm
   requiredSccs_RefCount := createRequiredSccsRefCount(requiredSccs);
   (commCosts,commCostsOfNode) := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
   graphTmp := fillAdjacencyList(graphIn,componentIndex,commCostsOfNode,1);
-  graphTmp := Array.map1(graphTmp,List.sort,intGt);
   graphInfoOut := (graphTmp,inComps,compParamMapping,commCosts,compNames,nodeMark,componentIndex+1);
 end createTaskGraph1;
 
