@@ -635,7 +635,6 @@ algorithm
     local
       Integer i;
       Integer v;
-      List<BackendDAE.Equation> eqnLst;
       List<BackendDAE.Var> varLst;
       array<Integer> ass2;
       List<Integer> es;
@@ -655,20 +654,15 @@ algorithm
     case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
       equation
        //get the equation string
-       eqnLst = BackendEquation.equationList(orderedEqs);
-       eqn = listGet(eqnLst,i);
-       eqString = BackendDump.equationString(eqn);
+       eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
        //get the variable string
-       varLst = BackendVariable.varList(orderedVars);
-       var = listGet(varLst,v);
-       varString = getVarString(var);
+       varString = getVarString(BackendVariable.getVarAt(orderedVars, v));
        desc = (eqString + " FOR " + varString);
        descLst = desc::iEqDesc;
      then
        descLst;
   case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
-       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
      then
@@ -676,9 +670,7 @@ algorithm
    case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -691,9 +683,7 @@ algorithm
    case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -706,9 +696,7 @@ algorithm
    case(BackendDAE.SINGLECOMPLEXEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -721,9 +709,7 @@ algorithm
    case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -736,9 +722,7 @@ algorithm
    case(BackendDAE.SINGLEIFEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -751,7 +735,6 @@ algorithm
   case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Torn linear System");
        descLst = desc::iEqDesc;
     then
@@ -759,7 +742,6 @@ algorithm
   case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Torn nonlinear System");
        descLst = desc::iEqDesc;
     then
