@@ -234,7 +234,7 @@ public
     Integer maxn, pos;
     Dimension sumDim;
   algorithm
-    Error.assertion(listLength(args)==listLength(tys) and listLength(args)>=1, getInstanceName() + " got wrong input sizes", sourceInfo());
+    Error.assertion(listLength(args)==listLength(tys) and not listEmpty(args), getInstanceName() + " got wrong input sizes", sourceInfo());
 
     // First: Get the number of dimensions and the element type
 

@@ -15836,7 +15836,7 @@ algorithm
       String fileContent;
     case SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples))
       algorithm
-        if listLength(nameValueTuples) >= 1 then
+        if not listEmpty(nameValueTuples) then
           for tpl in nameValueTuples loop
             (setting, value) := tpl;
             if stringEqual(setting, "s") and stringEqual(value, "cvode") then
