@@ -15,6 +15,7 @@
 #include <QMessageBox>
 #include <QTextDocumentFragment>
 #include <QGridLayout>
+#include <QRegularExpression>
 
 FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, QWidget *pParent)
   : QWidget(pParent)
@@ -97,9 +98,9 @@ FmuExportOutputWidget::~FmuExportOutputWidget()
 }
 
 /*!
- * \brief FmuExportOutputWidget::cancelCompilationOrSimulation
+ * \brief FmuExportOutputWidget::cancelCompilation
  * Slot activated when mpCancelButton clicked signal is raised.\n
- * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
+ * Cancels a running compilaiton by killing the fmu export process.
  */
 void FmuExportOutputWidget::cancelCompilation()
 {
@@ -117,8 +118,6 @@ void FmuExportOutputWidget::cancelCompilation()
     mpPostCompilationProcess->kill();
     mIsPostCompilationProcessRunning = false;
     progressStr = tr("Building cmake of %1 is cancelled.").arg(mpLibraryTreeItem->getName());
-    mpProgressBar->setRange(0, 1);
-    mpProgressBar->setValue(0);
     mpCancelButton->setEnabled(false);
   } else if (isZipCompilationProcessRunning()) {
     setZipCompilationProcessKilled(true);
@@ -145,7 +144,7 @@ void FmuExportOutputWidget::updateMessageTab(const QString &text)
 
 /*!
  * \brief FmuExportOutputWidget::compileModel
- * Compiles the simulation model.
+ * generates cmake target files for the compiled model
  */
 void FmuExportOutputWidget::compileModel()
 {
@@ -255,8 +254,7 @@ void FmuExportOutputWidget::compilationProcessStarted()
 /*!
  * \brief FmuExportOutputWidget::compilationProcessFinished
  * Slot activated when mpCompilationProcess finished signal is raised.\n
- * If the mpCompilationProcess finished normally then run the simulation executable.\n
- * Calls the Transformational Debugger or Algorithmic Debugger depending on the user selections.
+ * If the mpCompilationProcess finished normally then run the cmake build.\n
  * \param exitCode
  * \param exitStatus
  */
@@ -277,6 +275,12 @@ void FmuExportOutputWidget::compilationProcessFinished(int exitCode, QProcess::E
   }
 }
 
+/*!
+ * \brief FmuExportOutputWidget::compilationProcessFinishedHelper
+ * Slot activated when mpCompilationProcess finished signal is raised.\n
+ * \param exitCode
+ * \param exitStatus
+ */
 void FmuExportOutputWidget::compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
   QString progressStr;
@@ -337,10 +341,6 @@ void FmuExportOutputWidget::runPostCompilation()
   mpGeneratedFilesTabWidget->setCurrentIndex(1);
 }
 
-
-
-
-
 /*!
  * \brief FmuExportOutputWidget::postCompilationProcessStarted
 * Slot activated when mpPostCompilationProcess started signal is raised.\n
@@ -351,8 +351,8 @@ void FmuExportOutputWidget::postCompilationProcessStarted()
   mIsPostCompilationProcessRunning = true;
   const QString progressStr = tr("Building cmake of %1.").arg(mpLibraryTreeItem->getName());
   mpProgressLabel->setText(progressStr);
-  mpProgressBar->setRange(0, 0);
-  mpProgressBar->setTextVisible(false);
+  mpProgressBar->setTextVisible(true);
+  mpProgressBar->setMaximum(100);
   updateMessageTab(progressStr);
   mpCancelButton->setText(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(true);
@@ -364,7 +364,16 @@ void FmuExportOutputWidget::postCompilationProcessStarted()
  */
 void FmuExportOutputWidget::readPostCompilationStandardOutput()
 {
-  writePostCompilationOutput(QString(mpPostCompilationProcess->readAllStandardOutput()), Qt::black);
+  QString output = mpPostCompilationProcess->readAllStandardOutput();
+  // Regular expression to capture progress percentage (e.g., "[ 12%]")
+  QRegularExpression regex("\\[\\s*(\\d+)%\\]");
+  QRegularExpressionMatch match = regex.match(output);
+  if (match.hasMatch()) {
+    int currentStep = match.captured(1).toInt();
+    // Update the progress bar
+    mpProgressBar->setValue(currentStep);
+  }
+  writePostCompilationOutput(output, Qt::black);
 }
 
 /*!
@@ -395,7 +404,7 @@ void FmuExportOutputWidget::postCompilationProcessError(QProcess::ProcessError e
 /*!
  * \brief FmuExportOutputWidget::postCompilationProcessFinished
  * Slot activated when mpPostCompilationProcess finished signal is raised.\n
- * If the mpPostCompilationProcess finished normally then run the simulation executable.\n
+ * If the mpPostCompilationProcess finished normally then run the zipFMU() to export the FMU.\n
  * \param exitCode
  * \param exitStatus
  */
@@ -416,16 +425,20 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
   }
 }
 
+/*!
+ * \brief FmuExportOutputWidget::postCompilationProcessFinishedHelper
+ * Slot activated when mpPostCompilationProcess finished signal is raised.\n
+ * \param exitCode
+ * \param exitStatus
+ */
 void FmuExportOutputWidget::postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
   QString progressStr;
-  mpProgressBar->setRange(0, 1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    mpProgressBar->setValue(1);
+    mpProgressBar->setValue(mpProgressBar->maximum());
     progressStr = tr("Build cmake of %1 finished.").arg(mpLibraryTreeItem->getName());
   } else {
-    mpProgressBar->setValue(0);
     progressStr = tr("Build cmake of %1 failed.").arg(mpLibraryTreeItem->getName());
   }
   mpProgressLabel->setText(progressStr);
@@ -434,7 +447,7 @@ void FmuExportOutputWidget::postCompilationProcessFinishedHelper(int exitCode, Q
 
 
 /*!
- * \brief FmuExportOutputWidget::runPostCompilation
+ * \brief FmuExportOutputWidget::zipFMU
  * Runs the Zip compilation command after the post compilation of the model.
  */
 void FmuExportOutputWidget::zipFMU()
@@ -482,8 +495,8 @@ void FmuExportOutputWidget::zipFMU()
 }
 
 /*!
- * \brief FmuExportOutputWidget::postCompilationProcessStarted
-* Slot activated when mpPostCompilationProcess started signal is raised.\n
+ * \brief FmuExportOutputWidget::ZipCompilationProcessStarted
+* Slot activated when mpZipCompilationProcess started signal is raised.\n
  * Updates the progress label, bar and button controls.
  */
 void FmuExportOutputWidget::ZipCompilationProcessStarted()
@@ -499,8 +512,8 @@ void FmuExportOutputWidget::ZipCompilationProcessStarted()
 }
 
 /*!
- * \brief FmuExportOutputWidget::readPostCompilationStandardOutput
- * Slot activated when mpPostCompilationProcess readyReadStandardOutput signal is raised.\n
+ * \brief FmuExportOutputWidget::readZipCompilationStandardOutput
+ * Slot activated when mpZipCompilationProcess readyReadStandardOutput signal is raised.\n
  */
 void FmuExportOutputWidget::readZipCompilationStandardOutput()
 {
@@ -508,8 +521,8 @@ void FmuExportOutputWidget::readZipCompilationStandardOutput()
 }
 
 /*!
- * \brief FmuExportOutputWidget::readPostCompilationStandardError
- * Slot activated when mpPostCompilationProcess readyReadStandardError signal is raised.\n
+ * \brief FmuExportOutputWidget::readZipCompilationStandardError
+ * Slot activated when mpZipCompilationProcess readyReadStandardError signal is raised.\n
  */
 void FmuExportOutputWidget::readZipCompilationStandardError()
 {
@@ -517,8 +530,8 @@ void FmuExportOutputWidget::readZipCompilationStandardError()
 }
 
 /*!
- * \brief FmuExportOutputWidget::postCompilationProcessError
- * Slot activated when mpPostCompilationProcess errorOccurred signal is raised.\n
+ * \brief FmuExportOutputWidget::ZipCompilationProcessError
+ * Slot activated when mpZipCompilationProcess errorOccurred signal is raised.\n
  * \param error
  */
 void FmuExportOutputWidget::ZipCompilationProcessError(QProcess::ProcessError error)
@@ -533,9 +546,8 @@ void FmuExportOutputWidget::ZipCompilationProcessError(QProcess::ProcessError er
 }
 
 /*!
- * \brief FmuExportOutputWidget::postCompilationProcessFinished
- * Slot activated when mpPostCompilationProcess finished signal is raised.\n
- * If the mpPostCompilationProcess finished normally then run the simulation executable.\n
+ * \brief FmuExportOutputWidget::ZipCompilationProcessFinished
+ * Slot activated when mpZipCompilationProcess finished signal is raised.\n
  * \param exitCode
  * \param exitStatus
  */
@@ -562,6 +574,13 @@ void FmuExportOutputWidget::ZipCompilationProcessFinished(int exitCode, QProcess
   }
 }
 
+/*!
+ * \brief FmuExportOutputWidget::ZipCompilationProcessFinishedHelper
+ * Slot activated when mpZipCompilationProcess finished signal is raised.\n
+ * If the mpZipCompilationProcess finished normally then run the simulation executable.\n
+ * \param exitCode
+ * \param exitStatus
+ */
 void FmuExportOutputWidget::ZipCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
   QString progressStr;
@@ -578,6 +597,11 @@ void FmuExportOutputWidget::ZipCompilationProcessFinishedHelper(int exitCode, QP
   updateMessageTab(progressStr);
 }
 
+/*!
+ * \brief FmuExportOutputWidget::setDefaults
+ * set the default working directory to user settings
+ * after fmu export is success or failure
+ */
 void FmuExportOutputWidget::setDefaults()
 {
   // unset the generate debug symbols flag
