@@ -159,6 +159,7 @@ SOURCES += Util/Helper.cpp \
   TLM/TLMCoSimulationThread.cpp \
   FMI/ImportFMUDialog.cpp \
   FMI/ImportFMUModelDescriptionDialog.cpp \
+  FMI/FMUExportOutputWidget.cpp \
   Plotting/VariablesWidget.cpp \
   Plotting/DiagramWindow.cpp \
   Options/NotificationsDialog.cpp \
@@ -274,6 +275,7 @@ HEADERS  += Util/Helper.h \
   TLM/TLMCoSimulationThread.h \
   FMI/ImportFMUDialog.h \
   FMI/ImportFMUModelDescriptionDialog.h \
+  FMI/FMUExportOutputWidget.h \
   Plotting/VariablesWidget.h \
   Plotting/DiagramWindow.h \
   Options/NotificationsDialog.h \

@@ -1196,12 +1196,11 @@ algorithm
     case ("modelEquationsUC",_)
       then Values.STRING("There were errors during extraction of uncertainty equations. Use getErrorString() to see them.");
 
-    case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::_)
+    case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_)
       algorithm
-        Error.addMessage(Error.DEPRECATED_API_CALL, {"translateModelFMU", "buildModelFMU"});
-        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true);
+        (b, outCache, ret_val) := translateModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
       then
-        ret_val;
+        Values.BOOL(b);
 
     case ("translateModelFMU", _)
       then Values.STRING("");
@@ -3918,6 +3917,128 @@ algorithm
     end if;
   end if;
 end configureFMU;
+
+protected function translateModelFMU
+  "translates modelica model as FMU, generates only c code and does not build"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String FMUVersion;
+  input String inFMUType;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input list<String> platforms = {"static"};
+  input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  output Boolean success;
+  output FCore.Cache cache;
+  output Values.Value outValue;
+protected
+  Absyn.Program p;
+  Flags.Flag flags;
+  String commandLineOptions;
+  list<String> args;
+  Boolean haveAnnotation;
+algorithm
+  // handle encryption
+  // if AST contains encrypted class show nothing
+  p := SymbolTable.getAbsyn();
+  if Interactive.astContainsEncryptedClass(p) then
+    Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+    cache := inCache;
+    outValue := Values.STRING("");
+  elseif Config.ignoreCommandLineOptionsAnnotation() then
+    (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+  else
+    // read the __OpenModelica_commandLineOptions
+    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
+    // backup the flags.
+    flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
+    try
+      // apply if there are any new flags
+      if haveAnnotation then
+        args := System.strtok(commandLineOptions, " ");
+        FlagsUtil.readArgs(args);
+      end if;
+
+      (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+      // reset to the original flags
+      FlagsUtil.saveFlags(flags);
+    else
+      FlagsUtil.saveFlags(flags);
+      fail();
+    end try;
+  end if;
+end translateModelFMU;
+
+protected function callTranslateModelFMU
+ "Translates a model into target code and writes CMakeLists.txt"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String FMUVersion;
+  input String inFMUType;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input list<String> platforms = {"static"};
+  input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  output Boolean success;
+  output FCore.Cache cache;
+  output Values.Value outValue;
+protected
+  String filenameprefix, fmuTargetName;
+  GlobalScript.SimulationOptions defaultSimOpt;
+  SimCode.SimulationSettings simSettings;
+  list<String> libs;
+  String FMUType = inFMUType;
+algorithm
+  cache := inCache;
+  if not FMI.checkFMIVersion(FMUVersion) then
+    success :=false;
+    outValue := Values.STRING("");
+    Error.addMessage(Error.UNKNOWN_FMU_VERSION, {FMUVersion});
+    return;
+  elseif not FMI.checkFMIType(FMUType) then
+    success :=false;
+    outValue := Values.STRING("");
+    Error.addMessage(Error.UNKNOWN_FMU_TYPE, {FMUType});
+    return;
+  end if;
+  if not FMI.canExportFMU(FMUVersion, FMUType) then
+    success :=false;
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
+    return;
+  end if;
+  if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
+    Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
+    FMUType := "me";
+  end if;
+
+  // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
+  //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix, ".", "_");
+  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathLastIdent(className) else inFileNamePrefix);
+  if isSome(inSimSettings)  then
+    SOME(simSettings) := inSimSettings;
+  else
+    defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
+    simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
+  end if;
+  FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
+  FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+
+  try
+    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
+                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
+  else
+    success :=false;
+    outValue := Values.STRING("");
+  end try;
+  FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
+  FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
+end callTranslateModelFMU;
 
 protected function buildModelFMU
   input FCore.Cache inCache;

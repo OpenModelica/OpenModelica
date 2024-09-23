@@ -2643,6 +2643,25 @@ QString OMCProxy::buildModelFMU(QString className, QString version, QString type
 }
 
 /*!
+ * \brief OMCProxy::translateModelFMU
+ * Creates the FMU of the model.
+ * \param className - the name of the class.
+ * \param version - the fmu version
+ * \param type - the fmu type
+ * \param fileNamePrefix
+ * \param platforms
+ * \param includeResources
+ * \return
+ */
+bool OMCProxy::translateModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources)
+{
+  fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
+  bool result = mpOMCInterface->translateModelFMU(className, version, type, fileNamePrefix, platforms, includeResources);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
  * \brief OMCProxy::translateModelXML
  * Creates the XML of the model.
  * \param className - the name of the class.
