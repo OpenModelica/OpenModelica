@@ -1495,7 +1495,7 @@ protected
   String cr_str1, cr_str2;
 algorithm
   // Check that we have some crefs, otherwise we print an error and fail.
-  if listLength(inCrefs) < 1 then
+  if listEmpty(inCrefs) then
     Error.addSourceMessageAndFail(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,
       {inIterator}, inInfo);
   end if;

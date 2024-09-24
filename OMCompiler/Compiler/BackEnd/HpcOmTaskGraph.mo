@@ -3597,7 +3597,7 @@ algorithm
         true = realGt(realAdd(highestCommCost, highestParentExeCost), sumParentExeCosts);
         //We can only merge the parents if they have no other child-nodes -> check this
         parentChilds = List.map1(parentNodes, Array.getIndexFirst, iGraph);
-        true = intEq(listLength(List.removeOnTrue(1, intEq, List.map(parentChilds, listLength))), 0);
+        true = listEmpty(List.removeOnTrue(1, intEq, List.map(parentChilds, listLength)));
         mergeNodeList = iNodeIdx :: parentNodes;
         //print("HpcOmTaskGraph.mergeParentNodes0: mergeNodeList " + stringDelimitList(List.map(mergeNodeList,intString), ", ") + "\n");
         //print("HpcOmTaskGraph.mergeParentNodes0: Merging " + intString(iNodeIdx) + " with " + stringDelimitList(List.map(parentNodes,intString), ", ") + "\n");

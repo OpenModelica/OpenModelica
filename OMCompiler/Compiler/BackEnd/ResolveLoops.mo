@@ -1594,17 +1594,15 @@ protected function priorizeEqsWithVarCrosses2
   input array<list<Integer>> priorities;
 protected
   Boolean b0,b1,b2;
-  Integer numCrossVars;
   list<Integer> eqVars,crossVars;
 algorithm
   eqVars := arrayGet(mIn,eq);
   crossVars := List.intersectionOnTrue(eqVars,varCrossLst,intEq);
-  numCrossVars := listLength(crossVars);
-  if numCrossVars == 0 then
+  if listEmpty(crossVars) then
     arrayGetAppendLst(1,{eq},priorities);
-  elseif numCrossVars == 1 then
+  elseif List.hasOneElement(crossVars) then
     arrayGetAppendLst(2,{eq},priorities);
-  elseif numCrossVars >= 2 then
+  else
     arrayGetAppendLst(3,{eq},priorities);
   end if;
 end priorizeEqsWithVarCrosses2;
@@ -2241,7 +2239,7 @@ algorithm
         endPaths = List.filter1OnTrue(rest,firstInListIsEqual,endNode);
         endPaths = List.filter1OnTrue(endPaths,lastInListIsEqual,startNode);
         endPaths = listAppend(startPaths,endPaths);
-        closedALoop = intGe(listLength(endPaths),1);
+        closedALoop = not listEmpty(endPaths);
         newLoops = if closedALoop then connectPaths(path,endPaths) else {};
         restPaths = if closedALoop then restPathsIn else (path::restPathsIn);
         loops = listAppend(newLoops,loopsIn);
