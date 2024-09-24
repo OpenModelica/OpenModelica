@@ -182,9 +182,9 @@ void FmuExportOutputWidget::compileModel()
   }
 
 #ifdef Q_OS_WIN
-  arguments << "-G" << "MSYS Makefiles" << CMAKE_BUILD_TYPE << "-DCMAKE_C_COMPILER=clang" << "..";
+  arguments << "-G" << "MSYS Makefiles" << CMAKE_BUILD_TYPE << "-DCMAKE_C_COMPILER=clang" << "-DCMAKE_COLOR_MAKEFILE=OFF" << "..";
 #else
-  arguments << CMAKE_BUILD_TYPE << "-DCMAKE_C_COMPILER=clang" << "..";
+  arguments << CMAKE_BUILD_TYPE << "-DCMAKE_C_COMPILER=clang" << "-DCMAKE_COLOR_MAKEFILE=OFF" << "..";
 #endif
 
   mpCompilationProcess->start(program, arguments);
