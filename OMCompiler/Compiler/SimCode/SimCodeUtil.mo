@@ -8578,9 +8578,10 @@ algorithm
     end if;
   elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
     // All protected model variables will be filtered out in addition
-    // to --fmiFilter=internal.
+    // to --fmiFilter=internal (with minor exceptions. e.g.
+    // for state sets.clocked states and previous vars)
     if not (ComponentReference.isInternalCref(var.varName) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
-      if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
+      if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var) and not ComponentReference.isPreviousCref(var.varName))) then
         exportVar := SOME(var.varName);
       end if;
     end if;
@@ -15274,6 +15275,12 @@ algorithm
         local Integer index;
         case SOME(index)
         then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+      end match;
+      // fix fmi_index when using nfScalarize
+      sv.fmi_index := match sv.fmi_index
+        local Integer fmiIndex;
+        case SOME(fmiIndex)
+        then SOME(fmiIndex + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
       end match;
     end if;
     sv := match sv.aliasvar
