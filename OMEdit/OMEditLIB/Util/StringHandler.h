@@ -154,6 +154,7 @@ public:
   static bool naturalSort(const QString &s1, const QString &s2);
 #if defined(_WIN32)
   static QProcessEnvironment simulationProcessEnvironment();
+  static QProcessEnvironment modelicaSimulationProcessEnvironment(const QString pathsFileName, QString *errorMsg);
 #endif
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
   static QString getSimulationMessageTypeString(StringHandler::SimulationMessageType type);
