@@ -74,9 +74,9 @@ simulate(Test5); getErrorString();
 // 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
 // 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
 //
-// 	Nominal map after replacements (conflicting index = 1):
+// 	Nominal map after replacements (conflicting array index = 1):
 // 	(x, 2.0)
-// 	(z, -2e7)
+// 	(z, 2e7)
 // Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:

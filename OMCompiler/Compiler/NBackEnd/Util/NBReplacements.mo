@@ -416,6 +416,5 @@ public
     end match;
   end getFunctionBody;
 
-
   annotation(__OpenModelica_Interface="backend");
 end NBReplacements;

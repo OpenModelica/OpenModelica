@@ -46,14 +46,16 @@ protected
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import Function = NFFunction;
+  import JSON;
+  import MetaModelica.Dangerous.*;
   import NFPrefixes.{Variability, Purity};
   import Prefixes = NFPrefixes;
+  import RangeIterator = NFRangeIterator;
+  import SimplifyExp = NFSimplifyExp;
   import TypeCheck = NFTypeCheck;
   import UnorderedSet;
   import ValuesUtil;
-  import MetaModelica.Dangerous.*;
-  import RangeIterator = NFRangeIterator;
-  import JSON;
+  import Variable = NFVariable;
 
 public
   import Absyn.Path;
@@ -2152,6 +2154,51 @@ public
     ENUM_LITERAL(name = name, ty = Type.ENUMERATION(typePath = ty_path)) := exp;
     path := AbsynUtil.suffixPath(ty_path, name);
   end enumLiteralPath;
+
+  function getNominal
+    input output Expression exp;
+  algorithm
+    exp := Expression.map(exp, computeNominal);
+    exp := SimplifyExp.simplify(exp);
+  end getNominal;
+
+  function computeNominal
+    "Replaces variable crefs with their nominal values and normalizes by removing all negations.
+    Needs to be mapped with Expression.map()"
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Pointer<Variable> varPointer;
+        Option<Expression> nominal;
+        Operator operator;
+        Operator.SizeClassification sizeClass;
+
+      // replace variables with their nominal values
+      case CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))) algorithm
+        nominal := Variable.getNominal(Pointer.access(varPointer));
+      then Util.getOptionOrDefault(nominal, exp);
+
+      // remove negation
+      case INTEGER() then INTEGER(abs(exp.value));
+      case REAL()    then REAL(abs(exp.value));
+      case UNARY()   then exp.exp;
+
+      // replace binary - with +
+      case BINARY(operator = operator) guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.SUBTRACTION) algorithm
+        (_, sizeClass)  := Operator.classify(operator);
+        exp.operator    := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+      then exp;
+
+      // replace multary - with +
+      case MULTARY(operator = operator) guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION) algorithm
+        exp.arguments     := listAppend(exp.arguments, exp.inv_arguments);
+        exp.inv_arguments := {};
+      then exp;
+
+      else exp;
+    end match;
+  end computeNominal;
 
   function toAbsynOpt
     input Option<Expression> exp;

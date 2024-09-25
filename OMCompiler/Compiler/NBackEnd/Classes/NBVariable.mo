@@ -588,11 +588,6 @@ public
     end match;
   end isStateSelect;
 
-  function getVariableAttributes
-    input Variable var;
-    output VariableAttributes variableAttributes = var.backendinfo.attributes;
-  end getVariableAttributes;
-
   function setVariableAttributes
     input output Variable var;
     input VariableAttributes variableAttributes;
@@ -1389,7 +1384,7 @@ public
 
   function getStartAttribute
     input Pointer<Variable> var_ptr;
-    output Option<Expression> start =  VariableAttributes.getStartAttribute(getVariableAttributes(Pointer.access(var_ptr)));
+    output Option<Expression> start =  VariableAttributes.getStartAttribute(Variable.getVariableAttributes(Pointer.access(var_ptr)));
   end getStartAttribute;
 
   function hasNonTrivialAliasBinding

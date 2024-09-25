@@ -978,7 +978,7 @@ protected
       fail();
     end if;
 
-    // create expression iterators and loop while there is a next element
+    // array handling: create expression iterators and loop while there is a next element
     arr_iter := listArray(list(ExpressionIterator.fromExp(e) for e in lst_values));
 
     while ExpressionIterator.hasNext(arr_iter[1]) loop
@@ -989,6 +989,7 @@ protected
         arrayUpdate(arr_iter, i, iter);
         current := exp :: current;
       end for;
+      // 'current' now represents all values of one array element
       checkNominalThresholdSingle(current, map, set, index);
       index := index + 1;
     end while;
@@ -1001,39 +1002,55 @@ protected
     input AliasSet set;
     input Integer index;
   protected
-    list<Expression> constants, rest;
+    list<Expression> constants, rest, zeroes;
     list<Real> real_constants;
     Real nom_min, nom_max, nom_quotient;
+    String str;
   algorithm
+    // split by constant and non constant
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
-    try
-      List.assertIsEmpty(rest);
-    else
-      // non literal nominal values are not allowed
-      if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed.\n" + AliasSet.toString(set)
-                          + "\n\tNominal map after replacements (violating index = " + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
-        fail();
-      else
-        Error.addCompilerWarning(getInstanceName() + " failed because non literal nominal values are not allowed. Use -d=dumprepl for more information.\n");
-        fail();
-      end if;
-    end try;
-    real_constants := list(abs(Expression.realValue(val)) for val in constants);
-    nom_min := List.minElement(real_constants, realLt);
-    nom_max := List.maxElement(real_constants, realLt);
-    nom_quotient := nom_max / nom_min;
-    if nom_quotient > NOMINAL_THRESHOLD then
-      if Flags.isSet(Flags.DUMP_REPL) then
-        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ".\n"
-                                + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting index = " + intString(index) + "):\n\t"
-                                + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t"));
-      else
-        Error.addCompilerWarning(getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ". Use -d=dumprepl for more information.\n");
+    // remove and report zeros
+    (zeroes, constants) := List.splitOnTrue(constants, Expression.isZero);
+
+    // report non literal nominal values if failtrace is activated
+    if Flags.isSet(Flags.FAILTRACE) then
+      str := getInstanceName() + ": There are non literal nominal values in following alias set:"
+        + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
+        + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
+      Error.addCompilerWarning(str);
+    end if;
+
+    // report nominal values that are too far apart
+    if not listEmpty(constants) then
+      real_constants := list(abs(Expression.realValue(val)) for val in constants);
+      nom_min := List.minElement(real_constants, realLt);
+      nom_max := List.maxElement(real_constants, realLt);
+      nom_quotient := nom_max / nom_min;
+      if nom_quotient > NOMINAL_THRESHOLD then
+        str := getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ".";
+        if Flags.isSet(Flags.DUMP_REPL) then
+          str := str + "\n" + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
+            + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
+        else
+          str := str + " Use -d=dumprepl for more information.\n";
+        end if;
+        Error.addCompilerWarning(str);
       end if;
     end if;
-  end checkNominalThresholdSingle;
 
+    // zero valued and non literal nominal values are not allowed
+    if not listEmpty(zeroes) then
+      str := getInstanceName() + " failed because zero values are not allowed.";
+      if Flags.isSet(Flags.DUMP_REPL) then
+        str := str + "\n\tNominal map after replacements (violating array index = " + intString(index) + "):\n\t"
+          + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
+      else
+        str := str + " Use -d=dumprepl for more information.\n";
+      end if;
+      Error.addCompilerError(str);
+      fail();
+    end if;
+  end checkNominalThresholdSingle;
 
   function stateSelectAlways
     "Throws an error if multiple variables have StateSelect = always."
@@ -1345,7 +1362,8 @@ protected
       if Util.isSome(nominal_opt) then
         UnorderedMap.add(var_cref, Util.getOption(nominal_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
-        new_rhs := SimplifyExp.simplify(new_rhs);
+        // normalize the nominal values (remove negations)
+        new_rhs := Expression.getNominal(new_rhs);
         UnorderedMap.add(var_cref, new_rhs, attrcollector.nominal_map);
       end if;
     end fixValues;
