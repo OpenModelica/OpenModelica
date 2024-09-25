@@ -1800,6 +1800,30 @@ public
       names := listReverse(Pointer.access(acc));
     end getVarNames;
 
+    function getScalarVarNames
+      "Returns the names of all variables, with arrays and records expanded."
+      input VariablePointers variables;
+      output list<ComponentRef> names = {};
+    protected
+      Variable var;
+    algorithm
+      for var_ptr in toList(variables) loop
+        var := Pointer.access(var_ptr);
+
+        if Type.isArray(var.ty) then
+          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name)) loop
+            if Type.isComplex(ComponentRef.nodeType(cr)) then
+              names := listAppend(ComponentRef.getRecordChildren(cr), names);
+            else
+              names := cr :: names;
+            end if;
+          end for;
+        else
+          names := var.name :: names;
+        end if;
+      end for;
+    end getScalarVarNames;
+
     function getMarkedVars
       input VariablePointers variables;
       input array<Boolean> marks;
