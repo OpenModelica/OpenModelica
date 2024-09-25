@@ -1649,7 +1649,6 @@ public
       end match;
     end getType;
 
-
     function getForIterator
       "does not work for algorithms"
       input Equation eqn;
