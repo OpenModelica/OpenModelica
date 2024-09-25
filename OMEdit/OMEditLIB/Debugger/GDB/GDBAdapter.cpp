@@ -316,7 +316,13 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
   setGDBKilled(false);
 #if defined(_WIN32)
   /* Set the environment for GDB process */
-  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
+  QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName());
+  fileName = fileName.replace("//", "/");
+  QString errorMsg;
+  QProcessEnvironment processEnvironment = StringHandler::modelicaSimulationProcessEnvironment(fileName + ".bat", &errorMsg);
+  if (!errorMsg.isEmpty()) {
+    MainWindow::instance()->getTargetOutputWidget()->logDebuggerErrorOutput(errorMsg);
+  }
   if (!simulationOptions.getFileName().isEmpty()) {
     QFileInfo fileInfo(simulationOptions.getFileName());
     processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
