@@ -1,3 +1,33 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #include "FMUExportOutputWidget.h"
 #include "MainWindow.h"
 #include "Modeling/ItemDelegate.h"
@@ -24,11 +54,11 @@ FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, 
 
   // set the FMU Name and the fmuTmpPath
   if (!OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text().isEmpty()) {
-    mpFmuTmpPath = QDir::currentPath().append("/").append(OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text()+".fmutmp");
-    mpFMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
+    mFmuTmpPath = QDir::currentPath().append("/").append(OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text()+".fmutmp");
+    mFMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
   } else {
-    mpFmuTmpPath = QDir::currentPath().append("/").append(mpLibraryTreeItem->getName()+".fmutmp");
-    mpFMUName = mpLibraryTreeItem->getName();
+    mFmuTmpPath = QDir::currentPath().append("/").append(mpLibraryTreeItem->getName()+".fmutmp");
+    mFMUName = mpLibraryTreeItem->getName();
   }
 
   // progress label
@@ -159,7 +189,7 @@ void FmuExportOutputWidget::compileModel()
 #endif
   connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
 
-  QString cmakeBuildPath = QString("%1%2").arg(mpFmuTmpPath, "/sources/build_cmake");
+  QString cmakeBuildPath = QString("%1%2").arg(mFmuTmpPath, "/sources/build_cmake");
   if (!QDir().exists(cmakeBuildPath)) {
     QDir().mkpath(cmakeBuildPath);
   }
@@ -464,17 +494,17 @@ void FmuExportOutputWidget::zipFMU()
   connect(mpZipCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(ZipCompilationProcessFinished(int, QProcess::ExitStatus)));
   // check if FMU path is provided by user, otherwise generate the fmu in OMEDit working directory
   if (!mpLibraryTreeItem->getWhereToMoveFMU().isEmpty()){
-    mpFmuLocationPath = mpLibraryTreeItem->getWhereToMoveFMU() + "/" + mpFMUName + ".fmu";
+    mFmuLocationPath = mpLibraryTreeItem->getWhereToMoveFMU() + "/" + mFMUName + ".fmu";
   } else {
-    mpFmuLocationPath = OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory() + "/" + mpFMUName + ".fmu";
+    mFmuLocationPath = OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory() + "/" + mFMUName + ".fmu";
   }
 
   // change the directory to fmuTmpPath
-  MainWindow::instance()->getOMCProxy()->changeDirectory(mpFmuTmpPath);
+  MainWindow::instance()->getOMCProxy()->changeDirectory(mFmuTmpPath);
 
   QString program = "zip";
   QStringList arguments;
-  arguments  << "-r" << mpFmuLocationPath << ".";
+  arguments  << "-r" << mFmuLocationPath << ".";
 
   // check for fmiSources=false and do not export the source folder
   if (!OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked()) {
@@ -484,10 +514,10 @@ void FmuExportOutputWidget::zipFMU()
     arguments << arguments << "-x" << "'sources/build_cmake/*'";
   }
   // remove the fmu if already exists.
-  if (QFile::exists(mpFmuLocationPath)) {
-    if (!QFile::remove(mpFmuLocationPath)) {
+  if (QFile::exists(mFmuLocationPath)) {
+    if (!QFile::remove(mFmuLocationPath)) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                              GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE).arg(mpFmuLocationPath),
+                                                              GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE).arg(mFmuLocationPath),
                                                               Helper::scriptingKind, Helper::warningLevel));
     }
   }
@@ -556,11 +586,11 @@ void FmuExportOutputWidget::ZipCompilationProcessFinished(int exitCode, QProcess
   mIsZipCompilationProcessRunning = false;
   QString exitCodeStr = tr("Zip compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-      writePostCompilationOutput(tr("The FMU is generated at: %1").arg(mpFmuLocationPath), Qt::blue);
+      writePostCompilationOutput(tr("The FMU is generated at: %1").arg(mFmuLocationPath), Qt::blue);
     //trace export FMU
     if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked()) {
       //Push traceability information automaticaly to Daemon
-      MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", mpLibraryTreeItem->getFileName(), mpLibraryTreeItem->getNameStructure(), mpFmuLocationPath);
+      MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", mpLibraryTreeItem->getFileName(), mpLibraryTreeItem->getNameStructure(), mFmuLocationPath);
     }
     ZipCompilationProcessFinishedHelper(exitCode, exitStatus);
     setDefaults();
