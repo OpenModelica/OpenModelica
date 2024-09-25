@@ -111,6 +111,17 @@ template equationIndexAlternativeTearing(SimEqSystem eq)
     then at.index
 end equationIndexAlternativeTearing;
 
+template equationIndexGeneral(SimEqSystem eq)
+::=
+  match eq
+  case SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
+  case SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
+    equationIndexAlternativeTearing(eq)
+  else
+    equationIndex(eq)
+  end match
+end equationIndexGeneral;
+
 template dumpEqs(list<SimEqSystem> eqs)
 ::= match getConfigString(OBFUSCATE)
   case "none" then dumpEqsWork(eqs)
