@@ -1029,7 +1029,7 @@ protected
       if nom_quotient > NOMINAL_THRESHOLD then
         str := getInstanceName() + ": The quotient of the greatest and lowest nominal value is greater than the nominal threshold = "+ realString(NOMINAL_THRESHOLD) + ".";
         if Flags.isSet(Flags.DUMP_REPL) then
-          str := str + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
+          str := str + "\n" + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
             + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
         else
           str := str + " Use -d=dumprepl for more information.\n";
