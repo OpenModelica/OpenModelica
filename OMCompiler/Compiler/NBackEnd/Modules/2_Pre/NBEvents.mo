@@ -975,7 +975,7 @@ protected
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
         // collect event info and replace all conditions with auxiliary variables
         bucket_ptr := Pointer.create(bucket);
-        EquationPointers.mapPtr(eqData.simulation, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcTree = funcTree));
+        EquationPointers.mapPtr(eqData.equations, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcTree = funcTree));
         EquationPointers.mapPtr(eqData.clocked, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcTree = funcTree));
         EquationPointers.mapPtr(eqData.removed, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcTree = funcTree));
         bucket := Pointer.access(bucket_ptr);

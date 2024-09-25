@@ -958,40 +958,6 @@ protected
     end if;
   end setStartFixed;
 
-  function normalizeNominal
-    "Replaces variable crefs with their nominal values and normalizes by removing all negations.
-    Needs to be mapped with Expression.map()"
-    input output Expression exp;
-  algorithm
-    exp := match exp
-      local
-        Operator operator;
-        Operator.SizeClassification sizeClass;
-
-      // replace variables with their nominal values
-      case Expression.CREF()    then BVariable.getNominal(BVariable.getVar(exp.cref));
-
-      // remove negation
-      case Expression.INTEGER() then Expression.INTEGER(abs(exp.value));
-      case Expression.REAL()    then Expression.REAL(abs(exp.value));
-      case Expression.UNARY()   then exp.exp;
-
-      // replace binary - with +
-      case Expression.BINARY(operator = operator) guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.SUBTRACTION) algorithm
-        (_, sizeClass)  := Operator.classify(operator);
-        exp.operator    := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-      then exp;
-
-      // replace multary - with +
-      case Expression.MULTARY(operator = operator) guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION) algorithm
-        exp.arguments     := listAppend(exp.arguments, exp.inv_arguments);
-        exp.inv_arguments := {};
-      then exp;
-
-      else exp;
-    end match;
-  end normalizeNominal;
-
   function checkNominalThreshold
     "Calculates quotient of greatest and lowest nominal value and checks if quotient is above the constant NOMINAL_THRESHOLD."
     input UnorderedMap<ComponentRef, Expression> map;
@@ -1046,20 +1012,15 @@ protected
     // remove and report zeros
     (zeroes, constants) := List.splitOnTrue(constants, Expression.isZero);
 
-    // zero valued and non literal nominal values are not allowed
-    if not (listEmpty(rest) and listEmpty(zeroes)) then
-      str := getInstanceName() + " failed because zero valued and non literal nominal values are not allowed.";
-      if Flags.isSet(Flags.DUMP_REPL) then
-        str := str + "\n\tNominal map after replacements (violating array index = " + intString(index) + "):\n\t"
-          + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
-      else
-        str := str + " Use -d=dumprepl for more information.\n";
-      end if;
-      Error.addCompilerError(str);
-      fail();
+    // report non literal nominal values if failtrace is activated
+    if Flags.isSet(Flags.FAILTRACE) then
+      str := getInstanceName() + ": There are non literal nominal values in following alias set:"
+        + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
+        + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
+      Error.addCompilerWarning(str);
     end if;
 
-    // if there are no values to compare, exit
+    // report nominal values that are too far apart
     if not listEmpty(constants) then
       real_constants := list(abs(Expression.realValue(val)) for val in constants);
       nom_min := List.minElement(real_constants, realLt);
@@ -1075,6 +1036,19 @@ protected
         end if;
         Error.addCompilerWarning(str);
       end if;
+    end if;
+
+    // zero valued and non literal nominal values are not allowed
+    if not listEmpty(zeroes) then
+      str := getInstanceName() + " failed because zero values are not allowed.";
+      if Flags.isSet(Flags.DUMP_REPL) then
+        str := str + "\n\tNominal map after replacements (violating array index = " + intString(index) + "):\n\t"
+          + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
+      else
+        str := str + " Use -d=dumprepl for more information.\n";
+      end if;
+      Error.addCompilerError(str);
+      fail();
     end if;
   end checkNominalThresholdSingle;
 
@@ -1389,8 +1363,7 @@ protected
         UnorderedMap.add(var_cref, Util.getOption(nominal_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         // normalize the nominal values (remove negations)
-        new_rhs := Expression.map(new_rhs, normalizeNominal);
-        new_rhs := SimplifyExp.simplify(new_rhs);
+        new_rhs := Expression.getNominal(new_rhs);
         UnorderedMap.add(var_cref, new_rhs, attrcollector.nominal_map);
       end if;
     end fixValues;

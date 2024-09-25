@@ -45,7 +45,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Direction;
   import NFPrefixes.AccessLevel;
   import Type = NFType;
-  import NFBackendExtension.{BackendInfo, VariableKind};
+  import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
 
 protected
   import Ceval = NFCeval;
@@ -652,6 +652,17 @@ public
       var.binding := NFBinding.EMPTY_BINDING;
     end if;
   end moveBinding;
+
+  function getVariableAttributes
+    input Variable var;
+    output VariableAttributes variableAttributes = var.backendinfo.attributes;
+  end getVariableAttributes;
+
+  function getNominal
+    input Variable var;
+    output Option<Expression> nominal = VariableAttributes.getNominal(getVariableAttributes(var));
+  end getNominal;
+
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;
