@@ -1952,46 +1952,43 @@ algorithm
   for i in 1:arrayLength(actualComponents) loop
     enode := expectedComponents[i];
     ecomp := InstNode.component(enode);
+    anode := actualComponents[i];
 
-    if Component.isTyped(ecomp) then
-      anode := actualComponents[i];
-
-      // The records must have the same named components, but they don't need to
-      // be in the same order.
-      if InstNode.name(anode) == InstNode.name(enode) then
-        // If the names match we can use the index as is.
-        idx := i;
+    // The records must have the same named components, but they don't need to
+    // be in the same order.
+    if InstNode.name(anode) == InstNode.name(enode) then
+      // If the names match we can use the index as is.
+      idx := i;
+    else
+      // Otherwise look the index of the component up in the actual type.
+      try
+        idx := ClassTree.lookupComponentIndex(InstNode.name(enode), classTree);
       else
-        // Otherwise look the index of the component up in the actual type.
-        try
-          idx := ClassTree.lookupComponentIndex(InstNode.name(enode), classTree);
-        else
-          // The records do not have the same named components and are incompatible.
-          matchKind := MatchKind.NOT_COMPATIBLE;
-          return;
-        end try;
-
-        anode := actualComponents[idx];
-      end if;
-
-      // If the components aren't in the same order then we need to type cast
-      // the record expression to the expected record type.
-      if i <> idx then
-        matchKind := MatchKind.CAST;
-      end if;
-
-      // Match the type of the component to the expected type.
-      acomp := InstNode.component(anode);
-      e := expressions[idx];
-      (e, _, mk) := matchTypes(Component.getType(acomp), Component.getType(ecomp), e, options);
-      matchedExpressions := e :: matchedExpressions;
-
-      if mk == MatchKind.CAST then
-        matchKind := mk;
-      elseif not isValidPlugCompatibleMatch(mk) then
+        // The records do not have the same named components and are incompatible.
         matchKind := MatchKind.NOT_COMPATIBLE;
-        break;
-      end if;
+        return;
+      end try;
+
+      anode := actualComponents[idx];
+    end if;
+
+    // If the components aren't in the same order then we need to type cast
+    // the record expression to the expected record type.
+    if i <> idx then
+      matchKind := MatchKind.CAST;
+    end if;
+
+    // Match the type of the component to the expected type.
+    acomp := InstNode.component(anode);
+    e := expressions[idx];
+    (e, _, mk) := matchTypes(Component.getType(acomp), Component.getType(ecomp), e, options);
+    matchedExpressions := e :: matchedExpressions;
+
+    if mk == MatchKind.CAST then
+      matchKind := mk;
+    elseif not isValidPlugCompatibleMatch(mk) then
+      matchKind := MatchKind.NOT_COMPATIBLE;
+      break;
     end if;
   end for;
 
