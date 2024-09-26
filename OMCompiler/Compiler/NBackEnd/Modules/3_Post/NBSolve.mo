@@ -278,6 +278,7 @@ public
           // ToDo 1: resolve the eval order
           // ToDo 2: resolve potential equation slicing
           (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(comp.eqn)), comp.var_cref, funcTree, kind, implicit_index, slicing_map);
+          comp.eqn := Slice.SLICE(Pointer.create(eqn), comp.eqn.indices);
           comp.status := solve_status;
         then ({comp}, solve_status);
 
