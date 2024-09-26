@@ -1,0 +1,128 @@
+// name: fmiFilterTest.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmiFilterTest.fmu fmiFilterTest.log fmiFilterTest.xml fmiFilterTest_tmp.xml fmiFilterTest_info.json
+
+
+setCommandLineOptions("--exportClocksInModelDescription"); getErrorString();
+
+loadString("
+  model fmiFilterTest
+    input Real u;
+    Integer id(start = 0);
+  protected
+    Real p = 1;
+    Real xc(start = 0);
+    Real xd(start = 0);
+  equation
+    der(xc) = u;
+    when Clock() then
+      xd = previous(xd) + p*u;
+      id = previous(id) + 1;
+    end when;
+  end fmiFilterTest;
+"); getErrorString();
+
+buildModelFMU(fmiFilterTest, fileNamePrefix="fmiFilterTest"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmiFilterTest.fmu modelDescription.xml > fmiFilterTest_tmp.xml"); getErrorString();
+
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmiFilterTest_tmp.xml > fmiFilterTest.xml"); getErrorString();
+readFile("fmiFilterTest.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmiFilterTest_tmp.xml > fmiFilterTest.xml"); getErrorString();
+readFile("fmiFilterTest.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmiFilterTest.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"xc\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(xc)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"previous(xd)\"
+//     valueReference=\"2\"
+//     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"4\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"xd\"
+//     valueReference=\"5\"
+//     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"3\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"previous(id)\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     >
+//     <Integer/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"id\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"6\"
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"4\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//     <DiscreteStates>
+//       <Unknown index=\"5\" dependencies=\"3 4\" dependenciesKind=\"dependent dependent\" />
+//     </DiscreteStates>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"6\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

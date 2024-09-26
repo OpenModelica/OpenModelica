@@ -80,7 +80,7 @@
 #include "Util/NetworkAccessManager.h"
 #include "Modeling/InstallLibraryDialog.h"
 #include "CrashReport/CrashReportDialog.h"
-
+#include "FMI/FMUExportOutputWidget.h"
 #include <QtSvg/QSvgGenerator>
 #include <QNetworkProxyFactory>
 
@@ -1167,7 +1167,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   // set the status message.
-  mpStatusBar->showMessage(tr("Exporting model as FMU"));
+  mpStatusBar->showMessage(tr("Translating model %1 as FMU").arg(pLibraryTreeItem->getName()));
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
@@ -1185,7 +1185,6 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QString version = OptionsDialog::instance()->getFMIPage()->getFMIExportVersion();
   QString type = OptionsDialog::instance()->getFMIPage()->getFMIExportType();
   QString FMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
-  QString newFmuName = pLibraryTreeItem->getWhereToMoveFMU();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms;
   if (pSettings->contains("FMIExport/Platforms")) {
@@ -1208,41 +1207,21 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
   }
   bool includeResources = OptionsDialog::instance()->getFMIPage()->getIncludeResourcesCheckBox()->isChecked();
-  QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
-  if (!fmuFileName.isEmpty()) { // FMU was generated
-    if (!newFmuName.isEmpty()) { // FMU should be moved
-      QDir newNameAsDir(newFmuName);
-      QString whereToMove;
-      if (newNameAsDir.exists()) {
-        whereToMove = newNameAsDir.filePath(pLibraryTreeItem->getNameStructure() + ".fmu");
-      } else {
-        whereToMove = newFmuName;
-      }
-      QFile(whereToMove).remove();
-      if (QFile(fmuFileName).rename(whereToMove)) {
-        fmuFileName = whereToMove;
-      } else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_MOVE_FAILED).arg(whereToMove),
-                                                              Helper::scriptingKind, Helper::errorLevel));
-      }
-    }
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(fmuFileName),
-                                                          Helper::scriptingKind, Helper::notificationLevel));
-  }
-  //trace export FMU
-  if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
-    //Push traceability information automaticaly to Daemon
-    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
-  }
-  // unset the generate debug symbols flag
-  if (OptionsDialog::instance()->getFMIPage()->getGenerateDebugSymbolsCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions(QString("-d=-gendebugsymbols"));
-  }
-  MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  bool isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
   mpStatusBar->clearMessage();
+
+  if (isTranslationSuccessful) {
+    // create a FMU compilation window  similar to simulation process
+    FmuExportOutputWidget * pFmuExportOutputWidget = new FmuExportOutputWidget(pLibraryTreeItem, this);
+    MessagesWidget::instance()->addSimulationOutputTab(pFmuExportOutputWidget, pLibraryTreeItem->getName() + "_fmuExport");
+    pFmuExportOutputWidget->compileModel();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Translation of FMU: <b>%1</b> Failed").arg(pLibraryTreeItem->getName()),
+                                                                  "Translation Error", Helper::errorLevel));
+  }
 }
 
 #ifndef OM_ENABLE_ENCRYPTION

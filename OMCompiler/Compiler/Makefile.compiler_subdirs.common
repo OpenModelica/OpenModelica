@@ -5,9 +5,9 @@
 
 include $(srcdir)/Makefile.common
 
-all : .testvariables .depend runtime parser
+all : .testvariables .depend runtime parser FrontEndCpp
 
-SUBDIRS	= runtime parser Script
+SUBDIRS	= runtime parser Script FrontEndCpp
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 .SUFFIXES: .o .mo .h .c
@@ -23,9 +23,11 @@ runtime: $(SRCHSRCDIR)
 	$(MAKE) -C ../runtime/ -f $(MAKETARGET)
 parser: $(SRCHSRCDIR)
 	$(MAKE) -C ../../Parser/ -f $(MAKETARGET)
+FrontEndCpp: $(SRCHSRCDIR)
+  $(MAKE) -C ../FrontEndCpp/ -f $(MAKETARGET)
 
 clean:
-	for d in ../runtime/ ../../Parser/ Scripts; do \
+	for d in ../runtime/ ../../Parser/ Scripts ../FrontEndCpp; do \
 		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))

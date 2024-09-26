@@ -27,72 +27,29 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-/*
- * @author Adeel Asghar <adeel.asghar@liu.se>
- */
 
-#ifndef SIMULATIONOUTPUTWIDGET_H
-#define SIMULATIONOUTPUTWIDGET_H
+#ifndef FMUEXPORTOUTPUTWIDGET_H
+#define FMUEXPORTOUTPUTWIDGET_H
 
-#include "SimulationOptions.h"
-#include "Util/StringHandler.h"
-
-#include <QTreeView>
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QTextBrowser>
+#include <QWidget>
 #include <QProcess>
-#include <QDateTime>
-#include <QTcpServer>
+#include <QTabWidget>
+#include "Modeling/LibraryTreeWidget.h"
 
 class Label;
 class OutputPlainTextEdit;
-class SimulationOutputHandler;
-class SimulationOutputWidget;
-class SimulationMessage;
-class ArchivedSimulationItem;
 
-class SimulationOutputTree : public QTreeView
-{
-  Q_OBJECT
-private:
-  SimulationOutputWidget *mpSimulationOutputWidget;
-  QAction *mpSelectAllAction;
-  QAction *mpCopyAction;
-  QAction *mpExpandAllAction;
-  QAction *mpCollapseAllAction;
-public:
-  SimulationOutputTree(SimulationOutputWidget *pSimulationOutputWidget);
-  SimulationOutputWidget* getSimulationOutputWidget() {return mpSimulationOutputWidget;}
-  int getDepth(const QModelIndex &index) const;
-public slots:
-  void showContextMenu(QPoint point);
-  void callLayoutChanged(int logicalIndex, int oldSize, int newSize);
-  void selectAllMessages();
-  void copyMessages();
-protected:
-  virtual void keyPressEvent(QKeyEvent *event) override;
-};
-
-class SimulationOutputWidget : public QWidget
+class FmuExportOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  enum SocketState {
-    NotConnected,
-    Connected,
-    Disconnected
-  };
-  SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
-  ~SimulationOutputWidget();
-  void start();
-  SimulationOptions getSimulationOptions() {return mSimulationOptions;}
+  FmuExportOutputWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+  ~FmuExportOutputWidget();
   QProgressBar* getProgressBar() {return mpProgressBar;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
-  bool isOutputStructured() {return mIsOutputStructured;}
-  SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
-  QTcpServer* getTcpServer() {return mpTcpServer;}
   QProcess* getCompilationProcess() {return mpCompilationProcess;}
   void setCompilationProcessKilled(bool killed) {mIsCompilationProcessKilled = killed;}
   bool isCompilationProcessKilled() {return mIsCompilationProcessKilled;}
@@ -101,62 +58,43 @@ public:
   void setPostCompilationProcessKilled(bool killed) {mIsPostCompilationProcessKilled = killed;}
   bool isPostCompilationProcessKilled() {return mIsPostCompilationProcessKilled;}
   bool isPostCompilationProcessRunning() {return mIsPostCompilationProcessRunning;}
-  QProcess* getSimulationProcess() {return mpSimulationProcess;}
-  void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
-  bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
-  bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
-  void addGeneratedFileTab(QString fileName);
-  void writeSimulationMessage(SimulationMessage *pSimulationMessage);
-  void embeddedServerInitialized();
+  QProcess* getZipCompilationProcess() {return mpZipCompilationProcess;}
+  void setZipCompilationProcessKilled(bool killed) {mIsZipCompilationProcessKilled = killed;}
+  bool isZipCompilationProcessKilled() {return mIsZipCompilationProcessKilled;}
+  bool isZipCompilationProcessRunning() {return mIsZipCompilationProcessRunning;}
+  QString getFMUPath() {return mFmuLocationPath;}
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
+  void compileModel();
 private:
-  SimulationOptions mSimulationOptions;
+  QString mFmuTmpPath;
+  QString mFMUName;
+  QString mFmuLocationPath;
+  LibraryTreeItem *mpLibraryTreeItem;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
-  QToolButton *mpOpenTransformationalDebuggerButton;
-  QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
-  QList<QString> mGeneratedFilesList;
-  QList<QString> mGeneratedAlgLoopFilesList;
   OutputPlainTextEdit *mpCompilationOutputTextBox;
-  QString mSimulationStandardOutput;
-  QString mSimulationStandardError;
-  SimulationOutputHandler *mpSimulationOutputHandler;
-  bool mIsOutputStructured;
-  QTextBrowser *mpSimulationOutputTextBrowser;
-  SimulationOutputTree *mpSimulationOutputTree;
-  ArchivedSimulationItem *mpArchivedSimulationItem;
-  QTcpServer *mpTcpServer;
-  QTcpSocket *mpTcpSocket;
-  SocketState mSocketState;
+  OutputPlainTextEdit *mpPostCompilationOutputTextBox;
   QProcess *mpCompilationProcess;
   bool mIsCompilationProcessKilled;
   bool mIsCompilationProcessRunning;
   QProcess *mpPostCompilationProcess;
   bool mIsPostCompilationProcessKilled;
   bool mIsPostCompilationProcessRunning;
-  QProcess *mpSimulationProcess;
-  bool mIsSimulationProcessKilled;
-  bool mIsSimulationProcessRunning;
-  QDateTime mResultFileLastModifiedDateTime;
-
-  void compileModel();
+  QProcess *mpZipCompilationProcess;
+  bool mIsZipCompilationProcessKilled;
+  bool mIsZipCompilationProcessRunning;
   void runPostCompilation();
   void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
-  void runSimulationExecutable();
   void writeCompilationOutput(QString output, QColor color);
+  void writePostCompilationOutput(QString output, QColor color);
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
-  void deleteIntermediateCompilationFiles();
-  void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
-  void simulationProcessFinishedHelper();
+  void zipFMU();
+  void ZipCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
+  void setDefaults();
 private slots:
-  void openTransformationalDebugger();
-  void openSimulationLogFile();
-  void createSimulationProgressSocket();
-  void readSimulationProgress();
-  void socketDisconnected();
   void compilationProcessStarted();
   void readCompilationStandardOutput();
   void readCompilationStandardError();
@@ -167,18 +105,17 @@ private slots:
   void readPostCompilationStandardError();
   void postCompilationProcessError(QProcess::ProcessError error);
   void postCompilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void simulationProcessStarted();
-  void readSimulationStandardOutput();
-  void readSimulationStandardError();
-  void simulationProcessError(QProcess::ProcessError error);
-  void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void ZipCompilationProcessStarted();
+  void readZipCompilationStandardOutput();
+  void readZipCompilationStandardError();
+  void ZipCompilationProcessError(QProcess::ProcessError error);
+  void ZipCompilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 public slots:
-  void cancelCompilationOrSimulation();
-  void openTransformationBrowser(QUrl url);
+  void cancelCompilation();
 signals:
-  void simulationFinished();
   void updateText(const QString &text);
   void updateProgressBar(QProgressBar *pProgressBar);
 };
 
-#endif // SIMULATIONOUTPUTWIDGET_H
+#endif // FMUEXPORTOUTPUTWIDGET_H
+

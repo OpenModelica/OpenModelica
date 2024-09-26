@@ -55,7 +55,7 @@ function mapNoCopy<T>
   end FuncType;
 algorithm
   for i in 1:arrayLength(inArray) loop
-    arrayUpdate(inArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i)));
+    arrayUpdateNoBoundsChecking(inArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i)));
   end for;
 end mapNoCopy;
 
@@ -77,7 +77,7 @@ protected
 algorithm
   for i in 1:arrayLength(inArray) loop
     (e, outArg) := inFunc((arrayGetNoBoundsChecking(inArray, i), outArg));
-    arrayUpdate(inArray, i, e);
+    arrayUpdateNoBoundsChecking(inArray, i, e);
   end for;
 end mapNoCopy_1;
 

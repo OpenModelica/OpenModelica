@@ -999,14 +999,18 @@ function convertWhenStatement
   input DAE.ElementSource source;
   output DAE.Statement whenStatement;
 protected
+  Expression co;
+  list<ComponentRef> conditions;
   DAE.Exp cond;
   list<DAE.Statement> stmts;
   Option<DAE.Statement> when_stmt = NONE();
 algorithm
   for b in listReverse(whenBranches) loop
-    cond := Expression.toDAE(Util.tuple21(b));
+    co := Util.tuple21(b);
+    conditions := list(c for c guard(Type.isBoolean(ComponentRef.getSubscriptedType(c))) in UnorderedSet.toList(Expression.extractCrefs(co)));
+    cond := Expression.toDAE(co);
     stmts := convertStatements(Util.tuple22(b));
-    when_stmt := SOME(DAE.Statement.STMT_WHEN(cond, {}, false, stmts, when_stmt, source));
+    when_stmt := SOME(DAE.Statement.STMT_WHEN(cond, list(ComponentRef.toDAE(c) for c in conditions), false, stmts, when_stmt, source));
   end for;
 
   SOME(whenStatement) := when_stmt;

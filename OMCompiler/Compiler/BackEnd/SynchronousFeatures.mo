@@ -133,7 +133,7 @@ algorithm
   if not listEmpty(systs) then
     BackendDAE.DAE({syst}, shared) := BackendDAEOptimize.collapseIndependentBlocks(BackendDAE.DAE(systs, shared));
     (systs, clockedSysts1, unpartRemEqs) := baseClockPartitioning(syst, shared);
-    assert(listLength(clockedSysts1) == 0, "Get clocked system in SynchronousFeatures.addContVarsEqs");
+    assert(listEmpty(clockedSysts1), "Get clocked system in SynchronousFeatures.addContVarsEqs");
     shared.removedEqs := BackendEquation.addList(unpartRemEqs, shared.removedEqs);
   end if;
 

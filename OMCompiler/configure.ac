@@ -921,6 +921,7 @@ Compiler/Makefile \
 Compiler/Script/Makefile \
 Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
+Compiler/FrontEndCpp/Makefile \
 Parser/Makefile \
 SimulationRuntime/OMSICpp/Makefile.env \
 SimulationRuntime/cpp/Makefile.env \

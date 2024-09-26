@@ -2,7 +2,10 @@
 #include <stdexcept>
 #include <ostream>
 
+extern "C" {
 #include "meta/meta_modelica.h"
+}
+
 #include "MetaModelica.h"
 
 using namespace OpenModelica::MetaModelica;

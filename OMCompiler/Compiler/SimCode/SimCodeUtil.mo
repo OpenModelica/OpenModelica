@@ -4682,7 +4682,7 @@ algorithm
         crstates = List.map(statevars, BackendVariable.varCref);
 
         // create vars for A
-        simCodeAVars = List.map3(aVars, dlowvarToSimvar, NONE(), iVars, {});
+        simCodeAVars = List.map3(aVars, dlowvarToSimvar, NONE(), iVars, NONE());
 
         // get first a element for varinfo
         crA = ComponentReference.subscriptCrefWithInt(crA, 1);
@@ -8280,7 +8280,8 @@ protected
   Mutable<HashSet.HashSet> hs;
   array<list<SimCodeVar.SimVar>> simVars = arrayCreate(size(SimVarsIndex,1), {});
   Integer primeSize;
-  list<DAE.ComponentRef> iterationVars;
+  list<DAE.ComponentRef> iterationVarsLst;
+  Option<UnorderedSet<DAE.ComponentRef>> iterationVars;
   Option<DAE.Exp> timeInterval = NONE();
 
   constant Boolean debug = false;
@@ -8289,7 +8290,8 @@ algorithm
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, localKnownVars=localKnownVars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
 
   // get all iterationVars from initialization DAE which are needed for FMI-2.0 exports
-  (_, iterationVars) := BackendDAEOptimize.listAllIterationVariables0(inInitDAE.eqs);
+  (_, iterationVarsLst) := BackendDAEOptimize.listAllIterationVariables0(inInitDAE.eqs);
+  iterationVars := if listEmpty(iterationVarsLst) then NONE() else SOME(UnorderedSet.fromList(iterationVarsLst, ComponentReference.hashComponentRef, ComponentReference.crefEqual));
 
   primeSize := Util.nextPrime(
     integer(1.4*(
@@ -8414,7 +8416,7 @@ protected function extractVarsFromList
   input BackendDAE.Variables aliasVars, vars;
   input Mutable<HashSet.HashSet> hs;
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
-  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode";
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "optional set of iterationVars in InitializationMode";
 algorithm
   if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
     /* ignore variable, since they are treated by kind in the codegen */
@@ -8522,7 +8524,7 @@ protected function extractVarFromVar
   input array<list<SimCodeVar.SimVar>> simVars;
   input Mutable<HashSet.HashSet> hs "all processed crefs";
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
-  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "optional set of iterationVars in InitializationMode" ;
 protected
   list<DAE.ComponentRef> scalar_crefs;
   BackendDAE.Var scalarVar;
@@ -8578,9 +8580,10 @@ algorithm
     end if;
   elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
     // All protected model variables will be filtered out in addition
-    // to --fmiFilter=internal.
+    // to --fmiFilter=internal (with minor exceptions. e.g.
+    // for state sets.clocked states and previous vars)
     if not (ComponentReference.isInternalCref(var.varName) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
-      if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
+      if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var) and not ComponentReference.isPreviousCref(var.varName))) then
         exportVar := SOME(var.varName);
       end if;
     end if;
@@ -8609,7 +8612,7 @@ protected function extractVarFromVar2
   input array<list<SimCodeVar.SimVar>> simVars;
   input Mutable<HashSet.HashSet> hs "all processed crefs";
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
-  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "optional set of iterationVars in InitializationMode" ;
 protected
   SimCodeVar.SimVar simVar;
   SimCodeVar.SimVar derivSimvar;
@@ -8754,7 +8757,7 @@ end addSimVar;
 protected function derVarFromStateVar
   input SimCodeVar.SimVar state;
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
-  input list<DAE.ComponentRef> iterationVars = {} "list of iterationVars in InitializationMode";
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars = NONE() "optional set of iterationVars in InitializationMode";
   output SimCodeVar.SimVar deriv = state;
 protected
   Unit.Unit unit;
@@ -8778,7 +8781,7 @@ algorithm
   deriv.maxValue := NONE();
 
   // Only give nominal to iteration variables
-  if ComponentReference.crefInLst(deriv.name, iterationVars) then
+  if isSome(iterationVars) and UnorderedSet.contains(deriv.name, Util.getOption(iterationVars)) then
     // guess a nominal value for the derivative, if we have that information
     //   der(x).nominal = x.nominal/simulationInterval
     // otherwise just keep the nominal value of the state
@@ -8797,7 +8800,7 @@ algorithm
   deriv.isValueChangeable := false;
   deriv.variability := SOME(SimCodeVar.CONTINUOUS());
   // derivativeVars can be either APPROX or CALUCALTED
-  if ComponentReference.crefInLst(deriv.name, iterationVars) then  // Check Variable is an iterationVar
+  if isSome(iterationVars) and UnorderedSet.contains(deriv.name, Util.getOption(iterationVars)) then  // Check Variable is an iterationVar
     deriv.initial_ := SOME(SimCodeVar.APPROX());
     deriv.initialValue := SOME(DAE.RCONST(0.0));
   else
@@ -9958,7 +9961,7 @@ protected function dlowvarToSimvar
   input BackendDAE.Var dlowVar;
   input Option<BackendDAE.Variables> optAliasVars;
   input BackendDAE.Variables inVars;
-  input list<DAE.ComponentRef> iterationVars = {}; // list of iterationVars in InitializationMode default set to empty
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars = NONE(); // optional set of iterationVars in InitializationMode
   output SimCodeVar.SimVar simVar;
 algorithm
   simVar := match (dlowVar, optAliasVars, inVars)
@@ -10155,7 +10158,7 @@ protected function setInitialAttribute
   input SimCodeVar.Variability variability;
   input SimCodeVar.Causality causality;
   input Boolean isFixed;
-  input list<DAE.ComponentRef> iterationVars;
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars;
   input SimCodeVar.AliasVariable aliasvar;
   input BackendDAE.Variables globalknownVars;
   output SimCodeVar.Initial initial_;
@@ -10195,10 +10198,11 @@ protected function getInitialAttributeHelperForParameters
    with Variablity = parameter"
   input BackendDAE.Var var;
   input Boolean isFixed;
-  input list<DAE.ComponentRef> iterationVars "list of iterationvars from InitializationDAE";
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "list of iterationvars from InitializationDAE";
   output SimCodeVar.Initial initial_;
 algorithm
-  if not isFixed and ComponentReference.crefInLst(var.varName, iterationVars) and startValueIsConstOrNone(var) then
+  if not isFixed and isSome(iterationVars) and
+     UnorderedSet.contains(var.varName, Util.getOption(iterationVars)) and startValueIsConstOrNone(var) then
     initial_ := SimCodeVar.APPROX();
   else
     initial_ := SimCodeVar.CALCULATED(); // default value
@@ -10227,12 +10231,12 @@ protected function getInitialAttributeHelper
   "Returns the initial attribute of a variable with variablity = continuous or discrete."
   input BackendDAE.Var var;
   input Boolean isFixed;
-  input list<DAE.ComponentRef> iterationVars "list of iterationvars from InitializationDAE";
+  input Option<UnorderedSet<DAE.ComponentRef>> iterationVars "optional set of iterationvars from InitializationDAE";
   output SimCodeVar.Initial initial_;
 algorithm
   if isFixed and startValueIsConstOrNone(var) then
     initial_ := SimCodeVar.EXACT() "initialized with start value";
-  elseif ComponentReference.crefInLst(var.varName, iterationVars) and startValueIsConstOrNone(var) then
+  elseif isSome(iterationVars) and UnorderedSet.contains(var.varName, Util.getOption(iterationVars)) and startValueIsConstOrNone(var) then
     initial_ := SimCodeVar.APPROX();
   else
     initial_ := SimCodeVar.CALCULATED() "default";
@@ -15275,6 +15279,12 @@ algorithm
         case SOME(index)
         then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
       end match;
+      // fix fmi_index when using nfScalarize
+      sv.fmi_index := match sv.fmi_index
+        local Integer fmiIndex;
+        case SOME(fmiIndex)
+        then SOME(fmiIndex + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+      end match;
     end if;
     sv := match sv.aliasvar
       case SimCodeVar.NOALIAS() then sv;
@@ -15829,7 +15839,7 @@ algorithm
       String fileContent;
     case SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples))
       algorithm
-        if listLength(nameValueTuples) >= 1 then
+        if not listEmpty(nameValueTuples) then
           for tpl in nameValueTuples loop
             (setting, value) := tpl;
             if stringEqual(setting, "s") and stringEqual(value, "cvode") then

@@ -588,11 +588,6 @@ public
     end match;
   end isStateSelect;
 
-  function getVariableAttributes
-    input Variable var;
-    output VariableAttributes variableAttributes = var.backendinfo.attributes;
-  end getVariableAttributes;
-
   function setVariableAttributes
     input output Variable var;
     input VariableAttributes variableAttributes;
@@ -1389,7 +1384,7 @@ public
 
   function getStartAttribute
     input Pointer<Variable> var_ptr;
-    output Option<Expression> start =  VariableAttributes.getStartAttribute(getVariableAttributes(Pointer.access(var_ptr)));
+    output Option<Expression> start =  VariableAttributes.getStartAttribute(Variable.getVariableAttributes(Pointer.access(var_ptr)));
   end getStartAttribute;
 
   function hasNonTrivialAliasBinding
@@ -1799,6 +1794,30 @@ public
       mapPtr(variables, function getVarNameTraverse(acc = acc));
       names := listReverse(Pointer.access(acc));
     end getVarNames;
+
+    function getScalarVarNames
+      "Returns the names of all variables, with arrays and records expanded."
+      input VariablePointers variables;
+      output list<ComponentRef> names = {};
+    protected
+      Variable var;
+    algorithm
+      for var_ptr in toList(variables) loop
+        var := Pointer.access(var_ptr);
+
+        if Type.isArray(var.ty) then
+          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name)) loop
+            if Type.isComplex(ComponentRef.nodeType(cr)) then
+              names := listAppend(ComponentRef.getRecordChildren(cr), names);
+            else
+              names := cr :: names;
+            end if;
+          end for;
+        else
+          names := var.name :: names;
+        end if;
+      end for;
+    end getScalarVarNames;
 
     function getMarkedVars
       input VariablePointers variables;

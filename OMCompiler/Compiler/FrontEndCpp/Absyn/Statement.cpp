@@ -263,9 +263,9 @@ void WhileStatement::print(std::ostream &os) const noexcept
 
 WhenStatement::WhenStatement(MetaModelica::Record value)
   : Base(Comment{value[1]}, SourceInfo{value[2]}),
-    _branches{value[0].mapVector<Branch>([](MetaModelica::Value v) {
+    _branches{value[0].mapVector([](MetaModelica::Value v) {
       auto t = v.toTuple();
-      return std::pair(t[0], t[1].mapVector<Statement>());
+      return Branch(t[0], t[1].mapVector<Statement>());
     })}
 {
 

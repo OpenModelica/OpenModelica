@@ -487,7 +487,7 @@ match simVar
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(variability)
   let clockIndex = getClockIndex(simVar, simCode)
-  let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
+  let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableFMIIndex(cref2simvar(previousName, simCode))%>'
   let caus = getCausality2(causality)
   let initial = getFmiInitialAttributeStr(simVar)
   <<

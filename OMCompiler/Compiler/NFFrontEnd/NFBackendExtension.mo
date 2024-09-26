@@ -719,6 +719,16 @@ public
       end match;
     end setTearingSelect;
 
+    function getNominal
+      input VariableAttributes attr;
+      output Option<Expression> nominal;
+    algorithm
+      nominal := match attr
+        case VAR_ATTR_REAL() then attr.nominal;
+        else NONE();
+      end match;
+    end getNominal;
+
     function scalarizeReal
       input ExpressionIterator        quantity_iter "quantity";
       input ExpressionIterator        unit_iter "SI Unit for actual computation value";

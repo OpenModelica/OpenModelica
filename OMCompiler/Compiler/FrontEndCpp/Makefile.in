@@ -1,0 +1,28 @@
+#
+# Makefile for Compiler/FrontEndCpp
+#
+# $Id$
+#
+
+TOP_DIR=@abs_top_builddir@
+GCINCLUDE = -DGC_THREADS -I$(top_builddir)/3rdParty/gc/include
+OMC_CONFIG_INC = $(top_builddir)
+
+CFLAGS = @CFLAGS@ @CHECK_C_ERRORS@
+
+SHELL	= /bin/sh
+CC	= @CC@
+CXX	= @CXX@
+IDL	= @IDLCMD@
+IDLPYTHON = @IDLPYTHONCMD@
+CXXFLAGS = @CXXFLAGS@
+CPPFLAGS = @CPPFLAGS@ -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/gc $(GCINCLUDE)
+TRIPLE=@host_short@
+SHREXT=@SHREXT@
+RPATH=@RPATH@
+LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/" @OMCRUNTIME_SHARED_LDFLAGS@
+
+include Makefile.common
+
+Makefile: Makefile.in
+	cd @top_builddir@ && ./config.status

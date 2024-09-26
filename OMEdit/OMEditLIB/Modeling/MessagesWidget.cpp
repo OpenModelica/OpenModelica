@@ -41,6 +41,7 @@
 #include "Simulation/SimulationDialog.h"
 #include "Simulation//SimulationOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
+#include "FMI/FMUExportOutputWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
@@ -576,6 +577,15 @@ bool MessagesWidget::closeTab(int index)
   // Close OMSSimulationOutputWidget
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
+    return true;
+  }
+  // Close FMUExportOutputWidget
+  FmuExportOutputWidget *pFmuExportOutputWidget = qobject_cast<FmuExportOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pFmuExportOutputWidget
+      && !pFmuExportOutputWidget->isCompilationProcessRunning()
+      && !pFmuExportOutputWidget->isPostCompilationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
     emit messageTabClosed(index);
     return true;

@@ -194,7 +194,7 @@ algorithm
   (transitionLst, otherLst2) := List.extractOnTrue(otherLst1, isTransition);
   ({initialStateOp}, otherLst3) := List.extractOnTrue(otherLst2, isInitialState);
   (eqnLst, otherLst4) := List.extractOnTrue(otherLst3, isEquation);
-  assert(listLength(otherLst4) == 0, "Internal compiler error. Unexpected elements in flat state machine.");
+  assert(listEmpty(otherLst4), "Internal compiler error. Unexpected elements in flat state machine.");
 
   DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState"), expLst={DAE.CREF(componentRef=crefInitialState)})) := initialStateOp;
   ({initialStateComp}, smCompsLst2) := List.extract1OnTrue(smCompsLst, sMCompEqualsRef, crefInitialState);
