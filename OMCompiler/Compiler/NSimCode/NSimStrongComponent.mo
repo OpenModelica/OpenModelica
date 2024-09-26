@@ -635,13 +635,19 @@ public
           (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, kind, simcode_map, equation_map);
         then (tmp, getIndex(tmp));
 
+        case StrongComponent.RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
+          // for now create algorithms
+          // ToDo: actually create resizable code
+          (tmp, simCodeIndices) := createAlgorithm(Pointer.access(Slice.getT(comp.eqn)), simCodeIndices, equation_map);
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.GENERIC_COMPONENT() algorithm
           // create a generic index list call of a for-loop equation
           eqn_ptr := Slice.getT(comp.eqn);
-          eqn := Pointer.access(eqn_ptr);
-          ident := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref);
+          eqn     := Pointer.access(eqn_ptr);
+          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref);
           generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
-          tmp := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));
+          tmp     := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));
           UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));

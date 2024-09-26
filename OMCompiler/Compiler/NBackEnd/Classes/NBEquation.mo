@@ -1649,7 +1649,6 @@ public
       end match;
     end getType;
 
-
     function getForIterator
       "does not work for algorithms"
       input Equation eqn;
@@ -2211,10 +2210,10 @@ public
           list<Pointer<Variable>> lhs_lst, rhs_lst;
 
         case SCALAR_EQUATION()
-        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 
         case ARRAY_EQUATION()
-        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 
         case RECORD_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec)) algorithm
           lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec));
@@ -2225,12 +2224,12 @@ public
               stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
             end for;
           else
-            stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+            stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
           end if;
         then stmts;
 
         case RECORD_EQUATION()
-        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source)};
+        then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 
         case FOR_EQUATION() algorithm
           (iter_lst, range_lst) := Equation.Iterator.getFrames(eqn.iter);
@@ -2391,8 +2390,9 @@ public
       output list<tuple<Expression, list<Statement>>> stmts;
     protected
       tuple<Expression, list<Statement>> stmt;
+      Expression condition = if Expression.isEnd(body.condition) then Expression.BOOLEAN(true) else body.condition;
     algorithm
-      stmt := (body.condition, List.flatten(list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns)));
+      stmt := (condition, List.flatten(list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns)));
       if Util.isSome(body.else_if) then
         stmts := stmt :: toStatement(Util.getOption(body.else_if));
       else

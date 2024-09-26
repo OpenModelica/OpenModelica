@@ -1,0 +1,25 @@
+// name: Resizable_HeatTransfer_equations
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadFile("HeatTransfer1D_testCase.mo"); getErrorString();
+
+simulate(HeatTransfer1D_TestCase.Test1_equations); getErrorString();
+
+// Result:
+// true
+// "[simulation/modelica/NBackend/array_handling/HeatTransfer1D_testCase.mo:94:7-94:49:writable] Warning: der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.
+// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from HeatTransfer1D_TestCase.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// record SimulationResult
+//     resultFile = "HeatTransfer1D_TestCase.Test1_equations_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1e5, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'HeatTransfer1D_TestCase.Test1_equations', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
