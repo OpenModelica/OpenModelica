@@ -9,6 +9,7 @@ exemplary.mos\
 simple_der_for.mos\
 for_exp.mos\
 for_list.mos\
+Resizable_HeatTransfer_equations.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
