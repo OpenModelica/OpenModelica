@@ -605,7 +605,7 @@ algorithm
       equation
         true = intLe(bigTaskIdx, iCurrentSmallTask); // the index of the big task is smaller or equal to the small task index
         //print("applyGRSForLevelFixSchedulerLevel: terminating recursion with list " + stringDelimitList(List.map(bigTaskChilds, intString), ",") + "\n");
-        if(intGt(listLength(bigTaskChilds), 0)) then
+        if not listEmpty(bigTaskChilds) then
           //print("applyGRSForLevelFixSchedulerLevel: appending node to merged group\n");
           tmpContractedTasks = (arrayGet(iSortedLevelTasks,bigTaskIdx)::bigTaskChilds)::tmpContractedTasks; //append the merged tasks list to result list
         end if;
@@ -634,7 +634,7 @@ algorithm
         //print("applyGRSForLevelFixSchedulerLevel:In with current group size: " + realString(mergedGroupExecTime) + " \n");
         mergedGroupExecTime = mergedGroupExecTime + HpcOmTaskGraph.getExeCostReqCycles(arrayGet(iSortedLevelTasks, iCurrentSmallTask), iTaskGraphMeta);
         if(realGe(mergedGroupExecTime, iCriticalSize)) then
-          if(intGt(listLength(bigTaskChilds), 0)) then
+          if not listEmpty(bigTaskChilds) then
             //print("appending node to merged group\n");
             tmpContractedTasks = (arrayGet(iSortedLevelTasks, bigTaskIdx)::bigTaskChilds)::tmpContractedTasks; //append the merged tasks list to result list
           end if;

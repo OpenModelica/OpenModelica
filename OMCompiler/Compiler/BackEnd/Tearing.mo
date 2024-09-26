@@ -1007,7 +1007,7 @@ algorithm
     local
       list<Integer> freeVars,eqns,unsolvables,pointsLst;
       Integer tvar;
-      Integer size,varsize;
+      Integer varsize;
       array<Integer> points;
 
     // if there is a variable unsolvable select it
@@ -1042,8 +1042,7 @@ algorithm
           print("Candidates without variables with annotation attribute 'never':\n");
           BackendDump.debuglst(freeVars,intString,", ","\n");
         end if;
-        size = listLength(freeVars);
-        true = intGt(size,0);
+        false = listEmpty(freeVars);
 
         // CALCULATE TEARING-VARIABLE WEIGHTS
         points = arrayCreate(varsize,0);

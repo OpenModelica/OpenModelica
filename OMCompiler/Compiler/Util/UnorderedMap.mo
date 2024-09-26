@@ -582,11 +582,14 @@ public
     input UnorderedMap<K, V> map;
     input list<K> lst;
     output UnorderedMap<K, V> sub_set;
+  protected
+    Integer len;
   algorithm
+    len := listLength(lst);
     sub_set := UNORDERED_MAP(
-      Vector.newFill(listLength(lst), {}),
-      Vector.new<K>(listLength(lst)),
-      Vector.new<V>(listLength(lst)),
+      Vector.newFill(len, {}),
+      Vector.new<K>(len),
+      Vector.new<V>(len),
       map.hashFn,
       map.eqFn
     );

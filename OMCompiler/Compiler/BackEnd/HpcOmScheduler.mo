@@ -2156,7 +2156,7 @@ algorithm
   for taskIdx in iTaskList loop
     components := arrayGet(iComps, taskIdx); //Components of the task
     simEqs := List.flatten(List.map(List.map1(components,Array.getIndexFirst,iSccSimEqMapping), listReverse));
-    if(intGt(listLength(simEqs), 0)) then
+    if not listEmpty(simEqs) then
       simEqs := simEqs;
       newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, {taskIdx}, SOME(threadIdx));
       taskList := newTask :: taskList;
@@ -2166,7 +2166,7 @@ algorithm
   //This code merges all tasks handled by the same thread -- makes efficient memory management more complicated
   //components := List.flatten(List.map1(iTaskList, Array.getIndexFirst, iComps)); //Components of each task
   //simEqs := List.flatten(List.map(List.map1(components,Array.getIndexFirst,iSccSimEqMapping), listReverse));
-  //if(intGt(listLength(simEqs), 0)) then
+  //if not listEmpty(simEqs) then
   //  simEqs := listReverse(simEqs);
   //  newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, iTaskList, SOME(threadIdx));
   //  taskList := newTask :: taskList;

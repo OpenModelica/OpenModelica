@@ -3373,7 +3373,7 @@ algorithm (outrefs,matching) := match(inCrefs)
         // if then reinint;reinit; else reinit;reinit; end if;
         // make sure both of them are 0!
         true = intEq(i, 0);
-        true = intEq(listLength(crefs), 0);
+        true = listEmpty(crefs);
         b1 = true;
       end if;
     then

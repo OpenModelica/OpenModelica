@@ -12423,8 +12423,7 @@ algorithm
     case DAE.CREF(componentRef=cr, ty=ty as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(name)))
       equation
         expl = List.map1(varLst, generateCrefsExpFromExpVar, cr);
-        i = listLength(expl);
-        true = intGt(i, 0);
+        true = not listEmpty(expl);
         field_names = list(v.name for v in varLst);
         e = DAE.RECORD(name, expl, field_names, ty);
         (e, _) = traverseExpBottomUp(e, traversingextendArrExp, true);
