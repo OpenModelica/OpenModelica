@@ -4267,7 +4267,12 @@ void GraphicsView::showParameters()
     MainWindow::instance()->getStatusBar()->showMessage(tr("Opening %1 parameters window").arg(mpModelWidget->getModelInstance()->getName()));
     MainWindow::instance()->getProgressBar()->setRange(0, 0);
     MainWindow::instance()->showProgressBar();
-    ElementParameters *pElementParameters = new ElementParameters(0, this, false, false, 0, 0, 0, MainWindow::instance());
+    ElementParameters *pElementParameters;
+    if (mpModelWidget->isComponentMode()) {
+      pElementParameters = new ElementParameters(mpModelWidget->getModelInstance()->getParentElement(), this, false, false, 0, 0, 0, MainWindow::instance());
+    } else {
+      pElementParameters = new ElementParameters(0, this, false, false, 0, 0, 0, MainWindow::instance());
+    }
     MainWindow::instance()->hideProgressBar();
     MainWindow::instance()->getStatusBar()->clearMessage();
     pElementParameters->exec();
@@ -6899,13 +6904,13 @@ void ModelWidget::reDrawModelWidget(bool skipLoadModelInstance)
     }
     if (isNewApi()) {
       if (skipLoadModelInstance) {
+        drawModel(ModelInfo());
+      } else {
         if (mDiagramViewLoaded) {
           loadModelInstance(false, ModelInfo());
         } else {
           loadModelInstance(true, ModelInfo());
         }
-      } else {
-        drawModel(ModelInfo());
       }
     } else {
       // Draw icon view
