@@ -3268,6 +3268,21 @@ algorithm
   end match;
 end lookupBooleanAnnotation;
 
+public function lookupBooleanAnnotationMod
+  input SCode.Mod mod;
+  output Option<Boolean> value;
+protected
+  Option<Absyn.Exp> binding;
+  Boolean bval;
+algorithm
+  binding := getModifierBinding(mod);
+
+  value := match binding
+    case SOME(Absyn.Exp.BOOL(value = bval)) then SOME(bval);
+    else NONE();
+  end match;
+end lookupBooleanAnnotationMod;
+
 public function lookupAnnotations
   "Returns a list of modifiers with the given name found in the annotation."
   input SCode.Annotation ann;

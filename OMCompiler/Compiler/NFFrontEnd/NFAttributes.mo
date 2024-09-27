@@ -538,6 +538,8 @@ public
       // remove them so we don't have to worry about accidentally evaluating
       // e.g. an input declared as constant/parameter.
       attr.variability := Variability.CONTINUOUS;
+    elseif not Flags.isSet(Flags.NF_SCALARIZE) and var == Variability.PARAMETER
+      and Util.getOptionOrDefault(SCodeUtil.lookupBooleanAnnotationMod(InstNode.getAnnotation("__OpenModelica_resizable", compNode)), false) then
     end if;
   end updateVariability;
 
