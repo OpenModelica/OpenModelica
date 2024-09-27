@@ -4418,7 +4418,7 @@ template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, Strin
   {
     int id;
 
-    static const void (*eqFunctions[<%nFuncs%>])(DATA*, threadData_t*) = {
+    static void (*const eqFunctions[<%nFuncs%>])(DATA*, threadData_t*) = {
       <%eqs |> eq => '<%symbolName(modelNamePrefix, "eqFunction")%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
     };
 
