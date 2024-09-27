@@ -107,7 +107,7 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
 
 static inline void addHashStringString(hash_string_string **ht, const char *key, const char *val)
 {
-  hash_string_string *v = (hash_string_string*) calloc(1, sizeof(hash_string_string)); /* FIXME this isn't always freed correctly */
+  hash_string_string *v = (hash_string_string*) calloc(1, sizeof(hash_string_string));
   v->id=strdup(key);
   v->val=strdup(val);
   HASH_ADD_KEYPTR( hh, *ht, v->id, strlen(v->id), v );
@@ -161,6 +161,37 @@ static inline void addHashLongVar(hash_long_var **ht, long key, omc_ScalarVariab
   v->id=key;
   v->val=val;
   HASH_ADD_INT( *ht, id, v );
+}
+
+static inline void freeHashStringString(hash_string_string *ht)
+{
+  hash_string_string *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    HASH_DEL(ht, c);
+    free((void*)c->id);
+    free((void*)c->val);
+    free(c);
+  }
+}
+
+static inline void freeHashLongVar(hash_long_var *ht)
+{
+  hash_long_var *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    HASH_DEL(ht, c);
+    freeHashStringString(c->val);
+    free(c);
+  }
+}
+
+static inline void freeHashStringLong(hash_string_long *ht)
+{
+  hash_string_long *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    HASH_DEL(ht, c);
+    free((void*)c->id);
+    free(c);
+  }
 }
 
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
@@ -874,6 +905,32 @@ void read_input_xml(MODEL_DATA* modelData,
   messageClose(LOG_DEBUG);
 
   XML_ParserFree(parser);
+
+  freeHashStringString(mi.md);
+  freeHashStringString(mi.de);
+
+  freeHashLongVar(mi.rSta);
+  freeHashLongVar(mi.rDer);
+  freeHashLongVar(mi.rAlg);
+  freeHashLongVar(mi.rPar);
+  freeHashLongVar(mi.rAli);
+  freeHashLongVar(mi.rSen);
+
+  freeHashLongVar(mi.iAlg);
+  freeHashLongVar(mi.iPar);
+  freeHashLongVar(mi.iAli);
+
+  freeHashLongVar(mi.bAlg);
+  freeHashLongVar(mi.bPar);
+  freeHashLongVar(mi.bAli);
+
+  freeHashLongVar(mi.sAlg);
+  freeHashLongVar(mi.sPar);
+  freeHashLongVar(mi.sAli);
+
+  freeHashStringLong(mapAlias);
+  freeHashStringLong(mapAliasParam);
+  freeHashStringLong(mapAliasSen);
 }
 
 /* reads modelica_string value from a string */
