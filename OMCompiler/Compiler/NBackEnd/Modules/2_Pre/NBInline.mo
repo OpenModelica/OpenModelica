@@ -121,7 +121,7 @@ public
         Expression range;
         Integer start;
 
-      case Equation.FOR_EQUATION(body = {new_eqn}) guard(Equation.size(Pointer.create(eqn)) == 1) algorithm
+      case Equation.FOR_EQUATION(body = {new_eqn}) guard(Iterator.size(eqn.iter) == 1) algorithm
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         (names, ranges) := Iterator.getFrames(eqn.iter);
         for tpl in List.zip(names, ranges) loop
