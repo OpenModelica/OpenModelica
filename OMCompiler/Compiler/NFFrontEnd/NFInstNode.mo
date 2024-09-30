@@ -2019,10 +2019,15 @@ uniontype InstNode
     output Option<Expression> binding_exp;
   algorithm
     binding_exp := match node
+      local
+        Variable var;
       case COMPONENT_NODE() guard(Component.hasBinding(Pointer.access(node.component)))
-        then Binding.typedExp(Component.getBinding(Pointer.access(node.component)));
+        then Binding.getExpOpt(Component.getBinding(Pointer.access(node.component)));
       case COMPONENT_NODE()
         then getBindingExpOpt(instanceParent(node));
+      case VAR_NODE() algorithm
+          var := Pointer.access(node.varPointer);
+        then Binding.getExpOpt(var.binding);
       else NONE();
     end match;
   end getBindingExpOpt;

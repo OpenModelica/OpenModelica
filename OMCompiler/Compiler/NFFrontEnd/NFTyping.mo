@@ -549,7 +549,7 @@ algorithm
         (exp, ty, var, purity) := typeExp(range, InstContext.set(context, NFInstContext.ITERATION_RANGE), info);
 
         // If the iteration range is structural, it must be a parameter expression.
-        if structural and var > Variability.PARAMETER then
+        if structural and var > Variability.PARAMETER and Flags.isSet(Flags.NF_SCALARIZE) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
             {Expression.toString(exp)}, info);
         end if;
@@ -644,7 +644,7 @@ algorithm
                 SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
               exp := Ceval.evalExp(exp, target);
             end if;
-          else
+          elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
             fail();
           end if;

@@ -269,7 +269,12 @@ public
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
           (eqn, funcTree, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcTree, kind, implicit_index, slicing_map);
-          comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
+          if solve_status < Status.UNSOLVABLE then
+            comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
+          else
+            (eqn_slice, funcTree, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, funcTree, kind, implicit_index, slicing_map);
+            comp.eqn := eqn_slice;
+          end if;
           comp.status := solve_status;
         then ({comp}, solve_status);
 

@@ -1136,16 +1136,39 @@ public
     output Integer start;
     output Integer step;
     output Integer stop;
+  protected
+    function getInteger
+      input Expression exp;
+      output Integer i;
+    protected
+      Expression e;
+    algorithm
+      e := Expression.map(exp, Expression.replaceResizableParameter);
+      i := match SimplifyExp.simplify(e)
+        case INTEGER(i) then i;
+        else algorithm
+          Error.assertion(false, getInstanceName() + " cannot be parsed to an integer: " + toString(exp), sourceInfo());
+        then fail();
+      end match;
+    end getInteger;
   algorithm
     (start, step, stop) := match range
       local
+        Expression step_exp;
         Option<Expression> step_opt;
-      case RANGE(start = INTEGER(start), step = step_opt, stop = INTEGER(stop)) algorithm
-        if Util.isSome(step_opt) then
-          SOME(INTEGER(step)) := step_opt;
+      case RANGE(step = step_opt) algorithm
+        try
+          start := getInteger(range.start);
+          stop  := getInteger(range.stop);
+          if Util.isSome(range.step) then
+            step := getInteger(Util.getOption(range.step));
+          else
+            step := if start > stop then -1 else 1;
+          end if;
         else
-          step := if start > stop then -1 else 1;
-        end if;
+          Error.assertion(false, getInstanceName() + " range could not be parsed to integer values: " + toString(range), sourceInfo());
+          fail();
+        end try;
       then (start, step, stop);
       else algorithm
         Error.assertion(false, getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
@@ -6457,5 +6480,22 @@ public
     end match;
   end replaceLiteral;
 
+  function replaceResizableParameter
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Integer v;
+        Option<Integer> value;
+      case Expression.CREF() guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER) algorithm
+        value := match InstNode.getBindingExpOpt(ComponentRef.node(exp.cref))
+          case SOME(Expression.INTEGER(v)) then SOME(v);
+          case SOME(Expression.SUBSCRIPTED_EXP(exp = Expression.INTEGER(v))) then SOME(v);
+          else NONE();
+        end match;
+      then if Util.isSome(value) then Expression.INTEGER(Util.getOption(value)) else exp;
+      else exp;
+    end match;
+  end replaceResizableParameter;
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

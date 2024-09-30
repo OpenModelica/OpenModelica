@@ -967,11 +967,13 @@ protected
     UnorderedSet<ComponentRef> set;
   algorithm
     try
+      fixed_dependencies := list(ComponentRef.mapExp(dep, Expression.replaceResizableParameter) for dep in dependencies);
+      fixed_dependencies := list(ComponentRef.simplifySubscripts(dep) for dep in fixed_dependencies);
       // replace non derivative dependencies with their previous dependencies (also remove self dependency)
       // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
       if jacType == NBJacobian.JacobianType.ODE then
         set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        for dep in listReverse(dependencies) loop
+        for dep in listReverse(fixed_dependencies) loop
           // if the dependency is a state add itself, otherwise add the dependencies already saved
           // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
           if BVariable.checkCref(dep, BVariable.isState) then
@@ -986,13 +988,14 @@ protected
         fixed_dependencies := UnorderedSet.toList(set);
       else
         // only remove self dependency
-        fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in dependencies);
+        fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in fixed_dependencies);
       end if;
       // update the current value (res/tmp) --> {independent vars}
       UnorderedMap.add(cref, fixed_dependencies, map);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update " + ComponentRef.toString(cref)
         + " with dependencies " + List.toString(dependencies, ComponentRef.toString) + "."});
+      fail();
     end try;
   end updateDependencyMap;
 
