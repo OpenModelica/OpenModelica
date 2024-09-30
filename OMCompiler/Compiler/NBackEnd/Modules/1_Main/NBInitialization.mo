@@ -725,21 +725,12 @@ public
     input UnorderedMap<ComponentRef, Iterator> cref_map;
   algorithm
     body.then_eqns := list(Pointer.apply(e, function removeWhenEquation(iter = iter, cref_map = cref_map)) for e in body.then_eqns);
-    if Util.isSome(body.else_if) then
-      body.else_if := SOME(removeWhenEquationIfBody(Util.getOption(body.else_if), iter, cref_map));
-    end if;
+    body.else_if := Util.applyOption(body.else_if, function removeWhenEquationIfBody(iter = iter, cref_map = cref_map));
   end removeWhenEquationIfBody;
 
   function removeWhenEquationAlgorithmBody
     input list<Statement> in_stmts;
-    output list<Statement> out_stmts;
-  protected
-    list<list<Statement>> stmts = {};
-  algorithm
-    for stmt in listReverse(in_stmts) loop
-      stmts := removeWhenEquationStatement(stmt) :: stmts;
-    end for;
-    out_stmts := List.flatten(stmts);
+    output list<Statement> out_stmts = List.flatten(list(removeWhenEquationStatement(stmt) for stmt in in_stmts));
   end removeWhenEquationAlgorithmBody;
 
   function removeWhenEquationStatement

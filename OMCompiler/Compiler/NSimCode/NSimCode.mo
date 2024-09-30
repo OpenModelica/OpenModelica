@@ -650,8 +650,8 @@ public
         labels                          = {},
         resourcePaths                   = {},
         sortedClasses                   = {},
-        nClocks                         = listLength(UnorderedMap.toList(clockedInfo.baseClocks)),
-        nSubClocks                      = listLength(UnorderedMap.toList(clockedInfo.subClocks)),
+        nClocks                         = UnorderedMap.size(clockedInfo.baseClocks),
+        nSubClocks                      = UnorderedMap.size(clockedInfo.subClocks),
         nSpatialDistributions           = 0,
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
@@ -762,7 +762,7 @@ public
       simEqSystems := SimStrongComponent.Block.convertListList(data.blcks);
       oldData := OldSimCode.DAEMODEDATA(
         daeEquations    = simEqSystems,
-        sparsityPattern = SimJacobian.convertOpt(data.sparsityPattern),
+        sparsityPattern = Util.applyOption(data.sparsityPattern, SimJacobian.convert),
         residualVars    = SimVar.SimVar.convertList(data.residualVars),
         algebraicVars   = SimVar.SimVar.convertList(data.algebraicVars),
         auxiliaryVars   = SimVar.SimVar.convertList(data.auxiliaryVars),

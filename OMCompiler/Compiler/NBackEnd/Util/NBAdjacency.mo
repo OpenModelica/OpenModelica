@@ -331,9 +331,7 @@ public
       input Option<Mode> omode;
       input output Mode mode;
     algorithm
-      if Util.isSome(omode) then
-        mode := merge(mode, Util.getOption(omode));
-      end if;
+      mode := Util.applyOptionOrDefault(omode, function merge(mode1 = mode), mode);
     end mergeCreate;
 
     type Key = tuple<Integer, Integer>;

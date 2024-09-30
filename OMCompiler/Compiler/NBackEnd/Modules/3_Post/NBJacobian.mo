@@ -201,7 +201,7 @@ public
     SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN);
   algorithm
 
-    if listLength(jacobians) == 1 then
+    if List.hasOneElement(jacobians) then
       jacobian := List.first(jacobians);
       jacobian := match jacobian case BackendDAE.JACOBIAN() algorithm jacobian.name := name; then jacobian; end match;
     else
@@ -361,16 +361,12 @@ public
       Integer nnz;
     algorithm
       // get all relevant crefs
-      seed_vars           := VariablePointers.getScalarVarNames(seedCandidates);
-      partial_vars        := VariablePointers.getScalarVarNames(partialCandidates);
+      seed_vars     := VariablePointers.getScalarVarNames(seedCandidates);
+      partial_vars  := VariablePointers.getScalarVarNames(partialCandidates);
 
       // assume full dependency
-      for s in listReverse(seed_vars) loop
-        cols := (s, partial_vars) :: cols;
-      end for;
-      for p in listReverse(partial_vars) loop
-        rows := (p, seed_vars) :: rows;
-      end for;
+      cols := list((s, partial_vars) for s in seed_vars);
+      rows := list((p, seed_vars) for p in partial_vars);
       nnz := listLength(partial_vars) * listLength(seed_vars);
 
       sparsityPattern := SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz);

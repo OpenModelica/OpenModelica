@@ -3035,7 +3035,7 @@ algorithm
     if blockFound then
       outstringlist := listGet(inlist2, count);
     end if;
-  count := count+1;
+    count := count+1;
   end for;
 end getBlockVarList;
 

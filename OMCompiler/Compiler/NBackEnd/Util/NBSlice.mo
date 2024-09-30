@@ -1150,7 +1150,7 @@ protected
       then resolveSkips(index, ComponentRef.getSubscriptedType(field), rest, cref, fullmap);
 
       // skip to an array element
-      case (Type.ARRAY(), rest) guard(listLength(rest) >= listLength(ty.dimensions)) algorithm
+      case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
         index := locationToIndex(List.zip(list(Dimension.size(dim) for dim in ty.dimensions), rest), index);
       then resolveSkips(index, ty.elementType, tail, cref, fullmap);
@@ -1293,7 +1293,7 @@ protected
           subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
           dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
           eq_dims := Type.arrayDims(ty);
-          if listLength(subs) == listLength(dims) and listLength(subs) == listLength(regulars) and listLength(subs) == listLength(eq_dims) then
+          if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 and List.compareLength(subs, eq_dims) == 0 then
             // 2. create a map that maps a configuration key to the corresponding scalar crefs
             stripped  := ComponentRef.stripSubscriptsAll(cref);
             key       := arrayCreate(listLength(subs), 0);

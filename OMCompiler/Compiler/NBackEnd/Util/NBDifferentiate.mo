@@ -1034,7 +1034,7 @@ public
 
       // Builtin function call with one argument
       // df(x)/dz = df/dx * dx/dz
-      case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
+      case (Expression.CALL()) guard List.hasOneElement(Call.arguments(exp.call))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;

@@ -347,7 +347,7 @@ protected
   algorithm
     lhs_elems := getElementList(LHS);
     rhs_elems := getElementList(RHS);
-    if not listEmpty(lhs_elems) and listLength(lhs_elems) == listLength(rhs_elems) then
+    if not listEmpty(lhs_elems) and List.compareLength(lhs_elems, rhs_elems) == 0 then
       if Flags.isSet(Flags.DUMPBACKENDINLINE) then
         print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
       end if;

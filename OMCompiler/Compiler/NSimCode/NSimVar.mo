@@ -329,11 +329,7 @@ public
 
     function convertList
       input list<SimVar> simVar_lst;
-      output list<OldSimCodeVar.SimVar> oldSimVar_lst = {};
-    algorithm
-      for simVar in listReverse(simVar_lst) loop
-        oldSimVar_lst := convert(simVar) :: oldSimVar_lst;
-      end for;
+      output list<OldSimCodeVar.SimVar> oldSimVar_lst = list(convert(simVar) for simVar in simVar_lst);
     end convertList;
 
     function convertTpl
@@ -1248,7 +1244,7 @@ public
     algorithm
       varInfo := VAR_INFO(
         numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
-        numTimeEvents                = listLength(UnorderedSet.toList(eventInfo.time_set)),
+        numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
         numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listLength(vars.stateVars),
