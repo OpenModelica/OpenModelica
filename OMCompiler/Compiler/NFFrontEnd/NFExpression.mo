@@ -6485,15 +6485,15 @@ public
   algorithm
     exp := match exp
       local
+        Expression e;
         Integer v;
         Option<Integer> value;
-      case Expression.CREF() guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER) algorithm
-        value := match InstNode.getBindingExpOpt(ComponentRef.node(exp.cref))
-          case SOME(Expression.INTEGER(v)) then SOME(v);
-          case SOME(Expression.SUBSCRIPTED_EXP(exp = Expression.INTEGER(v))) then SOME(v);
-          else NONE();
+      case Expression.CREF() guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER)
+      then match InstNode.getBindingExpOpt(ComponentRef.node(exp.cref))
+          case SOME(e as Expression.INTEGER()) then e;
+          case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
+          else exp;
         end match;
-      then if Util.isSome(value) then Expression.INTEGER(Util.getOption(value)) else exp;
       else exp;
     end match;
   end replaceResizableParameter;
