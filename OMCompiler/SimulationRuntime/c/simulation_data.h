@@ -576,6 +576,13 @@ typedef struct MODEL_DATA
   long nBaseClocks;                    /* total number of base-clocks*/
 
   fortran_integer nStates;
+
+  /* numbers of unscalarized variables (arrays counted as one variable, used for index map) */
+  size_t nVariablesRealArray;
+  size_t nVariablesIntegerArray;
+  size_t nVariablesBooleanArray;
+  size_t nVariablesStringArray;
+
   long nVariablesReal;                 /* all Real Variables of the model (states, statesderivatives, algebraics, real discretes) */
   long nDiscreteReal;                  /* only all _discrete_ reals */
   long nVariablesInteger;
@@ -760,6 +767,12 @@ typedef struct SIMULATION_INFO
   long* zeroCrossingIndex;             /* := {0, 1, 2, ..., data->modelData->nZeroCrossings-1}; pointer for a list events at event instants */
   modelica_real* states_left;          /* work array for findRoot in event.c */
   modelica_real* states_right;         /* work array for findRoot in event.c */
+
+  /* index map: arr_idx -> start_idx */
+  size_t* realVarsIndex;
+  size_t* integerVarsIndex;
+  size_t* booleanVarsIndex;
+  size_t* stringVarsIndex;
 
   /* old vars for event handling */
   modelica_real timeValueOld;
