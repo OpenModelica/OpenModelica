@@ -1,7 +1,6 @@
 // name: CevalString1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model CevalString1

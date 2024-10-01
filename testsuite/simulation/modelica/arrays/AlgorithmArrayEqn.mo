@@ -1,7 +1,6 @@
 // name:     AlgorithmArrayEqn
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests array assignments in algorithm sections.
 //
@@ -11,6 +10,7 @@ model AlgorithmArrayEqn
    Real p2[2,2];
 algorithm
   p2 := transpose(p1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmArrayEqn;
 
 // Result:

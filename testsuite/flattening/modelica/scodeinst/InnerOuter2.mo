@@ -1,7 +1,6 @@
 // name: InnerOuter2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // inner/outer example from the specification.
 //

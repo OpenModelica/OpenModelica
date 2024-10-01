@@ -1,7 +1,6 @@
 // name: conn8.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 
 connector C = input Real;

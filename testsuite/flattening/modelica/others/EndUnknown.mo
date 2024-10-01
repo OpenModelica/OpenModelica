@@ -1,6 +1,5 @@
 // name: EndUnknown
 // status: correct
-// cflags: -d=noevalfunc,gen -d=-newInst
 // teardown_command: rm -f EndUnknown_*
 
 model EndUnknown
@@ -24,6 +23,7 @@ model EndUnknown
   Real x(start=1);
 equation
   der(x) = -a * x;
+  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen -d=-newInst");
 end EndUnknown;
 
 // Result:

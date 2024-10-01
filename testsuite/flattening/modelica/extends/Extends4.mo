@@ -1,7 +1,6 @@
 // name:     Extends4
 // keywords: extends basictype cat operator
 // status:   correct
-// cflags:   +std=2.x -d=-newInst
 //
 // Testing extending basic type and contatenation operators (MC bug #643)
 
@@ -25,6 +24,7 @@ block Multiplex3 "Multiplexer block for three input connectors"
 
 equation
   [y]=[u1;u2;u3];
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end Multiplex3;
 
 // Result:

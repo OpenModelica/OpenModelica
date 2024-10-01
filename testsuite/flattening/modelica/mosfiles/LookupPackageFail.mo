@@ -1,7 +1,6 @@
 // name:     Lookup11
 // keywords: scoping, lookup, bug1165
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Checks that lookup fails to find P.B from A, since it is only allowed to look
 // in the inner P package and not the outer.
@@ -17,6 +16,7 @@ package P
 
   package P
   end P;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end P;
 
 // Result:

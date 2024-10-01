@@ -1,7 +1,6 @@
 // name: ExternalObjectMod1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -25,7 +24,7 @@ end ExternalObjectMod1;
 
 // Result:
 // Error processing file: ExternalObjectMod1.mo
-// [flattening/modelica/scodeinst/ExternalObjectMod1.mo:23:14-23:19:writable] Error: Modified element x not found in class ExtObj.
+// [flattening/modelica/scodeinst/ExternalObjectMod1.mo:22:14-22:19:writable] Error: Modified element x not found in class ExtObj.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

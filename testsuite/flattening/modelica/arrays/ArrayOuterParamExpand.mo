@@ -1,7 +1,6 @@
 // name:     ArrayOuterParamExpand
 // keywords: array inner outer parameter
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that outer parameters are expanded correctly.
 //
@@ -17,6 +16,7 @@ end A;
 model ArrayOuterParamExpand
   inner parameter Real[3] p1;
   A a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayOuterParamExpand;
 
 // Result:

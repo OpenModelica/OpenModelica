@@ -4,7 +4,6 @@
 //
 // Close defined by two equations
 // Drmodelica: 9.1 When-Statements (p. 293)
-// cflags: -d=-newInst
 //
 
 model DoubleWhenConflict
@@ -18,6 +17,7 @@ algorithm
   when x <= 5 then
     close := false;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DoubleWhenConflict;
 
 

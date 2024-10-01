@@ -1,7 +1,6 @@
 // name:     Record Derived 1
 // keywords: record
 // status:   correct
-// cflags: -d=-newInst
 
 record BaseProps_Tpoly "Fluid state record"
   Real T "temperature";
@@ -13,6 +12,7 @@ model Derived1
   constant Real p = 2.0;
   constant ThermodynamicState res = ThermodynamicState(T = T, p = p);
   record ThermodynamicState = BaseProps_Tpoly;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Derived1;
 
 // Result:

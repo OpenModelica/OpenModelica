@@ -1,7 +1,6 @@
 // name:     FuncBuiltinPure1
 // keywords:
 // status:   correct
-// cflags:   -d=newInst
 //
 //
 

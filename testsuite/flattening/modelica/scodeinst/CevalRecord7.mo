@@ -1,7 +1,6 @@
 // name: CevalRecord7
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package PB

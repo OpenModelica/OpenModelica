@@ -1,7 +1,6 @@
 // name: InStreamTwoOutside
 // keywords: stream instream connector outside
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that inStream is evaluated correctly on two outside connected stream
 // connectors.

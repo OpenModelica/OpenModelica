@@ -1,7 +1,6 @@
 // name: InvalidComplexConnectorType3
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model InvalidComplexConnectorType3

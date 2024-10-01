@@ -1,7 +1,6 @@
 // name:     SimpleIntegrator4
 // keywords: declaration,modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Try to access non-existend attribute 'initial'.
 //
@@ -11,12 +10,13 @@ model SimpleIntegrator4
   Real x(initial = 2.0);
 equation
   der(x) = u;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimpleIntegrator4;
 // Result:
 // Error processing file: SimpleIntegrator4.mo
 // Failed to parse file: SimpleIntegrator4.mo!
 //
-// [openmodelica/parser/SimpleIntegrator4.mo:11:10-11:10:writable] Error: Missing token: ')'
+// [openmodelica/parser/SimpleIntegrator4.mo:10:10-10:10:writable] Error: Missing token: ')'
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

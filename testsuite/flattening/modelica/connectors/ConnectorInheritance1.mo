@@ -1,13 +1,13 @@
 // name:     ConnectorInheritance1.mo
 // keywords: connector, record, inheritance
 // status:   correct
-// cflags: -d=-newInst
 //
 // Connectors may inherit from records.
 //
 
 record A
   Real x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 connector ConnectorInheritance1 = A;

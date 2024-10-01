@@ -1,7 +1,6 @@
 // name:     FunctionReturn
 // keywords: function return
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests return in function
 
@@ -19,6 +18,7 @@ model FunctionReturn
 equation
   x = f(y);
   y = f(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionReturn;
 
 // Result:

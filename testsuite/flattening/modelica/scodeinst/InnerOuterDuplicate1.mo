@@ -1,7 +1,6 @@
 // name: InnerOuterDuplicate1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 // Tests that having duplicate outer elements due to inheritance works
 // correctly.

@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // Enhancement #3096
 
 model DotOperator
@@ -21,6 +20,7 @@ model DotOperator
 
   constant Real r1 = y(1.5);
   constant Real r2 = x(1.5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DotOperator;
 // Result:
 // function DotOperator.f

@@ -1,7 +1,6 @@
 // name: RedeclareFunction1
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 package P

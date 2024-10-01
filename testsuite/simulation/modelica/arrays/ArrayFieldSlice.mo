@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 7.4  Array Indexing operator (p. 216)
-// cflags: -d=-newInst
 //
 record Person
   String       name;
@@ -41,4 +40,5 @@ equation
   children   = pList.persons.children;  // Returns: {{"Carl", "Eva"},
                 //     {"Anders", "Dan"},
                 //     {"John", "Daniel"}}
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end getPerson;

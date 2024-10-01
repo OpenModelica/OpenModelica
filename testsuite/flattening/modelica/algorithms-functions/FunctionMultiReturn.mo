@@ -1,7 +1,6 @@
 // name:     FunctionReturn
 // keywords: function return
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests return in function
 
@@ -19,6 +18,7 @@ model FunctionMultiReturn
   Real y;
 equation
   y = f(4);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionMultiReturn;
 
 // Result:

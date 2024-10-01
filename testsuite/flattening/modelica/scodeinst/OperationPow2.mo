@@ -1,7 +1,6 @@
 // name: OperationPow2
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationPow2

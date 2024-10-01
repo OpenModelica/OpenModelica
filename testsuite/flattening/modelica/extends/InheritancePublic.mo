@@ -1,7 +1,6 @@
 // name: InheritancePublic
 // keywords: inheritance
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests public inheritance
 //
@@ -12,6 +11,7 @@ end A;
 
 class B
   public extends A;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 
 // Result:

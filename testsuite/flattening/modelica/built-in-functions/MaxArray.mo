@@ -1,6 +1,5 @@
 // name: MaxArray
 // status: correct
-// cflags: -d=-newInst
 // Checks that we can simplify max(array)=>max(scalar1,scalar2)
 
 class MaxArray
@@ -9,6 +8,7 @@ class MaxArray
   Real r2 = max({time*2,time});
   E e1 = max({E.A});
   E e2 = max({E.A,E.C});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MaxArray;
 
 // Result:

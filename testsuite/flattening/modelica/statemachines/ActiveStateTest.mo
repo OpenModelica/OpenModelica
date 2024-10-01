@@ -1,7 +1,6 @@
 // name: ActiveTest
 // keywords: state machines features
 // status: correct
-// cflags: -d=-newInst
 
 model ActiveStateTest
   block AState
@@ -11,6 +10,7 @@ model ActiveStateTest
   Boolean isActive;
 equation
   isActive = activeState(aState);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ActiveStateTest;
 
 // Result:

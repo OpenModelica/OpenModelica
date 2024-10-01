@@ -1,7 +1,6 @@
 // name:     Protected1
 // keywords: protected
 // status:   correct
-// cflags: -d=-newInst
 //
 // This file tests information hiding using the 'protect' keyword
 //
@@ -23,6 +22,7 @@ model Protected1
   B a(y=18);
   B b(a=3);
   B c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Protected1;
 
 // Result:

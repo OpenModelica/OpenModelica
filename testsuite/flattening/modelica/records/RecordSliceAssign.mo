@@ -1,7 +1,6 @@
 // name:     RecordSliceAssign
 // keywords: record slice #3245
 // status:   correct
-// cflags: -d=gen -d=-newInst
 //
 // Checks that assigning to a slice of an array of records works.
 //
@@ -24,6 +23,7 @@ end f;
 
 model RecordSliceAssign
   Real y[:] = f(4);
+  annotation(__OpenModelica_commandLineOptions="-d=gen -d=-newInst");
 end RecordSliceAssign;
 
 // Result:

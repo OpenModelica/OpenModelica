@@ -1,7 +1,6 @@
 // name:     Ticket4276a.mo
 // keywords: declaration
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Check that you cannot assign to parameter(fixed=true)
 //
@@ -23,12 +22,13 @@ initial algorithm
   (a, x) := f(2);
 equation
   x = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Ticket4276a;
 
 
 // Result:
 // Error processing file: Ticket4276a.mo
-// [flattening/modelica/declarations/Ticket4276a.mo:23:3-23:17:writable] Error: Trying to assign to parameter component a(fixed=true) in (a, x) := Ticket4276a.f(2.0)
+// [flattening/modelica/declarations/Ticket4276a.mo:22:3-22:17:writable] Error: Trying to assign to parameter component a(fixed=true) in (a, x) := Ticket4276a.f(2.0)
 // Error: Error occurred while flattening model Ticket4276a
 //
 // # Error encountered! Exiting...

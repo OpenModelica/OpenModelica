@@ -1,7 +1,6 @@
 // name: BindingArray5
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 type MyReal = Real[4];

@@ -1,7 +1,6 @@
 // name:     BC6 - LimPID component
 // keywords: LimPID
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the LimPID component.
 //
@@ -1765,6 +1764,7 @@ model BC6
 
 equation
   connect(constant1.outPort,limPID1.inPort_s) annotation(Line(visible=true,points={{-11.66,13.79},{1.11,15.62}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC6;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: Symmetric2
 // keywords: symmetric builtin bug2126
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in symmetric function.
 //
@@ -9,6 +8,7 @@
 model Symmetric2
   parameter Integer n =3;
   Real A[:,:] = symmetric(2*identity(n)-[[0,time,0];[0,0,time];zeros(1,n)]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Symmetric2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     ArrayVectorMatrixMul5
 // keywords: expression simplification array multiplication
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks simplification of vector-matrix multiplication.
 //
@@ -10,6 +9,7 @@ model ArrayVectorMatrixMul5
   Real x[3, 0], y[0], z[3];
 equation
   z = x * y;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayVectorMatrixMul5;
 
 // Result:

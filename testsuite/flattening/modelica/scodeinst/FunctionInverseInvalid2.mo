@@ -1,7 +1,6 @@
 // name: FunctionInverseInvalid2
 // keywords: inverse
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -27,7 +26,7 @@ end FunctionInverseInvalid2;
 
 // Result:
 // Error processing file: FunctionInverseInvalid2.mo
-// [flattening/modelica/scodeinst/FunctionInverseInvalid2.mo:13:14-13:38:writable] Error: 'z' is not an input of function 'f'.
+// [flattening/modelica/scodeinst/FunctionInverseInvalid2.mo:12:14-12:38:writable] Error: 'z' is not an input of function 'f'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

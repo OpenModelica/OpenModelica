@@ -1,7 +1,6 @@
 // name: ConnectExtendsBuiltin1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ConnectExtendsBuiltin1

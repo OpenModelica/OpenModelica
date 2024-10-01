@@ -1,7 +1,6 @@
 // name: OperatorOverloadConstructorHideDefault
 // keywords: operator overload constructor
 // status: correct
-// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 // Checks that overloaded constructor has precedence over deafault constructor 
 // which would otherwise cause ambiguity. 
@@ -25,6 +24,7 @@ model OperatorOverloadConstructorHideDefault
   C c;
 equation
   c = C(1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-nfEvalConstArgFuncs");
 end OperatorOverloadConstructorHideDefault;
 
 

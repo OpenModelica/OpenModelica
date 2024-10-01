@@ -1,7 +1,6 @@
 // name: FuncBuiltinMax2
 // keywords: max
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin max operator.
 //
@@ -24,7 +23,7 @@ end FuncBuiltinMax2;
 
 // Result:
 // class FuncBuiltinMax2
-//   Real r2 = -8.777798510069901e+304;
+//   Real r2 = -8.777798510069901e304;
 //   Integer i2 = -4611686018427387903;
 //   Boolean b2 = false;
 //   enumeration(one, two, three) e2 = E.one;

@@ -1,7 +1,6 @@
 // name: Extends3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

@@ -1,7 +1,6 @@
 // name: FuncBuiltinSum
 // keywords: sum
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin sum operator.
 //

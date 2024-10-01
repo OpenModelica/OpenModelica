@@ -1,7 +1,6 @@
 // name: SubscriptCevalSlice1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model SubscriptCevalSlice1

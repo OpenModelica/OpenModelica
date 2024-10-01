@@ -1,7 +1,6 @@
 // name:     Matrix2
 // keywords: array, matrices, matrix, bug2033
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the builtin matrix operator.
 //
@@ -12,6 +11,7 @@ model Matrix2
   Real b[M, 1];
 equation
   b = matrix(a);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Matrix2;
 
 // Result:

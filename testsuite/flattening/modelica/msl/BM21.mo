@@ -1,7 +1,6 @@
 // name:     BM21 -  Sin component
 // keywords: Sin
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sin component.
 //
@@ -1066,6 +1065,7 @@ model BM21
 
 equation
   connect(sin1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-5.58,13.49},{-38.73,10.45}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM21;
 // function Modelica.Math.sin
 // input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");

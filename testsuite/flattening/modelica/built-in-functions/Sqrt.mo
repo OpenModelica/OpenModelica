@@ -1,7 +1,6 @@
 // name: Sqrt
 // keywords: sqrt
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in sqrt function
 //
@@ -10,6 +9,7 @@ model Sqrt
   Real r;
 equation
   r = sqrt(25);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sqrt;
 
 // Result:

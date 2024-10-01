@@ -1,7 +1,6 @@
 // name: CevalRem1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -13,8 +12,8 @@ end CevalRem1;
 
 // Result:
 // class CevalRem1
-//   constant Real r1 = 0.2000000000000002;
-//   constant Real r2 = -0.2000000000000002;
+//   constant Real r1 = 0.20000000000000018;
+//   constant Real r2 = -0.20000000000000018;
 //   constant Integer i1 = 1;
 // end CevalRem1;
 // endResult

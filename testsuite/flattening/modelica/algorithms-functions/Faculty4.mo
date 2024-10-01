@@ -1,7 +1,6 @@
 // name:     Faculty4
 // keywords: equation,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Definition of faculty using equations. It is a matter of
 // quality of implementation if the model can be treated with
@@ -30,6 +29,7 @@ equation
     work[x:-1:2] = multiply(work[x-1:-1:1],(ones(x-1) + work[x-1:-1:1]));
     work[1] = 1;
   end if;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Faculty4;
 
 // Result:

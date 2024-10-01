@@ -1,7 +1,6 @@
 // name: CevalScalar1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

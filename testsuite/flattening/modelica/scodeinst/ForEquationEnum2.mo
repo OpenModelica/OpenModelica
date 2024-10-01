@@ -1,7 +1,6 @@
 // name: ForEquationEnum2.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

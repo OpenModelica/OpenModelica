@@ -1,7 +1,6 @@
 // name:     ConnectionOrder2
 // keywords: connect
 // status:   correct
-// cflags: +orderConnections=false -d=-newInst
 //
 // Makes sure that the connection order is preserved when
 // +orderConnections=false is used.
@@ -29,6 +28,7 @@ equation
   connect(CauvN, Nizss);
   connect(SsIbl, iCWhD);
   connect(hAhvy, xPLdp);
+  annotation(__OpenModelica_commandLineOptions="+orderConnections=false -d=-newInst");
 end ConnectionOrder2;
 
 // Result:

@@ -4,12 +4,12 @@
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.3 General Array concatenation (p. 213)
-// cflags: -d=-newInst
 //
 
 class Concat3
   Real[2, 3] r1 = cat(1, {{1.0, 2.0, 3}}, {{4, 5, 6}});
   Real[2, 6] r2 = cat(2, r1, r1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Concat3;
 
 // insert expected flat file here. Can be done by issuing the command

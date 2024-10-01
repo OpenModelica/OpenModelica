@@ -1,7 +1,6 @@
 // name: RecordPrefixes.mo
 // keywords: record
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Tests that prefixed components can't be used in records.
 //
@@ -14,6 +13,7 @@ model RecordPrefixes
   TestRecord tr;
 equation
   tr.i = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordPrefixes;
 
 // Result:

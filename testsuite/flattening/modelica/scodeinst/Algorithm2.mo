@@ -1,7 +1,6 @@
 // name: Algorithm2
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model Algorithm2

@@ -1,7 +1,6 @@
 // name:     Partial1
 // keywords: partial
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // This is a test of the `partial' keyword.  The class `A' is declared
 // as `partial' which means that it cannot be instantiated.
@@ -13,10 +12,11 @@ end A;
 
 model Partial1
   A a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Partial1;
 // Result:
 // Error processing file: Partial1.mo
-// [flattening/modelica/others/Partial1.mo:10:1-12:6:writable] Error: Illegal to instantiate partial class A.
+// [flattening/modelica/others/Partial1.mo:9:1-11:6:writable] Error: Illegal to instantiate partial class A.
 // Error: Error occurred while flattening model Partial1
 //
 // # Error encountered! Exiting...

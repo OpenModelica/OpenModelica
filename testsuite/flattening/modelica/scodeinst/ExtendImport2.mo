@@ -1,7 +1,6 @@
 // name: ExtendImport2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package P1

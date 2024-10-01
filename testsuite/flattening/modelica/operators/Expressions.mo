@@ -1,7 +1,6 @@
 // name: Expressions
 // keywords: expression, integer, add, subtract, multiply, divide, power
 // status: correct
-// cflags: -d=-newInst
 //
 // tests the basic math operators
 //
@@ -14,6 +13,7 @@ model Expressions
   Real r;
 equation
   r = 2 ^ 3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Expressions;
 
 // Result:

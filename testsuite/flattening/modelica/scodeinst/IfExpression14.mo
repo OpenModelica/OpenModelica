@@ -1,7 +1,6 @@
 // name: IfExpression14
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model IfExpression14

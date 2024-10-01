@@ -1,7 +1,6 @@
 // name: FuncBuiltinMatrixWrongType1
 // keywords: matrix
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests the builtin matrix operator.
 //
@@ -12,7 +11,7 @@ end FuncBuiltinMatrixWrongType1;
 
 // Result:
 // Error processing file: FuncBuiltinMatrixWrongType1.mo
-// [flattening/modelica/scodeinst/FuncBuiltinMatrixWrongType1.mo:10:3-10:103:writable] Error: Invalid dimension 3 of argument to matrix, expected dimension size 1 but got 2.
+// [flattening/modelica/scodeinst/FuncBuiltinMatrixWrongType1.mo:9:3-9:103:writable] Error: Invalid dimension 3 of argument to matrix, expected dimension size 1 but got 2.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

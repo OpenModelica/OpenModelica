@@ -1,7 +1,6 @@
 // name:     Array7
 // keywords: array,array of components
 // status:   correct
-// cflags: -d=-newInst
 //
 // This demonstrates how a modifier is split
 // among a an array of componets.
@@ -14,6 +13,7 @@ model Array7
     parameter Real x[n,n];
   end A;
   A a[2](n={1,2});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array7;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: InitialStateTest
 // keywords: state machines features
 // status: wrong
-// cflags: -d=-newInst
 
 model InitialStateTest
   block AState
@@ -10,6 +9,7 @@ model InitialStateTest
   AState aState;
 equation
   initialState(aState);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InitialStateTest;
 
 // Result:

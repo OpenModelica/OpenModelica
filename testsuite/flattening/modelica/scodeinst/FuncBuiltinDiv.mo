@@ -1,7 +1,6 @@
 // name: FuncBuiltinDiv
 // keywords: div
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin div function.
 //

@@ -1,7 +1,6 @@
 // name: StreamConcept_NoMedium_Total.mo
 // keywords: stream instream connector
 // status: correct
-// cflags: -d=-newInst
 //
 // Test model from SiemensPower that tests stream connectors.
 //
@@ -2153,6 +2152,7 @@ model SiemensPower_Components_Valves_Tests_valve_fixeddensity_test
     NumberOfIntervals=500,
     Tolerance=0.0001,
     Algorithm="dassl"),uses(SiemensPower(version="1.6")));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SiemensPower_Components_Valves_Tests_valve_fixeddensity_test;
 
 // Result:

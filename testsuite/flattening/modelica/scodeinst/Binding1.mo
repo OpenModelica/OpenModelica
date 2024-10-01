@@ -1,6 +1,5 @@
 // name: Binding1.mo
 // status: correct
-// cflags: -d=newInst
 //
 // Simple test of component bindings.
 //

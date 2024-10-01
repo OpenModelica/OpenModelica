@@ -1,7 +1,6 @@
 // name:     BM1 -  Abs component
 // keywords: Abs
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Abs component.
 //
@@ -974,6 +973,7 @@ model BM1
 
 equation
   connect(abs1.inPort,constant1.outPort) annotation(Line(visible=true,points={{11.45,39.94},{-1.32,38.12}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM1;
 
 

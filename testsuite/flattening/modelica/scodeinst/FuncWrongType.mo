@@ -1,7 +1,6 @@
 // name: FuncWrongType
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that type checking works for functions.
 //
@@ -17,7 +16,7 @@ end FuncWrongType;
 
 // Result:
 // Error processing file: FuncWrongType.mo
-// [flattening/modelica/scodeinst/FuncWrongType.mo:15:3-15:19:writable] Error: Type mismatch for positional argument 1 in f(x=true). The argument has type:
+// [flattening/modelica/scodeinst/FuncWrongType.mo:14:3-14:19:writable] Error: Type mismatch for positional argument 1 in f(x=true). The argument has type:
 //   Boolean
 // expected type:
 //   Real

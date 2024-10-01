@@ -1,7 +1,6 @@
 // name:     Modification5
 // keywords: modification,scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // By removing the declare-before-use this is legal in Modelica.
 // Note that declaration equation are seen as equation and
@@ -13,6 +12,7 @@ end A;
 
 class Modification5
   extends A;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification5;
 
 // Result:

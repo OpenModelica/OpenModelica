@@ -1,7 +1,6 @@
 // name:     UnknownDimensionMod.mo
 // keywords: deduce unknown dimensions from modifier
 // status:   correct
-// cflags: -d=-newInst
 //
 // check that we can deduce dimensions from array/matrix modifiers
 //
@@ -22,6 +21,7 @@ model UnknownDimensionMod "check that we can deduce unknown dimensions from arra
 
   A a(b = matrix);
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end UnknownDimensionMod;
 
 // Result:

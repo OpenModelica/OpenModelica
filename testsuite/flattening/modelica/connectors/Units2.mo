@@ -1,6 +1,5 @@
 // name:     Units2
 // keywords: connect
-// cflags: +std=2.x -d=-newInst
 // status:   incorrect
 //
 // Connections of flow variables with non-flow variables are not
@@ -22,11 +21,12 @@ model Units2
   Pin2 i;
 equation
   connect(v, i);
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end Units2;
 // Result:
 // Error processing file: Units2.mo
-// [flattening/modelica/connectors/Units2.mo:24:3-24:16:writable] Error: Cannot connect flow component i.x to non-flow component v.x.
-// [flattening/modelica/connectors/Units2.mo:24:3-24:16:writable] Error: The type of variables
+// [flattening/modelica/connectors/Units2.mo:23:3-23:16:writable] Error: Cannot connect flow component i.x to non-flow component v.x.
+// [flattening/modelica/connectors/Units2.mo:23:3-23:16:writable] Error: The type of variables
 // v type:
 // connector Pin1
 //   Real(unit = "V") x;

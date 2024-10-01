@@ -1,18 +1,18 @@
 // name: IntDiv
 // keywords: integer, division
 // status: incorrect
-// cflags: -d=-newInst
 //
 // tests Integer division
 //
 
 model IntDiv
   constant Integer i = 4000 / 100;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IntDiv;
 
 // Result:
 // Error processing file: IntDiv.mo
-// [flattening/modelica/operators/IntDiv.mo:10:3-10:34:writable] Error: Type mismatch in binding i = 40.0, expected subtype of Integer, got type Real.
+// [flattening/modelica/operators/IntDiv.mo:9:3-9:34:writable] Error: Type mismatch in binding i = 40.0, expected subtype of Integer, got type Real.
 // Error: Error occurred while flattening model IntDiv
 //
 // # Error encountered! Exiting...

@@ -1,7 +1,6 @@
 // name: ExternalBuiltin2
 // keywords: external builtin
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that external "builtin" functions are handled correctly when used in a
 // short class definition.

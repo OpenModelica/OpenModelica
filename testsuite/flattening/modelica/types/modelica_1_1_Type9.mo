@@ -1,7 +1,6 @@
 // name:     modelica_1_1_Type9
 // keywords: types
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that subscripts are handled in a correct manner int the component clause.
 //
@@ -13,6 +12,7 @@ class Type9
 equation
   x = y;
   ok[1]=3.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type9;
 
 // Result:

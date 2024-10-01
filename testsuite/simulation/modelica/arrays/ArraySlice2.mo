@@ -1,7 +1,6 @@
 // name:     ArraySlice2
 // keywords: array slicing
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests array slicing where some subscripts are scalar variables.
 //
@@ -25,5 +24,6 @@ end f;
 
 model ArraySlice2
   Real y = f();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice2;
 

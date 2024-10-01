@@ -1,7 +1,6 @@
 // name: Connect13
 // keywords:  connector, array components
 // status: correct
-// cflags: -d=-newInst
 //
 // Test that arrays can be used n connectors.
 //
@@ -20,6 +19,7 @@ model test2
 equation
 connect(t1.n,t2.p);
 connect(t2.n,t1.p);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test2;
 // Result:
 // class test2

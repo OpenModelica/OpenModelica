@@ -1,7 +1,6 @@
 // name:     PartialLookup3
 // keywords: lookup partial redeclare
 // status:   incorrect
-// cflags: -d=newInst
 //
 // Checks that it's not allowed to look up a name in a partial class.
 //
@@ -20,7 +19,7 @@ end PartialLookup3;
 
 // Result:
 // Error processing file: PartialLookup3.mo
-// [flattening/modelica/scodeinst/PartialLookup3.mo:18:3-18:17:writable] Error: P2 is partial, name lookup is not allowed in partial classes.
+// [flattening/modelica/scodeinst/PartialLookup3.mo:17:3-17:17:writable] Error: P2 is partial, name lookup is not allowed in partial classes.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

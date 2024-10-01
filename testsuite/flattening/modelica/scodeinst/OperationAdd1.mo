@@ -1,7 +1,6 @@
 // name: OperationAdd1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationAdd1

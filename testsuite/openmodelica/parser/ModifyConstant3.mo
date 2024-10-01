@@ -1,7 +1,6 @@
 // name:     ModifyConstant3
 // keywords: scoping,modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Only declared members may be redeclared. Using A.c in a redeclaration
 // is a syntactic error.
@@ -22,13 +21,14 @@ end C;
 class ModifyConstant3
   B b;
   C c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifyConstant3;
 
 // Result:
 // Error processing file: ModifyConstant3.mo
 // Failed to parse file: ModifyConstant3.mo!
 //
-// [openmodelica/parser/ModifyConstant3.mo:15:32-15:32:writable] Error: Missing token: ')'
+// [openmodelica/parser/ModifyConstant3.mo:14:32-14:32:writable] Error: Missing token: ')'
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

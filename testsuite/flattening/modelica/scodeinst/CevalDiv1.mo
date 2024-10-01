@@ -1,7 +1,6 @@
 // name: CevalDiv1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,7 +1,6 @@
 // name: Assert1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Assert1
@@ -12,6 +11,6 @@ end Assert1;
 // Result:
 // class Assert1
 // equation
-//   assert(time > 1, "test");
+//   assert(time > 1.0, "test");
 // end Assert1;
 // endResult

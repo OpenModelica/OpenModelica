@@ -1,7 +1,6 @@
 // name: FuncBuiltinSqrt
 // keywords: sqrt
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin sqrt function.
 //

@@ -1,7 +1,6 @@
 // name:     Epidemics1
 // keywords: der terminate
 // status:   correct
-// cflags: -d=-newInst
 //
 // Drmodelica:
 //
@@ -22,6 +21,7 @@ equation
   when (S < 10e-5) then
     terminate("Simulation terminated");
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Epidemics1;
 
 // class Epidemics1

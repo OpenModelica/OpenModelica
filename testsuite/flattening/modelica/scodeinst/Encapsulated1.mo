@@ -1,7 +1,6 @@
 // name: Encapsulated1
 // keywords: operator
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that it's not allowed to look outside an encapsulated package.
 //
@@ -22,7 +21,7 @@ end Encapsulated1;
 
 // Result:
 // Error processing file: Encapsulated1.mo
-// [flattening/modelica/scodeinst/Encapsulated1.mo:15:5-15:8:writable] Error: Class A not found in scope B.
+// [flattening/modelica/scodeinst/Encapsulated1.mo:14:5-14:8:writable] Error: Class A not found in scope B.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

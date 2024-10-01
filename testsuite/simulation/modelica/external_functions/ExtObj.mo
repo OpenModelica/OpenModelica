@@ -1,7 +1,6 @@
 // name:     ExternalObject
 // keywords: ExternalObject
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing the instantiation part of an external object.
 //
@@ -45,4 +44,5 @@ end ExtObj;
 
 model testextobj
   ExtObj.ExtObjtest t;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end testextobj;

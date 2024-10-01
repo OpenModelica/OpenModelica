@@ -1,7 +1,6 @@
 // name:     RecordConstant3
 // keywords: record, constant, array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's possible to look up components through record array
 // constants.
@@ -21,6 +20,7 @@ end P;
 
 model RecordConstant3
   constant Real r2 = P.cr[1].r1.r;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstant3;
 
 // Result:

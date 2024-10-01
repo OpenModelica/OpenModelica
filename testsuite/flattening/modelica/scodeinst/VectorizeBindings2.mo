@@ -1,7 +1,6 @@
 // name: VectorizeBindings2
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize,vectorizeBindings
 //
 
 model M1
@@ -20,6 +19,7 @@ end M2;
 
 model M3
   M2 m2[3];
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize,vectorizeBindings");
 end M3;
 
 // Result:

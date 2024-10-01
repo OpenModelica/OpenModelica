@@ -1,7 +1,6 @@
 // name: DiscreteDeclRecord
 // keywords: discrete
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the discrete prefix on a record type
 //
@@ -14,6 +13,7 @@ class DiscreteDeclRecord
   discrete DiscreteRecord dr;
 equation
   dr.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DiscreteDeclRecord;
 
 // Result:

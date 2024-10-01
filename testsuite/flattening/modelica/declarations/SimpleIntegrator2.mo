@@ -1,7 +1,6 @@
 // name:     SimpleIntegrator2
 // keywords: declaration,equation,modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // Correct formulation of a simple integrator example.
 //
@@ -11,6 +10,7 @@ model SimpleIntegrator2
   Real x(start = 2.0);
 equation
   der(x) = u;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimpleIntegrator2;
 
 // Result:

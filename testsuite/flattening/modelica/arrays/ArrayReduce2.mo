@@ -1,7 +1,6 @@
 // name:     ArrayReduce2
 // keywords: array, sum
 // status:   correct
-// cflags: -d=-newInst
 //
 // Fixed bug #1153: http://openmodelica.ida.liu.se:8080/cb/issue/1153
 //
@@ -16,6 +15,7 @@ model ArrayReduce2
   Real y;
 equation
   y = sum(a[:].k);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayReduce2;
 
 // Result:

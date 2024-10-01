@@ -1,7 +1,6 @@
 // name: ClassExtends1.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Tests that basic class extends works.
 //

@@ -1,7 +1,6 @@
 // name: ReinitInvalid2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model ReinitInvalid2
@@ -14,7 +13,7 @@ end ReinitInvalid2;
 
 // Result:
 // Error processing file: ReinitInvalid2.mo
-// [flattening/modelica/scodeinst/ReinitInvalid2.mo:11:5-11:19:writable] Error: The first argument to reinit must be a continuous time variable, but x is parameter.
+// [flattening/modelica/scodeinst/ReinitInvalid2.mo:10:5-10:19:writable] Error: The first argument to reinit must be a continuous time variable, but x is parameter.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

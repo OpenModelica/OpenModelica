@@ -1,7 +1,6 @@
 // name: HideResult1
 // keywords:
 // status: correct
-// cflags: -d=newInst --showAnnotations
 //
 //
 
@@ -21,6 +20,7 @@ model HideResult1
   B b1 annotation(HideResult = false);
   parameter Boolean hide = true;
   B b2 annotation(HideResult = hide);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst --showAnnotations");
 end HideResult1;
 
 // Result:
@@ -40,5 +40,6 @@ end HideResult1;
 //   Real b2.a2.x annotation(HideResult = true);
 //   Real b2.a2.y annotation(HideResult = false);
 //   Real b2.z annotation(HideResult = true);
+//   annotation(__OpenModelica_commandLineOptions = "-d=newInst --showAnnotations");
 // end HideResult1;
 // endResult

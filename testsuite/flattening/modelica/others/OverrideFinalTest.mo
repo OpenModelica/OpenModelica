@@ -1,7 +1,6 @@
 // name:     OverrideFinalTest
 // keywords: setting, final, parameter
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests for bug: http://openmodelica.ida.liu.se:8080/cb/issue/1155?navigation=true
 //
@@ -19,6 +18,7 @@ model OverrideFinalTest
  final parameter Real eAxis_ia[3](each final unit="1") = fcall({1,2,3});
  final parameter Real eAxis_ia2[3](each final unit="1") = {1,2,3};
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OverrideFinalTest;
 
 // function OverrideFinalTest.fcall

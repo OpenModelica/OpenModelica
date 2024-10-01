@@ -1,7 +1,6 @@
 // name:     InOutBool
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 
 function testBool
   input Integer x;
@@ -24,6 +23,7 @@ equation
   t = testBool(1,1,true);
   t = testBool(1,2,false);
   t = testBool(1,2,true);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Booltest;
 
 // Result:

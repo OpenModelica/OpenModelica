@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 package Modelica_Noise
 package Math
@@ -93,6 +92,7 @@ end f;
 
 model M
   constant Real r = f({1,2});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:

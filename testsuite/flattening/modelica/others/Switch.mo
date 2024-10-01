@@ -1,7 +1,6 @@
 // name:     Switch
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // <insert description here>
 //
@@ -23,6 +22,7 @@ equation
     1 - i1 = 0;
     1 - v - i = 0;
     open = time >= 0.5;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Switch;
 
 // Result:

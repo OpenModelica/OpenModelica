@@ -16,7 +16,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 9, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 9, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: Test5
 // Value of x(=1)
 // Value of x(=1)
@@ -26,7 +26,7 @@ getErrorString();
 // Value of x(=0.666667)
 // Value of x(=0.555556)
 // Value of x(=0.444444)
-// LOG_ASSERT        | info    | [simulation/modelica/asserts/AssertTest5.mo:26:3-26:65:writable]
+// LOG_ASSERT        | info    | [simulation/modelica/asserts/AssertTest5.mo:25:3-25:65:writable]
 // |                 | |       | The following assertion has been violated at time 0.555556
 // |                 | |       | ((assertTest.x >= 0.5)) --> \"Variable x(=0.444444) out of limit\"
 // LOG_ASSERT        | error   | No event found, but assert was triggered. Throwing now!

@@ -1,7 +1,6 @@
 // name: CevalLogical1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

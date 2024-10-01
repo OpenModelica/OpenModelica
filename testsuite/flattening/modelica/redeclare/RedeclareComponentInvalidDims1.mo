@@ -1,7 +1,6 @@
 // name:     RedeclareComponentInvalidDims1
 // keywords: redeclare component
 // status:   incorrect
-// cflags: -d=newInst
 //
 // Checks that a redeclare of a component is not allowed to have dimensions on
 // the type.
@@ -19,7 +18,7 @@ end RedeclareComponentInvalidDims1;
 // Error processing file: RedeclareComponentInvalidDims1.mo
 // Failed to parse file: RedeclareComponentInvalidDims1.mo!
 //
-// [flattening/modelica/redeclare/RedeclareComponentInvalidDims1.mo:15:24-15:24:writable] Error: No viable alternative near token: [
+// [flattening/modelica/redeclare/RedeclareComponentInvalidDims1.mo:14:24-14:24:writable] Error: No viable alternative near token: [
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

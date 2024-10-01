@@ -1,7 +1,6 @@
 // name: Asin
 // keywords: asin
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in asin function
 //
@@ -10,6 +9,7 @@ model Asin
   Real r;
 equation
   r = asin(0.5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Asin;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: dim2.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 // FAILREASON: Dimensions not subscripted during expansion.
 //

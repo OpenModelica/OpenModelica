@@ -1,7 +1,6 @@
 // name: CyclicBindingParam
 // keywords: cyclic
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Tests cyclic binding of parameters
 //
@@ -9,6 +8,7 @@
 model CyclicBindingParam
   parameter Real p = 2*q;
   parameter Real q = 2*p;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CyclicBindingParam;
 
 // Result:

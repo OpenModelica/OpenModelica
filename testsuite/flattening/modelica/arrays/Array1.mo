@@ -1,7 +1,6 @@
 // name:     Array1
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is a simple test of basic array handling.
 //
@@ -9,6 +8,7 @@
 model Array1
   Integer x[5] = {1,2,3,4,5};
   Integer y[3] = 1:3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array1;
 
 // Result:

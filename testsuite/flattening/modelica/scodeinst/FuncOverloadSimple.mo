@@ -1,7 +1,6 @@
 // name: FuncOverloadSimple
 // keywords: overload
 // status: correct
-// cflags: -d=newInst
 //
 // Tests simple overloading.
 //

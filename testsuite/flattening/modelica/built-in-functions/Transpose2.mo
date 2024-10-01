@@ -1,7 +1,6 @@
 // name:     Transpose2
 // keywords: transpose flattening ceval
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests fix for bug #1210: http://openmodelica.ida.liu.se:8080/cb/issue/1210
 //
@@ -11,6 +10,7 @@ class bug1210
   Real r;
 equation
   r = i[2,2];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end bug1210;
 
 // Result:

@@ -1,4 +1,3 @@
-// cflags: +d=-gen -d=-newInst
 // status: correct
 
 model EvalUnknownDim
@@ -12,6 +11,7 @@ model EvalUnknownDim
     s := size(tmp,1);
   end mySize;
   constant Integer s = mySize({1,2,3});
+  annotation(__OpenModelica_commandLineOptions="+d=-gen -d=-newInst");
 end EvalUnknownDim;
 // Result:
 // function EvalUnknownDim.mySize

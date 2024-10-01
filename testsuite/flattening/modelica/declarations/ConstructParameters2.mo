@@ -1,7 +1,6 @@
 // name:     ConstructParameters2
 // keywords: declaration,algorithm
 // status:   correct
-// cflags: -d=-newInst
 //
 // Show how to perform the same task
 // as in ConstructParameters1 but with legal
@@ -24,6 +23,7 @@ model ConstructParameters2
 protected
   parameter Prec prec = fc(p1,p2);
   parameter Real p3=prec.p3,p4 = prec.p4;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstructParameters2;
 
 // Result:

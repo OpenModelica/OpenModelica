@@ -1,7 +1,6 @@
 // name:     InnerClass1
 // keywords: dynamic scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // This example demonstrates how dynamic
 // scoping can be used both for models and for functions.
@@ -43,6 +42,7 @@ model InnerClass1
   end mybar;
   B b;
   A a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerClass1;
 
 // Result:

@@ -5,7 +5,6 @@
 // for statment handling
 //
 // Drmodelica: 9.1 for-Statement (p.288)
-// cflags: -d=-newInst
 //
 model SumZ
   parameter Integer n = 5;
@@ -16,6 +15,7 @@ algorithm
   for i in 1:n loop
     sum := sum + z[i];
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumZ;
 
 // Result:

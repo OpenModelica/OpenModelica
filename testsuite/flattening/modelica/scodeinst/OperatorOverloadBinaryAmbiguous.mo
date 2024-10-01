@@ -1,7 +1,6 @@
 // name: OperatorOverloadBinaryAmbiguous
 // keywords: operator overload constructor
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests that ambiguous overloads for a given operator are detected.
 //
@@ -41,7 +40,7 @@ end OperatorOverloadBinaryAmbiguous;
 
 // Result:
 // Error processing file: OperatorOverloadBinaryAmbiguous.mo
-// [flattening/modelica/scodeinst/OperatorOverloadBinaryAmbiguous.mo:38:3-38:14:writable] Error: Ambiguous matching overloaded operator functions found for c1 + 1.
+// [flattening/modelica/scodeinst/OperatorOverloadBinaryAmbiguous.mo:37:3-37:14:writable] Error: Ambiguous matching overloaded operator functions found for c1 + 1.
 // Candidates are:
 //   C.'+'.rightInt(C i, Integer j) => C
 //   C.'+'.anotherRightInt(C i, Integer j) => C

@@ -1,7 +1,6 @@
 // name: EnumConversion1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 
 model EnumConversion1
   type E = enumeration(one, two, three);

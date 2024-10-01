@@ -1,7 +1,6 @@
 // name: ReinitInvalid7
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model ReinitInvalid7
@@ -14,7 +13,7 @@ end ReinitInvalid7;
 
 // Result:
 // Error processing file: ReinitInvalid7.mo
-// [flattening/modelica/scodeinst/ReinitInvalid7.mo:11:5-11:19:writable] Error: Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore).
+// [flattening/modelica/scodeinst/ReinitInvalid7.mo:10:5-10:19:writable] Error: Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

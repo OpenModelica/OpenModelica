@@ -1,6 +1,5 @@
 // name:     Influenza
 // keywords: connect, equation, modification
-// cflags:   +std=2.x -d=-newInst
 // status:   correct
 
 connector Port = Real;
@@ -134,6 +133,7 @@ equation
   connect(Infected_Popul.in_1,Infection_Rate.out_1);
   connect(Non_Infected_Popul.in_2,Infection_Rate.out_1);
 
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end Influenza;
 
 

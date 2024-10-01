@@ -1,7 +1,6 @@
 // name: FuncBuiltinOuterProduct
 // keywords: outerProduct
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin outerProduct operator.
 //

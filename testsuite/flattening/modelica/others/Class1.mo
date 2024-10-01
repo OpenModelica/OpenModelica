@@ -1,13 +1,13 @@
 // name:     Class1
 // keywords:
 // status:   correct
-// cflags: -d=-newInst
 //
 // An empty class should be allowed.
 //
 
 class Class1
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Class1;
 
 // Result:

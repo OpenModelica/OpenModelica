@@ -1,7 +1,6 @@
 // name: OperationSub1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationSub1

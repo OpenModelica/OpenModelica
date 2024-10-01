@@ -1,6 +1,5 @@
 // name:     TankHybridPID
 // keywords: <insert keywords here>
-// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 // <insert description here>
@@ -111,6 +110,7 @@ equation
   connect(source.qOut, tank.qIn);
   connect(tank.tActuator, pidDiscrete.cOut );
   connect(tank.tSensor, pidDiscrete.cIn );
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end TankHybridPID;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,7 +1,6 @@
 // name:     ZeroDimUnconnectedFlow2
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that equations for unconnected flow variables in arrays with zero dims
 // are not generated.
@@ -18,6 +17,7 @@ model ZeroDimUnconnectedFlow2
   end M;
 
   M m[0];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ZeroDimUnconnectedFlow2;
 
 // Result:

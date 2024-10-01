@@ -1,7 +1,6 @@
 // name:     TestPackageConstantHandling.mo
 // keywords: declaration, import
 // status:   correct
-// cflags: -d=-newInst
 //
 // test that the imported constant can be used
 //
@@ -21,6 +20,7 @@ end TestPackage;
 
 model TestPackageConstantHandling
   constant TestPackage.MyType x = TestPackage.Water.simpleWaterConstants;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TestPackageConstantHandling;
 
 

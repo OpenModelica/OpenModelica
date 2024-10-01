@@ -1,7 +1,6 @@
 // name: OperatorOverloadConstructorDefault2
 // keywords: operator overload constructor
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that the default constructor is not used when an overloaded
 // constructor is defined, even if it would be the only match.
@@ -28,7 +27,7 @@ end OperatorOverloadConstructorDefault2;
 
 // Result:
 // Error processing file: OperatorOverloadConstructorDefault2.mo
-// [flattening/modelica/scodeinst/OperatorOverloadConstructorDefault2.mo:25:3-25:18:writable] Error: No matching function found for C(/*Real*/ 1.0, /*Real*/ 2.0).
+// [flattening/modelica/scodeinst/OperatorOverloadConstructorDefault2.mo:24:3-24:18:writable] Error: No matching function found for C(/*Real*/ 1.0, /*Real*/ 2.0).
 // Candidates are:
 //   C.'constructor'(Real r) => C
 //

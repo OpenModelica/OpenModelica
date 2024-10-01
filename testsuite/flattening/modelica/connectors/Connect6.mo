@@ -1,7 +1,6 @@
 // name:     Connect6
 // keywords: connect,type
 // status:   correct
-// cflags: -d=-newInst
 //
 // Strings are allowed in connectors
 //
@@ -18,6 +17,7 @@ equation
   connect(c1,c2);
   c1.s="h";
   b=c2.s=="h";
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect6;
 
 // Result:

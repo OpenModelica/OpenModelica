@@ -1,12 +1,12 @@
 // name: TimeInStateTest
 // keywords: state machines features
 // status: correct
-// cflags: -d=-newInst
 
 model TimeInStateTest
   output Real t;
 equation
   t = timeInState();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TimeInStateTest;
 
 // Result:

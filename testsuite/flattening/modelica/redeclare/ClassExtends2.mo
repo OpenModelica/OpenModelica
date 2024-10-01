@@ -1,7 +1,6 @@
 // name:     ClassExtends2
 // keywords: class,extends
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 class Y
@@ -22,6 +21,7 @@ end ClassExtends1;
 
 class ClassExtends2
   extends ClassExtends1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClassExtends2;
 
 // Result:

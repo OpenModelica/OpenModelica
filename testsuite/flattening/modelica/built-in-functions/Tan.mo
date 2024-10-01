@@ -1,7 +1,6 @@
 // name: Tan
 // keywords: tan
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in tan function
 //
@@ -10,6 +9,7 @@ model Tan
   Real r;
 equation
   r = tan(45);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Tan;
 
 // Result:

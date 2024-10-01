@@ -4,7 +4,6 @@
 //
 // <insert description here>
 // Drmodelica: 15.4.1 Population Dynamics (p. 556) Not in the notebook
-// cflags: -d=-newInst
 //
 
 class LotkaVolterra
@@ -17,6 +16,7 @@ class LotkaVolterra
 equation
   der(rabbits) = g_r*rabbits - d_rf*rabbits*foxes;
   der(foxes) = g_fr*d_rf*rabbits*foxes -d_f*foxes;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end LotkaVolterra;
 
 

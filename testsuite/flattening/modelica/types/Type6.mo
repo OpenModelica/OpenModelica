@@ -1,7 +1,6 @@
 // name:     Type6
 // keywords: type,declaration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Simple variable declarations, take two.
 //
@@ -11,6 +10,7 @@ model Type6
   parameter Real r                "a real value";
   parameter String s              "a string";
   parameter Boolean b             "a boolean";
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type6;
 
 // Result:

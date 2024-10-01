@@ -1,6 +1,5 @@
 // name: ParseElementReplaceable
 // status: correct
-// cflags: -d=-newInst
 //
 // This syntax is allowed by the grammar; the full MSL3.1 does not test it
 //
@@ -13,6 +12,7 @@ end Palette;
 
 Palette p(redeclare replaceable Real c1);
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParseElementReplaceable;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     loadFileInteractiveQualifiedInit
 // keywords: package hierarchy loading
 // status: correct
-// cflags: -d=-newInst
 //
 // Package hierachy loading
 //
@@ -12,4 +11,5 @@ package Something "Something"
 
   end Somewhere;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Something;

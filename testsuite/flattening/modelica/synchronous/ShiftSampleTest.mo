@@ -1,7 +1,6 @@
 // name: ShiftSampleTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model ShiftSampleTest
   output Real x;
@@ -10,6 +9,7 @@ model ShiftSampleTest
 equation
   x = shiftSample(1.0, 2, 4);
   y = shiftSample(z, 3);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ShiftSampleTest;
 
 // Result:

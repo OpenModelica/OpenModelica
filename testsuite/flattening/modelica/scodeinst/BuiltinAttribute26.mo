@@ -1,7 +1,6 @@
 // name: BuiltinAttribute26
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model BuiltinAttribute26
@@ -11,8 +10,8 @@ end BuiltinAttribute26;
 
 // Result:
 // Error processing file: BuiltinAttribute26.mo
-// [flattening/modelica/scodeinst/BuiltinAttribute26.mo:9:13-9:31:writable] Notification: From here:
-// [flattening/modelica/scodeinst/BuiltinAttribute26.mo:9:3-9:32:writable] Error: Type mismatch in binding 'start = x_start[1]', expected array dimensions [3], got [4].
+// [flattening/modelica/scodeinst/BuiltinAttribute26.mo:8:13-8:31:writable] Notification: From here:
+// [flattening/modelica/scodeinst/BuiltinAttribute26.mo:8:3-8:32:writable] Error: Type mismatch in binding 'start = x_start[1]', expected array dimensions [3], got [4].
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

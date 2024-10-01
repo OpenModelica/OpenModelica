@@ -1,7 +1,6 @@
 // name:     NestedSubscriptFor
 // keywords: array subscripts for loop #3155
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that nested subscripts using a for loop iterator is handled correctly.
 //
@@ -13,6 +12,7 @@ algorithm
   for i in 1:3 loop
     x[p[i]] := i;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NestedSubscriptFor;
 
 // Result:

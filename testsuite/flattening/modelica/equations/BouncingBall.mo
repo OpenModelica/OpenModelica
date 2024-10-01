@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 9.1 reinit (p. 296)
-// cflags: -d=-newInst
 //
 
 model BouncingBall     "The bouncing ball model"
@@ -18,6 +17,7 @@ equation
   when height <= radius then
     reinit(velocity, -c*pre(velocity));
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BouncingBall;
 
 

@@ -1,7 +1,6 @@
 // name: FuncUnknownDim1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 function f

@@ -1,7 +1,6 @@
 // name: CevalRecord1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R

@@ -1,7 +1,6 @@
 // name:     CatFunc
 // keywords: cat concatenation function #2681
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the use of cat in a function where the dimensions
 // are not known.
@@ -21,6 +20,7 @@ end func;
 
 model CatFunc
   Real x[:] = func(3, 5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CatFunc;
 
 // Result:

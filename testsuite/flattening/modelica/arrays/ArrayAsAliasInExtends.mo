@@ -1,7 +1,6 @@
 // name:     ArrayAsAliasInExtends
 // keywords: testing that array as alias used in extends works properly
 // status:   correct
-// cflags: -d=-newInst
 //
 // Array as alias used in extends checks, enumeration used as array size, enumeration indexing, etc.
 
@@ -39,6 +38,7 @@ end Mine;
 
 model ArrayAsAliasInExtends
   extends Mine.Theirs;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAsAliasInExtends;
 
 

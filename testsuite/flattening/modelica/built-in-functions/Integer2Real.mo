@@ -1,7 +1,6 @@
 // name:     Integer2Real
 // keywords: type
 // status:   correct
-// cflags: -d=-newInst
 //
 // Automatic conversion from Integer to Real.
 //
@@ -12,6 +11,7 @@ class Integer2Real
 equation
   n = 5;
   a = n / 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Integer2Real;
 
 // Result:

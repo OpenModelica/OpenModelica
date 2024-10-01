@@ -1,7 +1,6 @@
 // name:     RecordConstant4
 // keywords: record, constant, array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that modifiers are propagated when assigning records to other records,
 // both scalar and arrays.
@@ -22,6 +21,7 @@ end P;
 model RecordConstant4
   constant P.R CR = P.cr;
   constant P.R CR2[2] = P.cr2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstant4;
 
 // Result:

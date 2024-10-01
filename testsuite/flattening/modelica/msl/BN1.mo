@@ -1,7 +1,6 @@
 // name:     BN1 -  DeadZone component
 // keywords: DeadZone
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the DeadZone component.
 //
@@ -942,6 +941,7 @@ model BN1
 
 equation
   connect(constant1.outPort,deadZone1.inPort) annotation(Line(visible=true,points={{-26.56,35.08},{-8.62,32.65}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BN1;
 
 // class BN1

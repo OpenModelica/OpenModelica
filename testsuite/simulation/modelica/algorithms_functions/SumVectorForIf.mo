@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 9.1  if-Statement (p. 292)
-// cflags: -d=-newInst
 //
 class SumVector
   Real sum;
@@ -20,6 +19,7 @@ algorithm
       sum := sum - v[i];
     end if;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumVector;
 
 // class SumVector

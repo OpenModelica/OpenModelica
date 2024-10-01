@@ -1,7 +1,6 @@
 // name: RecordConnections
 // keywords: record
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests if records can be used in connections
 // THIS TEST SHOULD FAIL
@@ -16,6 +15,7 @@ model RecordConnections
 equation
   tr1.i = 3;
   connect(tr1.i,tr2.i);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConnections;
 
 // Result:

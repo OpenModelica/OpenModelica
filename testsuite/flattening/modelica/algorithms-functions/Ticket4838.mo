@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 model Sum
 function s
@@ -14,6 +13,7 @@ function s
   end if;
 end s;
   constant Integer x = s(0,4);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sum;
 
 // Result:

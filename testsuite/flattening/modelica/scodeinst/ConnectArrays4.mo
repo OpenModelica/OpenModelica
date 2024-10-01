@@ -1,7 +1,6 @@
 // name: ConnectArrays4
 // keywords:
 // status: correct
-// cflags:   -d=newInst --allowNonStandardModelica=nonStdEnumerationAsIntegers
 //
 //
 
@@ -16,6 +15,7 @@ model ConnectArrays4
 equation
   connect(c[E.a], c2[E.a]);
   connect(c[1], c2[2]);
+  annotation(__OpenModelica_commandLineOptions="--allowNonStandardModelica=nonStdEnumerationAsIntegers");
 end ConnectArrays4;
 
 // Result:

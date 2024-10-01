@@ -1,7 +1,6 @@
 // name: ImplicitRangeExp1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

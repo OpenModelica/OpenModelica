@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 2.1 Van der Pol (p. 22)
-// cflags: -d=-newInst
 //
 model VanDerPol  "Van der Pol oscillator model"
   Real x(start = 1);
@@ -12,6 +11,7 @@ model VanDerPol  "Van der Pol oscillator model"
 equation
   der(x) = y;
   der(y) = - x + lambda*(1 - x*x)*y;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VanDerPol;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: FuncBuiltinMatrix
 // keywords: matrix
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin matrix operator.
 //

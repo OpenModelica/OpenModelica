@@ -4,7 +4,6 @@
 //
 // //??Error - cat not yet implemented
 // Drmodelica: 7.5 Array Concatenation and Slice Operations (p. 219)
-// cflags: -d=-newInst
 //
 class AppendElement
   Real[1, 3] PA=[1, 2, 3];
@@ -44,6 +43,7 @@ equation
   XA4 = cat(2, {{-1}}, zeros(1, 2), {{1}});
   // Append OK, result is {{-1, 0, 0, 1}}
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AppendElement;
 
 

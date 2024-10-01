@@ -1,7 +1,6 @@
 // name: FunctionRecordArg4
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 record BaseR

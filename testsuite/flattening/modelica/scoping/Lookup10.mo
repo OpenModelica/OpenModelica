@@ -1,7 +1,6 @@
 // name:     Lookup10
 // keywords: lookup, extends, scoping, bug1151
 // status:   correct
-// cflags: -d=-newInst
 //
 // Fix for bug #1151: http://openmodelica.ida.liu.se:8080/cb/issue/1151?navigation=true
 //
@@ -31,6 +30,7 @@ end TOOLS;
 
 model Lookup10
   extends TOOLS.surf_orient.surf_orient_alias_def;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup10;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     Real2Integer3
 // keywords: type
 // status:   correct
-// cflags: -d=-newInst
 //
 // No implicit conversion from Real to Integer. Division via 'div'
 // gives integer output with integer input.
@@ -12,6 +11,7 @@ class Real2Integer3
 algorithm
   n1 := integer(6.6);
   n2 := div(n1,2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Real2Integer3;
 
 // Result:

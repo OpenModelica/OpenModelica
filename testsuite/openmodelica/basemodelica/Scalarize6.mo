@@ -1,6 +1,5 @@
 // name: Scalarize6
 // status: correct
-// cflags: -d=newInst -f --baseModelicaOptions=scalarize
 
 function f
   input Real x[3];
@@ -13,6 +12,7 @@ end A;
 
 model Scalarize6
   A a;
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f --baseModelicaOptions=scalarize");
 end Scalarize6;
 
 // Result:

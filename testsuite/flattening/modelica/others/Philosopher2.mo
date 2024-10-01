@@ -1,6 +1,5 @@
 // name:     Philosopher2
 // keywords: Example
-// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 // This is the dining philosopher model from Peter F. book.
@@ -217,6 +216,7 @@ package Philosopher
 end Philosopher;
 model Philosopher_DiningTable
   extends Philosopher.DiningTable;
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end Philosopher_DiningTable;
 
 // function Philosopher.Random.random

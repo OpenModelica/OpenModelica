@@ -1,7 +1,6 @@
 // name: StateSelectVariability1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model StateSelectVariability1

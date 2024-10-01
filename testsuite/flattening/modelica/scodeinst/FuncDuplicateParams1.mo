@@ -1,7 +1,6 @@
 // name: FuncDuplicateParams1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that duplicate elements are handled correctly in functions.
 //

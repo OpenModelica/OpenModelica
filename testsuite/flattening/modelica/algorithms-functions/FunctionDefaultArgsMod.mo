@@ -1,7 +1,6 @@
 // name:     FunctionDefaultArgsMod
 // keywords: functions, default arguments, modifier, #2729
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's possible to add default argument to a derived function via a
 // modifier.
@@ -17,6 +16,7 @@ model FunctionDefaultArgsMod
   Real p = 2.0;
   function g = f(r=p);
   Real x = g(1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionDefaultArgsMod;
 
 // Result:

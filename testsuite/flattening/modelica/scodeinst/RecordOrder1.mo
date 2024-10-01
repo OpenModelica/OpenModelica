@@ -1,7 +1,6 @@
 // name: RecordOrder1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R1

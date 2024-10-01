@@ -1,7 +1,6 @@
 // name: CardinalityInvalidContext2
 // keywords: cardinality
 // status: incorrect
-// cflags: -d=newInst
 //
 // Cardinality may only be used in the conditions of if-statements/equations and
 // asserts.
@@ -23,7 +22,7 @@ end CardinalityInvalidContext2;
 
 // Result:
 // Error processing file: CardinalityInvalidContext2.mo
-// [flattening/modelica/scodeinst/CardinalityInvalidContext2.mo:20:5-20:23:writable] Error: cardinality may only be used in the condition of an if-statement/equation or an assert.
+// [flattening/modelica/scodeinst/CardinalityInvalidContext2.mo:19:5-19:23:writable] Error: cardinality may only be used in the condition of an if-statement/equation or an assert.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

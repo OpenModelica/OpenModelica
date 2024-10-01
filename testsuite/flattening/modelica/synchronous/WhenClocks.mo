@@ -1,7 +1,6 @@
 // name: WhenClocks
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model WhenClocks
   Real x;
@@ -12,6 +11,7 @@ equation
   when Clock(time > 0.5) then
     x = previous(x) + 1;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenClocks;
 
 // Result:

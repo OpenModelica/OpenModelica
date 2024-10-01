@@ -1,7 +1,6 @@
 // name:     SliceAssignment
 // keywords: slice assignment bug1249
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that correct code is generated for slice assignments.
 //
@@ -11,6 +10,7 @@ model SliceAssignment
   parameter Real x[:] = data[:, 1];
   parameter Real y[:] = data[:, 2];
   parameter Real z[:] = data[:, 3];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SliceAssignment;
 
 // Result:

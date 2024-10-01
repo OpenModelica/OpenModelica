@@ -1,7 +1,6 @@
 // name:     Array5
 // keywords: array,modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is a test of values in types.
 // Note that the fill-operation is here generalized to non-scalars
@@ -21,6 +20,7 @@ equation
   end for;
   der(y)=-y;
   x={y,der(y)};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array5;
 
 // flatmodel Array5

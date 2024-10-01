@@ -1,7 +1,6 @@
 // name: AssertInvalid2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model AssertInvalid2
@@ -11,7 +10,7 @@ end AssertInvalid2;
 
 // Result:
 // Error processing file: AssertInvalid2.mo
-// [flattening/modelica/scodeinst/AssertInvalid2.mo:9:3-9:19:writable] Error: Type mismatch for positional argument 2 in assert(message=1). The argument has type:
+// [flattening/modelica/scodeinst/AssertInvalid2.mo:8:3-8:19:writable] Error: Type mismatch for positional argument 2 in assert(message=1). The argument has type:
 //   Integer
 // expected type:
 //   String

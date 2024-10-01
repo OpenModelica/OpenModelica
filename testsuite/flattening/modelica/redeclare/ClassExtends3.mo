@@ -1,7 +1,6 @@
 // name: ClassExtends3
 // keywords: class, extends
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that partial packages may be extended, and functions inside
 // redeclared. Constants inherited will use the full functions to calculate
@@ -45,6 +44,7 @@ end B;
 
 model ClassExtends3
   Integer b = B.usePart(integer(time));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClassExtends3;
 
 // Result:

@@ -3,7 +3,6 @@
 // status:   incorrect
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
-// cflags: -d=-newInst
 //
 class ArrayDivError
   Real Div1[1, 3], Div2, Div3;
@@ -16,4 +15,5 @@ equation
 
   Div3 = {1, 2, 3} / {1, 2, 2};
   // Not allowed!
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDivError;

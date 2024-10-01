@@ -1,7 +1,6 @@
 // name:     MultipleDeclarations2
 // keywords: declaration
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Multiple declarations are not allowed.
 //
@@ -10,6 +9,7 @@
 model MultipleDeclarations2
   Real x;
   Real x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MultipleDeclarations2;
 
 // Result:

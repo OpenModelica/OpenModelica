@@ -1,7 +1,6 @@
 // name: Operators.mo
 // keywords: operators
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the different operators in the Modelica language
 // Simple mathematical operations are tested in Expressions.mo
@@ -39,6 +38,7 @@ equation
   i1 = 4711;
   i2 = f(i1);
   i3 = if b then 36 else 37;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Operators;
 
 // Result:

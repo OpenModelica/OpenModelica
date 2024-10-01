@@ -1,7 +1,6 @@
 // name: FuncBuiltinGetInstanceName
 // keywords: getInstanceName
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin getInstanceName operator.
 //

@@ -1,7 +1,6 @@
 // name: WhenCondition4
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 //
 
@@ -15,7 +14,7 @@ end WhenCondition4;
 
 // Result:
 // Error processing file: WhenCondition4.mo
-// [flattening/modelica/scodeinst/WhenCondition4.mo:11:3-13:11:writable] Error: When-condition 'noEvent(time > 0)' is not a discrete-time expression.
+// [flattening/modelica/scodeinst/WhenCondition4.mo:10:3-12:11:writable] Error: When-condition 'noEvent(time > 0)' is not a discrete-time expression.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

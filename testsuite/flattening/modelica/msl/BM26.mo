@@ -1,7 +1,6 @@
 // name:     BM26 -  Tanh component
 // keywords: Tanh
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Tanh component.
 //
@@ -1062,6 +1061,7 @@ model BM26
 
 equation
   connect(tanh1.inPort,constant1.outPort) annotation(Line(visible=true,points={{4.48,-5.0},{-17.31,-2.93}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM26;
 // function Modelica.Math.tanh
 // input Real u;

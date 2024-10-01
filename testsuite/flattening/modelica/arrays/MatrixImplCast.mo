@@ -1,7 +1,6 @@
 // name: MatrixImplCast
 // keywords: matrix typecasting #3409
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that expressions in matrix constructor are typecast to Real properly
 // if there's a mix of Real and Integer expressions.
@@ -16,6 +15,7 @@ model MatrixImplCast
   end f;
 
   Real m[:, :] = f({0.1, 0.2, 0.3});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixImplCast;
 
 // Result:

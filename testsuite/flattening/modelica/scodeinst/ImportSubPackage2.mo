@@ -1,7 +1,6 @@
 // name:     ImportSubPackage2
 // keywords: import
 // status:   correct
-// cflags:   -d=newInst
 //
 //
 

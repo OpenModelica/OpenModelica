@@ -4,7 +4,6 @@
 //
 // <insert description here>
 // Drmodelica: 15.3.1 Chemical Reaction Kinetics of Hydrogen Iodine (p. 555) Not in the notebook
-// cflags: -d=-newInst
 //
 
 type Concentration = Real(final quantity ="Concentration",final unit = "mol/m3");
@@ -19,6 +18,7 @@ equation
 der(H2) = k2*HI^2 - k1*H2*I2;
 der(I2) = k2*HI^2 - k1*H2*I2;
 der(HI) = 2*k1*H2*I2 - 2*k2*HI^2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HydrogenIodide;
 
 // class HydrogenIodide

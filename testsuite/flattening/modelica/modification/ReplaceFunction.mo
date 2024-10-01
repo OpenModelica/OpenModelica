@@ -1,7 +1,6 @@
 // name:     ReplaceFunction
 // keywords: modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Function arguments must be identical, including their names,
 // in functions of the same type.
@@ -26,6 +25,7 @@ model M
   Real x;
 equation
   x=f(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 model ReplaceFunction = M(redeclare function f = Cos);   // Error

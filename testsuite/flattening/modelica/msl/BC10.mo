@@ -1,7 +1,6 @@
 // name:     BC10 - StateSpace component
 // keywords: StateSpace
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the StateSpace component.
 //
@@ -963,6 +962,7 @@ model BC10
 
 equation
   connect(constant1.outPort,stateSpace1.inPort) annotation(Line(visible=true,points={{-45.11,23.22},{-31.43,24.13}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC10;
 
 // class BC10

@@ -1,6 +1,5 @@
 // name: FunctionDerivative1
 // status: correct
-// cflags: -d=newInst
 //
 //
 

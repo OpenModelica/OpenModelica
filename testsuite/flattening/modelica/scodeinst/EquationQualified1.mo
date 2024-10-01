@@ -1,7 +1,6 @@
 // name: EquationQualified1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,7 +1,6 @@
 // name: RecordBinding11
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package PartialMedium

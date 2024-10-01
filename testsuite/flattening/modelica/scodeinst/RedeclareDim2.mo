@@ -1,7 +1,6 @@
 // name: RedeclareDim2
 // keywords: redeclare
 // status: correct
-// cflags: -d=newInst
 //
 
 package P

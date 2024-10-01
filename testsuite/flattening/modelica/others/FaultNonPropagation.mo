@@ -1,7 +1,6 @@
 // name:     FaultNonPropagation
 // keywords:
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that faults in an unused model doesn't cause instantiation of another
 // model to fail.
@@ -17,6 +16,7 @@ end AllKindsOfWrong;
 
 model FaultNonPropagation
   Real x = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FaultNonPropagation;
 
 // Result:

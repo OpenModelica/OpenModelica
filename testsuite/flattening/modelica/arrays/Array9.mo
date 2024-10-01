@@ -1,7 +1,6 @@
 // name:      Array9
 // keywords:  array
 // status:    correct
-// cflags: -d=-newInst
 //
 // End keyword in array subscript
 //
@@ -12,6 +11,7 @@ class Array9
   Real c[b[end]];
 algorithm
   a[end-b[end]] := 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array9;
 
 // Result:

@@ -4,7 +4,6 @@
 //
 // Equation handling
 // Drmodelica: 2.1 Hello World (p. 19)
-// cflags: -d=-newInst
 //
 
 model HelloWorld
@@ -12,6 +11,7 @@ model HelloWorld
   parameter Real a = 1;
 equation
   der(x) = - a * x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HelloWorld;
 
 // Result:

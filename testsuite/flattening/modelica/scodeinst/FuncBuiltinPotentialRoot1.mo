@@ -1,7 +1,6 @@
 // name: FuncBuiltinPotentialRoot1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 type OC

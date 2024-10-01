@@ -1,7 +1,6 @@
 // name: OperatorOverloadConstructor1
 // keywords: operator overload constructor
 // status: correct
-// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 //
 
@@ -21,6 +20,7 @@ model OperatorOverloadConstructor1
   C c;
 equation
   c = C(1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-nfEvalConstArgFuncs");
 end OperatorOverloadConstructor1;
 
 

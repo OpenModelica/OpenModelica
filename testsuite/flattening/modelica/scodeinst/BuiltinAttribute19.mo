@@ -1,7 +1,6 @@
 // name: BuiltinAttribute19
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

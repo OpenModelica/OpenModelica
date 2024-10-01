@@ -1,7 +1,6 @@
 // name: ArrayConnect2
 // keywords:
 // status: correct
-// cflags: -d=newInst,arrayConnect,-nfScalarize
 //
 
 connector C
@@ -30,6 +29,7 @@ equation
   for i in 1:N loop
     connect(C[i].p, R[i].n);
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=arrayConnect,-nfScalarize");
 end ArrayConnect2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: cond4.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

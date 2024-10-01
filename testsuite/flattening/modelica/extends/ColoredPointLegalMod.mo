@@ -9,7 +9,6 @@
 // superclass are inherited with their own protection.
 //
 // Drmodelica: 4.1 Public Respectively Protected Elements (p. 117)
-// cflags: -d=-newInst
 //
 record ColorData
   Real dummy;
@@ -45,6 +44,7 @@ class A
   ColoredPoint cp;
 equation
   a = cp.x;       //Should work since x is public
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 // Result:

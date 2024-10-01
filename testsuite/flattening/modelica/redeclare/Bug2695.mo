@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // Bug #2695
 
 package Modelica
@@ -62,6 +61,7 @@ end TestTILMediaOSMC;
 
 model TestGas_error
   extends TestTILMediaOSMC.TestGas_error;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TestGas_error;
 
 // Result:

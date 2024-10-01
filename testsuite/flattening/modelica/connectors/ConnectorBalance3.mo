@@ -1,7 +1,6 @@
 // name: ConnectorBalance3
 // keywords: connector
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -17,6 +16,6 @@ end ConnectorBalance3;
 // class ConnectorBalance3
 //   Real c.e;
 // end ConnectorBalance3;
-// [flattening/modelica/connectors/ConnectorBalance3.mo:13:3-13:6:writable] Warning: Connector c is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/ConnectorBalance3.mo:12:3-12:6:writable] Warning: Connector c is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
 //
 // endResult

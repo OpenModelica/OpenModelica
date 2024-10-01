@@ -1,7 +1,6 @@
 // name:     test_06.mo
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // <insert description here>
 //
@@ -20,6 +19,7 @@ equation
   der(i2) = u2*i2*(u2+1);
   u=u1+u2;
   i1=i2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

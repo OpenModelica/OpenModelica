@@ -1,7 +1,6 @@
 // name: FuncInnerParam
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that inner is not a valid function parameter prefix.
 //
@@ -19,7 +18,7 @@ end FuncInnerParam;
 
 // Result:
 // Error processing file: FuncInnerParam.mo
-// [flattening/modelica/scodeinst/FuncInnerParam.mo:11:5-11:23:writable] Error: Invalid prefix inner on formal parameter x.
+// [flattening/modelica/scodeinst/FuncInnerParam.mo:10:5-10:23:writable] Error: Invalid prefix inner on formal parameter x.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

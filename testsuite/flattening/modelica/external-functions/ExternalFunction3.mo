@@ -1,7 +1,6 @@
 // name:     ExternalFunction3
 // keywords: external function,code generation,constant propagation
 // status:   correct
-// cflags: -d=gen -d=-newInst
 // setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o ExternalFunction3-addmatrices.o ExternalFunction3-addmatrices.c
 // teardown_command: rm -f ExternalFunction3-addmatrices.o ExternalFunction3_*
 //
@@ -23,6 +22,7 @@ end addmatrices;
   Real c[2,2];
 equation
   c = addmatrices(a,b);
+  annotation(__OpenModelica_commandLineOptions="-d=gen -d=-newInst");
 end ExternalFunction3;
 
 // Result:
@@ -53,6 +53,6 @@ end ExternalFunction3;
 //   c[2,1] = 10.0;
 //   c[2,2] = 12.0;
 // end ExternalFunction3;
-// [flattening/modelica/external-functions/ExternalFunction3.mo:14:1-19:16:writable] Warning: An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language C does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning.
+// [flattening/modelica/external-functions/ExternalFunction3.mo:13:1-18:16:writable] Warning: An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language C does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning.
 //
 // endResult

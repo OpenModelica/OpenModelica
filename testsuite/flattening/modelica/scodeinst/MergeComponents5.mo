@@ -2,7 +2,6 @@
 // keywords:
 // status: correct
 // teardown_command: rm MergeComponents5_merged_table.json
-// cflags: -d=newInst,mergeComponents,-nfScalarize
 //
 
 model A
@@ -16,6 +15,7 @@ model MergeComponents5
   A3 a1(y = {1, 2, 3});
   A3 a2(y = {4, 5, 6});
   A3 a3(y = {7, 8, 9});
+  annotation(__OpenModelica_commandLineOptions="-d=mergeComponents,-nfScalarize");
 end MergeComponents5;
 
 // Result:

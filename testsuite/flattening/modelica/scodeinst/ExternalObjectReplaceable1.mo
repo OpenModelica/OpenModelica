@@ -1,7 +1,6 @@
 // name: ExternalObjectReplaceable1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -25,7 +24,7 @@ end ExternalObjectReplaceable1;
 
 // Result:
 // Error processing file: ExternalObjectReplaceable1.mo
-// [flattening/modelica/scodeinst/ExternalObjectReplaceable1.mo:11:15-14:18:writable] Error: 'constructor' may not be replaceable.
+// [flattening/modelica/scodeinst/ExternalObjectReplaceable1.mo:10:15-13:18:writable] Error: 'constructor' may not be replaceable.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -1,7 +1,6 @@
 // name: FuncBuiltinShiftSample1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model FuncBuiltinShiftSample1

@@ -1,6 +1,5 @@
 // name: ClassMod5
 // status: correct
-// cflags: -d=newInst
 
 model A
   type T = Real[3];

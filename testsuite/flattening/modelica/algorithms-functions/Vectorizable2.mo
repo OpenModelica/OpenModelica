@@ -1,7 +1,6 @@
 // name:     Vectorizable2
 // keywords: vectorized calls
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests vectorized calls.
 //
@@ -19,6 +18,7 @@ model Vectorizable2
   Real x[3];
 equation
   x=foo({1,2,3},[1,2;3,4;5,6]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable2;
 
 // function foo

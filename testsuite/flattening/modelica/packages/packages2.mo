@@ -1,7 +1,6 @@
 // name:     packages2
 // keywords: package, declaration
 // status:   correct
-// cflags: -d=-newInst
 
 //
 //   Instantiation with packages and extends. Tests special case to avoid infinite recursion.
@@ -24,6 +23,7 @@ end Modelica;
 
 model test
   Real x=Modelica.Constants.PI;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 

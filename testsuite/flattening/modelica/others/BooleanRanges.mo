@@ -1,7 +1,6 @@
 // name:     BooleanRanges
 // keywords: boolean range
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests boolean ranges.
 //
@@ -11,6 +10,7 @@ model BooleanRanges
   Boolean b2[:] = true : false;
   Boolean b3[:] = false : false;
   Boolean b4[:] = true : true;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BooleanRanges;
 
 // Result:

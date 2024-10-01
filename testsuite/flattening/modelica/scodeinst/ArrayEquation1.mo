@@ -1,7 +1,6 @@
 // name: ArrayEquation1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ArrayEquation1

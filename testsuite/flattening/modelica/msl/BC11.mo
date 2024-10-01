@@ -1,7 +1,6 @@
 // name:     BC11 - TransferFunction component
 // keywords: TransferFunction
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the TransferFunction component.
 //
@@ -964,6 +963,7 @@ model BC11
 
 equation
   connect(transferFunction1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-14.4,26.56},{-37.51,26.87}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC11;
 
 // class BC11

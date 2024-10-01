@@ -1,7 +1,6 @@
 // name: ReductionInvalidTypeProduct
 // keywords: reduction
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests the builtin reduction operators.
 //
@@ -12,7 +11,7 @@ end ReductionInvalidTypeProduct;
 
 // Result:
 // Error processing file: ReductionInvalidTypeProduct.mo
-// [flattening/modelica/scodeinst/ReductionInvalidTypeProduct.mo:10:3-10:43:writable] Error: Invalid expression '{1, 2, 3}' of type Integer[3] in product reduction, expected scalar Integer or Real.
+// [flattening/modelica/scodeinst/ReductionInvalidTypeProduct.mo:9:3-9:43:writable] Error: Invalid expression '{1, 2, 3}' of type Integer[3] in product reduction, expected scalar Integer or Real.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

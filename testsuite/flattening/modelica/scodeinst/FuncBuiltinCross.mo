@@ -1,7 +1,6 @@
 // name: FuncBuiltinCross
 // keywords: cross
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin cross operator.
 //

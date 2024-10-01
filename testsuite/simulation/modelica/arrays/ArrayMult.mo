@@ -4,7 +4,6 @@
 //
 // Array multiplication
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
-// cflags: -d=-newInst
 //
 class ArrayMult
   Real m1[3] = {1, 2, 3} * 2;       // Elementwise mult: {2, 4, 6};
@@ -15,6 +14,7 @@ class ArrayMult
   Real m6[1] = {1, 2, 3} * [1; 2; 10];       // Matrix mult:     {35};
   Real m7[2, 2] = {{1, 2}, {3, 4}} * {{1, 2}, {2, 1}};   // Matrix mult:   {{5, 4}, {11, 10}};
   Real m8[2, 2] = [1, 2; 3, 4] * [1, 2; 2, 1];   // Matrix mult: {{5, 4}, {11, 10}};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayMult;
 
 // class ArrayMult

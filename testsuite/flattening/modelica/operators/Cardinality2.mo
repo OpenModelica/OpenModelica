@@ -1,7 +1,6 @@
 // name:     Cardinality2
 // keywords: cardinality vectorization
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing vectorization of the cardinality operator.
 //
@@ -13,6 +12,7 @@ model Cardinality2
   Integer i[2];
 equation
   i = cardinality(c);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cardinality2;
 
 // Result:

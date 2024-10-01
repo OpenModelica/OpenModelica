@@ -1,7 +1,6 @@
 // name: FuncBuiltinSample
 // keywords: sample
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin sample operator.
 //

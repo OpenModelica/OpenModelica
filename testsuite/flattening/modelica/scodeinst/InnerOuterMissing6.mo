@@ -1,7 +1,6 @@
 // name: InnerOuterMissing6
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A
@@ -18,6 +17,6 @@ end InnerOuterMissing6;
 // class InnerOuterMissing6
 //   Real x;
 // end InnerOuterMissing6;
-// [flattening/modelica/scodeinst/InnerOuterMissing6.mo:8:3-8:15:writable] Warning: An inner declaration for outer component x could not be found and was automatically generated.
+// [flattening/modelica/scodeinst/InnerOuterMissing6.mo:7:3-7:15:writable] Warning: An inner declaration for outer component x could not be found and was automatically generated.
 //
 // endResult

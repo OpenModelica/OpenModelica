@@ -1,5 +1,4 @@
 // name:     ExternalFunction1
-// cflags: -d=gen -d=-newInst
 // keywords: external function,code generation,constant propagation
 // status:   correct
 // setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o ExternalFunction1_f.o ExternalFunction1_f.c
@@ -20,6 +19,7 @@ model ExternalFunction1
   Real y;
 equation
   y = f(x);
+  annotation(__OpenModelica_commandLineOptions="-d=gen -d=-newInst");
 end ExternalFunction1;
 
 

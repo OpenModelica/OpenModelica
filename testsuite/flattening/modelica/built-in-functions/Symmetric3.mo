@@ -1,7 +1,6 @@
 // name: Symmetric3
 // keywords: symmetric
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in symmetric function
 //
@@ -11,6 +10,7 @@ model Symmetric3
   Real sym[4,4];
 equation
   sym = symmetric(m);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Symmetric3;
 
 // Result:

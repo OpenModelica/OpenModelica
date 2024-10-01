@@ -1,7 +1,6 @@
 // name: ExternalObject6
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,7 +1,6 @@
 // name: FloatingPoint
 // keywords: real
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the different ways floating point numbers may be declared
 //
@@ -20,6 +19,7 @@ model FloatingPoint
   Real x;
 equation
   x = 2e0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FloatingPoint;
 
 // Result:

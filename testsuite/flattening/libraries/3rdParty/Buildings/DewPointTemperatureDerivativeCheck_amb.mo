@@ -1,7 +1,6 @@
 //name: DewPointTemperatureDerivativeCheck_amb [BUG: #2853]
 //keyword: Buildings and Annex60 library
 //status: correct
-// cflags: -d=-newInst
 //
 // instantiate example
 //
@@ -137,6 +136,7 @@ end Modelica;
 model DewPointTemperatureDerivativeCheck_amb
   extends Buildings.Utilities.Psychrometrics.Functions.BaseClasses.Examples.DewPointTemperatureDerivativeCheck_amb;
   annotation(__Dymola_Commands(file = "modelica://Buildings/Resources/Scripts/Dymola/Utilities/Psychrometrics/Functions/BaseClasses/Examples/DewPointTemperatureDerivativeCheck_amb.mos"), experiment(StartTime = 273.15, StopTime = 323.15));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DewPointTemperatureDerivativeCheck_amb;
 
 // Result:

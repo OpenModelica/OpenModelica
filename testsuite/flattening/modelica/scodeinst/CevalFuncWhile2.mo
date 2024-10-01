@@ -1,7 +1,6 @@
 // name: CevalFuncWhile2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -20,7 +19,7 @@ end CevalFuncWhile2;
 
 // Result:
 // Error processing file: CevalFuncWhile2.mo
-// [flattening/modelica/scodeinst/CevalFuncWhile2.mo:12:3-14:12:writable] Error: The loop iteration limit (--evalLoopLimit=100000) was exceeded during evaluation.
+// [flattening/modelica/scodeinst/CevalFuncWhile2.mo:11:3-13:12:writable] Error: The loop iteration limit (--evalLoopLimit=100000) was exceeded during evaluation.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

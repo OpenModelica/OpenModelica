@@ -1,7 +1,6 @@
 // name:     test_dump_languages.mo
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // <insert description here>
 //
@@ -18,6 +17,7 @@ equation
  der(num.x[1]) = num.x[1]*(a-b*num.x[1]-num.x[2]);
  der(num.x[2]) = num.x[2]*(c-num.x[1]-num.x[2]);
  y = num.x[1] * u + num.x[2] * u;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

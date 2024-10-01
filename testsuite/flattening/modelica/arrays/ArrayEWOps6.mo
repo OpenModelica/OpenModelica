@@ -1,7 +1,6 @@
 // name:     ArrayEWOps6
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests various array operators.
 
@@ -25,6 +24,7 @@ end f;
 
 class ArrayEWOps6
   Real x[9] = f([1; 2]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps6;
 
 // Result:

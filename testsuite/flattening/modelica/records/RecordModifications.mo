@@ -1,7 +1,6 @@
 // name:     Record Modifications
 // keywords: algorithm
 // status:   correct
-// cflags: -d=-newInst
 
 package HardMagnetic
 public
@@ -31,6 +30,7 @@ model Test
  parameter HardMagnetic.Other other = HardMagnetic.Other();
  parameter HardMagnetic.NdFeB y = HardMagnetic.NdFeB();
  HardMagnetic.NdFeB a = HardMagnetic.NdFeB();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     ConnectParamArray
 // keywords: connect parameter array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that asserts are generated for parameters arrays in connectors.
 //
@@ -14,6 +13,7 @@ model ConnectParamArray
   C c1, c2;
 equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectParamArray;
 
 // Result:

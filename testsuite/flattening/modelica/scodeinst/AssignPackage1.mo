@@ -1,7 +1,6 @@
 // name: AssignPackage1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 package P
@@ -16,7 +15,7 @@ end AssignPackage1;
 
 // Result:
 // Error processing file: AssignPackage1.mo
-// [flattening/modelica/scodeinst/AssignPackage1.mo:14:3-14:11:writable] Error: Component 'p1' may not be assigned to due to class specialization 'package'.
+// [flattening/modelica/scodeinst/AssignPackage1.mo:13:3-13:11:writable] Error: Component 'p1' may not be assigned to due to class specialization 'package'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

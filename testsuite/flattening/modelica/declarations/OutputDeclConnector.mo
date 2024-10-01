@@ -1,7 +1,6 @@
 // name: OutputDeclConnector
 // keywords: output
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the output prefix on a connector type
 //
@@ -15,6 +14,7 @@ class OutputDeclConnector
   output OutputConnector oc;
 equation
   oc.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OutputDeclConnector;
 
 // Result:

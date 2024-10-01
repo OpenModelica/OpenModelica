@@ -1,7 +1,6 @@
 // name: IntervalTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model IntervalTest
   Real y[2], u[2];
@@ -9,6 +8,7 @@ model IntervalTest
 equation
   x = previous(x);
   y = interval(u);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IntervalTest;
 
 // Result:

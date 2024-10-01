@@ -1,7 +1,6 @@
 // name:     RedeclareComponentInvalid1
 // keywords: redeclare component
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Tests that a component redeclaration needs a corresponding inherited
 // component to redeclare.
@@ -9,6 +8,7 @@
 
 class RedeclareComponentInvalid1
   redeclare Real r;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareComponentInvalid1;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: SubscriptCevalIndexRange1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model SubscriptCevalIndexRange1

@@ -1,7 +1,6 @@
 // name: FlowDeclRecord2
 // keywords: flow, record
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that the flow prefix is propagated when used on structured components.
 //
@@ -20,6 +19,7 @@ model FlowDeclRecord2
   C c1, c2;
 equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlowDeclRecord2;
 
 // Result:

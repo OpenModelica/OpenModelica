@@ -1,7 +1,6 @@
 // name:     EmptyArrayAlgorithm.mo [BUG: #2300]
 // keywords: Empty arrays used in algorithm
 // status:   correct
-// cflags: -d=-newInst
 //
 // Empty arrays used in algorithm
 //
@@ -14,6 +13,7 @@ equation
   r1 = fill(1.0, N);
 algorithm
   r2 := r1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EmptyArrayAlgorithm;
 
 

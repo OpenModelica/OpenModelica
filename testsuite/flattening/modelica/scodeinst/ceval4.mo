@@ -1,6 +1,5 @@
 // name: ceval4.mo
 // status: correct
-// cflags: -d=newInst
 
 model A
   function f

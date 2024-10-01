@@ -1,7 +1,6 @@
 // name:     Extends3
 // keywords: extends basictype operators
 // status:   correct
-// cflags:   +std=2.x -d=-newInst
 //
 // Testing extending basic type and matrix multiplication operators (MC bug #643)
 
@@ -21,6 +20,7 @@ block SS
   parameter Real B[2,1] = {{1},{2}};
 equation
   y = B*u;
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end SS;
 
 

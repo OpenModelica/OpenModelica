@@ -1,7 +1,6 @@
 // name:     RecordConstant1
 // keywords: record, constant
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's possible to look up components through record constants.
 //
@@ -16,6 +15,7 @@ end P;
 
 model RecordConstant1
   constant Real r2 = P.cr.r;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstant1;
 
 // Result:

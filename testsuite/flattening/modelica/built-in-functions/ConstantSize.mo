@@ -1,7 +1,6 @@
 // name:     ConstantSize
 // keywords: size constant
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that a size call with constant arguments is evaluted correctly.
 //
@@ -16,6 +15,7 @@ equation
   y = size(B, 1);
   z = size(B, 2);
   x2 = size(B);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantSize;
 
 // Result:

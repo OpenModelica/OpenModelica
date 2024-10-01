@@ -1,7 +1,6 @@
 // name:     Lookup6
 // keywords: scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // The constant 'a' is hidden in class 'B' after the declaration
 // of 'B.a'.
@@ -15,6 +14,7 @@ class Lookup6
     a = -a;
   end B;
   B b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup6;
 
 // Result:

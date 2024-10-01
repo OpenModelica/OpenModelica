@@ -1,7 +1,6 @@
 // name: FuncIntegerWrongType
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that type checking works for Integer.
 //
@@ -12,7 +11,7 @@ end FuncIntegerWrongType;
 
 // Result:
 // Error processing file: FuncIntegerWrongType.mo
-// [flattening/modelica/scodeinst/FuncIntegerWrongType.mo:10:3-10:27:writable] Error: Type mismatch for positional argument 1 in Integer(e=1.0). The argument has type:
+// [flattening/modelica/scodeinst/FuncIntegerWrongType.mo:9:3-9:27:writable] Error: Type mismatch for positional argument 1 in Integer(e=1.0). The argument has type:
 //   Real
 // expected type:
 //   enumeration(:)

@@ -1,7 +1,6 @@
 // name: ArrayConnect5
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize
 //
 
 connector C
@@ -13,6 +12,7 @@ model ArrayConnect5
   C c1[2], c2[2];
 equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize");
 end ArrayConnect5;
 
 // Result:

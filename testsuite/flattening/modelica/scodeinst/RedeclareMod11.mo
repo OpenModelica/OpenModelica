@@ -1,7 +1,6 @@
 // name: RedeclareMod11
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 partial package PartialMedium

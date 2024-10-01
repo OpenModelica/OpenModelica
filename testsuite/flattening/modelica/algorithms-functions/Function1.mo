@@ -1,7 +1,6 @@
 // name:     Function1
 // keywords: function
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests basic function functionality
 
@@ -17,6 +16,7 @@ model Function1
 equation
   x = f(z);
   y = f(z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Function1;
 
 // Result:

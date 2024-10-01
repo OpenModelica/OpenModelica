@@ -1,7 +1,6 @@
 // name:     InnerOuterSystem
 // keywords: inner, outer, innerouter, modifications
 // status:   correct
-// cflags: -d=-newInst
 //
 // Modelica specification example, 5.5 Simultaneous Inner/Outer Declarations
 //
@@ -26,6 +25,7 @@ model InnerOuterSystem
   inner Boolean isEnabled = time>=0.5;
   // subSystem.conditionalIntegrator.isEnabled will be
   // 'isEnabled and subSystem.enableMe'
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterSystem;
 
 // Result:

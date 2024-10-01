@@ -1,6 +1,5 @@
 // name: Constant13
 // status: correct
-// cflags: -d=-newInst
 // #2155 - this pattern was used in the Buildings library
 
 model Constant13
@@ -11,6 +10,7 @@ model Constant13
   end DataRecord;
 
   constant DataRecord r;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant13;
 
 // Result:

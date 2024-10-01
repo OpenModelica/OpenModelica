@@ -1,7 +1,6 @@
 // name:     Vectorizable5
 // keywords: vectorized calls
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests vectorized calls.
 //
@@ -22,6 +21,7 @@ model Vectorizable5
   Real w[2];
 equation
   w=foo(x,y,z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable5;
 
 

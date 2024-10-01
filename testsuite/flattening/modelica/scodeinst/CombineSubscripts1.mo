@@ -1,7 +1,6 @@
 // name: CombineSubscripts1
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize,combineSubscripts
 //
 
 model B
@@ -14,6 +13,7 @@ equation
   for i in 1:100 loop
     b[i].c[10] = 2;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize,combineSubscripts");
 end CombineSubscripts1;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: Time2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

@@ -1,7 +1,6 @@
 // name: AssignModel1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -16,7 +15,7 @@ end AssignModel1;
 
 // Result:
 // Error processing file: AssignModel1.mo
-// [flattening/modelica/scodeinst/AssignModel1.mo:14:3-14:11:writable] Error: Component 'a1' may not be assigned to due to class specialization 'model'.
+// [flattening/modelica/scodeinst/AssignModel1.mo:13:3-13:11:writable] Error: Component 'a1' may not be assigned to due to class specialization 'model'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

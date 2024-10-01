@@ -1,7 +1,6 @@
 // name:     IndexOutOfBoundsConnect1
 // keywords: array subscript connect
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Tests that indices out of bounds are caught in connect statements.
 //
@@ -15,6 +14,7 @@ model IndexOutOfBoundsConnect1
   C c1[2], c2[2];
 equation
   connect(c1[0], c2[1]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IndexOutOfBoundsConnect1;
 
 // Result:

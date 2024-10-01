@@ -1,7 +1,6 @@
 // name: Encapsulated2
 // keywords: operator
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that builtin functions can be accessed from an encapsulated scope.
 //

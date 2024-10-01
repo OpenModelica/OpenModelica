@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 9.1 while-loop (p.290)
-// cflags: -d=-newInst
 //
 model SumSeries
   parameter Real eps = 1.E-6;
@@ -19,6 +18,7 @@ algorithm
     i := i + 1;
     delta := exp(-0.01 * i);
   end while;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumSeries;
 
 // class SumSeries

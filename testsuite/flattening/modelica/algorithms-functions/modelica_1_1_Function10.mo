@@ -1,7 +1,6 @@
 // name:     modelica_1_1_Function10
 // keywords: function
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that subscripts are handled in a correct manner int the component clause.
 //
@@ -26,6 +25,7 @@ class Function10
   Real z;
 equation
   (x,y,z) = f(1,2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Function10;
 
 // Result:

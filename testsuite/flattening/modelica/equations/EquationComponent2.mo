@@ -1,7 +1,6 @@
 // name:     EquationComponent2
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // When an equation is between to complex types, the equation is split
 // into separate equations for the components.
@@ -14,6 +13,7 @@ class EquationComponent2
   R a,b,c;
 equation
   a = if true then b else c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationComponent2;
 // Result:
 // function EquationComponent2.R "Automatically generated record constructor for EquationComponent2.R"

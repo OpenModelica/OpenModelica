@@ -1,7 +1,6 @@
 // name:     Import1
 // keywords: import
 // status:   correct
-// cflags: -d=-newInst
 //
 // Demonstrating various form of import.
 //
@@ -40,6 +39,7 @@ class Import1
   D d;
   E e;
   MyC myc;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import1;
 
 

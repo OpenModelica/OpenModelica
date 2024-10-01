@@ -1,7 +1,6 @@
 // name:     BS3 - ExpSine component
 // keywords: ExpSine
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the ExpSine component.
 //
@@ -1309,6 +1308,7 @@ model BS3
 
 equation
   connect(der1.inPort,expSine1.outPort) annotation(Line(visible=true,points={{5.06,23.22},{-14.09,24.13}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS3;
 
 // function Modelica.Math.exp

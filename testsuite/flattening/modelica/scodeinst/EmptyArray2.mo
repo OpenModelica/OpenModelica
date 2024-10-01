@@ -1,7 +1,6 @@
 // name: EmptyArray2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model EmptyArray2

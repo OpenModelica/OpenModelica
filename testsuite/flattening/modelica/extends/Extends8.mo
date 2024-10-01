@@ -1,7 +1,6 @@
 // name:     Extends8
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing that you can extend and still keep all classdefs.
 // See bug: http://openmodelica.ida.liu.se:8080/cb/issue/1192?navigation=true
@@ -25,6 +24,7 @@ end MyPackage;
 
 class Extends8
   extends MyPackage.X;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends8;
 
 // Result:

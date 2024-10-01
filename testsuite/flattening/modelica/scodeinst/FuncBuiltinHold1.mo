@@ -1,7 +1,6 @@
 // name: FuncBuiltinHold1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model FuncBuiltinHold1

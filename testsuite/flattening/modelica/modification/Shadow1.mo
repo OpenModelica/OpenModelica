@@ -1,7 +1,6 @@
 // name:     Shadow1
 // keywords: modification,shadow
 // status:   correct
-// cflags: -d=-newInst
 //
 // Modifications override declarations but not equations.
 
@@ -15,6 +14,7 @@ end A;
 model Shadow1
   Real z;
   A a(x = z, y=2.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Shadow1;
 
 

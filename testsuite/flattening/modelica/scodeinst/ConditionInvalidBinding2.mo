@@ -1,7 +1,6 @@
 // name: ConditionInvalidBinding2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ConditionInvalidBinding2

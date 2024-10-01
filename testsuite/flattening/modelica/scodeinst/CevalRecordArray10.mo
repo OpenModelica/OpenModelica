@@ -1,7 +1,6 @@
 // name: CevalRecordArray10
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package Tilt

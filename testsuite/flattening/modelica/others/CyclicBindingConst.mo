@@ -1,7 +1,6 @@
 // name: CyclicBindingConst
 // keywords: cyclic
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Tests cyclic binding of constants
 //
@@ -9,6 +8,7 @@
 model CyclicBindingConst
   constant Real p = 2*q;
   constant Real q = 2*p;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CyclicBindingConst;
 
 // Result:

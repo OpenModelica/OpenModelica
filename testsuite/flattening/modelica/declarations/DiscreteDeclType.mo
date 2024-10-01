@@ -1,13 +1,13 @@
 // name: DiscreteDeclType
 // keywords: discrete
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the discrete prefix on a regular type
 //
 
 class DiscreteDeclType
   discrete Real rDiscrete = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DiscreteDeclType;
 
 // Result:

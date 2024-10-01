@@ -1,7 +1,6 @@
 // name: enum7.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model M

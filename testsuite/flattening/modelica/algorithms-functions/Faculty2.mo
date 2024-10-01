@@ -1,7 +1,6 @@
 // name:     Faculty2
 // keywords: algorithm
 // status:   correct
-// cflags: -d=-newInst
 //
 // Definition of faculty using a for loop. The for loop can not be
 // unrolled.
@@ -22,6 +21,7 @@ model Faculty2Model
   Integer y;
 equation
   y = Faculty2(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Faculty2Model;
 
 // Result:

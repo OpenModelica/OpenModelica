@@ -1,13 +1,13 @@
 // name:     NonConstantReduction
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests elaboration of non-constant reductions.
 //
 
 class NonConstantReduction
   Integer i = min(i for i in {1 + integer(time)});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NonConstantReduction;
 
 // Result:

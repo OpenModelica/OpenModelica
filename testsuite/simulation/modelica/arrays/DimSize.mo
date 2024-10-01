@@ -4,7 +4,6 @@
 //
 // ??Error - not yet implemented
 // Drmodelica: 7.7 Built-in Functions (p. 225)
-// cflags: -d=-newInst
 //
 class DimSize
   parameter Real[4, 1, 6] x = fill(1., 4, 1, 6);
@@ -13,5 +12,6 @@ class DimSize
   parameter Real specsize[3] = size(x);    // Returns the vector {4, 1, 6}
 equation
  // size(2*x + x) = size(x);                // This equation holds
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DimSize;
 

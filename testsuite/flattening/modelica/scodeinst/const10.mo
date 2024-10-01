@@ -1,7 +1,6 @@
 // name: const10.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

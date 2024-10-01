@@ -1,7 +1,6 @@
 // name: StringConversion
 // keywords: string
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests conversion of strings from other datatypes
 //
@@ -10,6 +9,7 @@ model StringConversion
   String s1 = String(true);
   String s2 = String(4711, minimumLength = 12, leftJustified = false);
   String s3 = String(3.14159265, significantDigits = 4);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StringConversion;
 
 // Result:

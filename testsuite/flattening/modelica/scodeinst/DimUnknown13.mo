@@ -1,7 +1,6 @@
 // name: DimUnknown13
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -11,7 +10,7 @@ end DimUnknown13;
 
 // Result:
 // Error processing file: DimUnknown13.mo
-// [flattening/modelica/scodeinst/DimUnknown13.mo:9:3-9:34:writable] Error: Dimension 1 of c, ':', could not be evaluated due to a cyclic dependency.
+// [flattening/modelica/scodeinst/DimUnknown13.mo:8:3-8:34:writable] Error: Dimension 1 of c, ':', could not be evaluated due to a cyclic dependency.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

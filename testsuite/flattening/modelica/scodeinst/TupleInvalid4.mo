@@ -1,7 +1,6 @@
 // name: TupleInvalid4
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -18,7 +17,7 @@ end TupleInvalid4;
 
 // Result:
 // Error processing file: TupleInvalid4.mo
-// [flattening/modelica/scodeinst/TupleInvalid4.mo:16:3-16:23:writable] Error: Tuple assignment only allowed for tuple of component references in lhs (in (x + 1.0, y + 2.0)).
+// [flattening/modelica/scodeinst/TupleInvalid4.mo:15:3-15:23:writable] Error: Tuple assignment only allowed for tuple of component references in lhs (in (x + 1.0, y + 2.0)).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

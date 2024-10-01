@@ -1,7 +1,6 @@
 // name: ConnectInitial
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that connect isn't allowed in an initial equation.
 //
@@ -21,7 +20,7 @@ end ConnectInitial;
 // Error processing file: ConnectInitial.mo
 // Failed to parse file: ConnectInitial.mo!
 //
-// [flattening/modelica/scodeinst/ConnectInitial.mo:17:3-17:18:writable] Error: Connect equations are not allowed in initial equation sections.
+// [flattening/modelica/scodeinst/ConnectInitial.mo:16:3-16:18:writable] Error: Connect equations are not allowed in initial equation sections.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

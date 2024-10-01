@@ -1,7 +1,6 @@
 // name:      Colered Point Illegal Mod 1
 // keywords: <insert keywords here>
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Test the public and protected access keywords together with inheritance
 // If the keyword protected is used in front of an extends clause, all
@@ -45,5 +44,6 @@ equation
   a = cp.y;       //Should NOT work, since x was declared protected in the
                   //point class. Public inheritance preserves the protection
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 

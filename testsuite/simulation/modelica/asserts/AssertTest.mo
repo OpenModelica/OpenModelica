@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Assert (p. 249)
-// cflags: -d=-newInst
 //
 
 class AssertTest
@@ -21,6 +20,7 @@ end AssertTestInst;
 class AssertTestDuringInst
 equation
   assert(false, "Testing assert during instantiation");
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssertTestDuringInst;
 
 // class AssertTestInst

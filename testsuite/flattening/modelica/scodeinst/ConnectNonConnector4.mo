@@ -1,7 +1,6 @@
 // name: ConnectNonConnector4
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model ConnectNonConnector4
@@ -12,7 +11,7 @@ end ConnectNonConnector4;
 
 // Result:
 // Error processing file: ConnectNonConnector4.mo
-// [flattening/modelica/scodeinst/ConnectNonConnector4.mo:10:3-10:16:writable] Error: x is not a valid connector.
+// [flattening/modelica/scodeinst/ConnectNonConnector4.mo:9:3-9:16:writable] Error: x is not a valid connector.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

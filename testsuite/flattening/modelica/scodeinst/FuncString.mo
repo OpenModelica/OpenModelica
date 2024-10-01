@@ -1,7 +1,6 @@
 // name: FuncString
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin String function.
 //

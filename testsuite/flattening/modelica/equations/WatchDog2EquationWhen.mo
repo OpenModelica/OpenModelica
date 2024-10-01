@@ -5,7 +5,6 @@
 // <insert description here>
 //
 // Drmodelica: 13.2 WatchDog System. (p. 435)
-// cflags: -d=-newInst
 //
 connector eventPort
   discrete Boolean signal;
@@ -49,6 +48,7 @@ equation
     connect(turnOn.dOutput,watchdog.dOn);
     connect(turnOff.dOutput,watchdog.dOff);
     connect(deadlineEmitter.dOutput, watchdog.dDeadline);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WatchDogSystem2;
 
 

@@ -1,7 +1,6 @@
 // name:     TempDepResistorCircuitInherited
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 // The flattened model should be the same for test TempDepResistorCircuit and
@@ -61,6 +60,7 @@ model TempDepResistorCircuitInherited
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TempDepResistorCircuitInherited;
 
 // Result:

@@ -1,6 +1,5 @@
 // name: ceval1.mo
 // status: correct
-// cflags: -d=newInst
 
 model A
   parameter Integer n = (-1+2)*2-3+4;

@@ -1,7 +1,6 @@
 // name:     VectorBuiltin
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test elaboration of the builtin vector function.
 
@@ -15,6 +14,7 @@ equation
   B = vector({1,2,3,4});
   C = vector({{1},{2},{3},{4}});
   D = vector({{{1}},{{2}},{{3}},{{4}}});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorBuiltin;
 
 // Result:

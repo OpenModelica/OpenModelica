@@ -1,7 +1,6 @@
 // name:     SimpleIntegrator1
 // keywords: declaration,equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // In this example 'x' is defined twice: constant and
 // non-constant. The example is correct, but is not
@@ -12,6 +11,7 @@ model SimpleIntegrator1
   Real x = 2.0;
 equation
   der(x) = u;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimpleIntegrator1;
 
 

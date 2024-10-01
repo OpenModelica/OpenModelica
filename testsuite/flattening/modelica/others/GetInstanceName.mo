@@ -1,6 +1,6 @@
 // name: GetInstanceName
-// cflags: +i=O.N -d=-newInst
 // status: correct
+// cflags: -i=O.N
 
 function f
   output String s = getInstanceName();
@@ -24,13 +24,10 @@ model N
   M m;
   P p;
 end N;
+  annotation(__OpenModelica_commandLineOptions="-i=O.N");
 end O;
 
 // Result:
-// function f
-//   output String s = "f";
-// end f;
-//
 // class O.N
 //   String m.s1 = "N.m";
 //   String m.s2 = "f";

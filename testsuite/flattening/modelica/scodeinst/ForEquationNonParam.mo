@@ -1,7 +1,6 @@
 // name: ForEquationNonPAram.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that the range of a for loop equation must be a parameter expression.
 //
@@ -17,7 +16,7 @@ end ForEquationNonParam;
 
 // Result:
 // Error processing file: ForEquationNonParam.mo
-// [flattening/modelica/scodeinst/ForEquationNonParam.mo:13:3-15:10:writable] Error: The iteration range 1:y is not a constant or parameter expression.
+// [flattening/modelica/scodeinst/ForEquationNonParam.mo:12:3-14:10:writable] Error: The iteration range 1.0:y is not a constant or parameter expression.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

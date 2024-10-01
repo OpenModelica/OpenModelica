@@ -1,7 +1,6 @@
 // name: FuncDefaultArg5
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

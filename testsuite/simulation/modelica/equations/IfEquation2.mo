@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Conditional Equations with if-Equations (p. 245)
-// cflags: -d=-newInst
 //
 
 model IfEquation2
@@ -36,4 +35,5 @@ equation
   else
     z = a * x / y;
   end if;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IfEquation2;

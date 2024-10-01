@@ -1,7 +1,6 @@
 // name:     PolynomialEvaluatorB
 // keywords:
 // status:   correct
-// cflags: -d=-newInst
 //
 
 block PolynomialEvaluator
@@ -24,6 +23,7 @@ class PolyEvaluate2
   Real p;
   PolynomialEvaluator polyeval(c = {1, 2, 3, 4}, x = time, y = p);
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolyEvaluate2;
 
 

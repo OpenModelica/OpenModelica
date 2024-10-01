@@ -1,7 +1,6 @@
 // name: InputDeclRecord
 // keywords: input
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the input prefix on a record type
 //
@@ -14,6 +13,7 @@ class InputDeclRecord
   input InputRecord ir;
 equation
   ir.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InputDeclRecord;
 
 // Result:

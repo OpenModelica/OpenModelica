@@ -1,6 +1,5 @@
 // name: FunctionDerivativeInvalidInput1
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -25,7 +24,7 @@ end FunctionDerivativeInvalidInput1;
 
 // Result:
 // Error processing file: FunctionDerivativeInvalidInput1.mo
-// [flattening/modelica/scodeinst/FunctionDerivativeInvalidInput1.mo:12:14-12:49:writable] Error: 'z' is not an input of function 'f1'.
+// [flattening/modelica/scodeinst/FunctionDerivativeInvalidInput1.mo:11:14-11:49:writable] Error: 'z' is not an input of function 'f1'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

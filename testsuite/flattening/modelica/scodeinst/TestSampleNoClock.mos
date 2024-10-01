@@ -1,7 +1,6 @@
 // name:     TestSampleNoClock
 // keywords: sample
 // status:   correct
-// cflags:   -d=newInst
 //
 // Tests if sample in Modelica 3.2.1 (which sets --std < 3.3) works fine
 //

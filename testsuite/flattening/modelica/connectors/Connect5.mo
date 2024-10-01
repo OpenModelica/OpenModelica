@@ -1,7 +1,6 @@
 // name:     Connect5
 // keywords: connect,type
 // status:   correct
-// cflags: -d=-newInst
 //
 // Booleans are allowed in connectors
 //
@@ -16,6 +15,7 @@ model Connect5
 equation
   connect(c1,c2);
   c1.b=time<0.5;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect5;
 
 // Result:

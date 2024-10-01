@@ -1,7 +1,6 @@
 // name: ReinitInvalid8
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model ReinitInvalid8
@@ -16,7 +15,7 @@ end ReinitInvalid8;
 
 // Result:
 // Error processing file: ReinitInvalid8.mo
-// [flattening/modelica/scodeinst/ReinitInvalid8.mo:12:7-12:21:writable] Error: Assignment to iterator 'i'.
+// [flattening/modelica/scodeinst/ReinitInvalid8.mo:11:7-11:21:writable] Error: Assignment to iterator 'i'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

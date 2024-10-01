@@ -1,7 +1,6 @@
 // name:     BM11 -  Exp component
 // keywords: Exp
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Exp component.
 //
@@ -1063,6 +1062,7 @@ model BM11
 
 equation
   connect(exp1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-14.09,8.32},{-32.34,4.06}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM11;
 // function Modelica.Math.exp
 // input Real u;

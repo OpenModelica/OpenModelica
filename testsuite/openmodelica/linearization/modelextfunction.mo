@@ -1,7 +1,6 @@
 // name:     differentiate functions
 // keywords: functions, derivative annotation, numerical, analytical
 // status:   correct
-// cflags: -d=-newInst
 //
 
 function f1
@@ -32,4 +31,5 @@ model extfunction
 equation
  der(x) = f(y)*x;
  der(y) = f1(x)*y;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end extfunction;

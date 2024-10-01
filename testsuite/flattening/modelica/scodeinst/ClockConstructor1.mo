@@ -1,7 +1,6 @@
 // name: ClockConstructor1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ClockConstructor1

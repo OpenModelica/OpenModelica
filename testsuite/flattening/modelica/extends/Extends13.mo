@@ -1,7 +1,6 @@
 // name:     Extends13
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing extension of local class with the same name as the extending class.
 //
@@ -15,6 +14,7 @@ model Test
   model Test
     extends A;
   end Test;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // Result:

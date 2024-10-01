@@ -1,7 +1,6 @@
 // name: LhsIf
 // keywords: if flattening
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests flattening of if-expressions, to make sure that the parentheses are
 // kept in the flattened model.
@@ -11,6 +10,7 @@ model LhsIf
   Real x, y, z;
 equation
   (if x > 1 then y else z) = x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end LhsIf;
 
 // Result:

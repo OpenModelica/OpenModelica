@@ -2,7 +2,6 @@
 // keywords: external function,code generation,constant propagation
 // status:   correct
 // teardown_command: rm -f ExternalFunction4_*
-// cflags: -d=-newInst
 //
 // Constant evaluation of function calls using Library annotation.
 // The following example is from MSL and should propagate all constants.
@@ -44,6 +43,7 @@ end dgetrf;
 
   constant Real r[2,2] = {{1,2},{3,4}};
   Real r2[2,2] = r*inv(r);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExternalFunction4;
 
 // Result:

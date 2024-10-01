@@ -1,7 +1,6 @@
 // name: ExpandableConnector14
 // keywords: expandable connector
 // status: correct
-// cflags: -d=newInst
 //
 
 expandable connector EC

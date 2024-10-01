@@ -1,13 +1,13 @@
 // name:     Type1
 // keywords: type
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // You cannot define your own types, only derive them from the builtings.
 //
 
 type Type1
   Real x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type1;
 // Result:
 // Error processing file: Type1.mo

@@ -1,7 +1,6 @@
 // name: ExternalFunctionInvalidLang1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -19,7 +18,7 @@ end ExternalFunctionInvalidLang1;
 
 // Result:
 // Error processing file: ExternalFunctionInvalidLang1.mo
-// [flattening/modelica/scodeinst/ExternalFunctionInvalidLang1.mo:8:1-12:6:writable] Error: 'fish' is not a valid language for an external function.
+// [flattening/modelica/scodeinst/ExternalFunctionInvalidLang1.mo:7:1-11:6:writable] Error: 'fish' is not a valid language for an external function.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

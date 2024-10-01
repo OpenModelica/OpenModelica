@@ -1,7 +1,6 @@
 // name: FuncBuiltinCeil
 // keywords: ceil
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin ceil function.
 //

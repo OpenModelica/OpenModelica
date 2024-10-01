@@ -1,4 +1,3 @@
-// cflags: +d=nogen -d=-newInst
 // status: correct
 
 model Identity4
@@ -13,6 +12,7 @@ end f;
   Integer[3,3] o1,o2;
 algorithm
   (o1,o2) := f({1,2,3},3);
+  annotation(__OpenModelica_commandLineOptions="+d=nogen -d=-newInst");
 end Identity4;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     MultipleDeclarations
 // keywords: declaration, extends
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Multiple declarations (through extends) must be identical.
 //
@@ -23,12 +22,13 @@ end B2;
 model test
   B b(n=1);
   B2 b2(n=1); // Error n in B2 and A is not identical
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 // Result:
 // Error processing file: MultipleDeclarations.mo
-// [flattening/modelica/declarations/MultipleDeclarations.mo:20:2-20:28:writable] Notification: From here:
-// [flattening/modelica/declarations/MultipleDeclarations.mo:9:2-9:28:writable] Error: Duplicate elements (due to inherited elements) not identical:
+// [flattening/modelica/declarations/MultipleDeclarations.mo:19:2-19:28:writable] Notification: From here:
+// [flattening/modelica/declarations/MultipleDeclarations.mo:8:2-8:28:writable] Error: Duplicate elements (due to inherited elements) not identical:
 //   first element is:  parameter Integer n(min = 3)
 //   second element is: parameter .Integer n(min = 1)
 // Error: Error occurred while flattening model test

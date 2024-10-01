@@ -1,7 +1,6 @@
 // name: Visibility1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Visibility1

@@ -5,7 +5,6 @@
 // <insert description here>
 //
 // Drmodelica: 7.2  Array Constructor (p. 210)
-// cflags: -d=-newInst
 //
 class RangeVector
   Real v1[5] = 2.7 : 6.8; // v1 is {2.7, 3.7, 4.7, 5.7, 6.7}
@@ -15,6 +14,7 @@ class RangeVector
   Real v5[4] = 1.0 : 2 : 8; // v5 is {1.0, 3.0, 5.0, 7.0}
   Integer v6[5] = 1 : -1 : -3; // v6 is {1, 0, -1, -2, -3}
   Real[0] v7none;  // v7 none is an empty Real vector
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RangeVector;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,7 +1,6 @@
 // name:     Connect18
 // keywords: connect arrays subscript bug1733
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests complex array connections with subscripts.
 //
@@ -17,6 +16,7 @@ model Connect18
 equation
   a[1].e = 1;
   connect(a[1:n-1],a[2:n]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect18;
 
 // Result:

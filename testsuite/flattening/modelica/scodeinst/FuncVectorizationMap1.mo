@@ -1,7 +1,6 @@
 // name: FuncVectorizationMap1
 // keywords: vectorization function map array reduction
 // status: correct
-// cflags: -d=newInst
 //
 // Checks vectorization mixed with mapping function.
 //

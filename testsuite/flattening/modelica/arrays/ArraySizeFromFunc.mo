@@ -1,7 +1,6 @@
 // name: ArraySizeFromFunc
 // keywords: array, wholedim, function
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests determination of array size from function call with parameter as
 // argument.
@@ -17,6 +16,7 @@ end f;
 model ArraySizeFromFunc
   parameter Integer n = 5;
   parameter Real x[:] = f(n);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySizeFromFunc;
 
 // Result:

@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 4.2 Hierarchical Modification (p. 124)
-// cflags: -d=-newInst
 //
 
 model LowPassFilter
@@ -24,6 +23,7 @@ end FiltersInSeries;
 
 model ModifiedFiltersInSeries
   FiltersInSeries F12(F1(T = 6), F2(T = 11));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifiedFiltersInSeries;
 
 

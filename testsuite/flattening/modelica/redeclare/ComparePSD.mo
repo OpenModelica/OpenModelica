@@ -1,6 +1,5 @@
 // name:     ComparePSD.mo [BUG: #2739]
 // keywords: redeclare function
-// cflags: -d=nogen -d=-newInst
 // status:   correct
 //
 // Checks that it's possible to uniquely modify packages in different components having the same type
@@ -497,6 +496,7 @@ model ComparePSD
   .Noise.PRNG IdealLowPass(redeclare function PSD = .Noise.PSD.PSD_IdealLowPass(n = 10), useSampleBasedMethods = false, redeclare function PDF = .Noise.PDF.PDF_Uniform(interval = {-1, 1}));
   .Noise.PRNG Linear(redeclare function PSD = .Noise.PSD.PSD_LinearInterpolation(n = 5), useSampleBasedMethods = false, redeclare function PDF = .Noise.PDF.PDF_Uniform(interval = {-1, 1}));
   inner .Noise.GlobalSeed globalSeed;
+  annotation(__OpenModelica_commandLineOptions="-d=nogen -d=-newInst");
 end ComparePSD;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: IfConnect1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

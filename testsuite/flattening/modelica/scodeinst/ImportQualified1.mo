@@ -1,7 +1,6 @@
 // name:     ImportQualified1
 // keywords: qualified import
 // status:   correct
-// cflags:   -d=newInst
 //
 // Checks that qualified imports work.
 //

@@ -1,7 +1,6 @@
 // name: PublicAccess
 // keywords: public, access
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests access to public elements of another class
 //
@@ -15,6 +14,7 @@ model PublicAccess
   TestModel tm;
 equation
   tm.x = 3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PublicAccess;
 
 // Result:

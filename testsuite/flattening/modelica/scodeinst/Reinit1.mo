@@ -1,7 +1,6 @@
 // name: Reinit1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Reinit1

@@ -1,6 +1,5 @@
 // name: ceval2.mo
 // status: correct
-// cflags: -d=newInst
 
 model A
   parameter Integer n = 1;

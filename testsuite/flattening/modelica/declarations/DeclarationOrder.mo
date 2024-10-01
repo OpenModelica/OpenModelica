@@ -1,7 +1,6 @@
 // name: DeclarationOrder
 // keywords: component, declaration
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests to make sure declaration order does not matter
 //
@@ -18,6 +17,7 @@ end C1;
 
 model DeclarationOrder
   Test t;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationOrder;
 
 // Result:

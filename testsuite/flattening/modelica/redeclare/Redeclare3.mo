@@ -1,7 +1,6 @@
 // name:     Redeclare3
 // keywords: redeclare
 // status:   correct
-// cflags: -d=-newInst
 //
 
 class A
@@ -23,6 +22,7 @@ end C;
 
 class Redeclare3
   C c(redeclare class Q = B(y=1));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Redeclare3;
 
 

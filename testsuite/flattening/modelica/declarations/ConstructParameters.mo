@@ -6,7 +6,6 @@
 // by using a function call.
 //
 // david: whereever did you come up with this syntax? It is wrong
-// cflags: -d=-newInst
 //
 
 function fc
@@ -20,6 +19,7 @@ model ConstructParameters
   parameter Real p1=2.0, p2=3.0;
 protected
   parameter Real p3 = fc(p1,p2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstructParameters;
 
 // functions=function fc

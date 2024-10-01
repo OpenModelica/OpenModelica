@@ -1,7 +1,6 @@
 // name: CevalRecordArray9
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 connector HeatPort_a

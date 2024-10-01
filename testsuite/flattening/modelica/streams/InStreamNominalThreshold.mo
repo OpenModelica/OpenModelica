@@ -1,7 +1,6 @@
 // name: InStreamNominalThreshold
 // keywords: stream instream connector outside
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that the nominal value of a flow is used for the flow rate threshold.
 //
@@ -33,6 +32,7 @@ model InStreamNominalThreshold
 equation
   instream_a_s1 = inStream(a.s1.s);
   instream_a_s2 = inStream(a.s2.s);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InStreamNominalThreshold;
 
 // Result:

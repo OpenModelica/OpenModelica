@@ -1,7 +1,6 @@
 // name: OperatorFunction2
 // keywords: operator
 // status: correct
-// cflags: -d=-newInst
 //
 // tests the shorthand operator function keyword, extension should be illegal
 //
@@ -27,4 +26,5 @@ model OperatorIllegal
 equation
   MyRec.r = 2.0;
   MyRec.k = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorIllegal;

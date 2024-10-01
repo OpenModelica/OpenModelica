@@ -1,7 +1,6 @@
 // name:     BM2 -  Acos component
 // keywords: Acos
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Acos component.
 //
@@ -1072,6 +1071,7 @@ model BM2
 
 equation
   connect(constant1.outPort,acos1.inPort) annotation(Line(visible=true,points={{-51.5,43.59},{-28.08,46.64}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM2;
 
 

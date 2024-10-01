@@ -1,7 +1,6 @@
 // name:     ForIterator1
 // keywords: for iterator
 // status:   correct
-// cflags: -d=-newInst
 //
 // For iterator handling
 //
@@ -42,6 +41,7 @@ equation
   arr3 = {3*j*i for j in 1:5,i in 1:3};
   arr4 = array(3*j*i for j in 1:5,i in 1:3);
   (i1,i2,r1,r2) = func(3);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForIterator1;
 
 // Result:

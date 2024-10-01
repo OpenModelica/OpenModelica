@@ -1,7 +1,6 @@
 // name: Comments
 // keywords:
 // status: correct
-// cflags: -d=newInst -f
 //
 
 model Comments "Model to test comments in Flat Modelica output"
@@ -11,6 +10,7 @@ equation
   x + y = 0 "Some equation" annotation(__A = true);
   x - y = 1 "Some other equation";
   annotation(version = "1.0.0", experiment(StopTime = 1.0));
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f");
 end Comments;
 
 // Result:
