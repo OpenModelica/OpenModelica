@@ -1014,7 +1014,7 @@ protected
 
     // report non literal nominal values if failtrace is activated
     if Flags.isSet(Flags.FAILTRACE) then
-      str := getInstanceName() + ": There are non literal nominal values in following alias set:"
+      str := getInstanceName() + ": There are non literal nominal values in following alias set:\n"
         + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
         + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
       Error.addCompilerWarning(str);
