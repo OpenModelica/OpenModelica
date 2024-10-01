@@ -57,8 +57,8 @@ val(x[3],1);
 //   (1) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 1: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -66,10 +66,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -77,7 +77,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_1)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #################################################
 //
@@ -89,8 +89,8 @@ val(x[3],1);
 //   (1) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 1: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -98,10 +98,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -109,7 +109,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_1)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #########################################
 //
@@ -121,8 +121,8 @@ val(x[3],1);
 //   (1) Continuous INI Partition
 // ================================
 //
-// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 1: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -130,10 +130,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -141,7 +141,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_1)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################
 //
@@ -154,8 +154,8 @@ val(x[3],1);
 // ================================
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 1: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 1: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -163,11 +163,11 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // --- Alias of INI[1 | 2] ---
-// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -175,7 +175,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_1)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #####################################
 //
@@ -187,8 +187,8 @@ val(x[3],1);
 //   (1) Continuous INI Partition
 // ================================
 //
-// BLOCK 1: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 1: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -196,10 +196,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 2: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -207,7 +207,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_1)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // record SimulationResult
 //     resultFile = "simple_for1_res.mat",
@@ -242,8 +242,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[11] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -251,10 +251,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -262,7 +262,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #################################################
 //
@@ -288,8 +288,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[11] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -297,10 +297,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -308,7 +308,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #########################################
 //
@@ -334,8 +334,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[11] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -343,10 +343,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -354,7 +354,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################
 //
@@ -383,8 +383,8 @@ val(x[3],1);
 // 	[SCAL] (1) x[11] = $FUN_2 ($RES_SIM_0)
 //
 // --- Alias of INI[1 | 3] ---
-// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -392,11 +392,11 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // --- Alias of INI[1 | 4] ---
-// BLOCK 4: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -404,7 +404,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #####################################
 //
@@ -430,8 +430,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[11] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -439,10 +439,10 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	x[$i1]
 // ### Equation:
@@ -450,7 +450,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // record SimulationResult
 //     resultFile = "simple_for2_res.mat",
@@ -485,8 +485,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[1] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -494,7 +494,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -505,7 +505,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #################################################
 //
@@ -531,8 +531,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[1] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -540,7 +540,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -551,7 +551,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #########################################
 //
@@ -577,8 +577,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[1] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -586,7 +586,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -597,7 +597,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[$i1] = x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // ################################
 //
@@ -626,8 +626,8 @@ val(x[3],1);
 // 	[SCAL] (1) x[1] = $FUN_2 ($RES_SIM_0)
 //
 // --- Alias of INI[1 | 3] ---
-// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -635,7 +635,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // --- Alias of INI[1 | 4] ---
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT)
@@ -647,7 +647,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[1 + $i1] = -($FUN_1[$i1] - x[$i1]) ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // #####################################
 //
@@ -673,8 +673,8 @@ val(x[3],1);
 // ### Equation:
 // 	[SCAL] (1) x[1] = $FUN_2 ($RES_SIM_0)
 //
-// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
@@ -682,7 +682,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------
@@ -693,7 +693,7 @@ val(x[3],1);
 // 	[----] for $i1 in 1:10 loop
 // 	[----]   [SCAL] (1) x[1 + $i1] = -($FUN_1[$i1] - x[$i1]) ($RES_SIM_2)
 // 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
+// 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // record SimulationResult
 //     resultFile = "simple_for3_res.mat",

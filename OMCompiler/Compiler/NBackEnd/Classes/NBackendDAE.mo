@@ -1491,7 +1491,7 @@ public
     input String phase;
     input list<list<Partition>> systems;
   protected
-    CountCollector c = CountCollector.COUNT_COLLECTOR(0,0,0,0,0,0,0,0,0,0,0);
+    CountCollector c = CountCollector.COUNT_COLLECTOR(0,0,0,0,0,0,0,0,0,0,0,0);
     Pointer<CountCollector> collector_ptr = Pointer.create(c);
     String single_sc, multi_sc, for_sc, alg_sc;
   algorithm
@@ -1503,7 +1503,7 @@ public
     c := Pointer.access(collector_ptr);
     single_sc := intString(c.single_scalar + c.single_array + c.single_record) + " (scalar:" + intString(c.single_scalar) + ", array:" + intString(c.single_array) + ", record:" + intString(c.single_record) + ")";
     multi_sc := intString(c.multi_algorithm + c.multi_when + c.multi_if) + " (algorithm:" + intString(c.multi_algorithm) + ", when:" + intString(c.multi_when) + ", if:" + intString(c.multi_if) + ", tuple:" + intString(c.multi_tpl) + ")";
-    for_sc := intString(c.generic_for + c.entwined_for) + " (generic: " + intString(c.generic_for) + ", entwined:" + intString(c.entwined_for) + ")";
+    for_sc := intString(c.resizable_for + c.generic_for + c.entwined_for) + " (resizable: " + intString(c.resizable_for) + "generic: " + intString(c.generic_for) + ", entwined:" + intString(c.entwined_for) + ")";
     alg_sc := intString(c.loop_lin + c.loop_nlin) + " (linear: " + intString(c.loop_lin) + ", nonlinear:" + intString(c.loop_nlin) + ")";
 
     Error.addCompilerNotification(

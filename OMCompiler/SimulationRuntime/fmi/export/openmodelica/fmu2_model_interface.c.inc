@@ -843,6 +843,10 @@ fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fm
   comp->startTime = startTime;
   comp->stopTimeDefined = stopTimeDefined;
   comp->stopTime = stopTime;
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12561
+    update the startTime values provided by users (e.g) OMSimulator test.fmu --startTime=2.5
+  */
+  comp->fmuData->localData[0]->timeValue = startTime;
   return fmi2OK;
 }
 

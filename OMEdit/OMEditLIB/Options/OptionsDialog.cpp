@@ -3586,7 +3586,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpToolbarIconSizeSpinBox->installEventFilter(mpOptionsDialog);
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
-  mpPreserveUserCustomizations->setChecked(OptionsDefaults::GeneralSettings::toolBarIconSize);
+  mpPreserveUserCustomizations->setChecked(OptionsDefaults::GeneralSettings::preserveUserCustomizations);
   // terminal command
   mpTerminalCommandLabel = new Label(tr("Terminal Command:"));
   mpTerminalCommandTextBox = new QLineEdit;
@@ -5548,12 +5548,13 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetBuildComboBox = new QComboBox;
 #ifdef Q_OS_WIN
   mpTargetBuildComboBox->addItem("MinGW", "gcc");
-  mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
-  mpTargetBuildComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
-  mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
-  mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
-  mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
-  mpTargetBuildComboBox->addItem("Visual Studio 2019 (msvc19)", "msvc19");
+  // We do not support any of the MSVC targets anymore
+  // mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
+  // mpTargetBuildComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
+  // mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
+  // mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
+  // mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
+  // mpTargetBuildComboBox->addItem("Visual Studio 2019 (msvc19)", "msvc19");
 #else
   mpTargetBuildComboBox->addItem("GNU Make", "gcc");
 #endif

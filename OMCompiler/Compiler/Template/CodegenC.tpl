@@ -4407,18 +4407,29 @@ end equationNamesHPCOM_Thread_;
 // End: Modified functions for HpcOm
 //----------------------------------
 
-template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n, String modelNamePrefixStr)
+template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, String modelNamePrefix)
 ::=
-  let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
-  let forwardEqs = derivativEquations |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
+  let nFuncs = listLength(eqs)
   <<
-
   /* forwarded equations */
-  <%forwardEqs%>
+  <%eqs |> eq => equationForward_(eq, contextSimulationNonDiscrete, modelNamePrefix); separator="\n"%>
 
   static void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
   {
-    <%odeEqs%>
+    int id;
+
+    static void (*const eqFunctions[<%nFuncs%>])(DATA*, threadData_t*) = {
+      <%eqs |> eq => '<%symbolName(modelNamePrefix, "eqFunction")%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
+    };
+
+    static const int eqIndices[<%nFuncs%>] = {
+      <%eqs |> eq => equationIndexGeneral(eq); separator=",\n"%>
+    };
+
+    for (id = 0; id < <%nFuncs%>; id++) {
+      eqFunctions[id](data, threadData);
+      threadData->lastEquationSolved = eqIndices[id];
+    }
   }
   >>
 end functionXXX_system;
@@ -4429,20 +4440,18 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
   match listLength(eqs)
   case 0 then //empty case
     let &loop +=
-        <<
-        /* no <%name%> systems */
-        >>
+      <<
+      /* no <%name%> systems */
+      >>
     ""
   case 1 then //1 function
     let &loop +=
-        <<
-        function<%name%>_system0(data, threadData);
-        >>
+      <<
+      function<%name%>_system0(data, threadData);
+      >>
     funcs //just the one function
   case nFuncs then //2 and more
-    let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
     let &varDecls += 'int id;<%\n%>'
-
     let &loop +=
       /* Text for the loop body that calls the equations */
       <<
@@ -4455,7 +4464,7 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     <%funcs%>
     OMC_DISABLE_OPT
     static void (*function<%name%>_systems[<%nFuncs%>])(DATA *, threadData_t *threadData) = {
-      <%funcNames%>
+      <%eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>'; separator=",\n"%>
     };
     >>
 end functionXXX_systems;
@@ -4636,8 +4645,6 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   let &varDecls = buffer ""
   let &fncalls = buffer ""
   let systems = functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix)
-
-
   <<
   <%systems%>
   /* for continuous time variables */
@@ -6060,13 +6067,7 @@ template equation_call(SimEqSystem eq, String modelNamePrefix)
   then ""
   else
   (
-  let ix = match eq
-  case e as SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
-  case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
-    equationIndexAlternativeTearing(eq)
-  else
-    equationIndex(eq)
-  end match
+  let ix = equationIndexGeneral(eq)
   <<
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data, threadData);
@@ -6083,13 +6084,7 @@ template equation_callJacobian(SimEqSystem eq, String modelNamePrefix)
   then ""
   else
   (
-  let ix = match eq
-  case e as SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
-  case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
-    equationIndexAlternativeTearing(eq)
-  else
-    equationIndex(eq)
-  end match
+  let ix = equationIndexGeneral(eq)
   <<
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data, threadData, jacobian, parentJacobian);
@@ -6108,13 +6103,7 @@ template equationForward_(SimEqSystem eq, Context context, String modelNamePrefi
   case e as SES_ALGORITHM(statements={})
   then ""
   else
-  let ix = match eq
-  case e as SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
-  case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
-    equationIndexAlternativeTearing(eq)
-  else
-    equationIndex(eq)
-  end match
+  let ix = equationIndexGeneral(eq)
   <<
   extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data, threadData_t *threadData);
   >>
@@ -6129,13 +6118,7 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   case e as SES_ALGORITHM(statements={})
   then ""
   else
-  let ix = match eq
-  case e as SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
-  case e as SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
-    equationIndexAlternativeTearing(eq)
-  else
-    equationIndex(eq)
-  end match
+  let ix = equationIndexGeneral(eq)
   let simEqAttrEval = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrEval(eq)%>'
   let simEqAttrIsDiscreteKind = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrIsDiscreteKind(eq)%>'
   <<

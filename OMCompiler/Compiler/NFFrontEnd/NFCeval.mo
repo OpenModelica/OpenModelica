@@ -697,12 +697,17 @@ algorithm
   exp_context := if InstNode.isFunction(InstNode.explicitParent(parent))
     then NFInstContext.FUNCTION else NFInstContext.CLASS;
 
-  Typing.typeComponentBinding(parent, exp_context, typeChildren = false);
   comp := InstNode.component(parent);
   binding := Component.getBinding(comp);
   subs := ComponentRef.getSubscripts(parent_cr);
 
   if Binding.hasExp(binding) then
+    if not Binding.isTyped(binding) then
+      binding := Typing.typeBinding(binding, InstContext.set(exp_context, NFInstContext.BINDING));
+      comp := Component.setBinding(binding, comp);
+      InstNode.updateComponent(comp, parent);
+    end if;
+
     exp := Binding.getExp(binding);
     exp := Expression.applySubscripts(subs, exp);
     exp := Expression.recordElement(ComponentRef.firstName(cref), exp);

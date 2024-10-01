@@ -186,6 +186,14 @@ public
         Slice.applyMutable(new_eqn_slice, function Equation.createName(idx = idx, context = context));
       then StrongComponent.SLICED_COMPONENT(new_cref, new_var_slice, new_eqn_slice, comp.status);
 
+      case StrongComponent.RESIZABLE_COMPONENT() algorithm
+        (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
+        Pointer.update(diffArguments_ptr, diffArguments);
+        new_var_slice := Slice.apply(comp.var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr));
+        new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
+        Slice.applyMutable(new_eqn_slice, function Equation.createName(idx = idx, context = context));
+      then StrongComponent.RESIZABLE_COMPONENT(new_cref, new_var_slice, new_eqn_slice, comp.order, comp.status);
+
       case StrongComponent.GENERIC_COMPONENT() algorithm
         (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
         Pointer.update(diffArguments_ptr, diffArguments);

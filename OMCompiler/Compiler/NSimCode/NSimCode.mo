@@ -367,6 +367,7 @@ public
               ode := {};
               if not listEmpty(no_ret) then
                 algebraic := {no_ret};
+                allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
               else
                 algebraic := {};
               end if;

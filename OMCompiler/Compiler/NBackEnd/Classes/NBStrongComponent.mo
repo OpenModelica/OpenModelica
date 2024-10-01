@@ -95,6 +95,8 @@ public
     end isEqual;
   end AliasInfo;
 
+  type EvalOrder = enumeration(INDEPENDENT, FORWARD, BACKWARD) "used only for RESIZABLE_COMPONENT";
+
   record SINGLE_COMPONENT
     "component for all equations that solve for a single (possibly multidimensional) variable
     SCALAR_EQUATION, ARRAY_EQUATION, RECORD_EQUATION."
@@ -118,6 +120,15 @@ public
     Slice<EquationPointer> eqn  "sliced equation";
     Solve.Status status;
   end SLICED_COMPONENT;
+
+  record RESIZABLE_COMPONENT
+    "component for for-equations with trivial evaluation order"
+    ComponentRef var_cref                       "cref to solve for";
+    Slice<VariablePointer> var                  "sliced variable";
+    Slice<EquationPointer> eqn                  "sliced equation";
+    UnorderedMap<ComponentRef, EvalOrder> order "independent, forward, backward";
+    Solve.Status status;
+  end RESIZABLE_COMPONENT;
 
   record GENERIC_COMPONENT
     "component for all equations that need to be sliced but where no for-loop could be recovered
@@ -182,6 +193,12 @@ public
         str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
+      case RESIZABLE_COMPONENT() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ")");
+        str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
+        str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
+      then str;
+
       case ENTWINED_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT)");
         str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, "", "{", ", ", "}", true, 10) + "\n";
@@ -222,6 +239,7 @@ public
       Integer multi_when;
       Integer multi_if;
       Integer multi_tpl;
+      Integer resizable_for;
       Integer generic_for;
       Integer entwined_for;
       Integer loop_lin;
@@ -250,7 +268,7 @@ public
           case Equation.ALGORITHM()       algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.WHEN_EQUATION()   algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
           case Equation.IF_EQUATION()     algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
-          case Equation.RECORD_EQUATION() algorithm collector.multi_tpl := collector.multi_tpl + 1; Pointer.update(collector_ptr, collector);               then ();
+          case Equation.RECORD_EQUATION() algorithm collector.multi_tpl := collector.multi_tpl + 1; Pointer.update(collector_ptr, collector);             then ();
           else                            algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");              then ();
         end match;
       then ();
@@ -264,12 +282,13 @@ public
         end match;
       then ();
 
-      case GENERIC_COMPONENT()  algorithm collector.generic_for := collector.generic_for + 1; Pointer.update(collector_ptr, collector);   then ();
-      case ENTWINED_COMPONENT() algorithm collector.entwined_for := collector.entwined_for + 1; Pointer.update(collector_ptr, collector); then ();
-      case ALGEBRAIC_LOOP() guard(comp.linear) algorithm collector.loop_lin := collector.loop_lin + 1; Pointer.update(collector_ptr, collector);         then ();
-      case ALGEBRAIC_LOOP()     algorithm collector.loop_nlin := collector.loop_nlin + 1; Pointer.update(collector_ptr, collector);         then ();
-      case ALIAS()              algorithm strongComponentInfo(comp.original, collector_ptr);                                              then ();
-      else                                      algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");        then ();
+      case RESIZABLE_COMPONENT()                algorithm collector.resizable_for := collector.resizable_for +1; Pointer.update(collector_ptr, collector);  then ();
+      case GENERIC_COMPONENT()                  algorithm collector.generic_for := collector.generic_for + 1; Pointer.update(collector_ptr, collector);     then ();
+      case ENTWINED_COMPONENT()                 algorithm collector.entwined_for := collector.entwined_for + 1; Pointer.update(collector_ptr, collector);   then ();
+      case ALGEBRAIC_LOOP() guard(comp.linear)  algorithm collector.loop_lin := collector.loop_lin + 1; Pointer.update(collector_ptr, collector);           then ();
+      case ALGEBRAIC_LOOP()                     algorithm collector.loop_nlin := collector.loop_nlin + 1; Pointer.update(collector_ptr, collector);         then ();
+      case ALIAS()                              algorithm strongComponentInfo(comp.original, collector_ptr);                                                then ();
+      else                                      algorithm Error.addCompilerWarning("Cannot classify strong component:\n" + toString(comp) + "\n");          then ();
     end match;
   end strongComponentInfo;
 
@@ -282,6 +301,7 @@ public
       case SINGLE_COMPONENT()   then BVariable.hash(comp.var) + Equation.hash(comp.eqn);
       case MULTI_COMPONENT()    then Equation.hash(Slice.getT(comp.eqn));
       case SLICED_COMPONENT()   then ComponentRef.hash(comp.var_cref) + Equation.hash(Slice.getT(comp.eqn));
+      case RESIZABLE_COMPONENT()then ComponentRef.hash(comp.var_cref) + Equation.hash(Slice.getT(comp.eqn));
       case GENERIC_COMPONENT()  then Equation.hash(Slice.getT(comp.eqn));
       case ENTWINED_COMPONENT() then sum(hash(sub_comp) for sub_comp in comp.entwined_slices);
       case ALGEBRAIC_LOOP()     then Tearing.hash(comp.strict);
@@ -295,13 +315,14 @@ public
     output Boolean b;
   algorithm
     b := match(comp1, comp2)
-      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())     then BVariable.equalName(comp1.var, comp2.var) and Equation.isEqualPtr(comp1.eqn, comp2.eqn);
-      case (MULTI_COMPONENT(), MULTI_COMPONENT())       then Equation.isEqualPtr(Slice.getT(comp1.eqn), Slice.getT(comp2.eqn));
-      case (SLICED_COMPONENT(), SLICED_COMPONENT())     then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
-      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())   then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
-      case (ENTWINED_COMPONENT(), ENTWINED_COMPONENT()) then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
-      case (ALGEBRAIC_LOOP(), ALGEBRAIC_LOOP())         then Tearing.isEqual(comp1.strict, comp2.strict);
-      case (ALIAS(), ALIAS())                           then AliasInfo.isEqual(comp1.aliasInfo, comp2.aliasInfo);
+      case (SINGLE_COMPONENT(), SINGLE_COMPONENT())       then BVariable.equalName(comp1.var, comp2.var) and Equation.isEqualPtr(comp1.eqn, comp2.eqn);
+      case (MULTI_COMPONENT(), MULTI_COMPONENT())         then Equation.isEqualPtr(Slice.getT(comp1.eqn), Slice.getT(comp2.eqn));
+      case (SLICED_COMPONENT(), SLICED_COMPONENT())       then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
+      case (RESIZABLE_COMPONENT(), RESIZABLE_COMPONENT()) then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
+      case (GENERIC_COMPONENT(), GENERIC_COMPONENT())     then Slice.isEqual(comp1.eqn, comp2.eqn, Equation.isEqualPtr);
+      case (ENTWINED_COMPONENT(), ENTWINED_COMPONENT())   then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
+      case (ALGEBRAIC_LOOP(), ALGEBRAIC_LOOP())           then Tearing.isEqual(comp1.strict, comp2.strict);
+      case (ALIAS(), ALIAS())                             then AliasInfo.isEqual(comp1.aliasInfo, comp2.aliasInfo);
       else false;
     end match;
   end isEqual;
@@ -332,6 +353,8 @@ public
     Slice<VariablePointer>var_slice;
     Slice<EquationPointer>eqn_slice;
     list<Integer> var_scal_indices;
+    list<ComponentRef> iterators;
+    UnorderedMap<ComponentRef, EvalOrder> order;
   algorithm
     // get and save sliced variable and equation
     var_ptr := BVariable.getVarPointer(cref_to_solve);
@@ -348,7 +371,19 @@ public
       eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices)));
     end if;
 
-    comp := createSliceOrSingle(cref_to_solve, var_slice, eqn_slice);
+    // check if it is an independent resizable component
+    if independent and Equation.isForEquation(eqn_ptr) and listLength(eqn_scal_indices) == eqn_size then
+      (iterators, _)  := Iterator.getFrames(Equation.getForIterator(Pointer.access(eqn_ptr)));
+      order           := UnorderedMap.fromLists(iterators, list(EvalOrder.INDEPENDENT for i in iterators), ComponentRef.hash, ComponentRef.isEqual);
+      comp := RESIZABLE_COMPONENT(
+        var_cref  = cref_to_solve,
+        var       = var_slice,
+        eqn       = eqn_slice,
+        order     = order,
+        status    = NBSolve.Status.UNPROCESSED);
+    else
+      comp := createSliceOrSingle(cref_to_solve, var_slice, eqn_slice);
+    end if;
   end createPseudoSlice;
 
   function createPseudoEntwined
@@ -544,6 +579,24 @@ public
         end for;
       then ();
 
+      // resizable for equations - create all the single entries
+      case RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
+        eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(Slice.getT(comp.eqn));
+        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
+        if ComponentRef.isEmpty(comp.var_cref) then
+          Expression.CREF(cref = cref) := Equation.getLHS(body);
+        else
+          cref := comp.var_cref;
+        end if;
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
+        for tpl in listReverse(scalarized_dependencies) loop
+          (cref, dependencies) := tpl;
+          updateDependencyMap(cref, dependencies, map, jacType);
+        end for;
+      then ();
+
       // sliced for equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
         eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(Slice.getT(comp.eqn));
@@ -601,7 +654,6 @@ public
 
       case ALGEBRAIC_LOOP(strict = strict) algorithm
         // collect iteration loop vars
-
         for var in strict.iteration_vars loop
           loop_vars := BVariable.getVarName(Slice.getT(var)) :: loop_vars;
         end for;
@@ -690,6 +742,7 @@ public
       case SINGLE_COMPONENT()   then {comp.var};
       case MULTI_COMPONENT()    then list(Slice.getT(v) for v in comp.vars);
       case SLICED_COMPONENT()   then {Slice.getT(comp.var)};
+      case RESIZABLE_COMPONENT()then {Slice.getT(comp.var)};
       case ENTWINED_COMPONENT() then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
       case ALGEBRAIC_LOOP()     then Tearing.getResidualVars(comp.strict); // + inner?
       case ALIAS()              then getVariables(comp.original);
@@ -712,6 +765,7 @@ public
       case SINGLE_COMPONENT()   then Equation.isDiscrete(comp.eqn);
       case MULTI_COMPONENT()    then Equation.isDiscrete(Slice.getT(comp.eqn));
       case SLICED_COMPONENT()   then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case RESIZABLE_COMPONENT()then Equation.isDiscrete(Slice.getT(comp.eqn));
       case ENTWINED_COMPONENT() then List.all(list(isDiscrete(c) for c in comp.entwined_slices), bool_ident);
       case GENERIC_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
       case ALGEBRAIC_LOOP()     then not comp.mixed;
@@ -765,12 +819,12 @@ public
         comp := match Pointer.access(eqn)
           // - case 1: sliced equation because of for-equation
           case _ guard(Equation.isForEquation(eqn)) algorithm
-              try
-                ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-              else
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-                fail();
-              end try;
+            try
+              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+            else
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+              fail();
+            end try;
           then SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
 
           // - case 2: multi components for when/if and algorithm although its size 1

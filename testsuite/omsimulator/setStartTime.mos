@@ -1,0 +1,52 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf setstartTime.fmu setstartTime.log setstartTime_systemCall.log/
+
+loadModel(Modelica); getErrorString();
+
+loadString("
+model setstartTime
+  import Modelica.Blocks.Sources;
+  import Modelica.Blocks.Types;
+  parameter Real x_0 = 5;
+  Real x(start=x_0, fixed=true);
+  Real t;
+  Real u;
+  Sources.CombiTimeTable scheme(
+       smoothness=Types.Smoothness.ConstantSegments,
+   extrapolation = Types.Extrapolation.HoldLastPoint,
+   table=[0,0; 1.0,1; 2.0,2; 1003,3; 1004,4; 1005,5; 1006,6; 1007,7; 1008,8; 1009,9]);
+equation
+  t = time;
+  u = scheme.y[1];
+  der(x) = -x;
+end setstartTime;
+"); getErrorString();
+
+buildModelFMU(setstartTime, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator setstartTime.fmu --startTime=2.5 --stopTime=5 -r=start_time_res.mat", "setstartTime_systemCall.log");
+readFile("setstartTime_systemCall.log");
+
+val(t, 2.5, "start_time_res.mat");
+val(u, 2.5, "start_time_res.mat");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "setstartTime.fmu"
+// ""
+// 0
+// "info:    maximum step size for 'model.root': 0.002000
+// info:    Result file: start_time_res.mat (bufferSize=1)
+// info:    Parameter model.root.setstartTime.scheme.fileName will not be stored in the result file, because the signal type is not supported
+// info:    Parameter model.root.setstartTime.scheme.tableName will not be stored in the result file, because the signal type is not supported
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 1252 NumRhsEvals  = 1255 NumLinSolvSetups = 65
+//          NumNonlinSolvIters = 1254 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// 2.5
+// 2.0
+// endResult
