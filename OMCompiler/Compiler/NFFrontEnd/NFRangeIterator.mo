@@ -179,6 +179,8 @@ public
 
       case Dimension.EXP() then fromExp(dim.exp);
 
+      case Dimension.RESIZABLE() then INT_RANGE(1, dim.size);
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown dim", sourceInfo());

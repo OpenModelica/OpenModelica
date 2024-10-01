@@ -77,6 +77,14 @@ public
     Variability var;
   end EXP;
 
+  record RESIZABLE
+    "for all symbolic purposes this is INTEGER() for codegeneration it is EXP()
+    invoked by using annotation(__OpenModelica_resizable=true) on a parameter"
+    Integer size;
+    Expression exp;
+    Variability var;
+  end RESIZABLE;
+
   record UNKNOWN
   end UNKNOWN;
 
@@ -85,15 +93,28 @@ public
     input Variability var;
     output Dimension dim;
   algorithm
-    dim := match exp
+    dim := match (exp, var)
       local
+        Expression e;
+        Integer value;
         Class cls;
         ComponentRef cref;
         Type ty;
 
-      case Expression.INTEGER() then INTEGER(exp.value, var);
+      case (_, Variability.NON_STRUCTURAL_PARAMETER) algorithm
+        e := Expression.map(exp, Expression.replaceResizableParameter);
+        e := SimplifyExp.simplify(e);
+        value := match e
+          case Expression.INTEGER(value) then value;
+          else algorithm
+            Error.assertion(false, getInstanceName() + " got invalid non structural parameter: " + Expression.toString(exp), sourceInfo());
+          then fail();
+        end match;
+      then RESIZABLE(value, exp, var);
 
-      case Expression.TYPENAME(ty = Type.ARRAY(elementType = ty))
+      case (Expression.INTEGER(), _) then INTEGER(exp.value, var);
+
+      case (Expression.TYPENAME(ty = Type.ARRAY(elementType = ty)), _)
         then
           match ty
             case Type.BOOLEAN() then BOOLEAN();
@@ -105,11 +126,11 @@ public
                 fail();
           end match;
 
-      case Expression.ARRAY()
+      case (Expression.ARRAY(), _)
         guard Expression.arrayAllEqual(exp)
         then fromExp(Expression.arrayFirstScalar(exp), var);
 
-      case Expression.SUBSCRIPTED_EXP(split = true)
+      case (Expression.SUBSCRIPTED_EXP(split = true), _)
         guard Expression.isArray(exp.exp) and Expression.arrayAllEqual(exp.exp)
         then fromExp(Expression.arrayFirstScalar(exp.exp), var);
 
@@ -184,17 +205,29 @@ public
   function add
     input Dimension a, b;
     output Dimension c;
+  protected
+    function addExp
+      input Expression e1;
+      input Expression e2;
+      output Expression res = Expression.BINARY(e1, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), e2);
+    end addExp;
   algorithm
     c := match (a, b)
-      case (UNKNOWN(),_) then UNKNOWN();
-      case (_,UNKNOWN()) then UNKNOWN();
-      case (INTEGER(),INTEGER()) then INTEGER(a.size+b.size, Prefixes.variabilityMax(a.var, b.var));
-      case (INTEGER(),EXP()) then EXP(Expression.BINARY(b.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(a.size)), b.var);
-      case (EXP(),INTEGER()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(b.size)), a.var);
-      case (EXP(),EXP()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (UNKNOWN(),_)              then UNKNOWN();
+      case (_,UNKNOWN())              then UNKNOWN();
+      case (INTEGER(),INTEGER())      then INTEGER(a.size+b.size, Prefixes.variabilityMax(a.var, b.var));
+      case (INTEGER(),EXP())          then EXP(addExp(b.exp, Expression.INTEGER(a.size)), b.var);
+      case (EXP(),INTEGER())          then EXP(addExp(a.exp, Expression.INTEGER(b.size)), a.var);
+      case (EXP(),EXP())              then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (INTEGER(),RESIZABLE())    then RESIZABLE(a.size+b.size, addExp(b.exp, Expression.INTEGER(a.size)), b.var);
+      case (RESIZABLE(),INTEGER())    then RESIZABLE(a.size+b.size, addExp(a.exp, Expression.INTEGER(b.size)), a.var);
+      case (EXP(),RESIZABLE())        then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (RESIZABLE(),EXP())        then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (RESIZABLE(),RESIZABLE())  then RESIZABLE(a.size+b.size, addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
       else UNKNOWN();
     end match;
   end add;
+
 
   function size
     input Dimension dim;
@@ -204,8 +237,9 @@ public
       local
         Type ty;
 
-      case INTEGER() then dim.size;
-      case BOOLEAN() then 2;
+      case INTEGER()    then dim.size;
+      case RESIZABLE()  then dim.size;
+      case BOOLEAN()    then 2;
       case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
       else algorithm
         if Flags.isSet(Flags.FAILTRACE) then
@@ -235,6 +269,7 @@ public
       case (_, UNKNOWN()) then true;
       case (EXP(), _) then true;
       case (_, EXP()) then true;
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
       else Dimension.size(dim1) == Dimension.size(dim2);
     end match;
   end isEqual;
@@ -245,11 +280,12 @@ public
     output Boolean isEqual;
   algorithm
     isEqual := match (dim1, dim2)
-      case (UNKNOWN(), _) then false;
-      case (_, UNKNOWN()) then false;
-      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
-      case (EXP(), _) then false;
-      case (_, EXP()) then false;
+      case (UNKNOWN(), _)             then false;
+      case (_, UNKNOWN())             then false;
+      case (EXP(), EXP())             then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (EXP(), _)                 then false;
+      case (_, EXP())                 then false;
       else Dimension.size(dim1) == Dimension.size(dim2);
     end match;
   end isEqualKnown;
@@ -276,6 +312,7 @@ public
       case (_, EXP()) guard isSizeOf(dim2, node1, index1) then true;
 
       case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
       case (UNKNOWN(), _) then false;
       case (_, UNKNOWN()) then false;
       else Dimension.size(dim1) == Dimension.size(dim2);
@@ -315,6 +352,7 @@ public
       case INTEGER() then true;
       case BOOLEAN() then true;
       case ENUM() then true;
+      case RESIZABLE() then true;
       case EXP() then allowExp;
       else false;
     end match;
@@ -362,6 +400,7 @@ public
       case BOOLEAN() then Type.BOOLEAN();
       case ENUM() then dim.enumType;
       case EXP() then Expression.typeOf(dim.exp);
+      case RESIZABLE() then Expression.typeOf(dim.exp);
       else Type.UNKNOWN();
     end match;
   end subscriptType;
@@ -379,6 +418,7 @@ public
       case BOOLEAN() then "Boolean";
       case ENUM(enumType = ty as Type.ENUMERATION()) then AbsynUtil.pathString(ty.typePath);
       case EXP() then Expression.toString(dim.exp);
+      case RESIZABLE() then Expression.toString(dim.exp) + "(R)";
       case UNKNOWN() then ":";
       case UNTYPED() then Expression.toString(dim.dimension);
     end match;
@@ -406,6 +446,7 @@ public
       case BOOLEAN() then "Boolean";
       case ENUM() then Type.toFlatString(dim.enumType, format);
       case EXP() then Expression.toFlatString(dim.exp, format);
+      case RESIZABLE() then Expression.toFlatString(dim.exp, format) + "(R)";
       case UNKNOWN() then ":";
       case UNTYPED() then Expression.toFlatString(dim.dimension, format);
     end match;
@@ -427,6 +468,7 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION())
         then Expression.makeEnumLiteral(ty, listLength(ty.literals));
       case EXP() then dim.exp;
+      case RESIZABLE() then dim.exp;
       case UNKNOWN()
         then match subscriptedExp
           case Expression.CREF()
@@ -452,6 +494,7 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION())
         then Expression.INTEGER(listLength(ty.literals));
       case EXP() then dim.exp;
+      case RESIZABLE() then dim.exp;
     end match;
   end sizeExp;
 
@@ -492,6 +535,7 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION())
         then Expression.makeEnumLiteral(ty, listLength(ty.literals));
       case EXP() then dim.exp;
+      case RESIZABLE() then dim.exp;
     end match;
   end upperBoundExp;
 
@@ -522,6 +566,7 @@ public
       case BOOLEAN() then Variability.CONSTANT;
       case ENUM() then Variability.CONSTANT;
       case EXP() then dim.var;
+      case RESIZABLE() then dim.var;
       case UNKNOWN() then Variability.CONTINUOUS;
     end match;
   end variability;
@@ -551,6 +596,12 @@ public
         then
           if referenceEq(e1, e2) then dim else fromExp(e2, dim.var);
 
+      case RESIZABLE(exp = e1)
+        algorithm
+          e2 := Expression.map(e1, func);
+        then
+          if referenceEq(e1, e2) then dim else fromExp(e2, dim.var);
+
       else dim;
     end match;
   end mapExp;
@@ -569,6 +620,7 @@ public
     outArg := match dim
       case UNTYPED() then Expression.fold(dim.dimension, func, arg);
       case EXP() then Expression.fold(dim.exp, func, arg);
+      case RESIZABLE() then Expression.fold(dim.exp, func, arg);
       else arg;
     end match;
   end foldExp;
@@ -595,6 +647,7 @@ public
   algorithm
     outDim := match dim
       case EXP() then fromExp(Ceval.evalExp(dim.exp, target), dim.var);
+      case RESIZABLE() then fromExp(Ceval.evalExp(dim.exp, target), dim.var);
       else dim;
     end match;
   end eval;
@@ -608,6 +661,9 @@ public
       case EXP() algorithm
         simple := SimplifyExp.simplify(dim.exp);
       then fromExp(simple, Expression.variability(simple));
+      case RESIZABLE() algorithm
+        dim.exp := SimplifyExp.simplify(dim.exp);
+      then dim;
       else dim;
     end match;
   end simplify;
@@ -621,6 +677,7 @@ public
       case BOOLEAN() then Type.BOOLEAN();
       case ENUM() then dim.enumType;
       case EXP() then Expression.typeOf(dim.exp);
+      case RESIZABLE() then Expression.typeOf(dim.exp);
       else Type.UNKNOWN();
     end match;
   end typeOf;
