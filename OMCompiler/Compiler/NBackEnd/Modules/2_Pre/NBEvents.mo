@@ -671,7 +671,6 @@ public
       Pointer<Variable> aux_var;
       ComponentRef aux_cref;
       Pointer<Boolean> clocked = Pointer.create(false);
-      list<tuple<Condition, ComponentRef>> aux_stmts;
     algorithm
       // collect possible sample events from exp
       (exp, bucket) := Expression.mapFold(exp, function TimeEvent.createSampleTraverse(clocked = clocked), bucket);
@@ -705,12 +704,7 @@ public
       end if;
 
       if not (createEqn or Pointer.access(clocked)) then
-        if Util.isSome(bucket.aux_stmts) then
-          SOME(aux_stmts) := bucket.aux_stmts;
-        else
-          aux_stmts := {};
-        end if;
-        bucket.aux_stmts := SOME((condition, aux_cref) :: aux_stmts);
+        bucket.aux_stmts := SOME((condition, aux_cref) :: Util.getOptionOrDefault(bucket.aux_stmts, {}));
       end if;
     end create;
 
@@ -870,7 +864,6 @@ public
       CompositeEvent cev;
       Pointer<Variable> aux_var;
       ComponentRef aux_cref;
-      list<tuple<Condition, ComponentRef>> aux_stmts;
     algorithm
       if createEqn then
         // create an equation
@@ -897,12 +890,7 @@ public
       end if;
 
       if not createEqn then
-        if Util.isSome(bucket.aux_stmts) then
-          SOME(aux_stmts) := bucket.aux_stmts;
-        else
-          aux_stmts := {};
-        end if;
-        bucket.aux_stmts := SOME((condition, aux_cref) :: aux_stmts);
+        bucket.aux_stmts := SOME((condition, aux_cref) :: Util.getOptionOrDefault(bucket.aux_stmts, {}));
       end if;
     end add;
   end CompositeEvent;

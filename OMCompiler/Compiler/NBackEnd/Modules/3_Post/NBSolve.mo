@@ -358,7 +358,7 @@ public
     end try;
 
     // solve implicit equation (algebraic loop is always implicit)
-    if solve_status == Status.IMPLICIT and listLength(solved_comps) == 1 then
+    if solve_status == Status.IMPLICIT and List.hasOneElement(solved_comps) then
       (implicit_comp, funcTree, implicit_index)  := Tearing.implicit(
         comp        = List.first(solved_comps),
         funcTree    = funcTree,
@@ -763,7 +763,7 @@ protected
     list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
     UnorderedMap<ComponentRef, Boolean> map;
   algorithm
-    if listLength(filtered_exps) == listLength(vars) then
+    if List.compareLength(filtered_exps, vars) == 0 then
       map := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
       // add all variables to solve for
       for var in vars loop
@@ -793,7 +793,7 @@ protected
   algorithm
     slices_lst := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = var_cref));
 
-    if listLength(slices_lst) == 1 then
+    if List.hasOneElement(slices_lst) then
       var_cref := List.first(slices_lst);
       solve_status := Status.UNPROCESSED;
     else

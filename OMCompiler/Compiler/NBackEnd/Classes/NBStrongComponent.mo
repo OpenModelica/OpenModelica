@@ -169,9 +169,6 @@ public
     String indexStr = if index > 0 then " " + intString(index) else "";
   algorithm
     str := match comp
-      local
-        Tearing casual;
-        Integer len;
 
       case SINGLE_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Strong Component (status = " + Solve.statusString(comp.status) + ")");
@@ -187,7 +184,6 @@ public
       then str;
 
       case SLICED_COMPONENT() algorithm
-        len := listLength(comp.eqn.indices);
         str := if index == -2 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Component (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
@@ -215,8 +211,7 @@ public
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ")");
         str := str + Tearing.toString(comp.strict, "Strict Tearing Set");
         if isSome(comp.casual) then
-          SOME(casual) := comp.casual;
-          str := str + Tearing.toString(casual, "Casual Tearing Set");
+          str := str + Tearing.toString(Util.getOption(comp.casual), "Casual Tearing Set");
         end if;
       then str;
 
@@ -923,8 +918,9 @@ protected
     list<Integer> idx_lst;
     Pointer<Variable> var;
     Pointer<Equation> eqn;
-    UnorderedMap<Integer, Slice.IntLst> var_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, listLength(comp_indices));
-    UnorderedMap<Integer, Slice.IntLst> eqn_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, listLength(comp_indices));
+    Integer len_comps = listLength(comp_indices);
+    UnorderedMap<Integer, Slice.IntLst> var_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);
+    UnorderedMap<Integer, Slice.IntLst> eqn_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);
   algorithm
     // store all component var and eqn indices in maps
     for eqn_idx in comp_indices loop

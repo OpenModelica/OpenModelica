@@ -177,7 +177,7 @@ public
       list<ComponentRef> tmp_names, names = {};
       list<Expression> tmp_ranges, ranges = {};
     algorithm
-      if listLength(iterators) == 1 then
+      if List.hasOneElement(iterators) then
         result := List.first(iterators);
       else
         for iter in listReverse(iterators) loop
@@ -522,20 +522,19 @@ public
       list<Expression> ranges;
     algorithm
       (names, ranges) := getFrames(iter);
-      subs := list(normalizedSubscript(frame) for frame in List.zip(names, ranges));
+      subs := list(normalizedSubscript(name, range) threaded for name in names, range in ranges);
     end normalizedSubscripts;
 
     function normalizedSubscript
       "returns subscripts such that traversing the range results in consecutive subscript values 1,2,3....
       e.g: i in 10:-2:1 -> x[(i-10)/(-2) + 1] which results in 1,2,3... for i=10,8,6..."
-      input tuple<ComponentRef, Expression> frame;
+      input ComponentRef iter_name;
+      input Expression range;
       output Subscript sub;
     protected
-      ComponentRef iter_name;
-      Expression range, step, sub_exp;
+      Expression step, sub_exp;
       Type ty = Type.REAL();
     algorithm
-      (iter_name, range) := frame;
       sub := match range
 
         // (iterator-start)/step + 1
@@ -842,7 +841,7 @@ public
         case (RECORD_EQUATION(), RECORD_EQUATION()) then Expression.isEqual(eqn1.lhs, eqn2.lhs) and Expression.isEqual(eqn1.rhs, eqn2.rhs);
         case (ALGORITHM(), ALGORITHM())             then Algorithm.isEqual(eqn1.alg, eqn2.alg);
         case (IF_EQUATION(), IF_EQUATION())         then IfEquationBody.isEqual(eqn1.body, eqn2.body);
-        case (FOR_EQUATION(), FOR_EQUATION())       then Iterator.isEqual(eqn1.iter, eqn2.iter) and List.all(List.zip(eqn1.body, eqn2.body), isEqualTpl);
+        case (FOR_EQUATION(), FOR_EQUATION())       then Iterator.isEqual(eqn1.iter, eqn2.iter) and List.all(list(isEqual(b1, b2) threaded for b1 in eqn1.body, b2 in eqn2.body), Util.id);
         case (WHEN_EQUATION(), WHEN_EQUATION())     then WhenEquationBody.isEqual(eqn1.body, eqn2.body);
         case (AUX_EQUATION(), AUX_EQUATION())       then BVariable.equalName(eqn1.auxiliary, eqn2.auxiliary) and Util.optionEqual(eqn1.body, eqn2.body, isEqual);
         case (DUMMY_EQUATION(), DUMMY_EQUATION())   then true;
@@ -1210,11 +1209,11 @@ public
       output Expression lhs;
     algorithm
       lhs := match(eq)
-        case SCALAR_EQUATION()                              then eq.lhs;
-        case ARRAY_EQUATION()                               then eq.lhs;
-        case RECORD_EQUATION()                              then eq.lhs;
-        case FOR_EQUATION() guard(listLength(eq.body) == 1) then getLHS(List.first(eq.body));
-        case IF_EQUATION()                                  then IfEquationBody.getLHS(eq.body);
+        case SCALAR_EQUATION()        then eq.lhs;
+        case ARRAY_EQUATION()         then eq.lhs;
+        case RECORD_EQUATION()        then eq.lhs;
+        case FOR_EQUATION(body = {_}) then getLHS(List.first(eq.body));
+        case IF_EQUATION()            then IfEquationBody.getLHS(eq.body);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS was ambiguous for: " + toString(eq)});
         then fail();
@@ -1227,11 +1226,11 @@ public
       output Expression rhs;
     algorithm
       rhs := match(eq)
-        case SCALAR_EQUATION()                              then eq.rhs;
-        case ARRAY_EQUATION()                               then eq.rhs;
-        case RECORD_EQUATION()                              then eq.rhs;
-        case FOR_EQUATION() guard(listLength(eq.body) == 1) then getRHS(List.first(eq.body));
-        case IF_EQUATION()                                  then IfEquationBody.getRHS(eq.body);
+        case SCALAR_EQUATION()        then eq.rhs;
+        case ARRAY_EQUATION()         then eq.rhs;
+        case RECORD_EQUATION()        then eq.rhs;
+        case FOR_EQUATION(body = {_}) then getRHS(List.first(eq.body));
+        case IF_EQUATION()            then IfEquationBody.getRHS(eq.body);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS was ambiguous for: " + toString(eq)});
         then fail();
@@ -1247,7 +1246,7 @@ public
         case SCALAR_EQUATION()  algorithm eq.lhs := lhs; then eq;
         case ARRAY_EQUATION()   algorithm eq.lhs := lhs; then eq;
         case RECORD_EQUATION()  algorithm eq.lhs := lhs; then eq;
-        case FOR_EQUATION() guard(listLength(eq.body) == 1) algorithm
+        case FOR_EQUATION(body = {_}) algorithm
           eq.body := {setLHS(List.first(eq.body), lhs)};
         then eq;
         else algorithm
@@ -1265,7 +1264,7 @@ public
         case SCALAR_EQUATION()  algorithm eq.rhs := rhs; then eq;
         case ARRAY_EQUATION()   algorithm eq.rhs := rhs; then eq;
         case RECORD_EQUATION()  algorithm eq.rhs := rhs; then eq;
-        case FOR_EQUATION() guard(listLength(eq.body) == 1) algorithm
+        case FOR_EQUATION(body = {_}) algorithm
           eq.body := {setRHS(List.first(eq.body), rhs)};
         then eq;
         else algorithm
@@ -1620,7 +1619,7 @@ public
 
         // returns innermost residual!
         // Ambiguous for entwined for loops!
-        case FOR_EQUATION() guard(listLength(eqn.body) == 1) then getResidualExp(List.first(eqn.body));
+        case FOR_EQUATION(body = {_}) then getResidualExp(List.first(eqn.body));
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
@@ -2218,7 +2217,7 @@ public
         case RECORD_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec)) algorithm
           lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec));
           rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec));
-          if listLength(lhs_lst) == listLength(rhs_lst) then
+          if List.compareLength(lhs_lst, rhs_lst) == 0 then
             for tpl in List.zip(lhs_lst, rhs_lst) loop
               (lhs, rhs) := tpl;
               stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
@@ -2368,7 +2367,7 @@ public
       input IfEquationBody body2;
       output Boolean b;
     algorithm
-      b := List.all(List.zip(body1.then_eqns, body2.then_eqns), Equation.isEqualPtrTpl) and Util.optionEqual(body1.else_if, body2.else_if, isEqual);
+      b := List.all(list(Equation.isEqualPtr(b1, b2) threaded for b1 in body1.then_eqns, b2 in body2.then_eqns), Util.id) and Util.optionEqual(body1.else_if, body2.else_if, isEqual);
     end isEqual;
 
     function createNames
@@ -2679,7 +2678,7 @@ public
       input WhenEquationBody body2;
       output Boolean b;
     algorithm
-      b := Expression.isEqual(body1.condition, body2.condition) and List.all(List.zip(body1.when_stmts, body2.when_stmts), WhenStatement.isEqualTpl) and Util.optionEqual(body1.else_when, body2.else_when, isEqual);
+      b := Expression.isEqual(body1.condition, body2.condition) and List.all(list(WhenStatement.isEqual(b1, b2) threaded for b1 in body1.when_stmts, b2 in body2.when_stmts), Util.id) and Util.optionEqual(body1.else_when, body2.else_when, isEqual);
     end isEqual;
 
     function getBodyAttributes
@@ -2883,7 +2882,7 @@ public
           conditions := list(elem for elem guard(not Expression.isFalse(elem)) in arrayList(condition.elements));
           if listEmpty(conditions) then
             body := b.else_when;
-          elseif listLength(conditions) == 1 then
+          elseif List.hasOneElement(conditions) then
             b.condition := listHead(conditions);
             body := SOME(b);
           else

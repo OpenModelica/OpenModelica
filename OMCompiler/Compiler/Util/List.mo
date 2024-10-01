@@ -312,6 +312,21 @@ algorithm
   end if;
 end allEqual;
 
+public function compareLength<T1, T2>
+  "Returns -1 if list1 is shorter than list2 or 1 if list1 is longer than list2.
+   If both lists are of equal length it returns 0."
+  input list<T1> list1;
+  input list<T2> list2;
+  output Integer res;
+algorithm
+  res := match (list1, list2)
+    case ({}, {}) then 0;
+    case ({}, _)  then -1;
+    case (_, {})  then 1;
+    else compareLength(listRest(list1), listRest(list2));
+  end match;
+end compareLength;
+
 public function compare<T1, T2>
   "Returns -1 if list1 is shorter than list2 or 1 if list1 is longer than list2.
    If both lists are of equal length it applies the given compare function to
@@ -328,13 +343,10 @@ public function compare<T1, T2>
     output Integer res;
   end CompFunc;
 protected
-  Integer l1, l2;
   T2 e2;
   list<T2> rest_e2;
 algorithm
-  l1 := listLength(list1);
-  l2 := listLength(list2);
-  res := if l1 == l2 then 0 elseif l1 > l2 then 1 else -1;
+  res := compareLength(list1, list2);
   if res <> 0 then
     return;
   end if;
@@ -1124,7 +1136,7 @@ public function countingSort
 protected
   array<Integer> a1;
 algorithm
-  if listLength(inList) < 2 then
+  if not hasSeveralElements(inList) then
     outSorted := inList;
     return;
   end if;
@@ -1508,11 +1520,12 @@ protected
   Integer length;
 algorithm
   true := inPartitionLength > 0;
-  length := listLength(inList);
-
-  if length == 0 then
+  if listEmpty(inList) then
     return;
-  elseif inPartitionLength >= length then
+  end if;
+
+  length := listLength(inList);
+  if inPartitionLength >= length then
     outPartitions := {inList};
     return;
   end if;
@@ -4544,12 +4557,12 @@ public function flatten<T>
    of the sublists. O(len(outList))
      Example: flatten({{1, 2}, {3, 4, 5}, {6}, {}}) => {1, 2, 3, 4, 5, 6}"
   input list<list<T>> inList;
-  output list<T> outList = if listEmpty(inList) then {} elseif intEq(listLength(inList), 1) then first(inList) else listAppend(lst for lst in listReverse(inList));
+  output list<T> outList = if listEmpty(inList) then {} elseif hasOneElement(inList) then first(inList) else listAppend(lst for lst in listReverse(inList));
 end flatten;
 
 public function flattenReverse<T>
   input list<list<T>> inList;
-  output list<T> outList = if listEmpty(inList) then {} elseif intEq(listLength(inList), 1) then first(inList) else listAppend(lst for lst in inList);
+  output list<T> outList = if listEmpty(inList) then {} elseif hasOneElement(inList) then first(inList) else listAppend(lst for lst in inList);
 end flattenReverse;
 
 public function thread<T>
@@ -4693,7 +4706,7 @@ end unzipFirst;
 
 public function unzipSecond<T1, T2>
   "Takes a list of two-element tuples and creates a list from the second element
-   of each tuple. Example: unzipFirst({(1, 2), (3, 4)}) => {2, 4}"
+   of each tuple. Example: unzipSecond({(1, 2), (3, 4)}) => {2, 4}"
   input list<tuple<T1, T2>> inTuples;
   output list<T2> outList = {};
 protected
@@ -7339,9 +7352,7 @@ public function listIsLonger<T>
   "Returns true if inList1 is longer than inList2, otherwise false."
   input list<T> inList1;
   input list<T> inList2;
-  output Boolean isLonger;
-algorithm
-  isLonger := intGt(listLength(inList1), listLength(inList2));
+  output Boolean isLonger = compareLength(inList1, inList2) > 0;
 end listIsLonger;
 
 public function toListWithPositions<T>

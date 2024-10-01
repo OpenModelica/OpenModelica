@@ -103,7 +103,7 @@ public
   protected
     list<SimVar> vars = UnorderedMap.valueList(simcode_map);
   algorithm
-    old_ht := HashTableCrefSimVar.emptyHashTableSized(listLength(vars));
+    old_ht := HashTableCrefSimVar.emptyHashTableSized(UnorderedMap.size(simcode_map));
     old_ht := List.fold(SimVar.convertList(vars), HashTableCrefSimVar.addSimVarToHashTable, old_ht);
   end convertSimCodeMap;
 
