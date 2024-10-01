@@ -549,7 +549,7 @@ algorithm
         (exp, ty, var, purity) := typeExp(range, InstContext.set(context, NFInstContext.ITERATION_RANGE), info);
 
         // If the iteration range is structural, it must be a parameter expression (unless we don't scalarize and it is a non structural parameter).
-        if structural and var > Variability.PARAMETER and (Flags.isSet(Flags.NF_SCALARIZE) or not var == Variability.NON_STRUCTURAL_PARAMETER) then
+        if structural and var > Variability.PARAMETER and (not var == Variability.NON_STRUCTURAL_PARAMETER or Flags.isSet(Flags.NF_SCALARIZE)) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
             {Expression.toString(exp)}, info);
         end if;
