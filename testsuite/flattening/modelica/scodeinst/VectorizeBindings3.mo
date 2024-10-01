@@ -1,7 +1,6 @@
 // name: VectorizeBindings3
 // keywords:
 // status: correct
-// cflags: -d=newInst --newBackend
 //
 
 operator record Complex
@@ -100,6 +99,7 @@ model VectorizeBindings3
   constant Integer m = 3;
   parameter Integer effectiveStatorTurns = 1;
   IM_SquirrelCage aimc(effectiveStatorTurns = effectiveStatorTurns);
+  annotation(__OpenModelica_commandLineOptions="--newBackend");
 end VectorizeBindings3;
 
 // Result:

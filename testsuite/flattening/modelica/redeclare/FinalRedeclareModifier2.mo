@@ -1,7 +1,6 @@
 // name:     FinalRedeclareModifier2
 // keywords: redeclare, modification, final
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's allowed to redeclare a component as final.
 //
@@ -18,6 +17,7 @@ model FinalRedeclareModifier2
   package P2 end P2;
 
   M2 m(redeclare final package P = P2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FinalRedeclareModifier2;
 
 // Result:

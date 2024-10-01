@@ -1,7 +1,6 @@
 // name:     ConnectInnerOuter4
 // keywords: connect inner outer
 // status:   correct
-// cflags: -d=-newInst
 //
 // Connect to references in outer class
 
@@ -30,6 +29,7 @@ model Top
   A a1,a2;
 equation
   connect(world.subWorld.pin, topPin);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Top;
 
 // Result:

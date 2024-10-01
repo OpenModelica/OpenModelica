@@ -1,11 +1,11 @@
 // name: IfExpCombiTable1
 // status: correct
-// cflags: -d=-newInst
 // This should succeed without error messages
 
 class IfExpCombiTable1
   parameter Boolean b = false;
   Real r = if not b then 1.5 else q();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IfExpCombiTable1;
 
 // Result:

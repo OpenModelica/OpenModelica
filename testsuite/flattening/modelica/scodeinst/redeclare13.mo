@@ -1,7 +1,6 @@
 // name: redeclare13.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 // Checks that redeclares are propagated to the correct element when there's
 // multiple extends.

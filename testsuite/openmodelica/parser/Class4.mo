@@ -1,13 +1,13 @@
 // name:     Class4
 // keywords:
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // end should be followed by Class4.
 //
 
 class Class4
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: CevalFuncRecursive2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -18,7 +17,7 @@ end CevalFuncRecursive2;
 
 // Result:
 // Error processing file: CevalFuncRecursive2.mo
-// [flattening/modelica/scodeinst/CevalFuncRecursive2.mo:8:1-13:6:writable] Error: The recursion limit (--evalRecursionLimit=256) was exceeded during evaluation of f.
+// [flattening/modelica/scodeinst/CevalFuncRecursive2.mo:7:1-12:6:writable] Error: The recursion limit (--evalRecursionLimit=256) was exceeded during evaluation of f.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -1,7 +1,6 @@
 // name: FunctionalArgBinary1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 partial function F

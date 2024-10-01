@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2  connect equations (p. 244)
-// cflags: -d=-newInst
 //
 
 model Test
@@ -35,6 +34,7 @@ end RegComponent;
 
 
   RegComponent rc(n = 6);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,7 +1,6 @@
 // name:     RedeclareFunctionSameType.mo [BUG: #2739]
 // keywords: redeclare function
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's possible to uniquely modify packages in different components having the same type
 //
@@ -47,6 +46,7 @@ model RedeclareFunctionSameType
     end B;
 
     B b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareFunctionSameType;
 
 // Result:

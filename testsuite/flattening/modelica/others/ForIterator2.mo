@@ -1,7 +1,6 @@
 // name:     ForIterator2
 // keywords: for iterator
 // status:   correct
-// cflags: -d=-newInst
 //
 // For iterator handling, testcase derived from MultiBody.World model.
 //
@@ -16,6 +15,7 @@ model ForIterator2
   parameter Real lines[3,3,3]={[1,2,3;4,5,6;7,8,9],[1,2,3;4,5,6;7,8,9],[1,2,3;4,5,6;7,8,9]};
   Cylinder c[n](length={r[i] for i in 1:n},lengthDirection={vector(lines[i,1,:]-lines[i,2,:]) for i in 1:n});
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForIterator2;
 
 // Result:

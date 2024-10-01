@@ -1,7 +1,6 @@
 // name: OperationDiv1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationDiv1

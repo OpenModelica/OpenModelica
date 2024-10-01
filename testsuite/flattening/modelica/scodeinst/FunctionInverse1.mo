@@ -1,7 +1,6 @@
 // name: FunctionInverse1
 // keywords: inverse
 // status: correct
-// cflags: -d=newInst
 //
 
 function f

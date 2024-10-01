@@ -1,7 +1,6 @@
 // name: FuncVectorizationCastConflict1
 // keywords: vectorization function
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that a vectorized function that matches both exactly and via casting
 // chooses the exact match.

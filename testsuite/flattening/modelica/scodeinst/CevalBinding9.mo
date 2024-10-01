@@ -1,6 +1,5 @@
 // name: CevalBinding9
 // status: correct
-// cflags: -d=newInst
 //
 //
 

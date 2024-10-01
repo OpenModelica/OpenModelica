@@ -1,7 +1,6 @@
 // name: InStreamInsideOutside
 // keywords: stream inStream connector inside outside
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that inStream is evaluated correctly for an inside and an outside
 // connected stream connector.

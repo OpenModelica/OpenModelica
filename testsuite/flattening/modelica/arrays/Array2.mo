@@ -1,13 +1,13 @@
 // name:     Array2
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Multidimensional arrays
 //
 
 model Array2
   parameter Integer x[2,3];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array2;
 
 // Result:

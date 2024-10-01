@@ -1,7 +1,6 @@
 // name:     Break
 // keywords: algorithm break
 // status:   correct
-// cflags: -d=-newInst
 //           [While statements in algorithms not supported yet]
 //
 // break statement in algorithms
@@ -38,6 +37,7 @@ algorithm
   when y>0.9 then
     z := 0.0;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Break;
 
 // Result:

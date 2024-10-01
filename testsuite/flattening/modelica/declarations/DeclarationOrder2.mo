@@ -1,7 +1,6 @@
 // name:     DeclarationOrder2
 // keywords: declaration order
 // status:   correct
-// cflags: -d=-newInst
 //
 // A model or component is available in its entire scope,
 // even before before it is declared.
@@ -26,6 +25,7 @@ end A;
 
 model DeclarationOrder2
   A.D d;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationOrder2;
 
 // Result:

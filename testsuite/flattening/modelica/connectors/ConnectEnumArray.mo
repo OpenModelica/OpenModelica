@@ -1,7 +1,6 @@
 // name: ConnectEnumArray
 // keywords: connect enum array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that enumeration indices are preserved when connecting arrays with
 // enumerations as dimensions.
@@ -23,7 +22,7 @@ equation
   connect (b2.in2, b1.out2);
 end MyLayout;
 
-block Test = MyLayout;
+block Test = MyLayout annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 
 // Result:
 // class Test

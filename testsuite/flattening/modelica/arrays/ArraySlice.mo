@@ -3,7 +3,6 @@
 // status:   incorrect
 //
 // Drmodelica: 7.4 Array Indexing operator (p. 216)
-// cflags: -d=-newInst
 //
 class ArraySlice
   Real x1    = X[2, 1];    // Retrieves the value 3
@@ -26,4 +25,5 @@ class ArraySlice
   Real[4] y = fill(1, 4);
 algorithm
    w[3:4] := {1, 2};  // Assignment causing w to become {15, 16, 1, 2}
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice;

@@ -1,7 +1,6 @@
 // name:     Bug3239.mo [BUG: #3239]
 // keywords: redeclare modifier handling
 // status:   correct
-// cflags: -d=-newInst
 //
 // check that modifiers on redeclare are not lost
 //
@@ -24,6 +23,7 @@ end m2;
 
 model m3
  extends m2(outBlock(T = 5.0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end m3;
 
 // Result:

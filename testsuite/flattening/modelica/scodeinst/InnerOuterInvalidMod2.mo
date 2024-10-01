@@ -1,7 +1,6 @@
 // name: InnerOuterInvalidMod2
 // keywords: 
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -15,7 +14,7 @@ end InnerOuterInvalidMod2;
 
 // Result:
 // Error processing file: InnerOuterInvalidMod2.mo
-// [flattening/modelica/scodeinst/InnerOuterInvalidMod2.mo:13:7-13:14:writable] Error: Modifier '= 1.0' found on outer element x.
+// [flattening/modelica/scodeinst/InnerOuterInvalidMod2.mo:12:7-12:14:writable] Error: Modifier '= 1.0' found on outer element x.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

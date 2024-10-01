@@ -1,7 +1,6 @@
 // name: DimNegative1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model DimNegative2

@@ -1,7 +1,6 @@
 // name:     ComplexNumbers
 // keywords: package, functions
 // status:   correct
-// cflags: -d=-newInst
 //
 // defines and uses a package
 //
@@ -48,6 +47,7 @@ class ComplexUser
   equation
     z = ComplexNumbers.Multiply(a, b);
     z = ComplexNumbers.Add(a, b);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexUser;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     AssertTest4
 // keywords: assert
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 
@@ -29,6 +28,7 @@ end AssertTest;
 
 class Test6
   AssertTest assertTest;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test6;
 
 // Result:

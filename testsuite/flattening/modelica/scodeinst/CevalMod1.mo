@@ -1,7 +1,6 @@
 // name: CevalMod1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -14,9 +13,9 @@ end CevalMod1;
 
 // Result:
 // class CevalMod1
-//   constant Real r1 = 0.2000000000000002;
-//   constant Real r2 = 1.199999999999999;
-//   constant Real r3 = -1.199999999999999;
+//   constant Real r1 = 0.20000000000000018;
+//   constant Real r2 = 1.1999999999999993;
+//   constant Real r3 = -1.1999999999999993;
 //   constant Integer i1 = 1;
 // end CevalMod1;
 // endResult

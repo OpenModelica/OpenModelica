@@ -1,13 +1,13 @@
 // name:     Import7
 // keywords: import
 // status:   correct
-// cflags: -d=-newInst
 //
 // Import of constants in packages.
 
 model Import7
   import sinx = sin;
   constant Real x = sinx(0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import7;
 
 // Result:

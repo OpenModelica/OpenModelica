@@ -1,7 +1,6 @@
 // name:     RecordModifications2
 // keywords: record modification #3479
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests record modification propagation using very simplified models from
 // Modelica.Electrical.Machines.
@@ -37,6 +36,7 @@ model RecordModifications2
   DC_PermanentMagnet dcpm2(wNominal = wNominal, frictionParameters = frictionParameters);
   parameter Real wNominal = 2850;
   parameter FrictionParameters frictionParameters(PRef = 100);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordModifications2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: NestedClasses
 // keywords: class
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests nested classes
 //
@@ -18,6 +17,7 @@ class NestedClasses
   NestedClass1 nc1;
   NestedClass2 nc2;
   Integer i;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NestedClasses;
 
 // Result:

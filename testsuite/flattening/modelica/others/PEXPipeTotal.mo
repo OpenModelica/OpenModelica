@@ -1,7 +1,6 @@
 // name:     PEXPipe
 // keywords: ticket #2699
 // status:   correct
-// cflags: -d=-newInst
 //
 // Ticket #2699 extending a model in FluidHeatFlow
 //
@@ -950,6 +949,7 @@ package Toneco
 end Toneco;
 model Toneco_PEXPipe
   extends Toneco.PEXPipe;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Toneco_PEXPipe;
 
 // Result:

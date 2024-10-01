@@ -1,7 +1,6 @@
 // name: RangeSlicing
 // keywords: array range slicing subscript
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests array slicing with range subscripts.
 //
@@ -26,6 +25,7 @@ model RangeSlicing
   Real ea[E] = {1.0, 2.0, 3.0, 4.0};
   Real es1[:] = ea[E.one:E.four];
   Real es2[:] = ea[E.two:E.three];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RangeSlicing;
 
 // Result:

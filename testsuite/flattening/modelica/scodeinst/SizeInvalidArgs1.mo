@@ -1,7 +1,6 @@
 // name: SizeInvalidArgs1
 // keywords: size
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests the builtin size operator.
 //
@@ -13,7 +12,7 @@ end SizeInvalidArgs1;
 
 // Result:
 // Error processing file: SizeInvalidArgs1.mo
-// [flattening/modelica/scodeinst/SizeInvalidArgs1.mo:11:3-11:28:writable] Error: No matching function found for size(x, 1, 2).
+// [flattening/modelica/scodeinst/SizeInvalidArgs1.mo:10:3-10:28:writable] Error: No matching function found for size(x, 1, 2).
 // Candidates are:
 //   size(Any[:, ...]) => Integer[:]
 //   size(Any[:, ...], Integer) => Integer

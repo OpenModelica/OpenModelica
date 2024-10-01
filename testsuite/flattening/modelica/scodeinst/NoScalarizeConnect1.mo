@@ -1,7 +1,6 @@
 // name: NoScalarizeConnect1
 // keywords:
 // status: correct
-// cflags: -d=newInst --newBackend
 //
 
 connector C
@@ -17,6 +16,7 @@ end M;
 
 model NoScalarizeConnect1
   M m[3];
+  annotation(__OpenModelica_commandLineOptions="--newBackend");
 end NoScalarizeConnect1;
 
 // Result:

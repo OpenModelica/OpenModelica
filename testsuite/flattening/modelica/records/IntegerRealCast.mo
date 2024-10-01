@@ -1,5 +1,4 @@
 // status: correct
-// cflags: +d=nogen -d=-newInst
 
 model MissingCast
 record SomeData
@@ -34,6 +33,7 @@ equation
 
 value = getData(0);
 
+  annotation(__OpenModelica_commandLineOptions="+d=nogen -d=-newInst");
 end MissingCast;
 // Result:
 // function MissingCast.SomeData "Automatically generated record constructor for MissingCast.SomeData"

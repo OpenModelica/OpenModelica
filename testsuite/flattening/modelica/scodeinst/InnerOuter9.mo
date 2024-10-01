@@ -1,7 +1,6 @@
 // name: InnerOuter9
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model PrescribedPump  

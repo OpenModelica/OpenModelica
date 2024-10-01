@@ -4,7 +4,6 @@
 //
 //
 // Drmodelica: 9.1 When-Statements (p. 293)
-// cflags: -d=-newInst
 //
 
 class WhenStat2
@@ -19,6 +18,7 @@ algorithm
   end when;
 equation
   der(x) = 2*x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenStat2;
 
 

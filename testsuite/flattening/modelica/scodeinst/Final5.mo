@@ -1,7 +1,6 @@
 // name: Final5
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -18,8 +17,8 @@ end Final4;
 
 // Result:
 // Error processing file: Final5.mo
-// [flattening/modelica/scodeinst/Final5.mo:16:9-16:16:writable] Notification: From here:
-// [flattening/modelica/scodeinst/Final5.mo:12:13-12:20:writable] Error: Trying to override final element x with modifier '= 2.0'.
+// [flattening/modelica/scodeinst/Final5.mo:15:9-15:16:writable] Notification: From here:
+// [flattening/modelica/scodeinst/Final5.mo:11:13-11:20:writable] Error: Trying to override final element x with modifier '= 2.0'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

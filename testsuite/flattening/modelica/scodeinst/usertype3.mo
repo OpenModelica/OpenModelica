@@ -1,7 +1,6 @@
 // name: usertype3.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 type MyReal = Real;

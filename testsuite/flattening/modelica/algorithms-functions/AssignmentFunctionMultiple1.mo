@@ -1,7 +1,6 @@
 // name: AssignmentFunctionMultiple1
 // keywords: assignment, function
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests assignment to a function call with multiple outputs
 //
@@ -22,6 +21,7 @@ model AssignmentFunctionMultiple1
 algorithm
   x := 2;
   (y, z) := F(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentFunctionMultiple1;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     TempDepResistorCircuit
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 // The flattened model should be the same for test TempDepResistorCircuit and
@@ -60,6 +59,7 @@ model TemperatureDependentResistorCircuit
   redeclare TempResistor R1(RT = 0.1, Temp = Temp),
   redeclare TempResistor R2
   );
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TemperatureDependentResistorCircuit;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: SD
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize,arrayConnect,combineSubscripts -f
 //
 
 connector C
@@ -39,6 +38,7 @@ equation
   for i in 1:N - 1 loop
     connect(c[i + 1].c, c[i].c);
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=newInst,-nfScalarize,arrayConnect,combineSubscripts -f");
 end SD;
 
 // Result:

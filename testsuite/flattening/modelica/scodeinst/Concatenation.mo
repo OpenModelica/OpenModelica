@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=newInst
 
 model Concatenation
   Real z[1,2] = [{{2}},{1.0}];

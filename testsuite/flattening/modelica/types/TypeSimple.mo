@@ -1,7 +1,6 @@
 // name: TypeSimple
 // keywords: type
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple type declaration
 //
@@ -12,6 +11,7 @@ model TypeSimple
   MyType mt;
 equation
   mt = 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TypeSimple;
 
 // Result:

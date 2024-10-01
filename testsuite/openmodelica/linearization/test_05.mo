@@ -1,7 +1,6 @@
 // name:     test_05.mo
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // <insert description here>
 //
@@ -12,6 +11,7 @@ model simple_test
 equation
   der(a) = 6*a - 2*a^2 - a*b;
   der(b) = 4*b - a*b - b^2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

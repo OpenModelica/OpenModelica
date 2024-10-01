@@ -1,7 +1,6 @@
 // name:     ImportSelf1
 // keywords: import, bug1445
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that importing a package in itself works.
 //
@@ -14,6 +13,7 @@ package ImportSelf1
   end f;
 
   constant Real c = P.f();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ImportSelf1;
 
 // Result:

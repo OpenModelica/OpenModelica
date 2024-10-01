@@ -1,7 +1,6 @@
 // name:     FinalParameterModification
 // keywords: final, parameter, modifications
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests modifications of final parameters.
 // Fix for bug #1193: http://openmodelica.ida.liu.se:8080/cb/issue/1193
@@ -12,6 +11,7 @@ model FinalParameterModification
   Real x(start = 1);
 equation
   der(x) = -p[1] * x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FinalParameterModification;
 
 // Result:

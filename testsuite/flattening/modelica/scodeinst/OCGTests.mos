@@ -1,6 +1,5 @@
 // name: OCGTests.mos [OCG]
 // status: correct
-// cflags: -d=newInst
 //
 //
 // tests the overconstrained connection graph

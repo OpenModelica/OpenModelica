@@ -1,7 +1,6 @@
 // name:     MatrixPow
 // keywords: matrices,power
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test Matrix power
 //
@@ -15,6 +14,7 @@ equation
   m = n^2;
   m1 = n^1;
   m0 = n^0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixPow;
 
 // Result:

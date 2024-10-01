@@ -1,7 +1,6 @@
 // name: CevalFuncArray6
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -21,7 +20,7 @@ end CevalFuncArray6;
 // Result:
 // class CevalFuncArray6
 //   final parameter Real table[1,1] = 0.0;
-//   final parameter Real table[2,1] = 1.047197551196598;
-//   final parameter Real table[3,1] = 1.570796326794897;
+//   final parameter Real table[2,1] = 1.0471975511965979;
+//   final parameter Real table[3,1] = 1.5707963267948966;
 // end CevalFuncArray6;
 // endResult

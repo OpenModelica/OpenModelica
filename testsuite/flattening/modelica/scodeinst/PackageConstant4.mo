@@ -1,7 +1,6 @@
 // name: PackageConstant4
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package P

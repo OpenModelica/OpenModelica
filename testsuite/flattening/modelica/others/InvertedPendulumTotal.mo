@@ -1,6 +1,5 @@
 // name: Inverted Pendulum
 // status: correct
-// cflags:   --std=2.x -d=-newInst
 //
 
 package Modelica "Modelica Standard Library"
@@ -4073,6 +4072,7 @@ descriptions of how to build and simulate respective model, as well as some exer
 end IntroductoryExamples;
 model IntroductoryExamples_Systems_InvertedPendulum
   extends IntroductoryExamples.Systems.InvertedPendulum;
+  annotation(__OpenModelica_commandLineOptions="--std=2.x -d=-newInst");
 end IntroductoryExamples_Systems_InvertedPendulum;
 // Result:
 // function MCVisualShape$pendulum$cart$box$mcShape.local_normalize
@@ -6092,9 +6092,9 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //   pendulum.cart.box.mcShape.Sshape = {{pendulum.cart.box.Sshape[1,1], pendulum.cart.box.Sshape[1,2], pendulum.cart.box.Sshape[1,3]}, {pendulum.cart.box.Sshape[2,1], pendulum.cart.box.Sshape[2,2], pendulum.cart.box.Sshape[2,3]}, {pendulum.cart.box.Sshape[3,1], pendulum.cart.box.Sshape[3,2], pendulum.cart.box.Sshape[3,3]}};
 //   pendulum.cart.box.mcShape.e_x = if noEvent(pendulum.cart.box.mcShape.abs_n_x < 1e-10) then {1.0, 0.0, 0.0} else {pendulum.cart.box.mcShape.lengthDirection[1] / pendulum.cart.box.mcShape.abs_n_x, pendulum.cart.box.mcShape.lengthDirection[2] / pendulum.cart.box.mcShape.abs_n_x, pendulum.cart.box.mcShape.lengthDirection[3] / pendulum.cart.box.mcShape.abs_n_x};
 //   pendulum.cart.box.mcShape.n_z_aux = {pendulum.cart.box.mcShape.e_x[2] * pendulum.cart.box.mcShape.widthDirection[3] - pendulum.cart.box.mcShape.e_x[3] * pendulum.cart.box.mcShape.widthDirection[2], pendulum.cart.box.mcShape.e_x[3] * pendulum.cart.box.mcShape.widthDirection[1] - pendulum.cart.box.mcShape.e_x[1] * pendulum.cart.box.mcShape.widthDirection[3], pendulum.cart.box.mcShape.e_x[1] * pendulum.cart.box.mcShape.widthDirection[2] - pendulum.cart.box.mcShape.e_x[2] * pendulum.cart.box.mcShape.widthDirection[1]};
-//   pendulum.cart.box.mcShape.e_y = cross(MCVisualShape$pendulum$cart$box$mcShape.local_normalize(cross({pendulum.cart.box.mcShape.e_x[1], pendulum.cart.box.mcShape.e_x[2], pendulum.cart.box.mcShape.e_x[3]}, if noEvent(pendulum.cart.box.mcShape.n_z_aux[1] ^ 2.0 + pendulum.cart.box.mcShape.n_z_aux[2] ^ 2.0 + pendulum.cart.box.mcShape.n_z_aux[3] ^ 2.0 > 1e-06) then {pendulum.cart.box.mcShape.widthDirection[1], pendulum.cart.box.mcShape.widthDirection[2], pendulum.cart.box.mcShape.widthDirection[3]} else if noEvent(abs(pendulum.cart.box.mcShape.e_x[1]) > 1e-06) then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0})), {pendulum.cart.box.mcShape.e_x[1], pendulum.cart.box.mcShape.e_x[2], pendulum.cart.box.mcShape.e_x[3]});
+//   pendulum.cart.box.mcShape.e_y = cross(MCVisualShape$pendulum$cart$box$mcShape.local_normalize(cross({pendulum.cart.box.mcShape.e_x[1], pendulum.cart.box.mcShape.e_x[2], pendulum.cart.box.mcShape.e_x[3]}, if noEvent(pendulum.cart.box.mcShape.n_z_aux[1] ^ 2.0 + pendulum.cart.box.mcShape.n_z_aux[2] ^ 2.0 + pendulum.cart.box.mcShape.n_z_aux[3] ^ 2.0 > 1e-6) then {pendulum.cart.box.mcShape.widthDirection[1], pendulum.cart.box.mcShape.widthDirection[2], pendulum.cart.box.mcShape.widthDirection[3]} else if noEvent(abs(pendulum.cart.box.mcShape.e_x[1]) > 1e-6) then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0})), {pendulum.cart.box.mcShape.e_x[1], pendulum.cart.box.mcShape.e_x[2], pendulum.cart.box.mcShape.e_x[3]});
 //   pendulum.cart.box.mcShape.e_z = {pendulum.cart.box.mcShape.e_x[2] * pendulum.cart.box.mcShape.e_y[3] - pendulum.cart.box.mcShape.e_x[3] * pendulum.cart.box.mcShape.e_y[2], pendulum.cart.box.mcShape.e_x[3] * pendulum.cart.box.mcShape.e_y[1] - pendulum.cart.box.mcShape.e_x[1] * pendulum.cart.box.mcShape.e_y[3], pendulum.cart.box.mcShape.e_x[1] * pendulum.cart.box.mcShape.e_y[2] - pendulum.cart.box.mcShape.e_x[2] * pendulum.cart.box.mcShape.e_y[1]};
-//   pendulum.cart.box.mcShape.Form = 1e+20 * (987000.0 + PackShape(pendulum.cart.box.mcShape.shapeType));
+//   pendulum.cart.box.mcShape.Form = 1e20 * (987000.0 + PackShape(pendulum.cart.box.mcShape.shapeType));
 //   pendulum.cart.box.mcShape.Material = PackMaterial(0.00392156862745098 * pendulum.cart.box.mcShape.color[1], 0.00392156862745098 * pendulum.cart.box.mcShape.color[2], 0.00392156862745098 * pendulum.cart.box.mcShape.color[3], pendulum.cart.box.mcShape.specularCoefficient);
 //   pendulum.cart.box.mcShape.Extra = pendulum.cart.box.mcShape.extra;
 //   pendulum.cart.box.mcShape.size[1] = pendulum.cart.box.mcShape.length;
@@ -6256,9 +6256,9 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //   pendulum.pendulum.box.mcShape.Sshape = {{pendulum.pendulum.box.Sshape[1,1], pendulum.pendulum.box.Sshape[1,2], pendulum.pendulum.box.Sshape[1,3]}, {pendulum.pendulum.box.Sshape[2,1], pendulum.pendulum.box.Sshape[2,2], pendulum.pendulum.box.Sshape[2,3]}, {pendulum.pendulum.box.Sshape[3,1], pendulum.pendulum.box.Sshape[3,2], pendulum.pendulum.box.Sshape[3,3]}};
 //   pendulum.pendulum.box.mcShape.e_x = if noEvent(pendulum.pendulum.box.mcShape.abs_n_x < 1e-10) then {1.0, 0.0, 0.0} else {pendulum.pendulum.box.mcShape.lengthDirection[1] / pendulum.pendulum.box.mcShape.abs_n_x, pendulum.pendulum.box.mcShape.lengthDirection[2] / pendulum.pendulum.box.mcShape.abs_n_x, pendulum.pendulum.box.mcShape.lengthDirection[3] / pendulum.pendulum.box.mcShape.abs_n_x};
 //   pendulum.pendulum.box.mcShape.n_z_aux = {pendulum.pendulum.box.mcShape.e_x[2] * pendulum.pendulum.box.mcShape.widthDirection[3] - pendulum.pendulum.box.mcShape.e_x[3] * pendulum.pendulum.box.mcShape.widthDirection[2], pendulum.pendulum.box.mcShape.e_x[3] * pendulum.pendulum.box.mcShape.widthDirection[1] - pendulum.pendulum.box.mcShape.e_x[1] * pendulum.pendulum.box.mcShape.widthDirection[3], pendulum.pendulum.box.mcShape.e_x[1] * pendulum.pendulum.box.mcShape.widthDirection[2] - pendulum.pendulum.box.mcShape.e_x[2] * pendulum.pendulum.box.mcShape.widthDirection[1]};
-//   pendulum.pendulum.box.mcShape.e_y = cross(MCVisualShape$pendulum$pendulum$box$mcShape.local_normalize(cross({pendulum.pendulum.box.mcShape.e_x[1], pendulum.pendulum.box.mcShape.e_x[2], pendulum.pendulum.box.mcShape.e_x[3]}, if noEvent(pendulum.pendulum.box.mcShape.n_z_aux[1] ^ 2.0 + pendulum.pendulum.box.mcShape.n_z_aux[2] ^ 2.0 + pendulum.pendulum.box.mcShape.n_z_aux[3] ^ 2.0 > 1e-06) then {pendulum.pendulum.box.mcShape.widthDirection[1], pendulum.pendulum.box.mcShape.widthDirection[2], pendulum.pendulum.box.mcShape.widthDirection[3]} else if noEvent(abs(pendulum.pendulum.box.mcShape.e_x[1]) > 1e-06) then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0})), {pendulum.pendulum.box.mcShape.e_x[1], pendulum.pendulum.box.mcShape.e_x[2], pendulum.pendulum.box.mcShape.e_x[3]});
+//   pendulum.pendulum.box.mcShape.e_y = cross(MCVisualShape$pendulum$pendulum$box$mcShape.local_normalize(cross({pendulum.pendulum.box.mcShape.e_x[1], pendulum.pendulum.box.mcShape.e_x[2], pendulum.pendulum.box.mcShape.e_x[3]}, if noEvent(pendulum.pendulum.box.mcShape.n_z_aux[1] ^ 2.0 + pendulum.pendulum.box.mcShape.n_z_aux[2] ^ 2.0 + pendulum.pendulum.box.mcShape.n_z_aux[3] ^ 2.0 > 1e-6) then {pendulum.pendulum.box.mcShape.widthDirection[1], pendulum.pendulum.box.mcShape.widthDirection[2], pendulum.pendulum.box.mcShape.widthDirection[3]} else if noEvent(abs(pendulum.pendulum.box.mcShape.e_x[1]) > 1e-6) then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0})), {pendulum.pendulum.box.mcShape.e_x[1], pendulum.pendulum.box.mcShape.e_x[2], pendulum.pendulum.box.mcShape.e_x[3]});
 //   pendulum.pendulum.box.mcShape.e_z = {pendulum.pendulum.box.mcShape.e_x[2] * pendulum.pendulum.box.mcShape.e_y[3] - pendulum.pendulum.box.mcShape.e_x[3] * pendulum.pendulum.box.mcShape.e_y[2], pendulum.pendulum.box.mcShape.e_x[3] * pendulum.pendulum.box.mcShape.e_y[1] - pendulum.pendulum.box.mcShape.e_x[1] * pendulum.pendulum.box.mcShape.e_y[3], pendulum.pendulum.box.mcShape.e_x[1] * pendulum.pendulum.box.mcShape.e_y[2] - pendulum.pendulum.box.mcShape.e_x[2] * pendulum.pendulum.box.mcShape.e_y[1]};
-//   pendulum.pendulum.box.mcShape.Form = 1e+20 * (987000.0 + PackShape(pendulum.pendulum.box.mcShape.shapeType));
+//   pendulum.pendulum.box.mcShape.Form = 1e20 * (987000.0 + PackShape(pendulum.pendulum.box.mcShape.shapeType));
 //   pendulum.pendulum.box.mcShape.Material = PackMaterial(0.00392156862745098 * pendulum.pendulum.box.mcShape.color[1], 0.00392156862745098 * pendulum.pendulum.box.mcShape.color[2], 0.00392156862745098 * pendulum.pendulum.box.mcShape.color[3], pendulum.pendulum.box.mcShape.specularCoefficient);
 //   pendulum.pendulum.box.mcShape.Extra = pendulum.pendulum.box.mcShape.extra;
 //   pendulum.pendulum.box.mcShape.size[1] = pendulum.pendulum.box.mcShape.length;
@@ -6414,7 +6414,7 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //   pendulum.pendulumJoint.nn[1] = pendulum.pendulumJoint.n[1] / sqrt(pendulum.pendulumJoint.n[1] ^ 2.0 + pendulum.pendulumJoint.n[2] ^ 2.0 + pendulum.pendulumJoint.n[3] ^ 2.0) "rotation matrix";
 //   pendulum.pendulumJoint.nn[2] = pendulum.pendulumJoint.n[2] / sqrt(pendulum.pendulumJoint.n[1] ^ 2.0 + pendulum.pendulumJoint.n[2] ^ 2.0 + pendulum.pendulumJoint.n[3] ^ 2.0) "rotation matrix";
 //   pendulum.pendulumJoint.nn[3] = pendulum.pendulumJoint.n[3] / sqrt(pendulum.pendulumJoint.n[1] ^ 2.0 + pendulum.pendulumJoint.n[2] ^ 2.0 + pendulum.pendulumJoint.n[3] ^ 2.0) "rotation matrix";
-//   pendulum.pendulumJoint.qq = pendulum.pendulumJoint.q + (-0.0174532925199433) * pendulum.pendulumJoint.q0;
+//   pendulum.pendulumJoint.qq = pendulum.pendulumJoint.q + (-0.017453292519943295) * pendulum.pendulumJoint.q0;
 //   pendulum.pendulumJoint.sinq = sin(pendulum.pendulumJoint.qq);
 //   pendulum.pendulumJoint.cosq = cos(pendulum.pendulumJoint.qq);
 //   pendulum.pendulumJoint.S_rel[1,1] = pendulum.pendulumJoint.nn[1] ^ 2.0 + (1.0 - pendulum.pendulumJoint.nn[1] ^ 2.0) * pendulum.pendulumJoint.cosq;
@@ -7020,4 +7020,6 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //     (controller.timeTable.a, controller.timeTable.b, controller.timeTable.nextEvent, controller.timeTable.last) := Modelica.Blocks.Sources.TimeTable$controller$timeTable.getInterpolationCoefficients({{controller.timeTable.table[1,1], controller.timeTable.table[1,2]}, {controller.timeTable.table[2,1], controller.timeTable.table[2,2]}, {controller.timeTable.table[3,1], controller.timeTable.table[3,2]}, {controller.timeTable.table[4,1], controller.timeTable.table[4,2]}, {controller.timeTable.table[5,1], controller.timeTable.table[5,2]}, {controller.timeTable.table[6,1], controller.timeTable.table[6,2]}, {controller.timeTable.table[7,1], controller.timeTable.table[7,2]}}, controller.timeTable.offset, controller.timeTable.startTime, time, controller.timeTable.last, 1e-13);
 //   end when;
 // end IntroductoryExamples_Systems_InvertedPendulum;
+// Warning: Ignoring unknown experiment annotation option: Algorithm = "dassl"
+//
 // endResult

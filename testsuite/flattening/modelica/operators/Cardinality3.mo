@@ -1,7 +1,6 @@
 // name:     Cardinality3
 // keywords: cardinality #2062
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the cardinality operator.
 //
@@ -26,6 +25,7 @@ model Cardinality3
 equation
   connect(u, and1.u1);
   connect(u, and1.u2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cardinality3;
 
 // Result:

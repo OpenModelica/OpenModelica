@@ -1,7 +1,6 @@
 // name:     BC8 - PID component
 // keywords: PID
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the PID component.
 //
@@ -1522,6 +1521,7 @@ model BC8
 
 equation
   connect(constant1.outPort,PID1.inPort) annotation(Line(visible=true,points={{-18.35,14.7},{0.81,15.62}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC8;
 
 // Result:

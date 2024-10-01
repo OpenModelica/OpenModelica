@@ -1,7 +1,6 @@
 // name:     BS5 - KinematicPTP component
 // keywords: KinematicPTP
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the KinematicPTP component.
 //
@@ -1254,6 +1253,7 @@ model BS5
 
 equation
   connect(kinematicPTP1.outPort,der1.inPort) annotation(Line(visible=true,points={{-4.67,11.36},{16.62,8.32}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS5;
 // class BS5
 // parameter Integer der1.n = 1 "Number of inputs (= number of outputs)";
@@ -1351,7 +1351,7 @@ end BS5;
 //   assert(kinematicPTP1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = kinematicPTP1.outPort.signal[1];
 // end BS5;
-// [flattening/modelica/msl/BS5.mo:687:42-687:70:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS5.mo:689:43-689:71:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS5.mo:686:42-686:70:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS5.mo:688:43-688:71:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

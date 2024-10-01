@@ -1,7 +1,6 @@
 // name: FunctionInverseInvalid3
 // keywords: inverse
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -29,7 +28,7 @@ end FunctionInverseInvalid3;
 
 // Result:
 // Error processing file: FunctionInverseInvalid3.mo
-// [flattening/modelica/scodeinst/FunctionInverseInvalid3.mo:15:14-15:43:writable] Error: Invalid inverse annotation for 'f', only functions with exactly one output may have an inverse.
+// [flattening/modelica/scodeinst/FunctionInverseInvalid3.mo:14:14-14:43:writable] Error: Invalid inverse annotation for 'f', only functions with exactly one output may have an inverse.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

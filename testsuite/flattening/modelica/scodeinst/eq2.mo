@@ -1,7 +1,6 @@
 // name: eq2.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 model A

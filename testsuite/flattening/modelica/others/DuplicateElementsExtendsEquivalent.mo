@@ -1,7 +1,6 @@
 // name:     DuplicateElementsExtendsEquivalent
 // keywords: check if duplicate elements one from extends are equivalent!
 // status:   correct
-// cflags: -d=-newInst
 
 
 package Crap
@@ -17,6 +16,7 @@ model DuplicateElementsExtendsEquivalent
  extends Duplicate; // have another x
  import C=Crap;
  C.X x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DuplicateElementsExtendsEquivalent;
 
 // Result:

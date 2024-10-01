@@ -1,6 +1,5 @@
 // name: ExternalFunctionBuiltin
 // status: correct
-// cflags: -d=-newInst
 //
 // MSL 3.2 started defining sin,cos,etc as external "builtin"
 // This tests that such definitions work correctly
@@ -30,6 +29,7 @@ class ExternalFunctionBuiltin
   Real r2 = sin2(time);
   Real r3 = cos(time);
   Real r4 = cos2(time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExternalFunctionBuiltin;
 
 // Result:

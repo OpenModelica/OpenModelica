@@ -1,7 +1,6 @@
 // name:     Sequence
 // keywords: testing that array given as modifications for input paramters in function work fine
 // status:   correct
-// cflags: -d=-newInst
 //
 // testing that array given as modifications for input paramters in function work fine
 //
@@ -46,6 +45,7 @@ model Sequence
  Orientation r = axesRotations(angles={4,5,6}, der_angles={7,8,9});
  Orientation rOther = axesRotations({10,11,12}, {4,5,6}, {7,8,9});
  Real x = axesRot(); // 28
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sequence;
 
 

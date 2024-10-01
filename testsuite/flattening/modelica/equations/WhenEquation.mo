@@ -1,7 +1,6 @@
 // name:     WhenEquation
 // keywords: when
 // status:   correct
-// cflags: -d=-newInst
 //
 
 model WhenEquation
@@ -15,6 +14,7 @@ equation
     y1 = sin(x);
     y3 = 2*x + y1 + y2;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenEquation;
 
 // Result:

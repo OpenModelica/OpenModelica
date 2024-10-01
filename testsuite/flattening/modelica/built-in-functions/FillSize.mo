@@ -1,7 +1,6 @@
 // name:     FillSize
 // keywords: fill, ones, zeros, wholedim, size, bug1146
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the fill function with ones and zeros where the function argument is
 // the size of an array of unknown size.
@@ -22,6 +21,7 @@ end z2;
 model FillSize
   constant Real r[:] = z(ones(3));
   constant Real r2[:,:] = z2(ones(4, 4));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FillSize;
 
 // Result:

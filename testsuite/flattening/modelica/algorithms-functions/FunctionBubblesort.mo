@@ -1,7 +1,6 @@
 // name:     FunctionBubblesort
 // keywords: function,code generation,constant propagation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constant evaluation of function calls. Result of a function call with
 // constant arguments is inserted into flat modelica.
@@ -30,6 +29,7 @@ model FunctionBubblesort
   Real b[8];
 equation
   b=bubblesort(a);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionBubblesort;
 
 

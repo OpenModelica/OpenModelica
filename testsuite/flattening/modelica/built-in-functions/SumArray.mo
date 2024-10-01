@@ -1,7 +1,6 @@
 // name: SumArray
 // keywords: sum array #4028
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that sum of a multidimensional array is constant evaluated correctly.
 //
@@ -13,6 +12,7 @@ model SumArray
   end f;
 
   constant Integer s = f({{{1, 2}}, {{3, 4}}});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumArray;
 
 // Result:

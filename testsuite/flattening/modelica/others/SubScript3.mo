@@ -1,7 +1,6 @@
 // name:     Subscript3
 // keywords: subscript array prefix
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that subscripts are correctly prefixed.
 //
@@ -20,6 +19,7 @@ end B;
 
 model Subscript3
   B b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Subscript3;
 
 // Result:

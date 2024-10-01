@@ -1,7 +1,6 @@
 // name: OperatorOverloadConstructorDefault1
 // keywords: operator overload constructor
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that the default constructor is used when an overloaded constructor is
 // not defined.

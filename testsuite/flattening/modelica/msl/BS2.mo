@@ -1,7 +1,6 @@
 // name:     BS2 - Constant component
 // keywords: Constant
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Constant component.
 //
@@ -922,6 +921,7 @@ model BS2
 
 equation
   connect(constant1.outPort,der1.inPort) annotation(Line(visible=true,points={{-22.91,8.32},{-8.01,6.19}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS2;
 
 // class BS2

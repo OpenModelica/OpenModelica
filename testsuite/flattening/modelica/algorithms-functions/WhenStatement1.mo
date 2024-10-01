@@ -1,7 +1,6 @@
 // name:     WhenStatement1
 // keywords: when
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -18,6 +17,7 @@ algorithm
   end when;
 equation
   der(x) = 2*x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenStat;
 
 

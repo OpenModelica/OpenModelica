@@ -1,7 +1,6 @@
 // name: OuterProduct
 // keywords: outerProduct
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in outerProduct function.
 //
@@ -14,6 +13,7 @@ model OuterProduct
 equation
   r1 = outerProduct({2, 1}, {3, 2});
   r2 = outerProduct(v1, v2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OuterProduct;
 
 // Result:

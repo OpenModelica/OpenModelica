@@ -1,7 +1,6 @@
 // name:     MatrixSubtraction
 // keywords: matrix subtraction simplify
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests simplification of matrix subtraction.
 //
@@ -14,6 +13,7 @@ model MatrixSubtraction
 equation
   M = [1, 0, 0; 0, 1, 0; 0, 0, 1];
   A = u + v - M * (v - u);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixSubtraction;
 
 

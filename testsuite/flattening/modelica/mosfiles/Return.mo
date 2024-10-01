@@ -1,7 +1,6 @@
 // name: Return
 // keywords: function, return
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests return within a function algorithm
 //
@@ -13,4 +12,5 @@ algorithm
   outInteger := inInteger * 2;
   return;
   outInteger := inInteger * 4; // this statement is never reached
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ReturnFunc;

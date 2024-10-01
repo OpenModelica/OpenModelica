@@ -1,7 +1,6 @@
 // name:     Modification8
 // keywords: modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // These are seen as two modifications of the
 // same element.
@@ -18,12 +17,13 @@ class Modification8
     A a;
   end B;
   B b(a.x = 1.0, a(x = 2.0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification8;
 
 // Result:
 // Error processing file: Modification8.mo
-// [flattening/modelica/modification/Modification8.mo:20:7-20:16:writable] Notification: From here:
-// [flattening/modelica/modification/Modification8.mo:20:20-20:27:writable] Error: Duplicate modification of element a.x on component b.
+// [flattening/modelica/modification/Modification8.mo:19:7-19:16:writable] Notification: From here:
+// [flattening/modelica/modification/Modification8.mo:19:20-19:27:writable] Error: Duplicate modification of element a.x on component b.
 // Error: Error occurred while flattening model Modification8
 //
 // # Error encountered! Exiting...

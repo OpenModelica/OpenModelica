@@ -1,7 +1,6 @@
 // name: mod5.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 
 
@@ -15,7 +14,7 @@ end B;
 
 // Result:
 // Error processing file: mod5.mo
-// [flattening/modelica/scodeinst/mod5.mo:13:7-13:14:writable] Error: Modified element y not found in class A.
+// [flattening/modelica/scodeinst/mod5.mo:12:7-12:14:writable] Error: Modified element y not found in class A.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

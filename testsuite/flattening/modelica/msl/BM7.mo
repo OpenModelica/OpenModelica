@@ -1,7 +1,6 @@
 // name:     BM7 -  Atan2 component
 // keywords: Atan2
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Atan2 component.
 //
@@ -1088,6 +1087,7 @@ model BM7
 equation
   connect(atan21.inPort2,constant2.outPort) annotation(Line(visible=true,points={{-16.22,16.53},{-49.37,-2.33}}));
   connect(constant1.outPort,atan21.inPort1) annotation(Line(visible=true,points={{-44.81,43.59},{-17.14,28.39}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM7;
 // function Modelica.Math.atan2
 // input Real u1;

@@ -1,7 +1,6 @@
 // name: TupleOperation1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 function f

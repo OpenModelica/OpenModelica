@@ -1,7 +1,6 @@
 // name:     RecordConstructorVectorization.mo
 // keywords: tests the vectorization of records
 // status:   correct
-// cflags: -d=-newInst
 //
 // tests the vectorization of records. this is used in Modelica.Media
 //
@@ -42,6 +41,7 @@ model RecordConstructorVectorization
   Crap.Whatever w = Crap.Whatever("Shipot", 5.5);
  equation
   w = Crap.Whatever("Nothing", 4.7);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstructorVectorization;
 
 // Result:

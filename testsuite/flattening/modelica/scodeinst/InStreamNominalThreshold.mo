@@ -1,7 +1,6 @@
 // name: InStreamNominalThreshold
 // keywords: stream instream connector outside
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that the nominal value of a flow is used for the flow rate threshold.
 //
@@ -55,8 +54,8 @@ end InStreamNominalThreshold;
 //   a.s2.r = a.s3.r;
 //   a.s2.r = a.s1.r;
 //   -(a.s2.f + a.s3.f + a.s1.f) = 0.0;
-//   a.s1.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s3.f, 1e-7) * a.s3.s + $OMC$PositiveMax(a.s2.f, 2e-4) * a.s2.s) / ($OMC$PositiveMax(a.s3.f, 1e-7) + $OMC$PositiveMax(a.s2.f, 2e-4)), 0) " equation generated from stream connection";
-//   a.s3.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s1.f, 1e-10) * a.s1.s + $OMC$PositiveMax(a.s2.f, 2e-4) * a.s2.s) / ($OMC$PositiveMax(a.s1.f, 1e-10) + $OMC$PositiveMax(a.s2.f, 2e-4)), 0) " equation generated from stream connection";
+//   a.s1.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s3.f, 1e-7) * a.s3.s + $OMC$PositiveMax(a.s2.f, 1.9999999999999998e-4) * a.s2.s) / ($OMC$PositiveMax(a.s3.f, 1e-7) + $OMC$PositiveMax(a.s2.f, 1.9999999999999998e-4)), 0) " equation generated from stream connection";
+//   a.s3.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s1.f, 1e-10) * a.s1.s + $OMC$PositiveMax(a.s2.f, 1.9999999999999998e-4) * a.s2.s) / ($OMC$PositiveMax(a.s1.f, 1e-10) + $OMC$PositiveMax(a.s2.f, 1.9999999999999998e-4)), 0) " equation generated from stream connection";
 //   a.s2.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s1.f, 1e-10) * a.s1.s + $OMC$PositiveMax(a.s3.f, 1e-7) * a.s3.s) / ($OMC$PositiveMax(a.s1.f, 1e-10) + $OMC$PositiveMax(a.s3.f, 1e-7)), 0) " equation generated from stream connection";
 //   a.s1.f = 0.0;
 //   a.s2.f = 0.0;

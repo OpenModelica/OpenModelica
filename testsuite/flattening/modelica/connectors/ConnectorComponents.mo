@@ -1,7 +1,6 @@
 // name: ConnectorComponents
 // keywords: connector
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests declaration and instantiation of a connector with components
 //
@@ -17,6 +16,7 @@ model ConnectorComponents
 equation
   tc1.r = 3.0;
   r = tc1.r;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectorComponents;
 
 // Result:

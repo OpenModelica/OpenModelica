@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 4.1 Public Respectively Protected Elements (p. 117)
-// cflags: -d=-newInst
 //
 record ColorData "Superclass of Color"
   parameter Real red;
@@ -22,6 +21,7 @@ model Colors
   Real k;
 equation
   k = c.green;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Colors;
 // Result:
 // class Colors

@@ -1,7 +1,6 @@
 // name: InnerOuter10
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model InnerOuter10

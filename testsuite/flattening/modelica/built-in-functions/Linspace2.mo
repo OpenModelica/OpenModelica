@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 model Linespace2
   Real points[5,2];
@@ -8,6 +7,7 @@ model Linespace2
 equation
   points[:,1]=linspace(0,size[1],pointNum);
   points[:,2] = fill(size[2], pointNum);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Linespace2;
 
 // Result:

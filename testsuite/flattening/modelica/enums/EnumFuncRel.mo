@@ -1,7 +1,6 @@
 // name:     EnumFuncRel
 // keywords: 
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Checks that a function reference to a function returning an enumeration can't
 // be used as an enumeration value.
@@ -17,11 +16,12 @@ function EnumFuncRel
 algorithm
   if f == E.one then
   end if;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumFuncRel;
 
 // Result:
 // Error processing file: EnumFuncRel.mo
-// [flattening/modelica/enums/EnumFuncRel.mo:18:3-19:9:writable] Error: Cannot resolve type of expression f == E.one. The operands have types .f<function>() => #enumeration(one, two, three), enumeration(one, two, three) in component <NO COMPONENT>.
+// [flattening/modelica/enums/EnumFuncRel.mo:17:3-18:9:writable] Error: Cannot resolve type of expression f == E.one. The operands have types .f<function>() => #enumeration(one, two, three), enumeration(one, two, three) in component <NO COMPONENT>.
 // Error: Error occurred while flattening model EnumFuncRel
 //
 // # Error encountered! Exiting...

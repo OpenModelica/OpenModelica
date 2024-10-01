@@ -1,7 +1,6 @@
 // name: CevalMax2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

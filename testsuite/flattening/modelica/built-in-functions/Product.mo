@@ -1,7 +1,6 @@
 // name: Product
 // keywords: product
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in product function.
 //
@@ -18,6 +17,7 @@ equation
   y4 = product({1, 2, 3});
   y5 = product({{3, 4}, {5, 6}});
   y6 = product({{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Product;
 
 // Result:

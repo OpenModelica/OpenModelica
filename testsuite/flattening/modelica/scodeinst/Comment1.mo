@@ -1,7 +1,6 @@
 // name: Comment1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Comment1 "class comment"

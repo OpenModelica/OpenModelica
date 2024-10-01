@@ -1,7 +1,6 @@
 // name: CevalLog2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -11,7 +10,7 @@ end CevalLog2;
 
 // Result:
 // Error processing file: CevalLog2.mo
-// [flattening/modelica/scodeinst/CevalLog2.mo:9:3-9:29:writable] Error: Argument -1 of log is out of range (x > 0)
+// [flattening/modelica/scodeinst/CevalLog2.mo:8:3-8:29:writable] Error: Argument -1 of log is out of range (x > 0)
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

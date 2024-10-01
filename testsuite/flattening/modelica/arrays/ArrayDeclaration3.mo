@@ -1,7 +1,6 @@
 // name: ArrayDeclaration3
 // keywords: array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests declaring arrays and scalars on the same line
 //
@@ -16,6 +15,7 @@ equation
   c[1] = 4;
   c[2] = 5;
   d = 6;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDeclaration3;
 
 // Result:

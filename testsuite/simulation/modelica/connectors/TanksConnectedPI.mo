@@ -5,7 +5,6 @@
 // <insert description here>
 //
 // Drmodelica: 12.1 Object Oriented Component-based (p. 386)
-// cflags: -d=-newInst
 //
 partial model BaseController
   parameter Real Ts(unit = "s") = 0.1  "Time period between discrete samples";
@@ -88,6 +87,7 @@ model TanksConnectedPI
   connect(tank1.qOut,tank2.qIn);
   connect(tank2.tActuator,piContinuous2.cOut);
   connect(tank2.tSensor,piContinuous2.cIn);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TanksConnectedPI;
 
 // insert expected flat file here. Can be done by issuing the command

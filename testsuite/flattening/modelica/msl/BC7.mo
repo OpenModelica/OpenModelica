@@ -1,7 +1,6 @@
 // name:     BC7 - PI component
 // keywords: PI
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the PI component.
 //
@@ -976,6 +975,7 @@ model BC7
 
 equation
   connect(constant1.outPort,PI1.inPort) annotation(Line(visible=true,points={{-33.25,14.7},{-14.09,15.62}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC7;
 
 // class BC7

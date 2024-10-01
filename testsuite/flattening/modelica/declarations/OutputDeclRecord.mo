@@ -1,7 +1,6 @@
 // name: OutputDeclRecord
 // keywords: output
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the output prefix on a record type
 //
@@ -14,6 +13,7 @@ class OutputDeclRecord
   output OutputRecord orec;
 equation
   orec.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OutputDeclRecord;
 
 // Result:

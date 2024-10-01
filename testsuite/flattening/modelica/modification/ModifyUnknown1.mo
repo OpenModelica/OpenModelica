@@ -1,7 +1,6 @@
 // name:     ModifyUnknown1
 // keywords: modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Try to introduce a new member via modification.
 //
@@ -10,7 +9,8 @@ class A
   Real a;
 end A;
 
-class ModifyUnknown1 = A(b = 5);
+class ModifyUnknown1 = A(b = 5) annotation(__OpenModelica_commandLineOptions="-d=-newInst");
+
 // Result:
 // Error processing file: ModifyUnknown1.mo
 // Error: In modifier (b = 5), class or component b not found in <ModifyUnknown1>.

@@ -1,7 +1,6 @@
 // name: NoScalarize1
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize
 //
 
 model NoScalarize1
@@ -21,6 +20,7 @@ equation
   for i in 1:2 loop
     x[i] = 3;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize");
 end NoScalarize1;
 
 // Result:

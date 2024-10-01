@@ -1,7 +1,6 @@
 // name: ArrayConstructorComplex1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 operator record Complex  "Complex number with overloaded operators"

@@ -1,7 +1,6 @@
 // name:     EquationIf4
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing `if' clauses in equations.
 // The condition may be a non-parameter expresion if all
@@ -20,6 +19,7 @@ equation
   else
     x = 4.0;
   end if;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationIf4;
 
 // Result:

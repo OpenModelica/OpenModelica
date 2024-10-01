@@ -1,7 +1,6 @@
 // name:     TestFill.mo [BUG: https://trac.openmodelica.org/OpenModelica/ticket/2113]
 // keywords: array fill
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test that fill has integer second argument but not necessary a parameter.
 //
@@ -16,6 +15,7 @@ algorithm
   y := fill(1, 5);
   n := n + 2;
   y[1:n] := fill(2, n);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 // Result:

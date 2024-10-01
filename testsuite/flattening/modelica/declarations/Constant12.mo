@@ -1,6 +1,5 @@
 // name: Constant12
 // status: correct
-// cflags: -d=-newInst
 
 class A
   class B
@@ -12,6 +11,7 @@ end A;
 
 class Constant12
   A[2] a(y = {1,2});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant12;
 
 // Result:

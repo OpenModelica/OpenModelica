@@ -1,7 +1,6 @@
 // name: FuncBuiltinZeros
 // keywords: zeros
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin zeros operator.
 //

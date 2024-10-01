@@ -5,7 +5,6 @@
 // Array constructs.
 // Error! linspace not implemented.
 // Drmodelica: 7.7 Built-in Functions (p. 225)
-// cflags: -d=-newInst
 //
 
 class ConstructFunc
@@ -16,6 +15,7 @@ class ConstructFunc
   Real id[3,3]    = identity(3);    // Creates the matrix {{1,0,0}, {0,1,0}, {0, 0, 1}}
   Real di[3,3] = diagonal({1, 2, 3}); // Creates the matrix {{1, 0, 0}, {0, 2, 0}, {0, 0, 3}}
   Real ls[5] = linspace(0.0, 8.0, 5);  // Computes the vector {0.0, 2.0, 4.0, 6.0, 8.0}
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstructFunc;
 
 

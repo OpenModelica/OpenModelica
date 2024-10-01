@@ -1,7 +1,6 @@
 // name:     Connect3
 // keywords: connect
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Only connector variables can be connected.
 
@@ -11,4 +10,5 @@ model Connect3
 equation
   connect(e1,e2);
   connect(f1,f2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect3;

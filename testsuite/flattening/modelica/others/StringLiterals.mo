@@ -1,7 +1,6 @@
 // name: StringLiterals
 // keywords: string
 // status: correct
-// cflags: -d=-newInst
 
 model StringLiterals
   // Skipping \r since it's weird :)
@@ -11,6 +10,7 @@ model StringLiterals
 ";
 equation
   str = "test";
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StringLiterals;
 
 // Result:

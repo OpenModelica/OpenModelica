@@ -1,7 +1,6 @@
 // name:     Lookup2
 // keywords: scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // Note that in order to use Lookup2Package.a
 // Either Lookup2Package must satisfy the requirements of
@@ -18,6 +17,7 @@ end Lookup2Package;
 
 model Lookup2
   extends Lookup2Package.B;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup2;
 
 

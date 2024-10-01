@@ -1,7 +1,6 @@
 // name: FuncBuiltinEnumTypeName
 // keywords: enumeration
 // status: correct
-// cflags: -d=newInst
 //
 // Tests that enumeration type names can be used to convert an Integer to an
 // enumeration value.

@@ -1,7 +1,6 @@
 // name:     InnerOuter2
 // keywords: dynamic scope, lookup
 // status:   correct
-// cflags: -d=-newInst
 //
 //  components with inner prefix references an outer component with
 //  the same name and one variable is generated for all of them.
@@ -42,6 +41,7 @@ class I
   // e.f.g.h.a.TI, e.f.g.h.a.b.c.d.TI, and e.f.TI is the same variable
   // But e.f.TI, e.TI and TI are different variables
   A a; // a.TI, a.b.c.d.TI, and TI is the same variable
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end I;
 
 // Result:

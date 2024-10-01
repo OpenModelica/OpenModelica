@@ -1,7 +1,6 @@
 // name: OperatorOverloadBinaryWithBuiltin
 // keywords: operator overload
 // status: correct
-// cflags: -d=newInst
 //
 // Tests binary overloaded operators with simple builtin types.
 //

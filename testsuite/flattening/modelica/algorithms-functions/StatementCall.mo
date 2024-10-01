@@ -5,7 +5,6 @@
 // Computes cartesian coordinates of a point
 //
 // Drmodelica: 9.2 Multiple Results (p. 302)
-// cflags: -d=-newInst
 //
 function PointOnCircle
   input Real angle "Angle in radians";
@@ -21,6 +20,7 @@ class StatementCall
   Real px, py;
 algorithm
   (px, py) := PointOnCircle(1.2, 2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StatementCall;
 
 // Result:

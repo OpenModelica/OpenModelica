@@ -1,7 +1,6 @@
 // name: FuncBuiltinSuperSample1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model FuncBuiltinSuperSample1

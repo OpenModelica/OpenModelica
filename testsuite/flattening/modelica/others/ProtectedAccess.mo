@@ -1,7 +1,6 @@
 // name: ProtectedAccess
 // keywords: protected, access
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that we give a warning when accessing protected elements of another class
 //
@@ -13,6 +12,7 @@ end TestModel;
 
 model ProtectedAccess
   TestModel tm(x = 3);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ProtectedAccess;
 
 

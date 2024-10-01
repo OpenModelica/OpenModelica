@@ -1,7 +1,6 @@
 // name: EvaluateAllParams
 // keywords:
 // status: correct
-// cflags: -d=newInst,evaluateAllParameters
 //
 
 model EvaluateAllParams
@@ -9,6 +8,7 @@ model EvaluateAllParams
   Real x;
 equation
   x = time * p;
+  annotation(__OpenModelica_commandLineOptions="-d=evaluateAllParameters");
 end EvaluateAllParams;
 
 // Result:

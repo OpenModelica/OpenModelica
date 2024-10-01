@@ -1,7 +1,6 @@
 // name: ConnectStream1
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 //
 
@@ -35,15 +34,15 @@ end ConnectStream1;
 
 // Result:
 // class ConnectStream1
-//   Real port_b.m_flow(min = -100000.0, max = 9.999999999999999e+59);
-//   Real port_b.p(min = 0.0, max = 100000000.0);
-//   Real port_b.h_outflow(min = -10000000000.0, max = 10000000000.0);
-//   protected Real preSou.port_b.m_flow(min = -100000.0, max = 9.999999999999999e+59);
-//   protected Real preSou.port_b.p(min = 0.0, max = 100000000.0);
-//   protected Real preSou.port_b.h_outflow(min = -10000000000.0, max = 10000000000.0);
-//   protected Real senRelPre.port_a.m_flow(min = 0.0, max = 100000.0);
-//   protected Real senRelPre.port_a.p(min = 0.0, max = 100000000.0);
-//   protected Real senRelPre.port_a.h_outflow(min = -10000000000.0, max = 10000000000.0);
+//   Real port_b.m_flow(min = -1e5, max = 1e60);
+//   Real port_b.p(min = 0.0, max = 1e8);
+//   Real port_b.h_outflow(min = -1e10, max = 1e10);
+//   protected Real preSou.port_b.m_flow(min = -1e5, max = 1e60);
+//   protected Real preSou.port_b.p(min = 0.0, max = 1e8);
+//   protected Real preSou.port_b.h_outflow(min = -1e10, max = 1e10);
+//   protected Real senRelPre.port_a.m_flow(min = 0.0, max = 1e5);
+//   protected Real senRelPre.port_a.p(min = 0.0, max = 1e8);
+//   protected Real senRelPre.port_a.h_outflow(min = -1e10, max = 1e10);
 // equation
 //   senRelPre.port_a.p = preSou.port_b.p;
 //   senRelPre.port_a.p = port_b.p;

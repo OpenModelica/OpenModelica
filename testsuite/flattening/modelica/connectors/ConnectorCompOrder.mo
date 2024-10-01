@@ -1,7 +1,6 @@
 // name:     ConnectorCompOrder
 // keywords: connector, binding, modification, bug2159
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that order of the components in connectors doesn't matter.
 //
@@ -23,6 +22,7 @@ model ConnectorCompOrder
   C2 c2;
 equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectorCompOrder;
 
 // Result:

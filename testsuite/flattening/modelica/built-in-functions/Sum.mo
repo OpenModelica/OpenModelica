@@ -1,7 +1,6 @@
 // name: Sum
 // keywords: sum
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in sum function.
 //
@@ -15,6 +14,7 @@ equation
   a = sum(x);
   b = sum(y);
   c = sum(z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sum;
 
 // Result:

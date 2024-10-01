@@ -1,7 +1,6 @@
 // name: RecordBinding12
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record BaseR

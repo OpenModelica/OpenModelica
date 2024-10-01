@@ -1,7 +1,6 @@
 // name:     IfExpression1
 // keywords: if expression
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that if-expressions with arrays of different size is handled correctly
 // in functions.
@@ -14,6 +13,7 @@ end f;
 
 model M
   Real x[:] = f(2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:

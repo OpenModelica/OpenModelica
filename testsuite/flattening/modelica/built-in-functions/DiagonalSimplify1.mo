@@ -1,7 +1,6 @@
 // name: DiagonalSimplify1
 // keywords: diagonal, simplify
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simplification of built in operator diagonal.
 //
@@ -10,6 +9,7 @@ model DiagonalSimplify1
   parameter Integer N = 2;
   parameter Real p[N] = ones(N);
   parameter Real m[N] = (diagonal(p) * fill(2.0,N));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DiagonalSimplify1;
 
 // Result:

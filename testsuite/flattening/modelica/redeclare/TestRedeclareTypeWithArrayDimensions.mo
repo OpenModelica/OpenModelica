@@ -1,7 +1,6 @@
 // name:     TestRedeclareTypeWithArrayDimensions.mo [BUG: #2418]
 // keywords: redeclare,type
 // status:   correct
-// cflags: -d=-newInst
 //
 // Redeclaration with array dimensions
 //
@@ -25,6 +24,7 @@ end RedeclareTypeWithArrayDimensions;
 
 model TestRedeclareTypeWithArrayDimensions
   extends RedeclareTypeWithArrayDimensions.bar;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TestRedeclareTypeWithArrayDimensions;
 
 // Result:

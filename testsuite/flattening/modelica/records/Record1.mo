@@ -1,7 +1,6 @@
 // name:     Record1
 // keywords: type
 // status:   correct
-// cflags: -d=-newInst
 //
 
 record A
@@ -10,6 +9,7 @@ end A;
 
 model Record1
   A a(x=18.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Record1;
 
 // Result:

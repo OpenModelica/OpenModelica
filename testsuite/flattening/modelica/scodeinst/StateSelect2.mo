@@ -1,7 +1,6 @@
 // name: StateSelect2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model StateSelect2

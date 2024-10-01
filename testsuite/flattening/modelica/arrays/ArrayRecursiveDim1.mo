@@ -1,7 +1,6 @@
 // name:     ArrayRecursiveDim
 // keywords: array, recursive, dimension, bug #2057
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that the compiler can handle modificaations that reference the
 // modified arrays dimensions.
@@ -17,6 +16,7 @@ equation
       der(Xtilde[i,j]) = 1;
     end for;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayRecursiveDim;
 
 // Result:

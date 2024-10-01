@@ -1,7 +1,7 @@
 // name: EncapsulatingInst1
 // keywords:
 // status: correct
-// cflags: -d=newInst, -i=EncapsulatingInst1.M
+// cflags: -i=EncapsulatingInst1.M
 //
 
 model EncapsulatingInst1
@@ -10,6 +10,7 @@ model EncapsulatingInst1
   end M;
 
   constant Integer i;
+  annotation(__OpenModelica_commandLineOptions="-i=EncapsulatingInst1.M");
 end EncapsulatingInst1;
 
 // Result:

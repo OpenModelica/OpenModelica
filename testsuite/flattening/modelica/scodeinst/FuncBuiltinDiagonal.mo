@@ -1,7 +1,6 @@
 // name: FuncBuiltinDiagonal
 // keywords: diagonal
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin diagonal operator.
 //

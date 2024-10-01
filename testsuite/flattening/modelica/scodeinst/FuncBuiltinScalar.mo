@@ -1,7 +1,6 @@
 // name: FuncBuiltinScalar
 // keywords: scalar
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin scalar operator.
 //

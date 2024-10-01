@@ -1,6 +1,5 @@
 // name: FunctionDerivativeInvalidOrder1
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -25,7 +24,7 @@ end FunctionDerivativeInvalidOrder1;
 
 // Result:
 // Error processing file: FunctionDerivativeInvalidOrder1.mo
-// [flattening/modelica/scodeinst/FunctionDerivativeInvalidOrder1.mo:7:1-13:7:writable] Error: Type mismatch in binding order = z, expected subtype of Integer, got type Real.
+// [flattening/modelica/scodeinst/FunctionDerivativeInvalidOrder1.mo:6:1-12:7:writable] Error: Type mismatch in binding order = z, expected subtype of Integer, got type Real.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

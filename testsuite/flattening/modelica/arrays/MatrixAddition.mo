@@ -1,7 +1,6 @@
 // name:     MatrixAddition
 // keywords: matrix addition simplify
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests simplification of matrix addition.
 //
@@ -18,6 +17,7 @@ equation
  M = A+(B+C*C)*D;
  N = C+B;
  K = C-B;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixAddition;
 
 

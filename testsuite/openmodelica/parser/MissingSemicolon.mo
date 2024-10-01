@@ -1,8 +1,8 @@
 // name: MissingSemicolon
 // status: incorrect
-// cflags: -d=-newInst
 //
 class abc
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end abc
 
 // Result:

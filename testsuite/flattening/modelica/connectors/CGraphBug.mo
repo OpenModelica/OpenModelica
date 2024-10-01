@@ -1,7 +1,6 @@
 // name:     CGraphBug
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 
 model Test
 
@@ -26,6 +25,7 @@ model Test
   equation
     connect(subModel1.frame_a, mass.frame_a);
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // insert expected flat file here. Can be done by issuing the command

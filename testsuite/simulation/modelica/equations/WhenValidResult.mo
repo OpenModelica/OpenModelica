@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
-// cflags: -d=-newInst
 //
 
 model WhenValidResult
@@ -14,6 +13,7 @@ equation
   when sample(0, 2) then
     y = 7; // - 2*x;              // Correct, y is a result variable from the when
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenValidResult;
 
 // class WhenValidResult

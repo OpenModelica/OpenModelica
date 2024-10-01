@@ -1,7 +1,6 @@
 // name: RecordConstructors
 // keywords: record
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests record constructor functions
 //
@@ -14,6 +13,7 @@ model RecordConstructors
   TestRecord tr;
 equation
   tr = TestRecord(1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstructors;
 
 // Result:

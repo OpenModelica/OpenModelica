@@ -1,7 +1,6 @@
 // name: TypeExtends2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 type TypeInteger

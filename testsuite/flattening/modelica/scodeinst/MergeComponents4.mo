@@ -2,7 +2,6 @@
 // keywords:
 // status: correct
 // teardown_command: rm MergeComponents4_merged_table.json
-// cflags: -d=newInst,mergeComponents,-nfScalarize
 //
 
 model A
@@ -19,6 +18,7 @@ equation
   a1.x = a2.y + a3.z;
 algorithm
   a2.z := a3.x + a1.y;
+  annotation(__OpenModelica_commandLineOptions="-d=mergeComponents,-nfScalarize");
 end MergeComponents4;
 
 // Result:

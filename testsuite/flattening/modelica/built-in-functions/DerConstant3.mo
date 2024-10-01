@@ -1,7 +1,6 @@
 // name:     DerConstant3
 // keywords: derivative
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Operator der cannot be applied to Integer expressions which are not constant or parametric
 //
@@ -9,10 +8,11 @@
 class A
   discrete Integer pa = 1;
   Real a = der(pa);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 // Result:
 // Error processing file: DerConstant3.mo
-// [flattening/modelica/built-in-functions/DerConstant3.mo:11:3-11:19:writable] Error: Argument 'pa' to der has illegal type Integer, must be a subtype of Real.
+// [flattening/modelica/built-in-functions/DerConstant3.mo:10:3-10:19:writable] Error: Argument 'pa' to der has illegal type Integer, must be a subtype of Real.
 // Error: Error occurred while flattening model A
 //
 // # Error encountered! Exiting...

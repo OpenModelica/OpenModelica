@@ -1,7 +1,6 @@
 // name: PureImpure2
 // keywords:
 // status: correct
-// cflags: -d=newInst --std=3.2
 //
 // Checks that pure/impure are allowed in Modelica 3.2 when not using --strict.
 //
@@ -13,6 +12,7 @@ impure function f2
 end f2;
 
 model PureImpure2
+  annotation(__OpenModelica_commandLineOptions="-d=newInst --std=3.2");
 end PureImpure2;
 
 // Result:

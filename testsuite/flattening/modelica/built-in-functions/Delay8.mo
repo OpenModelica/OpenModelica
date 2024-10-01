@@ -1,6 +1,5 @@
 // name: Delay8
 // status: correct
-// cflags: -d=-newInst
 
 block Delay8 "Delay block with variable DelayTime"
   parameter Integer n=3;
@@ -10,6 +9,7 @@ block Delay8 "Delay block with variable DelayTime"
   input Real delayTime;
 equation
   y[:] = delay(u[:], delayTime, delayMax);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Delay8;
 
 // Result:

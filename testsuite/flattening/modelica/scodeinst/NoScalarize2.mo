@@ -1,7 +1,6 @@
 // name: NoScalarize2
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize --noSimplify
 //
 
 model NoScalarize2
@@ -15,6 +14,7 @@ model NoScalarize2
 
   M m[2](each p = 2);
   Q q[3](m(each p = 2));
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize --noSimplify");
 end NoScalarize2;
 
 // Result:

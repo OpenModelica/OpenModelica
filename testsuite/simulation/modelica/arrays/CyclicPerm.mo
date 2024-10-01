@@ -3,7 +3,6 @@
 // status:   incorrect
 //
 // Drmodelica: 7.5 Array Concatenation and Slice Operations (p. 219)
-// cflags: -d=-newInst
 //
 class CyclicPerm
   Real[1, 3] WO = [1, 2, 3];          // Row matrix
@@ -31,5 +30,6 @@ algorithm
 
   X[{1},:] := [XO[{1}, 2:3], XO[{1}, {1}]];  // OK, X becomes [2,3,1; 5,6,4]
   X[1, :] := [XO[1, 2:3], XO[1, 1]];      // ERROR, incompatible dimensions
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CyclicPerm;
 

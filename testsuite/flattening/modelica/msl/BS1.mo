@@ -1,7 +1,6 @@
 // name:     BS1 - Clock component
 // keywords: Clock
 // status:   correct
-// cflags: +std=1.x -d=-newInst
 //
 // Testing instantiation of the Clock component.
 //
@@ -939,6 +938,7 @@ model BS1
 
 equation
   connect(clock1.outPort,der1.inPort) annotation(Line(visible=true,points={{-34.47,24.13},{-13.18,23.22}}));
+  annotation(__OpenModelica_commandLineOptions="+std=1.x -d=-newInst");
 end BS1;
 
 // class BS1

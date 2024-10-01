@@ -1,7 +1,6 @@
 // name: IfConnect3
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -21,7 +20,7 @@ end IfConnect3;
 
 // Result:
 // Error processing file: IfConnect3.mo
-// [flattening/modelica/scodeinst/IfConnect3.mo:18:5-18:20:writable] Error: connect may not be used inside if-equations with non-parametric conditions (found connect(c1, c2)).
+// [flattening/modelica/scodeinst/IfConnect3.mo:17:5-17:20:writable] Error: connect may not be used inside if-equations with non-parametric conditions (found connect(c1, c2)).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

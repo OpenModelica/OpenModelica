@@ -1,7 +1,6 @@
 // name:     MultipleResultsFunction
 // keywords: multiple results
 // status:   correct
-// cflags: -d=-newInst
 //
 // Multipe results from a function
 //
@@ -23,6 +22,7 @@ class MRFcall
   Real a, b, c;
 equation
   (a, b, c) = MultipleResultsFunction(2.0, 1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MRFcall;
 
 // Result:

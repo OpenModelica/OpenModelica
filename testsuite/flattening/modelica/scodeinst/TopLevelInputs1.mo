@@ -1,7 +1,6 @@
 // name: TopLevelInputs1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

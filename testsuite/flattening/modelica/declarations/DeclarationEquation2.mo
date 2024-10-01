@@ -1,13 +1,13 @@
 // name: DeclarationEquation2
 // keywords: equation, array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests declaration equations with vectors
 //
 
 model DeclarationEquation2
   Real x[2] = {1,2};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationEquation2;
 
 // Result:

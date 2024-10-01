@@ -1,7 +1,6 @@
 // name: DimSize1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model DimSize1

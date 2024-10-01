@@ -1,7 +1,6 @@
 // name:     ArrayMatrixMatrixMul6
 // keywords: expression simplification array multiplication
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks simplification of matrix-matrix multiplication.
 //
@@ -10,6 +9,7 @@ model ArrayMatrixMatrixMul6
   Real x[4, 0], y[0, 4], z[4, 4];
 equation
   z = x * y;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayMatrixMatrixMul6;
 
 // Result:

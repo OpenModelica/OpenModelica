@@ -1,7 +1,6 @@
 // name:     Modification2
 // keywords: modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // Modifying a parameter in a local class is allowed.
 
@@ -15,6 +14,7 @@ end B;
 
 class Modification2
   B b(A(p=2.0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: PartialApplication3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 partial function pf

@@ -1,7 +1,6 @@
 // name: ExternalFunction6
 // status: correct
 // teardown_command: rm -f ExternalFunction6_*
-// cflags: -d=gen -d=-newInst
 
 class ExternalFunction6
   function fn
@@ -11,6 +10,7 @@ class ExternalFunction6
   end fn;
 
   constant Integer i = fn(2);
+  annotation(__OpenModelica_commandLineOptions="-d=gen -d=-newInst");
 end ExternalFunction6;
 
 // Result:

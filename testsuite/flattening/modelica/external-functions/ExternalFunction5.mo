@@ -1,7 +1,6 @@
 // name: ExternalFunction5
 // status: correct
 // teardown_command: rm -f myFloor.* myFloor_* ExternalFunction5_*
-// cflags: -d=-newInst
 
 function trunc
   input Real r;
@@ -12,6 +11,7 @@ end trunc;
 class ExternalFunction5
   Real r1 = trunc(1.5);
   Real r2 = trunc(-1.5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExternalFunction5;
 
 // Result:

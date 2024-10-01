@@ -1,7 +1,6 @@
 // name: MathematicalFunctions
 // keywords: builtin, function, math
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing built-in mathematical functions
 //
@@ -20,6 +19,7 @@ model MathematicalFunctions
   Real r11 = exp(5);
   Real r12 = log(5);
   Real r13 = log10(5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MathematicalFunctions;
 
 // Results:

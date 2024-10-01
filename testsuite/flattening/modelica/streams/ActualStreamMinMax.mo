@@ -1,7 +1,6 @@
 // name: ActualStreamMinMax
 // keywords: stream actualStream connector
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that actualStream is simplified when the flow direction can be
 // determined from the min/max attributes.
@@ -31,6 +30,7 @@ equation
   actual_stream_s2 = actualStream(a.s2.s);
   actual_stream_s3 = actualStream(a.s3.s);
   actual_stream_s4 = actualStream(a.s4.s);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ActualStreamMinMax;
 
 // Result:

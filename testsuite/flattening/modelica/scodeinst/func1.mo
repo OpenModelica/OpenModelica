@@ -1,7 +1,6 @@
 // name: func1.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 

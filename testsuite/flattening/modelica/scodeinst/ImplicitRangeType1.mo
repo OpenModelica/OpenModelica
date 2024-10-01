@@ -1,7 +1,6 @@
 // name: ImplicitRangeType1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

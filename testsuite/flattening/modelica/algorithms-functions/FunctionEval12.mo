@@ -1,7 +1,6 @@
 // name:     FunctionEval12
 // keywords: function, ceval, bug1522
 // status:   correct
-// cflags: +d=nogen -d=-newInst
 //
 // Checks that size of an input parameter in a function is considered
 // non-constant, i.e. it should not be constant evaluated since the arrays size
@@ -31,6 +30,7 @@ model FunctionEval12
 equation
   res1 = myFun( {{1,2,3}});
   res2 = myFun( {{1,2,3,4,5}});
+  annotation(__OpenModelica_commandLineOptions="+d=nogen -d=-newInst");
 end FunctionEval12;
 
 // Result:

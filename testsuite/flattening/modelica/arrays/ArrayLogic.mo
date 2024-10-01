@@ -1,7 +1,6 @@
 // name: ArrayLogic
 // keywords: array, operators, logic
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests vectorization of logical operators and, or, and not.
 //
@@ -15,6 +14,7 @@ model ArrayLogic
   Boolean nb2[:,:] = not fill(b, 2);
   Boolean ab2[:,:] = fill(b, 2) and fill(b2, 2);
   Boolean ob2[:,:] = fill(b, 2) or fill(b2, 2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayLogic;
 
 // Result:

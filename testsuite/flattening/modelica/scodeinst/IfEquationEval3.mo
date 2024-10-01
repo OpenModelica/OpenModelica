@@ -1,7 +1,6 @@
 // name: IfEquationEval3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model IfEquationEval3

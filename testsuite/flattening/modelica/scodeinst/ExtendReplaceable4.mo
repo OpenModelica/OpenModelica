@@ -1,7 +1,6 @@
 // name: ExtendReplaceable4
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ExtendReplaceable4

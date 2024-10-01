@@ -1,7 +1,6 @@
 // name: FuncWildcard
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that _ can be used as a function name, since the Modelica grammar
 // actually allows that.

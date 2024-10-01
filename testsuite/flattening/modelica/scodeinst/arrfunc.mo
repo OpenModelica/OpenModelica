@@ -1,7 +1,6 @@
 // name: arrfunc.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 //
 
@@ -25,7 +24,7 @@ end B;
 
 // Result:
 // Error processing file: arrfunc.mo
-// [flattening/modelica/scodeinst/arrfunc.mo:22:3-22:22:writable] Error: Function call a[1].f contains subscripts.
+// [flattening/modelica/scodeinst/arrfunc.mo:21:3-21:22:writable] Error: Function call a[1].f contains subscripts.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

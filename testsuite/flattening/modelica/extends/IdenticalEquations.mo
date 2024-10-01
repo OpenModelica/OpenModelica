@@ -1,7 +1,6 @@
 // name:     IdenticalEquations
 // keywords: identical equations inheritance
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that identical equations from inheritance are not merged.
 //
@@ -18,6 +17,7 @@ class Color2
   extends Color;
 equation
   red + blue + green = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Color2;
 
 // Result:

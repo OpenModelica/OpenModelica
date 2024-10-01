@@ -1,7 +1,6 @@
 // name:     Faculty5
 // keywords: recursive function, Real->Int conversion
 // status:   correct
-// cflags: -d=-newInst
 //
 // Recursive function that results in very large integers.
 //
@@ -154,6 +153,7 @@ package M1_solutions "Solutions to exercises for training M1"
 end M1_solutions;
 model M1_solutions_E03_Faculty_FacultyCall
   extends M1_solutions.E03.Faculty.FacultyCall;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M1_solutions_E03_Faculty_FacultyCall;
 // Result:
 // function M1_solutions.E03.Faculty.faculty

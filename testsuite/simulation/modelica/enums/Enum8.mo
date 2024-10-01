@@ -1,7 +1,6 @@
 // name:     Enumeration8
 // keywords: enumeration enum string String
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -15,6 +14,7 @@ model Enumeration8
 equation
   der(x) = x;
   ss = String(Enum.test1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration8;
 
 

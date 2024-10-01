@@ -1,7 +1,6 @@
 // name: CevalFloor1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

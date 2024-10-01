@@ -1,7 +1,6 @@
 // name: RecordConstructor2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that final components in a record becomes protected in the default
 // constructor.

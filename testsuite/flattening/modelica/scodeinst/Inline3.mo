@@ -1,7 +1,6 @@
 // name: Inline3
 // keywords:
 // status: correct
-// cflags: -d=newInst --frontendInline
 //
 
 function f
@@ -15,6 +14,7 @@ end f;
 
 model Inline3
   Real x = f({1, 2, 3}, {time, time, time});
+  annotation(__OpenModelica_commandLineOptions="--frontendInline");
 end Inline3;
 
 // Result:

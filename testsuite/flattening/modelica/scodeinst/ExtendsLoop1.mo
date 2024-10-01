@@ -1,13 +1,14 @@
 // name: ExtendsLoop1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst -i=ExtendsLoop1.M
+// cflags: -i=ExtendsLoop1.M
 //
 
 model ExtendsLoop1
   model M
     extends ExtendsLoop1;
   end M;
+  annotation(__OpenModelica_commandLineOptions="-i=ExtendsLoop1.M");
 end ExtendsLoop1;
 
 // Result:

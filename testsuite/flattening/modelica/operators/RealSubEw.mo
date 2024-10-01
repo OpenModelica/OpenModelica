@@ -1,7 +1,6 @@
 // name: RealSubEw
 // keywords: real, subtraction, element-wise
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests element-wise scalar-array subtraction.
 //
@@ -16,6 +15,7 @@ end f;
 
 model RealAddEw
   Real x[:] = f(3, {4, 5, 6});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RealAddEw;
 
 // Result:

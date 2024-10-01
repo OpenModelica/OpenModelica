@@ -1,6 +1,5 @@
 // name: End
 // status: correct
-// cflags: -d=-newInst
 
 model End
   Integer p2 = 1;
@@ -9,6 +8,7 @@ model End
 algorithm
   vals[end,:] := ones(p);
   vals[end,end-end+1:2:end] := {0,0};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end End;
 
 // Result:

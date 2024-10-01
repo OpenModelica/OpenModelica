@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Repetitive Equation Structures with for-Equations (p. 241)
-// cflags: -d=-newInst
 //
 
 class FiveForEquations
@@ -12,6 +11,7 @@ equation
   for i in 1:5 loop
     x[i] = i + 1;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FiveForEquations;
 
 // Result:

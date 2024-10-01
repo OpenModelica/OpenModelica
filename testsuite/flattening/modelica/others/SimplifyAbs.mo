@@ -1,7 +1,6 @@
 // name:     SimplifyAbs
 // keywords: simplify #2517
 // status:   correct
-// cflags: -d=-newInst
 //
 
 
@@ -10,6 +9,7 @@ model SimplifyAbs
 equation
   a = abs(a-b)/abs(b);
   a = abs(a-b)*abs(b);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimplifyAbs;
 
 // Result:

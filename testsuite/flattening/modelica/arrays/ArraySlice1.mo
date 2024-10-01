@@ -1,7 +1,6 @@
 // name:     ArraySlice1
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Simple array slicing.
 //
@@ -12,6 +11,7 @@ equation
   a[{1,3}] = a[{2,4}];
   a[1]=time;
   a[4]=1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice1;
 
 // Result:

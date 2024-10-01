@@ -1,7 +1,6 @@
 // name: eq4.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 package P

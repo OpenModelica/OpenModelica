@@ -1,7 +1,6 @@
 // name:     ReplaceableBaseClass
 // keywords: redeclare, replaceable, extends
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Checks that the compiler gives an error if the base class in an extends
 // clause is replaceable.
@@ -14,6 +13,7 @@ end M;
 
 model ReplaceableBaseClass
   M m(redeclare type T = Integer);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ReplaceableBaseClass;
 
 // Result:

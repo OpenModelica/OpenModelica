@@ -1,7 +1,6 @@
 // name:     FlexibleShaft
 // keywords: Rotational Mechanics, Arrays of components.
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is an application example for a flexible rotational axis.
 //
@@ -2307,6 +2306,7 @@ model ShaftTest
 equation
   connect(shaft.flange_a,src.flange_b);
   connect(c.outPort,src.inPort);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ShaftTest;
 // Result:
 // class ShaftTest

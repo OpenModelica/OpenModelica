@@ -1,7 +1,6 @@
 // name:     RecordEnumBinding
 // keywords: record, enumeration, #2616
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that it's possible to have enumeration variables with bindings in
 // records.
@@ -20,6 +19,7 @@ end Controller;
 model RecordEnumBinding
   parameter StepData[:] stepdef = {StepData()};
   Controller controller(stepdef = stepdef);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordEnumBinding;
 
 // Result:

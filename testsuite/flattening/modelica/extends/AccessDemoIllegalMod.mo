@@ -4,7 +4,6 @@
 //
 // Test the public and protected access keywords
 // Drmodelica: 3.4 Access Control (p. 88)
-// cflags: -d=-newInst
 //
 
 class AccessDemo "Illustration of access prefixes"
@@ -25,6 +24,7 @@ end AccessDemo;
 class A
   AccessDemo ad(a = 2, y = 7, w = 7);
   // Illegal modifier of protected w, since AccessDemo is not inherited
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 

@@ -1,5 +1,4 @@
 // name: ExternalFunctionArray
-// cflags: -d=noevalfunc,gen -d=-newInst
 // status: correct
 // teardown_command: rm -f ExternalFunctionArray_*
 //
@@ -25,6 +24,7 @@ function f
 end f;
 
   Real res[2] = f(1.5);
+  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen -d=-newInst");
 end ExternalFunctionArray;
 // Result:
 // function ExternalFunctionArray.f

@@ -1,7 +1,6 @@
 // name: FuncBuiltinTranspose
 // keywords: transpose
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin transpose operator.
 //

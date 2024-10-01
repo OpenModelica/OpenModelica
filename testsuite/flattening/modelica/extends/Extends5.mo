@@ -1,7 +1,6 @@
 // name:     Extends5
 // keywords: extends, function
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing of bug that causes infinite loop if you call a function in an extended class.
 
@@ -17,6 +16,7 @@ end P;
 class Extends5
   extends P;
   constant Integer i = f(1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends5;
 
 // Result:

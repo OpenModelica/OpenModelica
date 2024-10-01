@@ -1,7 +1,6 @@
 // name:     FunctionEval4
 // keywords: function,constant propagation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constant evaluation of function calls. Result of a function call with
 // constant arguments is inserted into flat modelica.
@@ -19,6 +18,7 @@ model FunctionEval4
 equation
   y = f(x);
   x = 5;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEval4;
 
 // function f

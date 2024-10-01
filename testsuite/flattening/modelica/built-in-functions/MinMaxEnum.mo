@@ -1,7 +1,6 @@
 // name:     MinMaxEnum
 // keywords: builtin functions min max
 // status:   correct
-// cflags: -d=-newInst
 //
 // Usage of the min and max functions with enumerations.
 //
@@ -18,6 +17,7 @@ model MinMaxEnum
   constant E e6 = max(e for e in earr);
   constant E e7 = min(e for e in {E.c, E.b, E.d});
   constant E e8 = max(e for e in {E.a, E.c, E.b});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MinMaxEnum;
 
 // Result:

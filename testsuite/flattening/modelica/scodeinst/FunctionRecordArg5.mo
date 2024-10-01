@@ -1,7 +1,6 @@
 // name: FunctionRecordArg5
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 model FunctionRecordArg5

@@ -1,7 +1,6 @@
 // name:     Range2
 // keywords: array bug1825
 // status:   correct
-// cflags: -d=-newInst
 //
 // Some tests of range expressions with tricky limits due to floating point
 // rounding errors.
@@ -13,6 +12,7 @@ class Range2
   Real r3[5] = 0.0001 : 0.0001 : 0.0005;
   Real r4[5] = -0.0002 : 0.0001 : 0.0002;
   Real r5[5] = 0.0005 : -0.0001 : 0.0001;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Range2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: InStreamReduction1
 // keywords: stream actualStream connector
 // status: correct
-// cflags: -d=newInst
 //
 
 connector C

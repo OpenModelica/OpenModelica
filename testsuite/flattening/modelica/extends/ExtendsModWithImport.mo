@@ -1,7 +1,6 @@
 // name:     ExtendsModWithImport
 // keywords: extends import modification bug1255
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests extends where a modifier uses an import alias.
 //
@@ -26,6 +25,7 @@ end Model2;
 
 model ExtendsModWithImport
   extends Model2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExtendsModWithImport;
 
 // Result:

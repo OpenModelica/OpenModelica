@@ -1,7 +1,6 @@
 // name: lookup4.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 
 model A
@@ -25,7 +24,7 @@ end M;
 
 // Result:
 // Error processing file: lookup4.mo
-// [flattening/modelica/scodeinst/lookup4.mo:23:3-23:21:writable] Error: Found component 'd' in composite name 'a.b.C.d.x', expected class.
+// [flattening/modelica/scodeinst/lookup4.mo:22:3-22:21:writable] Error: Found component 'd' in composite name 'a.b.C.d.x', expected class.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

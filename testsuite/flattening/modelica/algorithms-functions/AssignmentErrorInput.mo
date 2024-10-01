@@ -1,6 +1,5 @@
 // name: AssignmentErrorInput
 // status: incorrect
-// cflags: -d=-newInst
 
 function Func
   input Real x;
@@ -11,11 +10,12 @@ end Func;
 model AssignmentErrorInput
 equation
   Func(2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentErrorInput;
 
 // Result:
 // Error processing file: AssignmentErrorInput.mo
-// [flattening/modelica/algorithms-functions/AssignmentErrorInput.mo:8:3-8:11:writable] Error: Trying to assign to input component x.
+// [flattening/modelica/algorithms-functions/AssignmentErrorInput.mo:7:3-7:11:writable] Error: Trying to assign to input component x.
 // Error: Error occurred while flattening model AssignmentErrorInput
 //
 // # Error encountered! Exiting...

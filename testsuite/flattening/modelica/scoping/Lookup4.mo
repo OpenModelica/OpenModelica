@@ -1,7 +1,6 @@
 // name:     Lookup4
 // keywords: scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constants can be referred to using names of previously defined
 // classes.
@@ -14,6 +13,7 @@ end Container;
 
 class Lookup4
   Real b = Container.a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup4;
 
 

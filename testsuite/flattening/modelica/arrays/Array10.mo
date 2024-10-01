@@ -1,7 +1,6 @@
 // name:     Array10
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // An array of mixed integer and reals is automatically cast to an
 // array of Reals. Fixes bug #37
@@ -10,6 +9,7 @@
 model Array10
   Real x[5] = {1.,2,3.0,4,5.0};
   Real y[:,:] = {{1,2.},{3.,4}};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array10;
 
 

@@ -1,7 +1,6 @@
 // name: Condition9
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 //
 

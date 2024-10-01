@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Step (p. 244)
-// cflags: -d=-newInst
 //
 
 
@@ -53,6 +52,7 @@ equation
     outPort.signal[i] = p_offset[i] +
               (if time < p_startTime[i] then 0 else p_height[i]);
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Step;                        // From Modelica.Blocks.Sources
 
 

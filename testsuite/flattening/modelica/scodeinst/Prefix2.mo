@@ -1,7 +1,6 @@
 // name: Prefix2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

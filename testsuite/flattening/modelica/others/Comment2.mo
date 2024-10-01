@@ -1,7 +1,6 @@
 // name: Comment2
 // keywords: comment
 // status: correct
-// cflags: -d=-newInst
 //
 // This file tests /* */-style comments
 //
@@ -25,6 +24,7 @@ model Comment2 /* Another Comment */
      Again */
 equation /* Comment */
   x = 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Comment2; /* Comment
 */
 /* Comment */

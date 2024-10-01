@@ -1,7 +1,6 @@
 // name:     ArrayReduce
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 
 
@@ -12,6 +11,7 @@ equation
   maximum = max([1, 2, 3; 4, 5, 6]);      // Gives the value 6
   summ    = sum({{1, 2, 3}, {4, 5, 6}});  // Gives the value 21
   prod    = product({3.14, 2, 2});        // Gives the value 12.56
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayReduce;
 
 // Result:

@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 2.2  Declaring Instances of Classes (p. 26)
-// cflags: -d=-newInst
 //
 
 class Point                "Point in a three-dimensional space"
@@ -24,6 +23,7 @@ class MyPointsInst1
   Real x=pts.point1.x;
   Real y=pts.point1.y;
   Real z=pts.point1.z;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MyPointsInst1;
 
 

@@ -1,7 +1,6 @@
 // name: Inline2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 operator record Complex

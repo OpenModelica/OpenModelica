@@ -1,7 +1,6 @@
 // name:     ModifierSubModMerging1
 // keywords: modification #2789
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that submodifiers are merged correctly.
 //
@@ -16,6 +15,7 @@ end B;
 
 model ModifierSubModMerging1
   B b(x(start = 0), x(nominal = 0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifierSubModMerging1;
 
 // Result:

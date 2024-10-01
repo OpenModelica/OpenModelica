@@ -1,7 +1,6 @@
 // name:     Matrix1
 // keywords: array,matrices
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is a simple test of basic matrix handling.
 //
@@ -12,6 +11,7 @@ model test
   parameter Real Em=1;
   parameter Real A=0.1;
   parameter Real L=4;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 // Result:
 // class test

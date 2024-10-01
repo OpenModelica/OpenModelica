@@ -1,7 +1,6 @@
 // name:     ConnectArrayCond2
 // keywords: connect conditional #3473
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests connecting deleted conditional array components.
 //
@@ -25,6 +24,7 @@ model ConnectArrayCond2
 equation
   connect(src.x, foo[1].x);
   connect(src1.x, foo[2].x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectArrayCond2;
 
 // Result:

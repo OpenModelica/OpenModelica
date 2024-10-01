@@ -1,6 +1,5 @@
 // name: FunctionDerivativeMissingName1
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -27,6 +26,6 @@ end FunctionDerivativeMissingName1;
 // class FunctionDerivativeMissingName1
 //   Real x = f1(time, time);
 // end FunctionDerivativeMissingName1;
-// [flattening/modelica/scodeinst/FunctionDerivativeMissingName1.mo:12:14-12:35:writable] Warning: Derivative annotation for function 'f1' does not specify a derivative function.
+// [flattening/modelica/scodeinst/FunctionDerivativeMissingName1.mo:11:14-11:35:writable] Warning: Derivative annotation for function 'f1' does not specify a derivative function.
 //
 // endResult

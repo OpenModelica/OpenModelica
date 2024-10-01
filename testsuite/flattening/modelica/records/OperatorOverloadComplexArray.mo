@@ -1,7 +1,6 @@
 // name: OperatorOverloadComplexArray.mo
 // keywords: operator overload array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests operator overloading on arrays of Complex numbers, This 'Complex' is a slightly modified version of the MSL to test more stuff.
 // and also (NOT RELATED to overloading) encapsulated was creating lookup problem in ##Complex.'*'.scalarProduct##
@@ -211,6 +210,7 @@ equation
    // Mix
    // === ((c6 ./ c5 ) * c4) .+ (c3 .* 1) .- (c2 .* c1)
    c1 = c1 ./ c2 .* c1 .+ c2 .* 1 .- c2 .* c1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // Result:

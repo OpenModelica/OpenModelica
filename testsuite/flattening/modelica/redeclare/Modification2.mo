@@ -1,7 +1,6 @@
 // name:     Modification2
 // keywords: redeclare, modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that modifiers are propagated and merged correctly when redeclaring
 // classes.
@@ -26,6 +25,7 @@ end P3;
 model Modification2
   P2.M m;
   P3.M m2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: ForStatement3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

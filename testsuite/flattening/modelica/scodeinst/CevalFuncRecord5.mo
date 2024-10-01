@@ -1,7 +1,6 @@
 // name: CevalFuncRecord5
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

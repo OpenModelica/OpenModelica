@@ -1,7 +1,6 @@
 // name:     BM8 -  Cos component
 // keywords: Cos
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Cos component.
 //
@@ -1066,6 +1065,7 @@ model BM8
 
 equation
   connect(constant1.outPort,cos1.inPort) annotation(Line(visible=true,points={{-25.96,23.22},{-6.8,28.39}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM8;
 // function Modelica.Math.cos
 // input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");

@@ -1,7 +1,6 @@
 // name:     Type9
 // keywords: types
 // status:   correct
-// cflags: -d=-newInst
 //
 // This checks that attributes are propagated from types to instances.
 //
@@ -22,6 +21,7 @@ class A
   T3 b3;
   T4 b4;
   T5 b5;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 // Result:
 // class A

@@ -1,7 +1,6 @@
 // name: Sin
 // keywords: sin
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in sin function
 //
@@ -10,6 +9,7 @@ model Sin
   Real r;
 equation
   r = sin(45);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sin;
 
 // Result:

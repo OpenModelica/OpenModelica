@@ -1,6 +1,5 @@
 // name: AlgorithmElseOpt
 // status: correct
-// cflags: -d=-newInst
 
 class AlgorithmElseOpt
   function f
@@ -60,6 +59,7 @@ algorithm
     r := 2.1;
   end if;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmElseOpt;
 
 // Result:

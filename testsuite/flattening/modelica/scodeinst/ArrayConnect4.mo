@@ -1,7 +1,6 @@
 // name: ArrayConnect4
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize
 //
 
 connector Port
@@ -22,6 +21,7 @@ equation
   for i in 1:N-1 loop
     connect(m[i].port, m[i+1].port);
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize");
 end S;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: FuncInteger
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that the Integer function works.
 //

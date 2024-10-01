@@ -1,7 +1,6 @@
 // name:     Vectorizable4
 // keywords: vectorized calls
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests vectorized calls.
 //
@@ -15,6 +14,7 @@ equation
   x=der([time*1,time*2;time*3,time*4]);
   der(y)=fill(-1,2);
   der(z)=fill(-1,2,2,2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable4;
 
 

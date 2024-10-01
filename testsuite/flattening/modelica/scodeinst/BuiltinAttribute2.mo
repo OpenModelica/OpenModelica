@@ -1,7 +1,6 @@
 // name: BuiltinAttribute2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 type MyReal
@@ -37,7 +36,7 @@ end BuiltinAttribute2;
 
 // Result:
 // class BuiltinAttribute2
-//   Real r(quantity = "m", unit = "kg", displayUnit = "kg", min = -100, max = 100, start = 10, fixed = true, nominal = 1.0, stateSelect = StateSelect.never);
+//   Real r(quantity = "m", unit = "kg", displayUnit = "kg", min = -100.0, max = 100.0, start = 10.0, fixed = true, nominal = 1.0, stateSelect = StateSelect.never);
 //   Integer i(quantity = "m", min = -100, max = 100, start = 10, fixed = true);
 //   Boolean b(quantity = "m", start = false, fixed = true);
 //   String s(quantity = "m", start = "hello");

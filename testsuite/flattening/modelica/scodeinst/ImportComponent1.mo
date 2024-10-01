@@ -1,7 +1,6 @@
 // name:     ImportComponent1
 // keywords: import
 // status:   correct
-// cflags:   -d=newInst
 //
 //
 

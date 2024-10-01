@@ -1,7 +1,6 @@
 // name: Inline4
 // keywords: function, inline
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests inline functions passed to inline functions as arguments
 //
@@ -29,6 +28,7 @@ equation
   x = 4;
   y = x + 4;
   z = inlineTwoArgs(x, inlineTwoArgs(x, simpleInline(y)));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Inline4;
 
 // Result:

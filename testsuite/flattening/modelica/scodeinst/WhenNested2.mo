@@ -1,7 +1,6 @@
 // name: WhenNested2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model WhenNested2
@@ -16,7 +15,7 @@ end WhenNested2;
 
 // Result:
 // Error processing file: WhenNested2.mo
-// [flattening/modelica/scodeinst/WhenNested2.mo:11:5-13:13:writable] Error: Nested when statements are not allowed.
+// [flattening/modelica/scodeinst/WhenNested2.mo:10:5-12:13:writable] Error: Nested when statements are not allowed.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

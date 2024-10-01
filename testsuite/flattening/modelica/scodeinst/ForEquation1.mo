@@ -1,7 +1,6 @@
 // name: ForEquation1.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

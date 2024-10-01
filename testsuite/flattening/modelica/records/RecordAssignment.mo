@@ -1,7 +1,6 @@
 // name: RecordAssignment
 // keywords: record
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests assignment of records
 //
@@ -15,6 +14,7 @@ model RecordAssignment
 equation
   tr1.i = 1;
   tr2 = tr1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordAssignment;
 
 // Result:

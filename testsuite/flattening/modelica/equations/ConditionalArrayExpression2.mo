@@ -1,7 +1,6 @@
 // name:     ConditionalArrayExpression2
 // keywords: equation,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // The sizes must fit in array expressions and equations.
 
@@ -15,6 +14,7 @@ equation
      c[1] = 2;
      c[2] = 4;
   end if;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConditionalArrayExpression2;
 
 // Result:

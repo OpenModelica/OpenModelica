@@ -1,7 +1,6 @@
 // name:     Min & Max
 // keywords: builtin functions min max
 // status:   correct
-// cflags: -d=-newInst
 //
 // Usage of the min and max functions
 model MinMax
@@ -18,6 +17,7 @@ model MinMax
   constant Boolean b6 = max(bemptyarr);
 equation
   x= fill(1.0,max(n,m));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MinMax;
 // Result:
 // class MinMax

@@ -1,7 +1,6 @@
 // name: ArrayTuple [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1951]
 // keywords: array
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the array reduction on function returning tuple
 //
@@ -60,6 +59,7 @@ model ArrayTuple
   Real x[n-1];
 equation
   x = array(Modelica.Math.Vectors.interpolate(pressure_drop[:, 1], sign(m_flows[i]) * pressure_drop[:, 2], abs(m_flows[i]), 1) for i in 1:n - 1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayTuple;
 
 

@@ -1,7 +1,6 @@
 // name: VectorizeBindings4
 // keywords:
 // status: correct
-// cflags: -d=newInst,evaluateAllParameters,-nfScalarize,vectorizeBindings
 //
 
 model A
@@ -13,6 +12,7 @@ end A;
 model VectorizeBindings4
   final parameter Real p = 3;
   A a[4,5,6](each X(start = 20, fixed = true), each p2 = 2*p);
+  annotation(__OpenModelica_commandLineOptions="-d=evaluateAllParameters,-nfScalarize,vectorizeBindings");
 end VectorizeBindings4;
 
 // Result:

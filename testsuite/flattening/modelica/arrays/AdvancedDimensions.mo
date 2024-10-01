@@ -1,7 +1,6 @@
 // name:     AdvancedDimensions.mo
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // make sure we handle weird dimensions in functions/models/arrays
 //
@@ -56,6 +55,7 @@ end Models;
 
 model AdvancedDimensions
   extends Models.Test2.D;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AdvancedDimensions;
 
 

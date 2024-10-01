@@ -1,7 +1,6 @@
 // name: FuncBuiltinSmoothWrongType2
 // keywords: smooth
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests the builtin smooth operator.
 //
@@ -14,7 +13,7 @@ end FuncBuiltinSmoothWrongType2;
 
 // Result:
 // Error processing file: FuncBuiltinSmoothWrongType2.mo
-// [flattening/modelica/scodeinst/FuncBuiltinSmoothWrongType2.mo:12:3-12:24:writable] Error: Type mismatch for positional argument 1 in smooth(=k). The argument has type:
+// [flattening/modelica/scodeinst/FuncBuiltinSmoothWrongType2.mo:11:3-11:24:writable] Error: Type mismatch for positional argument 1 in smooth(=k). The argument has type:
 //   Real
 // expected type:
 //   Integer

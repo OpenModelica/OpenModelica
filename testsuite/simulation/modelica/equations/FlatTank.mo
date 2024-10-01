@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 12.1 Traditional Methodology (p. 385)
-// cflags: -d=-newInst
 //
 
 function limitValue
@@ -43,6 +42,7 @@ equation
   error    = ref - h;
   der(x)   = error/T;
   outCtr   = K*(error + x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlatTank;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,7 +1,6 @@
 // name:     Reductions
 // keywords: reductions
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests flattening of non-constant reductions.
 //
@@ -25,6 +24,7 @@ equation
   g = {(1/(i+j-1)) for i in 1:n, j in 1:n};
   h = sum((1/(i+j-1)) for i in 1:n, j in 1:n);
   k = .sum(i for i in 1:n);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Reductions;
 
 // Result:

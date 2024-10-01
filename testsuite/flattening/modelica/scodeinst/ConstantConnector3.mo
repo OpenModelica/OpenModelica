@@ -1,7 +1,6 @@
 // name: ConstantConnector3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ConstantConnector3

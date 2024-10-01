@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // bug #2525
 
 model InitialReduction
@@ -11,6 +10,7 @@ equation
   for i loop
     der(T[i]) = 1;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InitialReduction;
 
 // Result:

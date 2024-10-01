@@ -1,13 +1,13 @@
 // name: BuiltinAttribute23
 // keywords:
 // status: correct
-// cflags: -d=newInst --newBackend
 //
 
 model BuiltinAttribute23
   parameter Real x0 = 0;
   type T = Real[3] (each start = x0);
   T t;
+  annotation(__OpenModelica_commandLineOptions="--newBackend");
 end BuiltinAttribute23;
 
 // Result:

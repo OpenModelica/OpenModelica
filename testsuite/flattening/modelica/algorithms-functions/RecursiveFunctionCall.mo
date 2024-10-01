@@ -1,7 +1,6 @@
 // name:     RecursiveFunctionCall
 // keywords: function, recursiive calls
 // status:   correct
-// cflags: -d=-newInst
 //
 // Just checks so that function calling itself will work.
 
@@ -22,6 +21,7 @@ model RecursiveFunctionCall
   Integer y;
 algorithm
   y:=pkg.factorial(2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecursiveFunctionCall;
 // Result:
 // function pkg.factorial

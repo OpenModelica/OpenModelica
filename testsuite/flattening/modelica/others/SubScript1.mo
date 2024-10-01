@@ -1,7 +1,6 @@
 // name:     SubScript1
 // keywords: SubScript,unknown
 // status:   correct
-// cflags: -d=-newInst
 //
 // checks if subscripts are correct when containing an expression with a parameter
 //
@@ -10,6 +9,7 @@ model SubScript1
  parameter Integer tmp  = 2;
  Real arraySubs[3*tmp];
 equation
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SubScript1;
 
 

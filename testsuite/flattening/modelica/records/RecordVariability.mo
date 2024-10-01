@@ -1,7 +1,6 @@
 // name:     Record Variability
 // keywords: record
 // status:   correct
-// cflags: -d=-newInst
 
 record abcRec
   Integer a;
@@ -14,6 +13,7 @@ model example
   constant  abcRec x = abcRec(1);
   parameter abcRec y = abcRec(4,p*2);
             abcRec z = abcRec(2,p);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end example;
 
 // Result:

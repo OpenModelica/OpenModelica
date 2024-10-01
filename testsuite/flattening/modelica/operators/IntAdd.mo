@@ -1,13 +1,13 @@
 // name: IntAdd
 // keywords: integer, addition
 // status: correct
-// cflags: -d=-newInst
 //
 // tests Integer addition
 //
 
 model IntAdd
   constant Integer i = 4711 + 1138;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IntAdd;
 
 // Result:

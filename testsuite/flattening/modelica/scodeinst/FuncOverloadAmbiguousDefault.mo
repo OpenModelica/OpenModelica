@@ -1,7 +1,6 @@
 // name: FuncOverloadAmbiguousDefault
 // keywords: overload
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests an ambigous overload due to default values.
 //
@@ -28,7 +27,7 @@ end FuncOverloadAmbiguousDefault;
 
 // Result:
 // Error processing file: FuncOverloadAmbiguousDefault.mo
-// [flattening/modelica/scodeinst/FuncOverloadAmbiguousDefault.mo:26:3-26:20:writable] Error: Ambiguous matching functions found for FuncOverloadAmbiguousDefault.OV(/*Integer*/ 1).
+// [flattening/modelica/scodeinst/FuncOverloadAmbiguousDefault.mo:25:3-25:20:writable] Error: Ambiguous matching functions found for FuncOverloadAmbiguousDefault.OV(/*Integer*/ 1).
 // Candidates are:
 //   FuncOverloadAmbiguousDefault.G(Integer g1, Integer g2 = 1) => Integer
 //   FuncOverloadAmbiguousDefault.F(Integer f1) => Integer

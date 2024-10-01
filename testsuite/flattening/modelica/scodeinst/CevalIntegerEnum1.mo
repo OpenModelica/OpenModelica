@@ -1,7 +1,6 @@
 // name: CevalIntegerEnum1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

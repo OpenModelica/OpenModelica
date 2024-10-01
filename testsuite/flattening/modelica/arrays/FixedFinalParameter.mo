@@ -1,7 +1,6 @@
 // name:     FixedFinalParameter
 // keywords: fixed, final, parameter, array, initial equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests fixed=false for final array parameters with initial equations.
 //
@@ -12,6 +11,7 @@ model FixedFinalParameter
   final parameter Real p[3](each fixed = false);
 initial equation
   p = {1.0, 2.0, 3.0};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FixedFinalParameter;
 
 // Result:

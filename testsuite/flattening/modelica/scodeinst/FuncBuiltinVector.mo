@@ -1,7 +1,6 @@
 // name: FuncBuiltinVector
 // keywords: vector
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin vector operator.
 //

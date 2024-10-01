@@ -1,7 +1,6 @@
 // name:     SimplifyBinary
 // keywords: simplify
 // status:   correct
-// cflags: -d=-newInst
 //
 
 
@@ -33,6 +32,7 @@ equation
   x11 = -x2+(((x*x2) - x/x4)/x);
   x12 = x*((x4*x1)+(x5*x1^2))*x;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimplifyBinary;
 
 // Result:

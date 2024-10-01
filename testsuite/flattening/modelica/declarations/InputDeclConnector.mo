@@ -1,7 +1,6 @@
 // name: InputDeclConnector
 // keywords: input
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the input prefix on a connector type
 //
@@ -15,6 +14,7 @@ class InputDeclConnector
   input InputConnector ic;
 equation
   ic.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InputDeclConnector;
 
 // Result:

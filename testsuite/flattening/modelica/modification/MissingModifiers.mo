@@ -1,7 +1,6 @@
 // name:     MissingModifiers.mo [BUG: #3051]
 // keywords: class modification handling
 // status:   correct
-// cflags: -d=-newInst
 //
 
 model A
@@ -19,6 +18,7 @@ end C;
 model MissingModifiers
  parameter B.crazyT b;
  parameter C.crazyT c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MissingModifiers;
 
 // Result:

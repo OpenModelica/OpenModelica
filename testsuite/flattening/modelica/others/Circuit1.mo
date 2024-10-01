@@ -1,7 +1,6 @@
 // name:     Circuit1
 // keywords:
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is the example from the report.  It is here to have a somewhat
 // larger test.
@@ -78,6 +77,7 @@ equation
   connect (R2.n, L.p);
   connect (L.n,  C.n);
   connect (AC.n, G.p);    // Ground
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Circuit1;
 
 // Result:

@@ -1,6 +1,5 @@
 // name: Connect14
 // keywords:  connector, primitive types
-// cflags: +std=2.x -d=-newInst
 // status: correct
 //
 // Test that all primitive types can be used in connectors.
@@ -21,6 +20,7 @@ model Connect14
 equation
   connect(c1,c2);
   connect(c1.b,b2);
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end Connect14;
 // Result:
 // class Connect14

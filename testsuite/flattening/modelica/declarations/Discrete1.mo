@@ -1,7 +1,6 @@
 // name:     Discrete1
 // keywords: declaration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test the `discrete' keyword
 
@@ -11,6 +10,7 @@ equation
   when time>0.5 then
     x=time;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Discrete1;
 
 // Result:

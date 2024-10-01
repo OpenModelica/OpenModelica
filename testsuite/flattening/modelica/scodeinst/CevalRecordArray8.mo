@@ -1,7 +1,6 @@
 // name: CevalRecordArray8
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model SolarRadiationExchange

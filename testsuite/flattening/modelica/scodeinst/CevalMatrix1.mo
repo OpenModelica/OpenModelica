@@ -1,7 +1,6 @@
 // name: CevalMatrix1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

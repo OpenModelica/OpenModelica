@@ -1,11 +1,11 @@
 // name: BindingArray10
 // keywords:
 // status: correct
-// cflags: -d=newInst --newBackend
 //
 
 model BindingArray10
   Real x[:] = ones(3);
+  annotation(__OpenModelica_commandLineOptions="--newBackend");
 end BindingArray10;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: DimSize3
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 
 function f
@@ -11,6 +10,7 @@ end f;
 model DimSize3
 algorithm
   f({{1, 2}, {3, 4}});
+  annotation(__OpenModelica_commandLineOptions="-d=-nfEvalConstArgFuncs");
 end DimSize3;
 
 // Result:

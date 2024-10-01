@@ -1,7 +1,6 @@
 // name: FunctionSimple
 // keywords: function
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple function declaration and calling
 //
@@ -18,6 +17,7 @@ model FunctionSimple
 equation
   x = 1;
   y = TestFunction(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionSimple;
 
 // Result:

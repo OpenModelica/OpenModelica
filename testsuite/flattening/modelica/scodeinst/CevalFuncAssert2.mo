@@ -1,7 +1,6 @@
 // name: CevalFuncAssert2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -19,7 +18,7 @@ end CevalFuncAssert2;
 
 // Result:
 // Error processing file: CevalFuncAssert2.mo
-// [flattening/modelica/scodeinst/CevalFuncAssert2.mo:12:3-12:64:writable] Error: assert triggered: f got n larger than 2
+// [flattening/modelica/scodeinst/CevalFuncAssert2.mo:11:3-11:64:writable] Error: assert triggered: f got n larger than 2
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

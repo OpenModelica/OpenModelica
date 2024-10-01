@@ -1,7 +1,6 @@
 // name: RecordBinding14
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package Cooling

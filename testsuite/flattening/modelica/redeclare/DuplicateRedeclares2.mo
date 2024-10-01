@@ -1,7 +1,6 @@
 // name:     DuplicateRedeclares2
 // keywords: redeclare
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Checks that the compiler issues an error on duplicate redeclares.
 //
@@ -13,12 +12,13 @@ end M;
 model DuplicateRedeclares2
   extends N(redeclare replaceable Real r = 1.5,
             redeclare replaceable Real r = 2.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DuplicateRedeclares2;
 
 // Result:
 // Error processing file: DuplicateRedeclares2.mo
-// [flattening/modelica/redeclare/DuplicateRedeclares2.mo:14:23-14:47:writable] Notification: From here:
-// [flattening/modelica/redeclare/DuplicateRedeclares2.mo:15:23-15:47:writable] Error: r is already redeclared in this scope.
+// [flattening/modelica/redeclare/DuplicateRedeclares2.mo:13:23-13:47:writable] Notification: From here:
+// [flattening/modelica/redeclare/DuplicateRedeclares2.mo:14:23-14:47:writable] Error: r is already redeclared in this scope.
 // Error: Error occurred while flattening model DuplicateRedeclares2
 //
 // # Error encountered! Exiting...

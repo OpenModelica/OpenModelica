@@ -1,7 +1,6 @@
 // name:     PredefinedTypes
 // keywords: Predefined types, modifications
 // status:   correct
-// cflags: -d=-newInst
 
 type enum = enumeration(a,b,c);
 model PredefinedTypes
@@ -11,6 +10,7 @@ model PredefinedTypes
   String string(quantity="quant_str_string",start="start");
   enum f(quantity="quant_str_enumeration",min = enum.a,max = enum.b,fixed = true,start = enum.c);
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PredefinedTypes;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     Enumeration6
 // keywords: enumeration enum
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -46,6 +45,7 @@ equation
    end for;
    ee = EE.frame_a;
    f = E.b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration6;
 
 // Result:

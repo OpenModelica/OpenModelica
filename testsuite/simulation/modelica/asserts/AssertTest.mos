@@ -19,16 +19,16 @@ getErrorString();
 // true
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AssertTestDuringInst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AssertTestDuringInst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: AssertTestDuringInst"
 // end SimulationResult;
-// "[simulation/modelica/asserts/AssertTest.mo:23:3-23:55:writable] Error: Assertion triggered during translation: \"Testing assert during instantiation\".
+// "[simulation/modelica/asserts/AssertTest.mo:22:3-22:55:writable] Error: Assertion triggered during translation: \"Testing assert during instantiation\".
 // "
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 4, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'AssertTestInst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 4, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'AssertTestInst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: AssertTestInst
-// LOG_ASSERT        | error   | [simulation/modelica/asserts/AssertTest.mo:14:3-14:70:writable]
+// LOG_ASSERT        | error   | [simulation/modelica/asserts/AssertTest.mo:13:3-13:70:writable]
 // |                 | |       | The following assertion has been violated during initialization at time 0.000000
 // |                 | |       | ((7.0 >= assertTest.lowlimit and 7.0 <= assertTest.highlimit)) --> \"Variable x out of limit\"
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization

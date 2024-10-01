@@ -1,7 +1,6 @@
 // name: ExpandableConnectorComplex1
 // keywords: expandable connector
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that augmenting an expandable connector with a connector works.
 //

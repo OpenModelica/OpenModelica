@@ -1,6 +1,5 @@
 // name: Concatenation2
 // status: correct
-// cflags: -d=newInst
 
 model Concatenation2
   parameter Real x[:] = {1, 2};

@@ -1,7 +1,6 @@
 // name:     BM10 -  Division component
 // keywords: Division
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Division component.
 //
@@ -982,6 +981,7 @@ model BM10
 equation
   connect(division1.inPort2,constant2.outPort) annotation(Line(visible=true,points={{-0.41,4.97},{-53.63,-6.89}}));
   connect(division1.inPort1,constant1.outPort) annotation(Line(visible=true,points={{-1.32,16.83},{-33.25,39.03}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM10;
 // class BM10
 // parameter Integer division1.n = 1 "Dimension of input and output vectors.";

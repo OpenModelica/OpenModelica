@@ -1,7 +1,6 @@
 // name:     MicroCircuitValid
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // Dymola 5.2a gives back "Error: Type CompType did not extend from basic types."
 // But this should be correct according to the specification?
@@ -82,6 +81,7 @@ class TempMicroCircuit = MicroCircuit(redeclare TempResistor comp1);
 class GenMicroCircuit
   replaceable type CompType = Resistor;
   replaceable CompType comp1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end GenMicroCircuit;
 
 //Have not got a flattended version yet...

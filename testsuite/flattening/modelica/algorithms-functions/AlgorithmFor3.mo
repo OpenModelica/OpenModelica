@@ -1,7 +1,6 @@
 // name:     AlgorithmFor3
 // keywords: algorithm,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test for loops in algorithms. The size is a parameter.
 //
@@ -14,6 +13,7 @@ algorithm
   for i in 1:N-1 loop
     a[i+1] := a[i] + 1.0;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor3;
 
 // Result:

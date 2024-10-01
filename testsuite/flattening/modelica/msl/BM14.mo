@@ -1,7 +1,6 @@
 // name:     BM14 -  Log component
 // keywords: Log
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Log component.
 //
@@ -1069,6 +1068,7 @@ model BM14
 
 equation
   connect(log1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-25.96,32.95},{-49.37,30.52}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM14;
 // function Modelica.Math.log
 // input Real u;

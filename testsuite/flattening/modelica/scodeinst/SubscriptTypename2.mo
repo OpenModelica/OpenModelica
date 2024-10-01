@@ -1,7 +1,6 @@
 // name: SubscriptTypename2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model SubscriptTypename2
@@ -10,7 +9,7 @@ end SubscriptTypename2;
 
 // Result:
 // Error processing file: SubscriptTypename2.mo
-// [flattening/modelica/scodeinst/SubscriptTypename2.mo:8:10-8:44:writable] Error: Variable StateSelect[1].never not found in scope SubscriptTypename2.
+// [flattening/modelica/scodeinst/SubscriptTypename2.mo:7:10-7:44:writable] Error: Wrong number of subscripts in StateSelect[1].never (0 subscripts for 0 dimensions).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

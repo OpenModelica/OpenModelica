@@ -1,7 +1,6 @@
 // name:     Constant3
 // keywords: declaration,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Basic constant definitions.
 //
@@ -12,6 +11,7 @@ class Constant3
 equation
   x[N-1] = 2.0;
   x[{1,N}] = {1,time};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant3;
 
 // Result:

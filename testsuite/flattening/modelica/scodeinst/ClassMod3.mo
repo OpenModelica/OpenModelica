@@ -1,6 +1,5 @@
 // name: ClassMod3
 // status: correct
-// cflags: -d=newInst
 
 package P
   type T = Real;

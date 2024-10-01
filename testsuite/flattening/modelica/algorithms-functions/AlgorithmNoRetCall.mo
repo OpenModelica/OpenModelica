@@ -1,6 +1,5 @@
 // name: AlgorithmNoRetCall
 // status: correct
-// cflags: -d=-newInst
 
 package Modelica
 package Utilities
@@ -34,6 +33,7 @@ end P;
 
 class AlgorithmNoRetCall
   extends P.B;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmNoRetCall;
 
 // Result:

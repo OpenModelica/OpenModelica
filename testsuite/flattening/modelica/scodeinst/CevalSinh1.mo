@@ -1,7 +1,6 @@
 // name: CevalSinh1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -11,6 +10,6 @@ end CevalSinh1;
 
 // Result:
 // class CevalSinh1
-//   constant Real r1 = 1.175201193643801;
+//   constant Real r1 = 1.1752011936438014;
 // end CevalSinh1;
 // endResult

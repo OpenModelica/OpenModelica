@@ -1,7 +1,6 @@
 // name: VectorTest
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize --std=3.3
 //
 
 package VectorTest  
@@ -46,6 +45,7 @@ end VectorTest;
 
 model VT 
   extends VectorTest.m;
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize --std=3.3");
 end VT;
 
 

@@ -1,7 +1,6 @@
 // name:     AlgorithmFor4
 // keywords: algorithm,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test for loops in algorithms.
 //
@@ -12,6 +11,7 @@ algorithm
   for i in 1:2:3 loop
     a[i+1] := a[i] + 1.0;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor4;
 
 // Result:

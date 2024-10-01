@@ -1,7 +1,6 @@
 // name: ExpandableConnector13
 // keywords: expandable connector
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that potentially present non-connector variables in an expandable
 // connector doesn't generate warnings about unbalanced connectors.

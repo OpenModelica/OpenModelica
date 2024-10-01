@@ -1,7 +1,6 @@
 // name:     ArrayAsAlias
 // keywords: testing that array as alias and enumeration functionality works properly
 // status:   correct
-// cflags: -d=-newInst
 //
 // Array as alias checks, enumeration checks, etc.
 
@@ -192,6 +191,7 @@ end Modelica;
 
 model ArrayAsAlias
  Modelica.Mechanics.MultiBody.World w;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAsAlias;
 
 

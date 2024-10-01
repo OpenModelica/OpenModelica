@@ -1,13 +1,13 @@
 // name:     Transpose3
 // keywords: transpose #2743
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that transpose works for 3 dimensions.
 //
 
 model Transpose3
   Real x[:, :, :] = transpose({{{1}, {2}, {3}}, {{4}, {5}, {6}}});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Transpose3;
 
 // Result:

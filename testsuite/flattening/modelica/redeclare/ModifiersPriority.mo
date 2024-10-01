@@ -1,7 +1,6 @@
 // name:     ModifiersPriority.mo
 // keywords: extends modifier handling
 // status:   correct
-// cflags: -d=-newInst
 //
 // check that modifiers on extends are not lost (constrainedby mods for short class def)
 //
@@ -27,6 +26,7 @@ end ModifiersPriority;
 
 model M
   ModifiersPriority.P2.A a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:

@@ -4,7 +4,6 @@
 //
 // Something wrong with Boolean and  der_2_y := exp(x)*der_x*der_x + exp(x)*der_2_x; in h2
 // Drmodelica: 11.1 Function Annotations (p. 372)
-// cflags: -d=-newInst
 //
 
 function h0                 // exp(x(t)+i1)
@@ -48,6 +47,7 @@ algorithm
   fn0 := h0(2,5,true);
   fn1 := h1(2,5,true,fn0);
   fn2 := h2(2,5,true,fn0,fn1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FuncDer;
 
 // insert expected flat file here. Can be done by issuing the command

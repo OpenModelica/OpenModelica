@@ -1,7 +1,6 @@
 // name: OperationDivEW1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationDivEW1

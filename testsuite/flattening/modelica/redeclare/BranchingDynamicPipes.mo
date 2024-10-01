@@ -1,7 +1,6 @@
 // name:     BranchingDynamicPipes.mo
 // keywords: chained redeclares
 // status:   correct
-// cflags: -d=-newInst
 //
 
 connector FluidPort
@@ -36,6 +35,7 @@ end MoistAir;
 model BranchingDynamicPipes
   replaceable package Medium = MoistAir;
   PartialSource source(redeclare package Medium = Medium);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BranchingDynamicPipes;
 
 // Result:

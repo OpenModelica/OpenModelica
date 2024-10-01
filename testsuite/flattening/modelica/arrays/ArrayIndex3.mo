@@ -1,7 +1,6 @@
 // name:     ArrayIndex
 // keywords: array, index
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is a simple test of basic array handling. Bug reported by Hannes Edinger
 //
@@ -38,6 +37,7 @@ class myTestClass
 end myTestClass;
 model myTestClass_a2
   extends myTestClass.a2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end myTestClass_a2;
 // Result:
 // class myTestClass_a2

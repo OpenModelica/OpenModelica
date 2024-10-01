@@ -1,7 +1,6 @@
 // name:     Redeclare1
 // keywords: redeclare,type
 // status:   correct
-// cflags: -d=-newInst
 //
 // Redeclaration and subtyping.
 //
@@ -23,6 +22,7 @@ model Redeclare1
   M m(redeclare B a);
 equation
   m.a.z = m.a.x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Redeclare1;
 
 // Result:

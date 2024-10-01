@@ -1,7 +1,6 @@
 // name:     DefaultRecordParameters
 // keywords: record parameters with default values, record extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing of record component parameters with default values and extends of records
 //
@@ -37,6 +36,7 @@ model DefaultRecordParameters
   BodyModel.Body body1(data=BodyModel.Extended());
   BodyModel.Body body2(data=BodyModel.Extended(length=3,volume=5));
   BodyModel.Body body3(data=BodyModel.Extended2());
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DefaultRecordParameters;
 
 

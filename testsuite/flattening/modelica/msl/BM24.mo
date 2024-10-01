@@ -1,7 +1,6 @@
 // name:     BM24 -  Sum component
 // keywords: Sum
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sum component.
 //
@@ -988,6 +987,7 @@ model BM24
 
 equation
   connect(sum1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-53.63,31.73},{-74.92,32.95},{-74.61,33.86}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM24;
 
 // class BM24

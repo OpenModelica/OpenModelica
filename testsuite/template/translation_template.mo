@@ -1,13 +1,13 @@
 // name:     <XXX>
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // <insert description here>
 //
 
 model <XXX>
     Real x;
+  annotation(__OpenModelica_commandLineOptions="insert compiler flags here");
 end <XXX>;
 
 // insert expected flat file here. Can be done by issuing the command

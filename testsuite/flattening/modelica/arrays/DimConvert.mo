@@ -4,7 +4,6 @@
 //
 // Not yet implemented
 // Drmodelica: 7.7 Built-in Functions (p. 225)
-// cflags: -d=-newInst
 //
 
 class DimConvert
@@ -16,4 +15,5 @@ class DimConvert
   Real s1 =         scalar(m2);     // s1 contains 4.0
   Real[2,2,1] m3 =  {{{1.0}, {2.0}}, {{3.0}, {4.0}}};
   Real[2,2] m4 =    matrix(m3);     // m4 contains {{1.0, 2.0}, {3.0, 4.0}}
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DimConvert;

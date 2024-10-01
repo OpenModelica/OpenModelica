@@ -1,7 +1,6 @@
 // name:     UncertaintyFlatten1
 // keywords: uncertainty, distribution, uncertain
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is a simple test of uncertainty attributes.
 //
@@ -24,6 +23,7 @@ model UncertaintyFlatten1
 equation
    y=u+1+u4;
    y2 = y+u2+u3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end UncertaintyFlatten1;
 // Result:
 // function Distribution "Automatically generated record constructor for Distribution"

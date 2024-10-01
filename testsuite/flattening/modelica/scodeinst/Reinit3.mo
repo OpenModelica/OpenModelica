@@ -1,7 +1,6 @@
 // name: Reinit3
 // keywords:
 // status: correct
-// cflags: -d=newInst, --allowNonStandardModelica=reinitInAlgorithms
 //
 
 model Reinit3
@@ -10,6 +9,7 @@ algorithm
   when time > 1 then
     reinit(x, 2);
   end when;
+  annotation(__OpenModelica_commandLineOptions="--allowNonStandardModelica=reinitInAlgorithms");
 end Reinit3;
 
 // Result:

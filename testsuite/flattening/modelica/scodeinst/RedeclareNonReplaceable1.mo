@@ -1,7 +1,6 @@
 // name: RedeclareNonReplaceable1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -23,7 +22,7 @@ end RedeclareNonReplaceable1;
 
 // Result:
 // Error processing file: RedeclareNonReplaceable1.mo
-// [flattening/modelica/scodeinst/RedeclareNonReplaceable1.mo:21:13-21:26:writable] Error: Redeclaration with a new type requires 'a' to be replaceable.
+// [flattening/modelica/scodeinst/RedeclareNonReplaceable1.mo:20:13-20:26:writable] Error: Redeclaration with a new type requires 'a' to be replaceable.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

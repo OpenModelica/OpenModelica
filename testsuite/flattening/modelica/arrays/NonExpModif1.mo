@@ -1,7 +1,6 @@
 // name:     Non-expanded Array - Modification
 // keywords: array
 // status:   correct
-// cflags:   +a -d=-newInst
 //
 // Basic test of modification processing in the case of non-expanded arrays.
 //
@@ -16,6 +15,7 @@ end B;
 
 model Modif1
   B[3] b;
+  annotation(__OpenModelica_commandLineOptions="+a -d=-newInst");
 end Modif1;
 
 // Result:

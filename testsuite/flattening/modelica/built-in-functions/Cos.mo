@@ -1,7 +1,6 @@
 // name: Cos
 // keywords: cos
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in cos function
 //
@@ -10,6 +9,7 @@ model Cos
   Real r;
 equation
   r = cos(45);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cos;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: EngineSAAB95Total
 // keywords: record
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in cos function
 //
@@ -30,6 +29,7 @@ end EngineModel;
 model EngineSAAB95
   EngineModel.Engine engine(data=EngineModel.SAAB95i());
   EngineModel.Engine engine2(data=EngineModel.SAAB95i(bore=3,stroke=5));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EngineSAAB95;
 
 // Result:

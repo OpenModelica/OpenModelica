@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 model SpliceUnknownDest
 
@@ -26,6 +25,7 @@ model SpliceUnknownDest
   String tab[8];
 equation
   tab=getVariableNameTable(2,8);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SpliceUnknownDest;
 
 // Result:

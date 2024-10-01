@@ -1,6 +1,5 @@
 // name: Tuple2
 // status: correct
-// cflags: -d=newInst -f
 
 function f
   input Real x;
@@ -16,6 +15,7 @@ equation
   (, x, ) = f(time);
   (, , x) = f(time);
   (,x, x) = f(time);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f");
 end Tuple2;
 
 // Result:

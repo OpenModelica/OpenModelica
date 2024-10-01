@@ -1,7 +1,6 @@
 // name: const13.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -22,7 +21,7 @@ end C;
 
 // Result:
 // Error processing file: const13.mo
-// [flattening/modelica/scodeinst/const13.mo:20:3-20:17:writable] Error: Found component 'y' in composite name 'a.B.y', expected class.
+// [flattening/modelica/scodeinst/const13.mo:19:3-19:17:writable] Error: Found component 'y' in composite name 'a.B.y', expected class.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

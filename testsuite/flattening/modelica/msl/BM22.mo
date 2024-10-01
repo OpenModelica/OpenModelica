@@ -1,7 +1,6 @@
 // name:     BM22 -  Sinh component
 // keywords: Sinh
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sinh component.
 //
@@ -1063,6 +1062,7 @@ model BM22
 
 equation
   connect(sinh1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-19.57,29.6},{-48.16,31.73}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM22;
 // function Modelica.Math.sinh
 // input Real u;

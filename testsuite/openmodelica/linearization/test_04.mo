@@ -1,7 +1,6 @@
 // name:     test_04.mo
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // <insert description here>
 //
@@ -16,6 +15,7 @@ equation
  der(x1) = x1*(a-b*x1-x2);
  der(x2) = x2*(c-x1-x2);
  y = x1 * u + x2 * u;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

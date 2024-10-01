@@ -1,7 +1,6 @@
 // name: ClockTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model ClockTest
   Clock c1;
@@ -13,6 +12,7 @@ model ClockTest
   Clock c7 = Clock(c5, "ExplicitEuler");
 equation
   c6 = Clock(time > 0.2, 0.1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClockTest;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     ImportConflict4
 // keywords: import conflict
 // status:   correct
-// cflags:   -d=newInst
 //
 // Checks that importing the same name from multiple sources is ok as long as
 // that name isn't used.

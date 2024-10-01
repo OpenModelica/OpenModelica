@@ -1,7 +1,6 @@
 // name: DimSize5
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record A

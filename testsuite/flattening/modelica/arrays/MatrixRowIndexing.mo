@@ -1,7 +1,6 @@
 // name:     MatrixRowIndexing
 // keywords: Row indexing of matrix
 // status:   correct
-// cflags: -d=-newInst
 //
 // Make sure row indexing of matrix works fine!
 // Also constant evaluation via Cevalfunc.mo module.
@@ -30,6 +29,7 @@ equation
   c = callMe(a[3, :]);
 algorithm
   d := a[4, :];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixRowIndexing;
 
 // Result:

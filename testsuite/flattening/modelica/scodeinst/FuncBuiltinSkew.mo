@@ -1,7 +1,6 @@
 // name: FuncBuiltinSkew
 // keywords: skew
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin skew operator.
 //

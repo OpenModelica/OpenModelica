@@ -1,7 +1,6 @@
 // name:      NPendulum10
 // keywords:  arrays
 // status:    correct
-// cflags: -d=-newInst
 //
 
 package NPendulum
@@ -64,5 +63,6 @@ model pendulum40
 end pendulum40;
 
 annotation(uses(Modelica(version="3.2.1")));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NPendulum;
 

@@ -1,7 +1,6 @@
 // name: FuncBuiltinRem
 // keywords: rem
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin rem function.
 //

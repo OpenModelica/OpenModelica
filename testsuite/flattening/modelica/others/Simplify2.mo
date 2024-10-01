@@ -1,7 +1,6 @@
 // name:     Simplify2
 // keywords: simplify
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that expressions are not lost in simplify.
 //
@@ -31,6 +30,7 @@ equation
    m[3] = x+2.0;
    4 = der(foo(m)*{0,1,0}+x);
    der(x) + x = x_end;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // Result:

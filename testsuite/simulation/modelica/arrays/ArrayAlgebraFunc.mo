@@ -4,7 +4,6 @@
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.7 Built-in Functions (p. 225)
-// cflags: -d=-newInst
 //
 
 class ArrayAlgebraFunc
@@ -14,6 +13,7 @@ class ArrayAlgebraFunc
   Real symm[2, 2] = symmetric({{1, 2}, {3, 1}}); // Gives {{1, 2}, {2, 1}}
   Real c[3] = cross({1, 0, 0}, {0, 1, 0}); // Gives {0, 0, 1}
   Real s[3, 3] = skew({1, 2, 3}); // Gives {{0, -3, 2}, {3, 0, -1}, {-2, 1, 0}};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAlgebraFunc;
 
 // insert expected flat file here. Can be done by issuing the command
