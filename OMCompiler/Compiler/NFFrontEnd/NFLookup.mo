@@ -90,20 +90,21 @@ end lookupClassName;
 function lookupBaseClassName
   input Absyn.Path name;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output list<InstNode> nodes;
 protected
   LookupState state;
 algorithm
   try
-    (nodes, state) := lookupNames(name, scope, NFInstContext.NO_CONTEXT);
+    (nodes, state) := lookupNames(name, scope, context);
   else
     Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
       {AbsynUtil.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
   end try;
 
-  LookupState.assertClass(state, listHead(nodes), name, NFInstContext.NO_CONTEXT, info);
+  LookupState.assertClass(state, listHead(nodes), name, context, info);
 end lookupBaseClassName;
 
 function lookupComponent
@@ -126,7 +127,7 @@ algorithm
       {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
   end try;
 
-  state := fixTypenameState(node, state);
+  state := fixTypenameState(node, state, context);
   LookupState.assertComponent(state, node, cref, context, info);
 end lookupComponent;
 
@@ -149,18 +150,19 @@ algorithm
   end try;
 
   node := ComponentRef.node(foundCref);
-  state := fixTypenameState(node, state);
+  state := fixTypenameState(node, state, context);
   LookupState.assertComponent(state, node, cref, context, info);
 end lookupConnector;
 
 function fixTypenameState
   input InstNode component;
   input output LookupState state;
+  input InstContext.Type context;
 protected
   Type ty;
 algorithm
   if InstNode.isClass(component) then
-    ty := InstNode.getType(Inst.expand(component));
+    ty := InstNode.getType(Inst.expand(component, context));
 
     state := match ty
       case Type.ENUMERATION() then LookupState.COMP();
@@ -251,7 +253,7 @@ algorithm
   // not. Components are instantiated before their bindings, so in proper models
   // we shouldn't get any non-expanded external objects here. But to avoid
   // getting weird errors in erroneous models we make sure it's expanded anyway.
-  Inst.expand(node);
+  Inst.expand(node, NFInstContext.NO_CONTEXT);
   cls := InstNode.getClass(node);
 
   () := match cls

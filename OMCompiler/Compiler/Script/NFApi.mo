@@ -205,7 +205,7 @@ algorithm
 
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, AbsynUtil.dummyInfo, checkAccessViolations = false);
-          inst_anncls := NFInst.expand(anncls);
+          inst_anncls := NFInst.expand(anncls, ANNOTATION_CONTEXT);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
@@ -423,7 +423,7 @@ algorithm
 
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, context, AbsynUtil.dummyInfo, checkAccessViolations = false);
-          inst_anncls := NFInst.expand(anncls);
+          inst_anncls := NFInst.expand(anncls, context);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, context);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
@@ -810,10 +810,10 @@ algorithm
   name := AbsynUtil.pathString(classPath);
 
   (program, top) := mkTop(absynProgram, name);
-  cls := Inst.lookupRootClass(classPath, top, InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP));
+  cls := Inst.lookupRootClass(classPath, top, FAST_CONTEXT);
 
   // Expand the class.
-  expanded_cls := NFInst.expand(cls);
+  expanded_cls := NFInst.expand(cls, FAST_CONTEXT);
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndLookup_dispatch("+ name +")");
@@ -1157,7 +1157,7 @@ protected
   Boolean annotation_is_literal = true;
   SCode.Element def;
 algorithm
-  Inst.expand(node);
+  Inst.expand(node, ANNOTATION_CONTEXT);
   def := InstNode.definition(node);
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
@@ -2404,7 +2404,7 @@ algorithm
   // Make a top node and look up the class in it.
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(clsPath));
   cls_node := Inst.lookupRootClass(clsPath, top, FAST_CONTEXT);
-  Inst.expand(cls_node);
+  Inst.expand(cls_node, FAST_CONTEXT);
 
   // Get the destination path including the class name.
   dest_path := match destination
@@ -2427,7 +2427,7 @@ algorithm
     // Change the scope in the environment to this class, if the class has its
     // own scope (i.e. is a long class definition).
     cls_node := Lookup.lookupLocalSimpleName(cls.name, env.scope);
-    Inst.expand(cls_node);
+    Inst.expand(cls_node, FAST_CONTEXT);
     cls_env := MoveEnv.MOVE_ENV(cls_node, AbsynUtil.suffixPath(env.destinationPath, cls.name));
   else
     cls_env := env;

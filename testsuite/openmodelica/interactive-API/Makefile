@@ -14,7 +14,6 @@ Bug3520.mos \
 Bug3783.mos \
 Bug3974.mos \
 Bug3979.mos \
-Bug4209.mos \
 Bug4248.mos \
 Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
@@ -55,6 +54,8 @@ getDefinitions.mos \
 getDialogAnnotation.mos \
 getElementAnnotation.mos \
 getIconAnnotation.mos \
+getInheritedClasses1.mos \
+getInheritedClasses2.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \

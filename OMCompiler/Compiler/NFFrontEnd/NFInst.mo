@@ -412,7 +412,7 @@ function instantiate
   input InstContext.Type context;
   input Boolean instPartial = false "Whether to instantiate a partial class or not.";
 algorithm
-  node := expand(node);
+  node := expand(node, context);
 
   if instPartial or not InstNode.isPartial(node) or
      InstContext.inRelaxed(context) or InstContext.inRedeclared(context) then
@@ -422,9 +422,10 @@ end instantiate;
 
 function expand
   input output InstNode node;
+  input InstContext.Type context;
 algorithm
   node := partialInstClass(node);
-  node := expandClass(node);
+  node := expandClass(node, context);
 end expand;
 
 function makeTopNode
@@ -468,7 +469,7 @@ algorithm
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   ann_node := InstNode.newClass(ann_package, topNode, InstNodeType.IMPLICIT_SCOPE());
-  expand(ann_node);
+  expand(ann_node, NFInstContext.NO_CONTEXT);
   // Mark annotations as builtin.
   cls := InstNode.getClass(ann_node);
   elems := Class.classTree(cls);
@@ -620,15 +621,17 @@ end makeEnumerationType;
 
 function expandClass
   input output InstNode node;
+  input InstContext.Type context;
 algorithm
   node := match InstNode.getClass(node)
-    case Class.PARTIAL_CLASS() then expandClass2(node);
+    case Class.PARTIAL_CLASS() then expandClass2(node, context);
     else node;
   end match;
 end expandClass;
 
 function expandClass2
   input output InstNode node;
+  input InstContext.Type context;
 protected
   SCode.Element def = InstNode.definition(node);
   SCode.ClassDef cdef;
@@ -637,13 +640,13 @@ algorithm
   SCode.CLASS(classDef = cdef, info = info) := def;
 
   node := match cdef
-    case SCode.PARTS() then expandClassParts(def, node, info);
-    case SCode.CLASS_EXTENDS() then expandClassParts(def, node, info);
+    case SCode.PARTS() then expandClassParts(def, node, context, info);
+    case SCode.CLASS_EXTENDS() then expandClassParts(def, node, context, info);
     // A short class definition, e.g. class A = B.
     case SCode.DERIVED()
       then match cdef.typeSpec
         case Absyn.TypeSpec.TCOMPLEX() then expandClassDerivedComplex(def, cdef, node, info);
-        else expandClassDerived(def, cdef, node, info);
+        else expandClassDerived(def, cdef, node, context, info);
       end match;
 
     // Overloaded functions are normally handled separately in Function, but we might
@@ -656,7 +659,7 @@ algorithm
       then expandClassDerived(def,
          SCode.ClassDef.DERIVED(Absyn.TypeSpec.TPATH(cdef.functionPath, NONE()),
                                 SCode.NOMOD(), SCode.defaultVarAttr),
-         node, info);
+         node, context, info);
 
     else
       algorithm
@@ -670,6 +673,7 @@ end expandClass2;
 function expandClassParts
   input SCode.Element def;
   input output InstNode node;
+  input InstContext.Type context;
   input SourceInfo info;
 protected
   Class cls;
@@ -685,7 +689,7 @@ algorithm
   node := InstNode.updateClass(cls, node);
 
   Class.EXPANDED_CLASS(elements = cls_tree, modifier = mod, ccMod = cc_mod, prefixes = prefs) := cls;
-  builtin_ext := ClassTree.mapFoldExtends(cls_tree, expandExtends, InstNode.EMPTY_NODE());
+  builtin_ext := ClassTree.mapFoldExtends(cls_tree, function expandExtends(context = context), InstNode.EMPTY_NODE());
 
   if InstNode.name(builtin_ext) == "ExternalObject" then
     node := expandExternalObject(cls_tree, node);
@@ -704,6 +708,7 @@ end expandClassParts;
 function expandExtends
   input output InstNode ext;
   input output InstNode builtinExt = InstNode.EMPTY_NODE();
+  input InstContext.Type context;
 protected
   SCode.Element def;
   Absyn.Path base_path;
@@ -725,10 +730,10 @@ algorithm
       algorithm
         // Look up the base class and expand it.
         scope := InstNode.parent(ext);
-        base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, info);
+        base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, context, info);
         checkExtendsLoop(base_node, scope, base_path, info);
         checkReplaceableBaseClass(base_nodes, base_path, info);
-        base_node := expand(base_node);
+        base_node := expand(base_node, context);
 
         ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def, InstNode.nodeType(base_node)), base_node);
 
@@ -960,6 +965,7 @@ function expandClassDerived
   input SCode.Element element;
   input SCode.ClassDef definition;
   input output InstNode node;
+  input InstContext.Type context;
   input SourceInfo info;
 protected
   Absyn.TypeSpec ty;
@@ -975,7 +981,7 @@ algorithm
   SCode.DERIVED(typeSpec = ty, attributes = sattrs) := definition;
 
   // Look up the class that's being derived from and expand it.
-  ext_node :: _ := Lookup.lookupBaseClassName(AbsynUtil.typeSpecPath(ty), InstNode.parent(node), info);
+  ext_node :: _ := Lookup.lookupBaseClassName(AbsynUtil.typeSpecPath(ty), InstNode.parent(node), context, info);
 
   // Check that the class isn't extending itself, i.e. class A = A.
   if referenceEq(ext_node, node) then
@@ -984,7 +990,7 @@ algorithm
     fail();
   end if;
 
-  ext_node := expand(ext_node);
+  ext_node := expand(ext_node, context);
   ext_node := InstNode.clone(ext_node);
 
   // Fetch the needed information from the class definition and construct a EXPANDED_DERIVED.
@@ -1207,7 +1213,7 @@ algorithm
       algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := InstNode.setNodeType(InstNodeType.NORMAL_CLASS(), node);
-        node := expand(node);
+        node := expand(node, context);
         node := instClass(node, outerMod, attributes, useBinding, instLevel, parent, context);
         updateComponentType(parent, node);
       then
@@ -1293,7 +1299,7 @@ algorithm
   if InstContext.inFastLookup(context) then
     if state < PackageCacheState.EXPANDED then
       InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
-      inst := expand(node);
+      inst := expand(node, context);
       InstNode.setPackageCache(node, inst, PackageCacheState.EXPANDED);
     end if;
 
@@ -1344,7 +1350,7 @@ algorithm
       case SCode.EXTENDS()
         algorithm
           // TODO: Lookup the base class and merge its modifier.
-          ext_node :: _ := Lookup.lookupBaseClassName(elem.baseClassPath, scope, elem.info);
+          ext_node :: _ := Lookup.lookupBaseClassName(elem.baseClassPath, scope, context, elem.info);
 
           // Finding a different element than before expanding extends
           // (probably an inherited element) is an error.
@@ -1685,7 +1691,7 @@ algorithm
     Class.getPrefixes(rdcl_cls), redeclareNode);
 
   if SCodeUtil.isClassExtends(InstNode.definition(redeclareNode)) then
-    orig_node := expand(originalNode);
+    orig_node := expand(originalNode, context);
     orig_cls := InstNode.getClass(orig_node);
 
     new_cls := match (orig_cls, rdcl_cls)
@@ -1724,7 +1730,7 @@ algorithm
   else
     new_cls := match (orig_cls, rdcl_cls)
       case (Class.PARTIAL_BUILTIN(), _)
-        then redeclareEnum(rdcl_cls, orig_cls, prefs, mod, redeclareNode, originalNode);
+        then redeclareEnum(rdcl_cls, orig_cls, prefs, mod, redeclareNode, originalNode, context);
 
       case (_, Class.PARTIAL_CLASS())
         algorithm
@@ -1756,10 +1762,11 @@ function redeclareEnum
   input Modifier outerMod;
   input InstNode redeclareNode;
   input InstNode originalNode;
+  input InstContext.Type context;
   output Class redeclaredClass = redeclareClass;
 algorithm
   // Expand the redeclare node so we can check whether it's an enumeration or not.
-  expand(redeclareNode);
+  expand(redeclareNode, context);
   redeclaredClass := InstNode.getClass(redeclareNode);
 
   redeclaredClass := match (redeclaredClass, originalClass)
@@ -2225,7 +2232,7 @@ algorithm
           checkRecursiveDefinition(node, parent, limitReached = true);
         end if;
 
-        node := expand(node);
+        node := expand(node, context);
         (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel, parent, context);
       then
         node;
