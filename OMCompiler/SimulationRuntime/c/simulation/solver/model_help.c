@@ -1004,18 +1004,16 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
     throwStreamPrint(threadData, "Your memory is not strong enough for our ringbuffer!");
   }
 
-  /* index map */
-  data->simulationInfo->realVarsIndex = (size_t*) calloc(data->modelData->nVariablesRealArray + 1, sizeof(size_t));
-  data->simulationInfo->integerVarsIndex = (size_t*) calloc(data->modelData->nVariablesIntegerArray + 1, sizeof(size_t));
-  data->simulationInfo->booleanVarsIndex = (size_t*) calloc(data->modelData->nVariablesBooleanArray + 1, sizeof(size_t));
-  data->simulationInfo->stringVarsIndex = (size_t*) calloc(data->modelData->nVariablesStringArray + 1, sizeof(size_t));
+  /* allocate index map */
+  data->simulationInfo->realVarsIndex     = (size_t*) calloc(data->modelData->nVariablesRealArray + 1, sizeof(size_t));
+  data->simulationInfo->integerVarsIndex  = (size_t*) calloc(data->modelData->nVariablesIntegerArray + 1, sizeof(size_t));
+  data->simulationInfo->booleanVarsIndex  = (size_t*) calloc(data->modelData->nVariablesBooleanArray + 1, sizeof(size_t));
+  data->simulationInfo->stringVarsIndex   = (size_t*) calloc(data->modelData->nVariablesStringArray + 1, sizeof(size_t));
 
   /* compute index map */
-  for (i = 0; i < data->modelData->nVariablesRealArray + 1; i++)    data->simulationInfo->realVarsIndex[i] = i;
-  for (i = 0; i < data->modelData->nVariablesIntegerArray + 1; i++) data->simulationInfo->integerVarsIndex[i] = i;
-  for (i = 0; i < data->modelData->nVariablesBooleanArray + 1; i++) data->simulationInfo->booleanVarsIndex[i] = i;
-  for (i = 0; i < data->modelData->nVariablesStringArray + 1; i++)  data->simulationInfo->stringVarsIndex[i] = i;
+  data->callback->computeVarIndices(data->simulationInfo->realVarsIndex, data->simulationInfo->integerVarsIndex, data->simulationInfo->booleanVarsIndex, data->simulationInfo->stringVarsIndex);
 
+  /* compute scalar number of variables */
   data->modelData->nVariablesReal     = data->simulationInfo->realVarsIndex[data->modelData->nVariablesRealArray];
   data->modelData->nVariablesInteger  = data->simulationInfo->integerVarsIndex[data->modelData->nVariablesIntegerArray];
   data->modelData->nVariablesBoolean  = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];

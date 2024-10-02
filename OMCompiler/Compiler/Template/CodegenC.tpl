@@ -1288,6 +1288,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
+    <%computeVarIndices(modelInfo.vars, modelNamePrefixStr)%>
+
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
@@ -1308,6 +1310,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        NULL,
        #endif    /* initializeStateSets */
        <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
+       <%symbolName(modelNamePrefixStr,"computeVarIndices")%>,
        <%symbolName(modelNamePrefixStr,"functionODE")%>,
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
@@ -4759,6 +4762,132 @@ template genVarIndexes(list<SimVar> vars, String arrayName)
   const int <%arrayName%>[<%size%>] = {<%varIndexes%>};
   >>
 end genVarIndexes;
+
+template computeVarIndices(SimVars vars, String modelNamePrefix)
+""
+::=
+  match vars
+  case SIMVARS(__) then
+    <<
+    void <%symbolName(modelNamePrefix,"computeVarIndices")%>(size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex)
+    {
+      TRACE_PUSH
+
+      realIndex[0] = 0;
+      integerIndex[0] = 0;
+      booleanIndex[0] = 0;
+      stringIndex[0] = 0;
+
+      /* stateVars */
+      <%computeVarIndicesList(stateVars)%>
+
+      /* derivativeVars */
+      <%computeVarIndicesList(derivativeVars)%>
+
+      /* algVars */
+      <%computeVarIndicesList(algVars)%>
+
+      /* discreteAlgVars */
+      <%computeVarIndicesList(discreteAlgVars)%>
+
+      /* intAlgVars */
+      <%computeVarIndicesList(intAlgVars)%>
+
+      /* boolAlgVars */
+      <%computeVarIndicesList(boolAlgVars)%>
+
+      /* stringAlgVars */
+      <%computeVarIndicesList(stringAlgVars)%>
+
+      /* enumAlgVars */
+
+      /* inputVars */
+      <%computeVarIndicesList(inputVars)%>
+
+      /* outputVars */
+      <%computeVarIndicesList(outputVars)%>
+
+      /* aliasVars */
+      <%computeVarIndicesList(aliasVars)%>
+
+      /* intAliasVars */
+      <%computeVarIndicesList(intAliasVars)%>
+
+      /* boolAliasVars */
+      <%computeVarIndicesList(boolAliasVars)%>
+
+      /* stringAliasVars */
+      <%computeVarIndicesList(stringAliasVars)%>
+
+      /* enumAliasVars */
+
+      /* paramVars */
+      <%computeVarIndicesList(paramVars)%>
+
+      /* intParamVars */
+      <%computeVarIndicesList(intParamVars)%>
+
+      /* boolParamVars */
+      <%computeVarIndicesList(boolParamVars)%>
+
+      /* stringParamVars */
+      <%computeVarIndicesList(stringParamVars)%>
+
+      /* enumParamVars */
+
+      /* extObjVars */
+      <%computeVarIndicesList(extObjVars)%>
+
+      /* constVars */
+      <%computeVarIndicesList(constVars)%>
+
+      /* intConstVars */
+      <%computeVarIndicesList(intConstVars)%>
+
+      /* boolConstVars */
+      <%computeVarIndicesList(boolConstVars)%>
+
+      /* stringConstVars */
+      <%computeVarIndicesList(stringConstVars)%>
+
+      /* enumConstVars */
+
+      /* residualVars */
+
+      /* jacobianVars */
+      <%computeVarIndicesList(jacobianVars)%>
+
+      /* seedVars */
+
+      /* realOptimizeConstraintsVars */
+      <%computeVarIndicesList(realOptimizeConstraintsVars)%>
+
+      /* realOptimizeFinalConstraintsVars */
+      <%computeVarIndicesList(realOptimizeFinalConstraintsVars)%>
+
+      /* sensitivityVars */
+      <%computeVarIndicesList(sensitivityVars)%>
+
+      /* dataReconSetcVars */
+      <%computeVarIndicesList(dataReconSetcVars)%>
+
+      /* dataReconinputVars */
+      <%computeVarIndicesList(dataReconinputVars)%>
+
+      /* dataReconSetBVars */
+      <%computeVarIndicesList(dataReconSetBVars)%>
+
+      TRACE_POP
+    }
+    >>
+end computeVarIndices;
+
+template computeVarIndicesList(list<SimVar> vars)
+::=
+  (vars |> var => match var
+    case SIMVAR(__)
+    then '<%crefShortType(name)%>Index[<%index%>+1] = <%crefShortType(name)%>Index[<%index%>] + 1; <%crefCCommentWithVariability(var)%>'; separator="\n")
+end computeVarIndicesList;
 
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
