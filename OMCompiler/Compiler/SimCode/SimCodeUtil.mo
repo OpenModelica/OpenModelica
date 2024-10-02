@@ -15217,7 +15217,6 @@ algorithm
   n := 2*varInfo.numStateVars+varInfo.numAlgVars+varInfo.numDiscreteReal+varInfo.numOptimizeConstraints+varInfo.numOptimizeFinalConstraints;
 end nVariablesReal;
 
-
 public function getSimCode
   output SimCode.SimCode code;
 protected

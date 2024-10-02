@@ -4862,27 +4862,27 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
   match cr
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case CREF_IDENT(ident = "$DAE_CJ") then "jacobian->dae_cj"
-  case CREF_QUAL(ident="$PRE", subscriptLst={}) then
+  case CREF_QUAL(ident = "$PRE", subscriptLst = {}) then
     (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStrNoUnderscore(cr)%>')
     else crefToCStr(componentRef, ix, true, isStart, &sub))
-  case CREF_QUAL(ident="$START") then
+  case CREF_QUAL(ident = "$START") then
     crefToCStr(componentRef, ix, isPre, true, &sub)
   else match cref2simvar(cr, getSimCode())
-    case SIMVAR(varKind=ALG_STATE_OLD(), index=index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
-    case SIMVAR(aliasvar=ALIAS(varName=varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
-    case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind=JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case SIMVAR(index=-2) then
+    case SIMVAR(varKind = ALG_STATE_OLD(), index = index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
+    case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
+    case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
+    case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
+    case v as SIMVAR(varKind = JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case SIMVAR(index = -2) then
       (let s = (if isPre then crefNonSimVar(crefPrefixPre(cr)) else crefNonSimVar(cr))
       if intEq(ix,0) then s
       else '_<%s%>(<%ix%>)')
-    case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStrNoUnderscore(name)%>')
-    case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre, isStart, &sub)%>'
+    case SIMVAR(index = -1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStrNoUnderscore(name)%>')
+    case v as SIMVAR(__) then varArrayNameValues(v, ix, isPre, isStart, &sub)
     else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
@@ -7837,9 +7837,10 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           '(<%arr%>data->simulationInfo->extObjs[<%index%>])<%&sub%>'
         case SIMVAR(__) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
+          let ty = crefShortType(name)
           '<%if isStart then '<%varAttributes(var, &sub)%>.start'
-             else if isPre then '(<%arr%>data->simulationInfo-><%crefShortType(name)%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
-             else '(<%arr%>data->localData[<%ix%>]-><%crefShortType(name)%>Vars[<%index%>]<%c_comment%>)<%sub%>'%>'
+             else if isPre then '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
+             else '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'%>'
       end match
   end match
 end varArrayNameValues;
@@ -7847,8 +7848,8 @@ end varArrayNameValues;
 template varArrayName(SimVar var)
 ::=
   match var
-  case SIMVAR(varKind=PARAM()) then '<%crefShortType(name)%>Parameter'
-  case SIMVAR(__) then '<%crefShortType(name)%>Vars'
+    case SIMVAR(varKind=PARAM()) then '<%crefShortType(name)%>Parameter'
+    case SIMVAR(__)              then '<%crefShortType(name)%>Vars'
 end varArrayName;
 
 template crefVarInfo(ComponentRef cr)
