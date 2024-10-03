@@ -15785,6 +15785,20 @@ algorithm
   outLibs := listReverse(outLibs);
 end getDirectoriesForDLLsFromLinkLibs;
 
+public function getCmakeCrossPlatformSuffixes
+  "Generate CMAKE_FIND_LIBRARY suffix for different platform"
+  output String cmakeCode;
+algorithm
+  cmakeCode := "\n# Cross-Platform CMAKE_FIND_LIBRARY_SUFFIXES\n"
+                 + "if(WIN32)\n"
+                 + "  set(CMAKE_FIND_LIBRARY_SUFFIXES \".lib\" \".dll\" \".a\")\n"
+                 + "elseif(APPLE)\n"
+                 + "  set(CMAKE_FIND_LIBRARY_SUFFIXES \".dylib\" \".a\")\n"
+                 + "else()\n"
+                 + "  set(CMAKE_FIND_LIBRARY_SUFFIXES \".so\" \".a\")\n"
+                 + "endif()\n";
+end getCmakeCrossPlatformSuffixes;
+
 public function getCmakeLinkLibrariesCode
   "Generate CMake code to find and link all input libraries."
   input list<String> libs;
@@ -15802,6 +15816,11 @@ algorithm
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
   cmakecode := cmakecode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12640
+   * in windows cmake does not find .dll suffixes using find_library(), the default is ".lib" & ".a" we need to explicitly
+   * specify to look for ".dll" suffix
+  */
+  cmakecode := cmakecode + getCmakeCrossPlatformSuffixes() + "\n";
   for lib in libraries loop
     cmakecode := cmakecode + "find_library(" + lib + "\n" +
                  "             NAMES " + lib + "\n" +
