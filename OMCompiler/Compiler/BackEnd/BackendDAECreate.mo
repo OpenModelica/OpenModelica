@@ -1164,6 +1164,13 @@ algorithm
       algorithm
         // Add the binding as an equation and remove the binding from the variable.
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
+        // remove fill from binding exp to avoid expansion if not scalarizing, treating like each
+        e2 := match(Flags.isSet(Flags.NF_SCALARIZE), e2)
+          case (false, DAE.CALL(path = Absyn.IDENT("fill"), expLst = {e1, _})) then
+            e1;
+          else
+            e2;
+        end match;
         e1 := Expression.crefExp(cr);
         attr := BackendDAE.EQ_ATTR_DEFAULT_BINDING;
         (tp, dims) := ComponentReference.crefTypeFull2(cr);
@@ -1293,7 +1300,8 @@ algorithm
       list<DAE.Dimension> dims;
       DAE.ComponentRef name;
       BackendDAE.VarKind kind_1;
-      Option<DAE.Exp> bind, bind1;
+      Option<DAE.Exp> bind;
+      DAE.Exp e1;
       DAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
@@ -1331,6 +1339,13 @@ algorithm
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct, protection);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
+        // remove fill from binding exp to avoid expansion if not scalarizing, treating like each
+        bind = match(Flags.isSet(Flags.NF_SCALARIZE), bind)
+          case (false, SOME(DAE.CALL(path = Absyn.IDENT("fill"), expLst = {e1, _}))) then
+            SOME(e1);
+          else
+            bind;
+        end match;
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
