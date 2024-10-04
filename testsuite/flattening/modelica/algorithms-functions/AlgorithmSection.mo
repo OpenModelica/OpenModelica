@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 9.1 Algorithm Sections (p. 285)
-// cflags: -d=-newInst
 //
 
 model AlgorithmSection
@@ -19,6 +18,7 @@ algorithm
   x3 := x2 + y;
 equation
   u = x1 + x2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmSection;
 
 

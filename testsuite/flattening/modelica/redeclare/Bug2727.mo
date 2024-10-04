@@ -1,7 +1,6 @@
 // name:     ModifiersOnExtends.mo [BUG: #2727]
 // keywords: extends modifier handling
 // status:   correct
-// cflags: -d=-newInst
 //
 // check that modifiers on extends are not lost
 //
@@ -164,6 +163,7 @@ end Modelica;
 
 model M
   extends Bug.M3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     BC2 - Derivative component
 // keywords: Derivative
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Derivative component.
 //
@@ -1199,6 +1198,7 @@ model BC2
 
 equation
   connect(constant1.outPort,derivative1.inPort) annotation(Line(visible=true,points={{-24.21,19.23},{-4.83,16.62}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC2;
 
 // class BC2

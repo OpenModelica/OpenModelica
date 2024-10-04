@@ -1,7 +1,6 @@
 // name: InheritanceClassMod
 // keywords: inheritance
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple inheritance with class modifications
 //
@@ -12,6 +11,7 @@ end A;
 
 class B
   extends A(a = 2.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: PartialApplicationInvalidArg2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f1
@@ -32,7 +31,7 @@ end PartialApplicationInvalidArg2;
 
 // Result:
 // Error processing file: PartialApplicationInvalidArg2.mo
-// [flattening/modelica/scodeinst/PartialApplicationInvalidArg2.mo:30:3-30:42:writable] Error: Function f1 has no input parameter named z.
+// [flattening/modelica/scodeinst/PartialApplicationInvalidArg2.mo:29:3-29:42:writable] Error: Function f1 has no input parameter named z.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

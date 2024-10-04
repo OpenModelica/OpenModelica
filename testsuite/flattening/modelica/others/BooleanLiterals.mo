@@ -1,7 +1,6 @@
 // name: BooleanLiterals
 // keywords: boolean
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests Boolean literals, true and false
 //
@@ -12,6 +11,7 @@ model BooleanLiterals
   Boolean b;
 equation
   b = true;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BooleanLiterals;
 
 // Result:

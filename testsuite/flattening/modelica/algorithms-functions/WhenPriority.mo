@@ -5,7 +5,6 @@
 // Close defined by two equations
 //
 // Drmodelica: 9.1 When-Statements (p. 293)
-// cflags: -d=-newInst
 //
 
 model WhenPriority
@@ -17,6 +16,7 @@ algorithm
   elsewhen x <= 5 then
     close := false;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenPriority;
 
 // Result:

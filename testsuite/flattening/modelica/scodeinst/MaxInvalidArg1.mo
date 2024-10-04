@@ -1,7 +1,6 @@
 // name: MaxInvalidArg1
 // keywords: max
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model MaxInvalidArg1
@@ -10,7 +9,7 @@ end MaxInvalidArg1;
 
 // Result:
 // Error processing file: MaxInvalidArg1.mo
-// [flattening/modelica/scodeinst/MaxInvalidArg1.mo:8:3-8:33:writable] Error: No matching function found for max("str1", "str2").
+// [flattening/modelica/scodeinst/MaxInvalidArg1.mo:7:3-7:33:writable] Error: No matching function found for max("str1", "str2").
 // Candidates are:
 //   max(Real, Real) => Real
 //   max(Integer, Integer) => Integer

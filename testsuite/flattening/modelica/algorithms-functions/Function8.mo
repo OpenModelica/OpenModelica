@@ -1,7 +1,6 @@
 // name:     Function8
 // keywords: function
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // This tests basic function functionality
 //
@@ -18,10 +17,11 @@ model Function8
   String z;
 equation
   x = f(z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Function8;
 // Result:
 // Error processing file: Function8.mo
-// [flattening/modelica/algorithms-functions/Function8.mo:20:3-20:11:writable] Error: Type mismatch for positional argument 1 in f(x=z). The argument has type:
+// [flattening/modelica/algorithms-functions/Function8.mo:19:3-19:11:writable] Error: Type mismatch for positional argument 1 in f(x=z). The argument has type:
 //   String
 // expected type:
 //   Real

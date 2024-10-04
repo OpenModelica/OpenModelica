@@ -1,7 +1,6 @@
 // name:     ExtendsDerived.mo
 // keywords: extends modifier handling
 // status:   correct
-// cflags: -d=-newInst
 //
 // check that modifiers on derived classes which are extended are not lost
 //
@@ -18,6 +17,7 @@ end B;
 
 model A
  extends B.X(z = 15);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 // Result:

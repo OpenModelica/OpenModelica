@@ -1,7 +1,6 @@
 // name: FlowDeclRecord
 // keywords: flow
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Tests the it's not valid to declare a structured component as flow if it
 // contains flow variables, as per section 4.4.2.2 in the Modelica 3.2 spec.
@@ -20,11 +19,12 @@ model FlowInvalid1
   C c1, c2;
 equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlowInvalid1;
 
 // Result:
 // Error processing file: FlowInvalid1.mo
-// [flattening/modelica/others/FlowInvalid1.mo:16:3-16:11:writable] Error: Invalid type prefix 'flow' on variable c1.r.y, due to existing type prefix 'flow'.
+// [flattening/modelica/others/FlowInvalid1.mo:15:3-15:11:writable] Error: Invalid type prefix 'flow' on variable c1.r.y, due to existing type prefix 'flow'.
 // Error: Error occurred while flattening model FlowInvalid1
 //
 // # Error encountered! Exiting...

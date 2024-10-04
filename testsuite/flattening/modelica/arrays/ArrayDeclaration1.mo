@@ -1,7 +1,6 @@
 // name: ArrayDeclaration1
 // keywords: array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests array declaration of the form Type[dim] identifier;
 //
@@ -11,6 +10,7 @@ model ArrayDeclaration1
 equation
   realArray[1] = 4;
   realArray[2] = 5;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDeclaration1;
 
 // Result:

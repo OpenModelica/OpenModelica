@@ -1,7 +1,6 @@
 // name: ConstantDeclRecord
 // keywords: constant
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the constant prefix on a record
 //
@@ -12,6 +11,7 @@ end ConstantRecord;
 
 model ConstantDeclRecord
   constant ConstantRecord cr(r = 2.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantDeclRecord;
 
 // Result:

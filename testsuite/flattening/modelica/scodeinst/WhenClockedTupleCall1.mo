@@ -1,7 +1,6 @@
 // name: WhenClockedTupleCall1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 function f

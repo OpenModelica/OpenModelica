@@ -1,7 +1,6 @@
 // name: Sinh
 // keywords: sinh
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in sinh function
 //
@@ -10,6 +9,7 @@ model Sinh
   Real r;
 equation
   r = sinh(45);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sinh;
 
 // Result:

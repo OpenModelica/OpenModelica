@@ -1,7 +1,6 @@
 // name: FunctionCompOrder3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 function f

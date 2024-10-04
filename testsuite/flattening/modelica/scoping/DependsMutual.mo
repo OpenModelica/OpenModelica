@@ -1,7 +1,6 @@
 // name:     DependsMutual
 // keywords: scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // Mutual dependence is supported since Modelica does not require
 // declare before use.
@@ -28,6 +27,7 @@ class DependsMutual
 equation
   a.x=x;
   x=time;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DependsMutual;
 
 // Result:

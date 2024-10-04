@@ -1,7 +1,6 @@
 // name:     VectorDimension
 // keywords: vector dimension
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests checks dimension validation in vector.
 //
@@ -9,6 +8,7 @@ model VectorDimension
   Real x[2];
 equation
 x = vector([1;3]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorDimension;
 
 // Result:

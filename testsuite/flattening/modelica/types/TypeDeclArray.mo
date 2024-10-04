@@ -1,7 +1,6 @@
 // name: TypeDeclArray
 // keywords: type, array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests defining new types as arrays
 //
@@ -12,6 +11,7 @@ model TypeDeclArray
   ArrayType at;
 equation
   at = {1,2,3};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TypeDeclArray;
 
 // Result:

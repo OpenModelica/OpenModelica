@@ -457,14 +457,14 @@ protected
           end if;
 
           // try to append the shorter to the longer lists
-          if listLength(set1.simple_equations) > listLength(set2.simple_equations) then
+          if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
             set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
           else
             set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
           end if;
 
           // try to change as few pointer entries as possible
-          if listLength(set1.simple_variables) > listLength(set2.simple_variables) then
+          if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
             set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
             Pointer.update(set1_ptr, set);
             for cr in set2.simple_variables loop
@@ -863,7 +863,7 @@ protected
     end if;
     if listEmpty(rest) then // constants and rest are empty
       max_exp := NONE();
-    elseif listLength(rest) == 1 then // one constant or one rest
+    elseif List.hasOneElement(rest) then // one constant or one rest
       max_exp := SOME(List.first(rest));
     else
       max_exp_val :=  Expression.CALL(Call.makeTypedCall(
@@ -892,7 +892,7 @@ protected
     end if;
     if listEmpty(rest) then // constants and rest are empty
       min_exp := NONE();
-    elseif listLength(rest) == 1 then // one constant or one rest
+    elseif List.hasOneElement(rest) then // one constant or one rest
       min_exp := SOME(List.first(rest));
     else
       min_exp_val :=  Expression.CALL(Call.makeTypedCall(
@@ -1014,7 +1014,7 @@ protected
 
     // report non literal nominal values if failtrace is activated
     if Flags.isSet(Flags.FAILTRACE) then
-      str := getInstanceName() + ": There are non literal nominal values in following alias set:"
+      str := getInstanceName() + ": There are non literal nominal values in following alias set:\n"
         + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
         + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
       Error.addCompilerWarning(str);
@@ -1119,7 +1119,7 @@ protected
     if listEmpty(lst_values) then
       chosen_val := NONE();
       chosen_cref := NONE();
-    elseif listLength(lst_values) == 1 then
+    elseif List.hasOneElement(lst_values) then
       (compref, sval) := List.first(lst_values);
       chosen_val := SOME(sval);
       chosen_cref := SOME(compref);
@@ -1146,7 +1146,7 @@ protected
   algorithm
     if listEmpty(lst_values) then
       chosen_val := NONE();
-    elseif listLength(lst_values) == 1 then
+    elseif List.hasOneElement(lst_values) then
       chosen_val := SOME(List.first(lst_values));
     else
       tearing_select := TearingSelect.NEVER;
@@ -1164,13 +1164,11 @@ protected
     input list<Expression> lst;
     output Real mean_val;
   protected
-    Real cur_sum = 0;
+    Real cur_sum;
   algorithm
-    for val in lst loop
-      cur_sum := cur_sum + Expression.realValue(val);
-    end for;
+    cur_sum := sum(Expression.realValue(val) for val in lst);
     mean_val := cur_sum / listLength(lst);
-    print("Mean = "+String(mean_val));
+    print("Mean = " + String(mean_val));
   end mean;
 
   function optionMinMax

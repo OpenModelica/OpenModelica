@@ -1,13 +1,13 @@
 // name: ConstantDeclType
 // keywords: constant
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the constant prefix on a regular type
 //
 
 model ConstantDeclType
   constant Real rConst = 2.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantDeclType;
 
 // Result:

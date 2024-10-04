@@ -63,6 +63,7 @@ import Class = NFClass;
 import TypeCheck = NFTypeCheck;
 import ExpandExp = NFExpandExp;
 import Prefixes = NFPrefixes;
+import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
 import ErrorExt;
 import Array;
@@ -807,7 +808,7 @@ protected
   list<String> literals;
   Integer istep;
 algorithm
-  Expression.RANGE(start = start, step = opt_step, stop = stop) := rangeExp;
+  Expression.RANGE(start = start, step = opt_step, stop = stop) := SimplifyExp.simplify(Expression.map(rangeExp, Expression.replaceResizableParameter));
 
   if isSome(opt_step) then
     SOME(step) := opt_step;

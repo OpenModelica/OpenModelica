@@ -1,7 +1,6 @@
 // name: FuncBuiltinSemiLinear
 // keywords: semiLinear
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin semiLinear operator.
 //

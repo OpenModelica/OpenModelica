@@ -1,7 +1,6 @@
 // name: InStreamInsideOutside
 // keywords: stream inStream connector inside outside
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that inStream is evaluated correctly for an inside and an outside
 // connected stream connector.
@@ -29,6 +28,7 @@ equation
   connect(a.s, s);
   instream_s = inStream(s.s);
   instream_s_a = inStream(a.s.s);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InStreamInsideOutside;
 
 // Result:

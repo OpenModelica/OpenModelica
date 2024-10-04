@@ -1,7 +1,7 @@
 // name: InnerOuterMissing9
 // keywords:
 // status: incorrect
-// cflags: -d=newInst -i=P.InnerOuterMissing9
+// cflags: -i=P.InnerOuterMissing9
 //
 // Checks that only the instance tree is searched when looking for an inner
 // element, and not the enclosing scopes of the class being instantiated.
@@ -13,6 +13,7 @@ package P
   model InnerOuterMissing9
     outer Real x;
   end InnerOuterMissing9;
+  annotation(__OpenModelica_commandLineOptions="-i=P.InnerOuterMissing9");
 end P;
 
 // Result:

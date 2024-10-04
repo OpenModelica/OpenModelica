@@ -1,7 +1,6 @@
 // name: FuncStringInvalid2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that positional arguments can't be used for the named parameters in
 // the String function.
@@ -13,7 +12,7 @@ end FuncStringInvalid2;
 
 // Result:
 // Error processing file: FuncStringInvalid2.mo
-// [flattening/modelica/scodeinst/FuncStringInvalid2.mo:11:3-11:33:writable] Error: No matching function found for String(/*Integer*/ 1, /*Boolean*/ false, /*Integer*/ 3).
+// [flattening/modelica/scodeinst/FuncStringInvalid2.mo:10:3-10:33:writable] Error: No matching function found for String(/*Integer*/ 1, /*Boolean*/ false, /*Integer*/ 3).
 // Candidates are:
 //   String(enumeration(:) $e, Integer minimumLength = 0, Boolean leftJustified = true) => String
 //   String(Integer $i, Integer minimumLength = 0, Boolean leftJustified = true) => String

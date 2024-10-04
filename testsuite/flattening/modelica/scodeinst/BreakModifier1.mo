@@ -1,7 +1,6 @@
 // name: BreakModifier1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model BreakModifier1

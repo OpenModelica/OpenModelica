@@ -1,7 +1,6 @@
 // name:     BS10 - Step component
 // keywords: Step
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Step component.
 //
@@ -948,6 +947,7 @@ model BS10
 
 equation
   connect(step1.outPort,der1.inPort) annotation(Line(visible=true,points={{-50.59,4.97},{-36.6,1.93}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS10;
 // class BS10
 // parameter Integer step1.nout(min = 1) = 1 "Number of outputs";

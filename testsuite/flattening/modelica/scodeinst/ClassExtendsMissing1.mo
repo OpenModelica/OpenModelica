@@ -1,7 +1,6 @@
 // name: ClassExtends1.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that a proper error message is given when no inherited element is found for a class extends.
 //
@@ -16,7 +15,7 @@ end ClassExtendsMissing1;
 
 // Result:
 // Error processing file: ClassExtendsMissing1.mo
-// [flattening/modelica/scodeinst/ClassExtendsMissing1.mo:10:13-12:8:writable] Error: Base class targeted by class extends B not found in the inherited classes.
+// [flattening/modelica/scodeinst/ClassExtendsMissing1.mo:9:13-11:8:writable] Error: Base class targeted by class extends B not found in the inherited classes.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

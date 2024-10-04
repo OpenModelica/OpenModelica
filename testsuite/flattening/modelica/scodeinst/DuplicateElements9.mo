@@ -1,7 +1,6 @@
 // name: DuplicateElements9
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

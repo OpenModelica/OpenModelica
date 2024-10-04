@@ -1,13 +1,13 @@
 // name:     Array3
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is a simple test of basic matrix handling.
 //
 
 model Array3
   Integer x[2,3] = [ 1,2,3 ; 4,5,6 ] ;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array3;
 
 

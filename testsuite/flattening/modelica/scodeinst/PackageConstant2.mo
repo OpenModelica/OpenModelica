@@ -1,7 +1,6 @@
 // name: PackageConstant2
 // keywords:
 // status: correct
-// cflags: -d=newInst,-replacePackageConstants
 //
 // Tests that package constants are collected correctly when the
 // replacePackageConstants debug flag is disabled.
@@ -31,6 +30,7 @@ equation
 algorithm
   z := P.x3;
   f(1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-replacePackageConstants");
 end PackageConstant2;
 
 // Result:

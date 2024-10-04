@@ -1,7 +1,6 @@
 // name:     RDCL.mo [BUG: #2346]
 // keywords: redeclare check
 // status:   correct
-// cflags: -d=-newInst
 
 package B
   connector Flange_b
@@ -30,6 +29,7 @@ end B;
 
 model RDCL
   B.WA w(redeclare B.BaseImpl cm);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RDCL;
 
 

@@ -1,7 +1,6 @@
 // name: IfEquation1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model IfEquation1

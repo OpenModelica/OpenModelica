@@ -1,6 +1,5 @@
 // name: InStreamFlowThreshold
 // keywords: stream instream connector outside
-// cflags: --flowThreshold=2 -d=newInst
 // status: correct
 //
 // Checks that the --flowThreshold flag works.
@@ -33,6 +32,7 @@ model InStreamFlowThreshold
 equation
   instream_a_s1 = inStream(a.s1.s);
   instream_a_s2 = inStream(a.s2.s);
+  annotation(__OpenModelica_commandLineOptions="--flowThreshold=2");
 end InStreamFlowThreshold;
 
 // Result:

@@ -4,7 +4,6 @@
 //
 //
 // Drmodelica: 7.8  Applied to Arrays  element-wise (p. 229)
-// cflags: -d=-newInst
 //
 class OneReturnValue
   Real a = 1, b = 0, c = 1;
@@ -13,6 +12,7 @@ class OneReturnValue
                 // Vector argument, result: {sin(a), sin(b), sin(c)}
   Real s2[2, 2] = sin([1, 2; 3, 4]);
                 // Matrix argument, result: [sin(1), sin(2); sin(3), sin(4)]
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OneReturnValue;
 
 // class OneReturnValue

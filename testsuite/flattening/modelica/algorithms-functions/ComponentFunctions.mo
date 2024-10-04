@@ -1,7 +1,6 @@
 // name:     ComponentFunctions.mo [BUG: #2854]
 // keywords: function calls via component
 // status:   correct
-// cflags: -d=-newInst
 //
 // function call via component
 
@@ -20,6 +19,7 @@ end N;
 model ComponentFunctions
   N n1(c=1),n2(c=2);
   Real r1 = n1.f(time), r2 = n2.f(time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComponentFunctions;
 
 // Result:

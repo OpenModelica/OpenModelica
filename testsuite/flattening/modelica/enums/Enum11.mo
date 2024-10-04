@@ -1,7 +1,6 @@
 // name:     Enum11
 // keywords: enumeration enum
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests integer conversion of enumeration types.
 //
@@ -13,6 +12,7 @@ type MyEnum=enumeration(A,B,C);
 MyEnum A=MyEnum.A;
 
 Integer i = Integer(A);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enum11;
 // Result:
 // class Enum11

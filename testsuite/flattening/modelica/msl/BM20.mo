@@ -1,7 +1,6 @@
 // name:     BM20 -  Sign component
 // keywords: Sign
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sign component.
 //
@@ -976,6 +975,7 @@ model BM20
 
 equation
   connect(constant1.outPort,sign1.inPort) annotation(Line(visible=true,points={{-45.11,18.05},{-18.35,18.05}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM20;
 // class BM20
 // parameter Integer sign1.n = 1 "Number of inputs (= number of outputs)";

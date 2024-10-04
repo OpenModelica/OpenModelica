@@ -1,7 +1,6 @@
 // name:     Encapsulated1
 // keywords: encapsulated
 // status:   correct
-// cflags: -d=-newInst
 //
 // Demonstrating correct use of import.
 
@@ -22,6 +21,7 @@ encapsulated model Encapsulated1
   import A.*;
   import A.B1.C2;
   B.C c(x=1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Encapsulated1;
 
 // Result:

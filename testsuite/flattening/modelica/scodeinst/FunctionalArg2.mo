@@ -1,7 +1,6 @@
 // name: FunctionalArg2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 partial function F

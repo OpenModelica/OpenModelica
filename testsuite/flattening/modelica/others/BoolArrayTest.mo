@@ -1,7 +1,6 @@
 // name:     BoolArrayTest
 // keywords: Arrays, bug #14
 // status:   correct
-// cflags: -d=-newInst
 //
 
 model BoolArrayTest
@@ -11,6 +10,7 @@ model BoolArrayTest
 equation
   a = time > 1;
   c = time > 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BoolArrayTest;
 
 // Result:

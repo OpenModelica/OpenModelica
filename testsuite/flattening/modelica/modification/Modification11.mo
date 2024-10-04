@@ -1,7 +1,6 @@
 // name:     Modification11
 // keywords: modification
 // status:   correct
-// cflags: -d=-newInst
 //
 
 class B
@@ -15,6 +14,7 @@ end A;
 
 class Modification11
   A a(b2(x = 17.0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification11;
 
 // Result:

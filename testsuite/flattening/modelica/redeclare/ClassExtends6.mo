@@ -1,7 +1,6 @@
 // name: ClassExtends6
 // keywords: class, extends
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that partial packages may be extended, and functions inside
 // redeclared.
@@ -44,6 +43,7 @@ end B;
 
 model C
  Integer b = B.b + B.part2(2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end C;
 
 // Result:

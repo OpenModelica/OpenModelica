@@ -1,7 +1,6 @@
 // name: InnerOuterPartialOuter1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 partial model A

@@ -1,7 +1,6 @@
 // name:     MicroCircuitInvalid
 // keywords: <insert keywords here>
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // This test should be incorrect, but currently, it is incorrect because of the
 // wrong reason. When MicroCircuitValid works, we can if check this test is correct.
@@ -82,13 +81,13 @@ class GenMicroCircuit
 end GenMicroCircuit;
 
 class InductorMicroCircuit =
-  GenMicroCircuit(redeclare type CompType = Inductor);
+  GenMicroCircuit(redeclare type CompType = Inductor) annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 
 
 
 // Result:
 // Error processing file: MicroCircuitInvalid.mo
-// [flattening/modelica/extends/MicroCircuitInvalid.mo:85:29-85:53:writable] Error: Class specialization violation: .Inductor is a model, not a type.
+// [flattening/modelica/extends/MicroCircuitInvalid.mo:84:29-84:53:writable] Error: Class specialization violation: .Inductor is a model, not a type.
 // Error: Error occurred while flattening model InductorMicroCircuit
 //
 // # Error encountered! Exiting...

@@ -1,7 +1,6 @@
 // name:     RedeclareComponent2
 // keywords: redeclare component
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests redeclaration of redeclared components.
 //
@@ -20,6 +19,7 @@ class RedeclareComponent2
 
   redeclare Real r(start = 1.0);
   C2 c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareComponent2;
 
 // Result:

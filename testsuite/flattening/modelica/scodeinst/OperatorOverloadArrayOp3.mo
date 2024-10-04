@@ -1,7 +1,6 @@
 // name: OperatorOverloadArrayOp3
 // keywords: operator overload complex
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -18,7 +17,7 @@ end OperatorOverloadArrayOp3;
 
 // Result:
 // Error processing file: OperatorOverloadArrayOp3.mo
-// [flattening/modelica/scodeinst/OperatorOverloadArrayOp3.mo:16:3-16:15:writable] Error: Cannot resolve type of expression c2 - c3. The operands have types Complex[0], Complex[0] in component <NO_COMPONENT>.
+// [flattening/modelica/scodeinst/OperatorOverloadArrayOp3.mo:15:3-15:15:writable] Error: Cannot resolve type of expression c2 - c3. The operands have types Complex[0], Complex[0] in component <NO_COMPONENT>.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

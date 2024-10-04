@@ -1,7 +1,6 @@
 // name: CombineSubscripts3
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize,combineSubscripts -f
 //
 
 record A
@@ -17,6 +16,7 @@ equation
       b[i].x[j] = b[i].x[j - 1] + b[i].p;
     end for;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize,combineSubscripts -f");
 end CombineSubscripts3;
 
 // Result:

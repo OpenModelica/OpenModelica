@@ -1,7 +1,6 @@
 // name: redeclare3.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 // FAILREASON: Invalid usage of time inside function not checked.
 //
@@ -20,7 +19,7 @@ end B;
 
 // Result:
 // Error processing file: redeclare3.mo
-// [flattening/modelica/scodeinst/redeclare3.mo:17:20-17:43:writable] Error: time is not allowed in a function.
+// [flattening/modelica/scodeinst/redeclare3.mo:16:20-16:43:writable] Error: time is not allowed in a function.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

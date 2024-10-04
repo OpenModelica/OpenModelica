@@ -1,7 +1,6 @@
 // name:     VectorizeOneReturnValue
 // keywords: Array
 // status:   correct
-// cflags: -d=-newInst
 //
 
 class OneReturnValue
@@ -11,6 +10,7 @@ class OneReturnValue
                 // Vector argument, result: {sin(a), sin(b), sin(c)}
   Real s2[2, 2] = sin([1, 2; 3, 4]);
                 // Matrix argument, result: [sin(1), sin(2); sin(3), sin(4)]
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OneReturnValue;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: FuncBuiltinMax
 // keywords: max
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin max operator.
 //
@@ -37,7 +36,7 @@ end FuncBuiltinMax;
 //   Real r2 = 3.0;
 //   Real r3 = max(r1, r2);
 //   Real r4 = max(1.0, r2);
-//   Real r5 = -4.611686018427388e+18;
+//   Real r5 = -4.611686018427388e18;
 //   Integer i1 = 6;
 //   Integer i2 = 4;
 //   Integer i3 = max(i2, i1);

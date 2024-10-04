@@ -1,7 +1,6 @@
 // name: FuncStringInvalid1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that type checking works for the builtin String function.
 //
@@ -17,7 +16,7 @@ end FuncStringInvalid1;
 
 // Result:
 // Error processing file: FuncStringInvalid1.mo
-// [flattening/modelica/scodeinst/FuncStringInvalid1.mo:15:3-15:23:writable] Error: No matching function found for String(/*R*/ r).
+// [flattening/modelica/scodeinst/FuncStringInvalid1.mo:14:3-14:23:writable] Error: No matching function found for String(/*R*/ r).
 // Candidates are:
 //   String(enumeration(:) $e, Integer minimumLength = 0, Boolean leftJustified = true) => String
 //   String(Integer $i, Integer minimumLength = 0, Boolean leftJustified = true) => String

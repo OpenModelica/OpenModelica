@@ -1,7 +1,6 @@
 // name: FuncBuiltinEdge
 // keywords: edge
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin edge operator.
 //

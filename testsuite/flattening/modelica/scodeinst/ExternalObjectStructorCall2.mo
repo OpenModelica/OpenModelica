@@ -1,7 +1,6 @@
 // name: ExternalObjectStructorCall2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests that it's not possible to call an external object constructor
 // explicitly.
@@ -28,7 +27,7 @@ end ExternalObjectStructorCall2;
 
 // Result:
 // Error processing file: ExternalObjectStructorCall2.mo
-// [flattening/modelica/scodeinst/ExternalObjectStructorCall2.mo:26:3-26:35:writable] Error: Function ExtObj.destructor not found in scope ExternalObjectStructorCall2.
+// [flattening/modelica/scodeinst/ExternalObjectStructorCall2.mo:25:3-25:35:writable] Error: Function ExtObj.destructor not found in scope ExternalObjectStructorCall2.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

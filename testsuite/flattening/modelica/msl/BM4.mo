@@ -1,7 +1,6 @@
 // name:     BM4 -  Add3 component
 // keywords: Abs
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Add3 component.
 //
@@ -990,6 +989,7 @@ equation
   connect(constant3.outPort,add31.inPort3) annotation(Line(visible=true,points={{-41.77,-6.59},{-4.67,17.74}}));
   connect(constant2.outPort,add31.inPort2) annotation(Line(visible=true,points={{-44.81,24.43},{-3.45,26.26}}));
   connect(constant1.outPort,add31.inPort1) annotation(Line(visible=true,points={{-51.2,56.06},{-4.36,32.95}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM4;
 // class BM4
 // parameter Real add31.k1 = 1.0 "Gain of upper input";

@@ -1,7 +1,6 @@
 // name:     Circle
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 
 
 model Circle
@@ -14,6 +13,7 @@ equation
   der(y) = x;
   x_out = x;
   y_out = y;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Circle;
 
 // Result:

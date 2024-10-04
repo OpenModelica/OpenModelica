@@ -169,9 +169,6 @@ public
     String indexStr = if index > 0 then " " + intString(index) else "";
   algorithm
     str := match comp
-      local
-        Tearing casual;
-        Integer len;
 
       case SINGLE_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Strong Component (status = " + Solve.statusString(comp.status) + ")");
@@ -187,7 +184,6 @@ public
       then str;
 
       case SLICED_COMPONENT() algorithm
-        len := listLength(comp.eqn.indices);
         str := if index == -2 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Component (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
@@ -215,8 +211,7 @@ public
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ")");
         str := str + Tearing.toString(comp.strict, "Strict Tearing Set");
         if isSome(comp.casual) then
-          SOME(casual) := comp.casual;
-          str := str + Tearing.toString(casual, "Casual Tearing Set");
+          str := str + Tearing.toString(Util.getOption(comp.casual), "Casual Tearing Set");
         end if;
       then str;
 
@@ -923,8 +918,9 @@ protected
     list<Integer> idx_lst;
     Pointer<Variable> var;
     Pointer<Equation> eqn;
-    UnorderedMap<Integer, Slice.IntLst> var_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, listLength(comp_indices));
-    UnorderedMap<Integer, Slice.IntLst> eqn_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, listLength(comp_indices));
+    Integer len_comps = listLength(comp_indices);
+    UnorderedMap<Integer, Slice.IntLst> var_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);
+    UnorderedMap<Integer, Slice.IntLst> eqn_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);
   algorithm
     // store all component var and eqn indices in maps
     for eqn_idx in comp_indices loop
@@ -967,11 +963,13 @@ protected
     UnorderedSet<ComponentRef> set;
   algorithm
     try
+      fixed_dependencies := list(ComponentRef.mapExp(dep, Expression.replaceResizableParameter) for dep in dependencies);
+      fixed_dependencies := list(ComponentRef.simplifySubscripts(dep) for dep in fixed_dependencies);
       // replace non derivative dependencies with their previous dependencies (also remove self dependency)
       // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
       if jacType == NBJacobian.JacobianType.ODE then
         set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        for dep in listReverse(dependencies) loop
+        for dep in listReverse(fixed_dependencies) loop
           // if the dependency is a state add itself, otherwise add the dependencies already saved
           // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
           if BVariable.checkCref(dep, BVariable.isState) then
@@ -986,13 +984,14 @@ protected
         fixed_dependencies := UnorderedSet.toList(set);
       else
         // only remove self dependency
-        fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in dependencies);
+        fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in fixed_dependencies);
       end if;
       // update the current value (res/tmp) --> {independent vars}
       UnorderedMap.add(cref, fixed_dependencies, map);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update " + ComponentRef.toString(cref)
         + " with dependencies " + List.toString(dependencies, ComponentRef.toString) + "."});
+      fail();
     end try;
   end updateDependencyMap;
 

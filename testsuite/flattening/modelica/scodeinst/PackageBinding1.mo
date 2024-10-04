@@ -1,7 +1,6 @@
 // name: PackageBinding1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 package A
@@ -15,7 +14,7 @@ end PackageBinding1;
 
 // Result:
 // Error processing file: PackageBinding1.mo
-// [flattening/modelica/scodeinst/PackageBinding1.mo:13:3-13:12:writable] Error: Component 'a2' may not have a binding equation due to class specialization 'package'.
+// [flattening/modelica/scodeinst/PackageBinding1.mo:12:3-12:12:writable] Error: Component 'a2' may not have a binding equation due to class specialization 'package'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

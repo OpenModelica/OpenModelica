@@ -494,7 +494,7 @@ public
             jacobianIndex       = simJac.jacobianIndex,
             partitionIndex      = simJac.partitionIndex,
             generic_loop_calls  = list(SimGenericCall.convert(gc) for gc in simJac.generic_loop_calls),
-            crefsHT             = if Util.isSome(simJac.jac_map) then SOME(SimCodeUtil.convertSimCodeMap(Util.getOption(simJac.jac_map))) else NONE()
+            crefsHT             = Util.applyOption(simJac.jac_map, SimCodeUtil.convertSimCodeMap)
           );
         then oldJac;
 
@@ -503,22 +503,6 @@ public
         then fail();
       end match;
     end convert;
-
-    function convertOpt
-      input Option<SimJacobian> simJac_opt;
-      output Option<OldSimCode.JacobianMatrix> oldJac_opt;
-    algorithm
-      oldJac_opt := match simJac_opt
-        local
-          SimJacobian simJac;
-          OldSimCode.JacobianMatrix oldJac;
-        case SOME(simJac) then SOME(convert(simJac));
-        case NONE()       then NONE();
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
-        then fail();
-      end match;
-    end convertOpt;
   end SimJacobian;
 
   constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {}, {}, {}, {}, 0, {}, NONE());

@@ -1,7 +1,6 @@
 // name:     BooleanArrayEq
 // keywords: array Boolean equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests array equations with components indexed by Boolean.
 //
@@ -10,6 +9,7 @@ model BooleanArrayEq
   Boolean arr[Boolean];
 equation
   arr = {true, true};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BooleanArrayEq;
 
 // Result:

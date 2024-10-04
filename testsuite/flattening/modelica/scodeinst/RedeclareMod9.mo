@@ -1,7 +1,6 @@
 // name: RedeclareMod9
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record NominalValues

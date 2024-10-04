@@ -5,7 +5,6 @@
 // MORE WORK ON THIS FILE HAS TO BE DONE!
 //
 // Drmodelica: 4.5 Design a Class to be Extended (p. 137)
-// cflags: -d=-newInst
 //
 type Voltage = Real(Unit = "V");
 
@@ -40,6 +39,7 @@ model TempResistor3 "Temperature dependent electrical resistor"
   parameter Real Tref(unit = "degC") = 20    "Reference temperature";
   Real    Temp = 20            "Actual temperature";
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TempResistor3;
 
 

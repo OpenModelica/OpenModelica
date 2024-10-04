@@ -765,7 +765,7 @@ public
 
         // for equations have to be split up before. Since they are not causalized
         // they can be executed in any order
-        case (BEquation.FOR_EQUATION(), {}) guard(listLength(eqn.body) == 1) algorithm
+        case (BEquation.FOR_EQUATION(body = {_}), {}) algorithm
           rhs := Equation.getRHS(eqn);
           (names, ranges) := Iterator.getFrames(eqn.iter);
           tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
@@ -774,7 +774,7 @@ public
         then tmp;
 
         // generic residual, for loop could not be fully recovered
-        case (BEquation.FOR_EQUATION(), _) guard(listLength(eqn.body) == 1) algorithm
+        case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
           rhs := Equation.getRHS(eqn);
           (names, ranges) := Iterator.getFrames(eqn.iter);
           tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
@@ -1078,7 +1078,7 @@ public
           conditions  = list(ComponentRef.toDAE(cr) for cr in blck.conditions),
           initialCall = blck.initialCall,
           whenStmtLst = list(WhenStatement.convert(stmt) for stmt in blck.when_stmts),
-          elseWhen    = convertOpt(blck.else_when),
+          elseWhen    = Util.applyOption(blck.else_when, convert),
           source      = blck.source,
           eqAttr      = EquationAttributes.convert(blck.attr)
         );
@@ -1102,29 +1102,14 @@ public
       end match;
     end convert;
 
-    function convertOpt
-      input Option<Block> blck;
-      output Option<OldSimCode.SimEqSystem> oldBlck = if Util.isSome(blck) then SOME(convert(Util.getOption(blck))) else NONE();
-    end convertOpt;
-
     function convertList
       input list<Block> blck_lst;
-      output list<OldSimCode.SimEqSystem> oldBlck_lst = {};
-    algorithm
-      for blck in blck_lst loop
-        oldBlck_lst := convert(blck) :: oldBlck_lst;
-      end for;
-      oldBlck_lst := listReverse(oldBlck_lst);
+      output list<OldSimCode.SimEqSystem> oldBlck_lst = list(convert(blck) for blck in blck_lst);
     end convertList;
 
     function convertListList
       input list<list<Block>> blck_lst_lst;
-      output list<list<OldSimCode.SimEqSystem>> oldBlck_lst_lst = {};
-    algorithm
-      for blck_lst in blck_lst_lst loop
-        oldBlck_lst_lst := convertList(blck_lst) :: oldBlck_lst_lst;
-      end for;
-      oldBlck_lst_lst := listReverse(oldBlck_lst_lst);
+      output list<list<OldSimCode.SimEqSystem>> oldBlck_lst_lst = list(convertList(blck_lst) for blck_lst in blck_lst_lst);
     end convertListList;
 
     function fixIndices
@@ -1380,7 +1365,7 @@ public
         crefs                 = listReverse(crefs),
         indexNonLinearSystem  = system.indexSystem,
         nUnknowns             = system.size,
-        jacobianMatrix        = SimJacobian.convertOpt(Pointer.access(system.jacobian)), // ToDo update this!
+        jacobianMatrix        = Util.applyOption(Pointer.access(system.jacobian), SimJacobian.convert), // ToDo update this!
         homotopySupport       = system.homotopy,
         mixedSystem           = system.mixed,
         tornSystem            = system.torn,

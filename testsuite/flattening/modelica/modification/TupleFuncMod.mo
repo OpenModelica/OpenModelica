@@ -1,7 +1,6 @@
 // name:     TupleFuncMod
 // keywords: #4521
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that functions with multiple outputs can be used as modifiers.
 //
@@ -20,6 +19,7 @@ end f;
 
 model TupleFuncMod
   Real Z2[2] = f(2, {1.0, 2.0});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TupleFuncMod;
 
 // Result:

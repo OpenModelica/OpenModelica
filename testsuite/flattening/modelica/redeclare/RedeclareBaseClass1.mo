@@ -1,7 +1,6 @@
 // name:     RedeclareBaseClass1
 // keywords: class extends, redeclare
 // status:   correct
-// cflags: -d=-newInst
 //
 // This test checks that it's possible to redeclare the base class in a class
 // extends. It doesn't really check that it's done correctly, but that the
@@ -30,6 +29,7 @@ class RedeclareBaseClass1
 
   constant R r = R(4.0);
   Real x = r.x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareBaseClass1;
 
 // Result:

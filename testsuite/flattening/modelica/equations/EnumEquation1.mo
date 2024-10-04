@@ -1,7 +1,6 @@
 // name:     EnumEquation1
 // keywords: equation, enumeration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that equations involving enumeration work.
 //
@@ -13,6 +12,7 @@ equation
   e1 = E.a;
   E.b = e2;
   E.a = E.a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumEquation1;
 
 // Result:

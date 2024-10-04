@@ -1,7 +1,6 @@
 // name:     Reductions
 // keywords: reduction
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test reduction expression.
 // Fix for bug #1136: http://openmodelica.ida.liu.se:8080/cb/issue/1136?navigation=true
@@ -22,6 +21,7 @@ equation
   ery = min(i for i in 1.0:0.0);
   erz = max(i for i in 1.0:0.0);
   erw = product(i for i in 1.0:0.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Reductions;
 
 // class Reductions

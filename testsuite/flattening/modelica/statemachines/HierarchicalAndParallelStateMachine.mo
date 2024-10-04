@@ -1,7 +1,6 @@
 // name: HierarchicalAndParallelStateMachine
 // keywords: state machines features
 // status: correct
-// cflags: -d=-newInst
 
 block HierarchicalAndParallelStateMachine
   "Example from the MLS 3.3, Section 17.3.7"
@@ -80,6 +79,7 @@ public
     v = previous(v) + 5;
   end State2;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HierarchicalAndParallelStateMachine;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     Implicit Integer to enumeration conversion
 // keywords: type
 // status:   correct
-// cflags:   +intEnumConversion -d=-newInst
 //
 // This tests that the +intEnumConversion flag works.
 //
@@ -36,6 +35,7 @@ algorithm
       z := -3;
     end if;
   end when;
+  annotation(__OpenModelica_commandLineOptions="+intEnumConversion -d=-newInst");
 end IntegerToEnumeration;
 
 // Result:

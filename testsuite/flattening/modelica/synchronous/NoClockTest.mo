@@ -1,7 +1,6 @@
 // name: NoClockTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model NoClockTest
   output Real x;
@@ -12,6 +11,7 @@ equation
   x = noClock(3);
   y = noClock(z);
   yy = noClock(vector([3;4]));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NoClockTest;
 
 // Result:

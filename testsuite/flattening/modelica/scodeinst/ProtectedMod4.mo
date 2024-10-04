@@ -1,7 +1,6 @@
 // name: ProtectedMod4
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 

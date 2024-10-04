@@ -1,7 +1,6 @@
 // name: InStreamTwoInside
 // keywords: stream inStream connector inside
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that inStream is evaluated correctly for a model where the stream just
 // passes through some components.
@@ -47,6 +46,7 @@ equation
   connect(b.s, a1.s1);
   connect(a1.s2, a2.s1);
   connect(a2.s2, c.s);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InStreamPipeline;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     EnumInnerOuterDim
 // keywords: enumeration enum inner outer dimension
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that inner outer arrays with enumeration dimensions are handled
 // correctly.
@@ -17,6 +16,7 @@ end Model1;
 block Model2
   inner parameter Real[E] p1;
   Model1 m1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Model2;
 
 // Result:

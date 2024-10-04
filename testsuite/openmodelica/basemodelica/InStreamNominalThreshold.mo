@@ -1,7 +1,6 @@
 // name: InStreamNominalThreshold
 // keywords:
 // status: correct
-// cflags: -d=newInst -f
 //
 //
 
@@ -32,6 +31,7 @@ model InStreamNominalThreshold
 equation
   instream_a_s1 = inStream(a.s1.s);
   instream_a_s2 = inStream(a.s2.s);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f");
 end InStreamNominalThreshold;
 
 // Result:

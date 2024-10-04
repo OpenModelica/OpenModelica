@@ -1,6 +1,5 @@
 // name: Subscript3
 // status: correct
-// cflags: -d=newInst
 //
 //
 

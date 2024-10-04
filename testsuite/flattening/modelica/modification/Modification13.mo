@@ -1,7 +1,6 @@
 // name:     Modification13
 // keywords: modification, attributes, arrays
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 
@@ -11,6 +10,7 @@ end Modification12;
 
 class Modification13
   Modification12 a(x={1.0,2.0,4.0});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification13;
 
 

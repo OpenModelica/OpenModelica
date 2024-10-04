@@ -1,7 +1,6 @@
 // name: TypeRestriction3
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 type T
@@ -17,7 +16,7 @@ end TypeRestriction3;
 
 // Result:
 // Error processing file: TypeRestriction3.mo
-// [flattening/modelica/declarations/TypeRestriction3.mo:10:3-11:8:writable] Error: Protected sections are not allowed in type.
+// [flattening/modelica/declarations/TypeRestriction3.mo:9:3-10:8:writable] Error: Protected sections are not allowed in type.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

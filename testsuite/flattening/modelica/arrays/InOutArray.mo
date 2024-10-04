@@ -1,7 +1,6 @@
 // name: InOutArray
 // keywords: <insert keywords here>
 // status: correct
-// cflags: -d=-newInst
 
 function sumInt
     input Integer[:] inVal;
@@ -55,6 +54,7 @@ class InOutArray
     Integer Csum = sumBool(C);
     constant Real D[3, 2] = { { 1.0, 2.0 }, { 3.0, 4.0 }, { 5.0, 6.0 } };
     constant Real F[3, 2] = addReal32(D);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InOutArray;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     Delay2
 // keywords: builtin
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test flattening of the builtin function delay.
 // Expression value is cast into Real.
@@ -13,6 +12,7 @@ model Delay
 equation
   y = 0;
   x = delay(y+1, 2.5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Delay;
 
 // Result:

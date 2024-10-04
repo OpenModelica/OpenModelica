@@ -1,8 +1,8 @@
 // name:     CGraphBug
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 
+setCommandLineOptions("-d=-newInst");
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 loadFile("CGraphBug.mo"); getErrorString();
 
@@ -10,6 +10,7 @@ instantiateModel(Test); getErrorString();
 
 
 // Result:
+// true
 // true
 // ""
 // true
@@ -319,9 +320,9 @@ instantiateModel(Test); getErrorString();
 //   parameter Real mass.I_11(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = 0.0) = 1.0 \"(1,1) element of inertia tensor\";
 //   parameter Real mass.I_22(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = 0.0) = 1.0 \"(2,2) element of inertia tensor\";
 //   parameter Real mass.I_33(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = 0.0) = 1.0 \"(3,3) element of inertia tensor\";
-//   parameter Real mass.I_21(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = -9.999999999999999e+59) = 0.0 \"(2,1) element of inertia tensor\";
-//   parameter Real mass.I_31(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = -9.999999999999999e+59) = 0.0 \"(3,1) element of inertia tensor\";
-//   parameter Real mass.I_32(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = -9.999999999999999e+59) = 0.0 \"(3,2) element of inertia tensor\";
+//   parameter Real mass.I_21(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = -1e60) = 0.0 \"(2,1) element of inertia tensor\";
+//   parameter Real mass.I_31(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = -1e60) = 0.0 \"(3,1) element of inertia tensor\";
+//   parameter Real mass.I_32(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = -1e60) = 0.0 \"(3,2) element of inertia tensor\";
 //   Real mass.r_0[1](quantity = \"Length\", unit = \"m\", start = 0.0, stateSelect = StateSelect.avoid) \"Position vector from origin of world frame to origin of frame_a\";
 //   Real mass.r_0[2](quantity = \"Length\", unit = \"m\", start = 0.0, stateSelect = StateSelect.avoid) \"Position vector from origin of world frame to origin of frame_a\";
 //   Real mass.r_0[3](quantity = \"Length\", unit = \"m\", start = 0.0, stateSelect = StateSelect.avoid) \"Position vector from origin of world frame to origin of frame_a\";
@@ -444,7 +445,7 @@ instantiateModel(Test); getErrorString();
 //   parameter Real world.n[1](unit = \"1\") = 0.0 \"Direction of gravity resolved in world frame (gravity = g*n/length(n))\";
 //   parameter Real world.n[2](unit = \"1\") = -1.0 \"Direction of gravity resolved in world frame (gravity = g*n/length(n))\";
 //   parameter Real world.n[3](unit = \"1\") = 0.0 \"Direction of gravity resolved in world frame (gravity = g*n/length(n))\";
-//   parameter Real world.mue(unit = \"m3/s2\", min = 0.0) = 398600000000000.0 \"Gravity field constant (default = field constant of earth)\";
+//   parameter Real world.mue(unit = \"m3/s2\", min = 0.0) = 3.986e14 \"Gravity field constant (default = field constant of earth)\";
 //   parameter Boolean world.driveTrainMechanics3D = true \"= true, if 3-dim. mechanical effects of Parts.Mounting1D/Rotor1D/BevelGear1D shall be taken into account\";
 //   parameter Real world.axisLength(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.5 * world.nominalLength \"Length of world axes arrows\";
 //   parameter Real world.axisDiameter(quantity = \"Length\", unit = \"m\", min = 0.0) = world.axisLength / world.defaultFrameDiameterFraction \"Diameter of world axes arrows\";
@@ -466,7 +467,7 @@ instantiateModel(Test); getErrorString();
 //   Integer world.gravityArrowColor[1](min = 0, max = 255) \"Color of gravity arrow\";
 //   Integer world.gravityArrowColor[2](min = 0, max = 255) \"Color of gravity arrow\";
 //   Integer world.gravityArrowColor[3](min = 0, max = 255) \"Color of gravity arrow\";
-//   parameter Real world.gravitySphereDiameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 12742000.0 \"Diameter of sphere representing gravity center (default = mean diameter of earth)\";
+//   parameter Real world.gravitySphereDiameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 1.2742e7 \"Diameter of sphere representing gravity center (default = mean diameter of earth)\";
 //   Integer world.gravitySphereColor[1](min = 0, max = 255) \"Color of gravity sphere\";
 //   Integer world.gravitySphereColor[2](min = 0, max = 255) \"Color of gravity sphere\";
 //   Integer world.gravitySphereColor[3](min = 0, max = 255) \"Color of gravity sphere\";
@@ -540,7 +541,7 @@ instantiateModel(Test); getErrorString();
 //     mass.Q[3] = 0.0;
 //     mass.Q[4] = 1.0;
 //   end if;
-//   mass.g_0 = Modelica.Mechanics.MultiBody.World$world.gravityAcceleration({mass.frame_a.r_0[1], mass.frame_a.r_0[2], mass.frame_a.r_0[3]} + Modelica.Mechanics.MultiBody.Frames.resolve1(mass.frame_a.R, {mass.r_CM[1], mass.r_CM[2], mass.r_CM[3]}), Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity, {0.0, -9.81, 0.0}, 398600000000000.0);
+//   mass.g_0 = Modelica.Mechanics.MultiBody.World$world.gravityAcceleration({mass.frame_a.r_0[1], mass.frame_a.r_0[2], mass.frame_a.r_0[3]} + Modelica.Mechanics.MultiBody.Frames.resolve1(mass.frame_a.R, {mass.r_CM[1], mass.r_CM[2], mass.r_CM[3]}), Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity, {0.0, -9.81, 0.0}, 3.986e14);
 //   mass.v_0[1] = der(mass.frame_a.r_0[1]);
 //   mass.v_0[2] = der(mass.frame_a.r_0[2]);
 //   mass.v_0[3] = der(mass.frame_a.r_0[3]);

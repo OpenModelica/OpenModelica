@@ -1,7 +1,6 @@
 // name: CevalRecordArray6
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model MultiLayer

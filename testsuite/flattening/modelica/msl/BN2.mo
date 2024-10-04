@@ -1,7 +1,6 @@
 // name:     BN2 -  Limiter component
 // keywords: Limiter
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Nonlinear.Limiter component.
 //
@@ -939,6 +938,7 @@ model BN2
 
 equation
   connect(constant1.outPort,limiter1.inPort) annotation(Line(visible=true,points={{-40.55,18.96},{-12.57,20.18}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BN2;
 
 // class BN2

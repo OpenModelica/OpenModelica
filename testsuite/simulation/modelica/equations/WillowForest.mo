@@ -5,7 +5,6 @@
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 //
 // Drmodelica: 15.4.2 An Energy Forest Annual Growth Model for Willow Trees (p. 559) Not in the notebook
-// cflags: -d=-newInst
 //
 class WillowForest
   parameter Real h = 0.95 "Harvest fraction";
@@ -41,6 +40,7 @@ equation
       wMortAcc = if(c == 1) then wMort else pre(wMortAcc) + wMort;
 
     end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WillowForest;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,6 +1,6 @@
 // name: MetaModelicaMatchElse
 // status: correct
-// cflags: +g=MetaModelica +i=MetaModelicaMatchElse.A -d=-newInst
+// cflags: -g=MetaModelica -i=MetaModelicaMatchElse.A -d=-newInst
 //
 // Tests that the parser can handle all sorts of match/matchcontinue
 
@@ -28,7 +28,6 @@ end f1;
 class A
 constant Real x = 1.0;
 end A;
-
 end MetaModelicaMatchElse;
 
 // Result:

@@ -1,6 +1,5 @@
 // name: ImportUnqualified4.mo
 // status: correct
-// cflags: -d=newInst
 
 package A
   import A.Units.*;

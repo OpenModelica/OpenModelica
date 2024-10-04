@@ -5,7 +5,6 @@
 // <decription>
 //
 // Drmodelica: 8.2 XPowers (p. 242)
-// cflags: -d=-newInst
 //
 model Xpowers2
   parameter Real x=10;
@@ -17,6 +16,7 @@ equation
     for i in 1:n-1 loop
   xpowers[i + 1] = xpowers[i]*x;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Xpowers2;
 
 // Result:

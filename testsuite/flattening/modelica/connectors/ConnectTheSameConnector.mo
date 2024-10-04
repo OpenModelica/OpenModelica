@@ -1,7 +1,6 @@
 // name:     ConnectTheSameConnector
 // keywords: connect(A, A) should be ignored
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 
@@ -17,6 +16,7 @@ model ConnectTheSameConnector
 equation
  connect(c1, c2);
  connect(c1, c1) "bummer!";
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectTheSameConnector;
 
 
@@ -33,6 +33,6 @@ end ConnectTheSameConnector;
 //   (-c1.i) + (-c2.i) = 0.0;
 //   c1.u = c2.u;
 // end ConnectTheSameConnector;
-// [flattening/modelica/connectors/ConnectTheSameConnector.mo:19:2-19:27:writable] Warning: connect(c1, c1) connects the same connector instance! The connect equation will be ignored.
+// [flattening/modelica/connectors/ConnectTheSameConnector.mo:18:2-18:27:writable] Warning: connect(c1, c1) connects the same connector instance! The connect equation will be ignored.
 //
 // endResult

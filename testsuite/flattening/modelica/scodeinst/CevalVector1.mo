@@ -1,7 +1,6 @@
 // name: CevalVector1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

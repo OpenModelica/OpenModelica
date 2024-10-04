@@ -1,7 +1,6 @@
 // name: PackageIllegal
 // keywords: package
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests to make sure that a package cannot have non-class components
 // THIS TEST SHOULD FAIL
@@ -23,6 +22,7 @@ model PackageIllegal
   IllegalPackage.LegalClass lc;
 equation
   lc.i = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PackageIllegal;
 
 // Result:

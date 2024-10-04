@@ -1,7 +1,6 @@
 // name: redeclare8.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 
 model A

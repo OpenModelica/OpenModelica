@@ -1,7 +1,6 @@
 // name:     Connect10
 // keywords: connect
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Testing of input/output flags
 //
@@ -19,4 +18,5 @@ class Connect10
   C2 c2;
 equation
   connect(c1,c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect10;

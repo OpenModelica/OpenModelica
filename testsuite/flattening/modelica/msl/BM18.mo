@@ -1,7 +1,6 @@
 // name:     BM18 -  Min component
 // keywords: Min
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Min component.
 //
@@ -973,6 +972,7 @@ model BM18
 equation
   connect(constant2.outPort,min1.inPort2) annotation(Line(visible=true,points={{-52.72,-2.33},{-14.4,22.0}}));
   connect(constant1.outPort,min1.inPort1) annotation(Line(visible=true,points={{-58.8,45.42},{-13.18,31.73}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM18;
 // class BM18
 // parameter Integer min1.n = 1 "Dimension of input and output vectors.";

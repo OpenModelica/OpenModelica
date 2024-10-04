@@ -1,7 +1,6 @@
 // name: InnerOuterMissing5
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A
@@ -21,6 +20,6 @@ end InnerOuterMissing5;
 // class InnerOuterMissing5
 //   Real b.m.x = 1.0;
 // end InnerOuterMissing5;
-// [flattening/modelica/scodeinst/InnerOuterMissing5.mo:12:9-12:20:writable] Warning: An inner declaration for outer class M could not be found and was automatically generated.
+// [flattening/modelica/scodeinst/InnerOuterMissing5.mo:11:9-11:20:writable] Warning: An inner declaration for outer class M could not be found and was automatically generated.
 //
 // endResult

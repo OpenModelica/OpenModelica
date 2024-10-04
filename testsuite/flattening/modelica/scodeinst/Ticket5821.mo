@@ -2,7 +2,6 @@
 // keywords: tests Connections.branch/Connections.uniqueRoot/Connections.uniqueRootIndices
 // status:   correct
 //
-// cflags:   -d=newInst --std=3.2
 //
 
 
@@ -2139,6 +2138,7 @@ end YD;
 model Test_total
   extends YD.Test;
  annotation(experiment(StopTime = 2.5));
+  annotation(__OpenModelica_commandLineOptions="--std=3.2");
 end Test_total;
 
 
@@ -2536,7 +2536,7 @@ end Test_total;
 //   booleanTable.combiTimeTable.timeScaled = time;
 //   when {time >= pre(booleanTable.combiTimeTable.nextTimeEvent), initial()} then
 //     booleanTable.combiTimeTable.nextTimeEventScaled = Modelica.Blocks.Tables.Internal.getNextTimeEvent(booleanTable.combiTimeTable.tableID, booleanTable.combiTimeTable.timeScaled);
-//     booleanTable.combiTimeTable.nextTimeEvent = if booleanTable.combiTimeTable.nextTimeEventScaled < 9.999999999999999e+59 then booleanTable.combiTimeTable.nextTimeEventScaled else 9.999999999999999e+59;
+//     booleanTable.combiTimeTable.nextTimeEvent = if booleanTable.combiTimeTable.nextTimeEventScaled < 1e60 then booleanTable.combiTimeTable.nextTimeEventScaled else 1e60;
 //   end when;
 //   booleanTable.combiTimeTable.y[1] = booleanTable.combiTimeTable.p_offset[1] + Modelica.Blocks.Tables.Internal.getTimeTableValueNoDer(booleanTable.combiTimeTable.tableID, 1, booleanTable.combiTimeTable.timeScaled, booleanTable.combiTimeTable.nextTimeEventScaled, pre(booleanTable.combiTimeTable.nextTimeEventScaled));
 //   booleanTable.realToBoolean.y = booleanTable.realToBoolean.u >= booleanTable.realToBoolean.threshold;
@@ -2626,17 +2626,17 @@ end Test_total;
 //   logicalDelayStateGraph.T4.outPort.node = logicalDelayStateGraph.T4.inPort.node;
 //   assert(logicalDelayStateGraph.T4.waitTime > 1e-13, "Either set delayTransition = false, or set waitTime (= " + String(logicalDelayStateGraph.T4.waitTime, 6, 0, true) + ") > " + String(1e-13, 6, 0, true));
 // end Test_total;
-// [flattening/modelica/scodeinst/Ticket5821.mo:39:7-39:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:60:7-60:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:39:7-39:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:60:7-60:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:39:7-39:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:60:7-60:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:38:7-38:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:59:7-59:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:38:7-38:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:59:7-59:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:38:7-38:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:59:7-59:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
 //
 // endResult

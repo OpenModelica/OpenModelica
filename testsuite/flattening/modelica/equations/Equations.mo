@@ -1,7 +1,6 @@
 // name:     Equations
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Drmodelica:
 //
@@ -11,6 +10,7 @@ class Equations
   constant Integer one = 1;      // Declaration equation
 equation
   x = 3*one;            // Normal equation
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Equations;
 
 

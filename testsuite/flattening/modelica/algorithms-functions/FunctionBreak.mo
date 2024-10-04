@@ -1,7 +1,6 @@
 // name:     FunctionBreak
 // keywords: function break
 // status:   correct
-// cflags: -d=-newInst
 //
 // break statement in function
 
@@ -25,6 +24,7 @@ model FunctionBreak
 equation
   x = f(y);
   y = f(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionBreak;
 
 

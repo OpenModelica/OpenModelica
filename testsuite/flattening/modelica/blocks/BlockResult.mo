@@ -1,7 +1,6 @@
 // name: BlockResult
 // keywords: block output
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that block outputs are handled correctly.
 //
@@ -27,6 +26,7 @@ model BlockResult
   foo f1(foo1=mod1, foo2=mod2);
 equation
   result = f1.result;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockResult;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     Delay
 // keywords: builtin
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test builtin function delay.
 //
@@ -12,6 +11,7 @@ equation
   y = sin(time);
   x = delay(y+1, 2.5);
   z = delay(y-1, 0.5, 1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Delay;
 
 // Result:

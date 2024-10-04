@@ -1,7 +1,6 @@
 // name: const11.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package P

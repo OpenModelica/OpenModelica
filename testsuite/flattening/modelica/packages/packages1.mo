@@ -1,7 +1,6 @@
 // name:     package-s-1
 // keywords: package, declaration
 // status:   correct
-// cflags: -d=-newInst
 
 //
 //   Instantiation of models residing in packages.
@@ -24,6 +23,7 @@ end Modelica;
 model World
   P.C c;
   Modelica.SIunits.Area a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end World;
 
 // Result:

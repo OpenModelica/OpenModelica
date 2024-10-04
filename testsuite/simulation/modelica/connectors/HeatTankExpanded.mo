@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 4.4 Parameterization and extension of Interfaces (p. 136).
-// cflags: -d=-newInst
 //
 
 model HeatTankExpanded  //Modelica Book version, Added start values etc.
@@ -31,6 +30,7 @@ equation
 
   outlet.temp = temp;
   outlet.volumeFlowRate = 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HeatTankExpanded;
 
 // class HeatTankExpanded

@@ -1,7 +1,6 @@
 // name: CevalSqrt1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -13,6 +12,6 @@ end CevalSqrt1;
 // Result:
 // class CevalSqrt1
 //   constant Real r1 = 2.0;
-//   constant Real r2 = 2.302172886644267;
+//   constant Real r2 = 2.3021728866442674;
 // end CevalSqrt1;
 // endResult

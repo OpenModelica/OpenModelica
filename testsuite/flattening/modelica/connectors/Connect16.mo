@@ -1,7 +1,6 @@
 // name:     Connect16
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that the correct connect equations are generated when components are
 // connected at different levels in the hierarchy.
@@ -29,6 +28,7 @@ model Connect16
 equation
   connect(c, b.a1.c);
   connect(c, b.a2.c);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect16;
 
 // Result:

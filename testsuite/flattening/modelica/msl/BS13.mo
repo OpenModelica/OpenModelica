@@ -1,7 +1,6 @@
 // name:     BS13 - IntegerConstant component
 // keywords: IntegerConstant
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the IntegerConstant component.
 //
@@ -960,6 +959,7 @@ model BS13
 
 equation
   connect(integerToReal1.inPort,integerConstant1.outPort) annotation(Line(visible=true,points={{-35.38,24.43},{-57.89,25.35}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS13;
 
 // class BS13

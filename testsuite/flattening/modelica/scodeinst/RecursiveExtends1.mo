@@ -1,7 +1,6 @@
 // name: RecursiveExtends1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that the compiler catches recursive extends.
 //
@@ -12,7 +11,7 @@ end RecursiveExtends1;
 
 // Result:
 // Error processing file: RecursiveExtends1.mo
-// [flattening/modelica/scodeinst/RecursiveExtends1.mo:10:3-10:28:writable] Error: extends RecursiveExtends1 causes an instantiation loop.
+// [flattening/modelica/scodeinst/RecursiveExtends1.mo:9:3-9:28:writable] Error: extends RecursiveExtends1 causes an instantiation loop.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

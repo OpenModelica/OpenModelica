@@ -1,7 +1,6 @@
 // name:     ModifyConstant6
 // keywords: scoping,modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Finalized constants can not be modified.
 //
@@ -21,6 +20,7 @@ end C;
 class ModifyConstant6
   B b;
   C c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifyConstant6;
 
 

@@ -1,7 +1,6 @@
 // name:     EnumDuplicateLiteral
 // keywords: enumeration enum duplicate
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Tests detection of duplicated enumeration literals.
 //
@@ -9,12 +8,13 @@
 model EnumDuplicateLiteral
   type E = enumeration(one, two, three, two);
   E e;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumDuplicateLiteral;
 
 
 // Result:
 // Error processing file: EnumDuplicateLiteral.mo
-// [flattening/modelica/enums/EnumDuplicateLiteral.mo:10:3-10:45:writable] Error: Enumeration has duplicate names: two in list of names one,two,three,two.
+// [flattening/modelica/enums/EnumDuplicateLiteral.mo:9:3-9:45:writable] Error: Enumeration has duplicate names: two in list of names one,two,three,two.
 // Error: Error occurred while flattening model EnumDuplicateLiteral
 //
 // # Error encountered! Exiting...

@@ -1,7 +1,6 @@
 // name: ClassExtends4
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package PartialMedium

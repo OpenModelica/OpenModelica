@@ -1,7 +1,6 @@
 // name:     InnerOuterArray2
 // keywords: dynamic scope, inner outer, lookup, array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that inner/outer arrays are handled correctly.
 //
@@ -31,6 +30,7 @@ model InnerOuterArray2
   A a;
   B b;
   inner R r[3] = {R(0, 0, 0), R(0, 0, 0), R(0, 0, 0)};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterArray2;
 
 // Result:

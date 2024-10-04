@@ -1,7 +1,6 @@
 // name: WhenClocked1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model WhenClocked1

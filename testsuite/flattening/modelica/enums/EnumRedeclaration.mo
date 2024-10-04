@@ -1,8 +1,8 @@
 // name:     EnumRedeclaration
 // keywords: enumeration enum
 // status:   correct
+// cflags:   -i=Ex
 //
-// cflags:   -i=Ex -d=-newInst
 //
 
 
@@ -17,11 +17,12 @@ end Ex;
 
 class Foo
   replaceable type T = enumeration(:);
+  annotation(__OpenModelica_commandLineOptions="-i=Ex -d=-newInst");
 end Foo;
 
 // Result:
 // class Ex
-//   parameter enumeration(One, Two) f1 = Ex.Foo1.T.Two;
-//   parameter enumeration(One) f2 = Ex.Foo2.T.One;
+//   parameter enumeration(One, Two) f1 = Foo1.T.Two;
+//   parameter enumeration(One) f2 = T.One;
 // end Ex;
 // endResult

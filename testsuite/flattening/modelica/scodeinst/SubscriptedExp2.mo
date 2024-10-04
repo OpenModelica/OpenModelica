@@ -1,6 +1,5 @@
 // name: SubscriptedExp2
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -12,7 +11,7 @@ end SubscriptedExp2;
 // Error processing file: SubscriptedExp2.mo
 // Failed to parse file: SubscriptedExp2.mo!
 //
-// [flattening/modelica/scodeinst/SubscriptedExp2.mo:8:12-8:23:writable] Error: Tuple expression can not be subscripted.
+// [flattening/modelica/scodeinst/SubscriptedExp2.mo:7:12-7:23:writable] Error: Tuple expression can not be subscripted.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

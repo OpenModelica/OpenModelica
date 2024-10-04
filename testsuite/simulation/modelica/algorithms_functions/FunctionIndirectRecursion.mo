@@ -1,7 +1,6 @@
 // name:     FunctionIndirectRecursion
 // keywords: function
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constant evaluation of indirectly recursive function call.
 
@@ -24,4 +23,5 @@ model FunctionIndirectRecursion
   Integer y1;
 equation
   y1 = facIndirect(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionIndirectRecursion;

@@ -1,7 +1,6 @@
 // name: Abs
 // keywords: abs
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in abs function
 //
@@ -11,6 +10,7 @@ model Abs
 equation
   r1 = abs(100);
   r2 = abs(-100);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Abs;
 
 // Result:

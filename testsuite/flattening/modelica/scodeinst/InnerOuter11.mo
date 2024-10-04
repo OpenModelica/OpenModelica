@@ -1,7 +1,6 @@
 // name: InnerOuter11
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 partial function A

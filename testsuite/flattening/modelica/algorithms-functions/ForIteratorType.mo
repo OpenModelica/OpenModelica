@@ -1,7 +1,6 @@
 // name:     ForIteratorType
 // keywords: for iterator type integer enumeration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that the iterator in a for loop gets the correct type.
 //
@@ -17,6 +16,7 @@ algorithm
   for i in 1:3 loop
     ints[i] := i;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForIteratorType;
 
 // Result:

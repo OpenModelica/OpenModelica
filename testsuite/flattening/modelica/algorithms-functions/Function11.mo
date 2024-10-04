@@ -1,7 +1,6 @@
 // name:     Function11
 // keywords: function, default values
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests default values for function arguments.
 
@@ -21,6 +20,7 @@ model test
 equation
 x=y;
 b = equal(x,y);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 // Result:

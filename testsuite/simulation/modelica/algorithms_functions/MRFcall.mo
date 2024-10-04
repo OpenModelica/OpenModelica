@@ -5,7 +5,6 @@
 // Multipe results from a function
 //
 // Drmodelica: 9.2 Multiple Results (p. 302)
-// cflags: -d=-newInst
 //
 
 function MultipleResultsFunction
@@ -34,6 +33,7 @@ algorithm
   r1 := x + y;
   r2 := x * y;
   r3 := x - y;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MultipleResultsFunction;
 
 // class MRFcall

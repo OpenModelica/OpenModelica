@@ -1,7 +1,6 @@
 // name: FuncBuiltinPre
 // keywords: pre
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin pre operator.
 //

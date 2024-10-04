@@ -1,7 +1,6 @@
 // name:     FunctionEvalBuiltin
 // keywords: function,constant propagation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constant evaluation of function calls. Result of a function call with
 // constant arguments is inserted into flat modelica.
@@ -39,6 +38,7 @@ model FunctionEvalBuiltin
      integer(2.45),
      size({1,2,3},1)
      };
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEvalBuiltin;
 
 // Result:

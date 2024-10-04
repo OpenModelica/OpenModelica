@@ -1,7 +1,6 @@
 // name: FunctionCall
 // keywords: function
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests function calls
 //
@@ -19,6 +18,7 @@ model FunctionCall
 equation
   x = 2;
   y = f(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionCall;
 
 // Result:

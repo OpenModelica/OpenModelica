@@ -1,7 +1,6 @@
 // name: Direction2
 // keywords:
 // status: correct
-// cflags: -d=newInst --useLocalDirection
 //
 // Checks that input/output isn't stripped when useLocalDirection is true. 
 // 
@@ -19,6 +18,7 @@ model Direction2
   output Real x; // Top-scope variable should keep direction.
   A a; // Non top-scope variables should not keep direction.
   C c; // Variable in top-scope connector should keep direction.
+  annotation(__OpenModelica_commandLineOptions="--useLocalDirection");
 end Direction2;
 
 // Result:

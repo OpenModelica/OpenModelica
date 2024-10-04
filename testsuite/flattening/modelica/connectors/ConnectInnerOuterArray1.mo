@@ -1,7 +1,6 @@
 // name:     ConnectInnerOuterArray1
 // keywords: connect inner outer array #2793
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that inner/outer works when connecting connectors in arrays.
 //
@@ -28,6 +27,7 @@ end LowerLevelModel;
 model ConnectInnerOuterArray1
   inner InnerOuterModel innerOuterModel;
   LowerLevelModel[2] lowerLevelModel;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectInnerOuterArray1;
 
 // Result:

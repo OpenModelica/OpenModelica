@@ -1,7 +1,6 @@
 // name:     BM13 -  Gain component
 // keywords: Gain
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Asin component.
 //
@@ -967,6 +966,7 @@ model BM13
 
 equation
   connect(gain1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-29.3,31.43},{-60.02,28.39}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM13;
 
 // class BM13

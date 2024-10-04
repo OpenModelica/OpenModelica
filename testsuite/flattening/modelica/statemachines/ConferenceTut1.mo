@@ -1,7 +1,6 @@
 // name: ConferenceTut1
 // keywords: state machines features
 // status: correct
-// cflags: -d=-newInst
 
 model ConferenceTut1
   inner Integer i(start=0);
@@ -29,6 +28,7 @@ equation
     state1,
     i < 1,
     immediate=false);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConferenceTut1;
 
 

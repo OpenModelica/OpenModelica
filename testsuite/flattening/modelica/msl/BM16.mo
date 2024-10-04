@@ -1,7 +1,6 @@
 // name:     BM16 -  MatrixGain component
 // keywords: MatrixGain
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.MatrixGain component.
 //
@@ -990,6 +989,7 @@ model BM16
 
 equation
   connect(matrixGain1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-25.04,25.35},{-45.11,26.26}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM16;
 // class BM16
 // parameter Integer matrixGain1.nin = 2 "Number of inputs";

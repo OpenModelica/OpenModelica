@@ -1,6 +1,5 @@
 // name: MoveBindings1
 // status: correct
-// cflags: -d=newInst -f --baseModelicaOptions=moveBindings
 
 model M
   record R
@@ -15,6 +14,7 @@ model M
   Real z;
 equation
   z = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f --baseModelicaOptions=moveBindings");
 end M;
 
 // Result:

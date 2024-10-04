@@ -1,7 +1,6 @@
 // name: MinInvalidArg2
 // keywords: min
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model MinInvalidArg2
@@ -10,7 +9,7 @@ end MinInvalidArg2;
 
 // Result:
 // Error processing file: MinInvalidArg2.mo
-// [flattening/modelica/scodeinst/MinInvalidArg2.mo:8:3-8:35:writable] Error: No matching function found for min({"str1", "str2"}).
+// [flattening/modelica/scodeinst/MinInvalidArg2.mo:7:3-7:35:writable] Error: No matching function found for min({"str1", "str2"}).
 // Candidates are:
 //   min(Real, Real) => Real
 //   min(Integer, Integer) => Integer

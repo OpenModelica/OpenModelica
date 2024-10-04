@@ -1,7 +1,6 @@
 // name: ClassExtends4
 // keywords: class, extends
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that partial packages may be extended, and functions inside
 // redeclared.
@@ -44,6 +43,7 @@ end B;
 
 model ClassExtends4
   Integer b = B.usePart(integer(time));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClassExtends4;
 
 // Result:

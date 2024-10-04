@@ -1,7 +1,6 @@
 // name:     WrongSubscriptType1
 // keywords: array subscript type
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Tests that invalid subscript types are caught.
 //
@@ -9,6 +8,7 @@
 model WrongSubscriptType1
   Real x[3] = {1, 2, 3};
   Real y = x[3.0];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WrongSubscriptType1;
 
 // Result:

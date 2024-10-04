@@ -1,7 +1,6 @@
 // name:     Delay7
 // keywords: builtin
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Test flattening of the builtin function delay.
 // Should issue a warning as b is not a parameter or constant.
@@ -14,11 +13,12 @@ model Delay
 equation
   x = sin(time);
   y = delay(x, a, b);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Delay;
 // Result:
 // Error processing file: Delay7.mo
-// [flattening/modelica/built-in-functions/Delay7.mo:16:3-16:21:writable] Error: Function argument delayMax=b in call to OpenModelica.Internal.delay3 has variability continuous which is not a parameter expression.
-// [flattening/modelica/built-in-functions/Delay7.mo:16:3-16:21:writable] Error: No matching function found for delay in component <NO COMPONENT>
+// [flattening/modelica/built-in-functions/Delay7.mo:15:3-15:21:writable] Error: Function argument delayMax=b in call to OpenModelica.Internal.delay3 has variability continuous which is not a parameter expression.
+// [flattening/modelica/built-in-functions/Delay7.mo:15:3-15:21:writable] Error: No matching function found for delay in component <NO COMPONENT>
 // candidates are .OpenModelica.Internal.delay2<function>(Real expr, Real parameter delayTime) => Real
 //  -.OpenModelica.Internal.delay3<function>(Real expr, Real delayTime, Real parameter delayMax) => Real
 // Error: Error occurred while flattening model Delay

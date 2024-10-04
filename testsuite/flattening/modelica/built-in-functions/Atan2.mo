@@ -1,7 +1,6 @@
 // name: Atan2
 // keywords: atan2
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in atan2 function
 //
@@ -10,6 +9,7 @@ model Atan2
   Real r;
 equation
   r = atan2(0.5,0.5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Atan2;
 
 // Result:

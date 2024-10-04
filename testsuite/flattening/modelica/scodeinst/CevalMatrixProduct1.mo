@@ -1,7 +1,6 @@
 // name: CevalMatrixProduct1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

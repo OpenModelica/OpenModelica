@@ -1,7 +1,6 @@
 // name: PackageConstant1
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 
 package P
@@ -28,6 +27,7 @@ equation
 algorithm
   z := P.x3;
   f(1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-nfEvalConstArgFuncs");
 end PackageConstant2;
 
 // Result:

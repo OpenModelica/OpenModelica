@@ -1,7 +1,6 @@
 // name:     Bug2784.mo [BUG: #2784]
 // keywords: redeclare modifier handling
 // status:   correct
-// cflags: -d=-newInst
 //
 // check that modifiers on redeclare are not lost
 //
@@ -12,6 +11,7 @@ end C1;
 
 model C2
   replaceable parameter C1 x1(redeclare replaceable Real r=3);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end C2;
 
 // Result:

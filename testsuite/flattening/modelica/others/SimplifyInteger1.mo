@@ -1,7 +1,6 @@
 // name:     SimplifyInteger1
 // keywords: simplify #4847
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 
@@ -14,6 +13,7 @@ model SimplifyInteger1
   Integer y5 = x * x * x;
   Integer y6 = x * x * x * x;
   Integer y7 = 2*x + 6*x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimplifyInteger1;
 
 // Result:

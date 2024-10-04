@@ -1,7 +1,6 @@
 // name:     Enumeration2
 // keywords: enumeration enum
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -13,6 +12,7 @@ equation
    for e in Color loop
      x[e] = 1;
    end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enumeration2;
 
 

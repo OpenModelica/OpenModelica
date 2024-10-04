@@ -1,7 +1,6 @@
 // name:     Range1
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Some tests of range expressions.
 //
@@ -19,6 +18,7 @@ equation
   end for;
   z[2]=1;
   z[4]=2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Range1;
 
 // Result:

@@ -5,7 +5,6 @@
 // <insert description here>
 //
 // Drmodelica: 13.2  Sampled Systems (p. 429)
-// cflags: -d=-newInst
 //
 
 model TwoRateSampler
@@ -28,6 +27,7 @@ model TwoRateSampler
   when slowSample then                // slow sampling (5-times slower)
     y = log(time);
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TwoRateSampler;
 
 

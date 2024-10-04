@@ -1,7 +1,6 @@
 // name:     Array6
 // keywords: array, modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // This demonstrates advanced use of modifiers in types.
 // Note that fill is generalized to take non-scalars in the flat model.
@@ -22,6 +21,7 @@ equation
   w={x};
   der(y)=-y;
   x={y,der(y)};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array6;
 
 // flatmodel Array6

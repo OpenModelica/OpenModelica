@@ -1,7 +1,6 @@
 // name: ActualStreamMinMax2
 // keywords: stream actualStream connector
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that actualStream is simplified when the flow direction can be
 // determined from the min/max attributes.

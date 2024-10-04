@@ -1,6 +1,5 @@
 // name: CevalBinding8
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -85,10 +84,10 @@ end CevalBinding8;
 //   final parameter Real pendulum[2].string.R.w[1] = 0.0;
 //   final parameter Real pendulum[2].string.R.w[2] = 0.0;
 //   final parameter Real pendulum[2].string.R.w[3] = 0.0;
-//   parameter Real pendulum[3].L = 0.8100000000000001;
+//   parameter Real pendulum[3].L = 0.81;
 //   parameter Real pendulum[3].d = 0.01;
 //   parameter Real pendulum[3].string.r[1](start = 0.1) = 0.0;
-//   parameter Real pendulum[3].string.r[2](start = 0.0) = 0.8100000000000001;
+//   parameter Real pendulum[3].string.r[2](start = 0.0) = 0.81;
 //   parameter Real pendulum[3].string.r[3](start = 0.0) = 0.0;
 //   final parameter Real pendulum[3].string.R.T[1,1] = 0.0;
 //   final parameter Real pendulum[3].string.R.T[1,2] = 1.0;

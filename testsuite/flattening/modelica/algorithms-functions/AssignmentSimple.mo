@@ -1,7 +1,6 @@
 // name: AssignmentSimple
 // keywords: assignment
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple assignment
 //
@@ -10,6 +9,7 @@ model AssignmentSimple
   Real x;
 algorithm
   x := 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentSimple;
 
 // Result:

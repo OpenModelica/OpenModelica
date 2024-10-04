@@ -1,7 +1,6 @@
 // name: CevalSub1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model CevalSub1

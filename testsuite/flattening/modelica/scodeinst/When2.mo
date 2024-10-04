@@ -1,7 +1,6 @@
 // name: When2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model When2

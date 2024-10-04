@@ -1,7 +1,6 @@
 // name: RecordConstructor3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

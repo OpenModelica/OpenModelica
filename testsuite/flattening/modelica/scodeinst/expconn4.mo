@@ -1,7 +1,6 @@
 // name: expconn4.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 //
 

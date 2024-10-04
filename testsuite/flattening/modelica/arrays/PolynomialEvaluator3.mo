@@ -5,7 +5,6 @@
 // Tests named arguments, dynamic array sizes etc.
 //
 // Drmodelica: 9.2 called (p. 300)
-// cflags: -d=-newInst
 //
 
 
@@ -28,6 +27,7 @@ class NamedCall
   Real p;
 equation
   p = PolynomialEvaluator2(A = {1, 2, 3, 4}, x = 21);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NamedCall;
 
 // Result:

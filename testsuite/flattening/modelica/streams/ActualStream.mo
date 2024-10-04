@@ -1,7 +1,6 @@
 // name: ActualStream
 // keywords: stream actualStream connector
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that actualStream is evaluated correctly.
 //
@@ -24,6 +23,7 @@ equation
   connect(a.s1, a.s2);
   actual_stream_s1 = actualStream(a.s1.s);
   actual_stream_s2 = actualStream(a.s2.s);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ActualStream;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: TransitionTest
 // keywords: state machines features
 // status: wrong
-// cflags: -d=-newInst
 
 model TransitionTest
   block AState
@@ -13,6 +12,7 @@ equation
   transition(aState1, aState2, true);
   transition(aState1, aState2, true, false);
   transition(aState1, aState2, false, false, false, true, 10);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TransitionTest;
 
 // Result:

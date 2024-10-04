@@ -1,6 +1,5 @@
 // name: ArrayBinding1
 // status: correct
-// cflags: -d=newInst -f -d=-nfScalarize,vectorizeBindings,evaluateAllParameters
 
 model A
   parameter Real p;
@@ -9,6 +8,7 @@ end A;
 model ArrayBinding1
   final parameter Real P = 1;
   A a[4,4,4](each p = P);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f -d=-nfScalarize,vectorizeBindings,evaluateAllParameters");
 end ArrayBinding1;
 
 // Result:

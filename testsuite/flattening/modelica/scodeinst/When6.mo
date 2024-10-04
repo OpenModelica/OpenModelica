@@ -1,7 +1,6 @@
 // name: When6
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 //
 

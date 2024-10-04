@@ -1,7 +1,6 @@
 // name: ModifierExtends
 // keywords: modifier
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests modification of extends clauses
 //
@@ -12,6 +11,7 @@ end ClassA;
 
 class ModifierExtends
   extends ClassA(r1 = 4711.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifierExtends;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: NoEvent2
 // keywords: noEvent
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin noEvent operator.
 //

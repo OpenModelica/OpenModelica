@@ -1,7 +1,6 @@
 // name: CevalRecordArray3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R

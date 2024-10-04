@@ -1,7 +1,6 @@
 // name: FuncBuiltinFloor
 // keywords: floor
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin floor function.
 //

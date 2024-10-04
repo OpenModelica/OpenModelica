@@ -1,7 +1,6 @@
 // name:     tupleSubset
 // keywords: function call returning tuples, which are not matched on left side.
 // status:   correct
-// cflags: -d=-newInst
 //
 // test to expand tuple, size 2,  and non tuple into tuples of size 3.
 
@@ -25,6 +24,7 @@ equation
  xvar = der(xvar);
  (x,z) = fooTuple(xvar);
  y = fooTuple(der(xvar));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end mo;
 // Result:
 // function fooTuple

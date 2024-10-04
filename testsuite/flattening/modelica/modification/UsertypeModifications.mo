@@ -1,7 +1,6 @@
 // name:     UsertypeModifications
 // keywords: usertypes, modifications, arrays, extend
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that modifications on usertypes are propagated correctly
 //
@@ -20,6 +19,7 @@ model AliasType
 equation
   b = a;
   a2 = ones(3);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AliasType;
 
 // Result:

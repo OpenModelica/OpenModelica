@@ -1,7 +1,6 @@
 // name:     ConstantReductions
 // keywords: declaration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constant evaluation of reductions.
 //
@@ -21,6 +20,7 @@ equation
   v2 = sum(j for j in {{1,2},{3,4}});
   s = sum(i for i in {"Hello", " ", "world", "!"});
   arr = {i for i in 1:5};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantReductions;
 
 // Result:

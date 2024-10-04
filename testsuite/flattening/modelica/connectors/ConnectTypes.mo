@@ -1,6 +1,5 @@
 // name:     ConnectTypes
 // keywords: connect,type
-// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 // Check generation of connection equations.
@@ -26,6 +25,7 @@ equation
   connect(c, a.c);
   c.e={time};
   c.d=4;
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end ConnectTypes;
 
 // Result

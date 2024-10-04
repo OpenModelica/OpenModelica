@@ -1,7 +1,6 @@
 // name:     DisturbedResistance2
 // keywords: modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // A parameter may not be redeclared as variable.
 //
@@ -15,4 +14,5 @@ end Resistor;
 
 model DisturbedResistance2
   extends Resistor(redeclare Real R = 1.0 + 0.1*sin(time));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DisturbedResistance2;

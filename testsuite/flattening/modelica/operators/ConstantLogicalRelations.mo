@@ -1,7 +1,6 @@
 // name: ConstantLogicalRelations
 // keywords: constant evaluation logical relation operator
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests constant evaluation of the logical relation operators.
 //
@@ -44,6 +43,7 @@ equation
   b = false >= true;
   b = true >= false;
   b = true >= true;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantLogicalRelations;
 
 // Result:

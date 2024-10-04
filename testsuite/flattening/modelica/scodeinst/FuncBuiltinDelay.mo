@@ -1,7 +1,6 @@
 // name: FuncBuiltinDelay
 // keywords: delay
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin delay operator.
 //

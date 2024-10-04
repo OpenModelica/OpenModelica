@@ -2,7 +2,6 @@
 // keywords: tests if array binding works fine
 // status:   correct
 //
-// cflags:   -d=newInst
 //
 
 model M

@@ -1,7 +1,6 @@
 // name: WhenNested
 // keywords: when, nested
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Test detection of nested when-statements, which are not allowed.
 // Fix for bug 1189: http://openmodelica.ida.liu.se:8080/cb/issue/1189
@@ -18,11 +17,12 @@ algorithm
       end when;
     end if;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenNested;
 
 // Result:
 // Error processing file: WhenNested.mo
-// [flattening/modelica/algorithms-functions/WhenNested.mo:14:3-20:11:writable] Error: Nested when statements are not allowed.
+// [flattening/modelica/algorithms-functions/WhenNested.mo:13:3-19:11:writable] Error: Nested when statements are not allowed.
 // Error: Error occurred while flattening model WhenNested
 //
 // # Error encountered! Exiting...

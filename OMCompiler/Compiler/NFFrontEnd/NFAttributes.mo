@@ -538,6 +538,9 @@ public
       // remove them so we don't have to worry about accidentally evaluating
       // e.g. an input declared as constant/parameter.
       attr.variability := Variability.CONTINUOUS;
+    elseif var == Variability.PARAMETER and not Flags.isSet(Flags.NF_SCALARIZE)
+      and Util.getOptionOrDefault(SCodeUtil.lookupBooleanAnnotationMod(InstNode.getAnnotation("__OpenModelica_resizable", compNode)), false) then
+      attr.variability := Variability.NON_STRUCTURAL_PARAMETER;
     end if;
   end updateVariability;
 

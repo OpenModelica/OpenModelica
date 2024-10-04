@@ -1,7 +1,7 @@
 // name:     loadFileInteractiveQualified
 // keywords: within test
 // status: correct
-// cflags: -d=-newInst
+//
 //
 // within test, first should load loadFileInteractiveQualifiedInit.mo
 //

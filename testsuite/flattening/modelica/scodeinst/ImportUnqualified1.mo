@@ -1,7 +1,6 @@
 // name:     ImportUnqualified1
 // keywords: unqualified import
 // status:   correct
-// cflags:   -d=newInst
 //
 // Checks that unqualified imports work.
 //

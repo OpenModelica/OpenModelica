@@ -1,7 +1,6 @@
 // name: EvaluateAllParams2
 // keywords:
 // status: correct
-// cflags: -d=newInst,evaluateAllParameters
 //
 
 model EvaluateAllParams2
@@ -10,6 +9,7 @@ model EvaluateAllParams2
   parameter Real r = 2;
 initial equation
   p - r = 0;
+  annotation(__OpenModelica_commandLineOptions="-d=evaluateAllParameters");
 end EvaluateAllParams2;
 
 // Result:

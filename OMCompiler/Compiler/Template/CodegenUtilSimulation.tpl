@@ -83,7 +83,6 @@ template equationIndex(SimEqSystem eq)
   case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
-    then index
   case SES_INVERSE_ALGORITHM(__)
     then index
   case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))

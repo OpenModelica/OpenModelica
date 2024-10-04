@@ -1,13 +1,13 @@
 // name: FlowDeclType
 // keywords: flow
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the flow prefix on a regular type
 //
 
 class FlowDeclType
   flow Real rFlow = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlowDeclType;
 
 // Result:

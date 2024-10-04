@@ -1,7 +1,6 @@
 // name:     ClassExtends1
 // keywords: class,extends
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 
@@ -21,6 +20,7 @@ class ClassExtends1
  X component;
 initial equation
  component.y = 5;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClassExtends1;
 
 // Result:

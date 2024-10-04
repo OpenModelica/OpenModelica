@@ -1,9 +1,9 @@
 // name: ErrorUnknownDimension
 // status: incorrect
-// cflags: -d=-newInst
 
 model ErrorUnknownDimension
   Real r[:];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ErrorUnknownDimension;
 // Result:
 // Error processing file: ErrorUnknownDimension.mo

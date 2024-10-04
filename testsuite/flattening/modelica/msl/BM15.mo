@@ -1,7 +1,6 @@
 // name:     BM15 -  Log10 component
 // keywords: Log10
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Log10 component.
 //
@@ -1070,6 +1069,7 @@ model BM15
 
 equation
   connect(log101.inPort,constant1.outPort) annotation(Line(visible=true,points={{-18.35,13.79},{-38.73,14.7}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM15;
 // function Modelica.Math.log10
 // input Real u;

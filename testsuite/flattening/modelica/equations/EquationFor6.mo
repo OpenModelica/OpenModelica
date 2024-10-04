@@ -1,7 +1,6 @@
 // name:     EquationFor6
 // keywords: equation,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test for loops with implicit range in equations.
 //
@@ -12,6 +11,7 @@ equation
   for i loop
     a[i] = i;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor6;
 
 // Result:

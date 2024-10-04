@@ -1,7 +1,6 @@
 // name: FlowDeclRecord
 // keywords: flow
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the flow prefix on a record type
 //
@@ -14,6 +13,7 @@ class FlowDeclRecord
   flow FlowRecord fr;
 equation
   fr.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlowDeclRecord;
 
 // Result:

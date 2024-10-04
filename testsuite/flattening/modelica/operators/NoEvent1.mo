@@ -1,7 +1,6 @@
 // name:     NoEvent1
 // keywords: noEvent
 // status:   correct
-// cflags: -d=-newInst
 //
 //  The noEvent operator
 //
@@ -14,6 +13,7 @@ model NoEvent1
 equation
   b = noEvent(x<y);
   der(h)=if noEvent(h>0) then -c*sqrt(h) else 0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NoEvent1;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: HoldTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model HoldTest
   output Real x;
@@ -10,6 +9,7 @@ model HoldTest
 equation
   x = hold(3);
   y = hold(z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HoldTest;
 
 // Result:

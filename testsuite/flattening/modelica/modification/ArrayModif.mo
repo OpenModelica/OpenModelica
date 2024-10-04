@@ -1,7 +1,6 @@
 // name:     ArrayModif
 // keywords: modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test that we don't give wrong errors about missing each
 
@@ -28,6 +27,7 @@ model ArrayModif
 
   B b;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayModif;
 
 // Result:

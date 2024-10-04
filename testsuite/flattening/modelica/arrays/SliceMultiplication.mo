@@ -1,5 +1,4 @@
 // status: correct
-// cflags: +t -d=-newInst
 // From bug #2376
 // Note the usage of +t to verify that the expression internally has the correct types set.
 //   It is not supposed to be Real[2] or Real[3] in the scalar expressions.
@@ -10,6 +9,7 @@ model M
   Real h[NVd+1];
 equation
   ones(NVd) = cos(th)*h[1:end-1];
+  annotation(__OpenModelica_commandLineOptions="+t -d=-newInst");
 end M;
 
 // Result:

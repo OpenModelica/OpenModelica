@@ -1,7 +1,6 @@
 // name: SubscriptIterator1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model SubscriptIterator1
@@ -14,7 +13,7 @@ end SubscriptIterator1;
 
 // Result:
 // Error processing file: SubscriptIterator1.mo
-// [flattening/modelica/scodeinst/SubscriptIterator1.mo:11:5-11:16:writable] Error: Wrong number of subscripts in i[1] (1 subscripts for 0 dimensions).
+// [flattening/modelica/scodeinst/SubscriptIterator1.mo:10:5-10:16:writable] Error: Wrong number of subscripts in i[1] (1 subscripts for 0 dimensions).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

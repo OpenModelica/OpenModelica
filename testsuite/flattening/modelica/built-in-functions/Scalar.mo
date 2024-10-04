@@ -1,7 +1,6 @@
 // name:     Scalar
 // keywords: array, scalar
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the scalar dimensionality conversion function.
 //
@@ -19,6 +18,7 @@ model Scalar
   Real r3 = scalar({{{5}}});
   Real r4 = scalar([6]);
   Real r5 = f(fill(1,3));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Scalar;
 
 // Result:

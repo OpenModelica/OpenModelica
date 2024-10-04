@@ -1,7 +1,6 @@
 // name: FuncBuiltinReduction
 // keywords: reduction
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin reduction operators.
 //
@@ -47,8 +46,8 @@ end FuncBuiltinReduction;
 //   Real r3 = 110.0;
 //   Real r4 = 14400.0;
 //   Real r5 = 420.0;
-//   Real r6 = 8.777798510069901e+304;
-//   Real r7 = -8.777798510069901e+304;
+//   Real r6 = 8.777798510069901e304;
+//   Real r7 = -8.777798510069901e304;
 //   Real r8 = 0.0;
 //   Real r9 = 1.0;
 //   Real r10 = /*Real*/(sum(sum(r1 * r2 for r1 in 1:integer(time)) for r2 in 1:4));

@@ -1,7 +1,6 @@
 // name:     BC5 - LimIntegrator component
 // keywords: LimIntegrator
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the LimIntegrator component.
 //
@@ -953,6 +952,7 @@ model BC5
 
 equation
   connect(constant1.outPort,limIntegrator1.inPort) annotation(Line(visible=true,points={{-21.59,8.49},{-3.25,8.49}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC5;
 // class BC5
 // parameter Integer limIntegrator1.n = 1 "Number of inputs (= number of outputs)";

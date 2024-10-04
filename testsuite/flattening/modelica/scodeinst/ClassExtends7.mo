@@ -1,7 +1,6 @@
 // name: ClassExtends7
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package P

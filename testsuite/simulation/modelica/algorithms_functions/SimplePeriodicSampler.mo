@@ -5,7 +5,6 @@
 // <insert description here>
 //
 // Drmodelica: 13.2  Sampled Systems (p. 429)
-// cflags: -d=-newInst
 //
 model Sampler
   parameter Real sample_interval = 0.1        "Sample period";
@@ -16,6 +15,7 @@ equation
   when sample(0, sample_interval) then
     y = x;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Sampler;
 
 

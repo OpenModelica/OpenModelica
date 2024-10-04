@@ -1,7 +1,6 @@
 // name:     SubscriptEval
 // keywords: subscripts
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that subscripts are evaluated correctly.
 //
@@ -12,6 +11,7 @@ model SubscriptEval
   Real r[1,1,1];
 equation
   r[c,n,c] = 2.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SubscriptEval;
 
 // Result:

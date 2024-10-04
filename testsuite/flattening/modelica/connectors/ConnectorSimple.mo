@@ -1,7 +1,6 @@
 // name: ConnectorSimple
 // keywords: connector
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple declaration and instantiation of a connector
 //
@@ -11,6 +10,7 @@ end SimpleConnector;
 
 model ConnectorSimple
   SimpleConnector sc;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectorSimple;
 
 // Result:

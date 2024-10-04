@@ -1,7 +1,6 @@
 // name: ForStatementArray.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

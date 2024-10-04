@@ -1,7 +1,6 @@
 // name: OperatorOverloadConstructorSimple
 // keywords: operator constructor overload
 // status: correct
-// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 // Tests simple overloaded construction.
 //
@@ -23,6 +22,7 @@ model OperatorOverloadConstructorSimple
   C c;
 equation
   c = C();
+  annotation(__OpenModelica_commandLineOptions="-d=-nfEvalConstArgFuncs");
 end OperatorOverloadConstructorSimple;
 
 

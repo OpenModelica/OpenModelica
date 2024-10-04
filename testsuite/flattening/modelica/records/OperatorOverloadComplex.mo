@@ -1,7 +1,6 @@
 // name: OperatorOverloadComplex.mo
 // keywords: operator overload
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests operator overloading on Complex numbers, operators can only contain function declarations
 //
@@ -187,6 +186,7 @@ equation
    // Mix
    // ===((((c6 / c5 )* (c4 ^ c3)) * Complex(1.0)) + c2) - c1
    c7 = c6 / c5 * c4 ^ c3 * 1 + c2 - c1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // Result:

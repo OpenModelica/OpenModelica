@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 2.1 Differential Algebraic Equation System (p. 19)
-// cflags: -d=-newInst
 //
 
 model DAEexample
@@ -13,6 +12,7 @@ model DAEexample
 equation
   (1 + 0.5*sin(y))*der(x) + der(y) = a*sin(time);
   x-y = exp(-0.9*x)*cos(y);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DAEexample;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: EnumDimSum
 // keywords: enum dimension sum
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that sum of an array whose dimension is an enumeration is expanded
 // correctly.
@@ -14,6 +13,7 @@ model EnumDimSum
 equation
   x = sum(X);
   y = sum(X[i]^2 for i in E);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumDimSum;
 
 // Result:

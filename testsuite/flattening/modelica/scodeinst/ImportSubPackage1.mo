@@ -1,7 +1,6 @@
 // name:     ImportSubPackage1
 // keywords: import
 // status:   incorrect
-// cflags:   -d=newInst
 //
 //
 
@@ -21,7 +20,7 @@ end M;
 
 // Result:
 // Error processing file: ImportSubPackage1.mo
-// [flattening/modelica/scodeinst/ImportSubPackage1.mo:19:3-19:9:writable] Error: Found imported name 'A' while looking up composite name 'P1.A'.
+// [flattening/modelica/scodeinst/ImportSubPackage1.mo:18:3-18:9:writable] Error: Found imported name 'A' while looking up composite name 'P1.A'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

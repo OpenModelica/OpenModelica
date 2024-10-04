@@ -1,7 +1,6 @@
 // name:     QualifiedEnd
 // keywords: array, end, #3250
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the usage of end as subscript of a qualified or fully qualified cref.
 //
@@ -18,6 +17,7 @@ model QualifiedEnd
   A a[2];
   Real x1[:] = a[end].x[1:end];
   Real x2[:] = .P.x[1:end];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end QualifiedEnd;
 
 // Result:

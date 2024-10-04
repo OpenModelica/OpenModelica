@@ -1,7 +1,6 @@
 // name: ForSimple
 // keywords: for
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests a simple for statement
 //
@@ -12,6 +11,7 @@ algorithm
   for i in 1:4 loop
     rarr[i] := i + 1.0;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForSimple;
 
 // Result:

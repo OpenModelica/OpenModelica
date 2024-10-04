@@ -1,7 +1,6 @@
 // name: TupleInvalid1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model TupleInvalid1
@@ -10,7 +9,7 @@ end TupleInvalid1;
 
 // Result:
 // Error processing file: TupleInvalid1.mo
-// [flattening/modelica/scodeinst/TupleInvalid1.mo:8:3-8:18:writable] Error: Tuple expressions may only occur on the left side of an assignment or equation with a single function call on the right side. Got the following expression: (1, 2).
+// [flattening/modelica/scodeinst/TupleInvalid1.mo:7:3-7:18:writable] Error: Tuple expressions may only occur on the left side of an assignment or equation with a single function call on the right side. Got the following expression: (1, 2).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

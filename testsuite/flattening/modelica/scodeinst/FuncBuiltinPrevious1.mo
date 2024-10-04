@@ -1,7 +1,6 @@
 // name: FuncBuiltinPrevious1
 // keywords: pre
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin previous operator.
 //

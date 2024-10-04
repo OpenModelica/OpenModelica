@@ -386,7 +386,7 @@ public
       end match;
 
       // check if children and children_args can be mapped to one another
-      if listLength(children) == listLength(children_args) then
+      if List.compareLength(children, children_args) == 0 then
         for child_tpl in List.zip(children, children_args) loop
           addInputArgTpl(child_tpl, replacements);
         end for;

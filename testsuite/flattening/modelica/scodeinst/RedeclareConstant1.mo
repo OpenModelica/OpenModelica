@@ -1,7 +1,6 @@
 // name: RedeclareConstant1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that constants aren't allowed to be redeclared.
 // 

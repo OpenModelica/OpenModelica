@@ -1,7 +1,6 @@
 // name:     RedeclareInClassModification.mo [BUG: #3247]
 // keywords: redeclare in class modification
 // status:   correct
-// cflags: -d=-newInst
 //
 
 model B
@@ -15,6 +14,7 @@ end B;
 model RedeclareInClassModification
   extends B(B2(redeclare type P = Integer));
   B2.P p;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareInClassModification;
 
 

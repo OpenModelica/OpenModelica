@@ -1,7 +1,6 @@
 // name:     InnerOuterSamePrefix.mo [BUG: #2650]
 // keywords: dynamic scope, lookup
 // status:   correct
-// cflags: -d=-newInst
 //
 //  components with inner prefix references an outer component with
 //  the same name and one variable is generated for all of them.
@@ -3582,6 +3581,7 @@ model InnerOuterSamePrefix
     annotation(Diagram(coordinateSystem(extent = {{-148.5, -105}, {148.5, 105}}, preserveAspectRatio = true, initialScale = 0.1, grid = {5, 5})));
   end B;
   annotation(Diagram(coordinateSystem(extent = {{-148.5, -105}, {148.5, 105}}, preserveAspectRatio = true, initialScale = 0.1, grid = {5, 5})));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterSamePrefix;
 
 

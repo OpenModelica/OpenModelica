@@ -1,7 +1,6 @@
 // name: FuncViaComp
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that functions can be called via components.
 //

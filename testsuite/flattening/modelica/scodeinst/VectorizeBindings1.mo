@@ -1,7 +1,6 @@
 // name: VectorizeBindings1
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize,vectorizeBindings
 //
 
 model M
@@ -12,6 +11,7 @@ end M;
 model VectorizeBindings1
   parameter Real p = 2;
   M m[2,3](each p = 2*p);
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize,vectorizeBindings");
 end VectorizeBindings1;
 
 // Result:

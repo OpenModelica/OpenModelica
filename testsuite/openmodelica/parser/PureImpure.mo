@@ -1,7 +1,6 @@
 // name: PureImpure.mo
 // keywords: test pure/impure Modelica 3.3 keywords
 // status: correct
-// cflags: -d=-newInst
 //
 // Test pure/impure keywords
 //
@@ -32,6 +31,7 @@ model PureImpure
   parameter Boolean x = f(y);
   parameter Boolean z = fimpure(y);
   parameter Boolean w = fdefaultpure(y);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PureImpure;
 
 // Result:

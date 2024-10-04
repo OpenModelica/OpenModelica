@@ -1,7 +1,6 @@
 // name:     ArrayEWOps5
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Array elementwise operators: power
 
@@ -13,6 +12,7 @@ equation
   x1=y.^t;
   x2=t.^y;
   v=t.^u;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps5;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: DocString.mo
 // keywords: comment, documentation string
 // status: correct
-// cflags: -d=-newInst
 //
 // This file tests ""-documentation strings in various places
 //
@@ -18,6 +17,7 @@ function f "Function f"
   output Real y "output Real named y";
 algorithm
   y := x + 2 "the result is 2 added to x";
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end f;
 
 // Result:

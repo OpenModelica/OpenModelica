@@ -1,7 +1,6 @@
 // name:     modifyOuter2
 // keywords: modification inner outer innerouter
 // status:   correct
-// cflags: -d=-newInst
 //
 //  the most inner modification is the actual
 //
@@ -43,6 +42,7 @@ model inn
  inner Pin ip(v=23);
  mid1 io;
  equation
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end inn;
 // Result:
 // class inn

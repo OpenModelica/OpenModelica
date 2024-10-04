@@ -1,7 +1,6 @@
 // name:     EquationIf3
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing `if' clauses in equations.
 //
@@ -17,6 +16,7 @@ equation
   else
     x = 3.0;
   end if;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationIf3;
 
 // Result:

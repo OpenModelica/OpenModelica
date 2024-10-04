@@ -1,8 +1,9 @@
 // name: ParameterBug.mos [tests https://trac.openmodelica.org/OpenModelica/ticket/1956]
 // keywords:
 // status: correct
-// cflags: -d=-newInst
 //
+
+setCommandLineOptions("-d=-newInst");
 
 loadFile("ParameterBug.mo"); getErrorString();
 instantiateModel(ParameterBug.A); getErrorString();
@@ -11,6 +12,7 @@ loadFile("PropagateRedeclareMod1.mo"); getErrorString();
 instantiateModel(D); getErrorString();
 
 // Result:
+// true
 // true
 // ""
 // "class ParameterBug.A

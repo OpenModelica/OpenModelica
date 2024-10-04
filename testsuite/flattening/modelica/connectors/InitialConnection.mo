@@ -1,7 +1,6 @@
 // name: InitialConnection
 // keywords: initial equation connection
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Checks that it's illegal to have connect equation in initial equations.
 //
@@ -15,13 +14,14 @@ model InitialConnection
   C c1, c2;
 initial equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InitialConnection;
 
 // Result:
 // Error processing file: InitialConnection.mo
 // Failed to parse file: InitialConnection.mo!
 //
-// [flattening/modelica/connectors/InitialConnection.mo:17:3-17:18:writable] Error: Connect equations are not allowed in initial equation sections.
+// [flattening/modelica/connectors/InitialConnection.mo:16:3-16:18:writable] Error: Connect equations are not allowed in initial equation sections.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

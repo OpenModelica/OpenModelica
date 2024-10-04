@@ -1,7 +1,6 @@
 // name: FuncBuiltinNdims
 // keywords: ndims
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin ndims operator.
 //

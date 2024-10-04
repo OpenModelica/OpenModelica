@@ -1,7 +1,6 @@
 // name:     ImpureCall1
 // keywords:
 // status:   correct
-// cflags:   -d=newInst
 //
 //
 
@@ -37,6 +36,6 @@ end ImpureCall1;
 // class ImpureCall1
 //   Real x = f2(1.0);
 // end ImpureCall1;
-// [flattening/modelica/scodeinst/ImpureCall1.mo:13:1-18:7:writable] Warning: Pure function 'f2' contains a call to impure function 'f'.
+// [flattening/modelica/scodeinst/ImpureCall1.mo:12:1-17:7:writable] Warning: Pure function 'f2' contains a call to impure function 'f'.
 //
 // endResult

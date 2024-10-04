@@ -1,7 +1,6 @@
 // name:     ArrayRemoveIndex1
 // keywords: subscript
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that array subscripts are removed even when preceeded with
 // unary minus vector expression
@@ -19,6 +18,7 @@ equation
   zeros(2, 2)=transpose(A)*transpose(X) + X*A - X*B*transpose(B)*X + Q "Algebraic Riccati Equation";
   der(x)=A*x + B*u "State equation";
   u=-transpose(B)*X*x "Control";
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayRemoveIndex1;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     EnumConnectArray
 // keywords: enum connect array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that enumeration literals are preserved when connecting two arrays
 // whose dimensions are given by enumerations.
@@ -18,6 +17,7 @@ block EnumConnectArray
   TBlock Block2;
 equation
   connect(Block2.In, Block1.Out);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumConnectArray;
 
 // Result:

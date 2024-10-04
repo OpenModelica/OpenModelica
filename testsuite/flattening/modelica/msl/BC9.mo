@@ -1,7 +1,6 @@
 // name:     BC9 - SecondOrder component
 // keywords: SecondOrder
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the SecondOrder component.
 //
@@ -974,6 +973,7 @@ model BC9
 
 equation
   connect(constant1.outPort,secondOrder1.inPort) annotation(Line(visible=true,points={{-29.91,12.57},{-8.62,15.62}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC9;
 
 // class BC9

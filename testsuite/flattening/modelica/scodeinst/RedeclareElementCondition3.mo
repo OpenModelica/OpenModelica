@@ -1,7 +1,6 @@
 // name: RedeclareElementCondition3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package P

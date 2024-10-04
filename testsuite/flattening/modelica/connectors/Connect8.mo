@@ -1,7 +1,6 @@
 // name:     Connect8
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // If parameters are involved in connections, the parameters have to
 // be known to generate the equations.
@@ -19,6 +18,7 @@ equation
   connect(c[N],cx);
   connect(c[2],cy);
   c[1].x=time; // Extra equation required compared to Connect7 example.
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect8;
 
 // Result:

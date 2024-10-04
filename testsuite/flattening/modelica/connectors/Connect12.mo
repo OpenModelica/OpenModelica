@@ -1,7 +1,6 @@
 // name: Connect12
 // keywords: array, connector, extending basictype
 // status: correct
-// cflags: +std=2.x -d=-newInst
 //
 // This test is for connectors extending a basictype.
 // New in Modelica v2.2.
@@ -30,6 +29,7 @@ equation
       x-y=0;
    connect(x,x2);
    connect(v,v2);
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end test;
 
 // Result:

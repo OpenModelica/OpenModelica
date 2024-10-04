@@ -1,7 +1,6 @@
 // name:     Connect4
 // keywords: connect,type,unknown
 // status:   correct
-// cflags: -d=-newInst
 //
 // Integers are allowed in connectors
 //
@@ -16,6 +15,7 @@ model Connect4
 equation
   connect(c1,c2);
   c1.i=integer(time*10);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect4;
 
 // Result:

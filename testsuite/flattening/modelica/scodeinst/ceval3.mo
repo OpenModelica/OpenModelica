@@ -1,6 +1,5 @@
 // name: ceval3.mo
 // status: correct
-// cflags: -d=newInst
 
 model A
   Real x(start=2.0, fixed=init_x);

@@ -1,7 +1,6 @@
 // name: FuncVectorization3
 // keywords: vectorization function
 // status: correct
-// cflags: -d=newInst
 //
 //
 

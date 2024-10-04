@@ -1,7 +1,6 @@
 // name:     RecordDefaultArg
 // keywords: record, default argument, #2366
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests default arguments in record constructors.
 //
@@ -13,6 +12,7 @@ model RecordDefaultArg
 
     end R;
     R r=R(x=zeros(0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordDefaultArg;
 
 // Result:

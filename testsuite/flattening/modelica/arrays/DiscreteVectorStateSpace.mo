@@ -1,7 +1,6 @@
 // name:     DiscreteVectorStateSpace
 // keywords: <insert keywords here>
 // status:   correct
-// cflags: -d=-newInst
 //
 // <insert description here>
 //
@@ -28,6 +27,7 @@ model DVSSTest
   DiscreteVectorStateSpace dvss;
 equation
   dvss.u= fill(time,dvss.m);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DVSSTest;
 
 

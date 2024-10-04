@@ -1,7 +1,6 @@
 // name: BindingArray8
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model BindingArray8  

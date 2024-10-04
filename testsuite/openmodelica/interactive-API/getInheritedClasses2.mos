@@ -1,0 +1,40 @@
+// name: getInheritedClasses2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+loadString("
+  package P1
+    package P2
+      package P3
+        extends P1.P2.Icons.Package;
+
+        model M
+          extends P1.P2.P3.Internal.M;
+        end M;
+
+        package Internal
+          model M
+          end M;
+        end Internal;
+      end P3;
+
+      package Icons
+        package Package
+        end Package;
+      end Icons;
+    end P2;
+  end P1;
+");
+getErrorString();
+
+getInheritedClasses(P1.P2.P3.M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// {P1.P2.P3.Internal.M}
+// ""
+// endResult

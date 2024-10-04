@@ -1,6 +1,5 @@
 // name: Record1
 // status: correct
-// cflags: -d=newInst -f
 
 model Record1
   record R
@@ -14,6 +13,7 @@ model Record1
 equation
   r1 = R(0,0);
   r2 = R(0,0);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f");
 end Record1;
 
 // Result:

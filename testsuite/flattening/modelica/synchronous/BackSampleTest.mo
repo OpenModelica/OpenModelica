@@ -1,7 +1,6 @@
 // name: BackSampleTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model BackSampleTest
   output Real x;
@@ -10,6 +9,7 @@ model BackSampleTest
 equation
   x = backSample(1.0, 2, 4);
   y = backSample(z, 3);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BackSampleTest;
 
 // Result:

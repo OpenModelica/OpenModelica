@@ -1,7 +1,6 @@
 // name:     RedeclareComponent1
 // keywords: redeclare component
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests simple redeclaration of an inherited component.
 //
@@ -14,6 +13,7 @@ class RedeclareComponent1
   extends C;
 
   redeclare Real r(start = 1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareComponent1;
 
 // Result:

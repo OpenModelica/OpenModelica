@@ -1,7 +1,6 @@
 // name: const14.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package B

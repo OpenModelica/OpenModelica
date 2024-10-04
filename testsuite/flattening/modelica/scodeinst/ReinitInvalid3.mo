@@ -1,7 +1,6 @@
 // name: ReinitInvalid3
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model ReinitInvalid3
@@ -14,7 +13,7 @@ end ReinitInvalid3;
 
 // Result:
 // Error processing file: ReinitInvalid3.mo
-// [flattening/modelica/scodeinst/ReinitInvalid3.mo:11:5-11:19:writable] Error: The first argument to reinit must be a continuous time variable, but x is constant.
+// [flattening/modelica/scodeinst/ReinitInvalid3.mo:10:5-10:19:writable] Error: The first argument to reinit must be a continuous time variable, but x is constant.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

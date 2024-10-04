@@ -1,7 +1,6 @@
 // name: FuncBuiltinSpatialDistribution
 // keywords: spacialDistribution
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin spacialDistribution operator.
 //

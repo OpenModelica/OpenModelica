@@ -218,7 +218,7 @@ public
       Value val;
     algorithm
       (_, val) := tpl;
-      b := listLength(Value.getEquations(val)) > 1;
+      b := List.hasSeveralElements(Value.getEquations(val));
     end relevant;
   end PseudoBucket;
 
@@ -410,7 +410,7 @@ public
       output Matching phase2_matching = matching;
       output array<SuperNode> super_nodes;
     protected
-      list<list<Integer>> algebraic_loops = list(scc for scc guard(listLength(scc) > 1) in scc_phase1);
+      list<list<Integer>> algebraic_loops = list(scc for scc guard List.hasSeveralElements(scc) in scc_phase1);
       list<tuple<Mode, Value>> buckets = UnorderedMap.toList(buck);
       Mode mode;
       Value val;
@@ -540,7 +540,7 @@ public
           sorted_body_indices := List.flatten(sorted_body_components);
           // if new strong components of size > 1 were created it is an error, this should
           // have occured in sorting phase I
-          if not listLength(sorted_body_components) == listLength(sorted_body_indices) then
+          if List.compareLength(sorted_body_components, sorted_body_indices) <> 0 then
             Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName()
               + " crucially failed for the following Phase II strong component"
               + " because the body turned out to still have strong components:\n"
@@ -550,7 +550,7 @@ public
           // check for independence of the element equations
           // if locally each variable occurs in only one equation, then they are all independent
           for i in node.eqn_indices loop
-            indep := indep and listLength(m_local[i]) == 1;
+            indep := indep and List.hasOneElement(m_local[i]);
           end for;
           eqn_arr_idx := mapping.eqn_StA[List.first(node.eqn_indices)];
           var_arr_idx := mapping.var_StA[matching.eqn_to_var[List.first(node.eqn_indices)]];
@@ -563,7 +563,7 @@ public
           sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := List.flatten(sorted_body_components);
 
-          if listLength(sorted_body_components) == listLength(sorted_body_indices) then
+          if List.compareLength(sorted_body_components, sorted_body_indices) == 0 then
             // create entwined for loop if there was no algebraic loop
             comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
           else

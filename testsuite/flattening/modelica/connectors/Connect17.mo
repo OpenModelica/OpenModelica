@@ -1,7 +1,6 @@
 // name:     Connect17
 // keywords: connect arrays subscript bug1731
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests array connections with subscripts.
 //
@@ -14,6 +13,7 @@ model Connect17
   OutReal y[p+1];
 equation
   connect(x,y[2:p+1]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect17;
 
 // Result:

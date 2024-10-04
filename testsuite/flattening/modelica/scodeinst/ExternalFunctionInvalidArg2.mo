@@ -1,7 +1,6 @@
 // name: ExternalFunctionInvalidArg2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -21,7 +20,7 @@ end ExternalFunctionInvalidArg2;
 
 // Result:
 // Error processing file: ExternalFunctionInvalidArg2.mo
-// [flattening/modelica/scodeinst/ExternalFunctionInvalidArg2.mo:8:1-13:6:writable] Error: Invalid external argument 'size(x, n)', the dimension index must be a constant expression.
+// [flattening/modelica/scodeinst/ExternalFunctionInvalidArg2.mo:7:1-12:6:writable] Error: Invalid external argument 'size(x, n)', the dimension index must be a constant expression.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

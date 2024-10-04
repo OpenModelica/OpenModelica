@@ -1,7 +1,6 @@
 // name:     BS9 - Sine component
 // keywords: Sine
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Sine component.
 //
@@ -1289,6 +1288,7 @@ model BS9
 
 equation
   connect(sine1.outPort,der1.inPort) annotation(Line(visible=true,points={{-43.9,22.0},{-31.13,22.0}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS9;
 // function Modelica.Math.sin
 // input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");

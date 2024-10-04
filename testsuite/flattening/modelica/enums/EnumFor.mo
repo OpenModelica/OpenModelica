@@ -1,7 +1,6 @@
 // name:     EnumFor
 // keywords: enumeration enum range for loop
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that enumeration literals are preserved when used in for loops.
 //
@@ -20,6 +19,7 @@ equation
   for i in E.c : E.e loop
     C[i] = B[i];
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumFor;
 
 // Result:

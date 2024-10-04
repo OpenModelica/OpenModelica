@@ -1,7 +1,6 @@
 // name: ExtendsShort2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

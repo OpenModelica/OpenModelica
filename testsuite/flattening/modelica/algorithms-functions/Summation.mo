@@ -1,7 +1,6 @@
 // name:     Summation
 // keywords: algorithm, array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Drmodelica:
 //
@@ -19,6 +18,7 @@ algorithm
     end if;
     n := n - 1;
   end while;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Summation;
 
 

@@ -1,7 +1,6 @@
 // name:     Cardinality
 // keywords: cardinality
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing the cardinality operator
 //
@@ -30,6 +29,7 @@ model circuit
 equation
 
     connect(R1.p,p); // R1.n_conn = cardinality(R1.p) = 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end circuit;
 
 // Result:

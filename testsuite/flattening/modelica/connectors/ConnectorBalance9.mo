@@ -1,7 +1,6 @@
 // name: ConnectorBalance9
 // keywords: connector
 // status: correct
-// cflags: -d=newInst, --allowNonStandardModelica=unbalancedModel
 //
 //
 
@@ -15,6 +14,7 @@ model ConnectorBalance9
   C c1, c2;
 equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst, --allowNonStandardModelica=unbalancedModel");
 end ConnectorBalance9;
 
 // Result:

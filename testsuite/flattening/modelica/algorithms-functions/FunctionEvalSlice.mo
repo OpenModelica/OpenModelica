@@ -1,7 +1,6 @@
 // name:     FunctionEvalSlice
 // keywords: function slice assignment
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that slice assignments in functions are constant evaluated correctly.
 //
@@ -18,6 +17,7 @@ model FunctionEvalSlice
   Real r[10];
 equation
   r = fn();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEvalSlice;
 
 // Result:

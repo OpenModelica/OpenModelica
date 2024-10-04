@@ -1,7 +1,6 @@
 // name:     ConnectInner3
 // keywords: connect,dynamic scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // This demonstrates dynamic scoping for
 // connector variables.
@@ -31,6 +30,7 @@ model ConnectInner3
   A a;
 equation
   global.c.e=10;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectInner3;
 
 // Result:

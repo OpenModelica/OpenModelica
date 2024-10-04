@@ -1,7 +1,6 @@
 // name: ExtendSelf1.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that a class can extend a local class via itself.
 //
@@ -16,6 +15,6 @@ end ExtendSelf1;
 
 // Result:
 // class ExtendSelf1
-//   Real x = 1;
+//   Real x = 1.0;
 // end ExtendSelf1;
 // endResult

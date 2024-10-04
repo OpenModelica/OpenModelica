@@ -1,7 +1,6 @@
 // name:     RedeclareComponentInvalid3
 // keywords: redeclare component
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Tests that it's only allowed to redeclare a component marked as replaceable.
 //
@@ -14,6 +13,7 @@ class RedeclareComponentInvalid3
   extends C;
 
   redeclare Real r(start = 1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareComponentInvalid3;
 
 // Result:

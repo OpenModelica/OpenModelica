@@ -1,6 +1,5 @@
 // name: CevalBinding4
 // status: correct
-// cflags: -d=newInst
 //
 // Simple test of component bindings.
 //

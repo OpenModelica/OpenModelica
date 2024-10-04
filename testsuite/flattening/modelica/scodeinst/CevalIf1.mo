@@ -1,7 +1,6 @@
 // name: CevalIf1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -142,7 +142,7 @@ public
       (_, _, state_adj, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
       state_candidates := {};
 
-      if listLength(state_candidates) < listLength(constraint_eqns) then
+      if List.compareLength(state_candidates, constraint_eqns) < 0 then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
           + " failed because there were not enough state candidates to balance out the constraint equations.\n"
           + StringUtil.headline_4("(" + intString(listLength(state_candidates)) + "|"

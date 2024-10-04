@@ -1,7 +1,6 @@
 // name: ModelBalance3
 // keywords: balance
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests an unbalanced model with too many equations
 //
@@ -13,6 +12,7 @@ equation
   x = 2;
   y = x + 2;
   x = y + 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModelBalance3;
 
 // class ModelBalance3

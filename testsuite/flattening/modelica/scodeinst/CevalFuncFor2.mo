@@ -1,7 +1,6 @@
 // name: CevalFuncFor2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,6 +1,5 @@
 // name: InStreamArray
 // keywords: stream instream connector
-// cflags: -d=newInst
 // status: correct
 //
 

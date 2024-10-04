@@ -1034,7 +1034,7 @@ public
 
       // Builtin function call with one argument
       // df(x)/dz = df/dx * dx/dz
-      case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
+      case (Expression.CALL()) guard List.hasOneElement(Call.arguments(exp.call))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1642,7 +1642,7 @@ public
   algorithm
     (exp, diffArguments) := match exp
       local
-        Expression exp1, exp2, diffExp1, diffExp2, call;
+        Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
         Operator operator, addOp, mulOp, powOp;
         Operator.SizeClassification sizeClass;
 
@@ -1715,88 +1715,40 @@ public
               Expression.isZero(exp1))
       then (Expression.makeZero(operator.ty), diffArguments);
 
-      // Power (POW, POW_EW, ...) with constant exponent and constant base
-      // (r1^r2)' = 0
+      // Power (POW, POW_EW, ...) general case
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
-        guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
-              Expression.isConstNumber(exp1) and Expression.isConstNumber(exp2))
-      then (Expression.makeZero(operator.ty), diffArguments);
-
-      // Power (POW, POW_EW, ...) with constant exponent
-      // (x^r)' = r*(x^(r-1))*x'
-      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
-        guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
-              (Expression.isConstNumber(exp2) or BVariable.checkExp(exp2, BVariable.isParamOrConst)))
-        algorithm
-          (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
-          (_, sizeClass) := Operator.classify(operator);
-          mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-      then (Expression.MULTARY(
-              {exp2,                                                      // r
-              Expression.BINARY(exp1, operator, minusOne(exp2, addOp)),   // x^(r-1)
-              diffExp1},                                                  // x'
-              {},
-              mulOp                                                       // *
-            ),
-            diffArguments);
-
-      // Power (POW, POW_EW, ...) with constant base
-      // ToDo: what is the most optimal constellation for this?
-      // (r^x)'  = r^x*ln(r)*x'
-      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
-        guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
-              (Expression.isConstNumber(exp1) or BVariable.checkExp(exp1, BVariable.isParamOrConst)))
-        algorithm
-          (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
-          (_, sizeClass) := Operator.classify(operator);
-          mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-      then (Expression.MULTARY(
-              {exp, expLog(exp1), diffExp2},    // r^x * ln(r) * x'
-              {},
-              mulOp                             //  *
-            ),
-            diffArguments);
-
-      // Power (POW, POW_EW, ...) regular case
-      // ToDo: what is the most optimal constellation for this?
-      // (x^y)' = x^(y-1) * ( x*ln(x)*y'+(y*x'))
-      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
-        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER)
+        guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER))
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
-          // create addition, subtraction and multiplication operator from the size classification of original power operator
+          diffExp1 := SimplifyExp.simplifyDump(diffExp1, true, getInstanceName());
+          diffExp2 := SimplifyExp.simplifyDump(diffExp2, true, getInstanceName());
           (_, sizeClass) := Operator.classify(operator);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          // create the ln(x) call
-          call := Expression.CALL(Call.makeTypedCall(
-            fn          = NFBuiltinFuncs.LOG_REAL,
-            args        = {exp1},
-            variability = Expression.variability(exp1),
-            purity      = NFPrefixes.Purity.PURE
-          ));
-      then (Expression.MULTARY(
-              {Expression.BINARY(
-                exp1,                                                   // x
-                operator,                                               // ^
-                minusOne(exp2, addOp)                                   // (y-1)
-              ),
-              Expression.MULTARY(
-                {Expression.MULTARY(
-                  {exp1, call, diffExp2},                               // x * ln(x) * y'
-                  {},
-                  mulOp                                                 // *
-                ),
-                Expression.MULTARY({exp2, diffExp1}, {}, mulOp)},       // y * x'
-                {},
-                addOp                                                   // +
-              )},
-              {},
-              mulOp                                                     // *
-            ),
-            diffArguments);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+
+          res := match (Expression.isZero(diffExp1), Expression.isZero(diffExp2))
+            // Power (POW, POW_EW, ...) with constant exponent and constant base
+            // (r1^r2)' = 0
+            case (true, true) then Expression.makeZero(operator.ty);
+            // Power (POW, POW_EW, ...) with constant exponent
+            // (x^r)' = r*(x^(r-1))*x'
+            case (false, true) then Expression.MULTARY({exp2, Expression.BINARY(exp1, operator, minusOne(exp2, addOp)), diffExp1}, {}, mulOp);
+            // Power (POW, POW_EW, ...) with constant base
+            // (r^x)'  = r^x*ln(r)*x'
+            case (true, false) then Expression.MULTARY({exp, expLog(exp1), diffExp2}, {}, mulOp);
+            // Power (POW, POW_EW, ...) regular case
+            // (x^y)' = x^(y-1) * (x*ln(x)*y'+(y*x'))
+            else algorithm
+              // x^(y-1)
+              e1 := Expression.BINARY(exp1, operator, minusOne(exp2, addOp));
+              // x * ln(x) * y'
+              e2 := Expression.MULTARY({exp1, expLog(exp1), diffExp2}, {}, mulOp);
+              // y * x'
+              e3 := Expression.MULTARY({exp2, diffExp1}, {}, mulOp);
+            then Expression.MULTARY({e1, Expression.MULTARY({e2, e3}, {}, addOp)}, {}, mulOp);
+          end match;
+      then (res, diffArguments);
 
       // Logical and Comparing operators => just return as is
       case Expression.BINARY(operator = operator)

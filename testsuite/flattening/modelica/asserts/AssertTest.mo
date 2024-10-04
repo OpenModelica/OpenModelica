@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Assert (p. 249)
-// cflags: -d=-newInst
 //
 
 
@@ -17,6 +16,7 @@ end AssertTest;
 
 class AssertTestInst
   AssertTest assertTest(lowlimit = -2, highlimit = 6, x = 5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssertTestInst;
 
 // Result:

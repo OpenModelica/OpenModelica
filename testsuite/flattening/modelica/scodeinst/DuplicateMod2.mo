@@ -1,7 +1,6 @@
 // name: DuplicateMod2.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 
 model A
@@ -14,8 +13,8 @@ end DuplicateMod2;
 
 // Result:
 // Error processing file: DuplicateMod2.mo
-// [flattening/modelica/scodeinst/DuplicateMod2.mo:12:20-12:25:writable] Notification: From here:
-// [flattening/modelica/scodeinst/DuplicateMod2.mo:12:13-12:18:writable] Error: Duplicate modification of element x on extends A.
+// [flattening/modelica/scodeinst/DuplicateMod2.mo:11:20-11:25:writable] Notification: From here:
+// [flattening/modelica/scodeinst/DuplicateMod2.mo:11:13-11:18:writable] Error: Duplicate modification of element x on extends A.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

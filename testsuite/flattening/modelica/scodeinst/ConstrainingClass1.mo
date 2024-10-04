@@ -1,7 +1,6 @@
 // name: ConstrainingClass1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ConstrainingClass1

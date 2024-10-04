@@ -1,7 +1,6 @@
 // name: BlockIllegal
 // keywords: block
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests block connections of non-directional components
 // THIS TEST SHOULD FAIL
@@ -16,6 +15,7 @@ model BlockIllegal
 equation
   tb1.i = 1;
   connect(tb1.i,tb2.i);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockIllegal;
 
 // Result:

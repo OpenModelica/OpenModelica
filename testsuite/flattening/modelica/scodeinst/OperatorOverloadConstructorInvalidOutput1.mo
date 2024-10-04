@@ -1,7 +1,6 @@
 // name: OperatorOverloadConstructorInvalidOutput1
 // keywords: operator overload constructor
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -24,7 +23,7 @@ end OperatorOverloadConstructorInvalidOutput1;
 
 // Result:
 // Error processing file: OperatorOverloadConstructorInvalidOutput1.mo
-// [flattening/modelica/scodeinst/OperatorOverloadConstructorInvalidOutput1.mo:8:1-16:6:writable] Error: Output 'x' in operator C.'constructor' must be of type C, got type Real.
+// [flattening/modelica/scodeinst/OperatorOverloadConstructorInvalidOutput1.mo:7:1-15:6:writable] Error: Output 'x' in operator C.'constructor' must be of type C, got type Real.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

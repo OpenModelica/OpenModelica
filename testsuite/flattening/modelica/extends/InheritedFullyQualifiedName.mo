@@ -1,7 +1,6 @@
 // name:     InheritedFullyQualifiedName
 // keywords: #4520
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that fully qualified names in inherited elements aren't corrupted.
 //
@@ -22,6 +21,7 @@ end P2;
 
 model InheritedFullyQualifiedName
   extends P2.P.M;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InheritedFullyQualifiedName;
 
 // Result:

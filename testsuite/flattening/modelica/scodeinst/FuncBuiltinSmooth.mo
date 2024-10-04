@@ -1,7 +1,6 @@
 // name: FuncBuiltinSmooth
 // keywords: smooth
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin smooth operator.
 //

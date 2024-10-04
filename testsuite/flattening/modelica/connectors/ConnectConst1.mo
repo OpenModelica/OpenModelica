@@ -1,7 +1,6 @@
 // name:     ConnectConst1
 // keywords: connect,constant
 // status:   correct
-// cflags: -d=-newInst
 //
 // The specification does not forbid you to connectors as constant.
 
@@ -15,6 +14,7 @@ model ConnectConst1
   constant C c2(e=1,f=2);
 equation
   connect(c1,c2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectConst1;
 
 // Result:

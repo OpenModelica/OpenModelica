@@ -1,7 +1,6 @@
 // name: Connect5
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 connector C

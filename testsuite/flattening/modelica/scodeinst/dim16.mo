@@ -1,7 +1,6 @@
 // name: dim16
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model B

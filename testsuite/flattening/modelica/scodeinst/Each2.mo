@@ -1,7 +1,6 @@
 // name: Each2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Each2

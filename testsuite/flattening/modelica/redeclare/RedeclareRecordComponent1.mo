@@ -1,7 +1,6 @@
 // name:     RedeclareRecordComponent1
 // keywords: redeclare record binding #3467
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that redeclares of record components are handled correctly.
 //
@@ -15,6 +14,7 @@ model RedeclareRecordComponent1
   record R2 = R(redeclare MyReal x);
 
   R2 r = R2(x = 1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareRecordComponent1;
 
 // Result:

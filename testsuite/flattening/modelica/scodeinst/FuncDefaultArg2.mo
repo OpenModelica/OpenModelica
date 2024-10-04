@@ -1,7 +1,6 @@
 // name: FuncDefaultArg2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that default arguments are replaced with the correct expression in the
 // function call.

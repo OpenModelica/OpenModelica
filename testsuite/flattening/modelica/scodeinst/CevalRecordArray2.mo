@@ -1,7 +1,6 @@
 // name: CevalRecordArray2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package P

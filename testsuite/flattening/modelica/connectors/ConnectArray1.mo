@@ -1,7 +1,6 @@
 // name:     ConnectArray1
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // Basic connections
 //
@@ -19,6 +18,7 @@ model ConnectArray1
   M m1[2], m2[2];
 equation
   connect(m1.c, m2.c);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectArray1;
 
 // Result:

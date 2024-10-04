@@ -1,13 +1,13 @@
 // name:     Constant5
 // keywords: declaration,array
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
 
 class Constant5
   Real x[integer(2.5)];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant5;
 
 // Result:

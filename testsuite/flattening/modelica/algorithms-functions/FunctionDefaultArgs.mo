@@ -1,7 +1,6 @@
 // name:     FunctionDefaultArgs
 // keywords: functions, default arguments, unknown size
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests default arguments to function, particularly default arguments of
 // unknown size.
@@ -24,6 +23,7 @@ equation
   res1 = set({4,5,6,7});
   res2 = set({4,3,2});
   res3 = set();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionDefaultArgs;
 
 // Result:

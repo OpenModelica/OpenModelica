@@ -1,7 +1,6 @@
 // name: IfExpression13
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R

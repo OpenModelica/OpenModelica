@@ -1,7 +1,6 @@
 // name: LookupLibrary1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Tests that libraries can be looked up even when not explicitly loaded.
 //

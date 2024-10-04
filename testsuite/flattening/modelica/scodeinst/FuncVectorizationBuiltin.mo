@@ -1,7 +1,6 @@
 // name: FuncVectorizationBuiltin
 // keywords: vectorization function map array reduction
 // status: correct
-// cflags: -d=newInst
 //
 // Checks vectorization of simple builtin functions.
 //

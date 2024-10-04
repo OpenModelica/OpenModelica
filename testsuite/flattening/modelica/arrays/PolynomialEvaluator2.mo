@@ -1,7 +1,6 @@
 // name:     PolynomialEvaluator2
 // keywords: function, algorithm, scoping, array
 // status:   correct
-// cflags: -d=-newInst
 
 
 function polyeval
@@ -24,6 +23,7 @@ model PolynomialEvaluator2
   Real result;
 equation
   result = polyeval(inVector);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolynomialEvaluator2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: OperatorOverloadConstructorInvalidOutput2
 // keywords: operator overload constructor
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -26,7 +25,7 @@ end OperatorOverloadConstructorInvalidOutput2;
 
 // Result:
 // Error processing file: OperatorOverloadConstructorInvalidOutput2.mo
-// [flattening/modelica/scodeinst/OperatorOverloadConstructorInvalidOutput2.mo:8:1-18:6:writable] Error: Operator C.'constructor' must have exactly one output.
+// [flattening/modelica/scodeinst/OperatorOverloadConstructorInvalidOutput2.mo:7:1-17:6:writable] Error: Operator C.'constructor' must have exactly one output.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

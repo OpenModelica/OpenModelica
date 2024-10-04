@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Polynomial Evaluator (p. 242)
-// cflags: -d=-newInst
 //
 
 block PolynomialEvaluator
@@ -27,6 +26,7 @@ class PolyEvaluate1
 equation
   polyeval.x = time;
   p = polyeval.y;              // p gets the result
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolyEvaluate1;
 
 // class PolyEvaluate1

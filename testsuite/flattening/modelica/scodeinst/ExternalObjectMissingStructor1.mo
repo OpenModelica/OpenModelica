@@ -1,7 +1,6 @@
 // name: ExternalObjectMissingStructor1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -16,7 +15,7 @@ end ExternalObjectMissingStructor1;
 
 // Result:
 // Error processing file: ExternalObjectMissingStructor1.mo
-// [flattening/modelica/scodeinst/ExternalObjectMissingStructor1.mo:8:1-15:35:writable] Error: External object ExternalObjectMissingStructor1 is missing a destructor.
+// [flattening/modelica/scodeinst/ExternalObjectMissingStructor1.mo:7:1-14:35:writable] Error: External object ExternalObjectMissingStructor1 is missing a destructor.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

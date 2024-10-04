@@ -1,7 +1,6 @@
 // name: OperationLogicalBinary2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationLogicalBinary2

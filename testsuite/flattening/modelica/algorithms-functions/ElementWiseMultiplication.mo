@@ -1,7 +1,6 @@
 // name:     ElementWiseMultiplication.mo
 // keywords: function, array, algorithm
 // status:   correct
-// cflags: -d=-newInst
 //
 // Drmodelica:
 //
@@ -18,6 +17,7 @@ model ElementWiseMultiplication
   Real result[3];
 equation
   result = ewm(inVector);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ElementWiseMultiplication;
 
 // Result:

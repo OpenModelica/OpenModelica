@@ -1,7 +1,6 @@
 // name: FuncBuiltinMath
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin math functions.
 //
@@ -26,16 +25,16 @@ end FuncBuiltinMath;
 // class FuncBuiltinMath
 //   Real r1 = -0.7568024953079282;
 //   Real r2 = -0.4161468365471424;
-//   Real r3 = 1.557407724654902;
+//   Real r3 = 1.5574077246549023;
 //   Real r4 = asin(r1);
 //   Real r5 = acos(r2 * r3);
-//   Real r6 = 1.10714871779409;
-//   Real r7 = 0.9827937232473291;
+//   Real r6 = 1.1071487177940904;
+//   Real r7 = 0.982793723247329;
 //   Real r8 = 27.28991719712775;
-//   Real r9 = 4872401723.124452;
+//   Real r9 = 4.872401723124452e9;
 //   Real r10 = 0.9950547536867305;
 //   Real r11 = 90.01713130052181;
 //   Real r12 = 6.931471805599453;
-//   Real r13 = 2.397940008672037;
+//   Real r13 = 2.3979400086720375;
 // end FuncBuiltinMath;
 // endResult

@@ -1,7 +1,6 @@
 // name: DimUnknown10
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

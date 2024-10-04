@@ -1,7 +1,6 @@
 // name: ModClass6
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model A
@@ -23,8 +22,8 @@ end ModClass6;
 
 // Result:
 // class ModClass6
-//   Real b.x = 2;
-//   Real b.y = 2;
-//   Real b.z = 2;
+//   Real b.x = 2.0;
+//   Real b.y = 2.0;
+//   Real b.z = 2.0;
 // end ModClass6;
 // endResult

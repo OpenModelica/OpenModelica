@@ -2,7 +2,6 @@
 // keywords:
 // status: correct
 // teardown_command: rm MergeComponents8_merged_table.json
-// cflags: -d=newInst,mergeComponents,-nfScalarize
 //
 
 model A
@@ -20,6 +19,7 @@ model MergeComponents8
   parameter Real n2 = 2.0;
   A a1(p = n1);
   A a2(p = n2);
+  annotation(__OpenModelica_commandLineOptions="-d=mergeComponents,-nfScalarize");
 end MergeComponents8;
 
 // Result:

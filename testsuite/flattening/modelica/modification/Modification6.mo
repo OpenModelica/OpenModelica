@@ -1,7 +1,6 @@
 // name:     Modification6
 // keywords: modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // This file tests modification precedence.
 //
@@ -17,6 +16,7 @@ model Modification6
   model myFoo parameter Real q=5;end myFoo;
   M m1(redeclare model Foo=myFoo(q=3.0), f(q=4.0));
   M m2(f(q=4.0), redeclare model Foo=myFoo(q=3.0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification6;
 
 

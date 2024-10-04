@@ -4,7 +4,6 @@
 //
 // function handling
 // Drmodelica: 9.1 Function with Multiple Results (p. 287)
-// cflags: -d=-newInst
 //
 
 function f
@@ -25,6 +24,7 @@ model fCall
 equation
   (a, b, c) = f(1.0, 2.0);
   (x[1], x[2], x[3]) = f(3.0, 4.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end fCall;
 
 // function f

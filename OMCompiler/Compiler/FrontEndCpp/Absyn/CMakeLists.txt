@@ -29,6 +29,7 @@ set(OMC_FRONTEND_CPP_ABSYN_SOURCES
 
 add_library(omcfrontendcppabsyn STATIC)
 add_library(omc::compiler::frontendcpp::absyn ALIAS omcfrontendcppabsyn)
+target_link_libraries(omcfrontendcppabsyn PUBLIC omc::compiler::frontendcpp)
 
 target_sources(omcfrontendcppabsyn PRIVATE ${OMC_FRONTEND_CPP_ABSYN_SOURCES})
 

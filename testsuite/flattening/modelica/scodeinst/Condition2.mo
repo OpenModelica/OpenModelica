@@ -1,7 +1,6 @@
 // name: Condition2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Condition2

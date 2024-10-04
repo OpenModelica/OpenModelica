@@ -5,7 +5,6 @@
 // MORE WORK ON THIS FILE HAS TO BE DONE!
 //
 // Drmodelica: 4.1  Moon Landing (p. 115)
-// cflags: -d=-newInst
 //
 
 model Body "Generic body"
@@ -46,6 +45,7 @@ equation
   else if (time < thrustEndTime) then force2
   else 0;
   apollo.gravity = moon.g*moon.mass/(apollo.altitude + moon.radius)^2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MoonLanding;
 
 // insert expected flat file here. Can be done by issuing the command

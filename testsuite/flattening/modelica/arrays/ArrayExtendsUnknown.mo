@@ -1,7 +1,6 @@
 // name: ArrayExtendsUnknown
 // keywords: array, inheritance
 // status: correct
-// cflags: -d=-newInst
 //
 // This test verifies that you can modify an array with unknown dimensions
 // in an extends node.
@@ -21,6 +20,7 @@ end B;
 class ArrayExtendsUnknown
   extends B;
   D d2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayExtendsUnknown;
 
 // Result:

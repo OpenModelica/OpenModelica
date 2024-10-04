@@ -1,7 +1,6 @@
 // name: InvalidVariability1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model InvalidVariability1

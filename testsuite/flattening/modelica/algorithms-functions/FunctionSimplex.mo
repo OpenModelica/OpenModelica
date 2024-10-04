@@ -1,7 +1,6 @@
 // name:     FunctionSimplex
 // keywords: function,code generation,constant propagation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constant evaluation of function calls. Result of a function call with
 // constant arguments is inserted into flat modelica.
@@ -115,6 +114,7 @@ model FunctionSimplex
   Integer q;
 equation
   (b,z,p,q)=misc_simplex1(a);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionSimplex;
 
 // Result:

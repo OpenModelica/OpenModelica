@@ -1,7 +1,6 @@
 // name: EvaluateFalse1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model EvaluateFalse1

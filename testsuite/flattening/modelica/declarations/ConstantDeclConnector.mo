@@ -1,7 +1,6 @@
 // name: ConstantDeclConnector
 // keywords: constant
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the constant prefix used on a connector
 //
@@ -13,6 +12,7 @@ end ConstantConnector;
 
 model ConstantDeclConnector
   constant ConstantConnector cc(r = 2.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantDeclConnector;
 
 // Result:

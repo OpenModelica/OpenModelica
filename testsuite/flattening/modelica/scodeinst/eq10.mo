@@ -1,7 +1,6 @@
 // name: eq10.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

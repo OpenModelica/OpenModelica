@@ -1,7 +1,6 @@
 // name: FuncBuiltinInteger
 // keywords: integer
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin integer function.
 //

@@ -1,7 +1,6 @@
 // name:     Extends11
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing that short-hand extend works for functions.
 //
@@ -13,6 +12,7 @@ end f;
 model Extends11
   function f2 = f;
   constant Real r = f2();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends11;
 
 // Result:

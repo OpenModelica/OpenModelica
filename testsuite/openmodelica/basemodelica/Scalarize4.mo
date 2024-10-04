@@ -1,6 +1,5 @@
 // name: Scalarize4
 // status: correct
-// cflags: -d=newInst -f --baseModelicaOptions=scalarize
 
 record R
   Real x[3];
@@ -10,6 +9,7 @@ model Scalarize4
   R r[2] = fill(R({1.0, 2.0, 3.0}), 2);
 equation
   r = array(R({4.0, 5.0, 6.0}) for i in 1:size(r, 1));
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f --baseModelicaOptions=scalarize");
 end Scalarize4;
 
 // Result:

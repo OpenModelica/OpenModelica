@@ -1,6 +1,5 @@
 // name: PartiallyScalarizedWithRecords1
 // status: correct
-// cflags: -d=newInst -f
 
 model M
   record R1
@@ -53,6 +52,7 @@ equation
   ma[1].r1.x = 0;
   ma[1].r1.z[2] = 0;
   ma[1].r1 = cr1;
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f");
 end PartiallyScalarizedWithRecords1;
 
 // Result:

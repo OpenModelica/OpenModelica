@@ -1,7 +1,6 @@
 // name:     FixedFalse [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1983]
 // keywords: fixed, parameter, modifications
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests modifications of final parameters.
 // Fix for bug #1983.
@@ -13,6 +12,7 @@ model FixedFalse
   parameter Real b[n](each fixed = true);
 initial equation
   a = b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FixedFalse;
 
 // Result:

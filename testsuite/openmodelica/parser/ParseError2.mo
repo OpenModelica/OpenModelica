@@ -1,20 +1,20 @@
 // name:     ParseError2
 // keywords: parse error
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Parsing error message.
 //
 
 model ParseError2
   Real 1x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParseError2;
 
 // Result:
 // Error processing file: ParseError2.mo
 // Failed to parse file: ParseError2.mo!
 //
-// [openmodelica/parser/ParseError2.mo:10:3-10:7:writable] Error: No viable alternative near token: Real
+// [openmodelica/parser/ParseError2.mo:9:3-9:7:writable] Error: No viable alternative near token: Real
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

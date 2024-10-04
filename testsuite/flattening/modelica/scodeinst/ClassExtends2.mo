@@ -1,7 +1,6 @@
 // name: ClassExtends2.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that class extends without redeclare works, although with a warning
 // since it was deprecated in Modelica 3.4.
@@ -46,6 +45,6 @@ end ClassExtends2;
 //   Real m2_b.x;
 //   Real m2_b.y;
 // end ClassExtends2;
-// [flattening/modelica/scodeinst/ClassExtends2.mo:26:3-28:9:writable] Warning: Missing redeclare prefix on class extends M1, treating like redeclare anyway.
+// [flattening/modelica/scodeinst/ClassExtends2.mo:25:3-27:9:writable] Warning: Missing redeclare prefix on class extends M1, treating like redeclare anyway.
 //
 // endResult

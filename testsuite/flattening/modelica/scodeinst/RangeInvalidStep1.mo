@@ -1,7 +1,6 @@
 // name: RangeInvalidStep1.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Check that a step size of 0 isn't allowed, since that would give an infinite
 // range.
@@ -13,7 +12,7 @@ end RangeInvalidStep1;
 
 // Result:
 // Error processing file: RangeInvalidStep1.mo
-// [flattening/modelica/scodeinst/RangeInvalidStep1.mo:11:3-11:22:writable] Error: Step size 0 in range is too small.
+// [flattening/modelica/scodeinst/RangeInvalidStep1.mo:10:3-10:22:writable] Error: Step size 0 in range is too small.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

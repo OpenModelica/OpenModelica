@@ -1,7 +1,6 @@
 // name:     Import6
 // keywords: import
 // status:   correct
-// cflags: -d=-newInst
 //
 // Import of constants in packages.
 
@@ -18,6 +17,7 @@ end A;
 
 model Import6
   extends A.C;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import6;
 
 // Result:

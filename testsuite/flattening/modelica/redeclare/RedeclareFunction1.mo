@@ -1,7 +1,6 @@
 // name:     RedeclareFunction1
 // keywords: redeclare function bug1432
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's possible to redeclare a function in several steps.
 //
@@ -38,6 +37,7 @@ model model3 = model2(replaceable function func = func2);
 model RedeclareFunction1
   model2 m2;
   model3 m3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareFunction1;
 
 // Result:

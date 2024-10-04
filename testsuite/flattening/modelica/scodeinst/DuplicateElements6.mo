@@ -1,7 +1,6 @@
 // name: DuplicateElements6
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that duplicate elements are detected and reported.
 //

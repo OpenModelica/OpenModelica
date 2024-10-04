@@ -1,7 +1,6 @@
 // name:     AlgorithmFor6
 // keywords: algorithm,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test for multiple loops in algorithms.
 //
@@ -12,6 +11,7 @@ algorithm
   for i, j in {2,3} loop
     a[i,j] := i + j;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor6;
 
 // Result:

@@ -1,6 +1,5 @@
 // name:     HeatTank
 // keywords: replaceable connector
-// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 // Error in implementation, replaceable connector.
@@ -50,6 +49,7 @@ equation
 
   outlet.temp = temp;
 
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end HeatTank;
 
 

@@ -1,7 +1,6 @@
 // name:     ClassExtendsInvalid1
 // keywords: class,extends
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Checks that it's not allowed to class extend a non-replaceable class.
 //
@@ -14,6 +13,7 @@ class ClassExtendsInvalid1
  extends Y;
 
  redeclare model extends X end X;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ClassExtendsInvalid1;
 
 // Result:

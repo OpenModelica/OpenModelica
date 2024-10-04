@@ -1,7 +1,6 @@
 // name: ExternalFunctionExplicit1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

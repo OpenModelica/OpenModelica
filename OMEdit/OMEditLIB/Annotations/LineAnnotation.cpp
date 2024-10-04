@@ -721,6 +721,8 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
       if ((mpStartElement && mpStartElement->getModelComponent() && !mpStartElement->getModelComponent()->getCondition())
           || (mpEndElement && mpEndElement->getModelComponent() && !mpEndElement->getModelComponent()->getCondition())) {
         painter->setOpacity(0.3);
+      } else {
+        painter->setOpacity(1.0);
       }
     }
     drawAnnotation(painter);

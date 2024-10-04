@@ -394,17 +394,7 @@ public
   function toList
     "Returns a list with the (key, value) pairs."
     input UnorderedMap<K, V> map;
-    output list<tuple<K, V>> lst;
-  protected
-    list<K> keys = keyList(map);
-    list<V> values = valueList(map);
-  algorithm
-    if listLength(keys) == listLength(values) then
-      lst := List.zip(keys, values);
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is an unequal number of keys ("
-        + intString(listLength(keys)) + ") and values (" + intString(listLength(values)) + ")."});
-    end if;
+    output list<tuple<K, V>> lst = List.zip(keyList(map), valueList(map));
   end toList;
 
   function keyList

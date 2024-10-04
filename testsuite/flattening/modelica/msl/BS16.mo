@@ -1,7 +1,6 @@
 // name:     BS16 - BooleanPulse component
 // keywords: BooleanPulse
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the BooleanPulse component.
 //
@@ -1218,6 +1217,7 @@ model BS16
 
 equation
   connect(booleanPulse1.outPort,booleanChange1.inPort) annotation(Line(visible=true,points={{-14.4,12.88},{-0.41,11.66}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS16;
 // class BS16
 // parameter Integer booleanPulse1.nout(min = 1) = 1 "Number of Boolean outputs";
@@ -1277,8 +1277,8 @@ end BS16;
 //   assert(booleanPulse1.outPort.n == booleanChange1.inPort.n, "automatically generated from connect");
 //   booleanChange1.inPort.signal[1] = booleanPulse1.outPort.signal[1];
 // end BS16;
-// [flattening/modelica/msl/BS16.mo:730:41-730:69:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS16.mo:730:76-730:83:writable] Warning: Non-array modification '100' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS16.mo:732:45-732:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS16.mo:729:41-729:69:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS16.mo:729:76-729:83:writable] Warning: Non-array modification '100' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS16.mo:731:45-731:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

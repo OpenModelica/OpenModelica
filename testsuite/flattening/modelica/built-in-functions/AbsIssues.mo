@@ -1,7 +1,6 @@
 // name: AbsWithTupleInput [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1946]
 // keywords: abs
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in abs function that gets a tuple input from another function call
 //
@@ -61,6 +60,7 @@ equation
          "Error: To use TableLookupFlow must specify 0,0 in first row of data if anti_symmetric=true");
   assert(abs(Modelica.Math.Vectors.interpolate(pressure_drop[:, 1], pressure_drop[:, 2], 0, 1)) < 1e-06,
          "Error: To use TableLookupFlow must specify data that goes through 0,0");
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AbsIssues;
 
 // Result:

@@ -1105,6 +1105,8 @@ void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, Q
       setVisible(mTransformation.getVisible());
       if (!condition) {
         setOpacity(0.3);
+      } else {
+        setOpacity(1.0);
       }
     } else if (isPort()) {
       setVisible(mTransformation.getVisible() && condition);

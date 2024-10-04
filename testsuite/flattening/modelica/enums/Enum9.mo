@@ -1,7 +1,6 @@
 // name:     Enumeration9
 // keywords: enumeration enum Integer
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -12,6 +11,7 @@ model EnumTest
    Integer a;
 equation
    a = Integer(ABC.b);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumTest;
 
 

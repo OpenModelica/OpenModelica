@@ -1,7 +1,6 @@
 // name: ClassExtends4
 // keywords: class, extends
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that repeated class extends are handled correctly.
 //
@@ -22,6 +21,7 @@ class P3
   redeclare class extends C Real r3; end C;
 
   C c3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end P3;
 
 // Result:

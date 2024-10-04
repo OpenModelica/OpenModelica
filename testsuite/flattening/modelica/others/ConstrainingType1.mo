@@ -1,7 +1,6 @@
 // name:     ConstrainingType1
 // keywords: replaceable
 // status:   correct
-// cflags: -d=-newInst
 //
 // Demonstrates that it is sufficient that
 // a redeclare is a sub-type of the constraining
@@ -79,6 +78,7 @@ equation
   connect(s.b,a.a);
   connect(a.b,b.a);
   connect(b.b,s.a);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstrainingType1;
 
 // Result:

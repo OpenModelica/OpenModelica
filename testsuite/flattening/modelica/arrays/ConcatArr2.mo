@@ -4,11 +4,11 @@
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.3 General Array concatenation (p. 213)
-// cflags: -d=-newInst
 //
 
 class ConcatArr2
   Real[2, 3] c3 = cat(2, [1, 2; 3, 4], [10; 11]); // Same result: {{1, 2, 10}, {3, 4, 11}}
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConcatArr2;
 
 // insert expected flat file here. Can be done by issuing the command

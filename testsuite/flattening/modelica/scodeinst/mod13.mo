@@ -1,7 +1,6 @@
 // name: mod13.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 model D

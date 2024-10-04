@@ -1,6 +1,5 @@
 // name: Scalarize2
 // status: correct
-// cflags: -d=newInst -f --baseModelicaOptions=scalarize
 
 model M
   Real x[2];
@@ -15,6 +14,7 @@ model Scalarize2
   M m[2];
 equation
   m.x = f(m.x);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f --baseModelicaOptions=scalarize");
 end Scalarize2;
 
 // Result:

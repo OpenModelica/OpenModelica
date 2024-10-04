@@ -282,11 +282,11 @@ protected
             // one or less algebraic variables > differentiate the expression
             (returnExp, oDiffArgs) := Differentiate.differentiateExpression(arg, diffArgs);
             returnExp := SimplifyExp.simplifyDump(returnExp, true, getInstanceName());
-            if listLength(oDiffArgs.new_vars) == 1 then
+            if List.hasOneElement(oDiffArgs.new_vars) then
               der_var := List.first(oDiffArgs.new_vars);
               Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
               Pointer.update(acc_states, BVariable.getStateVar(der_var) :: Pointer.access(acc_states));
-            elseif listLength(oDiffArgs.new_vars) > 1 then
+            elseif List.hasSeveralElements(oDiffArgs.new_vars) then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the number of algebraic variables were miscounted! " +
                 "Expected: 0 or 1, got: " + intString(listLength(oDiffArgs.new_vars))});
               fail();

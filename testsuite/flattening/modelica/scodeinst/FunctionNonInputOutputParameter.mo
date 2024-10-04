@@ -1,7 +1,6 @@
 // name: FunctionNonInputOutputParameter
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -20,7 +19,7 @@ end FunctionNonInputOutputParameter;
 
 // Result:
 // Error processing file: FunctionNonInputOutputParameter.mo
-// [flattening/modelica/scodeinst/FunctionNonInputOutputParameter.mo:11:3-11:23:writable] Error: Invalid public variable z, function variables that are not input/output must be protected.
+// [flattening/modelica/scodeinst/FunctionNonInputOutputParameter.mo:10:3-10:23:writable] Error: Invalid public variable z, function variables that are not input/output must be protected.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

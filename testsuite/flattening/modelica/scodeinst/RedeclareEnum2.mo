@@ -1,7 +1,6 @@
 // name: RedeclareEnum2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -16,8 +15,8 @@ end RedeclareEnum2;
 
 // Result:
 // Error processing file: RedeclareEnum2.mo
-// [flattening/modelica/scodeinst/RedeclareEnum2.mo:13:23-13:52:writable] Notification: From here:
-// [flattening/modelica/scodeinst/RedeclareEnum2.mo:8:15-8:38:writable] Error: Redeclaration of enumeration 'E' is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration).
+// [flattening/modelica/scodeinst/RedeclareEnum2.mo:12:23-12:52:writable] Notification: From here:
+// [flattening/modelica/scodeinst/RedeclareEnum2.mo:7:15-7:38:writable] Error: Redeclaration of enumeration 'E' is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

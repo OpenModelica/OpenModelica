@@ -125,11 +125,7 @@ public
 
   function countElem
     input array<list<Integer>> m;
-    output Integer count = 0;
-  algorithm
-    for lst in m loop
-      count := count + listLength(lst);
-    end for;
+    output Integer count = sum(listLength(lst) for lst in m);
   end countElem;
 
   function indexTplGt<T>
@@ -142,7 +138,7 @@ public
   algorithm
     (i1, _) := tpl1;
     (i2, _) := tpl2;
-    gt := if i1 > i2 then true else false;
+    gt := i1 > i2;
   end indexTplGt;
 
   public function noNameHashEq

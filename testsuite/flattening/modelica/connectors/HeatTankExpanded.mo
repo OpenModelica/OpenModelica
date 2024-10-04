@@ -1,6 +1,5 @@
 // name:     HeatTankExpanded
 // keywords:
-// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 //
@@ -31,6 +30,7 @@ equation
 
   outlet.temp = temp;
   outlet.volumeFlowRate = 2;
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end HeatTankExpanded;
 
 // Result:

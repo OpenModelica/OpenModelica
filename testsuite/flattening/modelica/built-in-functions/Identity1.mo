@@ -1,7 +1,6 @@
 // name: Identity1
 // keywords: identity
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built in operator identity.
 //
@@ -12,6 +11,7 @@ model Identity1
   Integer a2[n, n] = identity(n);
   Integer m = 3;
   Integer a3[3, 3] = identity(m);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Identity1;
 
 // Result:

@@ -1,13 +1,13 @@
 // name: DeclarationEquation3
 // keywords: equation, array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests declaration equations with matrices
 //
 
 model DeclarationEquation3
   Real x[2,2] = [1,2; 3,4];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationEquation3;
 
 // Result:

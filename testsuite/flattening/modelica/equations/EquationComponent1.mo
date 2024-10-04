@@ -1,7 +1,6 @@
 // name:     EquationComponent1
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // When an equation is between to complex types, the equation is split
 // into separate equations for the components.
@@ -14,6 +13,7 @@ class EquationComponent1
   R a,b;
 equation
   a = b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationComponent1;
 
 // Result:

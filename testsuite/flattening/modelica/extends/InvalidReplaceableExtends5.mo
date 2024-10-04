@@ -1,7 +1,6 @@
 // name:     InvalidReplaceableExtends5
 // keywords: extends replaceable
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Checks that an error is issued if any part of the base class name is
 // replaceable.
@@ -19,9 +18,8 @@ end InvalidReplaceableExtends5;
 
 // Result:
 // Error processing file: InvalidReplaceableExtends5.mo
-// [InvalidReplaceableExtends5.mo:16:3-16:14:writable] Notification: From here:
-// [InvalidReplaceableExtends5.mo:10:15-14:8:writable] Error: Part A of base class A.B is replaceable.
-// Error: Error occurred while flattening model InvalidReplaceableExtends5
+// [flattening/modelica/extends/InvalidReplaceableExtends5.mo:10:15-14:8:writable] Notification: From here:
+// [flattening/modelica/extends/InvalidReplaceableExtends5.mo:16:3-16:14:writable] Error: Class 'A' in 'extends <A>.B' is replaceable, the base class name must be transitively non-replaceable.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -1,7 +1,6 @@
 // name:     RedeclareVisibility
 // keywords: redeclare, modification, constant
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's allowed to redeclare a protected element.
 //
@@ -12,6 +11,7 @@ end m;
 
 model RedeclareVisibility
   extends m(replaceable Real x = 2.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareVisibility;
 
 // Result:

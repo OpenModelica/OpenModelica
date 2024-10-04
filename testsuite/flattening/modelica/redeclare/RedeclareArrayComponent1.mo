@@ -1,7 +1,6 @@
 // name:     RedeclareArrayComponent1
 // keywords: redeclare component array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that a redeclared components gets get correct type when using an array
 // type.
@@ -15,6 +14,7 @@ model RedeclareArrayComponent1
   type Real3 = Real[3];
   A a1(redeclare Real3 x);
   A a2(redeclare Real x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareArrayComponent1;
 
 // Result:

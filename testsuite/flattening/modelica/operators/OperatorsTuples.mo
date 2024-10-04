@@ -1,7 +1,6 @@
 // name: OperatorsTuples [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1953]
 // keywords: operators working of functions returning tuples
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that tuple returning functions can be used in expressions
 //
@@ -61,6 +60,7 @@ model OperatorsTuples
 equation
   x = (Modelica.Math.Vectors.interpolate(pressure_drop[:, 1], sign(m_flows[1]) * pressure_drop[:, 2], abs(m_flows[2]), 1) / 2) +
       (-(Modelica.Math.Vectors.interpolate(pressure_drop[:, 1], sign(m_flows[1]) * pressure_drop[:, 2], abs(m_flows[2]), 1)));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorsTuples;
 
 // Result:

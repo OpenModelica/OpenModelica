@@ -1,7 +1,6 @@
 // name:     IgnoreReplaceable
 // keywords: 
 // status:   correct
-// cflags: --ignoreReplaceable -d=-newInst
 //
 // Tests the --ignoreReplaceable flag.
 //
@@ -25,6 +24,7 @@ model IgnoreReplaceable
   type MyReal = Real(start = 1.0);
 
   A a(redeclare MyReal x, redeclare model B = C);
+  annotation(__OpenModelica_commandLineOptions="--ignoreReplaceable -d=-newInst");
 end IgnoreReplaceable;
 
 // Result:

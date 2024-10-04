@@ -1,7 +1,6 @@
 // name: OperatorOverloadError1
 // keywords: operator overload
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests that unneccesary error messages are not printed. e.g. when trying to
 // implicitly construct i to C on 'c1+i' to match '+'.self(), error messages
@@ -35,7 +34,7 @@ end T;
 
 // Result:
 // Error processing file: OperatorOverloadError1.mo
-// [flattening/modelica/scodeinst/OperatorOverloadError1.mo:33:3-33:14:writable] Error: Cannot resolve type of expression c1 + i. The operands have types C, Integer in component <NO_COMPONENT>.
+// [flattening/modelica/scodeinst/OperatorOverloadError1.mo:32:3-32:14:writable] Error: Cannot resolve type of expression c1 + i. The operands have types C, Integer in component <NO_COMPONENT>.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

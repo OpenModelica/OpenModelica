@@ -1063,6 +1063,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     data->simulationInfo->maxWarnDisplays = DEFAULT_FLAG_LV_MAX_WARN;
   }
 
+  // TODO this needs to happen after read_init_xml,
+  // or we need to read resizable parameters before this.
   initializeDataStruc(data, threadData);
   if(!data)
   {
@@ -1284,6 +1286,8 @@ void communicateMsg(char id, unsigned int size, const char *data)
  * if this is a good idea. However, I am leaving it as it was for now.
  */
 int _main_initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *threadData) {
+
+  // FIXME this looks like it's just a wrapper!
 
   if (initRuntimeAndSimulation(argc, argv, data, threadData)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;

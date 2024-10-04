@@ -1,7 +1,6 @@
 // name: Linspace1
 // keywords: linspace bug2027
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in linspace function.
 //
@@ -12,6 +11,7 @@ model Linspace1
   parameter Real b = 1;
 equation
   x = linspace(a, b, 2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Linspace1;
 
 // Result:

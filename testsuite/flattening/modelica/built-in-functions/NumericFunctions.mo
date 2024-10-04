@@ -1,7 +1,6 @@
 // name: NumericFunctions
 // keywords: builtin, function, numeric
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in numeric functions abs, sign, and sqrt
 //
@@ -10,6 +9,7 @@ model NumericFunctions
   constant Real r1 = abs(-2.5);
   constant Real r2 = sign(-72);
   constant Real r3 = sqrt(49);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NumericFunctions;
 
 // Result:

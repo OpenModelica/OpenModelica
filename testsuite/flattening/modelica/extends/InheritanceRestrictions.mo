@@ -1,7 +1,6 @@
 // name: InheritanceRestrictions
 // keywords: inheritance
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Tests inheritance of specialized classes
 //
@@ -25,4 +24,5 @@ end ModelA;
 // should NOT work
 model ModelB
   extends PackageA;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModelB;

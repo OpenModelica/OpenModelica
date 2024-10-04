@@ -1,7 +1,6 @@
 // name: OperatorOverloadArrayOp4
 // keywords: operator overload complex
 // status: correct
-// cflags: -d=newInst
 //
 //
 

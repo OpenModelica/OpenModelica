@@ -1,7 +1,6 @@
 // name: FinalParameter1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model FinalParameter1

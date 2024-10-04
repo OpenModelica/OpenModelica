@@ -1,7 +1,6 @@
 // name: RecordUnknownDim1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

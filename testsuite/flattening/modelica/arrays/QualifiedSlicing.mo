@@ -1,7 +1,6 @@
 // name:     QualifiedSlicing
 // keywords: array slicing #2532
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that slices are expanded properly when using a qualified cref.
 //
@@ -14,6 +13,7 @@ model QualifiedSlicing
   Vector v[2];
 equation
   v[:].x[:] = {{sin(time),cos(time)},{sin(time-0.5),cos(time-0.5)}};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end QualifiedSlicing;
 
 // Result:

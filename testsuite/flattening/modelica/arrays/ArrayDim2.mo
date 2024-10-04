@@ -1,7 +1,6 @@
 // name:     ArrayDim2
 // keywords: algorithm, equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Drmodelica:
 //
@@ -43,6 +42,7 @@ equation
       end for;
     end for;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDim2;
 
 // Result:

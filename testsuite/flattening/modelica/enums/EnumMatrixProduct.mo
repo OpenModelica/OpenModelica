@@ -1,7 +1,6 @@
 // name:     EnumMatrixProduct
 // keywords: enum matrix product
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that enumeration literals are preserved when doing matrix/vector
 // multiplications.
@@ -17,6 +16,7 @@ model EnumMatrixProduct
 equation
   e3 = e1 * e2;
   e4 = e2 * e2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumMatrixProduct;
 
 // Result:

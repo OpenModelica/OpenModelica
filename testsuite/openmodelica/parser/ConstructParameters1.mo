@@ -1,7 +1,6 @@
 // name:     ConstructParameters1
 // keywords: declaration,algorithm
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // This is not legal Modelica, see ConstructParameters2
 // for an example of how to do it.
@@ -22,6 +21,7 @@ model ConstructParameters1
   parameter Real p1=2.0, p2=3.0;
 protected
   parameter Real (p3,p4) = fc(p1,p2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstructParameters1;
 
 // function fc
@@ -38,7 +38,7 @@ end ConstructParameters1;
 // Error processing file: ConstructParameters1.mo
 // Failed to parse file: ConstructParameters1.mo!
 //
-// [openmodelica/parser/ConstructParameters1.mo:24:18-24:18:writable] Error: No viable alternative near token: (
+// [openmodelica/parser/ConstructParameters1.mo:23:18-23:18:writable] Error: No viable alternative near token: (
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

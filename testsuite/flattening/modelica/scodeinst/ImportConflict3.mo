@@ -1,7 +1,6 @@
 // name:     ImportConflict3
 // keywords: import conflict
 // status:   incorrect
-// cflags:   -d=newInst
 //
 // Checks that using a name imported from several sources produces an error.
 //
@@ -28,9 +27,9 @@ end ImportConflict3;
 
 // Result:
 // Error processing file: ImportConflict3.mo
-// [flattening/modelica/scodeinst/ImportConflict3.mo:24:3-24:16:writable] Notification: From here:
-// [flattening/modelica/scodeinst/ImportConflict3.mo:25:3-25:16:writable] Error: M found in several unqualified import statements.
-// [flattening/modelica/scodeinst/ImportConflict3.mo:26:3-26:6:writable] Error: Class M not found in scope ImportConflict3.
+// [flattening/modelica/scodeinst/ImportConflict3.mo:23:3-23:16:writable] Notification: From here:
+// [flattening/modelica/scodeinst/ImportConflict3.mo:24:3-24:16:writable] Error: M found in several unqualified import statements.
+// [flattening/modelica/scodeinst/ImportConflict3.mo:25:3-25:6:writable] Error: Class M not found in scope ImportConflict3.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

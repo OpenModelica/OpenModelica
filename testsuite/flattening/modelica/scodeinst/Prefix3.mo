@@ -1,7 +1,7 @@
 // name: Prefix3
 // keywords:
 // status: correct
-// cflags: -d=newInst -i=P.P2.Prefix3
+// cflags: -i=P.P2.Prefix3
 //
 
 package P
@@ -17,6 +17,7 @@ package P
       Real x = f(time);
     end Prefix3;
   end P2;
+  annotation(__OpenModelica_commandLineOptions="-i=P.P2.Prefix3");
 end P;
 
 // Result:

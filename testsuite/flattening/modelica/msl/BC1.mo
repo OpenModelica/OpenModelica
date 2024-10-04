@@ -1,7 +1,6 @@
 // name:     BC1 - Der component
 // keywords: Der
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Der component.
 //
@@ -923,6 +922,7 @@ model BC1
 
 equation
   connect(constant1.outPort,der1.inPort) annotation(Line(visible=true,points={{-34.43,46.74},{-12.42,42.29}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC1;
 
 

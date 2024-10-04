@@ -1,7 +1,6 @@
 // name: StringInteger
 // keywords: string
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests string conversion from Integer
 //
@@ -16,6 +15,7 @@ equation
   s2 = String(1138, minimumLength = 12, leftJustified = false);
   i = 1337;
   s3 = String(i);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StringInteger;
 
 // Result:

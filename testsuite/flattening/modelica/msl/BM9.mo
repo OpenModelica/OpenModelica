@@ -1,7 +1,6 @@
 // name:     BM9 -  Cosh component
 // keywords: Cosh
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Cosh component.
 //
@@ -1063,6 +1062,7 @@ model BM9
 
 equation
   connect(constant1.outPort,cosh1.inPort) annotation(Line(visible=true,points={{-29.0,25.35},{-10.14,28.39}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM9;
 // function Modelica.Math.cosh
 // input Real u;

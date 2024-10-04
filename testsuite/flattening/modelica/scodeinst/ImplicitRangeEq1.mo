@@ -1,7 +1,6 @@
 // name: ImplicitRangeEq1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,7 +1,6 @@
 // name:     ConnectHierarchical2
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // Compared to ConnectHiearchical1 we have established
 // the same connections but at different places.
@@ -31,6 +30,7 @@ class ConnectHierarchical2
   Connector c(e = 1.0, f=1.0);
 equation
   connect(c, a.c1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectHierarchical2;
 
 // Result:

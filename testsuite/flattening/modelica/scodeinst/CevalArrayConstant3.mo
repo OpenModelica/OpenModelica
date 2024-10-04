@@ -1,7 +1,6 @@
 // name: CevalArrayConstant3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,7 +1,6 @@
 // name: DiscreteDeclConnector
 // keywords: discrete
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the discrete prefix on a connector type
 //
@@ -15,6 +14,7 @@ class DiscreteDeclConnector
   discrete DiscreteConnector dc;
 equation
   dc.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DiscreteDeclConnector;
 
 // Result:

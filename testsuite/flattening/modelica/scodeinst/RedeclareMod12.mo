@@ -1,7 +1,6 @@
 // name: RedeclareMod12
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package Types

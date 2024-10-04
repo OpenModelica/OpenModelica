@@ -4,7 +4,6 @@
 //
 //  Verify component array addressing
 //  adrpo: This tests for bug that generated things like:
-// cflags: -d=-newInst
 //            force.y[1] = forceAndTorque.force[1];
 //         instead of correct:
 //            force[1].y = forceAndTorque.force[1];
@@ -46,6 +45,7 @@ model ForceAndTorque
   Internal.Constant force[3](k={0,1000,0});
 equation
   connect(force.y, forceAndTorque.force);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ForceAndTorque;
 
 // Result:

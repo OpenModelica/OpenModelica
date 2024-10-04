@@ -1,7 +1,6 @@
 // name: FuncDefaultArg1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that it's possible to use a function where only a 'middle' function
 // parameter has a default argument.

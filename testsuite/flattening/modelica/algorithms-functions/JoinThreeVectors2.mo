@@ -4,7 +4,6 @@
 //
 // External C function with column-major arrays
 // Drmodelica: 11.1 Function Annotations (p. 372)
-// cflags: -d=-newInst
 //
 
 
@@ -23,6 +22,7 @@ model joinThreeVectors
   Real x[9];
 algorithm
   x:=joinThreeVectors2(a,b,c);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end joinThreeVectors;
 
 // Result:

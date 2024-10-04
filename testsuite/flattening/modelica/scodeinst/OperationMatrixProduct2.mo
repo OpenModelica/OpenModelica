@@ -1,7 +1,6 @@
 // name: OperationMatrixProduct2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationMatrixProduct2

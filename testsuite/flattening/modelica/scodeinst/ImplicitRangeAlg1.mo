@@ -1,7 +1,6 @@
 // name: ImplicitRangeAlg1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
