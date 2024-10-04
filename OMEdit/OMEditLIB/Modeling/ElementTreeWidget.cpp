@@ -35,6 +35,7 @@
 #include "ElementTreeWidget.h"
 #include "ItemDelegate.h"
 #include "Util/Helper.h"
+#include "MainWindow.h"
 
 #include <QGridLayout>
 #include <QStringBuilder>
@@ -371,6 +372,10 @@ QModelIndex ElementTreeModel::elementsTreeItemIndex(const ElementTreeItem *pElem
  */
 void ElementTreeModel::addElements(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
 {
+  // Element Browser is only available with new API.
+  if (!MainWindow::instance()->isNewApi()) {
+    return;
+  }
   // remove the existing elements if we are adding elements of new model.
   if (!pParentElementTreeItem && mpRootElementTreeItem->childrenSize() > 0) {
     beginRemoveRows(elementsTreeItemIndex(mpRootElementTreeItem->parent()), 0, mpRootElementTreeItem->childrenSize() - 1);
