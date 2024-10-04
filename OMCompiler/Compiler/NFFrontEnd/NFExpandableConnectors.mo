@@ -62,6 +62,8 @@ import Typing = NFTyping;
 import UnorderedSet;
 import Util;
 import Variable = NFVariable;
+import Subscript = NFSubscript;
+import Ceval = NFCeval;
 
 public
 function elaborate
@@ -285,10 +287,33 @@ protected
   ComponentRef virtual_cref, normal_cref;
   Type ty;
   InstNode node;
+  list<Subscript> subs;
+  Subscript s1;
+  Expression expr;
+  Integer arrIndex;
 algorithm
   virtual_cref := virtualConnector.name;
   normal_cref := normalConnector.name;
   ty := normalConnector.ty;
+
+  // take subscripts for virtual connector
+  subs := ComponentRef.getSubscripts(virtual_cref);
+  if listLength(subs) > 0 then
+    if not (listLength(subs) == 1) then
+      Error.addInternalError("too many subscripts in expandable connector", sourceInfo());
+      fail();
+    end if;
+    s1 := List.first(subs);
+    expr := Subscript.toExp(s1);
+    expr := Ceval.evalExp(expr);
+    // if not Type.isInteger(Expression.typeOf(expr)) then
+    //   Error.addInternalError("unknown type in expandable connector", sourceInfo());
+    //   fail();
+    // end if;
+    arrIndex := Expression.toInteger(expr);
+    ty := Type.liftArrayLeft(ty, NFDimension.fromInteger(arrIndex));
+    subs := { Subscript.makeIndex(expr) };
+  end if;
 
   // TODO: Update the virtual connector with the created node.
   node := ComponentRef.node(normal_cref);
@@ -296,7 +321,7 @@ algorithm
   node := InstNode.rename(ComponentRef.firstName(virtual_cref), node);
   node := InstNode.setParent(ComponentRef.node(ComponentRef.rest(virtual_cref)), node);
   node := InstNode.componentApply(node, Component.setType, ty);
-  virtual_cref := ComponentRef.prefixCref(node, ty, {}, ComponentRef.rest(virtual_cref));
+  virtual_cref := ComponentRef.prefixCref(node, ty, subs, ComponentRef.rest(virtual_cref));
   // TODO: This needs more work, the new connector might be a complex connector.
   newConnector := Connector.CONNECTOR(virtual_cref, ty, virtualConnector.face,
     virtualConnector.cty, virtualConnector.source);
@@ -308,6 +333,10 @@ function elaborateExpandableSet
 protected
   UnorderedSet<Connector> exp_set;
   list<Connector> exp_conns = {}, exp_set_lst;
+  Option<Connector> con_in_set;
+  Connector cur_c;
+  list<Subscript> subs1, subs2;
+  Integer ind1, ind2;
 algorithm
   exp_set := UnorderedSet.new(hashConnector, Connector.isNodeNameEqual);
 
@@ -315,7 +344,38 @@ algorithm
     if ConnectorType.isExpandable(c.cty) then
       exp_conns := c :: exp_conns;
     elseif ConnectorType.isUndeclared(c.cty) then
-      UnorderedSet.add(c, exp_set);
+      // take max array index as array length
+      con_in_set := UnorderedSet.get(c, exp_set);
+      () := match con_in_set
+        case NONE() 
+          algorithm
+            UnorderedSet.add(c, exp_set);
+          then ();
+        case SOME(cur_c)
+          algorithm 
+            if (ComponentRef.hasSubscripts(c.name) or ComponentRef.hasSubscripts(cur_c.name)) then
+              if ComponentRef.hasSubscripts(c.name) then
+                subs1 := ComponentRef.getSubscripts(c.name);
+                ind1 := Subscript.toInteger(List.first(subs1));
+              else
+                ind1 := 0;
+              end if;
+
+              if ComponentRef.hasSubscripts(cur_c.name) then
+                subs2 := ComponentRef.getSubscripts(cur_c.name);
+                ind2 := Subscript.toInteger(List.first(subs2));
+              else
+                ind2 := 0;
+              end if;
+
+              if (ind1 > ind2) then
+                UnorderedSet.remove(cur_c, exp_set);
+                UnorderedSet.add(c, exp_set);
+              end if;
+            end if;
+          then ();
+        else();
+      end match;
       markComponentPresent(ComponentRef.node(Connector.name(c)));
     end if;
   end for;
@@ -343,7 +403,7 @@ algorithm
     InstNode.updateComponent(comp, node);
 
     // Also mark the component's children as present.
-    if Type.isComplex(Component.getType(comp)) then
+    if Type.isComplex(Component.getType(comp)) or Type.isArray(Component.getType(comp)) then
       cls := InstNode.getClass(Component.classInstance(comp));
       ClassTree.applyComponents(Class.classTree(cls), markComponentPresent);
     end if;

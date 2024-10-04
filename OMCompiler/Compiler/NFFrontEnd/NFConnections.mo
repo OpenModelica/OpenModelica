@@ -112,6 +112,9 @@ public
     DAE.ElementSource source;
     list<Equation> eql = {};
     Type ty1, ty2;
+      list<Subscript> subs, subs1;
+    Subscript s1, s2;
+    Expression exp;
   algorithm
     // Collect all connects.
     for eq in flatModel.equations loop
@@ -119,6 +122,30 @@ public
         case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
+// set type to slice subscript
+            subs := ComponentRef.getSubscripts(lhs);
+            if (listLength(subs) > 0) then
+              s1 := List.first(subs);
+              exp := Subscript.toExp(s1);
+              if Expression.isRange(exp) then
+                s2 := Subscript.SLICE(exp);
+                subs1 := { s2 };
+                lhs := ComponentRef.setSubscripts(subs1, lhs);
+              end if;
+            end if;
+
+            // set type to slice subscript
+            subs := ComponentRef.getSubscripts(rhs);
+            if (listLength(subs) > 0) then
+              s1 := List.first(subs);
+              exp := Subscript.toExp(s1);
+              if Expression.isRange(exp) then
+                s2 := Subscript.SLICE(exp);
+                subs1 := { s2 };
+                rhs := ComponentRef.setSubscripts(subs1, rhs);
+              end if;
+            end if;
+            
             lhs := ComponentRef.evaluateSubscripts(lhs);
             rhs := ComponentRef.evaluateSubscripts(rhs);
             conns.connections := makeConnections(lhs, ty1, rhs, ty2, source, isDeleted, conns.connections);
@@ -179,13 +206,22 @@ public
   protected
     list<Connector> cl1, cl2;
     Connector c2;
+    ComponentRef lhsCref1, rhsCref1;
+    Type lhsType1, rhsType1;
+    NFDimension.Dimension d;
   algorithm
     if isDeleted(lhsCref) or isDeleted(rhsCref) then
       return;
     end if;
 
-    cl1 := makeConnectors(lhsCref, lhsType, source);
-    cl2 := makeConnectors(rhsCref, rhsType, source);
+    // if type of connector is unknown (for expandeble connectors) and another connector is array
+    // set type of unknown connector equal to another connector type
+    // cause they should have equal number of elements (for next loop)
+    (lhsCref1, lhsType1) := trySetTypeFromKnown(lhsCref, lhsType, rhsType);
+    (rhsCref1, rhsType1) := trySetTypeFromKnown(rhsCref, rhsType, lhsType);
+    
+    cl1 := makeConnectors(lhsCref1, lhsType1, source);
+    cl2 := makeConnectors(rhsCref1, rhsType1, source);
 
     for c1 in cl1 loop
       c2 :: cl2 := cl2;
@@ -195,6 +231,20 @@ public
       end if;
     end for;
   end makeConnections;
+
+  function trySetTypeFromKnown
+    input output ComponentRef cref;
+    input output Type ty;
+    input Type knownTy;
+  protected
+    NFDimension.Dimension d;
+  algorithm
+    if Type.isUnknown(ty) and Type.isArray(knownTy) then
+      d := Type.nthDimension(knownTy, 1);
+      ty := Type.ARRAY(Type.arrayElementType(knownTy), {d});
+      cref := ComponentRef.setNodeType(ty, cref);
+    end if;
+  end trySetTypeFromKnown; 
 
   function makeConnectors
     input ComponentRef cref;

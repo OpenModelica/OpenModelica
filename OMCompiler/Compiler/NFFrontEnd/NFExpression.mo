@@ -270,6 +270,16 @@ public
     end match;
   end isArray;
 
+  function isRange
+    input Expression exp;
+    output Boolean isRange;
+  algorithm
+    isRange := match exp
+      case RANGE() then true;
+      else false;
+    end match;
+  end isRange;
+
   function isEmptyArray
     input Expression exp;
     output Boolean emptyArray;
