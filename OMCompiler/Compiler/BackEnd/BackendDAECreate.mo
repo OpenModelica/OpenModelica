@@ -1164,14 +1164,6 @@ algorithm
       algorithm
         // Add the binding as an equation and remove the binding from the variable.
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
-        // remove fill from binding exp to avoid expansion if not scalarizing, treating like each
-        e2 := match(Flags.isSet(Flags.NF_SCALARIZE), e2)
-          case (false, DAE.CALL(path = Absyn.IDENT("fill"), expLst = {e1, _})) then
-            e1;
-          else
-            e2;
-        end match;
-        e1 := Expression.crefExp(cr);
         attr := BackendDAE.EQ_ATTR_DEFAULT_BINDING;
         (tp, dims) := ComponentReference.crefTypeFull2(cr);
         tp := DAEUtil.expTypeElementType(tp);
@@ -1180,6 +1172,14 @@ algorithm
         else
           recordSize := NONE();
         end if;
+        // remove fill from binding exp to avoid expansion if not scalarizing, treating like each
+        e2 := match(Flags.isSet(Flags.NF_SCALARIZE), listEmpty(dims), e2)
+          case (false, false, DAE.CALL(path = Absyn.IDENT("fill"), expLst = {e1, _})) then
+            e1;
+          else
+            e2;
+        end match;
+        e1 := Expression.crefExp(cr);
         if listEmpty(dims) then
           outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
         else
@@ -1278,6 +1278,10 @@ algorithm
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
         dae_var_attr = setMinMaxFromEnumeration(t, dae_var_attr);
+        // remove fill from binding exp to avoid expansion if not scalarizing, treating like each
+        if not Flags.isSet(Flags.NF_SCALARIZE) and not listEmpty(dims) then
+          dae_var_attr = replaceFillWithExpInAttributes(dae_var_attr);
+        end if;
         ts = BackendDAEUtil.setTearingSelectAttribute(comment);
         hideResult = BackendDAEUtil.setHideResultAttribute(comment, name);
       then
@@ -1340,12 +1344,10 @@ algorithm
         kind_1 = lowerKnownVarkind(kind, name, dir, ct, protection);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
         // remove fill from binding exp to avoid expansion if not scalarizing, treating like each
-        bind = match(Flags.isSet(Flags.NF_SCALARIZE), bind)
-          case (false, SOME(DAE.CALL(path = Absyn.IDENT("fill"), expLst = {e1, _}))) then
-            SOME(e1);
-          else
-            bind;
-        end match;
+        if not Flags.isSet(Flags.NF_SCALARIZE) and not listEmpty(dims) then
+          bind = replaceFillWithExp(bind);
+          dae_var_attr = replaceFillWithExpInAttributes(dae_var_attr);
+        end if;
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
@@ -1404,6 +1406,78 @@ algorithm
     else NONE();
   end match;
 end lowerKnownVarSingle;
+
+protected function replaceFillWithExpInAttributes "
+  replaces fill(exp, dims) with exp in variable attributes assuming each qualifier"
+  input output Option<DAE.VariableAttributes> attr;
+algorithm
+  attr :=
+  match (attr)
+    local
+      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
+      Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
+      Option<DAE.Distribution> distOpt;
+      Option<DAE.Exp> eb;
+      Option<Boolean> ip,fn;
+
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,ip,fn,so)))
+      algorithm
+        q := replaceFillWithExp(q);
+        u := replaceFillWithExp(u);
+        du := replaceFillWithExp(du);
+        min := replaceFillWithExp(min);
+        max := replaceFillWithExp(max);
+        i := replaceFillWithExp(i);
+        f := replaceFillWithExp(f);
+        n := replaceFillWithExp(n);
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,fn,so)))
+      algorithm
+        q := replaceFillWithExp(q);
+        min := replaceFillWithExp(min);
+        max := replaceFillWithExp(max);
+        i := replaceFillWithExp(i);
+        f := replaceFillWithExp(f);
+      then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,fn,so)))
+      algorithm
+        q := replaceFillWithExp(q);
+        i := replaceFillWithExp(i);
+        f := replaceFillWithExp(f);
+      then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,ip,fn,so)))
+      algorithm
+        q := replaceFillWithExp(q);
+        i := replaceFillWithExp(i);
+        f := replaceFillWithExp(f);
+      then SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,fn,so)))
+      algorithm
+        q := replaceFillWithExp(q);
+        min := replaceFillWithExp(min);
+        max := replaceFillWithExp(max);
+        u := replaceFillWithExp(u);
+        du := replaceFillWithExp(du);
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,fn,so));
+    else
+      attr;
+  end match;
+end replaceFillWithExpInAttributes;
+
+protected function replaceFillWithExp "
+  replaces fill(exp, dims) with exp in binding expression assuming each qualifier"
+  input output Option<DAE.Exp> bind;
+protected
+  DAE.Exp e1;
+algorithm
+  bind := match(bind)
+    case SOME(DAE.CALL(path = Absyn.IDENT("fill"), expLst = {e1, _})) then
+      SOME(e1);
+    else
+      bind;
+  end match;
+end replaceFillWithExp;
 
 protected function buildAssertAlgorithms "builds BackendDAE.ALGORITHM out of the given assert statements
 author:Waurich TUD 2013-10"
