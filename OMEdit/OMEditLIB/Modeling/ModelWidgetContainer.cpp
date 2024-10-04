@@ -35,6 +35,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "MainWindow.h"
 #include "LibraryTreeWidget.h"
+#include "ElementTreeWidget.h"
 #include "ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "MessagesWidget.h"
@@ -7260,6 +7261,8 @@ void ModelWidget::updateModelText()
       callHandleCollidingConnectionsIfNeeded();
       // announce the change.
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
+      // Update Element Browser
+      MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(mpModelInstance);
     }
   }
 #if !defined(WITHOUT_OSG)
@@ -10351,6 +10354,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->viewport()->update();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked()) {
     MainWindow::instance()->getLibraryWidget()->scrollToActiveLibraryTreeItem();
+  }
+  // Update Element Browser
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
   }
 }
 

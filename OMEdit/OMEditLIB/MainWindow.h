@@ -65,6 +65,7 @@ extern "C" {
 class OMCProxy;
 class TransformationsWidget;
 class LibraryWidget;
+class ElementWidget;
 class GDBAdapter;
 class StackFramesWidget;
 class LocalsWidget;
@@ -122,6 +123,7 @@ public:
   int getNumberOfProcessors() {return mNumberOfProcessors;}
   QDockWidget* getMessagesDockWidget() {return mpMessagesDockWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
+  ElementWidget* getElementWidget() {return mpElementWidget;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
   LocalsWidget* getLocalsWidget() {return mpLocalsWidget;}
@@ -288,6 +290,8 @@ private:
   QDockWidget *mpMessagesDockWidget;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
+  ElementWidget *mpElementWidget;
+  QDockWidget *mpElementDockWidget;
   GDBAdapter *mpGDBAdapter;
   StackFramesWidget *mpStackFramesWidget;
   QDockWidget *mpStackFramesDockWidget;

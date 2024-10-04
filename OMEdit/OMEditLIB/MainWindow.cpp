@@ -40,6 +40,7 @@
 #include "Modeling/MessagesWidget.h"
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ElementTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
@@ -261,12 +262,20 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of LibraryWidget
   mpLibraryWidget = new LibraryWidget(this);
   // Create LibraryDockWidget
-  mpLibraryDockWidget = new QDockWidget(tr("Libraries"), this);
+  mpLibraryDockWidget = new QDockWidget(Helper::libraries, this);
   mpLibraryDockWidget->setObjectName("Libraries");
   mpLibraryDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpLibraryDockWidget->setWidget(mpLibraryWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpLibraryDockWidget);
   mpLibraryWidget->getLibraryTreeView()->setFocus(Qt::ActiveWindowFocusReason);
+  // Create an object of ElementWidget
+  mpElementWidget = new ElementWidget(this);
+  // Create ElementDockWidget
+  mpElementDockWidget = new QDockWidget(Helper::elements, this);
+  mpElementDockWidget->setObjectName("ElementBrowser");
+  mpElementDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  mpElementDockWidget->setWidget(mpElementWidget);
+  addDockWidget(Qt::LeftDockWidgetArea, mpElementDockWidget);
   // Create an object of SearchWidget
   mpSearchWidget = new SearchWidget(this);
   mpSearchDockWidget = new QDockWidget(tr("Search"),this);
@@ -841,6 +850,7 @@ void MainWindow::beforeClosingMainWindow()
   // delete the OMSProxy object
   OMSProxy::destroy();
   delete mpLibraryWidget;
+  delete mpElementWidget;
   delete mpModelWidgetContainer;
   // delete the ArchivedSimulationsWidget object
   ArchivedSimulationsWidget::destroy();
@@ -4498,6 +4508,7 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpOMSimulatorToolbar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpElementDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
 #if !defined(WITHOUT_OSG)
