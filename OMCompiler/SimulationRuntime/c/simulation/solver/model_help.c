@@ -1006,9 +1006,13 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   /* allocate index map */
   data->simulationInfo->realVarsIndex     = (size_t*) calloc(data->modelData->nVariablesRealArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->realVarsIndex, "out of memory");
   data->simulationInfo->integerVarsIndex  = (size_t*) calloc(data->modelData->nVariablesIntegerArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->integerVarsIndex, "out of memory");
   data->simulationInfo->booleanVarsIndex  = (size_t*) calloc(data->modelData->nVariablesBooleanArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->booleanVarsIndex, "out of memory");
   data->simulationInfo->stringVarsIndex   = (size_t*) calloc(data->modelData->nVariablesStringArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->stringVarsIndex, "out of memory");
 
   /* compute index map */
   data->callback->computeVarIndices(data->simulationInfo->realVarsIndex, data->simulationInfo->integerVarsIndex, data->simulationInfo->booleanVarsIndex, data->simulationInfo->stringVarsIndex);
