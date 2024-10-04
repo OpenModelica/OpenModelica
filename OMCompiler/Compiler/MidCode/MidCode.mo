@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -27,19 +27,36 @@
  *
  * See the full OSMC Public License conditions for more details.
  *
- */
+*/
 
 encapsulated package MidCode
 
-import DAE;
-import DAEDump;
+import DAE; /*TODO: remove DAE introduce custom type system */
+
+public
 
 uniontype Program
   record PROGRAM
     String name;
     list<Function> functions;
+    list<Record> records;
   end PROGRAM;
 end Program;
+
+uniontype Record
+   " A record in MidCode IR may either be a full definition
+     or a declaration"
+  record RECORD_DEFINITION
+    String name;
+    String definitionPath "The lowered concrete path to this record";
+    list<MidCode.Var> variables "As a temporary measure just hold the string TODO";
+  end RECORD_DEFINITION;
+  record RECORD_DECLARATION
+    String definitionPath "The lowered concrete path to the definition of this record. E.g the path separated by dots as a string";
+    String encodedPath "Path according to the current interface in Codegen";
+    list<String> fieldNames "Variables of the record";
+  end RECORD_DECLARATION;
+end Record;
 
 uniontype Var
   record VAR
@@ -74,13 +91,6 @@ uniontype OutVar
   record OUT_WILD end OUT_WILD;
 end OutVar;
 
-public function varString
-  input Var var;
-  output String str;
-algorithm
-  str := "(" + DAEDump.daeTypeStr(var.ty) + ") " + var.name;
-end varString;
-
 uniontype Function
   record FUNCTION
     Absyn.Path name;
@@ -97,9 +107,8 @@ end Function;
 
 uniontype Block
   record BLOCK
-  "Basic block.
-  No control flow within block.
-  Can branch or jump on exit, called the block's terminator."
+  "Basic block. No control flow within block.
+    Can branch or jump on exit, called the block's terminator."
     Integer id;
     list<Stmt> stmts;
     Terminator terminator;
@@ -107,6 +116,7 @@ uniontype Block
 end Block;
 
 uniontype Terminator
+"Instructions that terminates a basic block and transfer the control to another"
   record GOTO
     Integer next;
   end GOTO;
@@ -119,10 +129,12 @@ uniontype Terminator
 
   record CALL
     Absyn.Path func;
-    Boolean builtin; //vilka övriga CallAttributes relevanta?
+    Boolean builtin;
     list<Var> inputs;
     list<OutVar> outputs;
     Integer next;
+    DAE.Type ty;
+
   end CALL;
 
   record RETURN
@@ -136,13 +148,13 @@ uniontype Terminator
   record LONGJMP "used for fail() stmts"
   end LONGJMP;
 
-  record PUSHJMP "used for match-continue fail() handling"
+  record PUSHJMP "Used for match-continue fail() handling"
     VarBufPtr old_buf "where to save old jmp_buf";
     VarBuf new_buf "what to use as new jmp_buf";
     Integer next "where to goto next and the setjmp target";
   end PUSHJMP;
 
-  /* POPJMP does not cause control flow but
+  /* POPJMP in itself does not cause control flow but
      if it is a terminator to simplify matching
      with their respective PUSHJMPS.
   */
@@ -172,9 +184,20 @@ uniontype Stmt
     Var dest;
     RValue src;
   end ASSIGN;
+
+  record ALLOC_ARRAY "This statement represent an array allocation"
+    String func "runtime function to do the allocation";
+    Var array "The array to be allocated";
+    Var dimSize "Variable that describes the dimension of the allocation";
+    list<Var> sizeOfDims "Specifies the size of the dimensions";
+  end ALLOC_ARRAY;
+
 end Stmt;
 
 uniontype RValue
+  "An expression that could not be on the left hand side of an assignment.
+   Only at the right hand side."
+
   record VARIABLE
     Var src;
   end VARIABLE;
@@ -211,17 +234,30 @@ uniontype RValue
     DAE.Type ty;
   end LITERALMETATYPE;
 
+  record LITERAL_RECORD "TODO: not used. Does not work in codegen Modelica style record"
+    String name "Name of the record";
+    list<Var> elements "Elements";
+  end LITERAL_RECORD;
 
+  record LITERALARRAY
+  "Represents T_ARRAY, e.g normal arrays for Scalars. 
+   An Array that consists of literals.
+   All Literals must be RValues"
+  list<RValue> elements; //As a list since we need to support multidimensional arrays.
+  DAE.Type ty;
+  DAE.Dimensions dims;
+  //TODO extend with dimensions. ?
+  end LITERALARRAY;
 
 /*
 CTOR    SLOTS
-0       0       nil för list
-0       1+      tuple
-1       0       none för option
-1       1       some för option
-1       2       cons för list
-2       0+      array
-3+      0+      record
+0       0       NIL
+0       1+      TUPLE
+1       0       NONE
+1       1       SOME
+1       2       CONS
+2       0+      ARRAY
+3+      0+      RECORD
 */
 
   record UNIONTYPEVARIANT
@@ -241,17 +277,23 @@ CTOR    SLOTS
     Integer index;
     DAE.Type ty "type of value";
   end METAFIELD;
+
+  record DEREFERENCE "Used to indicate that an array should be dereferenced"
+    Var src;
+    DAE.Type ty;
+  end DEREFERENCE;
+
 end RValue;
 
-uniontype UnaryOp
-  record MOVE end MOVE;
+uniontype UnaryOp "Unary operator"
+  record MOVE DAE.Type originalType; end MOVE; //TODO, rename MOVE to cast.
   record UMINUS end UMINUS;
   record NOT end NOT;
   record UNBOX end UNBOX;
   record BOX end BOX;
 end UnaryOp;
 
-uniontype BinaryOp
+uniontype BinaryOp "Binary operator"
   record ADD end ADD;
   record SUB end SUB;
   record MUL end MUL;
@@ -265,5 +307,6 @@ uniontype BinaryOp
   record NEQUAL end NEQUAL;
 end BinaryOp;
 
-annotation(__OpenModelica_Interface="backend");
+
+annotation(__OpenModelica_Interface="backendInterface");
 end MidCode;
