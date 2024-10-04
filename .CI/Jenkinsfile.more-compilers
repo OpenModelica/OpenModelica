@@ -25,9 +25,50 @@ pipeline {
     }
     stage('builds') {
       parallel {
-        stage('clang-6.0') {
+        stage('gcc-11 (Ubuntu Jammy)') {
+          agent {
+             dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache-jammy'
+              label 'linux'
+              args "--mount type=volume,source=runtest-gcc-7-cache,target=/cache/runtest " +
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
           steps {
-            print "Ubuntu Bionic clang 6.0 tested on every pull request"
+            script {
+              common.buildOMC('gcc', 'g++', '')
+              common.makeLibsAndCache()
+              common.buildGUI('')
+              common.partest()
+            }
+          }
+        }
+        stage('clang-14 (Ubuntu Jammy)') {
+          agent {
+             dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache-jammy'
+              label 'linux'
+              args "--mount type=volume,source=runtest-gcc-7-cache,target=/cache/runtest " +
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          steps {
+            script {
+              common.buildOMC('clang', 'clang++', '')
+              common.makeLibsAndCache()
+              common.buildGUI('')
+              common.partest()
+            }
           }
         }
       }

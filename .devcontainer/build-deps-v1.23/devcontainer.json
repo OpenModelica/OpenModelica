@@ -1,13 +1,13 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-  "name": "build-deps:v1.22",
+  "name": "build-deps:v1.23",
 
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-        "BASE_IMAGE": "openmodelica/build-deps:v1.22.3",
+        "BASE_IMAGE": "openmodelica/build-deps:v1.23.0-wip",
         // On Windows USERNAME is set, on Linux USER is set
         // We hope only one is set
         "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
