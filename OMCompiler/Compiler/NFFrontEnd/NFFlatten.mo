@@ -436,12 +436,12 @@ protected
   String attr_name;
   Binding attr_binding;
 algorithm
-  var.binding := fillVectorizedBinding(var.binding, var.ty, false);
+  var.binding := fillVectorizedBinding(var.binding, var.ty);
 
   for ty_attr in var.typeAttributes loop
     (attr_name, attr_binding) := ty_attr;
     attr_binding := fillVectorizedBinding(attr_binding,
-      Type.copyDims(var.ty, Binding.getType(attr_binding)), true);
+      Type.copyDims(var.ty, Binding.getType(attr_binding)));
     ty_attrs := (attr_name, attr_binding) :: ty_attrs;
   end for;
 
@@ -1238,7 +1238,6 @@ end vectorizeBinding;
 function fillVectorizedBinding
   input output Binding binding;
   input Type varType;
-  input Boolean isAttribute;
 protected
   Expression bind_exp;
   Type bind_ty;
@@ -1259,14 +1258,10 @@ algorithm
         dim_diff := Type.dimensionDiff(varType, bind_ty);
 
         if dim_diff > 0 then
-          if isAttribute then
-            binding.eachType := NFBinding.EachType.EACH;
-          else
-            dim_expl := list(Dimension.sizeExp(d) for d in List.firstN(Type.arrayDims(varType), dim_diff));
-            binding.bindingExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
-              binding.bindingExp :: dim_expl, binding.variability, Purity.PURE, varType));
-            binding.bindingType := Expression.typeOf(binding.bindingExp);
-          end if;
+          dim_expl := list(Dimension.sizeExp(d) for d in List.firstN(Type.arrayDims(varType), dim_diff));
+          binding.bindingExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
+            binding.bindingExp :: dim_expl, binding.variability, Purity.PURE, varType));
+          binding.bindingType := Expression.typeOf(binding.bindingExp);
         end if;
       then
         ();
