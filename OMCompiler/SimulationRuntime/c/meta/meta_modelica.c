@@ -215,7 +215,7 @@ modelica_integer valueCompare(modelica_metatype lhs, modelica_metatype rhs)
   }
 
   fprintf(stderr, "%s:%d: %ld slots; ctor %lu - FAILED to detect the type\n", __FILE__, __LINE__, (long) numslots, (unsigned long) ctor);
-  EXIT(1);
+  exit(1);
 }
 
 void debug__print(void* prefix, void* any)
@@ -404,7 +404,6 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix, modelica_metaty
   checkAnyStringBufSize(ix,2);
   ix += sprintf(anyStringBuf+ix, ")");
   fprintf(stderr, "\n"); fflush(NULL);
-  /* EXIT(1); */
   return ix;
 }
 
@@ -652,7 +651,7 @@ void printTypeOfAny(void* any) /* for debugging */
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %u - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  EXIT(1);
+  exit(1);
 }
 
 inline static int getTypeOfAnyWork(void* any, int ix, int inRecord, modelica_metatype stack)  /* for debugging */
