@@ -204,6 +204,7 @@ algorithm
     end if;
 
     (initdae, dumpVars, outRemovedInitialEquations) := createInitialDAEFromSystem(initsyst, shared, initVars, enabledModules, disabledModules, outGlobalKnownVars, false);
+    shared := initdae.shared;
 
     // update the fixed attribute in the simulation DAE
     outSimDAE := BackendVariable.traverseBackendDAE(outSimDAE, updateFixedAttribute, BackendVariable.listVar(dumpVars));
@@ -212,10 +213,9 @@ algorithm
     if useHomotopy and Config.globalHomotopy() then
       initsyst0 := replaceHomotopyWithSimplifiedEqs(initsyst0);
       initdae0 := BackendDAE.DAE({initsyst0}, shared);
-      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
+      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(shared));
       (initdae0, _, removedEqns) := createInitialDAEFromSystem(initsyst0, shared, initVars, {}, {"inlineHomotopy", "generateHomotopyComponents"}, outGlobalKnownVars, true);
       outRemovedInitialEquations := listAppend(removedEqns, outRemovedInitialEquations);
-      initdae0.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae0.shared, BackendVariable.emptyVars());
       outInitDAE_lambda0 := SOME(initdae0);
       initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared)); // PH: why?
     else
@@ -239,6 +239,7 @@ algorithm
     Error.addCompilerError("No system for the symbolic initialization was generated");
     fail();
   end try;
+  outGlobalKnownVars := BackendVariable.mergeVariables(outGlobalKnownVars, initdae0.shared.globalKnownVars);
 end solveInitialSystem;
 
 function createInitialDAEFromSystem
@@ -319,9 +320,6 @@ algorithm
       BackendDump.graphvizBackendDAE(initdae, "dumpinitialsystem");
     end if;
   end if;
-
-  // Remove the globalKnownVars for the initialization set again
-  initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
 
   // warn about selected default initial conditions
   b1 := not listEmpty(dumpVars);
