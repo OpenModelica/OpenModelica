@@ -974,7 +974,11 @@ protected
             // found to be false, because it can never be reached.
             result := lowerIfEquationBody(rest, init);
           else
-            result := BEquation.IF_EQUATION_BODY(condition, eqns, SOME(lowerIfEquationBody(rest, init)));
+            if listEmpty(rest) and init then
+              result := BEquation.IF_EQUATION_BODY(condition, eqns, NONE());
+            else
+              result := BEquation.IF_EQUATION_BODY(condition, eqns, SOME(lowerIfEquationBody(rest, init)));
+            end if;
           end if;
       then result;
 
@@ -995,18 +999,14 @@ protected
     output Expression cond;
   algorithm
     (eqns, cond) := match branch
-      local
-        Expression condition;
-
-      case FEquation.BRANCH(condition = condition) algorithm
-        condition := lowerIfBranchCondition(condition);
-        if Expression.isFalse(condition) then
+      case FEquation.BRANCH() algorithm
+        if Expression.isFalse(branch.condition) then
           // Save some time by not lowering body if condition is false.
           eqns := {};
         else
           eqns := lowerIfBranchBody(branch.body, init);
         end if;
-      then (eqns, condition);
+      then (eqns, branch.condition);
 
       case FEquation.INVALID_BRANCH() algorithm
         // what to do with error message from invalid branch? Is that even needed?
@@ -1033,36 +1033,6 @@ protected
       case elem::rest then lowerIfBranchBody(rest, init, listAppend(lowerEquation(elem, init), eqns));
     end match;
   end lowerIfBranchBody;
-
-  function lowerIfBranchCondition
-    input output Expression condition;
-  algorithm
-    condition := match condition
-      local
-        Expression new_condition;
-        list<Expression> new_condition_elems;
-
-      case Expression.ARRAY() algorithm
-        // filter all false expressions
-        (_, new_condition_elems) := List.splitOnTrue(arrayList(condition.elements), Expression.isFalse);
-        // depending on what is remaining act differently
-        new_condition := match new_condition_elems
-          case {}              then Expression.BOOLEAN(false);
-          case {new_condition} then new_condition;
-          else algorithm
-            // if any of the conditions is true, this is getting evaluated
-            if List.any(new_condition_elems, Expression.isTrue) then
-              new_condition := Expression.BOOLEAN(true);
-            else
-              condition.elements := listArray(new_condition_elems);
-              new_condition := condition;
-            end if;
-          then new_condition;
-        end match;
-      then new_condition;
-      else condition;
-    end match;
-  end lowerIfBranchCondition;
 
   function lowerWhenEquation
     input FEquation frontend_equation;
