@@ -257,7 +257,7 @@ public
       flat_model.variables := reconstructRecordInstances(flat_model.variables);
     end if;
 
-    if Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "moveBindings") then
+    if format.moveBindings then
       flat_model := moveBindings(flat_model);
     end if;
 

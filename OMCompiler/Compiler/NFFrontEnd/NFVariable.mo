@@ -570,7 +570,7 @@ public
     if not listEmpty(var.typeAttributes) then
       s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, format, s);
     elseif not listEmpty(var.children) then
-      s := toFlatStreamModifier(var.children, Binding.isBound(var.binding), printBindingType, format, s);
+      s := toFlatStreamModifier(var.children, format.moveBindings or Binding.isBound(var.binding), printBindingType, format, s);
     end if;
 
     s := toFlatStreamBinding(var.binding, printBindingType, format, s);
@@ -606,6 +606,7 @@ public
     Boolean empty = true;
     Boolean overwritten_binding;
     IOStream.IOStream ss;
+    Binding.Source src;
   algorithm
     for child in children loop
       ss := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
@@ -617,8 +618,11 @@ public
         ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, format, ss);
       end if;
 
-      if not overwrittenBinding and Binding.source(child.binding) == NFBinding.Source.MODIFIER then
-        ss := toFlatStreamBinding(child.binding, printBindingType, format, ss);
+      if not overwrittenBinding then
+        src := Binding.source(child.binding);
+        if src == NFBinding.Source.MODIFIER or src == NFBinding.Source.GENERATED then
+          ss := toFlatStreamBinding(child.binding, printBindingType, format, ss);
+        end if;
       end if;
 
       if not IOStream.empty(ss) then
