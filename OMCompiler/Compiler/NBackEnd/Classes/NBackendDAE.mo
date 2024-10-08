@@ -926,12 +926,19 @@ protected
         list<IfEquationBody> bodies;
         EquationAttributes attr;
 
-      case FEquation.IF(branches = branches, source = source)
-        algorithm
-          attr      := EquationAttributes.default(EquationKind.CONTINUOUS, init);
-          ifEqBody  := lowerIfEquationBody(branches, init);
-          bodies    := IfEquationBody.split(ifEqBody);
-      then list(IfEquationBody.toEquation(body, source, init) for body in bodies);
+      case FEquation.IF(branches = branches, source = source) algorithm
+        attr      := EquationAttributes.default(EquationKind.CONTINUOUS, init);
+        ifEqBody  := lowerIfEquationBody(branches, init);
+        if Expression.isEnd(ifEqBody.condition) then
+          // if the condition is end from the start, there is no alternatives.
+          // remove surrounding if structure and return body equations
+          backend_equations := ifEqBody.then_eqns;
+        else
+          // split up the if equations to parse them indvidually
+          bodies  := IfEquationBody.split(ifEqBody);
+          backend_equations := list(IfEquationBody.toEquation(body, source, init) for body in bodies);
+        end if;
+      then backend_equations;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + FEquation.toString(frontend_equation)});
@@ -990,16 +997,16 @@ protected
     (eqns, cond) := match branch
       local
         Expression condition;
-        list<FEquation.Equation> body;
 
-      case FEquation.BRANCH(condition = condition, body = body) guard(not Expression.isFalse(condition))
-        // ToDo! Use condition variability here to have proper type of the
-        // auxiliary that will be created for the condition.
-      then (lowerIfBranchBody(body, init), condition);
-
-      // Save some time by not lowering body if condition is false.
-      case FEquation.BRANCH(condition = condition, body = body) guard(Expression.isFalse(condition))
-      then ({}, condition);
+      case FEquation.BRANCH(condition = condition) algorithm
+        condition := lowerIfBranchCondition(condition);
+        if Expression.isFalse(condition) then
+          // Save some time by not lowering body if condition is false.
+          eqns := {};
+        else
+          eqns := lowerIfBranchBody(branch.body, init);
+        end if;
+      then (eqns, condition);
 
       case FEquation.INVALID_BRANCH() algorithm
         // what to do with error message from invalid branch? Is that even needed?
@@ -1026,6 +1033,36 @@ protected
       case elem::rest then lowerIfBranchBody(rest, init, listAppend(lowerEquation(elem, init), eqns));
     end match;
   end lowerIfBranchBody;
+
+  function lowerIfBranchCondition
+    input output Expression condition;
+  algorithm
+    condition := match condition
+      local
+        Expression new_condition;
+        list<Expression> new_condition_elems;
+
+      case Expression.ARRAY() algorithm
+        // filter all false expressions
+        (_, new_condition_elems) := List.splitOnTrue(arrayList(condition.elements), Expression.isFalse);
+        // depending on what is remaining act differently
+        new_condition := match new_condition_elems
+          case {}              then Expression.BOOLEAN(false);
+          case {new_condition} then new_condition;
+          else algorithm
+            // if any of the conditions is true, this is getting evaluated
+            if List.any(new_condition_elems, Expression.isTrue) then
+              new_condition := Expression.BOOLEAN(true);
+            else
+              condition.elements := listArray(new_condition_elems);
+              new_condition := condition;
+            end if;
+          then new_condition;
+        end match;
+      then new_condition;
+      else condition;
+    end match;
+  end lowerIfBranchCondition;
 
   function lowerWhenEquation
     input FEquation frontend_equation;
