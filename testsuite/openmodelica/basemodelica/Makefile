@@ -22,6 +22,7 @@ TESTFILES = \
 	Record1.mo \
 	Record2.mo \
 	Record3.mo \
+	Record4.mo \
 	Scalarize1.mo \
 	Scalarize2.mo \
 	Scalarize3.mo \

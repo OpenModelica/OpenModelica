@@ -874,7 +874,7 @@ protected
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
-  bind_src := Binding.source(binding);
+  bind_src := NFBinding.Source.GENERATED;
 
   // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
@@ -924,7 +924,6 @@ protected
   Option<Binding> opt_binding;
   Expression binding_exp, binding_exp_eval;
   Equation eq;
-  list<Expression> bindings;
   Variability comp_var, binding_var;
   Type ty;
   Prefix pre;
