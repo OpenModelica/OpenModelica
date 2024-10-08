@@ -434,11 +434,11 @@ void TextAnnotation::drawAnnotation(QPainter *painter)
     font.setPointSizeF(qMax(fontSizeFactor, Helper::minimumTextFontSize));
     painter->setFont(font);
   }
-  /* Try to get the elided text if calculated font size <= Helper::minimumTextFontSize
-   * OR if font size is absolute and text is not multiline.
+  /* Try to get the elided text if calculated ((font size <= Helper::minimumTextFontSize OR if font size is absolute) AND text is not multiline).
+   * Issue #8383 and #12754
    */
   QString textToDraw = textString;
-  if (mappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || (mFontSize > 0 && !Utilities::isMultiline(textString)))) {
+  if (mappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || (mFontSize > 0)) && !Utilities::isMultiline(textString)) {
     QFontMetrics fontMetrics(painter->font());
     textToDraw = fontMetrics.elidedText(textString, Qt::ElideRight, mappedBoundingRect.width());
     // if we get "..." i.e., QChar(0x2026) as textToDraw then don't draw anything
