@@ -54,6 +54,7 @@ public:
   PlotWindowContainer(QWidget *pParent = 0);
   QString getUniqueName(QString name = QString("Plot"), int number = 1);
   OMPlot::PlotWindow* getCurrentWindow();
+  QMdiSubWindow* getPlotSubWindowFromMdi();
   OMPlot::PlotWindow* getInteractiveWindow(QString targetWindow);
 #if !defined(WITHOUT_OSG)
   AnimationWindow* getCurrentAnimationWindow();

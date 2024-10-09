@@ -1935,7 +1935,19 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
   try {
     // if pPlotWindow is 0 then get the current window.
     if (!pPlotWindow) {
-      pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
+      QMdiSubWindow *pSubWindow = MainWindow::instance()->getPlotWindowContainer()->getPlotSubWindowFromMdi();
+      if (pSubWindow) {
+        pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+        /* Since we change the active subwindow so the variable check state might change after call to setActiveSubWindow
+         * So we store the check state and apply it back after setActiveSubWindow.
+         * This is done to fix issue #12911.
+         * We plot on the previous plot window, if there is any and make it active. If there is no previous plot window then open a new plot window.
+         * See also VariablesWidget::updateVariablesTree
+         */
+        bool checkState = pVariablesTreeItem->isChecked();
+        MainWindow::instance()->getPlotWindowContainer()->setActiveSubWindow(pSubWindow);
+        pVariablesTreeItem->setChecked(checkState);
+      }
     }
     // if the variable is not an array and
     // pPlotWindow is 0 or the plot's type is PLOTARRAY or PLOTARRAYPARAMETRIC
@@ -2699,6 +2711,11 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  /* update the tree variables to last active PlotWindow
+   * This is done to fix issue #12911.
+   * See also VariablesWidget::plotVariables
+   */
+  pSubWindow = MainWindow::instance()->getPlotWindowContainer()->getPlotSubWindowFromMdi();
   updateVariablesTreeHelper(pSubWindow);
   initializeVisualization();
 }
