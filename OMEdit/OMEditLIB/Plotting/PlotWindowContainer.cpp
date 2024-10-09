@@ -123,6 +123,26 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
   }
 }
 
+/*!
+ * \brief PlotWindowContainer::getPlotSubWindowFromMdi
+ * Returns the topmost Plot subwindow, if there is any in the PlotWindowContainer
+ * \return
+ */
+QMdiSubWindow* PlotWindowContainer::getPlotSubWindowFromMdi()
+{
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
+    return 0;
+  } else {
+    QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
+    for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+      if (isPlotWindow(subWindowsList.at(i)->widget())) {
+        return subWindowsList.at(i);
+      }
+    }
+    return 0;
+  }
+}
+
 PlotWindow* PlotWindowContainer::getInteractiveWindow(QString targetWindow)
 {
   if (subWindowList().size() == 0) {
