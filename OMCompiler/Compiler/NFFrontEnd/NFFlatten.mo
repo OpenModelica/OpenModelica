@@ -874,7 +874,7 @@ protected
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
-  bind_src := Binding.source(binding);
+  bind_src := NFBinding.Source.GENERATED;
 
   // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
@@ -924,7 +924,6 @@ protected
   Option<Binding> opt_binding;
   Expression binding_exp, binding_exp_eval;
   Equation eq;
-  list<Expression> bindings;
   Variability comp_var, binding_var;
   Type ty;
   Prefix pre;
@@ -1907,9 +1906,13 @@ algorithm
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
             if Expression.isPure(cond) then
-              // Skip evaluation if the condition contains iterators, which can
-              // happen if scalarization is turned off and for-loops aren't unrolled.
-              if settings.scalarize or not Expression.contains(cond, Expression.isIterator) then
+              // Always evaluate if scalarization is on or the if contains
+              // connects, otherwise skip it if either the new backend is used
+              // or the condition contains iterators.
+              // TODO: The condition shouldn't be evaluated if scalarization is
+              //       turned off since that breaks vectorizeEquation, but
+              //       turning it off completely doesn't work yet either.
+              if settings.scalarize or has_connect or not (settings.newBackend or Expression.contains(cond, Expression.isIterator)) then
                 cond := Ceval.evalExp(cond, target);
                 cond := flattenExp(cond, prefix, info);
               end if;

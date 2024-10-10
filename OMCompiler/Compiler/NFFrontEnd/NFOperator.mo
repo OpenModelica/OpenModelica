@@ -158,24 +158,30 @@ public
   protected
     MathClassification mc = getMathClassification(operator);
     SizeClassification sc;
-    list<Integer> lst;
-    Integer i2;
+    list<tuple<Integer, Type>> lst;
+    tuple<Integer, Type> min_, max_;
     Type ty;
+    function tplLt
+      input tuple<Integer, Type> tpl1;
+      input tuple<Integer, Type> tpl2;
+      output Boolean b = Util.tuple21(tpl1) < Util.tuple21(tpl2);
+    end tplLt;
   algorithm
-    lst := list(typeRestriction(i) for i in types);
-    i2 := List.first(lst);
-    if List.all(lst, function intEq(i2=i2)) then
-      ty := List.first(types);
-      sc := match i2
-        case 0 then SizeClassification.SCALAR;
-        case 1 then SizeClassification.ELEMENT_WISE;
-        else getSizeClassification(operator);
-      end match;
-    else
-      Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
-       + List.toString(types, Type.toString), sourceInfo());
-      fail();
-    end if;
+    lst := list((typeRestriction(t), t) for t in types);
+    min_ := List.minElement(lst, tplLt);
+    max_ := List.maxElement(lst, tplLt);
+    (sc, ty) := match (min_, max_)
+      case ((0, _), (0, ty))  then (SizeClassification.SCALAR, ty);
+      case ((0, _), (_ ,ty))  then (SizeClassification.SCALAR_ARRAY, ty);
+      case ((1, _), (1, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((1, _), (2, ty))  then (SizeClassification.VECTOR_MATRIX, ty);
+      case ((2, _), (2, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((3, _), (3, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
+        + List.toString(types, Type.toString), sourceInfo());
+      then fail();
+    end match;
     operator := fromClassification((mc, sc), ty);
   end repairMultary;
 

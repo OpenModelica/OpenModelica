@@ -49,10 +49,15 @@ public
     record OUTPUT_FORMAT
       ScalarizeMode scalarizeMode;
       RecordMode recordMode;
+      Boolean moveBindings;
     end OUTPUT_FORMAT;
   end OutputFormat;
 
-  constant OutputFormat defaultFormat = OutputFormat.OUTPUT_FORMAT(ScalarizeMode.PARTIALLY_SCALARIZED, RecordMode.WITH_RECORDS);
+  constant OutputFormat defaultFormat = OutputFormat.OUTPUT_FORMAT(
+      ScalarizeMode.PARTIALLY_SCALARIZED,
+      RecordMode.WITH_RECORDS,
+      false
+  );
 
   function formatFromFlags
     output OutputFormat format = defaultFormat;
@@ -74,6 +79,8 @@ public
         else ();
       end match;
     end for;
+
+    format.moveBindings := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "moveBindings");
   end formatFromFlags;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -1873,7 +1873,6 @@ public
     Pointer<Variable> var;
     Integer sk = 1;
     list<Subscript> subs;
-    list<Option<Integer>> int_subs;
   algorithm
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
@@ -1885,7 +1884,6 @@ public
       var := BVariable.getVarPointer(cref);
       if BVariable.isRecord(var) then
         subs := ComponentRef.subscriptsAllFlat(cref);
-        int_subs := list(Subscript.toIntegerOpt(sub) for sub in subs);
         // get all Record children
         crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
         // add original subscripts
