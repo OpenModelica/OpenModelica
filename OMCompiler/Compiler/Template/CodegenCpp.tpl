@@ -9783,38 +9783,9 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
   let &measureTimeStartVar = buffer "" /*BUFD*/
   let &measureTimeEndVar = buffer "" /*BUFD*/
 
-  let body = match eq
-   case e as SES_SIMPLE_ASSIGN(__)
-     then
-      equationSimpleAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues, overwriteOldStartValue)
-   case e as SES_IFEQUATION(__)
-     then
-     equationIfEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-   case e as SES_ALGORITHM(__)
-   case e as SES_INVERSE_ALGORITHM(__)
-      then
-      equationAlgorithm(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-   case e as SES_WHEN(__)
-      then
-      equationWhen(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    case e as SES_ARRAY_CALL_ASSIGN(__)
-      then
-      equationArrayCallAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
-    case e as SES_LINEAR(__)
-    case e as SES_NONLINEAR(__)
-      then
-      equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
-    case e as SES_MIXED(__)
-      then
-      /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
-      let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValue, "")
-      "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
-    case e as SES_FOR_LOOP(__)
-      then
-        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
-    else
-      error(sourceInfo(), 'NOT IMPLEMENTED EQUATION: <%dumpEqs(fill(eq,1))%>')
-  end match
+  let body = equation_function_create_single_body(eq, context, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,
+                                                  additionalFuncs, method, classnameext, stateDerVectorName /*=__zDot*/, useFlatArrayNotation,
+                                                  createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
   let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", '(*measureTimeProfileBlocksArray)[<%ix_str_array%>]', 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
     <<
@@ -9831,6 +9802,49 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     }
     >>
 end equation_function_create_single_func;
+
+template equation_function_create_single_body(SimEqSystem eq, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
+                                              Text& additionalFuncs, Text method, Text classnameext, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation,
+                                              Boolean createMeasureTime, Boolean assignToStartValues, Boolean overwriteOldStartValue, Text &varDeclsLocal)
+::=
+  match eq
+    case e as SES_SIMPLE_ASSIGN(__)
+      then
+      equationSimpleAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues, overwriteOldStartValue)
+    case e as SES_IFEQUATION(__)
+      then
+      equationIfEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    case e as SES_ALGORITHM(__)
+    case e as SES_INVERSE_ALGORITHM(__)
+      then
+      equationAlgorithm(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    case e as SES_WHEN(__)
+      then
+      equationWhen(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    case e as SES_ARRAY_CALL_ASSIGN(__)
+      then
+      equationArrayCallAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
+    case e as SES_LINEAR(__)
+    case e as SES_NONLINEAR(__)
+      then
+      equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
+    case e as SES_MIXED(__)
+      then
+      /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
+      let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValue, "")
+      "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
+    case e as SES_FOR_LOOP(__)
+      then
+      equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
+    case e as SES_FOR_EQUATION(__)
+      then
+      equationForEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
+                          additionalFuncs, method, classnameext, stateDerVectorName, useFlatArrayNotation,
+                          createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
+    else
+      error(sourceInfo(), 'NOT IMPLEMENTED EQUATION: <%dumpEqs(fill(eq,1))%>')
+  end match
+end equation_function_create_single_body;
 
 template equationMixed(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -11442,6 +11456,35 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       }
       >>
 end equationForLoop;
+
+template equationForEquation(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text &extraFuncs, Text &extraFuncsDecl, Text extraFuncsNamespace,
+                             Text& additionalFuncs, Text method,Text classnameext, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation,
+                             Boolean createMeasureTime, Boolean assignToStartValues, Boolean overwriteOldStartValue, Text &varDeclsLocal)
+::=
+  match eq
+    case SES_FOR_EQUATION(__) then
+/*
+      let startFixedExp = match cref2simvar(cref, simCode)
+        case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = isStartFixed)) then
+          'if (<%if isStartFixed then "_clockStart[clockIndex - 1] || "%>_clockSubactive[clockIndex - 1]) return;'
+*/
+      let &preExp = buffer ""
+      let iterExp = daeExp(iter, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let startExp = daeExp(startIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let endExp = daeExp(endIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let bodyPart = (body |> eq =>
+        equation_function_create_single_body(eq, context, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,
+                                             additionalFuncs, method, classnameext, stateDerVectorName, useFlatArrayNotation,
+                                             createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
+        ;separator="\n")
+//      <%if not assignToStartValues then '<%startFixedExp%>'%>
+      <<
+      for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
+        <%preExp%>
+        <%bodyPart%>
+      }
+      >>
+end equationForEquation;
 
 // Previously unknown dims were set to ICONST(-1) at SimCode creation
 // we do not do that anymore.
