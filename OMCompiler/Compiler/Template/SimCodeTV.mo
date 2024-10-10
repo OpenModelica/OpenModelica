@@ -685,6 +685,16 @@ package SimCode
       BackendDAE.EquationAttributes eqAttr;
     end SES_FOR_LOOP;
 
+    record SES_FOR_EQUATION
+      Integer index;
+      DAE.Exp iter;
+      DAE.Exp startIt;
+      DAE.Exp endIt;
+      list<SimEqSystem> body;
+      DAE.ElementSource source;
+      BackendDAE.EquationAttributes eqAttr;
+    end SES_FOR_EQUATION;
+
     record SES_ALIAS
       Integer aliasOf;
     end SES_ALIAS;

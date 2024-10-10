@@ -2274,17 +2274,33 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, partitionKind=partitionKind) := syst;
   eqn := BackendEquation.get(eqns, eqNum);
-  _ := match eqn
-    case BackendDAE.WHEN_EQUATION() then ();
+  v := match eqn
+    case BackendDAE.WHEN_EQUATION() then
+      BackendVariable.makeVar(DAE.WILD()); // dummy, not used
     else
-      algorithm
-        v := BackendVariable.getVarAt(vars, varNum);
-      then ();
+      BackendVariable.getVarAt(vars, varNum);
   end match;
+  (equation_, ouniqueEqIndex, otempvars) := createEquationImpl(eqn, v, vars, partitionKind, shared, skipDiscInAlgorithm, iuniqueEqIndex, itempvars, cons);
+end createEquation;
 
+protected function createEquationImpl
+  input BackendDAE.Equation eqn;
+  input BackendDAE.Var v;
+  input BackendDAE.Variables vars;
+  input BackendDAE.BaseClockPartitionKind partitionKind;
+  input BackendDAE.Shared shared;
+  input Boolean skipDiscInAlgorithm;
+  input Integer iuniqueEqIndex;
+  input list<SimCodeVar.SimVar> itempvars;
+  input BackendDAE.Constraints cons;
+  output list<SimCode.SimEqSystem> equation_;
+  output Integer ouniqueEqIndex;
+  output list<SimCodeVar.SimVar> otempvars;
+algorithm
   (equation_, ouniqueEqIndex, otempvars) := match eqn
     local
       DAE.ComponentRef cr;
+      BackendDAE.Var var;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> values;
       Integer uniqueEqIndex1, uniqueEqIndex;
@@ -2323,26 +2339,34 @@ algorithm
     // for equation that may result from -d=-nfScalarize
     case BackendDAE.FOR_EQUATION(iter = varexp, start = start, stop = cond, source = source, attr = eqAttr)
       algorithm
-        (e1, e2) := match eqn.body
+        (b, e1, e2) := match eqn.body
           case BackendDAE.EQUATION(exp = e1, scalar = e2) then
-            (e1, e2);
+            (true, e1, e2);
           case BackendDAE.ARRAY_EQUATION(left = e1, right = e2) then
-            (e1, e2);
-          else algorithm
-            Error.addInternalError("Unsupported FOR_EQUATION: " + BackendDump.equationString(eqn)  + " ToDo: generalize SimEqSystem.SES_FOR_LOOP with embedded SimEqSystem.", sourceInfo());
-          then fail();
+            (true, e1, e2);
+          else
+            (false, DAE.BCONST(false), DAE.BCONST(false));
         end match;
         DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)) := varexp;
-        cr := ComponentReference.crefApplySubs(v.varName, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(iter, DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
-        BackendDAE.SHARED(functionTree = funcs) := shared;
-        try
-          (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, Expression.crefExp(cr), SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
+        var := v;
+        var.varName := ComponentReference.crefApplySubs(v.varName, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(iter, DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
+        if b then
+          cr := var.varName;
+          BackendDAE.SHARED(functionTree = funcs) := shared;
+          try
+            (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, Expression.crefExp(cr), SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
+          else
+            Error.addInternalError("solving FOR_EQUATION body: " + BackendDump.equationString(eqn.body)  + "\nfor variable: " + ComponentReference.printComponentRefStr(cr) + ".", sourceInfo());
+            fail();
+          end try;
+          simEqSys := SimCode.SES_FOR_LOOP(iuniqueEqIndex, varexp, start, cond, cr, exp_, source, eqAttr);
+          otempvars := itempvars;
         else
-          Error.addInternalError("solving FOR_EQUATION body: " + BackendDump.equationString(eqn.body)  + "\nfor variable: " + ComponentReference.printComponentRefStr(cr) + ".", sourceInfo());
-          fail();
-        end try;
+          (resEqs, _, otempvars) := createEquationImpl(eqn.body, var, vars, partitionKind, shared, skipDiscInAlgorithm, iuniqueEqIndex, itempvars, cons);
+          simEqSys := SimCode.SES_FOR_EQUATION(iuniqueEqIndex, varexp, start, cond, resEqs, source, eqAttr);
+        end if;
       then
-        ({SimCode.SES_FOR_LOOP(iuniqueEqIndex, varexp, start, cond, cr, exp_, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
+        ({simEqSys}, iuniqueEqIndex + 1, otempvars);
 
     // solved equation
     case BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr)
@@ -2433,7 +2457,7 @@ algorithm
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
   end match;
-end createEquation;
+end createEquationImpl;
 
 protected function replaceIFBrancheswithoutVar
   input DAE.Exp inExp;
@@ -9159,6 +9183,13 @@ algorithm
         s = s+"end for;";
     then s;
 
+    case(SimCode.SES_FOR_EQUATION(index=idx,iter=iterator, startIt=startIt, endIt=endIt, body=eqs))
+      equation
+        s = intString(idx) +" FOR-EQUATION: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n";
+        s = s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
+        s = s+"end for;";
+    then s;
+
     case SimCode.SES_ALIAS()
       equation
         s = String(eqSysIn.index) +": alias of "+ String(eqSysIn.aliasOf);
@@ -12062,6 +12093,10 @@ algorithm
     then (eq, a);
 
     case (SimCode.SES_FOR_LOOP(), _, a)
+      /* TODO: Me */
+    then (eq, a);
+
+    case (SimCode.SES_FOR_EQUATION(), _, a)
       /* TODO: Me */
     then (eq, a);
 
