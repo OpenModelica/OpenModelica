@@ -140,6 +140,7 @@ public:
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
   static QString libraries;
+  static QString elements;
   static QString clearRecentFiles;
   static QString encoding;
   static QString fileLabel;
@@ -298,6 +299,7 @@ public:
   static QString textView;
   static QString documentationView;
   static QString filterClasses;
+  static QString filterElements;
   static QString findReplaceModelicaText;
   static QString left;
   static QString center;
