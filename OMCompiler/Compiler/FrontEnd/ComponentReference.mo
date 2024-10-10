@@ -2468,8 +2468,7 @@ algorithm
 end crefSetLastSubs;
 
 public function crefApplySubs
-  "Apply subs to the first componenentref ident that is of array type.
-   TODO: must not apply subs whose list length exceeds array dimensions.
+  "Apply subs to the first componenentref idents that are of array type.
    author: rfranke"
   input DAE.ComponentRef inComponentRef;
   input list<DAE.Subscript> inSubs;
@@ -2479,26 +2478,47 @@ algorithm
     local
       DAE.Ident id;
       DAE.Type tp;
-      list<DAE.Subscript> subs;
+      list<DAE.Subscript> subs, subs1, subs2;
       DAE.ComponentRef cr;
+      DAE.Dimensions dims;
 
-    case DAE.CREF_IDENT(ident = id, identType = tp as DAE.T_ARRAY(), subscriptLst = subs)
+    case DAE.CREF_IDENT(ident = id, identType = tp as DAE.T_ARRAY(dims = dims), subscriptLst = subs)
+      algorithm
+        if listLength(subs) + listLength(inSubs) > listLength(dims) then
+          Error.addInternalError("ComponentReference.crefApplySubs ["
+            + ExpressionDump.printListStr(inSubs, ExpressionDump.printSubscriptStr, ",") + "] to ident "
+            + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
+          fail();
+        end if;
       then
         makeCrefIdent(id, tp, listAppend(subs, inSubs));
 
-    case DAE.CREF_QUAL(ident = id, identType = tp as DAE.T_ARRAY(), subscriptLst = subs, componentRef = cr)
+    case DAE.CREF_QUAL(ident = id, identType = tp as DAE.T_ARRAY(dims = dims), subscriptLst = subs, componentRef = cr)
+      algorithm
+        if listLength(inSubs) > listLength(dims) - listLength(subs) then
+          (subs1, subs2) := List.split(inSubs, listLength(dims) - listLength(subs));
+          cr := crefApplySubs(cr, subs2);
+        else
+          subs1 := inSubs;
+        end if;
+        if listLength(subs) + listLength(subs1) > listLength(dims) then
+          Error.addInternalError("ComponentReference.crefApplySubs ["
+            + ExpressionDump.printListStr(inSubs, ExpressionDump.printSubscriptStr, ",") + "] to qual "
+            + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
+          fail();
+        end if;
       then
-        makeCrefQual(id, tp, listAppend(subs, inSubs), cr);
+        makeCrefQual(id, tp, listAppend(subs, subs1), cr);
 
     case DAE.CREF_QUAL(ident = id, identType = tp, subscriptLst = subs, componentRef = cr)
-      equation
-        cr = crefApplySubs(cr, inSubs);
+      algorithm
+        cr := crefApplySubs(cr, inSubs);
       then
         makeCrefQual(id, tp, subs, cr);
 
     else
-      equation
-        Error.addInternalError("function ComponentReference.crefApplySubs to non array\n", sourceInfo());
+      algorithm
+        Error.addInternalError("ComponentReference.crefApplySubs to non array " + printComponentRefStr(inComponentRef) + "\n", sourceInfo());
       then
         fail();
   end match;

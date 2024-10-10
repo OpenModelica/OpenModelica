@@ -35,6 +35,7 @@ testMatrixState.mos \
 testRecordStartValue.mos \
 testReduction.mos \
 testVectorizedBlocks.mos \
+testVectorizedPowerSystem.mos \
 testVectorizedSolarSystem.mos \
 trapezoidTest.mos \
 negatedParameter.mos
@@ -42,7 +43,6 @@ negatedParameter.mos
 FAILINGTESTFILES= \
 clockedEventRotationalTest.mos \
 ClockInterval.mos \
-testVectorizedPowerSystem.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
