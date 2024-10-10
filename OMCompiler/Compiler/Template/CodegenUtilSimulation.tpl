@@ -93,6 +93,8 @@ template equationIndex(SimEqSystem eq)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
     then index
+  case SES_FOR_EQUATION(__)
+    then index
   case SES_ALIAS(__)
     then aliasOf
   case SES_ALGEBRAIC_SYSTEM(__)
@@ -284,6 +286,17 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(e)%>
       type: FOR_LOOP
+      <%forstatement%>
+      >>
+    case e as SES_FOR_EQUATION(__) then
+      let &forstatement = buffer ""
+      let &forstatement += 'for ' + escapeCComments(dumpExp(e.iter,"\"")) + ' in ' + escapeCComments(dumpExp(e.startIt,"\""))
+      let &forstatement += ' : ' + escapeCComments(dumpExp(e.endIt,"\"")) + ' loop<%\n%>'
+      let &forstatement += '  <%dumpEqs(e.body)%>;'
+      let &forstatement += 'end for'
+      <<
+      equation index: <%equationIndex(e)%>
+      type: FOR_EQUATION
       <%forstatement%>
       >>
     else

@@ -7,7 +7,7 @@ model VectorizedPowerSystemTest
     package PS = PhaseSystem;
     parameter PS.Voltage[PhaseSystem.n] v_start = zeros(PhaseSystem.n) "Start value for voltage drop";
     parameter PS.Current[PhaseSystem.n] i_start = zeros(PhaseSystem.n) "Start value for current";
-    parameter Integer n_n = n;
+    parameter Integer n_n;
     PowerSystems.Generic.Ports.Terminal_p terminal_p(redeclare package PhaseSystem = PhaseSystem);
     PowerSystems.Generic.Ports.Terminal_n[n_n] terminal_n(redeclare each package PhaseSystem = PhaseSystem);
     PS.Voltage[PhaseSystem.n] v(start = v_start) = terminal_p.v;
@@ -36,7 +36,7 @@ model VectorizedPowerSystemTest
   PowerSystems.Generic.FixedVoltageSource fixedVoltageSource1;
   inner PowerSystems.System system;
   PowerSystems.Generic.FixedLoad[n] fixedLoad1(P = 1e6:1e6:1e6 * n, phi = 0.1:0.1:0.1 * n);
-  BusBar busBar1;
+  BusBar busBar1(n_n = n);
 equation
   connect(busBar1.terminal_n, fixedLoad1.terminal);
   connect(fixedVoltageSource1.terminal, busBar1.terminal_p);
@@ -325,7 +325,9 @@ package PowerSystems  "Library for electrical power systems"
         package PS = PhaseSystem;
         parameter PS.Voltage[PhaseSystem.n] v_start = ones(PhaseSystem.n) "Start value for voltage drop";
         PowerSystems.Generic.Ports.Terminal_p terminal(redeclare package PhaseSystem = PhaseSystem, v(start = v_start));
-        SI.Power[PhaseSystem.n] p = PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
+        SI.Power[PhaseSystem.n] p "ToDo: move below equation back to binding; broken since commit 28c5b6f (#9907)";
+      equation
+        p = PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
       end PartialLoad;
     end Ports;
   end Generic;
