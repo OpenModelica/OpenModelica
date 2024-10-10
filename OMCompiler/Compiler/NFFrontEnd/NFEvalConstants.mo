@@ -164,20 +164,22 @@ end evaluateTypeAttribute;
 function evaluateExp
   input Expression exp;
   input SourceInfo info;
+  input Boolean ignoreFailure = false;
   output Expression outExp;
 algorithm
-  outExp := evaluateExpTraverser(exp, info);
+  outExp := evaluateExpTraverser(exp, info, ignoreFailure = ignoreFailure);
 end evaluateExp;
 
 function evaluateExpOpt
   input Option<Expression> exp;
   input SourceInfo info;
+  input Boolean ignoreFailure = false;
   output Option<Expression> outExp;
 protected
   Expression e;
 algorithm
   outExp := match exp
-    case SOME(e) then SOME(evaluateExp(e, info));
+    case SOME(e) then SOME(evaluateExp(e, info, ignoreFailure));
     else exp;
   end match;
 end evaluateExpOpt;
@@ -186,6 +188,7 @@ function evaluateExpTraverser
   input Expression exp;
   input SourceInfo info;
   input Boolean changed = false;
+  input Boolean ignoreFailure = false;
   output Expression outExp;
   output Boolean outChanged;
 protected
@@ -199,14 +202,24 @@ algorithm
       algorithm
         (outExp as Expression.CREF(cref = cref, ty = ty), outChanged) :=
           Expression.mapFoldShallow(exp,
-            function evaluateExpTraverser(info = info), false);
+            function evaluateExpTraverser(info = info, ignoreFailure = ignoreFailure), false);
 
         if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER and
            not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
-          outExp := Ceval.evalCref(cref, outExp, NFCeval.noTarget, evalSubscripts = false);
-          outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
-          outChanged := true;
+          if ignoreFailure then
+            try
+              e := Ceval.evalCref(cref, outExp, NFCeval.noTarget, evalSubscripts = false);
+              e := Flatten.flattenExp(e, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
+              outExp := e;
+              outChanged := true;
+            else
+            end try;
+          else
+            outExp := Ceval.evalCref(cref, outExp, NFCeval.noTarget, evalSubscripts = false);
+            outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
+            outChanged := true;
+          end if;
         elseif outChanged then
           ty := ComponentRef.getSubscriptedType(cref);
         end if;
@@ -229,7 +242,7 @@ algorithm
         if isSome(exp.dimIndex) then
           SOME(e) := exp.dimIndex;
           (e, outChanged) := Expression.mapFoldShallow(e,
-            function evaluateExpTraverser(info = info), false);
+            function evaluateExpTraverser(info = info, ignoreFailure = ignoreFailure), false);
 
           if outChanged then
             exp.dimIndex := SOME(e);
@@ -241,7 +254,7 @@ algorithm
     case Expression.RANGE()
       algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
-          function evaluateExpTraverser(info = info), false);
+          function evaluateExpTraverser(info = info, ignoreFailure = ignoreFailure), false);
 
         // If anything in a range is evaluated its better to just retype it
         // rather than evaluating the type, since it's usually faster and gives
@@ -255,7 +268,7 @@ algorithm
     else
       algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
-          function evaluateExpTraverser(info = info), false);
+          function evaluateExpTraverser(info = info, ignoreFailure = ignoreFailure), false);
 
         ty := Expression.typeOf(outExp);
         ty2 := evaluateType(ty, info);
@@ -337,8 +350,8 @@ algorithm
     // if-expression.
     else
       algorithm
-        (tb, c1) := evaluateExpTraverser(tb, info);
-        (fb, c2) := evaluateExpTraverser(fb, info);
+        (tb, c1) := evaluateExpTraverser(tb, info, ignoreFailure = true);
+        (fb, c2) := evaluateExpTraverser(fb, info, ignoreFailure = true);
       then
         (Expression.IF(ty, cond, tb, fb), outChanged or c1 or c2);
 
@@ -347,11 +360,13 @@ end evaluateIfExp;
 
 function evaluateEquations
   input list<Equation> eql;
-  output list<Equation> outEql = list(evaluateEquation(e) for e in eql);
+  input Boolean ignoreFailure = false;
+  output list<Equation> outEql = list(evaluateEquation(e, ignoreFailure) for e in eql);
 end evaluateEquations;
 
 function evaluateEquation
   input output Equation eq;
+  input Boolean ignoreFailure;
 protected
   SourceInfo info = Equation.info(eq);
 algorithm
@@ -363,61 +378,60 @@ algorithm
     case Equation.EQUALITY()
       algorithm
         ty := Type.mapDims(eq.ty, function evaluateDimension(info = info));
-        e1 := evaluateExp(eq.lhs, info);
-        e2 := evaluateExp(eq.rhs, info);
+        e1 := evaluateExp(eq.lhs, info, ignoreFailure);
+        e2 := evaluateExp(eq.rhs, info, ignoreFailure);
       then
         Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source);
 
     case Equation.ARRAY_EQUALITY()
       algorithm
         ty := Type.mapDims(eq.ty, function evaluateDimension(info = info));
-        e2 := evaluateExp(eq.rhs, info);
+        e2 := evaluateExp(eq.rhs, info, ignoreFailure);
       then
         Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.scope, eq.source);
 
     case Equation.FOR()
       algorithm
-        eq.range := Util.applyOption(eq.range,
-          function evaluateExp(info = info));
-        eq.body := evaluateEquations(eq.body);
+        eq.range := evaluateExpOpt(eq.range, info, ignoreFailure);
+        eq.body := evaluateEquations(eq.body, ignoreFailure);
       then
         eq;
 
     case Equation.IF()
       algorithm
-        eq.branches := list(evaluateEqBranch(b, info) for b in eq.branches);
+        eq.branches := list(evaluateEqBranch(b, info, ignoreFailure) for b in eq.branches);
       then
         eq;
 
     case Equation.WHEN()
       algorithm
-        eq.branches := list(evaluateEqBranch(b, info) for b in eq.branches);
+        eq.branches := list(evaluateEqBranch(b, info, ignoreFailure) for b in eq.branches);
       then
         eq;
 
     case Equation.ASSERT()
       algorithm
-        e1 := evaluateExp(eq.condition, info);
-        e2 := evaluateExp(eq.message, info);
-        e3 := evaluateExp(eq.level, info);
+        e1 := evaluateExp(eq.condition, info, ignoreFailure);
+        e2 := evaluateExp(eq.message, info, ignoreFailure);
+        e3 := evaluateExp(eq.level, info, ignoreFailure);
       then
         Equation.ASSERT(e1, e2, e3, eq.scope, eq.source);
 
     case Equation.TERMINATE()
       algorithm
-        eq.message := evaluateExp(eq.message, info);
+        eq.message := evaluateExp(eq.message, info, ignoreFailure);
       then
         eq;
 
     case Equation.REINIT()
       algorithm
-        eq.reinitExp := evaluateExp(eq.reinitExp, info);
+        eq.reinitExp := evaluateExp(eq.reinitExp, info, ignoreFailure);
       then
         eq;
 
     case Equation.NORETCALL()
       algorithm
-        eq.exp := evaluateExp(eq.exp, info);
+        eq.exp := evaluateExp(eq.exp, info, ignoreFailure);
       then
         eq;
 
@@ -428,6 +442,7 @@ end evaluateEquation;
 function evaluateEqBranch
   input Branch branch;
   input SourceInfo info;
+  input Boolean ignoreFailure;
   output Branch outBranch;
 algorithm
   outBranch := match branch
@@ -437,8 +452,12 @@ algorithm
 
     case Branch.BRANCH(condition = condition, body = body)
       algorithm
-        condition := evaluateExp(condition, info);
-        body := evaluateEquations(body);
+        // Failures in the condition are only ignored if they should be ignored
+        // in the whole if-equation.
+        condition := evaluateExp(condition, info, ignoreFailure);
+        // Failures in the body are always ignored, since we don't know if the
+        // branch will be executed or not.
+        body := evaluateEquations(body, ignoreFailure = true);
       then
         Branch.BRANCH(condition, branch.conditionVar, body);
 
@@ -459,11 +478,13 @@ end evaluateAlgorithm;
 
 function evaluateStatements
   input list<Statement> stmts;
-  output list<Statement> outStmts = list(evaluateStatement(s) for s in stmts);
+  input Boolean ignoreFailure = false;
+  output list<Statement> outStmts = list(evaluateStatement(s, ignoreFailure) for s in stmts);
 end evaluateStatements;
 
 function evaluateStatement
   input output Statement stmt;
+  input Boolean ignoreFailure = false;
 protected
   SourceInfo info = Statement.info(stmt);
 algorithm
@@ -475,61 +496,60 @@ algorithm
     case Statement.ASSIGNMENT()
       algorithm
         ty := Type.mapDims(stmt.ty, function evaluateDimension(info = info));
-        e1 := evaluateExp(stmt.lhs, info);
-        e2 := evaluateExp(stmt.rhs, info);
+        e1 := evaluateExp(stmt.lhs, info, ignoreFailure);
+        e2 := evaluateExp(stmt.rhs, info, ignoreFailure);
       then
         Statement.ASSIGNMENT(e1, e2, ty, stmt.source);
 
     case Statement.FOR()
       algorithm
-        stmt.range := Util.applyOption(stmt.range,
-          function evaluateExp(info = info));
-        stmt.body := evaluateStatements(stmt.body);
+        stmt.range := evaluateExpOpt(stmt.range, info, ignoreFailure);
+        stmt.body := evaluateStatements(stmt.body, ignoreFailure);
       then
         stmt;
 
     case Statement.IF()
       algorithm
-        stmt.branches := list(evaluateStmtBranch(b, info) for b in stmt.branches);
+        stmt.branches := list(evaluateStmtBranch(b, info, ignoreFailure) for b in stmt.branches);
       then
         stmt;
 
     case Statement.WHEN()
       algorithm
-        stmt.branches := list(evaluateStmtBranch(b, info) for b in stmt.branches);
+        stmt.branches := list(evaluateStmtBranch(b, info, ignoreFailure) for b in stmt.branches);
       then
         stmt;
 
     case Statement.ASSERT()
       algorithm
-        e1 := evaluateExp(stmt.condition, info);
-        e2 := evaluateExp(stmt.message, info);
-        e3 := evaluateExp(stmt.level, info);
+        e1 := evaluateExp(stmt.condition, info, ignoreFailure);
+        e2 := evaluateExp(stmt.message, info, ignoreFailure);
+        e3 := evaluateExp(stmt.level, info, ignoreFailure);
       then
         Statement.ASSERT(e1, e2, e3, stmt.source);
 
     case Statement.TERMINATE()
       algorithm
-        stmt.message := evaluateExp(stmt.message, info);
+        stmt.message := evaluateExp(stmt.message, info, ignoreFailure);
       then
         stmt;
 
     case Statement.REINIT()
       algorithm
-        stmt.reinitExp := evaluateExp(stmt.reinitExp, info);
+        stmt.reinitExp := evaluateExp(stmt.reinitExp, info, ignoreFailure);
       then
         stmt;
 
     case Statement.NORETCALL()
       algorithm
-        stmt.exp := evaluateExp(stmt.exp, info);
+        stmt.exp := evaluateExp(stmt.exp, info, ignoreFailure);
       then
         stmt;
 
     case Statement.WHILE()
       algorithm
-        stmt.condition := evaluateExp(stmt.condition, info);
-        stmt.body := evaluateStatements(stmt.body);
+        stmt.condition := evaluateExp(stmt.condition, info, ignoreFailure);
+        stmt.body := evaluateStatements(stmt.body, ignoreFailure);
       then
         stmt;
 
@@ -540,14 +560,15 @@ end evaluateStatement;
 function evaluateStmtBranch
   input tuple<Expression, list<Statement>> branch;
   input SourceInfo info;
+  input Boolean ignoreFailure;
   output tuple<Expression, list<Statement>> outBranch;
 protected
   Expression cond;
   list<Statement> body;
 algorithm
   (cond, body) := branch;
-  cond := evaluateExp(cond, info);
-  body := evaluateStatements(body);
+  cond := evaluateExp(cond, info, ignoreFailure = ignoreFailure);
+  body := evaluateStatements(body, ignoreFailure = true);
   outBranch := (cond, body);
 end evaluateStmtBranch;
 

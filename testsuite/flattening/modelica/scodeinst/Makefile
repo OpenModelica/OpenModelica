@@ -731,6 +731,7 @@ IfEquation6.mo \
 IfEquation7.mo \
 IfEquation8.mo \
 IfEquation9.mo \
+IfEquation10.mo \
 IfEquationEval1.mo \
 IfEquationEval2.mo \
 IfEquationEval3.mo \
