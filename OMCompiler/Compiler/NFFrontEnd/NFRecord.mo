@@ -58,6 +58,7 @@ import Inst = NFInst;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
+import EvalConstants = NFEvalConstants;
 import NFPrefixes.Direction;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
@@ -373,6 +374,7 @@ algorithm
   Typing.typeClass(node, NFInstContext.RELAXED);
   // Keep the node type from the original node to get the correct name.
   node := InstNode.setNodeType(node_ty, node);
+  EvalConstants.evaluateRecordDeclaration(node);
   s := IOStream.append(s, InstNode.toFlatString(node, format, indent));
 end toFlatDeclarationStream;
 

@@ -48,6 +48,8 @@ import Algorithm = NFAlgorithm;
 import NFEquation.Branch;
 import Dimension = NFDimension;
 import InstContext = NFInstContext;
+import Component = NFComponent;
+import NFClassTree.ClassTree;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -679,6 +681,38 @@ algorithm
     res := true;
   end if;
 end isLocalFunctionVariable;
+
+function evaluateRecordDeclaration
+  input InstNode recordNode;
+algorithm
+  ClassTree.applyComponents(Class.classTree(InstNode.getClass(recordNode)),
+    function evaluateRecordDeclarationField(recordNode = recordNode));
+end evaluateRecordDeclaration;
+
+function evaluateRecordDeclarationField
+  input InstNode fieldNode;
+  input InstNode recordNode;
+protected
+  Component comp;
+  Binding binding;
+  InstNode cls_inst;
+algorithm
+  comp := InstNode.component(fieldNode);
+  binding := Component.getBinding(comp);
+
+  if Binding.isBound(binding) then
+    binding := Binding.mapExp(binding, function evaluateFuncExp(fnNode = fieldNode, evaluateAll = false));
+    comp := Component.setBinding(binding, comp);
+  end if;
+
+  cls_inst := Component.classInstance(comp);
+  if not InstNode.isEmpty(cls_inst) then
+    ClassTree.applyComponents(Class.classTree(InstNode.getClass(cls_inst)),
+      function evaluateRecordDeclarationField(recordNode = recordNode));
+  end if;
+
+  InstNode.updateComponent(comp, fieldNode);
+end evaluateRecordDeclarationField;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEvalConstants;
