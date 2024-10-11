@@ -229,7 +229,9 @@ namespace IAEX
     QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
     if( editor )
+    {
       editor->setFontFamily( family_ );
+    }
   }
 
 
