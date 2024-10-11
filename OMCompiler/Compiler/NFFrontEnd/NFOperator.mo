@@ -238,6 +238,16 @@ public
     end match;
   end isRelational;
 
+  function isScalarProduct
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.SCALAR_PRODUCT then true;
+      else false;
+    end match;
+  end isScalarProduct;
+
   function fromAbsyn
     input Absyn.Operator inOperator;
     output Operator outOperator;
@@ -941,6 +951,9 @@ public
     (mcl1, scl1) := classify(op1);
     (mcl2, scl2) := classify(op2);
     b := isCombineableMath(mcl1, mcl2) and isCombineableSize(scl1, scl2);
+    if b then
+      b := not (Operator.isScalarProduct(op1) or Operator.isScalarProduct(op1));
+    end if;
   end isCombineable;
 
   function isCombineableMath
