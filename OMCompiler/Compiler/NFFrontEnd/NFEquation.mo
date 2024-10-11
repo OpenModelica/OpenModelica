@@ -1204,7 +1204,7 @@ public
     res := match eq
       case Equation.CONNECT() then true;
       case Equation.NORETCALL(exp = Expression.CALL(call = call))
-        then Call.functionNameFirst(call) == "Connections";
+        then Call.isConnectionsOperator(call);
       else false;
     end match;
   end isConnection;
