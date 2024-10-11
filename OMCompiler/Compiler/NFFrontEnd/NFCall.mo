@@ -2117,7 +2117,7 @@ public
   algorithm
     isOp := match call
       case TYPED_CALL()
-        then Function.isBuiltin(call.fn) and functionNameFirst(call) == "Connections";
+        then Function.isBuiltin(call.fn) and AbsynUtil.pathFirstIdent(Function.name(call.fn)) == "Connections";
       else false;
     end match;
   end isConnectionsOperator;
