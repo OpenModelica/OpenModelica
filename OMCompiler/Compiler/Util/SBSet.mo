@@ -35,6 +35,7 @@ encapsulated uniontype SBSet
 
 protected
   import Array;
+  import Error;
   import List;
   import Vector;
 
@@ -129,8 +130,10 @@ public
       set.ndim := SBAtomicSet.ndim(aset);
     elseif SBAtomicSet.ndim(aset) == set.ndim then
       UnorderedSet.add(aset, set.asets);
-    // else
-    //   Error: Atomic sets should have the same dimension.
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because atomic sets should have the same dimension:\nThe atomic set "
+        + SBAtomicSet.toString(aset) + " could not be added to " + SBSet.toString(set)});
+      fail();
     end if;
   end addAtomicSet;
 
@@ -175,11 +178,12 @@ public
     output SBSet outSet;
   protected
     UnorderedSet<SBAtomicSet> int_res, aux, comp_res;
-    SBSet new_sets;
+    SBSet new_sets, test;
   algorithm
     outSet := newEmpty();
-    SET(asets = int_res) := intersection(set1, set2);
+    test := intersection(set1, set2);
 
+    SET(asets = int_res) := test;
     if not UnorderedSet.isEmpty(int_res) then
       for as1 in UnorderedSet.toArray(set1.asets) loop
         aux := UnorderedSet.new(SBAtomicSet.hash, SBAtomicSet.isEqual);
@@ -217,6 +221,43 @@ public
       outSet := addAtomicSets(aux.asets, outSet);
     end if;
   end union;
+
+  function normalize
+    input SBSet set;
+    output SBSet res = copy(set);
+  protected
+    Boolean first, stop = false;
+    SBAtomicSet norm;
+    list<SBAtomicSet> asets = UnorderedSet.toList(res.asets);
+    UnorderedSet<SBAtomicSet> toDelete, toInsert;
+  algorithm
+    while not stop loop
+      first := true;
+      toDelete := UnorderedSet.new(SBAtomicSet.hash, SBAtomicSet.isEqual);
+      toInsert := UnorderedSet.new(SBAtomicSet.hash, SBAtomicSet.isEqual);
+      for as1 in asets loop
+        for as2 in asets loop
+          if not SBAtomicSet.isEqual(as1, as2) then
+            norm := SBAtomicSet.normalize(as1, as2);
+            if not first and SBAtomicSet.isEmpty(norm) then
+              first := false;
+              UnorderedSet.add(as1, toDelete);
+              UnorderedSet.add(as2, toDelete);
+              UnorderedSet.add(norm, toInsert);
+            end if;
+          end if;
+        end for;
+      end for;
+      stop := UnorderedSet.isEmpty(toDelete);
+    end while;
+
+    for del in UnorderedSet.toList(toDelete) loop
+      UnorderedSet.remove(del, res.asets);
+    end for;
+    for ins in UnorderedSet.toList(toInsert) loop
+      UnorderedSet.add(ins, res.asets);
+    end for;
+  end normalize;
 
   function card
     "the name cardinality seems to be reserved and cannot be used inside of the same scope
