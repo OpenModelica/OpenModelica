@@ -2095,12 +2095,16 @@ void ElementParameters::updateElementParameters()
           if (mInherited) {
             pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getName(), modifiers);
           } else {
-            pOMCProxy->setElementModifierValue(className, mpElement->getName(), modifiers);
+            pOMCProxy->setElementModifierValue(className, mpElement->getQualifiedName(), modifiers);
           }
-          ModelInfo newModelInfo = pModelWidget->createModelInfo();
-          pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo,
-                                                                QString("Update Element %1 Parameters").arg(mpElement->getName())));
-          pModelWidget->updateModelText();
+          if (pModelWidget->isComponentMode()) {
+            pModelWidget->setComponentModified(true);
+          } else {
+            ModelInfo newModelInfo = pModelWidget->createModelInfo();
+            pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo,
+                                                                  QString("Update Element %1 Parameters").arg(mpElement->getName())));
+            pModelWidget->updateModelText();
+          }
         }
       } else {
         for (const auto &modifier : modifiersList) {

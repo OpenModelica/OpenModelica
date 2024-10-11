@@ -86,7 +86,7 @@ public:
   LibraryType getLibraryType() {return mLibraryType;}
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
-  bool isSystemLibrary();
+  bool isSystemLibrary() {return mSystemLibrary;}
   void setModelWidget(ModelWidget *pModelWidget);
   ModelWidget* getModelWidget() {return mpModelWidget;}
   void setName(QString name) {mName = name;}

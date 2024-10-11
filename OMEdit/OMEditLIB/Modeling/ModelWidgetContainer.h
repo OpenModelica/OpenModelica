@@ -325,6 +325,7 @@ public:
   void sendToBack(ShapeAnnotation *pShape);
   void sendBackward(ShapeAnnotation *pShape);
   void clearGraphicsView();
+  void clearGraphicsViewsExceptOutOfSceneItems();
   void removeClassComponents();
   void removeElementsFromScene();
   void removeOutOfSceneClassComponents();
@@ -589,7 +590,11 @@ public:
   bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
   void setRequiresUpdate(bool requiresUpdate) {mRequiresUpdate = requiresUpdate;}
   bool requiresUpdate() {return mRequiresUpdate;}
-  bool isComponentMode() {return !mModelInstanceList.isEmpty();}
+  bool isComponentMode() const {return !mModelInstanceList.isEmpty();}
+  void setComponentModified(bool modified) {mComponentModified = modified;}
+  bool isComponentModified() const {return mComponentModified;}
+  void setRestoringModel(bool restoring) {mRestoringModel = restoring;}
+  bool isRestoringModel() const {return mRestoringModel;}
 
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
@@ -616,6 +621,7 @@ public:
   void addUpdateDeleteOMSElementIcon(const QString &iconPath);
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
+  void clearGraphicsViewsExceptOutOfSceneItems();
   void reDrawModelWidget(bool skipLoadModelInstance = false);
   void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
@@ -692,6 +698,9 @@ private:
   ModelInstance::Model *mpRootModelInstance;
   QList<ModelInstance::Model*> mModelInstanceList;
   int mModelInstancesPos = -1;
+  ModelInfo mModelInfo;
+  bool mComponentModified = false;
+  bool mRestoringModel = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();

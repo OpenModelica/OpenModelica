@@ -127,17 +127,6 @@ LibraryTreeItem::~LibraryTreeItem()
   mChildren.clear();
 }
 
-/*!
- * \brief LibraryTreeItem::isSystemLibrary
- * Returns true if the class is a system library or if the model is opened in a component editing mode.
- * \return
- */
-bool LibraryTreeItem::isSystemLibrary()
-{
-  bool componentMode = mpModelWidget ? mpModelWidget->isComponentMode() : false;
-  return mSystemLibrary || componentMode;
-}
-
 QString LibraryTreeItem::getWhereToMoveFMU()
 {
   QString nameTemplate = OptionsDialog::instance()->getFMIPage()->getMoveFMUTextBox()->text();
