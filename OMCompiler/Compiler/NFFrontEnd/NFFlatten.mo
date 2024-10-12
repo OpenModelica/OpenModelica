@@ -675,6 +675,7 @@ protected
   Boolean unfix;
   Prefix pre;
   Variable v;
+  Boolean fillVectorizedBindingFails = false;
 algorithm
   Component.COMPONENT(ty = ty, binding = binding, attributes = comp_attr, comment = cmt, info = info) := comp;
   checkUnspecifiedEnumType(ty, node, info);
@@ -688,12 +689,20 @@ algorithm
     unfix := false;
   end if;
 
+  // If the component is vectorized and the binding uses variables of the component,
+  // move the binding into an equation as fillVectorizedBinding is insufficient.
+  if not settings.scalarize and not settings.vectorizeBindings and Binding.isBound(binding)
+     and not Prefix.isEmpty(prefix) and Type.isArray(ComponentRef.nodeType(Prefix.prefix(prefix)))  then
+    fillVectorizedBindingFails := containsPrefix(Binding.getExp(binding), prefix);
+  end if;
+
   // If the component is an array component with a binding and at least discrete
   // variability, and scalarization is enabled, move the binding into an equation.
   // This avoids having to scalarize the binding.
-  if not settings.nfAPI and settings.scalarize then
+  if not settings.nfAPI and settings.scalarize or fillVectorizedBindingFails then
     if var >= Variability.DISCRETE and Type.isArray(ty) and
-       not Type.isExternalObject(Type.arrayElementType(ty)) and Binding.isBound(binding) then
+       not Type.isExternalObject(Type.arrayElementType(ty)) and Binding.isBound(binding)
+       or fillVectorizedBindingFails then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
         InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
@@ -1460,6 +1469,36 @@ algorithm
     else exp;
   end match;
 end addIterator_traverse;
+
+function containsPrefix
+  input Expression exp;
+  input Prefix prefix;
+  output Boolean contains;
+algorithm
+  contains := Expression.fold(exp, function containsPrefix_traverse(prefix = prefix), false);
+end containsPrefix;
+
+function containsPrefix_traverse
+  input Expression exp;
+  input output Boolean contains;
+  input Prefix prefix;
+protected
+  String restString, prefixString = ComponentRef.toString(Prefix.prefix(prefix));
+algorithm
+  () := match exp
+    local
+      ComponentRef restCref;
+    case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
+      algorithm
+        restString := ComponentRef.toString(restCref);
+        if StringUtil.startsWith(restString, prefixString) then
+          contains := true;
+        end if;
+      then
+        ();
+    else ();
+  end match;
+end containsPrefix_traverse;
 
 function subscriptBindingOpt
   input list<Subscript> subscripts;

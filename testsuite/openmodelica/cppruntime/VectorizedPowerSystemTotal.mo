@@ -325,9 +325,7 @@ package PowerSystems  "Library for electrical power systems"
         package PS = PhaseSystem;
         parameter PS.Voltage[PhaseSystem.n] v_start = ones(PhaseSystem.n) "Start value for voltage drop";
         PowerSystems.Generic.Ports.Terminal_p terminal(redeclare package PhaseSystem = PhaseSystem, v(start = v_start));
-        SI.Power[PhaseSystem.n] p "ToDo: move below equation back to binding; broken since commit 28c5b6f (#9907)";
-      equation
-        p = PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
+        SI.Power[PhaseSystem.n] p = PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
       end PartialLoad;
     end Ports;
   end Generic;
