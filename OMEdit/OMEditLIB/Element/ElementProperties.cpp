@@ -600,6 +600,32 @@ QString Parameter::getValue()
   }
 }
 
+/*!
+ * \brief Parameter::hideValueWidget
+ * Hides the value widget.
+ */
+void Parameter::hideValueWidget()
+{
+  switch (mValueType) {
+    case Parameter::Boolean:
+    case Parameter::Enumeration:
+    case Parameter::ReplaceableClass:
+    case Parameter::ReplaceableComponent:
+    case Parameter::Choices:
+    case Parameter::ChoicesAllMatching:
+      mpValueComboBox->setVisible(false);
+      break;
+    case Parameter::CheckBox:
+      mpValueCheckBox->setVisible(false);
+      break;
+    case Parameter::Record:
+    case Parameter::Normal:
+    default:
+      mpValueTextBox->setVisible(false);
+      break;
+  }
+}
+
 void Parameter::setFixedState(QString fixed, bool defaultValue)
 {
   mOriginalFixedValue = defaultValue ? "" : fixed;
@@ -1390,8 +1416,9 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
      * Check if parameter is marked final.
      */
     if ((defaultValue && pModifier->isFinal()) || (!isElementModification && pModifier->isRedeclare() && !pModifier->isReplaceable())) {
-      mParametersList.removeOne(pParameter);
-      delete pParameter;
+      if (mParametersList.removeOne(pParameter)) {
+        delete pParameter;
+      }
     } else {
       // if builtin type
       if (MainWindow::instance()->getOMCProxy()->isBuiltinType(pParameter->getModelInstanceElement()->getRootType())) {
@@ -1399,7 +1426,9 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
         // if value is not empty then use it otherwise try to read start and fixed modifiers
         if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter() && !pParameter->isInput())) {
           bool hasStart = pModifier->hasModifier("start");
+          bool isStartFinal = false;
           bool hasFixed = pModifier->hasModifier("fixed");
+          bool isFixedFinal = false;
           if (hasStart || hasFixed) {
             if (!pParameter->isGroupDefined() && !pParameter->isParameter() && !pParameter->isInput()) {
               pParameter->setGroup("Initialization");
@@ -1409,6 +1438,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           if (hasStart) {
             ModelInstance::Modifier *pStartModifier = pModifier->getModifier("start");
             if (pStartModifier) {
+              isStartFinal = pStartModifier->isFinal();
               pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(pStartModifier->getValue()), defaultValue, pParameter->getUnit(), mNested);
               pParameter->getFinalEachMenu()->setFinal(pStartModifier->isFinal());
               pParameter->getFinalEachMenu()->setEach(pStartModifier->isEach());
@@ -1417,10 +1447,32 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           if (hasFixed) {
             ModelInstance::Modifier *pFixedModifier = pModifier->getModifier("fixed");
             if (pFixedModifier) {
+              isFixedFinal = pFixedModifier->isFinal();
               pParameter->setFixedState(StringHandler::removeFirstLastQuotes(pFixedModifier->getValue()), defaultValue);
               pParameter->getFixedFinalEachMenu()->setFinal(pFixedModifier->isFinal());
               pParameter->getFixedFinalEachMenu()->setEach(pFixedModifier->isEach());
             }
+          }
+          /* Ticket #12898
+           * If start is final then hide the value box.
+           * If fixed is final then hide the fixed checkbox.
+           * If both are final then delete the parameter.
+           * The can be set final at different levels e.g., start can be set final at delaration and fixed set final via modifier
+           * so we check visibility and hide based on it.
+           */
+          if (isStartFinal) {
+            pParameter->hideValueWidget();
+            pParameter->getFinalEachMenu()->setVisible(false);
+          }
+          if (isFixedFinal) {
+            pParameter->getFixedCheckBox()->setVisible(false);
+            pParameter->getFixedFinalEachMenu()->setVisible(false);
+          }
+          if (!pParameter->getFinalEachMenu()->isVisible() && !pParameter->getFixedFinalEachMenu()->isVisible()) {
+            if (mParametersList.removeOne(pParameter)) {
+              delete pParameter;
+            }
+            return;
           }
         } else {
           pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
@@ -1677,6 +1729,17 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
        */
       if (!pElement->isPublic() || pElement->isFinal()) {
         continue;
+      }
+      /* Ticket #12898
+       * Do not show parameter if start and fixed are final.
+       */
+      ModelInstance::Modifier *pModifier = pElement->getModifier();
+      if (pModifier) {
+        ModelInstance::Modifier *pStartModifier = pModifier->getModifier("start");
+        ModelInstance::Modifier *pFixedModifier = pModifier->getModifier("fixed");
+        if (pStartModifier && pStartModifier->isFinal() && pFixedModifier && pFixedModifier->isFinal()) {
+          continue;
+        }
       }
       // if connectorSizing is present then don't show the parameter
       if (pElement->getAnnotation()->getDialogAnnotation().isConnectorSizing()) {
@@ -1960,29 +2023,33 @@ void ElementParameters::updateElementParameters()
       // set start value
       if (pParameter->isShowStartAndFixed()) {
         QString startModifier;
-        if (pParameter->getFinalEachMenu()->isEach()) {
-          startModifier.append("each ");
-        }
-        if (pParameter->getFinalEachMenu()->isFinal()) {
-          startModifier.append("final ");
-        }
-        if (elementModifierValue.isEmpty()) {
-          subModifiers.append(startModifier.append("start"));
-        } else {
-          subModifiers.append(startModifier.append("start=" % elementModifierValue));
+        if (pParameter->getFinalEachMenu()->isVisible()) {
+          if (pParameter->getFinalEachMenu()->isEach()) {
+            startModifier.append("each ");
+          }
+          if (pParameter->getFinalEachMenu()->isFinal()) {
+            startModifier.append("final ");
+          }
+          if (elementModifierValue.isEmpty()) {
+            subModifiers.append(startModifier.append("start"));
+          } else {
+            subModifiers.append(startModifier.append("start=" % elementModifierValue));
+          }
         }
         // set fixed
-        QString fixedModifier;
-        if (pParameter->getFixedFinalEachMenu()->isEach()) {
-          fixedModifier.append("each ");
-        }
-        if (pParameter->getFixedFinalEachMenu()->isFinal()) {
-          fixedModifier.append("final ");
-        }
-        if (pParameter->getFixedState().isEmpty()) {
-          subModifiers.append(fixedModifier.append("fixed"));
-        } else {
-          subModifiers.append(fixedModifier.append("fixed=" % pParameter->getFixedState()));
+        if (pParameter->getFixedFinalEachMenu()->isVisible()) {
+          QString fixedModifier;
+          if (pParameter->getFixedFinalEachMenu()->isEach()) {
+            fixedModifier.append("each ");
+          }
+          if (pParameter->getFixedFinalEachMenu()->isFinal()) {
+            fixedModifier.append("final ");
+          }
+          if (pParameter->getFixedState().isEmpty()) {
+            subModifiers.append(fixedModifier.append("fixed"));
+          } else {
+            subModifiers.append(fixedModifier.append("fixed=" % pParameter->getFixedState()));
+          }
         }
       }
       // set displayUnit
