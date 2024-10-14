@@ -15305,7 +15305,7 @@ algorithm
       else
         sv := BaseHashTable.get(ComponentReference.crefStripSubs(inCref), crefToSimVarHT);
         subs := ComponentReference.crefSubs(inCref);
-        sv.name := ComponentReference.crefApplySubs(sv.name, subs);
+        sv.name := ComponentReference.crefApplySubs(ComponentReference.crefStripSubs(sv.name), subs);
       end if;
 
       sv.variable_index := match sv.variable_index

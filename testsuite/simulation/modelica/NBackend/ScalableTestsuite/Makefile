@@ -22,13 +22,13 @@ OneDHeatTransferTT_Modelica.mos \
 CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
 SimpleAdvection.mos \
+PowerSystemStepLoad.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
 TransmissionLineEquations.mos \
 CombiTimeTable.mos \ #this actually runs but somehow external functions dont work
-PowerSystemStepLoad.mos \ #ComponentReference.crefApplySubs fails with new check of dimensions
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
