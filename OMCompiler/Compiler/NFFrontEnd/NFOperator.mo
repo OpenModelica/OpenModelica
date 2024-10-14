@@ -952,7 +952,7 @@ public
     (mcl2, scl2) := classify(op2);
     b := isCombineableMath(mcl1, mcl2) and isCombineableSize(scl1, scl2);
     if b then
-      b := not (Operator.isScalarProduct(op1) or Operator.isScalarProduct(op1));
+      b := not (isScalarProduct(op1) or isScalarProduct(op2));
     end if;
   end isCombineable;
 
