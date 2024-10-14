@@ -108,6 +108,7 @@ public:
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
+  void hideValueWidget();
   QToolButton *getEditClassButton() const {return mpEditClassButton;}
   FinalEachToolButton *getFinalEachMenu() const {return mpFinalEachMenuButton;}
   QToolButton* getFileSelectorButton() {return mpFileSelectorButton;}
