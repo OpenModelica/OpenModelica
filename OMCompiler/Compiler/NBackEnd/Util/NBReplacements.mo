@@ -318,7 +318,6 @@ public
 
         // get the expression from function body (fails if its not a single replacable assignment)
         body_exp := getFunctionBody(fn);
-
         // replace input withs arguments in expression
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
         body_exp := SimplifyExp.combineBinaries(body_exp);

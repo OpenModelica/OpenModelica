@@ -1,0 +1,140 @@
+// name:     testVectorizedBinding
+// keywords: vectorized components, array equations, for loops
+// status: correct
+// teardown_command: rm -f *VectorizedBindingTest*
+// cflags: -d=-nfScalarize
+
+setCommandLineOptions("-d=-nfScalarize"); getErrorString();
+setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--postOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model VectorizedBindingTest
+  function f
+    input Real u, i;
+    output Real p = u * i;
+  end f;
+  model M
+    input Real u = 1;
+    input Real i = 2;
+    output Real p = f(u, i);
+  end M;
+  parameter Integer n = 10;
+  M[n] m(u = 1:1:n);
+end VectorizedBindingTest;
+"); getErrorString();
+
+simulate(VectorizedBindingTest); getErrorString();
+
+val(m.p[1], 1.0);
+val(m.p[4], 1.0);
+val(m.p[7], 1.0);
+val(m.p[10], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: m.p:VARIABLE()  type: Real[10] [10]
+// 2: m.i:VARIABLE()  type: Real[10] [10]
+// 3: m.u:VARIABLE()  type: Real[10] [10]
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (10): for $i1 in 1 : 10 loop
+//     m[$i1].p = VectorizedBindingTest.f(m[$i1].u, m[$i1].i); end for;    [dynamic |0|0|0|0|]
+// 2/11 (10): m.u = 1.0:1.0:10.0   [binding |0|0|0|0|]
+// 3/21 (10): m.i = 2.0   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: n:PARAM(final = true )  = 10  type: Integer
+//
+//
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: m.p:VARIABLE()  type: Real[10] [10]
+// 2: m.i:VARIABLE()  type: Real[10] [10]
+// 3: m.u:VARIABLE()  type: Real[10] [10]
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (10): for $i1 in 1 : 10 loop
+//     m[$i1].p = VectorizedBindingTest.f(m[$i1].u, m[$i1].i); end for;    [dynamic |0|0|0|0|]
+// 2/11 (10): m.u = 1.0:1.0:10.0   [binding |0|0|0|0|]
+// 3/21 (10): m.i = 2.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// Array  {{3:2}}
+// Array  {{2:3}}
+// {1:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: n:PARAM(final = true )  = 10  type: Integer
+//
+//
+// record SimulationResult
+//     resultFile = "VectorizedBindingTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'VectorizedBindingTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 2.0
+// 8.0
+// 14.0
+// 20.0
+// endResult

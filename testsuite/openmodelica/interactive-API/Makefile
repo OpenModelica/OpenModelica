@@ -86,6 +86,7 @@ matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
 MoveClass2.mos \
 MoveClass.mos \
+ModelicaError.mos \
 Obfuscation1.mos \
 Obfuscation2.mos \
 Obfuscation3.mos \

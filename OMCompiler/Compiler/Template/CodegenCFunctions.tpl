@@ -2487,10 +2487,20 @@ case EXTERNAL_FUNCTION(__) then
       '<%extVarName(c)%> = '
     else
       ""
+  /*https://github.com/OpenModelica/OpenModelica/issues/9681
+   * ModelicaError should be handled as assert failing with AssertionLevel = error
+  */
+  let modelicaError = match extName
+    case "ModelicaError" then
+      <<
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert(threadData, info, <%args%>);
+      >> else ""
+
   <<
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls, &auxFunction, true)%>
   <%dynamicCheck%>
-  <%returnAssign%><%fname%>(<%args%>);
+  <%if modelicaError then '<%modelicaError%>' else '<%returnAssign%><%fname%>(<%args%>);'%>
   <%extArgs |> arg => extFunCallVarcopy(arg, &auxFunction) ;separator="\n"%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn, &auxFunction)%>
   >>

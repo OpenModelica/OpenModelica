@@ -383,7 +383,11 @@ namespace IAEX
       }
       else if( (*current)->attribute() == "FontFamily" )
       {
+#if QT_VERSION >= 0x060000
+        style_.textCharFormat()->setFontFamilies({(*current)->value()});
+#else
         style_.textCharFormat()->setFontFamily( (*current)->value() );
+#endif
       }
       else if( (*current)->attribute() == "InitializationCell" )
       {}
