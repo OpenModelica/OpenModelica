@@ -3223,6 +3223,19 @@ annotation(
   preferredView="text");
 end getElementModifierNames;
 
+function getExtendsModifierNames
+  input TypeName className;
+  input TypeName extendsName;
+  input Boolean useQuotes = false;
+  output String modifiers;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the names of the modifiers on an extends clause.
+</html>"),
+  preferredView="text");
+end getExtendsModifierNames;
+
 function setComponentModifierValue = setElementModifierValue;
 
 function setElementModifierValue

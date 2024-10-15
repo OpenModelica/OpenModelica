@@ -53,6 +53,7 @@ getComponentsTestOF.mos \
 getDefinitions.mos \
 getDialogAnnotation.mos \
 getElementAnnotation.mos \
+getExtendsModifierNames.mos \
 getIconAnnotation.mos \
 getInheritedClasses1.mos \
 getInheritedClasses2.mos \
