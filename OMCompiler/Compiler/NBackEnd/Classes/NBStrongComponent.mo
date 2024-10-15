@@ -532,20 +532,20 @@ public
     input Mapping eqn_rep_mapping                             "index mapping for equation representatives";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
     input UnorderedSet<ComponentRef> set                      "unordered set of array crefs to check for relevance (index lookup)";
-    input Boolean pseudo                                      "true if arrays are unscalarized";
     input JacobianType jacType                                "sets the context";
   algorithm
     () := match comp
       local
         Pointer<Equation> eqn_ptr;
         ComponentRef cref;
-        list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
+        list<ComponentRef> dependencies, loop_vars, tmp;
         list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
         Tearing strict;
         Equation eqn, body;
         Iterator iter;
         list<ComponentRef> names;
         list<Expression> ranges;
+        UnorderedSet<ComponentRef> deps_set;
 
       // sliced array equations - create all the single entries
       case SINGLE_COMPONENT() guard(Equation.isArrayEquation(comp.eqn)) algorithm
@@ -553,23 +553,26 @@ public
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(BVariable.getVarName(comp.var), dependencies);
         for tpl in scalarized_dependencies loop
           (cref, dependencies) := tpl;
-          updateDependencyMap(cref, dependencies, map, jacType);
+          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+          updateDependencyMap(cref, deps_set, map);
         end for;
       then ();
 
       case SINGLE_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
-        updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
+        deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+        updateDependencyMap(BVariable.getVarName(comp.var), deps_set, map);
       then ();
 
       case MULTI_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(Slice.getT(comp.eqn)), function Slice.getDependentCrefCausalized(set = set));
         dependencies := list(ComponentRef.stripIteratorSubscripts(dep) for dep in dependencies);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+        deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
         for var in comp.vars loop
           for cref in ComponentRef.scalarizeAll(BVariable.getVarName(Slice.getT(var))) loop
-            updateDependencyMap(cref, dependencies, map, jacType);
+            updateDependencyMap(cref, deps_set, map);
           end for;
         end for;
       then ();
@@ -588,7 +591,8 @@ public
           iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
-          updateDependencyMap(cref, dependencies, map, jacType);
+          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+          updateDependencyMap(cref, deps_set, map);
         end for;
       then ();
 
@@ -606,7 +610,8 @@ public
           iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
-          updateDependencyMap(cref, dependencies, map, jacType);
+          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+          updateDependencyMap(cref, deps_set, map);
         end for;
       then ();
 
@@ -617,7 +622,8 @@ public
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(comp.var_cref, dependencies, comp.eqn.indices);
         for tpl in scalarized_dependencies loop
           (cref, dependencies) := tpl;
-          updateDependencyMap(cref, dependencies, map, jacType);
+          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+          updateDependencyMap(cref, deps_set, map);
         end for;
       then ();
 
@@ -626,7 +632,8 @@ public
         eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
-        updateDependencyMap(comp.var_cref, dependencies, map, jacType);
+        deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+        updateDependencyMap(comp.var_cref, deps_set, map);
       then ();
 
       // sliced for equations - create all the single entries
@@ -643,17 +650,14 @@ public
           iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
         for tpl in listReverse(scalarized_dependencies) loop
           (cref, dependencies) := tpl;
-          updateDependencyMap(cref, dependencies, map, jacType);
+          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+          updateDependencyMap(cref, deps_set, map);
         end for;
       then ();
 
       case ALGEBRAIC_LOOP(strict = strict) algorithm
-        // collect iteration loop vars
-        for var in strict.iteration_vars loop
-          loop_vars := BVariable.getVarName(Slice.getT(var)) :: loop_vars;
-        end for;
-
         // traverse residual equations and collect dependencies
+        deps_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for slice in strict.residual_eqns loop
           // ToDo: does this work properly for arrays?
           tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function Slice.getDependentCrefCausalized(set = set));
@@ -668,28 +672,35 @@ public
               iter, Equation.size(eqn_ptr), slice.indices, true);
             tmp := List.flatten(list(Util.tuple22(tpl) for tpl in scalarized_dependencies));
           end if;
-          dependencies := listAppend(tmp, dependencies);
+          for dep in tmp loop
+            for scal in ComponentRef.scalarizeAll(dep) loop
+              UnorderedSet.add(scal, deps_set);
+            end for;
+          end for;
         end for;
+        deps_set := prepareDependencies(deps_set, map, jacType);
+
+        // collect iteration loop vars
+        loop_vars := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
 
         // traverse inner equations and collect loop vars and dependencies
         for i in 1:arrayLength(strict.innerEquations) loop
           // collect inner equation dependencies
-          collectCrefs(strict.innerEquations[i], var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, pseudo, jacType);
+          collectCrefs(strict.innerEquations[i], var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
 
           // collect inner loop variables
           loop_vars := listAppend(list(BVariable.getVarName(var) for var in getVariables(strict.innerEquations[i])), loop_vars);
         end for;
 
-        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
-
         // add all dependencies
         for cref in loop_vars loop
-          updateDependencyMap(cref, dependencies, map, jacType);
+          updateDependencyMap(cref, deps_set, map);
         end for;
+
       then ();
 
       case ALIAS() algorithm
-        collectCrefs(comp.original, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, pseudo, jacType);
+        collectCrefs(comp.original, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
       then ();
 
       /* ToDo add the others and let else case fail! */
@@ -955,45 +966,45 @@ protected
 
   function updateDependencyMap
     input ComponentRef cref                                   "cref representing current equation";
-    input list<ComponentRef> dependencies                     "the dependency crefs";
+    input UnorderedSet<ComponentRef> dependencies             "the dependency crefs";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
-    input JacobianType jacType                                "gives context";
   protected
-    list<ComponentRef> fixed_dependencies;
-    UnorderedSet<ComponentRef> set;
+    Boolean removed;
   algorithm
-    try
-      fixed_dependencies := list(ComponentRef.mapExp(dep, Expression.replaceResizableParameter) for dep in dependencies);
-      fixed_dependencies := list(ComponentRef.simplifySubscripts(dep) for dep in fixed_dependencies);
-      // replace non derivative dependencies with their previous dependencies (also remove self dependency)
-      // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
-      if jacType == NBJacobian.JacobianType.ODE then
-        set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        for dep in listReverse(fixed_dependencies) loop
-          // if the dependency is a state add itself, otherwise add the dependencies already saved
-          // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
-          if BVariable.checkCref(dep, BVariable.isState) then
-            UnorderedSet.add(dep, set);
-          else
-            for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop
-              UnorderedSet.add(tmp, set);
-            end for;
-            UnorderedSet.remove(cref, set);
-          end if;
-        end for;
-        fixed_dependencies := UnorderedSet.toList(set);
-      else
-        // only remove self dependency
-        fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in fixed_dependencies);
-      end if;
-      // update the current value (res/tmp) --> {independent vars}
-      UnorderedMap.add(cref, fixed_dependencies, map);
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update " + ComponentRef.toString(cref)
-        + " with dependencies " + List.toString(dependencies, ComponentRef.toString) + "."});
-      fail();
-    end try;
+    removed := UnorderedSet.remove(cref, dependencies)              "remove self dependency";
+    UnorderedMap.add(cref, UnorderedSet.toList(dependencies), map)  "update the current value (res/tmp) --> {independent vars}";
+    if removed then UnorderedSet.addNew(cref, dependencies); end if "restore dependencies";
   end updateDependencyMap;
+
+  function prepareDependencies
+    input output UnorderedSet<ComponentRef> dependencies;
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+    input JacobianType jacType;
+  protected
+    function addStateDependencies
+      input ComponentRef dep;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      input output UnorderedSet<ComponentRef> set;
+    algorithm
+      // if the dependency is a state add itself, otherwise add the dependencies already saved
+      // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
+      if BVariable.checkCref(dep, BVariable.isState) then
+        UnorderedSet.add(dep, set);
+      else
+        for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop
+          UnorderedSet.add(tmp, set);
+        end for;
+      end if;
+    end addStateDependencies;
+  algorithm
+    UnorderedSet.apply(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
+    UnorderedSet.apply(dependencies, function ComponentRef.simplifySubscripts(trim = false));
+    // replace non derivative dependencies with their previous dependencies
+    // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
+    if jacType == NBJacobian.JacobianType.ODE then
+      dependencies := UnorderedSet.fold(dependencies, function addStateDependencies(map = map), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+    end if;
+  end prepareDependencies;
 
   annotation(__OpenModelica_Interface="backend");
 end NBStrongComponent;

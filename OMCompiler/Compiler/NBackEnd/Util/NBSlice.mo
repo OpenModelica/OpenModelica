@@ -476,7 +476,7 @@ public
     list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
 
-    Integer num_rows, iter_size, body_size;
+    Integer iter_size, body_size;
     list<ComponentRef> row_crefs;
     list<Integer> row_scal_lst;
     list<list<Integer>> accum_row_lst = {};
@@ -503,17 +503,16 @@ public
 
     // get row cref lst
     if implicit then
-      row_crefs := ComponentRef.scalarizeAll(row_cref);
+      row_crefs := ComponentRef.scalarizeSlice(row_cref, slice);
     else
       for cref in ComponentRef.scalarizeAll(row_cref) loop
         row_scal_lst  := getCrefInFrameIndices(cref, frames, eqn_rep_mapping, eqn_rep.map);
         accum_row_lst := row_scal_lst :: accum_row_lst;
       end for;
       row_scal_lst  := List.flatten(accum_row_lst);
+      row_scal_lst  := if listEmpty(slice) then row_scal_lst else List.getAtIndexLst(row_scal_lst, slice, true);
       row_crefs     := list(VariablePointers.varSlice(eqn_rep, i, eqn_rep_mapping) for i in row_scal_lst);
     end if;
-    row_crefs := if listEmpty(slice) then row_crefs else List.getAtIndexLst(row_crefs, slice, true);
-    num_rows := listLength(row_crefs);
 
     // prepare the functions to update dependencies
     func_var := function updateDependenciesCref(accum_dep_arr = accum_dep_arr, vars = var_rep, mapping = var_rep_mapping);
@@ -633,24 +632,14 @@ public
     Turns cref dependencies into index lists, used for adjacency."
     input ComponentRef row_cref                                   "cref representing the current row";
     input list<ComponentRef> dependencies                         "dependent var crefs";
-    input list<Integer> slice = {}                                "optional slice, empty least means all";
+    input list<Integer> slice = {}                                "optional slice, empty list means all";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
-    list<ComponentRef> row_cref_scal, dep_scal;
-    list<list<ComponentRef>> dependencies_scal = {};
-    Boolean sliced = not listEmpty(slice);
+    list<ComponentRef> row_cref_scal;
+    list<list<ComponentRef>> dependencies_scal;
   algorithm
-    row_cref_scal := ComponentRef.scalarizeAll(row_cref);
-    if sliced then
-      row_cref_scal := List.getAtIndexLst(row_cref_scal, slice, true);
-    end if;
-    for dep in listReverse(dependencies) loop
-      dep_scal := ComponentRef.scalarizeAll(dep);
-      if sliced then
-        dep_scal := List.getAtIndexLst(dep_scal, slice, true);
-      end if;
-      dependencies_scal := dep_scal :: dependencies_scal;
-    end for;
+    row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice);
+    dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice) for dep in dependencies);
     dependencies_scal := List.transposeList(dependencies_scal);
     tpl_lst := List.zip(row_cref_scal, dependencies_scal);
   end getDependentCrefsPseudoArrayCausalized;
