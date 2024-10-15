@@ -3149,6 +3149,18 @@ annotation(
   preferredView="text");
 end getParameterValue;
 
+function setParameterValue
+  input TypeName className;
+  input TypeName variableName;
+  input Expression value;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Sets the binding equation of a component.
+</html>"),
+  preferredView="text");
+end setParameterValue;
+
 function getComponentModifierNames
   input TypeName class_;
   input String componentName;

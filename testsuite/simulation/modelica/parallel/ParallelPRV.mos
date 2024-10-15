@@ -16,11 +16,11 @@ val(hydr.left.p,1.01);
 // Result:
 // true
 // ""
-// Ok
+// true
 // ""
 // record SimulationResult
 //     resultFile = "PRVSystem_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.2, numberOfIntervals = 119999, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'PRVSystem', options = '', outputFormat = 'mat', variableFilter = 'hydr.left.p|hydr.x', cflags = '', simflags = '-noEventEmit'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.2, numberOfIntervals = 119999, tolerance = 1e-6, method = 'rungekutta', fileNamePrefix = 'PRVSystem', options = '', outputFormat = 'mat', variableFilter = 'hydr.left.p|hydr.x', cflags = '', simflags = '-noEventEmit'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [simulation/modelica/parallel/ParallelPRV.mo:55:3-55:47:writable]
 // |                 | |       | The following assertion has been violated at time 1.000058
@@ -29,6 +29,6 @@ val(hydr.left.p,1.01);
 // "
 // end SimulationResult;
 // ""
-// 1.88899226550377e-06
-// 10009941.5345061
+// 1.8770099696304126e-6
+// 1.0009615619705122e7
 // endResult

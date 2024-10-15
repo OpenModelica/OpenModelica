@@ -2551,6 +2551,15 @@ algorithm
       then
         Values.STRING(str2);
 
+    case ("setParameterValue", {Values.CODE(Absyn.C_TYPENAME(classpath)),
+        Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_EXPRESSION(aexp))})
+      algorithm
+        (p, b) := InteractiveUtil.setElementModifier(classpath, path,
+          Absyn.Modification.CLASSMOD({}, Absyn.EqMod.EQMOD(aexp, AbsynUtil.dummyInfo)), SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
+
     case ("getComponentModifierNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)})
       equation
         strings = Interactive.getComponentModifierNames(path, str1, SymbolTable.getAbsyn());
