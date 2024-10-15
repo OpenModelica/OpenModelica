@@ -187,7 +187,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentDimensions(A, x, {10, 11, 12})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(A)
@@ -197,7 +197,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentDimensions(A, x, {1, 2})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(A)

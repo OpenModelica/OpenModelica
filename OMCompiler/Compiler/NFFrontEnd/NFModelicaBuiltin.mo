@@ -2938,6 +2938,29 @@ external "builtin";
 annotation(preferredView="text");
 end reduceTerms;
 
+function createModel
+  input TypeName className;
+  output Boolean success;
+external "builtin"
+annotation(
+  Documentation(info="<html>
+  Creates a new empty model.
+</html>"),
+  preferredView="text");
+end createModel;
+
+function newModel
+  input TypeName className;
+  input TypeName withinPath;
+  output Boolean success;
+external "builtin"
+annotation(
+  Documentation(info="<html>
+  Creates a new empty model in the given package.
+</html>"),
+  preferredView="text");
+end newModel;
+
 function moveClass
  "Moves a class up or down depending on the given offset, where a positive
   offset moves the class down and a negative offset up. The offset is truncated
@@ -2979,6 +3002,17 @@ function copyClass
 external "builtin";
 annotation(preferredView="text");
 end copyClass;
+
+function deleteClass
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Unloads a class.
+</html>"),
+  preferredView="text");
+end deleteClass;
 
 function linearize "creates a model with symbolic linearization matrices"
   input TypeName className "the class that should simulated";
@@ -3655,6 +3689,19 @@ annotation(
 </html>"),
   preferredView="text");
 end removeExtendsModifiers;
+
+function setComponentDimensions
+  input TypeName className;
+  input TypeName componentName;
+  input Expression dimensions;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Sets the array dimensions of a component.
+</html>"),
+  preferredView="text");
+end setComponentDimensions;
 
 function updateConnection
   input TypeName className;
