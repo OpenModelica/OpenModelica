@@ -1336,30 +1336,6 @@ algorithm
       then
         getExternalFunctionSpecification(cr, p);
 
-    case "isPrimitive"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isPrimitive(cr, p));
-
-    case "isParameter"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
-      then
-        boolString(isParameter(cr, class_, p));
-
-    case "isProtected"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
-      then
-        boolString(isProtected(cr, class_, p));
-
-    case "isConstant"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
-      then
-        boolString(isConstant(cr, class_, p));
-
     case "getEnumerationLiterals"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -5681,29 +5657,23 @@ public function isPrimitive
 "Thisfunction takes a component reference and a program.
   It returns the true if the refrenced type is a primitive
   type, otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path className;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  match (inComponentRef,inProgram)
+  outBoolean := match className
     local
-      Absyn.Path path;
       Absyn.Class class_;
-      Boolean res;
-      Absyn.ComponentRef cr;
-      Absyn.Program p;
-    case (Absyn.CREF_IDENT(name = "Real"),_) then true;  /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */
-    case (Absyn.CREF_IDENT(name = "Integer"),_) then true;
-    case (Absyn.CREF_IDENT(name = "String"),_) then true;
-    case (Absyn.CREF_IDENT(name = "Boolean"),_) then true;
-    case (cr,p)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        class_ = InteractiveUtil.getPathedClassInProgram(path, p);
-        res = isPrimitiveClass(class_, p);
+    /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */
+    case Absyn.IDENT(name = "Real") then true;
+    case Absyn.IDENT(name = "Integer") then true;
+    case Absyn.IDENT(name = "String") then true;
+    case Absyn.IDENT(name = "Boolean") then true;
+    case _
+      algorithm
+        class_ := InteractiveUtil.getPathedClassInProgram(className, inProgram);
       then
-        res;
+        isPrimitiveClass(class_, inProgram);
     else false;
   end match;
 end isPrimitive;
@@ -6226,11 +6196,11 @@ algorithm
   end try;
 end isRedeclare;
 
-protected function isParameter
+public function isParameter
   "This function takes a class and a component reference and a program
    and returns true if the component referenced is a parameter."
-  input Absyn.ComponentRef componentName;
-  input Absyn.ComponentRef className;
+  input Absyn.Path componentName;
+  input Absyn.Path className;
   input Absyn.Program program;
   output Boolean res;
 protected
@@ -6238,7 +6208,7 @@ protected
   Absyn.Element elem;
 algorithm
   try
-    path := AbsynUtil.joinPaths(AbsynUtil.crefToPath(className), AbsynUtil.crefToPath(componentName));
+    path := AbsynUtil.joinPaths(className, componentName);
     Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.PARAM()))) :=
       InteractiveUtil.getPathedElementInProgram(path, program);
     res := true;
@@ -6247,11 +6217,11 @@ algorithm
   end try;
 end isParameter;
 
-protected function isConstant
+public function isConstant
   "This function takes a class and a component reference and a program
    and returns true if the component referenced is a constant."
-  input Absyn.ComponentRef componentName;
-  input Absyn.ComponentRef className;
+  input Absyn.Path componentName;
+  input Absyn.Path className;
   input Absyn.Program program;
   output Boolean res;
 protected
@@ -6259,7 +6229,7 @@ protected
   Absyn.Element elem;
 algorithm
   try
-    path := AbsynUtil.joinPaths(AbsynUtil.crefToPath(className), AbsynUtil.crefToPath(componentName));
+    path := AbsynUtil.joinPaths(className, componentName);
     Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.CONST()))) :=
       InteractiveUtil.getPathedElementInProgram(path, program);
     res := true;
@@ -6268,23 +6238,21 @@ algorithm
   end try;
 end isConstant;
 
-protected function isProtected
+public function isProtected
   "This function takes a class and a component reference and a program
    and returns true if the component referenced is in a protected section."
-  input Absyn.ComponentRef componentName;
-  input Absyn.ComponentRef className;
+  input Absyn.Path componentName;
+  input Absyn.Path className;
   input Absyn.Program program;
   output Boolean res;
 protected
-  Absyn.Path path;
   list<Absyn.ClassPart> parts;
   list<Absyn.ElementItem> items;
 algorithm
   try
-    path := AbsynUtil.crefToPath(className);
-    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(path, program));
+    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(className, program));
     items := InteractiveUtil.getProtectedList(parts);
-    getComponentsContainsName(componentName, items);
+    getComponentsContainsName(AbsynUtil.pathToCref(componentName), items);
     res := true;
   else
     res := false;
@@ -6562,6 +6530,7 @@ algorithm
         res = isPrimitiveClass(cdef, p);
       then
         res;
+    else false;
   end match;
 end isPrimitiveClass;
 

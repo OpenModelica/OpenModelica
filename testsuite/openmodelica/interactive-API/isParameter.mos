@@ -1,0 +1,20 @@
+// name: isParameter
+// keywords:
+// status: correct
+//
+
+loadString("
+  model M
+    parameter Real x;
+    Real y;
+  end M;
+");
+
+isParameter(x, M);
+isParameter(y, M);
+
+// Result:
+// true
+// true
+// false
+// endResult

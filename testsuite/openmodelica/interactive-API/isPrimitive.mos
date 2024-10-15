@@ -1,0 +1,17 @@
+// name: isPrimitive
+// keywords:
+// status: correct
+//
+
+loadString("
+  model M end M;
+");
+
+isPrimitive(M);
+isPrimitive(Real);
+
+// Result:
+// true
+// false
+// true
+// endResult

@@ -526,7 +526,7 @@ algorithm
       algorithm
           _ := AbsynUtil.typeSpecPath(typeSpec);
           //print ("**** Finding clients ... " + Dump.unparseTypeSpec(typeSpec) + "  +  " +Dump.unparseTypeSpec(tSpec)+ "  +  "+Dump.unparseTypeSpec(rootType) + "... \n");
-          //if Interactive.isPrimitive(AbsynUtil.pathToCref(path), defs) then fail(); end if;
+          //if Interactive.isPrimitive(path, defs) then fail(); end if;
           // TODO: add generation error for is mandatory
           if ((AbsynUtil.typeSpecPathString(rootType) == AbsynUtil.typeSpecPathString(tSpec)) and not(listEmpty(exp2))) then
           print("... found instance provider " + Dump.unparseTypeSpec(tSpec) +   "\n");
@@ -1046,7 +1046,7 @@ algorithm
          //print(Dump.unparseTypeSpec(typeSpec));
          //print("   VS " +className);
          //print ("... \n");
-         // if Interactive.isPrimitive(AbsynUtil.pathToCref(path), env) then fail(); end if;
+         // if Interactive.isPrimitive(path, env) then fail(); end if;
           def := InteractiveUtil.getPathedClassInProgram(path,env); // load the element
           if (AbsynUtil.typeSpecPathString(typeSpec) == className) then
             print("... found provider " + className + "\n");
@@ -1188,7 +1188,7 @@ algorithm
           //print(Dump.unparseTypeSpec(typeSpec));
           //print ("... \n");
 
-          //if Interactive.isPrimitive(AbsynUtil.pathToCref(path), env) then fail(); end if;
+          //if Interactive.isPrimitive(path, env) then fail(); end if;
           def := InteractiveUtil.getPathedClassInProgram(path, env); // load the element
 
           (isCl, iname, m) := isClient(AbsynUtil.typeSpecPathString(typeSpec), mediators, {});
@@ -1256,7 +1256,7 @@ algorithm
           //print ("TESTING in parseElementList ... ");
           //print(Dump.unparseTypeSpec(typeSpec));
           //print ("... \n");
-          //if Interactive.isPrimitive(AbsynUtil.pathToCref(path), env) then fail(); end if;
+          //if Interactive.isPrimitive(path, env) then fail(); end if;
           def := InteractiveUtil.getPathedClassInProgram(path, env); // load the element
           (isCl, iname, m) := isClient(AbsynUtil.typeSpecPathString(typeSpec), mediators, {});
           // TODO: check if it was not already added to the list
