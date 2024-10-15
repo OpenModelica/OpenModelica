@@ -1061,7 +1061,11 @@ void PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
         QMenu menu(this);
         mpBaseEditor->getToggleBreakpointAction()->setData(QStringList() << fileName << QString::number(lineNumber));
         menu.addAction(mpBaseEditor->getToggleBreakpointAction());
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        menu.exec(event->globalPosition().toPoint());
+#else
         menu.exec(event->globalPos());
+#endif
       }
     }
   }
