@@ -3951,6 +3951,53 @@ annotation(
   preferredView="text");
 end getBuiltinType;
 
+function isPrimitive
+  input TypeName className;
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class is a primitive type, otherwise false.
+</html>"),
+  preferredView="text");
+end isPrimitive;
+
+function isParameter
+  input TypeName componentName;
+  input TypeName className;
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given component in the given class is a parameter, otherwise false.
+</html>"),
+  preferredView="text");
+end isParameter;
+
+function isConstant
+  input TypeName componentName;
+  input TypeName className;
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given component in the given class is a constant, otherwise false.
+</html>"),
+  preferredView="text");
+end isConstant;
+
+function isProtected
+  input TypeName componentName;
+  input TypeName className;
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given component in the given class is protected, otherwise false.
+</html>"),
+  preferredView="text");
+end isProtected;
+
 function setInitXmlStartValue
   input String fileName;
   input String variableName;

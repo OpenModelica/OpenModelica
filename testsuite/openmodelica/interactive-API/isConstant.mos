@@ -1,0 +1,20 @@
+// name: isConstant
+// keywords:
+// status: correct
+//
+
+loadString("
+  model M
+    constant Real x;
+    Real y;
+  end M;
+");
+
+isConstant(x, M);
+isConstant(y, M);
+
+// Result:
+// true
+// true
+// false
+// endResult

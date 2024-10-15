@@ -1,0 +1,21 @@
+// name: isProtected
+// keywords:
+// status: correct
+//
+
+loadString("
+  model M
+    Real x;
+  protected
+    Real y;
+  end M;
+");
+
+isProtected(x, M);
+isProtected(y, M);
+
+// Result:
+// true
+// false
+// true
+// endResult

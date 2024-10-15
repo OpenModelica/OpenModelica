@@ -3119,6 +3119,17 @@ algorithm
           {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.BOOL(b)})
       then InteractiveUtil.getExtendsModifierNames(classpath, path, b, SymbolTable.getAbsyn());
 
+    case ("isPrimitive", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then ValuesUtil.makeBoolean(Interactive.isPrimitive(classpath, SymbolTable.getAbsyn()));
+
+    case ("isParameter", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then ValuesUtil.makeBoolean(Interactive.isParameter(path, classpath, SymbolTable.getAbsyn()));
+
+    case ("isConstant", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then ValuesUtil.makeBoolean(Interactive.isConstant(path, classpath, SymbolTable.getAbsyn()));
+
+    case ("isProtected", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then ValuesUtil.makeBoolean(Interactive.isProtected(path, classpath, SymbolTable.getAbsyn()));
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
