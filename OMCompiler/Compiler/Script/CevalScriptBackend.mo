@@ -3106,6 +3106,10 @@ algorithm
       then
         Values.BOOL(b);
 
+    case ("getExtendsModifierNames",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.BOOL(b)})
+      then InteractiveUtil.getExtendsModifierNames(classpath, path, b, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

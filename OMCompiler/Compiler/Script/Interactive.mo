@@ -1429,20 +1429,6 @@ algorithm
       then
         getCrefInfo(cr, p);
 
-    case "getExtendsModifierNames"
-      algorithm
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getExtendsModifierNames");
-        end if;
-        outResult := getExtendsModifierNames(class_, cr, useQuotes(nargs), p);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getExtendsModifierNames");
-        end if;
-      then
-        outResult;
-
     case "getExtendsModifierValue"
       algorithm
         {Absyn.CREF(componentRef = class_),
@@ -4926,6 +4912,13 @@ algorithm
   end matchcontinue;
 end isExtendsModifierFinal;
 
+public function extendsElementspecNamed
+"the name given as path, false otherwise."
+  input Absyn.ElementSpec inElementSpec;
+  input Absyn.Path inPath;
+  output Boolean res = AbsynUtil.pathEqual(inPath, AbsynUtil.elementSpecToPath(inElementSpec));
+end extendsElementspecNamed;
+
 public function isModifierfinal
 " Helper function to isExtendsModifierFinal."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -4959,7 +4952,7 @@ algorithm
   end match;
 end isModifierfinal;
 
-protected function makeExtendsFullyQualified
+function makeExtendsFullyQualified
 " Makes an EXTENDS ElementSpec having a
    fully qualified extends path."
   input Absyn.ElementSpec inElementSpec;
@@ -4981,106 +4974,6 @@ algorithm
         Absyn.EXTENDS(path_1,earg,annOpt);
   end match;
 end makeExtendsFullyQualified;
-
-protected function getExtendsModifierNames
-" Return the modifier names of a
-   modification on an extends clause.
-   For instance,
-     model test extends A(p1=3,p2(z=3));end test;
-     getExtendsModifierNames(test,A) => {p1,p2.z}
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* inherited class */
-               Absyn.Program)
-   outputs: (string)"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Boolean inBoolean;
-  input Absyn.Program inProgram3;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inBoolean,inProgram3)
-    local
-      Absyn.Path p_class,name,extpath;
-      Absyn.Class cdef;
-      list<Absyn.ElementSpec> exts,exts_1;
-      GraphicEnvCache env;
-      list<Absyn.ElementArg> extmod;
-      list<String> res,res1;
-      String res_1,res_2;
-      Boolean b;
-      Absyn.ComponentRef class_,inherit_name;
-      Absyn.Program p;
-    case (class_,inherit_name,b,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        name = AbsynUtil.crefToPath(inherit_name);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        exts = InteractiveUtil.getExtendsElementspecInClass(cdef);
-        if hasModifiers(exts) then
-          env = getClassEnv(p, p_class);
-          exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
-          {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-          res = getModificationNames(extmod);
-          res1 = if b then insertQuotesToList(res) else res;
-          res_1 = stringDelimitList(res1, ", ");
-        else
-          res_1 = "";
-        end if;
-        res_2 = stringAppendList({"{",res_1,"}"});
-      then
-        res_2;
-    else "Error";
-  end matchcontinue;
-end getExtendsModifierNames;
-
-function hasModifiers
-  input list<Absyn.ElementSpec> exts;
-  output Boolean b = false;
-protected
-   Absyn.ElementSpec ext;
-algorithm
-  for e in exts loop
-    b := match e
-      case ext as Absyn.EXTENDS() then not listEmpty(ext.elementArg);
-      else false;
-    end match;
-    if b then
-      break;
-    end if;
-  end for;
-end hasModifiers;
-
-protected function extendsElementspecNamed
-"the name given as path, false otherwise."
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.Path inPath;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  match (inElementSpec,inPath)
-    local
-      Boolean res;
-      Absyn.Path extpath,path;
-    case (Absyn.EXTENDS(path = extpath),path)
-      equation
-        res = AbsynUtil.pathEqual(path, extpath);
-      then
-        res;
-  end match;
-end extendsElementspecNamed;
-
-protected function extendsName
-"Return the class name of an EXTENDS element spec."
-  input Absyn.ElementSpec inElementSpec;
-  output Absyn.Path outPath;
-algorithm
-  outPath:=
-  match (inElementSpec)
-    local Absyn.Path path;
-    case (Absyn.EXTENDS(path = path)) then path;
-  end match;
-end extendsName;
 
 public function removeComponentModifiers
   "Removes all the modifiers of a component."
@@ -8283,7 +8176,7 @@ algorithm
   end match;
 end useQuotes;
 
-protected function insertQuotesToList
+public function insertQuotesToList
   input list<String> inStringList;
   output list<String> outStringList;
 algorithm

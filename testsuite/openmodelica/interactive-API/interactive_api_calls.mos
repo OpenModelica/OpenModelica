@@ -291,7 +291,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getExtendsModifierNames(vector3D, Real)
-// {start, nominal}
+// {start,nominal}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getExtendsModifierValue(vector3D, Real, start)
