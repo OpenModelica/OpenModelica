@@ -18,19 +18,19 @@ list(M); getErrorString();
 //   Real a;
 // end M;"
 // ""
-// Ok
+// true
 // ""
 // "model M
 //   Real a;
 // end M;"
 // ""
-// Ok
+// true
 // ""
 // "model M
 //   Real a[10, 12];
 // end M;"
 // ""
-// Ok
+// true
 // ""
 // "model M
 //   Real a;

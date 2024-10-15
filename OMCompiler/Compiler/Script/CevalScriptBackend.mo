@@ -3130,6 +3130,36 @@ algorithm
 
     case ("isProtected", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath))})
       then ValuesUtil.makeBoolean(Interactive.isProtected(path, classpath, SymbolTable.getAbsyn()));
+
+    case ("setComponentDimensions", {Values.CODE(Absyn.C_TYPENAME(classpath)),
+        Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_EXPRESSION(aexp as Absyn.Exp.ARRAY()))})
+      algorithm
+        (p, b) := Interactive.setComponentDimensions(classpath, path, aexp.arrayExp, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
+
+    case ("createModel", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      algorithm
+        p := Interactive.createModel(classpath, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(true);
+
+    case ("newModel", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      algorithm
+        p := Interactive.newModel(classpath, path, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(true);
+
+    case ("deleteClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      algorithm
+        (b, p) := Interactive.deleteClass(classpath, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

@@ -897,46 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "setComponentDimensions"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = cr),
-         Absyn.ARRAY(dimensions)} := args;
-        (p, outResult) := setComponentDimensions(class_, cr, dimensions, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "createModel"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        p := createModel(cr, p);
-        SymbolTable.setAbsyn(p);
-      then
-        "true";
-
-    case "newModel"
-      algorithm
-        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        p := InteractiveUtil.updateProgram(
-          Absyn.PROGRAM({
-          Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo)
-          }, Absyn.WITHIN(path)), p);
-        SymbolTable.setAbsyn(p);
-      then
-        "true";
-
-    // Not moving this yet as it could break things...
-    case "deleteClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        (outResult, p) := deleteClass(cr, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
     case "addComponent"
       algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
@@ -5678,8 +5638,8 @@ algorithm
   end match;
 end isPrimitive;
 
-protected function createModel
-  input Absyn.ComponentRef inComponentRef;
+public function createModel
+  input Absyn.Path className;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 protected
@@ -5687,12 +5647,11 @@ protected
   Absyn.Within w;
   Absyn.Path wp;
 algorithm
-  if AbsynUtil.crefIsIdent(inComponentRef) then
-    name := AbsynUtil.crefFirstIdent(inComponentRef);
+  if AbsynUtil.pathIsIdent(className) then
+    name := AbsynUtil.pathFirstIdent(className);
     w := Absyn.TOP();
   else
-    wp := AbsynUtil.crefToPath(inComponentRef);
-    (wp, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(wp);
+    (wp, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(className);
     w := Absyn.WITHIN(wp);
   end if;
 
@@ -5701,53 +5660,56 @@ algorithm
         {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
 end createModel;
 
-protected function deleteClass
-" This function takes a component reference and a program.
-   It deletes the class specified by the component reference from the
-   given program."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
-  output Absyn.Program outProgram;
+public function newModel
+  input Absyn.Path className;
+  input Absyn.Path withinPath;
+  input output Absyn.Program program;
 algorithm
-  (outString,outProgram) := matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path cpath,parentcpath,parentparentcpath;
-      Absyn.Class cdef,parentcdef,parentcdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef class_;
-      list<Absyn.Class> clist,clist_1;
-      Absyn.Within w;
+  program := createModel(AbsynUtil.joinPaths(withinPath, className), program);
+end newModel;
 
-    case (class_,(p as Absyn.PROGRAM()))
+public function deleteClass
+  "Deletes the given class from the program."
+  input Absyn.Path classPath;
+  input Absyn.Program inProgram;
+  output Boolean success;
+  output Absyn.Program outProgram = inProgram;
+algorithm
+  (success, outProgram) := matchcontinue inProgram
+    local
+      Absyn.Path parentcpath,parentparentcpath;
+      Absyn.Class cdef,parentcdef,parentcdef_1;
+
+    case _
       equation
-        cpath = AbsynUtil.crefToPath(class_) "Class inside another class, inside another class" ;
-        parentcpath = AbsynUtil.stripLast(cpath);
+        //Class inside another class, inside another class
+        parentcpath = AbsynUtil.stripLast(classPath);
         parentparentcpath = AbsynUtil.stripLast(parentcpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(cpath, p);
-        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, p);
+        cdef = InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, inProgram);
         parentcdef_1 = InteractiveUtil.removeInnerClass(cdef, parentcdef);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), p);
+        outProgram = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), inProgram);
       then
-        ("true",newp);
-    case (class_,(p as Absyn.PROGRAM()))
+        (true, outProgram);
+    case _
       equation
-        cpath = AbsynUtil.crefToPath(class_) "Class inside other class" ;
-        parentcpath = AbsynUtil.stripLast(cpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(cpath, p);
-        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, p);
+        // Class inside other class
+        parentcpath = AbsynUtil.stripLast(classPath);
+        cdef = InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, inProgram);
         parentcdef_1 = InteractiveUtil.removeInnerClass(cdef, parentcdef);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), p);
+        outProgram = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), inProgram);
       then
-        ("true",newp);
-    case (class_,(p as Absyn.PROGRAM()))
+        (true, outProgram);
+    case _
       equation
-        cpath = AbsynUtil.crefToPath(class_) "Top level class" ;
-        cdef = InteractiveUtil.getPathedClassInProgram(cpath, p);
-        p.classes = deleteClassFromList(cdef, p.classes);
+        // Top level class
+        cdef = InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        outProgram.classes = deleteClassFromList(cdef, inProgram.classes);
       then
-        ("true",p);
-    else ("false",inProgram);
+        (true, outProgram);
+
+    else (false,inProgram);
   end matchcontinue;
 end deleteClass;
 
@@ -14219,36 +14181,35 @@ algorithm
   end try;
 end getClassEnvNoElaboration;
 
-protected function setComponentDimensions
+public function setComponentDimensions
   "Sets a component dimensions."
-  input Absyn.ComponentRef inClass;
-  input Absyn.ComponentRef inComponentName;
+  input Absyn.Path inClass;
+  input Absyn.Path inComponentName;
   input list<Absyn.Exp> inDimensions;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
-  output String outResult;
+  output Boolean outResult;
 protected
   Absyn.Path p_class;
   Absyn.Within within_;
   Absyn.Class cls;
 algorithm
   try
-    p_class := AbsynUtil.crefToPath(inClass);
-    within_ := InteractiveUtil.buildWithin(p_class);
-    cls := InteractiveUtil.getPathedClassInProgram(p_class, inProgram);
+    within_ := InteractiveUtil.buildWithin(inClass);
+    cls := InteractiveUtil.getPathedClassInProgram(inClass, inProgram);
     cls := setComponentDimensionsInClass(cls, inComponentName, inDimensions);
     outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
-    outResult := "Ok";
+    outResult := true;
   else
     outProgram := inProgram;
-    outResult := "Error";
+    outResult := false;
   end try;
 end setComponentDimensions;
 
 protected function setComponentDimensionsInClass
 " Sets the dimensions on a component in a class."
   input Absyn.Class inClass;
-  input Absyn.ComponentRef inComponentName;
+  input Absyn.Path inComponentName;
   input list<Absyn.Exp> inDimensions;
   output Absyn.Class outClass = inClass;
 algorithm
@@ -14261,7 +14222,7 @@ protected function setComponentDimensionsInCompitems
  Sets the dimensions in a ComponentItem."
   input list<Absyn.ComponentItem> inComponents;
   input Boolean inFound;
-  input Absyn.ComponentRef inComponentName;
+  input Absyn.Path inComponentName;
   input list<Absyn.Exp> inDimensions;
   output list<Absyn.ComponentItem> outComponents = {};
   output Boolean outFound;
@@ -14274,7 +14235,7 @@ protected
   Absyn.EqMod eqmod_old, eqmod_new;
   String comp_id;
 algorithm
-  comp_id := AbsynUtil.crefFirstIdent(inComponentName);
+  comp_id := AbsynUtil.pathFirstIdent(inComponentName);
 
   // Try to find the component we're looking for.
   while not listEmpty(rest_items) loop
