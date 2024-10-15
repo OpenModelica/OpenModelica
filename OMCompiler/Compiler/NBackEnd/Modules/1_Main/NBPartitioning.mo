@@ -503,8 +503,8 @@ protected
 
   uniontype Cluster
     record CLUSTER
-      UnorderedSet<ComponentRef> variables    "list of all variables in this set";
-      UnorderedSet<ComponentRef> eqn_idnts    "list of all equations in this set";
+      UnorderedSet<ComponentRef> variables  "list of all variables in this set";
+      UnorderedSet<ComponentRef> eqn_idnts  "list of all equations in this set";
     end CLUSTER;
 
     function toString

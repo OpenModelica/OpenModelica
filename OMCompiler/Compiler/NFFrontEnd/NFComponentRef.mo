@@ -1536,9 +1536,29 @@ public
           end match;
         end for;
       then crefs;
-
     end match;
   end scalarizeAll_Nesting;
+
+  function scalarizeSlice
+    input ComponentRef cref;
+    input list<Integer> slice = {}  "optional slice, empty list means all";
+    output list<ComponentRef> crefs;
+  protected
+    ComponentRef next = cref;
+    list<list<ComponentRef>> nested_crefs = {};
+  algorithm
+    while not isEmpty(next) loop
+      nested_crefs := scalarize(next) :: nested_crefs;
+      CREF(restCref = next) := next;
+    end while;
+    crefs := scalarizeAll_Nesting(nested_crefs);
+
+    // TODO: Only generate crefs that are needed by slice instead of filtering
+    //       them here at the end. Is this even possible for unsorted indices?
+    if not listEmpty(slice) then
+      crefs := List.getAtIndexLst(crefs, slice, true);
+    end if;
+  end scalarizeSlice;
 
   function isPackageConstant
     input ComponentRef cref;
