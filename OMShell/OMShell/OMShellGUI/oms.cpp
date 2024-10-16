@@ -280,7 +280,7 @@ OMS::OMS( QWidget* parent )
   }
 
   // command stuff
-#if QT_VERSION >= 0x060000
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   commandSignFormat_.setFontFamilies({"Arial"});
 #else
   commandSignFormat_.setFontFamily( "Arial" );
@@ -449,7 +449,7 @@ void OMS::addCommandLine()
 
   // set original text settings
   moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
-#if QT_VERSION >= 0x060000
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   textFormat_.setFontFamilies({"Courier New"});
 #else
   textFormat_.setFontFamily( "Courier New" );

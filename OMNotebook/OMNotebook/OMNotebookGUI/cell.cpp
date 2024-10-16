@@ -383,7 +383,7 @@ namespace IAEX
       }
       else if( (*current)->attribute() == "FontFamily" )
       {
-#if QT_VERSION >= 0x060000
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
         style_.textCharFormat()->setFontFamilies({(*current)->value()});
 #else
         style_.textCharFormat()->setFontFamily( (*current)->value() );

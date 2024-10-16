@@ -363,7 +363,7 @@ namespace IAEX
         // FAMILY
         if( fontElement.tagName() == "family" )
         {
-#if QT_VERSION >= 0x060000
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
           item->textCharFormat()->setFontFamilies({fontElement.text()});
 #else
           item->textCharFormat()->setFontFamily( fontElement.text() );
