@@ -184,8 +184,16 @@ public
       return;
     end if;
 
-    cl1 := makeConnectors(lhsCref, lhsType, source);
-    cl2 := makeConnectors(rhsCref, rhsType, source);
+    if InstNode.isName(ComponentRef.node(lhsCref)) or InstNode.isName(ComponentRef.node(rhsCref)) then
+      // Keep the connectors unexpanded if either connector refers to a not
+      // declared component in an expandable connector, since we can't expand
+      // such connectors here.
+      cl1 := {Connector.fromCref(lhsCref, lhsType, source)};
+      cl2 := {Connector.fromCref(rhsCref, rhsType, source)};
+    else
+      cl1 := makeConnectors(lhsCref, lhsType, source);
+      cl2 := makeConnectors(rhsCref, rhsType, source);
+    end if;
 
     for c1 in cl1 loop
       c2 :: cl2 := cl2;
