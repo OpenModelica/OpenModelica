@@ -1769,7 +1769,7 @@ algorithm
       DAE.Type tp;
       Absyn.Class absynClass;
       Absyn.ClassDef cdef;
-      Absyn.Exp aexp;
+      Absyn.Exp aexp, aexp2, aexp3;
       Option<DAE.DAElist> odae;
       Values.Value v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr;
@@ -3160,6 +3160,15 @@ algorithm
       then
         ValuesUtil.makeBoolean(b);
 
+    case ("addComponent", {Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))),
+        Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)),
+        Values.CODE(Absyn.C_EXPRESSION(aexp)), Values.CODE(Absyn.C_MODIFICATION(modification = mod)),
+        Values.CODE(Absyn.C_EXPRESSION(aexp2)), Values.CODE(Absyn.C_EXPRESSION(aexp3))})
+      algorithm
+        (p, b) := Interactive.addComponent(name, path, classpath, aexp, mod, aexp2, aexp3, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

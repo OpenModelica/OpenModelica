@@ -3160,6 +3160,23 @@ and the annotation to set.</p>
 </html>"));
 end addClassAnnotation;
 
+function addComponent
+  input TypeName componentName;
+  input TypeName typeName;
+  input TypeName classPath;
+  input Expression binding = $Expression(());
+  input ExpressionOrModification modification = $Code(());
+  input Expression comment = $Expression(());
+  input Expression annotate = $Expression(());
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Adds a component to the given class.
+</html>"),
+  preferredView="text");
+end addComponent;
+
 function getParameterNames
   input TypeName class_;
   output String[:] parameters;

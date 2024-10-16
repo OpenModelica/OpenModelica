@@ -2155,7 +2155,7 @@ algorithm
       then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE(), false);
 
     case Absyn.C_EXPRESSION()
-      then DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION());
+      then DAE.T_CODE(DAE.C_EXPRESSION());
 
     case Absyn.C_MODIFICATION()
       then DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION());

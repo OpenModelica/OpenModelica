@@ -6175,5 +6175,48 @@ algorithm
   end try;
 end setElementType;
 
+function makeCommentFromArgs
+  input Absyn.Exp commentExp;
+  input Absyn.Exp annotationExp;
+  output Option<Absyn.Comment> comment;
+protected
+  Option<Absyn.Annotation> ann;
+  Option<String> cmt;
+algorithm
+  cmt := match commentExp
+    case Absyn.Exp.TUPLE(expressions = {}) then NONE();
+    case Absyn.Exp.STRING() then SOME(commentExp.value);
+  end match;
+
+  ann := match annotationExp
+    case Absyn.Exp.TUPLE(expressions = {}) then NONE();
+    else SOME(Absyn.Annotation.ANNOTATION({recordConstructorToModification(annotationExp)}));
+  end match;
+
+  if isSome(cmt) or isSome(ann) then
+    comment := SOME(Absyn.Comment.COMMENT(ann, cmt));
+  else
+    comment := NONE();
+  end if;
+end makeCommentFromArgs;
+
+function makeModifierFromArgs
+  input Absyn.Exp bindingExp;
+  input Absyn.Modification modifier;
+  input SourceInfo info;
+  output Option<Absyn.Modification> outModifier;
+algorithm
+  outModifier := match (bindingExp, modifier)
+    // No binding, no modifier.
+    case (Absyn.Exp.TUPLE(expressions = {}), Absyn.Modification.CLASSMOD(elementArgLst = {})) then NONE();
+    // Only modifier.
+    case (Absyn.Exp.TUPLE(expressions = {}), _) then SOME(modifier);
+    // Binding, maybe modifier.
+    case (_, Absyn.Modification.CLASSMOD())
+      then SOME(Absyn.Modification.CLASSMOD(modifier.elementArgLst,
+                  Absyn.EqMod.EQMOD(bindingExp, info)));
+  end match;
+end makeModifierFromArgs;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
