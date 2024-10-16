@@ -92,7 +92,11 @@ bool Legend::eventFilter(QObject *object, QEvent *event)
 #endif
     if (pPlotCurve) {
       QString toolTip = tr("Name: <b>%1</b><br />Filename: <b>%2</b>").arg(pPlotCurve->title().text()).arg(pPlotCurve->getFileName());
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      QToolTip::showText(pMouseEvent->globalPosition().toPoint(), toolTip, this);
+#else
       QToolTip::showText(pMouseEvent->globalPos(), toolTip, this);
+#endif
     } else {
       QToolTip::hideText();
     }
