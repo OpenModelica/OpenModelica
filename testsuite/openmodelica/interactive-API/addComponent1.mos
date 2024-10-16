@@ -14,6 +14,7 @@ end InstantiationExample;");
 getErrorString();
 list(InstantiationExample);
 addComponent(myBlock, InstantiationExample.MyBlock,InstantiationExample,annotate=Placement(transformation=transformation(origin={-32,-62},extent={{-10,-10},{10,10}})));
+addComponent(x, Real, InstantiationExample, comment="comment", binding=10, modification = $Code((start = 0.0)));
 getErrorString();
 list(InstantiationExample);
 getErrorString();
@@ -27,6 +28,7 @@ getErrorString();
 //   end MyBlock;
 // end InstantiationExample;"
 // true
+// true
 // ""
 // "model InstantiationExample
 //   block MyBlock
@@ -35,6 +37,7 @@ getErrorString();
 //
 //   MyBlock myBlock annotation(
 //     Placement(transformation(origin = {-32, -62}, extent = {{-10, -10}, {10, 10}})));
+//   Real x(start = 0.0) = 10 \"comment\";
 // end InstantiationExample;"
 // ""
 // endResult

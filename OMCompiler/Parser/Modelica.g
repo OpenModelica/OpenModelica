@@ -2136,6 +2136,7 @@ code_expression returns [void* ast]
       }
   | CODE_NAME LPAR name=name_path RPAR {ast = Absyn__CODE(Absyn__C_5fTYPENAME(name));}
   | CODE_ANNOTATION cmod=class_modification { ast = Absyn__CODE(Absyn__C_5fMODIFICATION(Absyn__CLASSMOD(cmod, Absyn__NOMOD))); }
+  | CODE_EXP LPAR e=expression[metamodelica_enabled()] RPAR { ast = Absyn__CODE(Absyn__C_5fEXPRESSION(e.ast)); }
   | CODE_VAR LPAR cr=component_reference RPAR {ast = Absyn__CODE(Absyn__C_5fVARIABLENAME(cr.ast));}
   )
   ;

@@ -897,18 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "addComponent"
-      algorithm
-        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = tp),
-         Absyn.CREF(componentRef = model_)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        p := addComponent(name, tp, model_, nargs, p);
-        SymbolTable.setAbsyn(p);
-        Print.clearBuf();
-      then
-        "true";
-
     case "updateComponent"
       algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
@@ -6895,71 +6883,54 @@ algorithm
   end match;
 end deleteOrUpdateComponentFromElementitems;
 
-public function addComponent " This function takes:
-   arg1 - string giving the instancename,
-   arg2 - `ComponentRef\' giving the component type
-   arg3 - ComponentRef giving the model to instantiate the component within,
-   arg4 - `NamedArg\' list of annotations
-   arg5 - a Program.
-   The result is an updated program with the component and its annotations
-   inserted, and a string \"OK\" for success. If the insertion fails, a
-   suitable error string is given along with the input Program.
-"
-  input String inString1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst4;
-  input Absyn.Program inProgram5;
-  output Absyn.Program outProgram;
-  output String outString;
+public function addComponent
+  "Adds a component to the program."
+  input String componentName;
+  input Absyn.Path typeName;
+  input Absyn.Path classPath;
+  input Absyn.Exp bindingExp;
+  input Absyn.Modification modifier;
+  input Absyn.Exp commentExp;
+  input Absyn.Exp annotationExp;
+  input output Absyn.Program program;
+  output Boolean success = true;
+protected
+  String name, filename;
+  Absyn.Class cdef;
+  Option<Absyn.Comment> annotation_;
+  Option<Absyn.Modification> modification;
+  Absyn.Within w;
+  Absyn.InnerOuter io;
+  Option<Absyn.RedeclareKeywords> redecl;
+  Absyn.ElementAttributes attr;
+  SourceInfo info;
 algorithm
-  (outProgram,outString):=
-  matchcontinue (inString1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
-    local
-      Absyn.Path modelpath,modelwithin,tppath;
-      String name, filename;
-      Absyn.ComponentRef tp,model_;
-      list<Absyn.NamedArg> nargs;
-      Absyn.Program p,newp;
-      Absyn.Class cdef,newcdef;
-      Option<Absyn.Comment> annotation_;
-      Option<Absyn.Modification> modification;
-      Absyn.Within w;
-      Absyn.InnerOuter io;
-      Option<Absyn.RedeclareKeywords> redecl;
-      Absyn.ElementAttributes attr;
+  try
+    w := match classPath
+      case Absyn.IDENT() then Absyn.TOP();
+      else Absyn.WITHIN(AbsynUtil.stripLast(classPath));
+    end match;
 
-    // class cannot be found
-    case (_,_,model_,_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        failure(_ = InteractiveUtil.getPathedClassInProgram(modelpath, p));
-      then
-        (p,"false\n");
+    (cdef as Absyn.CLASS(info=SOURCEINFO(fileName=filename))) :=
+      InteractiveUtil.getPathedClassInProgram(classPath, program);
+    info := SOURCEINFO(filename, false, 0, 0, 0, 0, 0.0);
 
-    // adding component to model that resides inside package
-    case (name,tp,model_,nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        w = match modelpath case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(AbsynUtil.stripLast(modelpath)); end match;
-        (cdef as Absyn.CLASS(info=SOURCEINFO(fileName=filename))) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        tppath = AbsynUtil.crefToPath(tp);
-        annotation_ = annotationListToAbsynComment(nargs,NONE());
-        modification = modificationToAbsyn(nargs,NONE());
-        (io,redecl,attr) = getDefaultPrefixes(p,tppath);
-        newcdef = addToPublic(cdef,
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,redecl,io,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(AbsynUtil.pathStripSamePrefix(tppath,modelpath),NONE()),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
-          SOURCEINFO(filename,false,0,0,0,0,0.0),NONE())));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},w), p);
-      then
-        (newp,"Ok\n");
+    annotation_ := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp);
+    modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, info);
+    (io, redecl, attr) := getDefaultPrefixes(program, typeName);
 
-    else (inProgram5,"Error");
-
-  end matchcontinue;
+    cdef := addToPublic(cdef,
+      Absyn.ELEMENTITEM(
+        Absyn.ELEMENT(false, redecl, io,
+          Absyn.COMPONENTS(attr, Absyn.TPATH(AbsynUtil.pathStripSamePrefix(typeName, classPath), NONE()),
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(componentName, {}, modification), NONE(), annotation_)}),
+          info, NONE())
+      )
+    );
+    program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef}, w), program);
+  else
+    success := false;
+  end try;
 end addComponent;
 
 protected function getDefaultPrefixes "Retrieves default prefixes by looking at the defaultComponentPrefixes annotation"
