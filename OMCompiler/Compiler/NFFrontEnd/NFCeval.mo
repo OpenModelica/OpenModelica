@@ -744,6 +744,7 @@ algorithm
   comps := ClassTree.getComponents(tree);
   args := {};
 
+  ErrorExt.setCheckpoint(getInstanceName());
   for i in arrayLength(comps):-1:1 loop
     c := comps[i];
     ty := InstNode.getType(c);
@@ -751,11 +752,18 @@ algorithm
     arg := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
-      arg := evalExp(arg, target);
+      try
+        arg := evalExp(arg, target);
+      else
+        // Ignore components that don't have a binding, it might not be an error
+        // and if it is we can give better error messages in other places.
+        arg := Expression.EMPTY(ty);
+      end try;
     end if;
 
     args := arg :: args;
   end for;
+  ErrorExt.rollBack(getInstanceName());
 
   exp := Expression.makeRecord(InstNode.fullPath(recordNode), recordType, args);
 end makeRecordBindingExp;
