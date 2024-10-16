@@ -28,6 +28,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Modeling/MessagesWidget.cpp
                       Modeling/ItemDelegate.cpp
                       Modeling/LibraryTreeWidget.cpp
+                      Modeling/ElementTreeWidget.cpp
                       Modeling/Commands.cpp
                       Modeling/CoOrdinateSystem.cpp
                       Modeling/ModelWidgetContainer.cpp
@@ -157,6 +158,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Modeling/MessagesWidget.h
                       Modeling/ItemDelegate.h
                       Modeling/LibraryTreeWidget.h
+                      Modeling/ElementTreeWidget.h
                       Modeling/Commands.h
                       Modeling/CoOrdinateSystem.h
                       Modeling/ModelWidgetContainer.h

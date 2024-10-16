@@ -1249,10 +1249,12 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
 void Element::setElementFlags(bool enable)
 {
   /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on component if the class is not a system library class
+   * AND model not in component mode.
    * AND not a visualization view.
    * AND component is not an inherited shape.
    */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isComponentMode()
+      && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
@@ -1798,10 +1800,12 @@ void Element::reDrawElementNew()
   }
   createStateElement();
   drawElement();
-  prepareGeometryChange();
-  mTransformation.parseTransformation(mpModelComponent->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
-  setTransform(mTransformation.getTransformationMatrix());
-  updateConnections();
+  if (mpGraphicsView && !mpGraphicsView->getModelWidget()->isRestoringModel()) {
+    prepareGeometryChange();
+    mTransformation.parseTransformation(mpModelComponent->getAnnotation()->getPlacementAnnotation(), getCoOrdinateSystemNew());
+    setTransform(mTransformation.getTransformationMatrix());
+    updateConnections();
+  }
   updateToolTip();
 }
 
@@ -2832,6 +2836,10 @@ void Element::createClassShapes()
 void Element::createActions()
 {
   // Parameters Action
+  mpShowComponentAction = new QAction("Show Component", mpGraphicsView);
+  mpShowComponentAction->setStatusTip(tr("Shows the component"));
+  connect(mpShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
+  // Parameters Action
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
@@ -2874,6 +2882,7 @@ void Element::showReplaceSubModelDialog()
 void Element::createResizerItems()
 {
   bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
+  bool isComponentMode = mpGraphicsView->getModelWidget()->isComponentMode();
   bool isOMSConnector = (mpLibraryTreeItem
                          && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
                          && mpLibraryTreeItem->getOMSConnector());
@@ -2893,7 +2902,7 @@ void Element::createResizerItems()
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
-  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
+  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isComponentMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
   mpTopLeftResizerItem->setPos(x1, y2);
@@ -2902,7 +2911,7 @@ void Element::createResizerItems()
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
-  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
+  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isComponentMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
   mpTopRightResizerItem->setPos(x2, y2);
@@ -2911,7 +2920,7 @@ void Element::createResizerItems()
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
-  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
+  mpTopRightResizerItem->blockSignals(isSystemLibrary || isComponentMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
   mpBottomRightResizerItem->setPos(x2, y1);
@@ -2920,7 +2929,7 @@ void Element::createResizerItems()
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeElement(QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeElement()));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedElement()));
-  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
+  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isComponentMode || isInheritedElement() || isOMSConnector || isOMSBusConnecor || isOMSTLMBusConnecor);
 }
 
 void Element::getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2)
@@ -3926,6 +3935,15 @@ void Element::moveCtrlRight()
 }
 
 /*!
+ * \brief Element::showComponent
+ * Opens the component for hierarchical editing.
+ */
+void Element::showComponent()
+{
+  mpGraphicsView->getModelWidget()->showComponent(mpModel, true);
+}
+
+/*!
  * \brief Element::showParameters
  * Slot that opens up the element parameters dialog.
  * @see showAttributes()
@@ -4065,8 +4083,11 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
     if (isSelected()) {
       showResizerItems();
       setCursor(Qt::SizeAllCursor);
-      // Only allow manipulations on component if the class is not a system library class OR not a visualization view OR component is not an inherited component.
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
+      /* Only allow manipulations on component if the class is not a system library class AND model not in component mode
+       * AND not a visualization view AND component is not an inherited component.
+       */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isComponentMode()
+          && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
         connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
@@ -4100,8 +4121,11 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
         hideResizerItems();
       }
       unsetCursor();
-      /* Only allow manipulations on component if the class is not a system library class OR not a visualization view OR component is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
+      /* Only allow manipulations on component if the class is not a system library class AND model not in component mode
+       * AND not a visualization view AND component is not an inherited component.
+       */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isComponentMode()
+          && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
         disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));

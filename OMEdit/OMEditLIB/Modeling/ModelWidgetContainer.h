@@ -325,6 +325,7 @@ public:
   void sendToBack(ShapeAnnotation *pShape);
   void sendBackward(ShapeAnnotation *pShape);
   void clearGraphicsView();
+  void clearGraphicsViewsExceptOutOfSceneItems();
   void removeClassComponents();
   void removeElementsFromScene();
   void removeOutOfSceneClassComponents();
@@ -589,6 +590,11 @@ public:
   bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
   void setRequiresUpdate(bool requiresUpdate) {mRequiresUpdate = requiresUpdate;}
   bool requiresUpdate() {return mRequiresUpdate;}
+  bool isComponentMode() const {return !mModelInstanceList.isEmpty();}
+  void setComponentModified(bool modified) {mComponentModified = modified;}
+  bool isComponentModified() const {return mComponentModified;}
+  void setRestoringModel(bool restoring) {mRestoringModel = restoring;}
+  bool isRestoringModel() const {return mRestoringModel;}
 
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
@@ -615,7 +621,8 @@ public:
   void addUpdateDeleteOMSElementIcon(const QString &iconPath);
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
-  void reDrawModelWidget();
+  void clearGraphicsViewsExceptOutOfSceneItems();
+  void reDrawModelWidget(bool skipLoadModelInstance = false);
   void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
@@ -640,6 +647,7 @@ public:
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
   ModelInfo createModelInfo() const;
+  void showComponent(ModelInstance::Model *pModelInstance, bool addToList);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -649,6 +657,9 @@ private:
   QToolButton *mpTextViewToolButton;
   QToolButton *mpDocumentationViewToolButton;
   QButtonGroup *mpViewsButtonGroup;
+  QToolButton *mpBackToolButton;
+  QToolButton *mpForwardToolButton;
+  QToolButton *mpExitToolButton;
   Label *mpReadOnlyLabel;
   Label *mpModelicaTypeLabel;
   Label *mpViewTypeLabel;
@@ -684,6 +695,12 @@ private:
   bool mHasMissingType = false;
   bool mHandleCollidingConnectionsNeeded = false;
   bool mRequiresUpdate = false;
+  ModelInstance::Model *mpRootModelInstance;
+  QList<ModelInstance::Model*> mModelInstanceList;
+  int mModelInstancesPos = -1;
+  ModelInfo mModelInfo;
+  bool mComponentModified = false;
+  bool mRestoringModel = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
@@ -714,10 +731,14 @@ private:
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   static void removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
   bool dependsOnModel(const QString &modelName);
+  void updateComponentModeButtons();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
   void showTextView(bool checked);
+  void backComponent();
+  void forwardComponent();
+  void exitComponent();
   void updateModel();
 public slots:
   void makeFileWritAble();
