@@ -119,7 +119,7 @@ namespace IAEX
 
     const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
     if (!installationDirectoryPath) {
-      QMessageBox::critical(0, tr("Error"), tr("Could not find installation directory path. Please make sure OpenModelica is installed properly."), "OK");
+      QMessageBox::critical(nullptr, tr("Error"), tr("Could not find installation directory path. Please make sure OpenModelica is installed properly."));
       app_->quit();
       exit(1);
     }
@@ -165,7 +165,7 @@ namespace IAEX
     QString cdRes = env->getResult();
     cdRes.remove("\"");
     if (0 != tmpDir.compare(cdRes)) {
-      QMessageBox::critical( 0, "OpenModelica Error", tr("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
+      QMessageBox::critical(nullptr, "OpenModelica Error", tr("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
       exit(1);
     }
 
@@ -184,7 +184,7 @@ namespace IAEX
     }
     catch( std::exception &e )
     {
-      QMessageBox::warning( 0, tr("Error"), e.what(), "OK" );
+      QMessageBox::warning(nullptr, tr("Error"), e.what());
       exit(-1);
     }
 
@@ -204,7 +204,7 @@ namespace IAEX
     {
       QString msg = e.what();
       msg += "\nCould not create command completion class, exiting OMNotebook";
-      QMessageBox::warning( 0, tr("Error"), msg, "OK" );
+      QMessageBox::warning(nullptr, tr("Error"), msg);
       std::exit(-1);
     }
 
@@ -290,7 +290,7 @@ namespace IAEX
     {
       if( !dir.remove( removeList_.at(i) ))
       {
-        QMessageBox::warning( 0, tr("Warning"), tr("Could not remove temporary image %1 from harddrive.").arg(removeList_.at(i)), "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), tr("Could not remove temporary image %1 from harddrive.").arg(removeList_.at(i)));
       }
     }
   }

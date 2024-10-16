@@ -86,7 +86,7 @@ namespace IAEX
       }
 
       // display message box
-      QMessageBox::warning( 0, QObject::tr("Warning"), msg, "OK" );
+      QMessageBox::warning(nullptr, QObject::tr("Warning"), msg);
     }
   }
 

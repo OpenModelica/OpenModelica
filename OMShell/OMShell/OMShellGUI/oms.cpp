@@ -260,7 +260,7 @@ OMS::OMS( QWidget* parent )
   // create command compleation instance
   QString openmodelica( delegate_->OpenModelicaHome() );
   if( openmodelica.isEmpty() )
-    QMessageBox::critical( 0, "OMShell Error", "Could not find installation directory path, command completion will not work. Please make sure OpenModelica is installed properly." );
+    QMessageBox::critical(nullptr, "OMShell Error", "Could not find installation directory path, command completion will not work. Please make sure OpenModelica is installed properly." );
 
   try
   {
@@ -276,7 +276,7 @@ OMS::OMS( QWidget* parent )
   {
     QString msg = e.what();
     msg += "\nCould not create command completion class!";
-    QMessageBox::warning( 0, "Error", msg, "OK" );
+    QMessageBox::warning(nullptr, "Error", msg);
   }
 
   // command stuff

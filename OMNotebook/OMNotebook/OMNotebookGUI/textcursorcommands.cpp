@@ -362,7 +362,7 @@ namespace IAEX
         if( oldStretch == cursor.charFormat().font().stretch() )
         {
           // 2006-01-30 AF, add message box
-          QMessageBox::warning( 0, QObject::tr("Warning"), QObject::tr("QT was unable to stretch the font"), "OK" );
+          QMessageBox::warning(nullptr, QObject::tr("Warning"), QObject::tr("QT was unable to stretch the font"));
         }
       }
     }
