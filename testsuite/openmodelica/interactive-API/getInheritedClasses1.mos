@@ -1,4 +1,4 @@
-// name: Bug4209.mos
+// name: getInheritedClasses1
 // keywords:
 // status: correct
 // cflags: -d=newInst

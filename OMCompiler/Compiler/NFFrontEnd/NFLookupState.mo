@@ -166,7 +166,7 @@ uniontype LookupState
     end if;
 
     n := InstNode.resolveInner(node);
-    Inst.expand(n);
+    Inst.expand(n, NFInstContext.NO_CONTEXT);
 
     callable := match InstNode.restriction(n)
       case Restriction.RECORD() then true;
