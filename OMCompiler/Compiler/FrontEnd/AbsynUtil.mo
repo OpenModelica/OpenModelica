@@ -6414,6 +6414,17 @@ algorithm
   end if;
 end getCommentOptAnnotation;
 
+function getCommentOptComment
+  input Option<Absyn.Comment> commentOpt;
+  output Option<String> outComment;
+algorithm
+  if isSome(commentOpt) then
+    SOME(Absyn.Comment.COMMENT(comment = outComment)) := commentOpt;
+  else
+    outComment := NONE();
+  end if;
+end getCommentOptComment;
+
 function setElementAnnotation
   "Sets the annotation on an element. The name argument is used to select a
    component when there are multiple components in one element, in other cases

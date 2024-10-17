@@ -6178,10 +6178,11 @@ end setElementType;
 function makeCommentFromArgs
   input Absyn.Exp commentExp;
   input Absyn.Exp annotationExp;
+  input Option<Absyn.Comment> oldComment = NONE();
   output Option<Absyn.Comment> comment;
 protected
-  Option<Absyn.Annotation> ann;
-  Option<String> cmt;
+  Option<Absyn.Annotation> ann, old_ann;
+  Option<String> cmt, old_cmt;
 algorithm
   cmt := match commentExp
     case Absyn.Exp.TUPLE(expressions = {}) then NONE();
@@ -6194,9 +6195,11 @@ algorithm
   end match;
 
   if isSome(cmt) or isSome(ann) then
+    cmt := if isSome(cmt) then cmt else AbsynUtil.getCommentOptComment(oldComment);
+    ann := if isSome(ann) then ann else AbsynUtil.getCommentOptAnnotation(oldComment);
     comment := SOME(Absyn.Comment.COMMENT(ann, cmt));
   else
-    comment := NONE();
+    comment := oldComment;
   end if;
 end makeCommentFromArgs;
 
@@ -6204,11 +6207,12 @@ function makeModifierFromArgs
   input Absyn.Exp bindingExp;
   input Absyn.Modification modifier;
   input SourceInfo info;
+  input Option<Absyn.Modification> oldModifier = NONE();
   output Option<Absyn.Modification> outModifier;
 algorithm
   outModifier := match (bindingExp, modifier)
     // No binding, no modifier.
-    case (Absyn.Exp.TUPLE(expressions = {}), Absyn.Modification.CLASSMOD(elementArgLst = {})) then NONE();
+    case (Absyn.Exp.TUPLE(expressions = {}), Absyn.Modification.CLASSMOD(elementArgLst = {})) then oldModifier;
     // Only modifier.
     case (Absyn.Exp.TUPLE(expressions = {}), _) then SOME(modifier);
     // Binding, maybe modifier.
