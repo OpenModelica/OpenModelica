@@ -2637,7 +2637,8 @@ end listFile;
 type DiffFormat = enumeration(plain "no deletions, no markup", color "terminal escape sequences", xml "XML tags");
 
 function diffModelicaFileListings "Creates diffs of two strings corresponding to Modelica files"
-  input String before, after;
+  input String before;
+  input String after;
   input DiffFormat diffFormat = DiffFormat.color;
   input Boolean failOnSemanticsChange = false "Defaults to returning after instead of hard fail";
   output String result;
@@ -2776,7 +2777,8 @@ annotation(preferredView="text");
 end importFMUModelDescription;
 
 function translateModelFMU
-"Translates a modelica model into c code without building it
+"Deprecated: Use buildModelFMU instead.
+Translates a modelica model into c code without building it
 The only required argument is the className, while all others have some default values.
   Example command:
   translateModelFMU(className, version=\"2.0\");"
@@ -2869,7 +2871,7 @@ function translateModel
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output Boolean success;
@@ -4559,18 +4561,6 @@ annotation(
   preferredView="text");
 end updatePackageIndex;
 
-function upgradeInstalledPackages
-  input Boolean installNewestVersions = true;
-  output Boolean result;
-external "builtin";
-annotation(
-  Documentation(info="<html>
-  Upgrades installed packages that have been registered by the package manager.
-  To update the index, call <code>updatePackageIndex()</code>.
-</html>"),
-  preferredView="text");
-end upgradeInstalledPackages;
-
 function getAvailablePackageVersions
   input TypeName pkg;
   input String version;
@@ -4606,6 +4596,18 @@ annotation(
 </html>"),
   preferredView="text");
 end getAvailablePackageConversionsFrom;
+
+function upgradeInstalledPackages
+  input Boolean installNewestVersions = true;
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Upgrades installed packages that have been registered by the package manager.
+  To update the index, call <code>updatePackageIndex()</code>.
+</html>"),
+  preferredView="text");
+end upgradeInstalledPackages;
 
 function getUses
   input TypeName pack;
@@ -5822,7 +5824,7 @@ package AutoCompletion "Auto completion information for OMEdit."
       String features[:] = fill("", 0) "Activated library license features";
       String startDate = "" "Optional start date in UTCformat YYYY-MM-DD";
       String expirationDate = "" "Optional expiration date in UTCformat YYYY-MM-DD";
-      String operations[:] = fill("",0) "Library usage conditions";
+      String operations[:] = fill("", 0) "Library usage conditions";
     end License;
 
     // TODO: Function Derivative Annotations
