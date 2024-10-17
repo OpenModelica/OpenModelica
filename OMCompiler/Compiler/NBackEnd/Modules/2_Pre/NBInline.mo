@@ -466,7 +466,7 @@ protected
     eqns := Pointer.access(new_eqns);
     // add the iterators to the cref
     subs      := list(Subscript.INDEX(Expression.CREF(Type.INTEGER(), Util.tuple21(tpl))) for tpl in frames);
-    cref_exp  := Expression.fromCref(ComponentRef.mergeSubscripts(subs, cref, true, true));
+    cref_exp  := Expression.fromCref(ComponentRef.mergeSubscripts(subs, cref, true));
     eqns      := createInlinedEquation(eqns, cref_exp, rhs, attr, Iterator.addFrames(iter, frames), variables, index);
     Pointer.update(new_eqns, eqns);
     eqn := Equation.DUMMY_EQUATION();
