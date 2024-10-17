@@ -157,6 +157,20 @@ public
       end if;
     end fromFrames;
 
+    function addFrames
+      input output Iterator iter;
+      input list<Frame> frames;
+    protected
+      list<ComponentRef> names1, names2;
+      list<Expression> ranges1, ranges2;
+    algorithm
+      if not listEmpty(frames) then
+        (names1, ranges1) := getFrames(iter);
+        (names2, ranges2) := List.unzip(frames);
+        iter := fromFrames(List.zip(listAppend(names1, names2), listAppend(ranges1, ranges2)));
+      end if;
+    end addFrames;
+
     function getFrames
       input Iterator iter;
       output list<ComponentRef> names;

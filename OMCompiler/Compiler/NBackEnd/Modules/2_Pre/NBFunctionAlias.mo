@@ -220,6 +220,7 @@ protected
     extends Module.functionAliasInterface;
   protected
     UnorderedMap<Call_Id, Call_Aux> map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
+    VariablePointers variables = VarData.getVariables(varData);
     UnorderedMap<BClock, ComponentRef> clock_map;
     Pointer<Integer> index = Pointer.create(1);
     list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck;
@@ -238,7 +239,8 @@ protected
 
       case EqData.EQ_DATA_SIM() algorithm
         // first collect all new functions from simulation equations
-        eqData.simulation := EquationPointers.map(eqData.simulation, function introduceFunctionAliasEquation(map = map, index = index, init = false));
+        eqData.simulation := EquationPointers.map(eqData.simulation,
+          function introduceFunctionAliasEquation(map = map, variables = variables, index = index, init = false));
 
         // create new simulation variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
@@ -268,7 +270,8 @@ protected
         end if;
 
         // afterwards collect all functions from initial equations
-        eqData.initials := EquationPointers.map(eqData.initials, function introduceFunctionAliasEquation(map = map, index = index, init = true));
+        eqData.initials := EquationPointers.map(eqData.initials,
+          function introduceFunctionAliasEquation(map = map, variables = variables, index = index, init = true));
 
         // create new initialization variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
@@ -328,26 +331,33 @@ protected
 
   function introduceFunctionAliasEquation
     "creates auxilliary variables for all not inlineable function calls in the equation"
-    input output Equation eq;
+    input output Equation eqn;
     input UnorderedMap<Call_Id, Call_Aux> map;
+    input VariablePointers variables;
     input Pointer<Integer> index;
     input Boolean init;
   protected
     Iterator iter;
     Boolean stop;
   algorithm
-    (iter, stop) := match eq
+    // inline trivial array constructors first
+    eqn := Inline.inlineArrayConstructorSingle(eqn, Iterator.EMPTY(), variables, index);
+
+    // get iterator and determine if it needs to be checked further
+    (iter, stop) := match eqn
       local
         Equation body;
-      case Equation.FOR_EQUATION(body = {body}) then (eq.iter, Equation.isWhenEquation(Pointer.create(body))
+      case Equation.FOR_EQUATION(body = {body}) then (eqn.iter, Equation.isWhenEquation(Pointer.create(body))
                                                             or Equation.isIfEquation(Pointer.create(body)));
       case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), true);
       case Equation.IF_EQUATION()               then (Iterator.EMPTY(), true);
       case Equation.ALGORITHM()                 then (Iterator.EMPTY(), true);
                                                 else (Iterator.EMPTY(), false);
     end match;
+
+    // do the function alias replacement
     if not stop then
-      eq := Equation.map(eq, function introduceFunctionAlias(map = map, index = index, iter = iter, init = init));
+      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, index = index, iter = iter, init = init));
     end if;
   end introduceFunctionAliasEquation;
 

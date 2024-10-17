@@ -50,6 +50,7 @@ protected
   import Expression = NFExpression;
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
+  import InstNode = NFInstNode.InstNode;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -169,6 +170,45 @@ public
     slices := list(Slice.SLICE(eqn, {}) for eqn in Pointer.access(record_eqns));
   end inlineRecordSliceEquation;
 
+  function inlineArrayConstructorSingle
+    input output Equation eqn;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<Integer> index;
+  protected
+    Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
+  algorithm
+    try
+      eqn := match eqn
+        local
+          Equation new_eqn, body;
+          Expression lhs, rhs;
+          Call call;
+
+        // CREF = {... for i in []} array constructor equation
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) algorithm
+        then inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index);
+
+        // {... for i in []} = CREF array constructor equation
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF()) algorithm
+        then inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index);
+
+        // apply on for-equation. assumed to be split up
+        case Equation.FOR_EQUATION(body = {body}) algorithm
+          new_eqn := inlineArrayConstructorSingle(body, eqn.iter, variables, index);
+          new_eqn := if Equation.isDummy(new_eqn) then Pointer.access(List.first(Pointer.access(new_eqns))) else eqn;
+        then new_eqn;
+
+        // nothing happens
+        else eqn;
+      end match;
+    else
+      if Flags.isSet(Flags.FAILTRACE) then
+        Error.addCompilerWarning("Failed to inline following equation:\n" + Equation.toString(eqn));
+      end if;
+    end try;
+  end inlineArrayConstructorSingle;
+
 protected
   function inline extends Module.inlineInterface;
   protected
@@ -238,7 +278,6 @@ protected
     end if;
   end inlineRecordsTuplesArrays;
 
-protected
   function inlineRecordTupleArrayEquation
     input output Equation eqn;
     input Iterator iter;
@@ -252,6 +291,7 @@ protected
         local
           Equation new_eqn, body;
           Expression lhs, rhs;
+          Call call;
           list<Expression> elements;
           Integer size;
 
@@ -281,6 +321,14 @@ protected
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.CREF()) algorithm
           elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs) for i in 1:arrayLength(lhs.elements));
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, index);
+
+        // CREF = {... for i in []} array constructor equation
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) algorithm
+        then inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index);
+
+        // {... for i in []} = CREF array constructor equation
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF()) algorithm
+        then inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index);
 
         // apply on for-equation. assumed to be split up
         case Equation.FOR_EQUATION(body = {body}) algorithm
@@ -392,6 +440,35 @@ protected
     Pointer.update(new_eqns, eqns);
     eqn := Equation.DUMMY_EQUATION();
   end inlineArrayEquation;
+
+  function inlineArrayConstructor
+    input output Equation eqn;
+    input ComponentRef cref;
+    input Expression rhs;
+    input list<tuple<InstNode, Expression>> iters;
+    input EquationAttributes attr;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input Pointer<Integer> index;
+  protected
+    list<tuple<ComponentRef, Expression>> frames
+      = list((ComponentRef.makeIterator(Util.tuple21(tpl), Type.INTEGER()), Util.tuple22(tpl)) for tpl in iters);
+    list<Subscript> subs;
+    Expression cref_exp;
+    list<Pointer<Equation>> eqns;
+  algorithm
+    if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+    end if;
+    eqns := Pointer.access(new_eqns);
+    // add the iterators to the cref
+    subs      := list(Subscript.INDEX(Expression.CREF(Type.INTEGER(), Util.tuple21(tpl))) for tpl in frames);
+    cref_exp  := Expression.fromCref(ComponentRef.mergeSubscripts(subs, cref, true, true));
+    eqns      := createInlinedEquation(eqns, cref_exp, rhs, attr, Iterator.addFrames(iter, frames), variables, index);
+    Pointer.update(new_eqns, eqns);
+    eqn := Equation.DUMMY_EQUATION();
+  end inlineArrayConstructor;
 
   function createInlinedEquation
     "used for inlining record, tuple and array equations.
