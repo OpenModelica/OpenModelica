@@ -3169,6 +3169,24 @@ algorithm
         SymbolTable.setAbsyn(p);
       then
         ValuesUtil.makeBoolean(b);
+
+    case ("updateComponent", {Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))),
+        Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)),
+        Values.CODE(Absyn.C_EXPRESSION(aexp)), Values.CODE(Absyn.C_MODIFICATION(modification = mod)),
+        Values.CODE(Absyn.C_EXPRESSION(aexp2)), Values.CODE(Absyn.C_EXPRESSION(aexp3))})
+      algorithm
+        (p, b) := Interactive.updateComponent(name, path, classpath, aexp, mod, aexp2, aexp3, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
+
+    case ("deleteComponent", {Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))), Values.CODE(Absyn.C_TYPENAME(classpath))})
+      algorithm
+        (p, b) := Interactive.deleteComponent(name, classpath, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

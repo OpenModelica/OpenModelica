@@ -3176,6 +3176,35 @@ annotation(
   preferredView="text");
 end addComponent;
 
+function updateComponent
+  input TypeName componentName;
+  input TypeName typeName;
+  input TypeName classPath;
+  input Expression binding = $Expression(());
+  input ExpressionOrModification modification = $Code(());
+  input Expression comment = $Expression(());
+  input Expression annotate = $Expression(());
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Updates an existing component.
+</html>"),
+  preferredView="text");
+end updateComponent;
+
+function deleteComponent
+  input TypeName componentName;
+  input TypeName classPath;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Deletes a component from the given class.
+</html>"),
+  preferredView="text");
+end deleteComponent;
+
 function getParameterNames
   input TypeName class_;
   output String[:] parameters;
