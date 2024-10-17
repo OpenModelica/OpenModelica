@@ -175,11 +175,11 @@ public
     input Iterator iter;
     input VariablePointers variables;
     input Pointer<Integer> index;
-  protected
-    Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
+    input Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
+    output Boolean changed;
   algorithm
     try
-      eqn := match eqn
+      (eqn, changed) := match eqn
         local
           Equation new_eqn, body;
           Expression lhs, rhs;
@@ -187,21 +187,23 @@ public
 
         // CREF = {... for i in []} array constructor equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) algorithm
-        then inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index);
+        then (inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index), true);
 
         // {... for i in []} = CREF array constructor equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF()) algorithm
-        then inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index);
+        then (inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, index), true);
 
         // apply on for-equation. assumed to be split up
         case Equation.FOR_EQUATION(body = {body}) algorithm
-          new_eqn := inlineArrayConstructorSingle(body, eqn.iter, variables, index);
-          new_eqn := if Equation.isDummy(new_eqn) then Pointer.access(List.first(Pointer.access(new_eqns))) else eqn;
-        then new_eqn;
+          (new_eqn, changed) := inlineArrayConstructorSingle(body, eqn.iter, variables, index, new_eqns);
+          new_eqn := if changed then new_eqn else eqn;
+        then (new_eqn, changed);
 
         // nothing happens
-        else eqn;
+        else (eqn, false);
       end match;
+      // unpack the equation
+      eqn := if Equation.isDummy(eqn) then Pointer.access(List.first(Pointer.access(new_eqns))) else eqn;
     else
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addCompilerWarning("Failed to inline following equation:\n" + Equation.toString(eqn));

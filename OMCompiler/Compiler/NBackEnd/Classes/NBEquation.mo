@@ -869,8 +869,12 @@ public
     protected
       Pointer<Variable> residualVar;
     algorithm
-      residualVar := getResidualVar(eqn);
-      name := BVariable.getVarName(residualVar);
+      if isDummy(Pointer.access(eqn)) then
+        name := ComponentRef.EMPTY();
+      else
+        residualVar := getResidualVar(eqn);
+        name := BVariable.getVarName(residualVar);
+      end if;
     end getEqnName;
 
     function getResidualVar
@@ -3660,7 +3664,9 @@ public
           new_eq := func(eq);
           if not referenceEq(eq, new_eq) then
             // Do not update the expandable array entry, but the pointer itself
-            if debug and UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(eq_ptr)), debug_eqns) and not Equation.equalName(Pointer.create(eq), Pointer.create(new_eq)) then
+            if debug and (UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(eq_ptr)), debug_eqns)
+              or UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(Pointer.create(new_eq))), debug_eqns))
+              and not Equation.equalName(Pointer.create(eq), Pointer.create(new_eq)) then
               print("[debugFollowEquations] The equation:\n" + Equation.toString(eq) + "\nGets replaced by:\n"  + Equation.toString(new_eq) + "\n");
             end if;
             Pointer.update(eq_ptr, new_eq);
