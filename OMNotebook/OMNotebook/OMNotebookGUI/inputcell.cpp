@@ -457,7 +457,7 @@ namespace IAEX
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"));
     }
 
     QTextCursor cursor = output_->textCursor();

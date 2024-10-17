@@ -373,7 +373,7 @@ namespace IAEX {
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"));
     }
 
     QTextCursor cursor = output_->textCursor();
@@ -917,7 +917,7 @@ void LatexCell::eval(bool silent)
         {
           setState(Error_l);
           if (!silent)
-            QMessageBox::warning( 0, tr("Error"), tr("Latex is not installed in your System. This cell cannot be evaluated."), "OK" );
+            QMessageBox::warning(nullptr, tr("Error"), tr("Latex is not installed in your System. This cell cannot be evaluated."));
         }
         /*Generate the DVI file from tex through latex */
         else
@@ -985,7 +985,7 @@ void LatexCell::eval(bool silent)
             }
             else
             {
-                QMessageBox::warning( 0, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."), "OK" );
+                QMessageBox::warning(nullptr, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."));
             }
         }
     }

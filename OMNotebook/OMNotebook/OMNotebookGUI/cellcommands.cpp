@@ -307,7 +307,7 @@ namespace IAEX
       }
       else
       {
-        QMessageBox::warning( 0, QObject::tr("Warning"), QObject::tr("No cells in clipboard. To paste a cell, select the cells and perform copy."), "OK" );
+        QMessageBox::warning(nullptr, QObject::tr("Warning"), QObject::tr("No cells in clipboard. To paste a cell, select the cells and perform copy."));
       }
 
       //2006-01-18 AF, set docuement changed

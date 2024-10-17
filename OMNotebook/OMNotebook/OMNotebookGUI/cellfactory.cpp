@@ -108,7 +108,7 @@ namespace IAEX
       }
       catch( std::exception e )
       {
-        QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
+        QMessageBox::warning(nullptr, QObject::tr("Warning"), e.what());
       }
 
       try
@@ -195,7 +195,7 @@ namespace IAEX
       catch( std::exception e )
       {
 
-        QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
+        QMessageBox::warning(nullptr, QObject::tr("Warning"), e.what());
       }
 
       QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
@@ -250,7 +250,7 @@ namespace IAEX
       }
       catch( std::exception e )
       {
-        QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
+        QMessageBox::warning(nullptr, QObject::tr("Warning"), e.what());
       }
 
       try
