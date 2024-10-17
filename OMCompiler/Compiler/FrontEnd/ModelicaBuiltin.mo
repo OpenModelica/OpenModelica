@@ -872,21 +872,21 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   end rationalClock;
 
   function realClock
-    input Real interval(unit="s", min=0);
+    input Real interval(unit="s", min = 0);
     output Clock c;
     external "builtin";
   end realClock;
 
   function booleanClock
     input Boolean condition;
-    input Real startInterval=0.0;
+    input Real startInterval = 0.0;
     output Clock c;
     external "builtin";
   end booleanClock;
 
   function solverClock
     input Clock c;
-    parameter input String solverMethod;
+    input String solverMethod;
     output Clock clk;
     external "builtin";
   end solverClock;
@@ -1192,7 +1192,7 @@ was read in binary format from a file with the same name.
   "
   input String data;
   input String filename = "<interactive>";
-  input String encoding = "UTF-8";
+  input String encoding = "UTF-8" "Deprecated as *ALL* strings are now UTF-8 encoded";
   input Boolean merge = false "if merge is true the parsed AST is merged with the existing AST, default to false which means that is replaced, not merged";
   input Boolean uses = true;
   input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
@@ -1215,7 +1215,7 @@ extends. The content is merged according to the following rules:</p>
 <p>
 <ul>
 <li>public/protected sections: Merged with the last public/protected section if the protection is the same.</li>
-<li>equation sections: Merged with the last equation section.</li>
+<li>equation sections: Merged with the last equation section if it's the same type of equation section (normal/initial).</li>
 <li>external declaration: The new declaration overwrites the old.</li>
 <li>annotations: The new annotation is merged with the old.
 </ul>
@@ -2524,7 +2524,7 @@ end importFMUModelDescription;
 
 function translateModelFMU
 "Deprecated: Use buildModelFMU instead.
-Translates a modelica model to c code without building it
+Translates a modelica model into c code without building it
 The only required argument is the className, while all others have some default values.
   Example command:
   translateModelFMU(className, version=\"2.0\");"
@@ -2537,7 +2537,6 @@ The only required argument is the className, while all others have some default 
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
-
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output Boolean success;
 external "builtin";
@@ -2587,7 +2586,7 @@ function simulate "simulates a modelica model by generating c code, build it and
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output SimulationResult simulationResults;
@@ -2618,7 +2617,7 @@ function translateModel
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output Boolean success;
@@ -2642,7 +2641,7 @@ function buildModel "builds a modelica model by generating c code and build it.
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output String[2] buildModelResults;
@@ -2660,7 +2659,7 @@ input TypeName className "the class that should be built";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "" "cflags. <default> = \"\"";
   input String simflags = "" "simflags. <default> = \"\"";
 output String[2] buildModelResults;
@@ -2678,7 +2677,7 @@ input TypeName className "the class that should be built";
   input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
   input String options = "" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "" "cflags. <default> = \"\"";
   input String simflags = "" "simflags. <default> = \"\"";
   input String labelstoCancel="";
@@ -2776,7 +2775,7 @@ function linearize "creates a model with symbolic linearization matrices"
   input Boolean noClean = false "noClean. <default> = false";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output String linearizationResult;
@@ -2813,7 +2812,7 @@ function optimize "optimize a modelica/optimica model by generating c code, buil
   input Boolean noClean = false "noClean. <default> = false";
   input String options = "<default>" "options. <default> = \"\"";
   input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
   output String optimizationResults;
@@ -3375,7 +3374,7 @@ function setExtendsModifierValue
   input TypeName elementName;
   input ExpressionOrModification modifier;
   output Boolean success;
-external "builtin"
+external "builtin";
 annotation(
   Documentation(info="<html>
 Sets a modifier on an extends clause in a class definition, for example:
@@ -3396,17 +3395,6 @@ end P;
 </html>"),
   preferredView="text");
 end setExtendsModifierValue;
-
-function getInstantiatedParametersAndValues
-  input TypeName cls;
-  output String[:] values;
-external "builtin";
-annotation(
-  Documentation(info="<html>
-  <p>Returns the top-level parameter names and values from the DAE.</p>
-</html>"),
-  preferredView="text");
-end getInstantiatedParametersAndValues;
 
 function getElementAnnotation
   input TypeName elementName;
@@ -3442,6 +3430,17 @@ annotation(
 </html>"),
   preferredView="text");
 end setElementType;
+
+function getInstantiatedParametersAndValues
+  input TypeName cls;
+  output String[:] values;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the top-level parameter names and values from the DAE.</p>
+</html>"),
+  preferredView="text");
+end getInstantiatedParametersAndValues;
 
 function removeExtendsModifiers
   input TypeName className;
