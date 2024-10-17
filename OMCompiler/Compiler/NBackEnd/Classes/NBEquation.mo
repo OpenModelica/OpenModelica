@@ -157,6 +157,20 @@ public
       end if;
     end fromFrames;
 
+    function addFrames
+      input output Iterator iter;
+      input list<Frame> frames;
+    protected
+      list<ComponentRef> names1, names2;
+      list<Expression> ranges1, ranges2;
+    algorithm
+      if not listEmpty(frames) then
+        (names1, ranges1) := getFrames(iter);
+        (names2, ranges2) := List.unzip(frames);
+        iter := fromFrames(List.zip(listAppend(names1, names2), listAppend(ranges1, ranges2)));
+      end if;
+    end addFrames;
+
     function getFrames
       input Iterator iter;
       output list<ComponentRef> names;
@@ -855,8 +869,12 @@ public
     protected
       Pointer<Variable> residualVar;
     algorithm
-      residualVar := getResidualVar(eqn);
-      name := BVariable.getVarName(residualVar);
+      if isDummy(Pointer.access(eqn)) then
+        name := ComponentRef.EMPTY();
+      else
+        residualVar := getResidualVar(eqn);
+        name := BVariable.getVarName(residualVar);
+      end if;
     end getEqnName;
 
     function getResidualVar
@@ -3646,7 +3664,9 @@ public
           new_eq := func(eq);
           if not referenceEq(eq, new_eq) then
             // Do not update the expandable array entry, but the pointer itself
-            if debug and UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(eq_ptr)), debug_eqns) and not Equation.equalName(Pointer.create(eq), Pointer.create(new_eq)) then
+            if debug and (UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(eq_ptr)), debug_eqns)
+              or UnorderedSet.contains(ComponentRef.toString(Equation.getEqnName(Pointer.create(new_eq))), debug_eqns))
+              and not Equation.equalName(Pointer.create(eq), Pointer.create(new_eq)) then
               print("[debugFollowEquations] The equation:\n" + Equation.toString(eq) + "\nGets replaced by:\n"  + Equation.toString(new_eq) + "\n");
             end if;
             Pointer.update(eq_ptr, new_eq);

@@ -190,7 +190,7 @@ protected
     function createName
       input Type ty;
       input Iterator iter;
-      input Pointer<Integer> index;
+      input Pointer<Integer> aux_index;
       input Boolean init;
       output ComponentRef name;
     protected
@@ -198,13 +198,13 @@ protected
     algorithm
       if not Iterator.isEmpty(iter) then
         new_ty := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(iter)));
-        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), new_ty, init);
+        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
         // add iterators to subscripts of auxilliary variable
         name      := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(iter), name, true, true);
       else
-        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(index), new_ty, init);
+        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
       end if;
-      Pointer.update(index, Pointer.access(index) + 1);
+      Pointer.update(aux_index, Pointer.access(aux_index) + 1);
     end createName;
   end Call_Aux;
 
@@ -220,8 +220,9 @@ protected
     extends Module.functionAliasInterface;
   protected
     UnorderedMap<Call_Id, Call_Aux> map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
+    VariablePointers variables = VarData.getVariables(varData);
     UnorderedMap<BClock, ComponentRef> clock_map;
-    Pointer<Integer> index = Pointer.create(1);
+    Pointer<Integer> aux_index = Pointer.create(1);
     list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck;
     list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck;
     list<tuple<Call_Id, Call_Aux>> debug_lst_sim, debug_lst_ini;
@@ -238,7 +239,8 @@ protected
 
       case EqData.EQ_DATA_SIM() algorithm
         // first collect all new functions from simulation equations
-        eqData.simulation := EquationPointers.map(eqData.simulation, function introduceFunctionAliasEquation(map = map, index = index, init = false));
+        eqData.simulation := EquationPointers.map(eqData.simulation,
+          function introduceFunctionAliasEquation(map = map, variables = variables, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = false));
 
         // create new simulation variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
@@ -268,7 +270,8 @@ protected
         end if;
 
         // afterwards collect all functions from initial equations
-        eqData.initials := EquationPointers.map(eqData.initials, function introduceFunctionAliasEquation(map = map, index = index, init = true));
+        eqData.initials := EquationPointers.map(eqData.initials,
+          function introduceFunctionAliasEquation(map = map, variables = variables, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = true));
 
         // create new initialization variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
@@ -328,26 +331,34 @@ protected
 
   function introduceFunctionAliasEquation
     "creates auxilliary variables for all not inlineable function calls in the equation"
-    input output Equation eq;
+    input output Equation eqn;
     input UnorderedMap<Call_Id, Call_Aux> map;
-    input Pointer<Integer> index;
+    input VariablePointers variables;
+    input Pointer<Integer> aux_index;
+    input Pointer<Integer> eqn_index;
     input Boolean init;
   protected
     Iterator iter;
     Boolean stop;
   algorithm
-    (iter, stop) := match eq
+    // inline trivial array constructors first
+    eqn := Inline.inlineArrayConstructorSingle(eqn, Iterator.EMPTY(), variables, eqn_index);
+
+    // get iterator and determine if it needs to be checked further
+    (iter, stop) := match eqn
       local
         Equation body;
-      case Equation.FOR_EQUATION(body = {body}) then (eq.iter, Equation.isWhenEquation(Pointer.create(body))
+      case Equation.FOR_EQUATION(body = {body}) then (eqn.iter, Equation.isWhenEquation(Pointer.create(body))
                                                             or Equation.isIfEquation(Pointer.create(body)));
       case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), true);
       case Equation.IF_EQUATION()               then (Iterator.EMPTY(), true);
       case Equation.ALGORITHM()                 then (Iterator.EMPTY(), true);
                                                 else (Iterator.EMPTY(), false);
     end match;
+
+    // do the function alias replacement
     if not stop then
-      eq := Equation.map(eq, function introduceFunctionAlias(map = map, index = index, iter = iter, init = init));
+      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init));
     end if;
   end introduceFunctionAliasEquation;
 
@@ -357,7 +368,7 @@ protected
     ToDo: also exclude special functions der(), pre(), ..."
     input output Expression exp;
     input UnorderedMap<Call_Id, Call_Aux> map;
-    input Pointer<Integer> index;
+    input Pointer<Integer> aux_index;
     input Iterator iter;
     input Boolean init;
   algorithm
@@ -395,11 +406,11 @@ protected
           ty := Expression.typeOf(exp);
           new_exp := match ty
             case Type.TUPLE() algorithm
-              names   := list(Call_Aux.createName(sub_ty, new_iter, index, init) for sub_ty in ty.types);
+              names   := list(Call_Aux.createName(sub_ty, new_iter, aux_index, init) for sub_ty in ty.types);
               tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
             then Expression.TUPLE(ty, tpl_lst);
             else algorithm
-              name := Call_Aux.createName(ty, new_iter, index, init);
+              name := Call_Aux.createName(ty, new_iter, aux_index, init);
             then Expression.fromCref(name);
           end match;
         end if;
