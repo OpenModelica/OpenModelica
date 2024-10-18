@@ -3187,6 +3187,17 @@ algorithm
       then
         ValuesUtil.makeBoolean(b);
 
+    case ("getComponentCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then ValuesUtil.makeInteger(Interactive.getComponentCount(classpath, SymbolTable.getAbsyn()));
+
+    case ("getNthComponent", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthComponent(classpath, SymbolTable.getAbsyn(), n);
+
+    case ("getComponents", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
+      then Interactive.getComponents(classpath, b, SymbolTable.getAbsyn());
+
+    case ("getElements", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
+      then Interactive.getElements(classpath, b, SymbolTable.getAbsyn());
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
