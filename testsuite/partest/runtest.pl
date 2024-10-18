@@ -101,14 +101,14 @@ sub make_test_specific_links {
     make_link("ReferenceGraphs");
   }
 
-  # search for any _prof.xml and _TaskGraph.graphml and link those too
+  # search for any _prof.xml and _TaskGraph.graphml and .expected.txt and link those too
   my $dir = '../';
   opendir(DIR, $dir);
   while (my $file = readdir(DIR)) {
     # We only want files
     next unless (-f "$dir/$file");
     # Use a regular expression to find files ending in _prof.xml and _TaskGraph.graphml
-    next unless ($file =~ m/_prof\.xml$/) or ($file =~ m/_TaskGraph\.graphml$/);
+    next unless ($file =~ m/_prof\.xml$/) or ($file =~ m/_TaskGraph\.graphml$/) or ($file =~ m/\.expected\.txt$/);
     make_link($file);
   }
   closedir(DIR);
