@@ -16,7 +16,7 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState); ge
 // ""
 // true
 // ""
-// {"OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState","OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState_init.xml"}
+// {"OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState", "OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState_init.xml"}
 // "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass1.v = $START.mass1.v ($START.mass2.v = $START.mass1.v)
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass2.a = $START.mass2.a ($START.mass1.a = $START.mass2.a)
 // Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization system:

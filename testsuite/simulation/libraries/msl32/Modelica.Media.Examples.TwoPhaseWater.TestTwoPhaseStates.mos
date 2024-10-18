@@ -25,8 +25,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates
-// {"medium.p","medium.h"}
-// Simulation options: startTime = 0.0, stopTime = 22.0, numberOfIntervals = 2200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates', options = '', outputFormat = 'mat', variableFilter = 'time|medium.p|medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"medium.p", "medium.h"}
+// Simulation options: startTime = 0.0, stopTime = 22.0, numberOfIntervals = 2200, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates', options = '', outputFormat = 'mat', variableFilter = 'time|medium.p|medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_ASSERT        | info    | [Modelica 3.2.1+maint.om/Media/package.mo:2592:7-2592:43:writable]

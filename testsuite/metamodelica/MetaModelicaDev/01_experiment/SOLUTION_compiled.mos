@@ -13,7 +13,7 @@ getErrorString();
 i:=Main.main({"10"});
 getErrorString();
 // Result:
-// {true,true}
+// {true, true}
 // true
 // true
 // true

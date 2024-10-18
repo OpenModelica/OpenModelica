@@ -50,7 +50,7 @@ getErrorString();
 // ""
 // true
 // ""
-// {"Modelica.Fluid.Examples.DrumBoiler.DrumBoiler","Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_init.xml"}
+// {"Modelica.Fluid.Examples.DrumBoiler.DrumBoiler", "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_init.xml"}
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // 0
@@ -59,7 +59,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
-// (true,{})
+// (true, {})
 // ""
 // 0
 // ""
@@ -67,7 +67,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
-// (true,{})
+// (true, {})
 // ""
 // 0
 // ""
@@ -76,7 +76,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
-// (true,{})
+// (true, {})
 // ""
 // 0
 // ""
@@ -84,6 +84,6 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
-// (true,{})
+// (true, {})
 // ""
 // endResult

@@ -14,7 +14,7 @@ buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString()
 // ""
 // true
 // ""
-// {"Modelica.Utilities.Examples.readRealParameterModel","Modelica.Utilities.Examples.readRealParameterModel_init.xml"}
+// {"Modelica.Utilities.Examples.readRealParameterModel", "Modelica.Utilities.Examples.readRealParameterModel_init.xml"}
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 0
 //  * Number of variables: 0

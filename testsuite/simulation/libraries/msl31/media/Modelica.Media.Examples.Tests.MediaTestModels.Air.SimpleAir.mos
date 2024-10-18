@@ -15,5 +15,5 @@ buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir);
 // ""
 // true
 // Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir)
-// {"Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir","Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir_init.xml"}
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir", "Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir_init.xml"}
 // endResult

@@ -38,8 +38,8 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.HeatingSystem
 // 600.0
-// {"heater.mediums[1].h","heater.mediums[1].p","pipe.mediums[1].h","pipe.mediums[2].h","pipe.mediums[2].p","radiator.mediums[1].h","radiator.mediums[1].p","tank.level","tank.medium.h"}
-// Simulation options: startTime = 0.0, stopTime = 600.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.HeatingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|heater.mediums.1..h|heater.mediums.1..p|pipe.mediums.1..h|pipe.mediums.2..h|pipe.mediums.2..p|radiator.mediums.1..h|radiator.mediums.1..p|tank.level|tank.medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=600 -emit_protected'
+// {"heater.mediums[1].h", "heater.mediums[1].p", "pipe.mediums[1].h", "pipe.mediums[2].h", "pipe.mediums[2].p", "radiator.mediums[1].h", "radiator.mediums[1].p", "tank.level", "tank.medium.h"}
+// Simulation options: startTime = 0.0, stopTime = 600.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.HeatingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|heater.mediums.1..h|heater.mediums.1..p|pipe.mediums.1..h|pipe.mediums.2..h|pipe.mediums.2..p|radiator.mediums.1..h|radiator.mediums.1..p|tank.level|tank.medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=600 -emit_protected'
 // Result file: Modelica.Fluid.Examples.HeatingSystem_res.mat
 // Messages: LOG_ASSERT        | warning | [Modelica 3.2.1+maint.om/Fluid/Machines.mo:317:5-318:51:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000

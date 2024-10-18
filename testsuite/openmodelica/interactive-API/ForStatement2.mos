@@ -13,8 +13,8 @@ end for;
 s
 
 // Result:
-// {"Here ","are ","some ","strings."}
+// {"Here ", "are ", "some ", "strings."}
 // ""
-// 
+//
 // "Here are some strings."
 // endResult

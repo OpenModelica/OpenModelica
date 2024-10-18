@@ -13,6 +13,6 @@ buildModel(ActualStreamCodeGen); getErrorString();
 // Result:
 // true
 // ""
-// {"ActualStreamCodeGen","ActualStreamCodeGen_init.xml"}
+// {"ActualStreamCodeGen", "ActualStreamCodeGen_init.xml"}
 // ""
 // endResult

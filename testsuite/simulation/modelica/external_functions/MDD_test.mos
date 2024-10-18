@@ -25,7 +25,7 @@ buildModel(MDD_test); getErrorString();
 // "
 // true
 // ""
-// {"MDD_test","MDD_test_init.xml"}
+// {"MDD_test", "MDD_test_init.xml"}
 // "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.

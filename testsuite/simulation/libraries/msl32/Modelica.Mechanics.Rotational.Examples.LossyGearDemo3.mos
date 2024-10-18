@@ -25,8 +25,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Rotational.Examples.LossyGearDemo3
-// {"Inertia2.w","Inertia2.phi"}
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.LossyGearDemo3', options = '', outputFormat = 'mat', variableFilter = 'time|Inertia2.w|Inertia2.phi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"Inertia2.w", "Inertia2.phi"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.LossyGearDemo3', options = '', outputFormat = 'mat', variableFilter = 'time|Inertia2.w|Inertia2.phi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Rotational.Examples.LossyGearDemo3_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

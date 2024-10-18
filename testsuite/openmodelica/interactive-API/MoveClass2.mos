@@ -31,10 +31,10 @@ getClassNames(P1.P2);
 // true
 // ""
 // true
-// {M,P1}
-// {C1,C2}
+// {M, P1}
+// {C1, C2}
 // true
 // ""
-// {M,P1}
-// {C2,C1}
+// {M, P1}
+// {C2, C1}
 // endResult

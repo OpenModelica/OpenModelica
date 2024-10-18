@@ -28,8 +28,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour
-// {"actuator.p.v","actuator.p.i","actuator.n.v","actuator.n.i","actuator.flange.f"}
-// Simulation options: startTime = -4.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour', options = '', outputFormat = 'mat', variableFilter = 'time|actuator.p.v|actuator.p.i|actuator.n.v|actuator.n.i|actuator.flange.f', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"actuator.p.v", "actuator.p.i", "actuator.n.v", "actuator.n.i", "actuator.flange.f"}
+// Simulation options: startTime = -4.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-7, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour', options = '', outputFormat = 'mat', variableFilter = 'time|actuator.p.v|actuator.p.i|actuator.n.v|actuator.n.i|actuator.flange.f', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

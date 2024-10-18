@@ -35,7 +35,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // end XmlDumpComment;
 // "
 // "Flat"
-// (true,"XmlDumpComment.xml")
+// (true, "XmlDumpComment.xml")
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
 //                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
@@ -108,7 +108,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // "Optimiser"
 // true
 // ""
-// (true,"Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml")
+// (true, "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml")
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
 //                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"

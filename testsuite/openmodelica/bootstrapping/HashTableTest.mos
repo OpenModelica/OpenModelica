@@ -19,15 +19,15 @@ getErrorString();
 // true
 // ({record DAE.Exp.ICONST
 //     integer = 7
-// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+// end DAE.Exp.ICONST;, record DAE.Exp.ICONST
 //     integer = 3
-// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+// end DAE.Exp.ICONST;, record DAE.Exp.ICONST
 //     integer = 2
-// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+// end DAE.Exp.ICONST;, record DAE.Exp.ICONST
 //     integer = 1
-// end DAE.Exp.ICONST;},{record DAE.Exp.ICONST
+// end DAE.Exp.ICONST;}, {record DAE.Exp.ICONST
 //     integer = 2
-// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+// end DAE.Exp.ICONST;, record DAE.Exp.ICONST
 //     integer = 7
 // end DAE.Exp.ICONST;})
 // ""

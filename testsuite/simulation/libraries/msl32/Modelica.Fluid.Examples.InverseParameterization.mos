@@ -35,8 +35,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.InverseParameterization
-// {"source.ports[1].m_flow","source.ports[1].p","source.ports[1].h_outflow","sink.ports[1].m_flow","sink.ports[1].p","sink.ports[1].h_outflow","sink1.ports[1].m_flow","sink1.ports[1].p","sink1.ports[1].h_outflow","sink2.ports[1].m_flow","sink2.ports[1].p","sink2.ports[1].h_outflow"}
-// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.InverseParameterization', options = '', outputFormat = 'mat', variableFilter = 'time|source.ports.1..m_flow|source.ports.1..p|source.ports.1..h_outflow|sink.ports.1..m_flow|sink.ports.1..p|sink.ports.1..h_outflow|sink1.ports.1..m_flow|sink1.ports.1..p|sink1.ports.1..h_outflow|sink2.ports.1..m_flow|sink2.ports.1..p|sink2.ports.1..h_outflow', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"source.ports[1].m_flow", "source.ports[1].p", "source.ports[1].h_outflow", "sink.ports[1].m_flow", "sink.ports[1].p", "sink.ports[1].h_outflow", "sink1.ports[1].m_flow", "sink1.ports[1].p", "sink1.ports[1].h_outflow", "sink2.ports[1].m_flow", "sink2.ports[1].p", "sink2.ports[1].h_outflow"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.InverseParameterization', options = '', outputFormat = 'mat', variableFilter = 'time|source.ports.1..m_flow|source.ports.1..p|source.ports.1..h_outflow|sink.ports.1..m_flow|sink.ports.1..p|sink.ports.1..h_outflow|sink1.ports.1..m_flow|sink1.ports.1..p|sink1.ports.1..h_outflow|sink2.ports.1..m_flow|sink2.ports.1..p|sink2.ports.1..h_outflow', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.InverseParameterization_res.mat
 // Messages: LOG_ASSERT        | warning | [Modelica 3.2.1+maint.om/Fluid/Machines.mo:317:5-318:51:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000

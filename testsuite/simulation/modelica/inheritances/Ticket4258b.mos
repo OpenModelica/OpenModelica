@@ -17,7 +17,7 @@ buildModel(Eco); getErrorString();
 // ""
 // true
 // ""
-// {"Eco","Eco_init.xml"}
+// {"Eco", "Eco_init.xml"}
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================

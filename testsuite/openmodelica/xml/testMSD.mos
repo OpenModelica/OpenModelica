@@ -18,7 +18,7 @@ readFile("stateSpace-MSD.xml");
 // true
 // true
 // "StateSpace"
-// (true,"stateSpace-MSD.xml")
+// (true, "stateSpace-MSD.xml")
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
 //                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
@@ -256,7 +256,7 @@ readFile("stateSpace-MSD.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"7\" name=\"damper1.s_nominal\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Nominal value of s_rel (used for scaling)\">
-// <bindExpression string=\"0.0001\">
+// <bindExpression string=\"1e-4\">
 // </bindExpression>
 // <attributesValues>
 // <quantity string=\"&quot;Length&quot;\">

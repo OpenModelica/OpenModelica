@@ -35,7 +35,7 @@ list(TestTicket5871);
 // ""
 // {TestTicket5871}
 // ""
-// {pack1,pack2}
+// {pack1, pack2}
 // ""
 // "package TestTicket5871
 //   extends Modelica.Icons.Package;
@@ -50,7 +50,7 @@ list(TestTicket5871);
 //   end pack2;
 // end TestTicket5871;"
 // true
-// {pack1,pack2}
+// {pack1, pack2}
 // ""
 // {TestTicket5871}
 // ""

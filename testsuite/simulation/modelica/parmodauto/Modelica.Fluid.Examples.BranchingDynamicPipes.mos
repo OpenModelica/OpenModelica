@@ -66,6 +66,6 @@ getErrorString();
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // true
-// (true,{})
+// (true, {})
 // ""
 // endResult

@@ -27,8 +27,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling
-// {"heatCapacitor.T","pipe1.T","outerPipe.T","innerPipe.T"}
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling', options = '', outputFormat = 'mat', variableFilter = 'time|heatCapacitor.T|pipe1.T|outerPipe.T|innerPipe.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"heatCapacitor.T", "pipe1.T", "outerPipe.T", "innerPipe.T"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling', options = '', outputFormat = 'mat', variableFilter = 'time|heatCapacitor.T|pipe1.T|outerPipe.T|innerPipe.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

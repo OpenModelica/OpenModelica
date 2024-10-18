@@ -28,8 +28,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Thermal.FluidHeatFlow.Examples.ParallelPumpDropOut
-// {"pipe1.T","pipe2.T","pipe3.T","heatCapacitor1.T","heatCapacitor2.T"}
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.ParallelPumpDropOut', options = '', outputFormat = 'mat', variableFilter = 'time|pipe1.T|pipe2.T|pipe3.T|heatCapacitor1.T|heatCapacitor2.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"pipe1.T", "pipe2.T", "pipe3.T", "heatCapacitor1.T", "heatCapacitor2.T"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.ParallelPumpDropOut', options = '', outputFormat = 'mat', variableFilter = 'time|pipe1.T|pipe2.T|pipe3.T|heatCapacitor1.T|heatCapacitor2.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Thermal.FluidHeatFlow.Examples.ParallelPumpDropOut_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

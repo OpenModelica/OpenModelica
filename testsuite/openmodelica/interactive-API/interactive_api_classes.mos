@@ -147,15 +147,15 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(A.test)
-// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0.0, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, Smooth.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDiagramAnnotation(A.test)
-// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0.0, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, Smooth.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDocumentationAnnotation(A.test)
-// {"<HTML>foo</HTML>","1.0",""}
+// {"<HTML>foo</HTML>", "1.0", ""}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentCount(A.test)
@@ -169,7 +169,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)
 // Ok
 // Evaluating: getNthConnection(A.test, 1)
-// {"a.n","b.z",""}
+// {"a.n", "b.z", ""}
 // Evaluating: getClassNames(A)
 // {test}
 // Evaluating: clear()
@@ -226,15 +226,15 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(A.test)
-// {-10.0,-10.0,10.0,10.0,{Line(true, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
+// {-10.0,-10.0,10.0,10.0,{Line(true, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDiagramAnnotation(A.test)
-// {-100.0,-100.0,100.0,100.0,{Line(true, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
+// {-100.0,-100.0,100.0,100.0,{Line(true, {{-50.0, -50.0}, {50.0, 50.0}, {100.0, 0.0}, {0.0, 100.0}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDocumentationAnnotation(A.test)
-// {"<HTML>foo</HTML>","1.0",""}
+// {"<HTML>foo</HTML>", "1.0", ""}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentCount(A.test)
@@ -248,7 +248,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)
 // Ok
 // Evaluating: getNthConnection(A.test, 1)
-// {"a.n","b.z",""}
+// {"a.n", "b.z", ""}
 // Evaluating: getClassNames(A)
 // {test}
 // Evaluating: loadString("model M
@@ -256,7 +256,7 @@ getClassNames(B, includeConstants=true);
 // end M;")
 // true
 // Evaluating: getDocumentationAnnotation(M)
-// {"html info","","html header info"}
+// {"html info", "", "html header info"}
 // Evaluating: loadString("model B
 //   constant Integer constant1=0;
 //   constant Boolean constant2=true;
@@ -264,5 +264,5 @@ getClassNames(B, includeConstants=true);
 // end B;")
 // true
 // Evaluating: getClassNames(B, includeConstants = true)
-// {constant1,constant2,constant3,constant4}
+// {constant1, constant2, constant3, constant4}
 // endResult

@@ -37,9 +37,9 @@ getErrorString();
 
 // Result:
 // true
-// {x,r.r1,w,r2}
+// {x, r.r1, w, r2}
 // ""
-// {"x","r.r1","w","r2"}
+// {"x", "r.r1", "w", "r2"}
 // ""
 // {}
 // ""

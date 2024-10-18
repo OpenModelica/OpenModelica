@@ -63,7 +63,7 @@ if res2[1,s] > -1e-2 then 1 else 0;
 // "testSolver.problem6_res.mat"
 // true
 // ""
-// {"testSolver.problem6","testSolver.problem6_init.xml"}
+// {"testSolver.problem6", "testSolver.problem6_init.xml"}
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0

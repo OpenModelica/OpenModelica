@@ -15,5 +15,5 @@ buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir);
 // ""
 // true
 // Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir)
-// {"Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir","Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir_init.xml"}
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir", "Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir_init.xml"}
 // endResult

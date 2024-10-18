@@ -6536,9 +6536,13 @@ algorithm
         failed = if f then failed + 1 else failed;
 
         if reportTimes then
-          print (s + " seconds -> " + smsg + "\n\t");
+          print (s + " seconds -> " + smsg + "\n");
         else
-          print(smsg + "\n\t");
+          print(smsg + "\n");
+        end if;
+
+        if not stringEmpty(str) then
+          print("\t");
         end if;
 
         print (System.stringReplace(str, "\n", "\n\t"));
@@ -6555,7 +6559,7 @@ algorithm
     case (cache,env,className::rest,msg)
       equation
         c = InteractiveUtil.getPathedClassInProgram(className, p);
-        print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... \n");
+        print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "...\n");
         failed = checkAll(cache, env, rest, msg, reportTimes, failed);
       then
         ();

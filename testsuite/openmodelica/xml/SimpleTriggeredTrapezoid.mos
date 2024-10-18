@@ -41,7 +41,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // end SimpleTriggeredTrapezoid;
 // "
 // ""
-// (true,"SimpleTriggeredTrapezoid.xml")
+// (true, "SimpleTriggeredTrapezoid.xml")
 // ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
