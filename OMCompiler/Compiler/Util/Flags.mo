@@ -1168,7 +1168,7 @@ constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(97, "preferTVars
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("Prefer tearing variables with start value for initialization."));
 constant ConfigFlag EQUATIONS_PER_FILE = CONFIG_FLAG(98, "equationsPerFile",
-  NONE(), EXTERNAL(), INT_FLAG(500), NONE(),
+  NONE(), EXTERNAL(), INT_FLAG(1000), NONE(),
   Gettext.gettext("Generate code for at most this many equations per C-file (partially implemented in the compiler)."));
 constant ConfigFlag EVALUATE_FINAL_PARAMS = CONFIG_FLAG(99, "evaluateFinalParameters",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
