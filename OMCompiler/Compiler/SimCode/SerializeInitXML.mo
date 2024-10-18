@@ -241,15 +241,15 @@ algorithm
   File.writeReal(file, s.tolerance);
   File.write(file, "\"\n");
 
-  File.write(file, "    solver        = \"");
+  File.write(file, "    solver         = \"");
   File.write(file, s.method);
   File.write(file, "\"\n");
 
-  File.write(file, "    outputFormat      = \"");
+  File.write(file, "    outputFormat   = \"");
   File.write(file, s.outputFormat);
   File.write(file, "\"\n");
 
-  File.write(file, "    variableFilter      = \"");
+  File.write(file, "    variableFilter = \"");
   File.write(file, s.variableFilter);
   File.write(file, "\" />\n\n");
 
@@ -349,7 +349,6 @@ protected
   Integer inputIndex = SimCodeUtil.getInputIndex(simVar);
   DAE.ElementSource source;
   SourceInfo info;
-  String hideResult;
 algorithm
   source := simVar.source;
   info := source.info;
@@ -399,13 +398,7 @@ algorithm
   File.write(file, "    isProtected = \"");
   File.write(file, String(simVar.isProtected));
   File.write(file, "\" hideResult = \"");
-  hideResult := match (simVar.hideResult)
-    local
-      Boolean bval;
-    case SOME(bval) then String(bval);
-    else "";
-  end match;
-  File.write(file, hideResult);
+  File.write(file, Util.applyOptionOrDefault(simVar.hideResult, boolString, ""));
   File.write(file, "\" isEncrypted = \"");
   File.write(file, boolString(simVar.isEncrypted));
   File.write(file, "\" initNonlinear = \"");
