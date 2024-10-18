@@ -16,7 +16,7 @@ buildModel(OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial)
 // ""
 // true
 // ""
-// {"OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial","OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial_init.xml"}
+// {"OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial", "OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial_init.xml"}
 // "Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are over specified. The following 3 initial equations are redundant, so they are removed from the initialization system:
 //          $DER.LR2.i_dq0[1] = 0.0

@@ -15,5 +15,5 @@ buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa);
 // ""
 // true
 // Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa)
-// {"Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa","Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa_init.xml"}
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa", "Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa_init.xml"}
 // endResult

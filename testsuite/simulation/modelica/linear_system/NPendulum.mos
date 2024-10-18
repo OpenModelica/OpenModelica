@@ -104,7 +104,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // "
 // true
 // ""
-// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
+// {"NPendulum.pendulum", "NPendulum.pendulum_init.xml"}
 // ""
 // 0
 // "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
@@ -133,7 +133,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // true
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
 // "
-// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
+// {"NPendulum.pendulum", "NPendulum.pendulum_init.xml"}
 // ""
 // 0
 // "LOG_STDOUT        | info    | Minimum system size for using linear sparse solver changed to 4000

@@ -19,17 +19,17 @@ b;
 if 100>40 then if a > 10 then a:=55; else a:=60; end if; else a:=70; end if; // test nested if
 a;
 // Result:
-// 
+//
 // 5
-// 
+//
 // 34
-// 
+//
 // 34
-// 
+//
 // 77
-// 
+//
 // 100
 // "test"
-// 
+//
 // 55
 // endResult

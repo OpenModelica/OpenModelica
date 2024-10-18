@@ -16,14 +16,14 @@ buildModel(ConPNlib.Examples.Test4); getErrorString();
 // Result:
 // true
 // ""
-// {"ConPNlib.Examples.Test1b","ConPNlib.Examples.Test1b_init.xml"}
+// {"ConPNlib.Examples.Test1b", "ConPNlib.Examples.Test1b_init.xml"}
 // ""
 // true
 // ""
-// {"ConPNlib.Examples.Test2","ConPNlib.Examples.Test2_init.xml"}
+// {"ConPNlib.Examples.Test2", "ConPNlib.Examples.Test2_init.xml"}
 // ""
 // true
 // ""
-// {"ConPNlib.Examples.Test4","ConPNlib.Examples.Test4_init.xml"}
+// {"ConPNlib.Examples.Test4", "ConPNlib.Examples.Test4_init.xml"}
 // ""
 // endResult

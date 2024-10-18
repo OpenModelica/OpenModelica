@@ -29,7 +29,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res
 // "
 // true
 // true
-// {"NPendulum.pendulum40","NPendulum.pendulum40_init.xml"}
+// {"NPendulum.pendulum40", "NPendulum.pendulum40_init.xml"}
 // ""
 // LOG_STDOUT        | info    | Minimum system size for using linear sparse solver changed to 4000
 // LOG_STDOUT        | info    | Using sparse solver for linear system 0,

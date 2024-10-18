@@ -111,7 +111,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: setParameterValue(NOT_EXISTENT, NOT_EXISTENT, 35)
 // false
 // Evaluating: getComponentModifierNames(C, "b1")
-// {"a1.p1","a1.p2","a2.p2"}
+// {"a1.p1", "a1.p2", "a2.p2"}
 // Evaluating: getComponentModifierValue(C, b1.a1)
 // ""
 // Evaluating: setComponentModifierValue(C, b1.a1, $Code((p1 = 45)))
@@ -123,7 +123,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getComponentModifierValue(C, b1.a2)
 // "33"
 // Evaluating: getExtendsModifierNames(D2, B2)
-// {a.x,f}
+// {a.x, f}
 // Evaluating: getExtendsModifierValue(D2, B2, a.x)
 // 2*y
 // Evaluating: setExtendsModifierValue(D2, B2, a.x, $Code( = 10))
@@ -217,7 +217,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: getExtendsModifierValue(K3, Resistor, R)
 // 2
 // Evaluating: getExtendsModifierNames(K4, Resistor)
-// {x,x.start,x.fixed}
+// {x, x.start, x.fixed}
 // Evaluating: setExtendsModifierValue(K4, Resistor, x, $Code())
 // true
 // Evaluating: getExtendsModifierValue(K4, Resistor, x)
@@ -231,7 +231,7 @@ isExtendsModifierFinal(K6,Resistor,x);
 // Evaluating: setExtendsModifierValue(K5, Resistor, x, $Code())
 // true
 // Evaluating: getExtendsModifierNames(K5, Resistor)
-// {x.fixed,x.start}
+// {x.fixed, x.start}
 // Evaluating: getExtendsModifierValue(K5, Resistor, x.fixed)
 // true
 // Evaluating: getExtendsModifierValue(K5, Resistor, x.start)

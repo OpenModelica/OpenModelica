@@ -28,7 +28,7 @@ readFile("TestTornHomotopy2_equidistant_global_homotopy.csv")
 // ""
 // record SimulationResult
 //     resultFile = "TestTornHomotopy2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestTornHomotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_HOMOTOPY -s=dassl'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestTornHomotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_HOMOTOPY -s=dassl'",
 //     messages = "LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
 // LOG_INIT_HOMOTOPY | info    | Global homotopy with equidistant step size started.
 // LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to TestTornHomotopy2_equidistant_global_homotopy.csv.
@@ -53,7 +53,7 @@ readFile("TestTornHomotopy2_equidistant_global_homotopy.csv")
 // "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "\"lambda\",\"x\",\"y\",\"z\"
-// 0,2.307692307692307,2.307692307692308,0.7692307692307693
+// 0,2.307692307692307,2.307692307692307,0.7692307692307692
 // 0.3333333333333333,2.436704982096462,2.268988505371062,0.7563295017903539
 // 0.6666666666666666,2.557625806717175,2.232712257984848,0.7442374193282825
 // 1,2.671349569180263,2.198595129245921,0.7328650430819735

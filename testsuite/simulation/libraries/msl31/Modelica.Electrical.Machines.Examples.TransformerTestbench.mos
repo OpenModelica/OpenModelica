@@ -31,8 +31,8 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults
 // Modelica.Electrical.Machines.Examples.TransformerTestbench
-// {"transformer.l2sigma.inductor[1].i","transformer.l2sigma.inductor[3].i"}
-// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = 'time|transformer.l2sigma.inductor.1..i|transformer.l2sigma.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"transformer.l2sigma.inductor[1].i", "transformer.l2sigma.inductor[3].i"}
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = 'time|transformer.l2sigma.inductor.1..i|transformer.l2sigma.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.TransformerTestbench_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -40,7 +40,7 @@ runScript(modelTesting);getErrorString();
 // Files Equal!
 // [Modelica 3.1.0+maint.om/Electrical/Machines.mo:7955:5-7956:40:writable] Warning: Parameter transformerData.P_sc has no value, and is fixed during initialization (fixed=true), using available start value (start=300.0) as default value.
 // [Modelica 3.1.0+maint.om/Electrical/Machines.mo:7953:5-7954:36:writable] Warning: Parameter transformerData.v_sc has no value, and is fixed during initialization (fixed=true), using available start value (start=0.05) as default value.
-// [Modelica 3.1.0+maint.om/Electrical/Machines.mo:7951:5-7952:33:writable] Warning: Parameter transformerData.SNominal has no value, and is fixed during initialization (fixed=true), using available start value (start=30000.0) as default value.
+// [Modelica 3.1.0+maint.om/Electrical/Machines.mo:7951:5-7952:33:writable] Warning: Parameter transformerData.SNominal has no value, and is fixed during initialization (fixed=true), using available start value (start=3e4) as default value.
 // [Modelica 3.1.0+maint.om/Electrical/Machines.mo:7945:5-7946:86:writable] Warning: Parameter transformerData.V2 has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
 // [Modelica 3.1.0+maint.om/Electrical/Machines.mo:7940:5-7941:53:writable] Warning: Parameter transformerData.V1 has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
 // [Modelica 3.1.0+maint.om/Electrical/Machines.mo:7939:5-7939:73:writable] Warning: Parameter transformerData.f has no value, and is fixed during initialization (fixed=true), using available start value (start=50.0) as default value.

@@ -24,10 +24,10 @@ SystemTest.randTest(1000,6);getErrorString();
 // true
 // ""
 // "SystemTest.substringTest"
-// ("abc "," def","abc def")
+// ("abc ", " def", "abc def")
 // ""
 // "SystemTest.substringTest"
-// ("a","a","a")
+// ("a", "a", "a")
 // ""
 // "SystemTest.substringTest"
 // fail()

@@ -28,7 +28,7 @@ simulate(initializationTests.bug_2673, startTime=0.0, stopTime=0.0, simflags="-i
 // ""
 // record SimulationResult
 //     resultFile = "bug_2673.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=bug_2673.mat'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=bug_2673.mat'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -36,7 +36,7 @@ simulate(initializationTests.bug_2673, startTime=0.0, stopTime=0.0, simflags="-i
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.bug_2673_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI'",
 //     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | states variables
 // |                 | |       | | | [1] Real x(start=2.47151, nominal=1) = 5 (pre: 2.47151)
@@ -51,7 +51,7 @@ simulate(initializationTests.bug_2673, startTime=0.0, stopTime=0.0, simflags="-i
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.bug_2673_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI -iim none'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI -iim none'",
 //     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | states variables
 // |                 | |       | | | [1] Real x(start=2.47151, nominal=1) = 2.47151 (pre: 0)

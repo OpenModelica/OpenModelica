@@ -33,7 +33,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // "
 // "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no value, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
 // "
-// (true,"BB.BouncingBall.xml")
+// (true, "BB.BouncingBall.xml")
 // ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"

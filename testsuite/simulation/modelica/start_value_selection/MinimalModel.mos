@@ -64,6 +64,6 @@ buildModel(MinimalModel); getErrroString();
 // 5: b:VARIABLE(fixed = true )  = 0.0  type: Real
 //
 //
-// {"MinimalModel","MinimalModel_init.xml"}
+// {"MinimalModel", "MinimalModel_init.xml"}
 //
 // endResult

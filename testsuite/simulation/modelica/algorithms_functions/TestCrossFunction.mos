@@ -26,6 +26,6 @@ buildModel(TestCrossFunction);getErrorString();
 // ""
 // true
 // ""
-// {"TestCrossFunction","TestCrossFunction_init.xml"}
+// {"TestCrossFunction", "TestCrossFunction_init.xml"}
 // ""
 // endResult

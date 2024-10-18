@@ -120,165 +120,69 @@ moveClassToBottom(P2.E); list(P2); // Move from non-bottom public section to bot
 // true
 // true
 // true
-// {A,B,C,D,E}
+// {A, B, C, D, E}
 // true
-// {B,A,C,D,E}
+// {B, A, C, D, E}
 // true
-// {B,A,C,D,E}
+// {B, A, C, D, E}
 // true
-// {A,C,D,E,B}
+// {A, C, D, E, B}
 // true
-// {C,D,E,B,A}
+// {C, D, E, B, A}
 // true
-// {C,D,B,E,A}
+// {C, D, B, E, A}
 // true
-// {C,B,D,E,A}
+// {C, B, D, E, A}
 // true
-// {D,C,B,E,A}
+// {D, C, B, E, A}
 // true
-// {D,C,E,A,B}
+// {D, C, E, A, B}
 // true
-// {E,D,C,A,B}
+// {E, D, C, A, B}
 // true
-// {E,D,A,B,C}
+// {E, D, A, B, C}
 // true
-// {E,D,A,B,C}
+// {E, D, A, B, C}
 // true
-// {E,D,A,C,B}
+// {E, D, A, C, B}
 // true
-// {B,E,D,A,C}
+// {B, E, D, A, C}
 // true
-// {C,B,E,D,A}
-// true
-// ""
-// true
-// {A,B,C,D,E}
-// true
-// {B,A,C,D,E}
-// true
-// {B,A,C,D,E}
-// true
-// {A,C,D,E,B}
-// true
-// {C,D,E,B,A}
-// true
-// {C,D,B,E,A}
-// true
-// {C,B,D,E,A}
-// true
-// {D,C,B,E,A}
-// true
-// {D,C,E,A,B}
-// true
-// {E,D,C,A,B}
-// true
-// {E,D,A,B,C}
-// true
-// {E,D,A,B,C}
-// true
-// {E,D,A,C,B}
-// true
-// {B,E,D,A,C}
-// true
-// {C,B,E,D,A}
+// {C, B, E, D, A}
 // true
 // ""
 // true
-// "package P2
-//   type A = Real;
-//   type B = Real;
-//   type C = Real;
-// protected
-//   type D = Real;
-// public
-//   type E = Real;
-//   type F = Real;
-// protected
-//   type G = Real;
-//   type H = Real;
-//   type I = Real;
-//   type J = Real;
-// end P2;"
+// {A, B, C, D, E}
 // true
-// "package P2
-//   type B = Real;
-//   type A = Real;
-//   type C = Real;
-// protected
-//   type D = Real;
-// public
-//   type E = Real;
-//   type F = Real;
-// protected
-//   type G = Real;
-//   type H = Real;
-//   type I = Real;
-//   type J = Real;
-// end P2;"
+// {B, A, C, D, E}
 // true
-// "package P2
-//   type B = Real;
-//   type C = Real;
-//   type A = Real;
-// protected
-//   type D = Real;
-// public
-//   type E = Real;
-//   type F = Real;
-// protected
-//   type G = Real;
-//   type H = Real;
-//   type I = Real;
-//   type J = Real;
-// end P2;"
+// {B, A, C, D, E}
 // true
-// "package P2
-//   type B = Real;
-//   type C = Real;
-// protected
-//   type D = Real;
-// public
-//   type A = Real;
-//   type E = Real;
-//   type F = Real;
-// protected
-//   type G = Real;
-//   type H = Real;
-//   type I = Real;
-//   type J = Real;
-// end P2;"
+// {A, C, D, E, B}
 // true
-// "package P2
-//   type B = Real;
-//   type C = Real;
-//   type A = Real;
-// protected
-//   type D = Real;
-// public
-//   type E = Real;
-//   type F = Real;
-// protected
-//   type G = Real;
-//   type H = Real;
-//   type I = Real;
-//   type J = Real;
-// end P2;"
+// {C, D, E, B, A}
 // true
-// "package P2
-//   type A = Real;
-//   type B = Real;
-//   type C = Real;
-// protected
-//   type D = Real;
-// public
-//   type E = Real;
-//   type F = Real;
-// protected
-//   type G = Real;
-//   type H = Real;
-//   type I = Real;
-//   type J = Real;
-// end P2;"
+// {C, D, B, E, A}
+// true
+// {C, B, D, E, A}
+// true
+// {D, C, B, E, A}
+// true
+// {D, C, E, A, B}
+// true
+// {E, D, C, A, B}
+// true
+// {E, D, A, B, C}
+// true
+// {E, D, A, B, C}
+// true
+// {E, D, A, C, B}
+// true
+// {B, E, D, A, C}
+// true
+// {C, B, E, D, A}
+// true
+// ""
 // true
 // "package P2
 //   type A = Real;
@@ -298,12 +202,28 @@ moveClassToBottom(P2.E); list(P2); // Move from non-bottom public section to bot
 // true
 // "package P2
 //   type B = Real;
+//   type A = Real;
 //   type C = Real;
 // protected
 //   type D = Real;
 // public
 //   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
 //   type A = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
 //   type F = Real;
 // protected
 //   type G = Real;
@@ -318,26 +238,8 @@ moveClassToBottom(P2.E); list(P2); // Move from non-bottom public section to bot
 // protected
 //   type D = Real;
 // public
-//   type E = Real;
-//   type F = Real;
-// protected
-//   type G = Real;
-//   type H = Real;
-// public
 //   type A = Real;
-// protected
-//   type I = Real;
-//   type J = Real;
-// end P2;"
-// true
-// "package P2
-//   type B = Real;
-//   type C = Real;
-// protected
-//   type D = Real;
-// public
 //   type E = Real;
-//   type A = Real;
 //   type F = Real;
 // protected
 //   type G = Real;
@@ -349,11 +251,43 @@ moveClassToBottom(P2.E); list(P2); // Move from non-bottom public section to bot
 // "package P2
 //   type B = Real;
 //   type C = Real;
-//   type E = Real;
 //   type A = Real;
 // protected
 //   type D = Real;
 // public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type A = Real;
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type A = Real;
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
 //   type F = Real;
 // protected
 //   type G = Real;
@@ -385,6 +319,72 @@ moveClassToBottom(P2.E); list(P2); // Move from non-bottom public section to bot
 //   type D = Real;
 // public
 //   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+// public
+//   type A = Real;
+// protected
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+//   type E = Real;
+//   type A = Real;
+// protected
+//   type D = Real;
+// public
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
 //   type A = Real;
 //   type F = Real;
 // protected
@@ -432,30 +432,30 @@ moveClassToBottom(P2.E); list(P2); // Move from non-bottom public section to bot
 // true
 // true
 // true
-// {C,A,B,D,E}
+// {C, A, B, D, E}
 // true
-// {C,A,B,D,E}
+// {C, A, B, D, E}
 // true
-// {E,C,A,B,D}
+// {E, C, A, B, D}
 // true
-// {E,C,B,D,A}
+// {E, C, B, D, A}
 // true
-// {E,C,B,D,A}
+// {E, C, B, D, A}
 // true
-// {C,B,D,A,E}
+// {C, B, D, A, E}
 // true
 // true
-// {C,A,B,D,E}
+// {C, A, B, D, E}
 // true
-// {C,A,B,D,E}
+// {C, A, B, D, E}
 // true
-// {E,C,A,B,D}
+// {E, C, A, B, D}
 // true
-// {E,C,B,D,A}
+// {E, C, B, D, A}
 // true
-// {E,C,B,D,A}
+// {E, C, B, D, A}
 // true
-// {C,B,D,A,E}
+// {C, B, D, A, E}
 // true
 // true
 // "package P2

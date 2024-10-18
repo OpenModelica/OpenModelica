@@ -52,7 +52,7 @@ list();
 // Ok
 // "model M
 // equation
-// 
+//
 // end M;"
 // true
 // ""
@@ -98,6 +98,6 @@ list();
 // Ok
 // "model M
 // equation
-// 
+//
 // end M;"
 // endResult

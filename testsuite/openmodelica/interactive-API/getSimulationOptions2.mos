@@ -25,7 +25,7 @@ getErrorString();
 // Result:
 // true
 // ""
-// (0.0,1.0,1e-6,500,0.002)
+// (0.0, 1.0, 1e-6, 500, 0.002)
 // "Warning: Conflicting 'experiment' annotations inherited by class 'M':
 //   (StopTime = 1.0) from 'extends A'
 //   (StopTime = 2.0) from 'extends B'

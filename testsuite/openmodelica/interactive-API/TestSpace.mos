@@ -32,6 +32,6 @@ getErrorString();
 //          'a x':VARIABLE(fixed = true )  type: Real
 //          'b_x':VARIABLE(fixed = true )  type: Real
 // "
-// {"'a x'","'b_x'","der('a x')","der('b_x')","time"}
+// {"'a x'", "'b_x'", "der('a x')", "der('b_x')", "time"}
 // ""
 // endResult

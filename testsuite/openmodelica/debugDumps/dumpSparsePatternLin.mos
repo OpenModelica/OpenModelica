@@ -127,6 +127,6 @@ buildModel(problem3); getErrorString();
 // 0: {x[1]}
 // The following (1) independents belong to one color
 // 1: {x[2]}
-// {"problem3","problem3_init.xml"}
+// {"problem3", "problem3_init.xml"}
 // ""
 // endResult

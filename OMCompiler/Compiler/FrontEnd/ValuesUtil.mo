@@ -2005,7 +2005,7 @@ end valRecordString;
 
 protected function valListString "
   This function returns a textual representation of a list of
-  values, separating each value with a comman.
+  values, separating each value with a comma.
 "
   input list<Values.Value> inValueLst;
 algorithm
@@ -2022,7 +2022,7 @@ algorithm
     case (v :: vs)
       equation
         valString2(v);
-        Print.printBuf(",");
+        Print.printBuf(", ");
         valListString(vs);
       then
         ();

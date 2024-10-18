@@ -25,11 +25,11 @@ getCommandLineOptions();
 // true
 // {"-d=failtrace"}
 // true
-// {"-d=failtrace","--showAnnotations=true"}
+// {"-d=failtrace", "--showAnnotations=true"}
 // true
-// {"-d=ceval,failtrace","--showAnnotations=true"}
+// {"-d=ceval,failtrace", "--showAnnotations=true"}
 // true
-// {"-d=ceval,failtrace","--postOptModules=dumpDAE,dumpDAEXML","--showAnnotations=true"}
+// {"-d=ceval,failtrace", "--postOptModules=dumpDAE,dumpDAEXML", "--showAnnotations=true"}
 // true
-// {"-d=nonewInst,ceval,failtrace","--postOptModules=dumpDAE,dumpDAEXML","--showAnnotations=true"}
+// {"-d=nonewInst,ceval,failtrace", "--postOptModules=dumpDAE,dumpDAEXML", "--showAnnotations=true"}
 // endResult

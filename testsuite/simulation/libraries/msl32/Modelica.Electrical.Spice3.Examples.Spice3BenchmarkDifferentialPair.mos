@@ -31,7 +31,7 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
-// {"Q1.vbe","Q1.vbc","Q1.vbx","Q1.vcs","Q2.vbe","Q2.vbc","Q2.vbx","Q2.vcs"}
+// {"Q1.vbe", "Q1.vbc", "Q1.vbx", "Q1.vcs", "Q2.vbe", "Q2.vbc", "Q2.vbx", "Q2.vcs"}
 // Compilation succeeded
 // "true
 // "

@@ -11,30 +11,30 @@ VectorizeMultipleUnknown(3);getErrorString();
 // {{record Complex
 //     re = 0.3333333333333333,
 //     im = 0.0
-// end Complex;,record Complex
-//     re = -0.1666666666666666,
-//     im = 0.2886751345948129
-// end Complex;,record Complex
+// end Complex;, record Complex
+//     re = -0.16666666666666657,
+//     im = 0.28867513459481287
+// end Complex;, record Complex
 //     re = -0.1666666666666668,
-//     im = -0.2886751345948128
-// end Complex;},{record Complex
+//     im = -0.28867513459481275
+// end Complex;}, {record Complex
 //     re = 0.3333333333333333,
 //     im = 0.0
-// end Complex;,record Complex
+// end Complex;, record Complex
 //     re = -0.1666666666666668,
-//     im = -0.2886751345948128
-// end Complex;,record Complex
+//     im = -0.28867513459481275
+// end Complex;, record Complex
 //     re = -0.1666666666666664,
-//     im = 0.288675134594813
-// end Complex;},{record Complex
+//     im = 0.28867513459481303
+// end Complex;}, {record Complex
 //     re = 0.3333333333333333,
 //     im = 0.0
-// end Complex;,record Complex
+// end Complex;, record Complex
 //     re = 0.3333333333333333,
 //     im = -8.164311994315688e-17
-// end Complex;,record Complex
+// end Complex;, record Complex
 //     re = 0.3333333333333333,
-//     im = -1.632862398863138e-16
+//     im = -1.6328623988631375e-16
 // end Complex;}}
 // ""
 // endResult

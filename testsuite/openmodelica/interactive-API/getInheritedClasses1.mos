@@ -14,7 +14,7 @@ getInheritedClasses(ModelicaServices.Animation.Shape); getErrorString();
 // ""
 // true
 // ""
-// {ModelicaServices.Animation.Shape,Modelica.Utilities.Internal.PartialModelicaServices.Animation.PartialShape}
+// {ModelicaServices.Animation.Shape, Modelica.Utilities.Internal.PartialModelicaServices.Animation.PartialShape}
 // ""
 // {Modelica.Utilities.Internal.PartialModelicaServices.Animation.PartialShape}
 // ""

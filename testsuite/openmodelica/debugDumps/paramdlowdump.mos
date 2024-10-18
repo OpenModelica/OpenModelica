@@ -40,6 +40,6 @@ buildModel(testParamdlowdump); getErrorString();
 // 5: b2=not b1 [Boolean]
 // 6: b3=b1 or b2 [Boolean]
 //
-// {"testParamdlowdump","testParamdlowdump_init.xml"}
+// {"testParamdlowdump", "testParamdlowdump_init.xml"}
 // ""
 // endResult

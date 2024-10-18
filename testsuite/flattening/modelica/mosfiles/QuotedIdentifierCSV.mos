@@ -26,6 +26,6 @@ readSimulationResultVars("QuotedIdentifier_res.csv"); getErrorString();
 // "
 // end SimulationResult;
 // ""
-// {"time","'*/ no code injection'","'\\''","'\\\\\\\\\\''","'a\"b'","'c d'","'e\"f g'","'h\\'i //j'","'stupid,name'","der('*/ no code injection')","der('\\'')","der('\\\\\\\\\\'')","der('a\"b')","der('c d')","der('e\"f g')","der('h\\'i //j')","der('stupid,name')"}
+// {"time", "'*/ no code injection'", "'\\''", "'\\\\\\\\\\''", "'a\"b'", "'c d'", "'e\"f g'", "'h\\'i //j'", "'stupid,name'", "der('*/ no code injection')", "der('\\'')", "der('\\\\\\\\\\'')", "der('a\"b')", "der('c d')", "der('e\"f g')", "der('h\\'i //j')", "der('stupid,name')"}
 // ""
 // endResult

@@ -30,7 +30,8 @@ buildModel(DerInvalid); getErrorString();
 // Result:
 // true
 // ""
-// {"",""}
+// {"", ""}
 // "[<interactive>:3:3-3:30:writable] Error: Argument 'x' of der is not differentiable.
 // Error: pre-optimization module expandDerOperator (simulation) failed.
 // "
+// endResult

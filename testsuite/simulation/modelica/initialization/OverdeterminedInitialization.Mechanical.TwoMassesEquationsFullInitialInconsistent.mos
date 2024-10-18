@@ -16,7 +16,7 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial
 // ""
 // true
 // ""
-// {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent","OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent_init.xml"}
+// {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent", "OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent_init.xml"}
 // "Error: The initialization problem is inconsistent due to the following equation: x1 = 0.0 (1.0 = 0.0)
 // Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization system:
 //          x1 = 0.0

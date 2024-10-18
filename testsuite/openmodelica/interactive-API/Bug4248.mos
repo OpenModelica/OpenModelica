@@ -26,13 +26,13 @@ val(imc.powerBalance.powerStator, 0.001);
 // ""
 // record SimulationResult
 //     resultFile = "IMCNominalOperation.NominalOperation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'IMCNominalOperation.NominalOperation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'IMCNominalOperation.NominalOperation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// 25149.45842709183
-// 25149.45842709183
+// 25149.45842709203
+// 25149.45842709203
 // endResult

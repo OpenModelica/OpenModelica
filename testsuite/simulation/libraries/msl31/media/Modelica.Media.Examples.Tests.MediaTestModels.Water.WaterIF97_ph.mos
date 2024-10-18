@@ -15,5 +15,5 @@ buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph);
 // ""
 // true
 // Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph)
-// {"Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph","Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph_init.xml"}
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph", "Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph_init.xml"}
 // endResult

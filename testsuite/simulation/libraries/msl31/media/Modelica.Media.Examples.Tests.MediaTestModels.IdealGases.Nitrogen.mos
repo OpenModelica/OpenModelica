@@ -15,5 +15,5 @@ buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen);
 // ""
 // true
 // Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen)
-// {"Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen","Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_init.xml"}
+// {"Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen", "Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_init.xml"}
 // endResult

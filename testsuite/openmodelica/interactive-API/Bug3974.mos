@@ -27,7 +27,7 @@ v;
 // Result:
 // true
 // ""
-// {"ModelTestBug3974","ModelTestBug3974_init.xml"}
+// {"ModelTestBug3974", "ModelTestBug3974_init.xml"}
 // ""
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
