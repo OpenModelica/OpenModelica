@@ -3494,6 +3494,78 @@ annotation(
   preferredView="text");
 end setParameterValue;
 
+function getNthComponent
+  input TypeName className;
+  input Integer n;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the type, name, and description string of the n:th component in the given class.
+</html>"),
+  preferredView="text");
+end getNthComponent;
+
+function getComponents
+  input TypeName className;
+  input Boolean useQuotes = false;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns information about the components in a given class. For each component
+the following information is returned in an array:</p>
+<p>
+<ul>
+<li>type</li>
+<li>name</li>
+<li>description string</li>
+<li>public/protected</li>
+<li>final prefix</li>
+<li>flow prefix</li>
+<li>stream prefix</li>
+<li>replaceable prefix</li>
+<li>variability (constant/parameter/discrete/unspecified)</li>
+<li>inner/outer prefix</li>
+<li>input/output prefix</li>
+<li>array dimensions</li>
+</ul>
+</p>
+</html>"),
+  preferredView="text");
+end getComponents;
+
+function getElements
+  input TypeName className;
+  input Boolean useQuotes = false;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns information about the elements in a given class. For each
+component/short class definition the following information is returned in an
+array:</p>
+<p>
+<ul>
+<li>kind of element (co = component, cl = class)</li>
+<li>class restriction</li>
+<li>type</li>
+<li>name</li>
+<li>description string</li>
+<li>public/protected</li>
+<li>final prefix</li>
+<li>flow prefix</li>
+<li>stream prefix</li>
+<li>replaceable prefix</li>
+<li>variability (constant/parameter/discrete/unspecified)</li>
+<li>inner/outer prefix</li>
+<li>input/output prefix</li>
+<li>constraining class</li>
+<li>array dimensions</li>
+</ul>
+</p>
+</html>"),
+  preferredView="text");
+end getElements;
+
 function getComponentModifierNames
   input TypeName class_;
   input String componentName;
@@ -3678,6 +3750,17 @@ end P;
 </html>"),
   preferredView="text");
 end setExtendsModifierValue;
+
+function getComponentCount
+  input TypeName classPath;
+  output Integer count;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the number of components in a class.</p>
+</html>"),
+  preferredView="text");
+end getComponentCount;
 
 function getElementAnnotation
   input TypeName elementName;

@@ -1312,63 +1312,6 @@ algorithm
   end match;
 end updateProgram2;
 
-public function getElements
-" This function takes a `ComponentRef\', a `Program\' and an int and  returns
-   a list of all elements"
-  input Absyn.ComponentRef cr;
-  input Boolean inBoolean;
-  input Integer inAccess;
-  output String outString;
-algorithm
-  outString := getElements2(cr,inBoolean,inAccess);
-end getElements;
-
-protected function getElements2
-" This function takes a `ComponentRef\', a `Program\' and returns the list of all elements"
-  input Absyn.ComponentRef inComponentRef;
-  input Boolean inBoolean;
-  input Integer inAccess;
-  output String outString;
-algorithm
-  outString := matchcontinue (inComponentRef,inBoolean,inAccess)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      list<SCode.Element> p_1;
-      FCore.Graph env,env_1,env2;
-      SCode.Element c;
-      String id,s1,s2,str,res;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
-      ClassInf.State ci_state;
-      list<Absyn.Element> comps1,comps2;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      FCore.Cache cache;
-      Boolean b, permissive;
-      GraphicEnvCache genv;
-      Integer access;
-
-    case (model_,b,access)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        genv = createEnvironment(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), modelpath);
-        comps1 = getPublicElementsInClass(cdef);
-        s1 = getElementsInfo(comps1, b, "\"public\"", genv);
-        if (access >= 4) then // i.e., Access.diagram
-          comps2 = getProtectedElementsInClass(cdef);
-          s2 = getElementsInfo(comps2, b, "\"protected\"", genv);
-        else
-          s2 = "";
-        end if;
-        str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
-        res = stringAppendList({"{",str,"}"});
-      then res;
-    else "Error";
-  end matchcontinue;
-end getElements2;
-
 public function createEnvironment
   input Absyn.Program p;
   input Option<SCode.Program> os;
@@ -2194,111 +2137,158 @@ protected function getElementInfo
    component, the empty string is returned.
    inputs: (Absyn.Element, string, /* public or protected */, FCore.Graph)
    outputs: string list"
-  input Absyn.Element inElement;
-  input Boolean inQuoteNames;
-  input String inVisibility;
-  input GraphicEnvCache inEnv;
-  output list<String> outStringLst;
+  input Absyn.Element element;
+  input Boolean isPublic;
+  input Boolean quoteNames;
+  input Boolean onlyComponents;
+  input GraphicEnvCache env;
+  input output list<Values.Value> infos = {};
+protected
+  Absyn.ElementAttributes attr;
+  Absyn.Path ty, cc_path;
+  list<Absyn.ComponentItem> comps;
+  String name, cmt;
+  list<Values.Value> common_info, info;
+  Absyn.Class cls;
+  Absyn.Restriction restriction;
+  Option<Absyn.Comment> opt_cmt;
+  Option<Absyn.ConstrainClass> opt_cc;
+  Option<Absyn.ArrayDim> opt_adim;
+  list<Values.Value> common_dims, dims;
+  Values.Value dims_val;
+
+  function make_dim_vals
+    input list<Absyn.Subscript> dims;
+    output list<Values.Value> vals =
+      list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(Dump.printSubscriptStr(d))) for d in dims);
+  end make_dim_vals;
 algorithm
-  outStringLst := match inElement
-    local
-      Absyn.ElementAttributes attr;
-      Absyn.Path p, env_path, pkg_path, tp_path, qpath;
-      list<Absyn.ComponentItem> comps;
-      FCore.Graph env;
-      list<String> names, dims;
-      Option<Absyn.Path> oenv_path;
-      String tp_name, typename, final_str, repl_str, io_str;
-      String flow_str, stream_str, var_str, dir_str, dim_str, str, cc_str;
-      Absyn.Class c;
-      String name, cmt_str;
-      Option<Absyn.Comment> ocmt;
-      Option<Absyn.ArrayDim> oadim;
-      Absyn.ArrayDim ad;
-      Option<Absyn.ConstrainClass> occ;
-      Absyn.Restriction restriction;
-
+  infos := match element
     case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
-        attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps),
-        constrainClass = occ)
+          attributes = attr, typeSpec = Absyn.TPATH(path = ty, arrayDim = opt_adim), components = comps),
+        constrainClass = opt_cc)
       algorithm
-        typename := AbsynUtil.pathString(qualifyPath(inEnv, p));
+        common_info := {};
+        ty := qualifyPath(env, ty);
+        common_dims := make_dim_vals(attr.arrayDim);
 
-        names := getComponentItemsNameAndComment(comps, inElement, inQuoteNames);
-        dims := getComponentitemsDimension(comps);
-        final_str := boolString(inElement.finalPrefix);
-        repl_str := boolString(keywordReplaceable(inElement.redeclareKeywords));
-        io_str := innerOuterStr(inElement.innerOuter);
-        flow_str := attrFlowStr(attr);
-        stream_str := attrStreamStr(attr);
-        var_str := attrVariabilityStr(attr);
-        dir_str := attrDirectionStr(attr);
-        dim_str := attrDimensionStr(attr);
-        cc_str := getConstrainClassStr(inEnv, occ);
+        if not onlyComponents then
+          cc_path := getConstrainClassPath(env, opt_cc);
 
-        if inQuoteNames then
-          typename := StringUtil.quote(typename);
-          final_str := StringUtil.quote(final_str);
-          repl_str := StringUtil.quote(repl_str);
-          flow_str := StringUtil.quote(flow_str);
-          stream_str := StringUtil.quote(stream_str);
-          cc_str := StringUtil.quote(cc_str);
+          if quoteNames then
+            common_info := ValuesUtil.makeString(AbsynUtil.pathString(cc_path)) :: common_info;
+          else
+            common_info := ValuesUtil.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: common_info;
+          end if;
         end if;
 
-        names := prefixTypename(typename, names);
-        names := prefixTypename("\"-\"", names);
-        names := prefixTypename("\"co\"", names);
-        str := stringDelimitList({inVisibility, final_str, flow_str,
-          stream_str, repl_str, var_str, io_str, dir_str, cc_str}, ", ");
+        common_info := InteractiveUtil.getElementAttributeValues(element, isPublic, quoteNames, common_info);
+
+        for comp in listReverse(comps) loop
+          name := comp.component.name;
+          cmt := getComponentComment(comp, element);
+          dims := make_dim_vals(comp.component.arrayDim);
+          dims_val := ValuesUtil.makeArray(listAppend(dims, common_dims));
+
+          if quoteNames then
+            dims_val := ValuesUtil.makeString(ValuesUtil.printValStr(dims_val));
+          end if;
+
+          info := List.appendElt(dims_val, common_info);
+          info := ValuesUtil.makeString(cmt) :: info;
+
+          if quoteNames then
+            info := ValuesUtil.makeString(name) :: info;
+            info := ValuesUtil.makeString(AbsynUtil.pathString(ty)) :: info;
+          else
+            info := ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(name)) :: info;
+            info := ValuesUtil.makeCodeTypeName(ty) :: info;
+          end if;
+
+          if not onlyComponents then
+            info := ValuesUtil.makeString("co") :: ValuesUtil.makeString("-") :: info;
+          end if;
+
+          infos := ValuesUtil.makeArray(info) :: infos;
+        end for;
       then
-        suffixInfos(names, dims, dim_str, str, inQuoteNames);
+        infos;
 
-    case Absyn.ELEMENT(specification = Absyn.CLASSDEF(
-           class_ = c as Absyn.CLASS(name = name, restriction = restriction, body = Absyn.DERIVED(typeSpec = Absyn.TPATH(p, oadim), attributes = attr, comment = ocmt))),
-           constrainClass = occ)
+    case Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = cls as Absyn.CLASS(
+            name = name, restriction = restriction,
+            body = Absyn.DERIVED(typeSpec = Absyn.TPATH(ty, opt_adim), attributes = attr, comment = opt_cmt))),
+          constrainClass = opt_cc)
+      guard not onlyComponents
       algorithm
-        typename := AbsynUtil.pathString(qualifyPath(inEnv, p));
+        ty := qualifyPath(env, ty);
+        cmt := getClassCommentInCommentOpt(opt_cmt);
 
-        cmt_str := getClassCommentInCommentOpt(ocmt);
+        dims := if isSome(opt_adim) then make_dim_vals(Util.getOption(opt_adim)) else {};
+        dims := listAppend(make_dim_vals(attr.arrayDim), dims);
+        dims_val := ValuesUtil.makeArray(dims);
 
-        names := (if inQuoteNames
-                  then stringAppendList({"\"", name, "\", \"", cmt_str, "\""})
-                  else stringAppendList({name, ", \"", cmt_str, "\""})) :: {};
-        dims := match (oadim)
-                  case (SOME(ad)) then {stringDelimitList(List.map(ad, Dump.printSubscriptStr), ",")};
-                  else {""};
-                end match;
-        final_str := boolString(inElement.finalPrefix);
-        repl_str := boolString(keywordReplaceable(inElement.redeclareKeywords));
-        io_str := innerOuterStr(inElement.innerOuter);
-        flow_str := attrFlowStr(attr);
-        stream_str := attrStreamStr(attr);
-        var_str := attrVariabilityStr(attr);
-        dir_str := attrDirectionStr(attr);
-        dim_str := attrDimensionStr(attr);
-        cc_str := getConstrainClassStr(inEnv, occ);
-
-        if inQuoteNames then
-          typename := StringUtil.quote(typename);
-          final_str := StringUtil.quote(final_str);
-          repl_str := StringUtil.quote(repl_str);
-          flow_str := StringUtil.quote(flow_str);
-          stream_str := StringUtil.quote(stream_str);
-          cc_str := StringUtil.quote(cc_str);
+        if quoteNames then
+          dims_val := ValuesUtil.makeString(ValuesUtil.printValStr(dims_val));
         end if;
 
-        names := prefixTypename(typename, names);
-        names := prefixTypename("\"" + Dump.unparseRestrictionStr(restriction) + "\"", names);
-        names := prefixTypename("\"cl\"", names);
-        str := stringDelimitList({inVisibility, final_str, flow_str,
-          stream_str, repl_str, var_str, io_str, dir_str, cc_str}, ", ");
+        info := {dims_val};
+        info := ValuesUtil.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: info;
+        info := getElementAttributeValues(element, isPublic, quoteNames, info);
+        info := ValuesUtil.makeString("") :: info; // dims
+        info := ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(name)) :: info;
+        info := ValuesUtil.makeCodeTypeName(ty) :: info;
+        info := ValuesUtil.makeString(Dump.unparseRestrictionStr(restriction)) :: info;
+        info := ValuesUtil.makeString("cl") :: info;
+
+        infos := ValuesUtil.makeArray(info) :: infos;
       then
-        suffixInfos(names, dims, dim_str, str, inQuoteNames);
+        infos;
 
-    else {};
-
+    else infos;
   end match;
 end getElementInfo;
+
+public function getElementAttributeValues
+  input Absyn.Element element;
+  input Boolean isPublic;
+  input Boolean quoteNames;
+  input output list<Values.Value> attrValues;
+protected
+  Absyn.ElementAttributes attr;
+  Values.Value vis_val, final_val, flow_val, stream_val, repl_val, var_val, io_val, dir_val;
+algorithm
+  attrValues := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        attr := match element.specification
+          case Absyn.ElementSpec.CLASSDEF(class_ = Absyn.Class.CLASS(body = Absyn.ClassDef.DERIVED(attributes = attr))) then attr;
+          case Absyn.ElementSpec.COMPONENTS(attributes = attr) then attr;
+        end match;
+
+        attrValues := ValuesUtil.makeString(attrVariabilityStr(attr)) ::
+                      ValuesUtil.makeString(innerOuterStr(element.innerOuter)) ::
+                      ValuesUtil.makeString(attrDirectionStr(attr)) ::
+                      attrValues;
+
+        if quoteNames then
+          attrValues := ValuesUtil.makeString(String(element.finalPrefix)) ::
+                        ValuesUtil.makeString(String(attr.flowPrefix)) ::
+                        ValuesUtil.makeString(String(attr.streamPrefix)) ::
+                        ValuesUtil.makeString(String(AbsynUtil.isElementReplaceable(element))) ::
+                        attrValues;
+        else
+          attrValues := ValuesUtil.makeBoolean(element.finalPrefix) ::
+                        ValuesUtil.makeBoolean(attr.flowPrefix) ::
+                        ValuesUtil.makeBoolean(attr.streamPrefix) ::
+                        ValuesUtil.makeBoolean(AbsynUtil.isElementReplaceable(element)) ::
+                        attrValues;
+        end if;
+
+        attrValues := ValuesUtil.makeString(if isPublic then "public" else "protected") :: attrValues;
+      then
+        attrValues;
+  end match;
+end getElementAttributeValues;
 
 public function qualifyPath
   input GraphicEnvCache inEnv;
@@ -2329,22 +2319,17 @@ algorithm
   end match;
 end qualifyPath;
 
-public function getConstrainClassStr
+public function getConstrainClassPath
   input GraphicEnvCache inEnv;
   input Option<Absyn.ConstrainClass> occ;
-  output String s;
-protected
-  Absyn.Path p, qpath;
+  output Absyn.Path path;
 algorithm
-  s := matchcontinue(occ)
-    case SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path = p)))
-      algorithm
-        s := AbsynUtil.pathString(qualifyPath(inEnv, p));
-      then
-        s;
-    else "$Any";
+  path := matchcontinue occ
+    case SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path = path)))
+      then qualifyPath(inEnv, path);
+    else Absyn.Path.IDENT("$Any");
   end matchcontinue;
-end getConstrainClassStr;
+end getConstrainClassPath;
 
 public function qualifyType
   input FGraph.Graph inEnv;
@@ -2420,73 +2405,18 @@ algorithm
   end match;
 end arrayDimensionStr;
 
-protected function getElementsInfo
-"Helper function to get_components.
-  Return all the info as a comma separated list of values.
-  get_component_info => {{name, type, comment, access, final, flow, stream, replaceable, variability,innerouter,vardirection},..}
-  where access is one of: \"public\", \"protected\"
-  where final is one of: true, false
-  where flow is one of: true, false
-  where flow is one of: true, false
-  where stream is one of: true, false
-  where replaceable is one of: true, false
-  where parallelism is one of: \"parglobal\", \"parlocal\", \"unspecified\"
-  where variability is one of: \"constant\", \"parameter\", \"discrete\" or \"unspecified\"
-  where innerouter is one of: \"inner\", \"outer\", (\"innerouter\") or \"none\"
-  where vardirection is one of: \"input\", \"output\" or \"unspecified\".
-  inputs:  (Absyn.Element list, string /* \"public\" or \"protected\" */, FCore.Graph)
-  outputs:  string"
-  input list<Absyn.Element> inAbsynElementLst;
-  input Boolean inBoolean;
-  input String inString;
-  input Interactive.GraphicEnvCache inEnv;
-  output String outString;
+public function getElementsInfo
+  input list<Absyn.Element> elements;
+  input Boolean isPublic;
+  input Boolean useQuotes;
+  input Boolean onlyComponents;
+  input Interactive.GraphicEnvCache env;
+  input output list<Values.Value> infos = {};
 algorithm
-  outString:=
-  matchcontinue (inAbsynElementLst,inBoolean,inString,inEnv)
-    local
-      list<String> lst;
-      String lst_1,res,access;
-      list<Absyn.Element> elts;
-      Interactive.GraphicEnvCache env;
-      Boolean b;
-    case (elts,_,access,env)
-      equation
-        ((lst as (_ :: _))) = getElementsInfo2(elts, inBoolean, access, env, {});
-        lst_1 = stringDelimitList(lst, "},{");
-        res = stringAppendList({"{",lst_1,"}"});
-      then
-        res;
-    else "";
-  end matchcontinue;
+  for elem in listReverse(elements) loop
+    infos := getElementInfo(elem, isPublic, useQuotes, onlyComponents, env, infos);
+  end for;
 end getElementsInfo;
-
-protected function getElementsInfo2
-"Helper function to getElementsInfo
-  inputs: (Absyn.Element list, string /* \"public\" or \"protected\" */, FCore.Graph)
-  outputs: string list"
-  input list<Absyn.Element> inAbsynElementLst;
-  input Boolean inBoolean;
-  input String inString;
-  input Interactive.GraphicEnvCache inEnv;
-  input list<String> acc;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := match (inAbsynElementLst,inBoolean,inString,inEnv,acc)
-    local
-      list<String> res;
-      Absyn.Element elt;
-      list<Absyn.Element> rest;
-      String access;
-      Interactive.GraphicEnvCache env;
-      Boolean b;
-    case ({},_,_,_,_) then listReverse(acc);
-    case ((elt :: rest),b,access,env,_)
-      equation
-        res = getElementInfo(elt, b, access, env);
-      then getElementsInfo2(rest, b, access, env, List.append_reverse(res,acc));
-  end match;
-end getElementsInfo2;
 
 public function keywordReplaceable
 "Returns true if RedeclareKeywords contains replaceable."
@@ -2508,10 +2438,10 @@ public function innerOuterStr
 algorithm
   outString:=
   match (inInnerOuter)
-    case (Absyn.INNER()) then "\"inner\"";
-    case (Absyn.OUTER()) then "\"outer\"";
-    case (Absyn.NOT_INNER_OUTER()) then "\"none\"";
-    case (Absyn.INNER_OUTER()) then "\"innerouter\"";
+    case (Absyn.INNER()) then "inner";
+    case (Absyn.OUTER()) then "outer";
+    case (Absyn.NOT_INNER_OUTER()) then "none";
+    case (Absyn.INNER_OUTER()) then "innerouter";
   end match;
 end innerOuterStr;
 
@@ -2561,8 +2491,8 @@ public function attrParallelismStr
 algorithm
   outString:=
   match (inElementAttributes)
-    case (Absyn.ATTR(parallelism = Absyn.PARGLOBAL())) then "\"parglobal\"";
-    case (Absyn.ATTR(parallelism = Absyn.PARLOCAL())) then "\"parlocal\"";
+    case (Absyn.ATTR(parallelism = Absyn.PARGLOBAL())) then "parglobal";
+    case (Absyn.ATTR(parallelism = Absyn.PARLOCAL())) then "parlocal";
     case (Absyn.ATTR(parallelism = Absyn.NON_PARALLEL())) then "";
   end match;
 end attrParallelismStr;
@@ -2575,10 +2505,10 @@ public function attrVariabilityStr
 algorithm
   outString:=
   match (inElementAttributes)
-    case (Absyn.ATTR(variability = Absyn.VAR())) then "\"unspecified\"";
-    case (Absyn.ATTR(variability = Absyn.DISCRETE())) then "\"discrete\"";
-    case (Absyn.ATTR(variability = Absyn.PARAM())) then "\"parameter\"";
-    case (Absyn.ATTR(variability = Absyn.CONST())) then "\"constant\"";
+    case (Absyn.ATTR(variability = Absyn.VAR())) then "unspecified";
+    case (Absyn.ATTR(variability = Absyn.DISCRETE())) then "discrete";
+    case (Absyn.ATTR(variability = Absyn.PARAM())) then "parameter";
+    case (Absyn.ATTR(variability = Absyn.CONST())) then "constant";
   end match;
 end attrVariabilityStr;
 
@@ -2603,79 +2533,11 @@ public function attrDirectionStr
 algorithm
   outString:=
   match (inElementAttributes)
-    case (Absyn.ATTR(direction = Absyn.INPUT())) then "\"input\"";
-    case (Absyn.ATTR(direction = Absyn.OUTPUT())) then "\"output\"";
-    case (Absyn.ATTR(direction = Absyn.BIDIR())) then "\"unspecified\"";
+    case (Absyn.ATTR(direction = Absyn.INPUT())) then "input";
+    case (Absyn.ATTR(direction = Absyn.OUTPUT())) then "output";
+    case (Absyn.ATTR(direction = Absyn.BIDIR())) then "unspecified";
   end match;
 end attrDirectionStr;
-
-public function getComponentitemsDimension
-"Retrieves the dimensions of a list of components as a list of strings."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  output list<String> outStringLst;
-algorithm
-  outStringLst:=
-  matchcontinue (inAbsynComponentItemLst)
-    local
-      String str;
-      list<String> lst,res;
-      Absyn.ComponentItem c2;
-      list<Absyn.ComponentItem> rest;
-      Absyn.ArrayDim ad;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim=ad))) :: (c2 :: rest))
-      equation
-        lst = getComponentitemsDimension((c2 :: rest));
-        str = stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
-      then (str :: lst);
-    case ((_ :: rest))
-      equation
-        res = getComponentitemsDimension(rest);
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim = ad))})
-      equation
-        str = stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
-      then
-        {str};
-    case ({_}) then {};
-  end matchcontinue;
-end getComponentitemsDimension;
-
-public function suffixInfos
-"Helper function to getElementInfo.
-  Add suffix info (from each component) to element names, dimensions, etc."
-  input list<String> eltInfo;
-  input list<String> idims;
-  input String typeAd;
-  input String suffix;
-  input Boolean inQuoteNames;
-  output list<String> outStringLst;
-algorithm
-  outStringLst:=
-  match (eltInfo,idims,typeAd,suffix,inQuoteNames)
-    local
-      list<String> res,rest,dims;
-      String str_1,str;
-      String dim,s1;
-      Boolean b;
-    case ({},{},_,_,_) then {};
-    case ((str :: rest),dim::dims,_,_,b)
-      equation
-        res = suffixInfos(rest, dims, typeAd, suffix, b);
-        s1 = Util.stringDelimitListNonEmptyElts({dim,typeAd},",");
-        str_1 = if b then stringAppendList({ str,", ",suffix,", \"{",s1,"}\""}) else stringAppendList({str,", ",suffix,", {",s1,"}"});
-      then
-        (str_1 :: res);
-  end match;
-end suffixInfos;
-
-public function prefixTypename
-"Helper function to getElementInfo. Add a prefix typename to each string in the list."
-  input String inType;
-  input list<String> inComponents;
-  output list<String> outComponents =
-    list(stringAppendList({inType, ", ", c}) for c in inComponents);
-end prefixTypename;
 
 public function getConstrainingClassComment
   input Option<Absyn.ConstrainClass> constrainingClass;
@@ -2688,31 +2550,37 @@ algorithm
   end match;
 end getConstrainingClassComment;
 
+public function getComponentComment
+  input Absyn.ComponentItem component;
+  input Absyn.Element element;
+  output String comment;
+algorithm
+  // The Modelica syntax allows a comment on both the element and the
+  // constraining clause, but the specification recommends putting it on
+  // the constraining clause. So check the constraining clause first.
+  comment := getConstrainingClassComment(AbsynUtil.getElementConstrainingClass(element));
+
+  if stringEmpty(comment) then
+    comment := getClassCommentInCommentOpt(component.comment);
+  end if;
+end getComponentComment;
+
 public function getComponentItemsNameAndComment
 " separated list of all component names and comments (if any)."
   input list<Absyn.ComponentItem> inComponents;
   input Absyn.Element inElement;
-  input Boolean inQuoteNames "Adds quotes around the component names if true.";
-  output list<String> outStrings = {};
+  output list<list<String>> outStrings = {};
 protected
-  String name, cmt_str, str;
+  String name, cmt_str;
 algorithm
   for comp in listReverse(inComponents) loop
     _ := match comp
       case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name))
         algorithm
-          // The Modelica syntax allows a comment on both the element and the
-          // constraining clause, but the specification recommends putting it on
-          // the constraining clause. So check the constraining clause first.
-          cmt_str := getConstrainingClassComment(AbsynUtil.getElementConstrainingClass(inElement));
+          cmt_str := getComponentComment(comp, inElement);
+          cmt_str := StringUtil.quote(cmt_str);
 
-          if stringEmpty(cmt_str) then
-            cmt_str := getClassCommentInCommentOpt(comp.comment);
-          end if;
-
-          outStrings := (if inQuoteNames then
-            stringAppendList({"\"", name, "\", \"", cmt_str, "\""}) else
-            stringAppendList({name, ", \"", cmt_str, "\""})) :: outStrings;
+          outStrings := {name, cmt_str} :: outStrings;
         then
           ();
 
@@ -3856,9 +3724,9 @@ algorithm
     case (Absyn.ALG_ASSIGN(value = Absyn.MATCHEXP(localDecls = elsItems)), b, env)
       equation
         els = Interactive.getComponentsInElementitems(elsItems);
-        strList = Interactive.getComponentsInfo(els, b, "public", env);
       then
-        strList;
+        //Interactive.getComponentsInfo(els, b, "public", env);
+        "";
     case (_, _, _) then "";
   end match;
 end getLocalVariablesInAlgorithmItem;

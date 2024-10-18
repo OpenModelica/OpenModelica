@@ -112,6 +112,7 @@ setElementAnnotation.mos \
 setElementType.mos \
 setElementModifierValue.mos \
 setExtendsModifierValue.mos \
+setParameterValue.mos \
 setSourceFileListFile.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \

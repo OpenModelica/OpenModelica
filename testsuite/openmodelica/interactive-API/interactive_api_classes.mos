@@ -163,7 +163,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getComponentCount(test2)
 // 1
 // Evaluating: getComponents(A.test)
-// {{Integer, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, z, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Integer, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, z, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // Evaluating: addConnection(a.n, b.z, A.test)
 // Ok
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)
@@ -242,7 +242,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getComponentCount(test2)
 // 1
 // Evaluating: getComponents(A.test)
-// {{Integer, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, z, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Integer, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, z, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // Evaluating: addConnection(a.n, b.z, A.test)
 // Ok
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)

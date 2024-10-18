@@ -38,21 +38,21 @@ getElementAnnotations(Ticket6307); getErrorString();
 // ""
 // true
 // ""
-// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // {{choicesAllMatching=true},{choicesAllMatching=true}}
 // ""
-// {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
+// {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
 // ""
 // {{choicesAllMatching=true},{choicesAllMatching=true},{choicesAllMatching=true}}
 // ""
 // true
 // ""
-// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // {{choicesAllMatching=true},{choicesAllMatching=true}}
 // ""
-// {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
+// {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
 // ""
 // {{choicesAllMatching=true},{choicesAllMatching=true},{choicesAllMatching=true}}
 // ""
