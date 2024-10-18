@@ -17,35 +17,21 @@ set CPLUS_INCLUDE_PATH=
 set C_INCLUDE_PATH=
 set LIBRARY_PATH=
 set OLD_PATH=%PATH%
-call :CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME "%OPENMODELICAHOME%"
-set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
+set "MINGW=%OPENMODELICAHOME%tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
 REM If OMDEV is set, use msys2-ucrt64 from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
 REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1
 REM echo MINGW = %MINGW% >>%1.log 2>&1
-call :CONVERT_CD_TO_SHORT_PATH_NAME "%CD%"
 
-if %LOGGING%==1 (goto :SET_PATH_LOG) else (goto :SET_PATH)
-
-:SET_PATH_LOG
-cd /D "%MINGW%\bin" >>%CURRENT_DIR%\%1.log 2>&1
-set PATH=%CD%;%CD%\..\..\usr\bin; >>%CURRENT_DIR%\%1.log 2>&1
-cd /D "%CURRENT_DIR%" >>%CURRENT_DIR%\%1.log 2>&1
-goto :CHECK_TARGET
-
-:SET_PATH
-cd /D "%MINGW%\bin"
-set PATH=%CD%;%CD%\..\..\usr\bin;
+% PATH for mingw binary lookup
+set "PATH=%MINGW%\bin;%MINGW%\..\usr\bin;"
 echo PATH = "%PATH%"
-cd /D "%CURRENT_DIR%"
-goto :CHECK_TARGET
 
 REM echo PATH = %PATH% >>%1.log 2>&1
 REM echo CD = %CD% >>%1.log 2>&1
 
-:CHECK_TARGET
 if /I "%2"=="msvc" (goto :MSVC)
 if /I "%2"=="msvc10" (goto :MSVC100)
 if /I "%2"=="msvc12" (goto :MSVC110)
@@ -115,15 +101,6 @@ if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
 goto :Final
 
 :Final
-set PATH=%OLD_PATH%
+set "PATH=%OLD_PATH%"
 set OLD_PATH=
-@%COMSPEC% /C exit %RESULT%
-EXIT /B %ERRORLEVEL%
-
-:CONVERT_CD_TO_SHORT_PATH_NAME
-set CURRENT_DIR="%~s1"
-EXIT /B 0
-
-:CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME
-set OPENMODELICAHOME=%~s1
-EXIT /B 0
+EXIT /B %RESULT%
