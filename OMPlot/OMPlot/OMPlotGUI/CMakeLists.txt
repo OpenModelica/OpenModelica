@@ -47,7 +47,13 @@ if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   target_link_libraries(OMPlotLib PUBLIC Qt6::Core5Compat)
 endif ()
 
-target_link_libraries(OMPlotLib PUBLIC omqwt)
+if (OM_OMPLOT_EXTERNAL_QWT)
+  target_link_libraries(OMPlotLib PUBLIC ${QWT_LIBRARIES})
+  target_include_directories(OMPlotLib PUBLIC ${QWT_INCLUDE_DIRS})
+else ()
+  target_link_libraries(OMPlotLib PUBLIC omqwt)
+endif ()
+
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
 
 
