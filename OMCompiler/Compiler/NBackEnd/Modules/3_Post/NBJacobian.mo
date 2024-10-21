@@ -306,8 +306,8 @@ public
   // necessary as wrapping value type for UnorderedMap
   type CrefLst = list<ComponentRef>;
 
-  type SparsityPatternCol = tuple<ComponentRef, CrefLst>  "partial_vars, {seed_vars}";
-  type SparsityPatternRow = SparsityPatternCol            "seed_vars, {partial_vars}";
+  type SparsityPatternCol = tuple<ComponentRef, list<ComponentRef>> "partial_vars, {seed_vars}";
+  type SparsityPatternRow = SparsityPatternCol                      "seed_vars, {partial_vars}";
 
   uniontype SparsityPattern
     record SPARSITY_PATTERN
@@ -381,7 +381,7 @@ public
       output SparsityPattern sparsityPattern;
       output SparsityColoring sparsityColoring;
     protected
-      UnorderedMap<ComponentRef, CrefLst> map;
+      UnorderedMap<ComponentRef, list<ComponentRef>> map;
     algorithm
       (sparsityPattern, map) := match strongComponents
         local
@@ -420,7 +420,7 @@ public
 
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
-            StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, not partialCandidates.scalarized, jacType);
+            StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, jacType);
           end for;
 
           // create row-wise sparsity pattern
@@ -590,7 +590,7 @@ public
       https://doi.org/10.1137/S0036144504444711
       A greedy partial distance-2 coloring algorithm. Slightly adapted to also track row sparsity."
       input SparsityPattern sparsityPattern;
-      input UnorderedMap<ComponentRef, CrefLst> map;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
       output SparsityColoring sparsityColoring;
     protected
       array<ComponentRef> cref_lookup;
