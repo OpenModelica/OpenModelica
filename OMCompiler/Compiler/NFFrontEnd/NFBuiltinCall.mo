@@ -464,7 +464,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability var = Variability.DISCRETE;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     Call argtycall;
     Function fn;
@@ -473,6 +473,7 @@ protected
   algorithm
     argtycall := Call.typeMatchNormalCall(call, context, info);
     ty := Call.typeOf(argtycall);
+    purity := Call.purity(argtycall);
     callExp := Expression.CALL(Call.unboxArgs(argtycall));
   end typeDiscreteCall;
 
@@ -512,9 +513,9 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   algorithm
-    (callExp, ty, variability) := typePreChangeCall("pre", call, context, info);
+    (callExp, ty, variability, purity) := typePreChangeCall("pre", call, context, info);
   end typePreCall;
 
   function typeChangeCall
@@ -524,9 +525,9 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   algorithm
-    (callExp, ty, variability) := typePreChangeCall("change", call, context, info);
+    (callExp, ty, variability, purity) := typePreChangeCall("change", call, context, info);
     ty := Type.setArrayElementType(ty, Type.BOOLEAN());
   end typeChangeCall;
 
@@ -538,6 +539,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability = Variability.DISCRETE;
+    output Purity purity;
   protected
     ComponentRef fn_ref;
     list<Expression> args;
@@ -561,7 +563,7 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty, var) := Typing.typeExp(listHead(args), context, info);
+    (arg, ty, var, purity) := Typing.typeExp(listHead(args), context, info);
 
     if not Expression.isCref(arg) then
       Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
@@ -576,7 +578,7 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, Purity.IMPURE, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
   end typePreChangeCall;
 
   function typeDerCall
@@ -586,7 +588,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     ComponentRef fn_ref;
     list<Expression> args;
@@ -610,7 +612,7 @@ protected
     end if;
 
     {arg} := args;
-    (arg, ty, variability) := Typing.typeExp(arg, context, info);
+    (arg, ty, variability, purity) := Typing.typeExp(arg, context, info);
 
     // The argument of der must be a Real scalar or array.
     ety := Type.arrayElementType(ty);
@@ -647,7 +649,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability = Variability.DISCRETE;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     Call argtycall;
     Function fn;
@@ -665,6 +667,7 @@ protected
     argtycall as Call.ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := Call.typeNormalCall(call, context, info);
     argtycall := Call.matchTypedNormalCall(argtycall, context, info);
     ty := Call.typeOf(argtycall);
+    purity := Call.purity(argtycall);
     callExp := Expression.CALL(Call.unboxArgs(argtycall));
 
     {arg} := args;
@@ -839,7 +842,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     ComponentRef fn_ref;
     list<Expression> args;
@@ -860,7 +863,7 @@ protected
 
     {arg1, arg2} := args;
     (arg1, ty1, var) := Typing.typeExp(arg1, context, info);
-    (arg2, ty2, variability) := Typing.typeExp(arg2, context, info);
+    (arg2, ty2, variability, purity) := Typing.typeExp(arg2, context, info);
 
     // First argument must be Integer.
     if not Type.isInteger(ty1) then
