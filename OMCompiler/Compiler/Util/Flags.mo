@@ -744,7 +744,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("dumpDAEXML", Gettext.gettext("dumps the DAE as xml representation of the current transformation state")),
     ("evaluateParameters", Gettext.gettext("Evaluates parameters with annotation(Evaluate=true). Use '--evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to specify additional parameters to be evaluated. Use '--replaceEvaluatedParameters=true' if the evaluated parameters should be replaced in the DAE. To evaluate all parameters in the Frontend use -d=evaluateAllParameters.")),
     ("extendDynamicOptimization", Gettext.gettext("Move loops to constraints.")),
-    ("generateSymbolicLinearization", Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t:math:`\\dot{x} = Ax + Bu `\n\t:math:`y = Cx +Du`")),
+    ("generateSymbolicLinearization", Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`y = Cx + Du`")),
     ("generateSymbolicSensitivities", Gettext.gettext("Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param.")),
     ("inlineArrayEqn", Gettext.gettext("This module expands all array equations to scalar equations.")),
     ("inputDerivativesUsed", Gettext.gettext("Checks if derivatives of inputs are need to calculate the model.")),
@@ -943,7 +943,7 @@ constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(51, "generateSymbol
 
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot x = Ax + Bu`\n\t\t:math:`y = Cx +Du`"));
+  Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t\t:math:`y = Cx + Du`"));
 
 constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(53, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1284,8 +1284,13 @@ constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSele
 
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
   NONE(), EXTERNAL(), STRING_FLAG("modelica"),
-  SOME(STRING_OPTION({"modelica","matlab","julia","python"})),
-    Gettext.gettext("Sets the target language for the produced code of linearization. Only works with '--generateSymbolicLinearization' and 'linearize(modelName)'."));
+  SOME(STRING_DESC_OPTION({
+    ("none", Gettext.gettext("Don't generate code for linearization.")),
+    ("modelica", Gettext.gettext("Generate linearized Modelica model.")),
+    ("matlab", Gettext.gettext("Generate matlab function that returns linearization matrices A,B,C,D.")),
+    ("julia", Gettext.gettext("Generate julia function that returns linearization matrices A,B,C,D.")),
+    ("python", Gettext.gettext("Generate python function that returns linearization matrices A,B,C,D."))})),
+  Gettext.gettext("Sets the target language for the produced code of linearization."));
 
 constant ConfigFlag NO_ASSC = CONFIG_FLAG(123, "noASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
@@ -1472,6 +1477,10 @@ constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOption
 constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquations",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Takes a list of equation names and prints the corresponding equations after each stage of the backend process."));
+
+constant ConfigFlag MAX_SIZE_LINEARIZATION = CONFIG_FLAG(156, "maxSizeLinearization",
+  NONE(), EXTERNAL(), INT_FLAG(1000), NONE(),
+  Gettext.gettext("Sets the maximum system size for which linearization code is generated."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

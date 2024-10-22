@@ -4074,6 +4074,7 @@ package Flags
   constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES;
   constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
   constant ConfigFlag OBFUSCATE;
+  constant ConfigFlag MAX_SIZE_LINEARIZATION;
 
   function isSet
     input DebugFlag inFlag;

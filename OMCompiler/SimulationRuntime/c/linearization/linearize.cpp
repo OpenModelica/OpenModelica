@@ -53,7 +53,7 @@ static string array2string(double* array, int row, int col, DATA *data)
     int k = i;
     for(j=0; j<col-1; j++)
     {
-      if (data->modelData->linearizationDumpLanguage == 2)
+      if (data->modelData->linearizationDumpLanguage == OMC_LINEARIZE_DUMP_LANGUAGE_JULIA)
       {
         retVal << array[k] << " "; // Julia matrix accepts space as separators
       }
@@ -595,7 +595,7 @@ int linearize(DATA* data, threadData_t *threadData)
             assertStreamPrint(threadData,0==functionJacD(data, threadData, matrixD),"Error, can not get Matrix D ");
         }
     }
-    if (data->modelData->linearizationDumpLanguage != 3)
+    if (data->modelData->linearizationDumpLanguage != OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON)
     {
 
       strA = array2string(matrixA, size_A, size_A, data);
@@ -614,7 +614,7 @@ int linearize(DATA* data, threadData_t *threadData)
       if (size_A)
       {
         // fix dummping julia vector braces
-        if (data->modelData->linearizationDumpLanguage == 2)
+        if (data->modelData->linearizationDumpLanguage == OMC_LINEARIZE_DUMP_LANGUAGE_JULIA)
           strX = "[" + array2string(data->localData[0]->realVars, 1, size_A, data) + "]";
         else
           strX = "{" + array2string(data->localData[0]->realVars, 1, size_A, data) + "}";
@@ -627,7 +627,7 @@ int linearize(DATA* data, threadData_t *threadData)
       if (size_Inputs)
       {
         // fix dummping julia vector braces
-        if (data->modelData->linearizationDumpLanguage == 2)
+        if (data->modelData->linearizationDumpLanguage == OMC_LINEARIZE_DUMP_LANGUAGE_JULIA)
           strU = "[" + array2string(data->simulationInfo->inputVars, 1, size_Inputs, data) + "]";
         else
           strU = "{" + array2string(data->simulationInfo->inputVars, 1, size_Inputs, data) + "}";
@@ -672,10 +672,10 @@ int linearize(DATA* data, threadData_t *threadData)
         free(matrixDz);
     }
     switch(data->modelData->linearizationDumpLanguage){
-      case OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA: ext = ".mo";  break;
-      case OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB: ext = ".m";   break;
-      case OMC_LINEARIZE_DUMP_LANGUAGE_JULIA: ext = ".jl";  break;
-      case OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON: ext = ".py";  break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA:  ext = ".mo";  break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB:    ext = ".m";   break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_JULIA:     ext = ".jl";  break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON:    ext = ".py";  break;
     }
     /* ticket #5927: Don't use the model name to prevent bad names for certain languages. */
     filename = "linearized_model" + string(ext);

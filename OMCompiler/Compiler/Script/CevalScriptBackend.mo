@@ -1107,7 +1107,7 @@ algorithm
 
     case ("diffModelicaFileListings",_) then Values.STRING("");
 
-  // exportToFigaro cases added by Alexander Carlqvist
+    // exportToFigaro cases added by Alexander Carlqvist
     case ("exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)})
       equation
         sp = SymbolTable.getSCode();
@@ -1521,7 +1521,6 @@ algorithm
 
     case ("linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
       equation
-
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
         (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
@@ -1576,7 +1575,7 @@ algorithm
       then
         createSimulationResultFailure(res, simOptionsAsString(vals));
 
-   case ("optimize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
+    case ("optimize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
       equation
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
@@ -1728,7 +1727,7 @@ algorithm
       then
         ret_val;
 
- end matchcontinue;
+  end matchcontinue;
 end cevalInteractiveFunctions3;
 
 public function cevalInteractiveFunctions4
