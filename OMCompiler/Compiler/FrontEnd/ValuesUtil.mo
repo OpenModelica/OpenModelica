@@ -1694,6 +1694,10 @@ algorithm
   end matchcontinue;
 end makeArray;
 
+function makeEmptyArray
+  output Values.Value outValue = Values.Value.ARRAY({}, {0});
+end makeEmptyArray;
+
 public function makeStringArray
   "Creates a Values.ARRAY from a list of Strings."
   input list<String> inReals;
@@ -2400,6 +2404,17 @@ algorithm
     else e;
   end match;
 end fixZeroSizeArray;
+
+public function arraySize
+  input Values.Value value;
+  output Integer size;
+algorithm
+  size := match value
+    case Values.Value.ARRAY() then listHead(value.dimLst);
+    case Values.Value.META_ARRAY() then listLength(value.valueLst);
+    else 0;
+  end match;
+end arraySize;
 
 annotation(__OpenModelica_Interface="frontend");
 end ValuesUtil;

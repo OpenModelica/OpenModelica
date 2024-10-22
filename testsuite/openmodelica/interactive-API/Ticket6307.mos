@@ -5,7 +5,7 @@
 // Tests if -d=nfAPI will give the correct response for getComponentAnnotations
 //
 
-setCommandLineOptions("-d=nfAPI"); getErrorString();
+setCommandLineOptions("-d=-nfAPI"); getErrorString();
 
 loadString("
 model Ticket6307
@@ -40,20 +40,20 @@ getElementAnnotations(Ticket6307); getErrorString();
 // ""
 // {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
-// {{choicesAllMatching=true},{choicesAllMatching=true}}
+// {{choicesAllMatching=true}, {choicesAllMatching=true}}
 // ""
 // {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
 // ""
-// {{choicesAllMatching=true},{choicesAllMatching=true},{choicesAllMatching=true}}
+// {{choicesAllMatching=true}, {choicesAllMatching=true}, {choicesAllMatching=true}}
 // ""
 // true
 // ""
 // {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
-// {{choicesAllMatching=true},{choicesAllMatching=true}}
+// {{choicesAllMatching=true}, {choicesAllMatching=true}}
 // ""
 // {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}, {"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
 // ""
-// {{choicesAllMatching=true},{choicesAllMatching=true},{choicesAllMatching=true}}
+// {{choicesAllMatching=true}, {choicesAllMatching=true}, {choicesAllMatching=true}}
 // ""
 // endResult

@@ -3762,6 +3762,18 @@ annotation(
   preferredView="text");
 end getComponentCount;
 
+function getNthComponentAnnotation
+  input TypeName className;
+  input Integer n;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the annotation for the n:th component in the given class.</p>
+</html>"),
+  preferredView="text");
+end getNthComponentAnnotation;
+
 function getElementAnnotation
   input TypeName elementName;
   output String annotationString;
@@ -3807,6 +3819,28 @@ annotation(
 </html>"),
   preferredView="text");
 end getInstantiatedParametersAndValues;
+
+function getComponentAnnotations
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the annotations of the components in the given class.</p>
+</html>"),
+  preferredView="text");
+end getComponentAnnotations;
+
+function getElementAnnotations
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the annotations of the components and short class definitions in the given class.</p>
+</html>"),
+  preferredView="text");
+end getElementAnnotations;
 
 function removeExtendsModifiers
   input TypeName className;
