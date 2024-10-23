@@ -897,66 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getComponentAnnotations"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getComponentAnnotations");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          Config.setEvaluateParametersInAnnotations(true);
-          outResult := getComponentAnnotations(cr, p, access);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getComponentAnnotations");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getElementAnnotations"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getElementAnnotations");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          Config.setEvaluateParametersInAnnotations(true);
-          outResult := InteractiveUtil.getElementAnnotations(cr, p, access);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getElementAnnotations");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getNthComponentAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthComponentAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthComponentAnnotation(cr, p, n);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthComponentAnnotation");
-        end if;
-      then
-        outResult;
-
     case "getNthComponentModification"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
@@ -3413,7 +3353,7 @@ algorithm
     case (_,p)
       equation
         cdef = InteractiveUtil.getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = list(InteractiveUtil.getComponentitemsInElement(c) for c guard isParameterElement(c) in comps);
         compelts_1 = List.flatten(compelts);
         names = List.map(compelts_1, getComponentitemName);
@@ -4923,7 +4863,7 @@ algorithm
         p_class = AbsynUtil.crefToPath(class_);
         Absyn.IDENT(name) = AbsynUtil.crefToPath(ident);
         cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, name);
@@ -4989,7 +4929,7 @@ algorithm
     case (_,_,p)
       equation
         cdef = InteractiveUtil.getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, inComponentName);
@@ -7655,7 +7595,7 @@ protected
   String comp_name, cmt;
   Absyn.Path ty;
 algorithm
-  comp := getNthComponentInClass(inClass, n);
+  comp := InteractiveUtil.getNthComponentInClass(inClass, n);
   (comp_name, ty, cmt) := getComponentInfoOld(comp, genv);
 
   result := Values.ARRAY({
@@ -7721,21 +7661,22 @@ protected
   Integer access;
   Absyn.Class cls;
   Interactive.GraphicEnvCache env;
-  Boolean silent = not Flags.isSet(Flags.NF_API_NOISE);
+  Boolean silent;
   list<Values.Value> infos;
   list<Absyn.Element> elems;
 algorithm
-  if silent then
-    ErrorExt.setCheckpoint(getInstanceName());
-  end if;
-
   try
     Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(classPath, program);
 
-    if access < 2 then
+    if access < 2 then // Access.icon
       Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
       result := ValuesUtil.makeBoolean(false);
       return;
+    end if;
+
+    silent := not Flags.isSet(Flags.NF_API_NOISE);
+    if silent then
+      ErrorExt.setCheckpoint(getInstanceName());
     end if;
 
     cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
@@ -7759,68 +7700,101 @@ algorithm
   end if;
 end getElements;
 
-protected function getComponentAnnotations " This function takes a `ComponentRef\', a `Program\' and
+public function getComponentAnnotations " This function takes a `Path\', a `Program\' and
    returns a list of all component annotations, as returned by
    get_nth_component_annotation.
    Both public and protected components are returned, but they need to
    be in the same order as get_componentsfunctions, i.e. first public
    components then protected ones."
-  input Absyn.ComponentRef inClassPath;
-  input Absyn.Program inProgram;
-  input Integer inAccess;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
 protected
-  Absyn.Path model_path;
-  Absyn.Class cdef;
-  list<Absyn.Element> comps1, comps2, comps;
-algorithm
-  try
-    model_path := AbsynUtil.crefToPath(inClassPath);
-    cdef := InteractiveUtil.getPathedClassInProgram(model_path, inProgram);
-    comps1 := getPublicComponentsInClass(cdef);
-    if (inAccess >= 4) then // i.e., Access.diagram
-      comps2 := getProtectedComponentsInClass(cdef);
-    else
-      comps2 := {};
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Integer accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cdef;
+    list<Absyn.Element> comps;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+
+    if accessLevel >= 4 then // Access.diagram
+      comps := InteractiveUtil.getProtectedComponentsInClass(cdef);
     end if;
-    comps := listAppend(comps1, comps2);
-    outString := getComponentAnnotationsFromElts(comps, cdef, inProgram, model_path);
-    outString := stringAppendList({"{", outString, "}"});
-  else
-    outString := "Error";
-  end try;
+
+    comps := listAppend(InteractiveUtil.getPublicComponentsInClass(cdef), comps);
+    result := InteractiveUtil.getElementAnnotationsFromElts(comps, cdef, program, classPath);
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl, true);
 end getComponentAnnotations;
 
-protected function getNthComponentAnnotation "
-   This function takes a `ComponentRef\', a `Program\' and an int and
+public function getElementAnnotations " This function takes a `Path\', a `Program\' and
+   returns a list of all element annotations.
+   Both public and protected components are returned, but they need to
+   be in the same order as get_componentsfunctions, i.e. first public
+   components then protected ones."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Integer accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Path model_path;
+    Absyn.Class cdef;
+    list<Absyn.Element> elts;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+
+    if accessLevel >= 4 then // Access.diagram
+      elts := InteractiveUtil.getProtectedElementsInClass(cdef);
+    end if;
+
+    elts := listAppend(InteractiveUtil.getPublicElementsInClass(cdef), elts);
+    result := InteractiveUtil.getElementAnnotationsFromElts(elts, cdef, program, classPath);
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl, true);
+end getElementAnnotations;
+
+public function getNthComponentAnnotation "
+   This function takes a `Path\', a `Program\' and an int and
    returns a comma separated string of values corresponding to the flat
    record for component annotations.
 "
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Integer accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cdef;
+    Absyn.Element comp;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    comp := InteractiveUtil.getNthComponentInClass(cdef, n);
+    result := InteractiveUtil.getElementAnnotationsFromElts({comp}, cdef, program, classPath);
+
+    // Only return an array of arrays if there are multiple components in the same declaration.
+    if ValuesUtil.isArray(result) and ValuesUtil.arraySize(result) == 1 then
+      result := ValuesUtil.arrayScalar(result);
+    end if;
+  end impl;
 algorithm
-  outString := matchcontinue (inComponentRef,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.Element comp;
-      String s1,str;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      Integer n;
-    case (model_,p,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = getNthComponentInClass(cdef, n);
-        s1 = getComponentAnnotation(comp, cdef, p, modelpath);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
-    else "Error";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), true);
 end getNthComponentAnnotation;
 
 protected function getNthComponentModification "
@@ -7847,7 +7821,7 @@ algorithm
       equation
         modelpath = AbsynUtil.crefToPath(model_);
         cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = getNthComponentInClass(cdef, n);
+        comp = InteractiveUtil.getNthComponentInClass(cdef, n);
         str = getComponentModification(comp);
         str_1 = stringAppendList({"{",str,"}"});
       then
@@ -7878,7 +7852,7 @@ algorithm
       equation
         modelpath = AbsynUtil.crefToPath(model_);
         cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = getNthComponentInClass(cdef, n);
+        comp = InteractiveUtil.getNthComponentInClass(cdef, n);
         str = getComponentCondition(comp);
         str = System.trim(str, " ");
         str_1 = stringAppendList({"\"",str,"\""});
@@ -11030,190 +11004,6 @@ algorithm
   end match;
 end getConnectionsInEquations;
 
-protected function getComponentAnnotationsFromElts
-"Helper function to getComponentAnnotations."
-  input list<Absyn.Element> comps;
-  input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output String resStr;
-protected
-  list<SCode.Element> graphicProgramSCode;
-  FCore.Graph env;
-  list<String> res;
-  Absyn.Program placementProgram;
-  GraphicEnvCache cache;
-algorithm
-  if not Flags.isSet(Flags.NF_API) then
-    placementProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
-    graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
-    (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
-  else
-    env := FGraph.emptyGraph;
-  end if;
-  cache := GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
-  res := getComponentitemsAnnotations(comps, env, inClass, cache);
-  resStr := stringDelimitList(res, ",");
-end getComponentAnnotationsFromElts;
-
-protected function getComponentitemsAnnotations
-"Helper function to getComponentAnnotationsFromElts"
-  input list<Absyn.Element> inElements;
-  input FCore.Graph inEnv;
-  input Absyn.Class inClass;
-  input GraphicEnvCache inCache;
-  output list<String> outStringLst = {};
-protected
-  list<String> res;
-  GraphicEnvCache cache = inCache;
-  list<Absyn.ComponentItem> items;
-  Option<Absyn.ConstrainClass> cc;
-  Absyn.Program fullProgram;
-  Absyn.Path modelPath;
-algorithm
-  if Flags.isSet(Flags.NF_API) then
-    (fullProgram, modelPath) := cacheProgramAndPath(inCache);
-    outStringLst := NFApi.evaluateAnnotations(fullProgram, modelPath, inElements);
-    return;
-  end if;
-
-  for e in listReverse(inElements) loop
-    outStringLst := matchcontinue e
-      case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
-        algorithm
-          (res, cache) := getComponentitemsAnnotationsFromItems(items,
-            AbsynUtil.getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
-        then
-          listAppend(res, outStringLst);
-
-      case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
-        then "{}" :: outStringLst;
-
-      else outStringLst;
-    end matchcontinue;
-  end for;
-end getComponentitemsAnnotations;
-
-protected function getComponentitemsAnnotationsElArgs
-"Helper function to getComponentitemsAnnotationsFromItems."
-  input list<Absyn.ElementArg> inElementArgs;
-  input FCore.Graph inEnv;
-  input Absyn.Class inClass;
-  input GraphicEnvCache inCache;
-  input Boolean addAnnotationName = true;
-  output list<String> outStringLst = {};
-  output GraphicEnvCache outCache = inCache;
-algorithm
-  (outStringLst, outCache) := InteractiveUtil.getElementitemsAnnotationsElArgs(inElementArgs, inEnv, inClass, inCache, addAnnotationName);
-end getComponentitemsAnnotationsElArgs;
-
-protected function getComponentitemsAnnotationsFromItems
-"Helper function to getComponentitemsAnnotations."
-  input list<Absyn.ComponentItem> inComponentItems;
-  input list<Absyn.ElementArg> ccAnnotations;
-  input FCore.Graph inEnv;
-  input Absyn.Class inClass;
-  input GraphicEnvCache inCache;
-  output list<String> outStringLst = {};
-  output GraphicEnvCache outCache = inCache;
-protected
-  list<Absyn.ElementArg> annotations;
-  list<String> res;
-  String str;
-algorithm
-  for comp in listReverse(inComponentItems) loop
-    annotations := match comp
-      case Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(annotation_ =
-          SOME(Absyn.ANNOTATION(annotations)))))
-        then listAppend(annotations, ccAnnotations);
-      else ccAnnotations;
-    end match;
-
-    (res, outCache) := getComponentitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
-    str := stringDelimitList(res, ", ");
-    outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
-  end for;
-end getComponentitemsAnnotationsFromItems;
-
-protected function getComponentAnnotation
-"This function takes an Element and returns a comma separated string
-  of values corresponding to the flat record for a component annotation.
-  If several components are declared within the eleement, a list of values
-  is given for each of them."
-  input Absyn.Element inElement;
-  input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output String outString;
-algorithm
-  outString := matchcontinue (inElement,inClass,inFullProgram,inModelPath)
-    local
-      String str;
-      list<Absyn.ComponentItem> lst;
-
-    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst)),
-          _,_,_)
-      equation
-        str = getComponentitemsAnnotation(lst, inClass,inFullProgram,inModelPath);
-      then
-        str;
-
-    else "";
-  end matchcontinue;
-end getComponentAnnotation;
-
-protected function getComponentitemsAnnotation
-"Helper function to get_component_annotation."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output String outString;
-algorithm
-  outString := match (inAbsynComponentItemLst,inClass,inFullProgram,inModelPath)
-    local
-      String s1,str,res;
-      list<Absyn.ElementArg> mod;
-      list<Absyn.ComponentItem> rest;
-
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(path = Absyn.IDENT("Placement")) :: _)))),_))) ::
-      (rest as (_ :: _))),
-      _,_,_)
-      equation
-        s1 = getAnnotationString(Absyn.ANNOTATION(mod), inClass, inFullProgram, inModelPath);
-        str = getComponentitemsAnnotation(rest, inClass, inFullProgram, inModelPath);
-        res = stringAppendList({"{", s1, "},", str});
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(path = Absyn.IDENT("Placement")) :: _)))),_)))},
-      _,_,_)
-      equation
-        s1 = getAnnotationString(Absyn.ANNOTATION(mod),inClass,inFullProgram,inModelPath);
-        res = stringAppendList({"{", s1, "}"});
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(NONE(),_))) :: (rest as (_ :: _))),
-      _,_,_)
-      equation
-        str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
-        res = stringAppend("{nada},", str);
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),
-      _,_,_)
-      equation
-        str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
-        res = stringAppend("{},", str);
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(comment = NONE())},_,_,_)
-      equation
-        res = "{}";
-      then
-        res;
-  end match;
-end getComponentitemsAnnotation;
-
 public function getComponentModification
 " This function takes an Element and returns a comma separated
    list of Code expression for the modification of the component."
@@ -11336,216 +11126,6 @@ algorithm
     else Dump.unparseAnnotation(inAnnotation) + " ";
   end matchcontinue;
 end getAnnotationString;
-
-public function getComponentsInClass
-" Both public and protected lists are searched."
-  input Absyn.Class inClass;
-  output list<Absyn.Element> outAbsynElementLst;
-algorithm
-  outAbsynElementLst:=
-  match (inClass)
-    local
-      list<Absyn.Element> lst1,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> lst;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-                case Absyn.PROTECTED(contents = elts)
-                  algorithm
-                    lst1 := getComponentsInElementitems(elts);
-                    res := List.append_reverse(lst1, res);
-                  then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-                case Absyn.PROTECTED(contents = elts)
-                  algorithm
-                    lst1 := getComponentsInElementitems(elts);
-                    res := List.append_reverse(lst1, res);
-                  then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    else {};
-
-  end match;
-end getComponentsInClass;
-
-public function getPublicComponentsInClass
-" Public lists are searched."
-  input Absyn.Class inClass;
-  output list<Absyn.Element> outAbsynElementLst;
-algorithm
-  outAbsynElementLst:=
-  match (inClass)
-    local
-      list<Absyn.Element> lst1,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> lst;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    else {};
-  end match;
-end getPublicComponentsInClass;
-
-public function getProtectedComponentsInClass
-" Protected lists are searched."
-  input Absyn.Class inClass;
-  output list<Absyn.Element> outAbsynElementLst;
-algorithm
-  outAbsynElementLst:=
-  match (inClass)
-    local
-      list<Absyn.Element> lst1,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> lst;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PROTECTED(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PROTECTED(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    else {};
-  end match;
-end getProtectedComponentsInClass;
-
-public function getComponentsInElementitems
-"Helper function to getComponentsInClass."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output list<Absyn.Element> outAbsynElementLst = {};
-algorithm
-  for el in inAbsynElementItemLst loop
-    _ := match (el)
-        local
-          Absyn.Element elt;
-        case Absyn.ELEMENTITEM(element = elt as Absyn.ELEMENT(specification = Absyn.COMPONENTS()))
-          algorithm
-            outAbsynElementLst := elt :: outAbsynElementLst;
-          then ();
-
-        else ();
-      end match;
-  end for;
-  outAbsynElementLst := Dangerous.listReverseInPlace(outAbsynElementLst);
-end getComponentsInElementitems;
-
-protected function getNthComponentInClass
-"Returns the nth GlobalScript.Component of a class. Indexed from 1..n."
-  input Absyn.Class inClass;
-  input Integer nth;
-  output Absyn.Element outElement;
-protected
-  list<Absyn.Element> pub, pro, lst;
-  Integer n;
-algorithm
-  pub := getPublicComponentsInClass(inClass);
-  n := listLength(pub);
-  if nth <= n then
-    outElement := listGet(pub, nth);
-  else
-    // !TODO, check access annotation
-    pro := getProtectedComponentsInClass(inClass);
-    outElement := listGet(pro, nth-n);
-  end if;
-end getNthComponentInClass;
 
 public function keywordReplaceable
 "Returns true if RedeclareKeywords contains replaceable."
@@ -13642,7 +13222,7 @@ algorithm
         p_class = AbsynUtil.crefToPath(class_);
         Absyn.IDENT(name) = AbsynUtil.crefToPath(cr);
         cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {compitem} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, name);
@@ -13655,7 +13235,7 @@ algorithm
         p_class = AbsynUtil.crefToPath(class_);
         Absyn.IDENT(name) = AbsynUtil.crefToPath(cr);
         cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {compitem} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, name);

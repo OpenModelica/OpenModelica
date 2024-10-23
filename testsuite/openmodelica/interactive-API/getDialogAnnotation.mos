@@ -22,9 +22,9 @@ getComponentAnnotations(Modelica.Blocks.Sources.RealExpression); getErrorString(
 //     Dialog);
 // end GetDialogAnnotation;"
 // ""
-// {{},{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}}
+// {{}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}}
 // ""
-// {{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)},{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)},{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)},{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)},{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)},{Dialog("General","Parameters",true,false,true,-,-,-,-,"",false)},{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)},{},{},{},{HideResult=true},{HideResult=true},{HideResult=true},{},{}}
+// {{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,true,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {}, {}, {}, {HideResult=true}, {HideResult=true}, {HideResult=true}, {}, {}}
 // ""
 // {{Dialog("General","Time varying output signal",true,false,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
 // ""

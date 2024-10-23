@@ -2113,8 +2113,8 @@ algorithm
       equation
         absynClass = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         genv = Interactive.getClassEnv(SymbolTable.getAbsyn(), classpath);
-        valsLst = list(getComponentInfo(c, genv, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
-        valsLst = listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
+        valsLst = list(getComponentInfo(c, genv, isProtected=false) for c in InteractiveUtil.getPublicComponentsInClass(absynClass));
+        valsLst = listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in InteractiveUtil.getProtectedComponentsInClass(absynClass)), valsLst);
       then ValuesUtil.makeArray(List.flatten(valsLst));
 
     case ("getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(_))})
@@ -3198,6 +3198,16 @@ algorithm
 
     case ("getElements", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
       then Interactive.getElements(classpath, b, SymbolTable.getAbsyn());
+
+    case ("getComponentAnnotations", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getComponentAnnotations(classpath, SymbolTable.getAbsyn());
+
+    case ("getElementAnnotations", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getElementAnnotations(classpath, SymbolTable.getAbsyn());
+
+    case ("getNthComponentAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthComponentAnnotation(classpath, n, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

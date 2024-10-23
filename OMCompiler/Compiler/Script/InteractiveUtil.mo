@@ -92,6 +92,8 @@ public
 type GraphicEnvCache = Interactive.GraphicEnvCache;
 type AnnotationType = Interactive.AnnotationType;
 
+type Visibility = enumeration(PUBLIC, PROTECTED, ANY);
+
 public function getExtendsElementspecInClass
 "Retrieve all ElementSpec of a class that are EXTENDS."
   input Absyn.Class inClass;
@@ -1193,6 +1195,122 @@ algorithm
   fail();
 end getComponentInClass;
 
+public function getNthComponentInClass
+  "Returns the n:th component in a class."
+  input Absyn.Class inClass;
+  input Integer nth;
+  output Absyn.Element outElement;
+protected
+  list<Absyn.Element> pub, pro, lst;
+  Integer n;
+algorithm
+  pub := getPublicComponentsInClass(inClass);
+  n := listLength(pub);
+  if nth <= n then
+    outElement := listGet(pub, nth);
+  else
+    // !TODO, check access annotation
+    pro := getProtectedComponentsInClass(inClass);
+    outElement := listGet(pro, nth-n);
+  end if;
+end getNthComponentInClass;
+
+public function getComponentsInClass
+" Both public and protected lists are searched."
+  input Absyn.Class inClass;
+  input Visibility visibility = Visibility.ANY;
+  output list<Absyn.Element> outAbsynElementLst;
+algorithm
+  outAbsynElementLst:=
+  match (inClass)
+    local
+      list<Absyn.Element> lst1,res;
+      list<Absyn.ClassPart> lst;
+
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          res := match elt
+              case Absyn.PUBLIC() guard visibility <> Visibility.PROTECTED
+                algorithm
+                  lst1 := getComponentsInElementitems(elt.contents);
+                then
+                  List.append_reverse(lst1, res);
+              case Absyn.PROTECTED() guard visibility <> Visibility.PUBLIC
+                algorithm
+                  lst1 := getComponentsInElementitems(elt.contents);
+                then
+                  List.append_reverse(lst1, res);
+              else res;
+            end match;
+        end for;
+      then
+        Dangerous.listReverseInPlace(res);
+
+    // adrpo: handle also the case model extends X end X;
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
+      algorithm
+        res := {};
+        for elt in lst loop
+          res := match elt
+              case Absyn.PUBLIC() guard visibility <> Visibility.PROTECTED
+                algorithm
+                  lst1 := getComponentsInElementitems(elt.contents);
+                then
+                  List.append_reverse(lst1, res);
+              case Absyn.PROTECTED() guard visibility <> Visibility.PUBLIC
+                algorithm
+                  lst1 := getComponentsInElementitems(elt.contents);
+                then
+                  List.append_reverse(lst1, res);
+              else res;
+            end match;
+        end for;
+      then
+        Dangerous.listReverseInPlace(res);
+
+    else {};
+
+  end match;
+end getComponentsInClass;
+
+function getPublicComponentsInClass
+  input Absyn.Class inClass;
+  output list<Absyn.Element> components;
+algorithm
+  components := getComponentsInClass(inClass, Visibility.PUBLIC);
+end getPublicComponentsInClass;
+
+function getProtectedComponentsInClass
+  input Absyn.Class inClass;
+  output list<Absyn.Element> components;
+algorithm
+  components := getComponentsInClass(inClass, Visibility.PROTECTED);
+end getProtectedComponentsInClass;
+
+public function getComponentsInElementitems
+"Helper function to getComponentsInClass."
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  output list<Absyn.Element> outAbsynElementLst = {};
+algorithm
+  for el in inAbsynElementItemLst loop
+    _ := match (el)
+        local
+          Absyn.Element elt;
+        case Absyn.ELEMENTITEM(element = elt as Absyn.ELEMENT(specification = Absyn.COMPONENTS()))
+          algorithm
+            outAbsynElementLst := elt :: outAbsynElementLst;
+          then ();
+
+        else ();
+      end match;
+  end for;
+  outAbsynElementLst := Dangerous.listReverseInPlace(outAbsynElementLst);
+end getComponentsInElementitems;
+
 public function getVariableBindingInComponentitem
 " Retrieve the variable binding from an ComponentItem"
   input Absyn.ComponentItem inComponentItem;
@@ -1352,37 +1470,6 @@ algorithm
   end if;
 end createEnvironment;
 
-public function getElementAnnotations " This function takes a `ComponentRef\', a `Program\' and
-   returns a list of all element annotations.
-   Both public and protected components are returned, but they need to
-   be in the same order as get_componentsfunctions, i.e. first public
-   components then protected ones."
-  input Absyn.ComponentRef inClassPath;
-  input Absyn.Program inProgram;
-  input Integer inAccess;
-  output String outString;
-protected
-  Absyn.Path model_path;
-  Absyn.Class cdef;
-  list<Absyn.Element> els1, els2, els;
-algorithm
-  try
-    model_path := AbsynUtil.crefToPath(inClassPath);
-    cdef := getPathedClassInProgram(model_path, inProgram);
-    els1 := getPublicElementsInClass(cdef);
-    if (inAccess >= 4) then // i.e., Access.diagram
-      els2 := getProtectedElementsInClass(cdef);
-    else
-      els2 := {};
-    end if;
-    els := listAppend(els1, els2);
-    outString := getElementAnnotationsFromElts(els, cdef, inProgram, model_path);
-    outString := stringAppendList({"{", outString, "}"});
-  else
-    outString := "Error";
-  end try;
-end getElementAnnotations;
-
 public function getClassCommentInCommentOpt
 "Helper function to getComponentComment."
   input Option<Absyn.Comment> inComment;
@@ -1521,13 +1608,13 @@ algorithm
   outStringLst := DoubleEnded.toListAndClear(delst);
 end getClassnamesInElts;
 
-protected function getElementAnnotationsFromElts
+public function getElementAnnotationsFromElts
 "Helper function to getElementAnnotations."
   input list<Absyn.Element> els;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
-  output String resStr;
+  output Values.Value result;
 protected
   list<SCode.Element> graphicProgramSCode;
   FCore.Graph env;
@@ -1543,8 +1630,7 @@ algorithm
     env := FGraph.emptyGraph;
   end if;
   cache := Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
-  res := getElementitemsAnnotations(els, env, inClass, cache);
-  resStr := stringDelimitList(res, ",");
+  result := getElementitemsAnnotations(els, env, inClass, cache);
 end getElementAnnotationsFromElts;
 
 protected function getElementitemsAnnotations
@@ -1553,9 +1639,9 @@ protected function getElementitemsAnnotations
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input GraphicEnvCache inCache;
-  output list<String> outStringLst = {};
+  output Values.Value result;
 protected
-  list<String> res;
+  list<Values.Value> res, accum = {};
   GraphicEnvCache cache = inCache;
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
@@ -1564,21 +1650,20 @@ protected
   Absyn.Program fullProgram;
   Absyn.Path modelPath;
 algorithm
-
   if Flags.isSet(Flags.NF_API) then
     (fullProgram, modelPath) := Interactive.cacheProgramAndPath(inCache);
-    outStringLst := NFApi.evaluateAnnotations(fullProgram, modelPath, inElements);
+    result := makeAnnotationArrayValue(NFApi.evaluateAnnotations(fullProgram, modelPath, inElements));
     return;
   end if;
 
   for e in listReverse(inElements) loop
-    outStringLst := matchcontinue e
+    accum := matchcontinue e
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
         algorithm
           (res, cache) := getElementitemsAnnotationsFromItems(items,
             getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
         then
-          listAppend(res, outStringLst);
+          listAppend(res, accum);
 
       case Absyn.ELEMENT(specification = Absyn.CLASSDEF(
            class_ = Absyn.CLASS(body = Absyn.DERIVED(comment = cmt))),
@@ -1592,17 +1677,19 @@ algorithm
           (res, cache) := getElementitemsAnnotationsFromElArgs(annotations,
             getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
         then
-          listAppend(res, outStringLst);
+          ValuesUtil.makeArray(res) :: accum;
 
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
-        then "{}" :: outStringLst;
+        then Values.Value.ARRAY({}, {0}) :: accum;
 
       case Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(body = Absyn.DERIVED())))
-        then "{}" :: outStringLst;
+        then Values.Value.ARRAY({}, {0}) :: accum;
 
-      else outStringLst;
+      else accum;
     end matchcontinue;
   end for;
+
+  result := ValuesUtil.makeArray(accum);
 end getElementitemsAnnotations;
 
 protected function getElementitemsAnnotationsFromElArgs
@@ -1612,17 +1699,15 @@ protected function getElementitemsAnnotationsFromElArgs
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input GraphicEnvCache inCache;
-  output list<String> outStringLst = {};
+  output list<Values.Value> result;
   output GraphicEnvCache outCache = inCache;
 protected
   list<Absyn.ElementArg> annotations;
-  list<String> res;
-  String str;
+  list<String> strl;
 algorithm
   annotations := listAppend(inAnnotations, ccAnnotations);
-  (res, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
-  str := stringDelimitList(res, ", ");
-  outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
+  (strl, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
+  result := list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(s)) for s in strl);
 end getElementitemsAnnotationsFromElArgs;
 
 protected function getAnnotationsFromConstraintClass
@@ -1802,12 +1887,11 @@ protected function getElementitemsAnnotationsFromItems
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input GraphicEnvCache inCache;
-  output list<String> outStringLst = {};
+  output list<Values.Value> result = {};
   output GraphicEnvCache outCache = inCache;
 protected
   list<Absyn.ElementArg> annotations;
-  list<String> res;
-  String str;
+  list<String> strl;
 algorithm
   for comp in listReverse(inComponentItems) loop
     annotations := match comp
@@ -1817,9 +1901,8 @@ algorithm
       else ccAnnotations;
     end match;
 
-    (res, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
-    str := stringDelimitList(res, ", ");
-    outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
+    (strl, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
+    result := makeAnnotationArrayValue(strl) :: result;
   end for;
 end getElementitemsAnnotationsFromItems;
 
@@ -3723,7 +3806,7 @@ algorithm
       list<Absyn.Element> els;
     case (Absyn.ALG_ASSIGN(value = Absyn.MATCHEXP(localDecls = elsItems)), b, env)
       equation
-        els = Interactive.getComponentsInElementitems(elsItems);
+        els = getComponentsInElementitems(elsItems);
       then
         //Interactive.getComponentsInfo(els, b, "public", env);
         "";
@@ -6090,5 +6173,65 @@ algorithm
   end match;
 end makeModifierFromArgs;
 
+public function accessClass
+  "Looks up a class and calls the given function on it, while also handling
+   Access annotations and the nfAPINoise flag."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input Fn fn;
+  input Boolean evaluateParams = false;
+  output Values.Value result;
+
+  partial function Fn
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Integer accessLevel;
+    output Values.Value result;
+  end Fn;
+protected
+  Integer access;
+  Boolean silent, eval_params;
+algorithm
+  eval_params := Config.getEvaluateParametersInAnnotations();
+
+  try
+    Values.ENUM_LITERAL(index = access) := Interactive.checkAccessAnnotationAndEncryption(classPath, program);
+
+    if access < 2 then // Access.icon
+      Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+      result := ValuesUtil.makeBoolean(false);
+      return;
+    end if;
+
+    silent := not Flags.isSet(Flags.NF_API_NOISE);
+    if silent then
+      ErrorExt.setCheckpoint(getInstanceName());
+    end if;
+
+    Config.setEvaluateParametersInAnnotations(evaluateParams);
+    result := fn(classPath, program, access);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
+
+  if silent then
+    ErrorExt.rollBack(getInstanceName());
+  end if;
+
+  Config.setEvaluateParametersInAnnotations(eval_params);
+end accessClass;
+
+function makeAnnotationArrayValue
+  "Some of the old functions that handle annotations just dumps the annotations
+   to strings, but the new API functions need to return Values. Until those
+   functions have been rewritten to create Values instead we can abuse TypeName
+   expressions to get the correct output.
+   TODO: Rewrite old functions that return strings instead of Values and get
+         rid of this hack."
+  input list<String> annotations;
+  output Values.Value arr;
+algorithm
+  arr := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(s)) for s in annotations));
+end makeAnnotationArrayValue;
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
