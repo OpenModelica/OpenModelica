@@ -1092,11 +1092,13 @@ void ShapeAnnotation::moveShape(const qreal dx, const qreal dy)
 void ShapeAnnotation::setShapeFlags(bool enable)
 {
   /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
+   * AND model not in element mode.
    * AND not a visualization view.
    * AND shape is not an inherited shape.
    * AND shape is not a OMS connector i.e., input/output signals of fmu.
    */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
+      && !mpGraphicsView->isVisualizationView() && !isInheritedShape()
       && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
            && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
                || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
@@ -1876,8 +1878,11 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     if (isSelected()) {
       setCornerItemsActiveOrPassive();
       setCursor(Qt::SizeAllCursor);
-      /* Only allow manipulations on shapes if the class is not a system library class OR not a visualization view OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
+      /* Only allow manipulations on shapes if the class is not a system library class AND model not in element mode
+       * AND not a visualization view OR shape is not an inherited component.
+       */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
+          && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
           connect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
         }
@@ -1909,8 +1914,11 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     } else if (!mIsCornerItemClicked) {
       setCornerItemsActiveOrPassive();
       unsetCursor();
-      /* Only allow manipulations on shapes if the class is not a system library class OR not a visualization view OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
+      /* Only allow manipulations on shapes if the class is not a system library class AND model not in element mode
+       * AND not a visualization view AND shape is not an inherited component.
+       */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
+          && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
           disconnect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()));
         }

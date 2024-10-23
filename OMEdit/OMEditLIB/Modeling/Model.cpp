@@ -1166,6 +1166,15 @@ namespace ModelInstance
     }
   }
 
+  Element *Model::getRootParentElement() const
+  {
+    Element *pElement = getParentElement();
+    while (pElement && pElement->getParentModel() && pElement->getParentModel()->getParentElement()) {
+      pElement = pElement->getParentModel()->getParentElement();
+    }
+    return pElement;
+  }
+
   Extend *Model::getParentExtend() const
   {
     if (mpParentElement && mpParentElement->isExtend()) {
@@ -2082,15 +2091,25 @@ namespace ModelInstance
 
   /*!
    * \brief Extend::getQualifiedName
-   * Returns the qualified name of component.
+   * Returns the qualified name of extend.
+   * \param includeBaseName
    * \return
    */
-  QString Extend::getQualifiedName() const
+  QString Extend::getQualifiedName(bool includeBaseName) const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName();
+      if (includeBaseName) {
+        QString name = mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
+        if (name.isEmpty()) {
+          return mBaseClass;
+        } else {
+          return name % "." % mBaseClass;
+        }
+      } else {
+        return mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
+      }
     } else {
-      return "";
+      return includeBaseName ? mBaseClass : "";
     }
   }
 
@@ -2178,12 +2197,13 @@ namespace ModelInstance
   /*!
    * \brief Component::getQualifiedName
    * Returns the qualified name of the component.
+   * \param includeBaseName
    * \return
    */
-  QString Component::getQualifiedName() const
+  QString Component::getQualifiedName(bool includeBaseName) const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      QString name = mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
       if (name.isEmpty()) {
         return mName;
       } else {
@@ -2267,10 +2287,16 @@ namespace ModelInstance
     }
   }
 
-  QString ReplaceableClass::getQualifiedName() const
+  /*!
+   * \brief ReplaceableClass::getQualifiedName
+   * Returns the qualified name of the replaceable class.
+   * \param includeBaseName
+   * \return
+   */
+  QString ReplaceableClass::getQualifiedName(bool includeBaseName) const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      QString name = mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
       if (name.isEmpty()) {
         return mName;
       } else {

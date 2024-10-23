@@ -245,6 +245,7 @@ public:
   ResizerItem* getTopRightResizerItem() {return mpTopRightResizerItem;}
   ResizerItem* getBottomRightResizerItem() {return mpBottomRightResizerItem;}
   OriginItem* getOriginItem() {return mpOriginItem;}
+  QAction* getShowElementAction() {return mpShowElementAction;}
   QAction* getParametersAction() {return mpParametersAction;}
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
@@ -286,6 +287,8 @@ public:
   bool isInitialState() {return mIsInitialState;}
   void setActiveState(bool activeState) {mActiveState = activeState;}
   bool isActiveState() {return mActiveState;}
+  void setIgnoreSelection(bool ignoreSelection) {mIgnoreSelection = ignoreSelection;}
+  bool ignoreSelection() const {return mIgnoreSelection;}
   void removeChildren();
   void removeChildrenNew();
   void reDrawElementNew();
@@ -339,6 +342,7 @@ private:
   RectangleAnnotation *mpDefaultElementRectangle;
   TextAnnotation *mpDefaultElementText;
   RectangleAnnotation *mpStateElementRectangle;
+  QAction *mpShowElementAction;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
@@ -364,6 +368,7 @@ private:
   bool mIsInitialState;
   bool mActiveState;
   Element *mpBusComponent;
+  bool mIgnoreSelection = false;
   void createNonExistingElement();
   void deleteNonExistingElement();
   void createDefaultElement();
@@ -437,6 +442,7 @@ public slots:
   void moveRight();
   void moveShiftRight();
   void moveCtrlRight();
+  void showElement();
   void showParameters();
   void showAttributes();
   void fetchInterfaceData();

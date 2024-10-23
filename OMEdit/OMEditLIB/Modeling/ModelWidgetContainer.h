@@ -265,6 +265,7 @@ public:
   void deleteElementFromOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.removeOne(pElement);}
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
   Element* getElementObject(QString elementName);
+  Element* getElementObjectFromQualifiedName(QString elementQualifiedName);
   QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
   QString getUniqueElementName(const QString &nameStructure, QString elementName, int number = 0);
   bool checkElementName(const QString &nameStructure, QString elementName);
@@ -325,6 +326,7 @@ public:
   void sendToBack(ShapeAnnotation *pShape);
   void sendBackward(ShapeAnnotation *pShape);
   void clearGraphicsView();
+  void clearGraphicsViewsExceptOutOfSceneItems();
   void removeClassComponents();
   void removeElementsFromScene();
   void removeOutOfSceneClassComponents();
@@ -589,6 +591,11 @@ public:
   bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
   void setRequiresUpdate(bool requiresUpdate) {mRequiresUpdate = requiresUpdate;}
   bool requiresUpdate() {return mRequiresUpdate;}
+  bool isElementMode() const {return !mModelInstanceList.isEmpty();}
+  void setComponentModified(bool modified) {mComponentModified = modified;}
+  bool isComponentModified() const {return mComponentModified;}
+  void setRestoringModel(bool restoring) {mRestoringModel = restoring;}
+  bool isRestoringModel() const {return mRestoringModel;}
 
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
@@ -615,6 +622,7 @@ public:
   void addUpdateDeleteOMSElementIcon(const QString &iconPath);
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
+  void clearGraphicsViewsExceptOutOfSceneItems();
   void reDrawModelWidget();
   void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
@@ -640,6 +648,8 @@ public:
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
   ModelInfo createModelInfo() const;
+  void showElement(ModelInstance::Model *pModelInstance, bool addToList);
+  void selectDeselectElement(const QString &name, bool selected);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -649,6 +659,10 @@ private:
   QToolButton *mpTextViewToolButton;
   QToolButton *mpDocumentationViewToolButton;
   QButtonGroup *mpViewsButtonGroup;
+  QToolButton *mpBackToolButton;
+  QToolButton *mpForwardToolButton;
+  QToolButton *mpExitToolButton;
+  Label *mpElementModeLabel;
   Label *mpReadOnlyLabel;
   Label *mpModelicaTypeLabel;
   Label *mpViewTypeLabel;
@@ -684,6 +698,12 @@ private:
   bool mHasMissingType = false;
   bool mHandleCollidingConnectionsNeeded = false;
   bool mRequiresUpdate = false;
+  ModelInstance::Model *mpRootModelInstance;
+  QList<ModelInstance::Model*> mModelInstanceList;
+  int mModelInstancesPos = -1;
+  ModelInfo mModelInfo;
+  bool mComponentModified = false;
+  bool mRestoringModel = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
@@ -714,10 +734,14 @@ private:
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   static void removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
   bool dependsOnModel(const QString &modelName);
+  void updateElementModeButtons();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
   void showTextView(bool checked);
+  void backElement();
+  void forwardElement();
+  void exitElement();
   void updateModel();
 public slots:
   void makeFileWritAble();

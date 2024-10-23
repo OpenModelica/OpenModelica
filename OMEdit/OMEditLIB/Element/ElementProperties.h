@@ -276,8 +276,10 @@ private:
   void setUpDialog();
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance, bool defaultValue);
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
-  void fetchElementModifiers();
+  void fetchModifiers(ModelInstance::Modifier *pModifier);
+  void fetchRootElementModifiers(ModelInstance::Element *pModelElement);
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
+  void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;

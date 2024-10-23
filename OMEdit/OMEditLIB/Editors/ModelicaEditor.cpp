@@ -574,6 +574,8 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
     /* if user is changing the system library class. */
     if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() && !mForceSetPlainText) {
       mpInfoBar->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
+    } else if (mpModelWidget->isElementMode() && !mForceSetPlainText) {
+      mpInfoBar->showMessage(tr("<b>Warning: </b>Cannot modify the text in the element mode. Your changes will not be saved."));
     } else if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
       /* if user is changing the read-only class. */
       mpInfoBar->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));

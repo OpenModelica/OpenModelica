@@ -1596,8 +1596,16 @@ void ElementParameters::setUpDialog()
   createTabsGroupBoxesAndParameters(getModel() , hasElement());
   fetchElementExtendsModifiers(getModel(), hasElement());
   if (hasElement()) {
-    fetchElementModifiers();
+    fetchModifiers(mpElement->getModifier());
+    // In case of element mode use the root parent ModelInstance::Element to read the element modifiers.
+    if (mpGraphicsView->getModelWidget()->isElementMode()) {
+      fetchRootElementModifiers(mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement());
+    }
     fetchClassExtendsModifiers(mpElement);
+    // In case of element mode use the root parent ModelInstance::Element to read the extends modifiers.
+    if (mpGraphicsView->getModelWidget()->isElementMode()) {
+      fetchRootClassExtendsModifiers(mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement());
+    }
   }
   // Apply the default modifiers that are given in the redeclaration of the replaceable class or component.
   applyModifier(mpDefaultElementModifier, true);
@@ -1798,13 +1806,13 @@ void ElementParameters::fetchElementExtendsModifiers(ModelInstance::Model *pMode
 }
 
 /*!
- * \brief ElementParameters::fetchElementModifiers
- * Fetches the Element's modifiers and apply modifier values on the appropriate Parameters.
+ * \brief ElementParameters::fetchModifiers
+ * Fetches the modifiers and apply modifier values on the appropriate Parameters.
  */
-void ElementParameters::fetchElementModifiers()
+void ElementParameters::fetchModifiers(ModelInstance::Modifier *pModifier)
 {
-  if (mpElement->getModifier()) {
-    foreach (auto *pModifier, mpElement->getModifier()->getModifiers()) {
+  if (pModifier) {
+    foreach (auto *pModifier, pModifier->getModifiers()) {
       Parameter *pParameter = findParameter(pModifier->getName());
       ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true);
       // set final and each checkboxes in the menu
@@ -1813,6 +1821,29 @@ void ElementParameters::fetchElementModifiers()
         pParameter->getFinalEachMenu()->setEach(pModifier->isEach());
       }
     }
+  }
+}
+
+/*!
+ * \brief ElementParameters::fetchRootElementModifiers
+ * \param pModelElement
+ */
+void ElementParameters::fetchRootElementModifiers(ModelInstance::Element *pModelElement)
+{
+  if (pModelElement && pModelElement->isComponent() && pModelElement->getModifier()) {
+    QStringList nameList = StringHandler::makeVariableParts(mpElement->getQualifiedName());
+    // the first item is element name
+    if (!nameList.isEmpty()) {
+      nameList.removeFirst();
+    }
+    ModelInstance::Modifier *pModifier = pModelElement->getModifier();
+    foreach (QString name, nameList) {
+      pModifier = pModifier->getModifier(name);
+      if (!pModifier) {
+        return;
+      }
+    }
+    fetchModifiers(pModifier);
   }
 }
 
@@ -1843,6 +1874,33 @@ void ElementParameters::fetchClassExtendsModifiers(ModelInstance::Element *pMode
       }
       if (hasParentElement) {
         fetchClassExtendsModifiers(pExtend);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief ElementParameters::fetchRootClassExtendsModifiers
+ * In case of element mode if the root parent ModelInstance::Element is extend and has modifier.
+ * Apply modifier values on the appropriate Parameters.
+ * \param pModelElement
+ */
+void ElementParameters::fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement)
+{
+  if (pModelElement && pModelElement->isExtend() && pModelElement->getModifier()) {
+    QStringList nameList = StringHandler::makeVariableParts(mpElement->getQualifiedName());
+    ModelInstance::Modifier *pModifier = pModelElement->getModifier();
+    foreach (QString name, nameList) {
+      pModifier = pModifier->getModifier(name);
+      if (!pModifier) {
+        return;
+      }
+    }
+
+    if (pModifier && pModifier->getName().compare(mpElement->getName()) == 0) {
+      foreach (auto *pSubModifier, pModifier->getModifiers()) {
+        Parameter *pParameter = findParameter(pSubModifier->getName());
+        applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, false, true);
       }
     }
   }
@@ -2160,14 +2218,18 @@ void ElementParameters::updateElementParameters()
         if (!modifiers.isEmpty()) {
           // if the element is inherited then add the modifier value into the extends.
           if (mInherited) {
-            pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getName(), modifiers);
+            pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getQualifiedName(), modifiers);
           } else {
-            pOMCProxy->setElementModifierValue(className, mpElement->getName(), modifiers);
+            pOMCProxy->setElementModifierValue(className, mpElement->getQualifiedName(), modifiers);
           }
-          ModelInfo newModelInfo = pModelWidget->createModelInfo();
-          pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo,
-                                                                QString("Update Element %1 Parameters").arg(mpElement->getName())));
-          pModelWidget->updateModelText();
+          if (pModelWidget->isElementMode()) {
+            pModelWidget->setComponentModified(true);
+          } else {
+            ModelInfo newModelInfo = pModelWidget->createModelInfo();
+            pModelWidget->getUndoStack()->push(new OMCUndoCommand(pModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo,
+                                                                  QString("Update Element %1 Parameters").arg(mpElement->getQualifiedName())));
+            pModelWidget->updateModelText();
+          }
         }
       } else {
         for (const auto &modifier : modifiersList) {
