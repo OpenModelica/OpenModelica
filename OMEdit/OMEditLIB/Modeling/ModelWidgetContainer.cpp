@@ -1335,6 +1335,29 @@ Element* GraphicsView::getElementObject(QString elementName)
 }
 
 /*!
+ * \brief GraphicsView::getElementObjectFromQualifiedName
+ * Finds the Element using the qualified name.
+ * \param elementQualifiedName
+ * \return
+ */
+Element* GraphicsView::getElementObjectFromQualifiedName(QString elementQualifiedName)
+{
+  // look in inherited elements
+  foreach (Element *pInheritedElement, mInheritedElementsList) {
+    if (pInheritedElement->getModelComponent() && pInheritedElement->getModelComponent()->getQualifiedName(true).compare(elementQualifiedName) == 0) {
+      return pInheritedElement;
+    }
+  }
+  // look in elements
+  foreach (Element *pElement, mElementsList) {
+    if (pElement->getModelComponent() && pElement->getModelComponent()->getQualifiedName(true).compare(elementQualifiedName) == 0) {
+      return pElement;
+    }
+  }
+  return 0;
+}
+
+/*!
  * \brief GraphicsView::getUniqueElementName
  * Checks the Element default name and returns a unique name for the element.
  * \param nameStructure
@@ -2431,7 +2454,7 @@ void GraphicsView::removeOutOfSceneInitialStates()
 
 void GraphicsView::createLineShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
 
@@ -2448,7 +2471,7 @@ void GraphicsView::createLineShape(QPointF point)
 
 void GraphicsView::createPolygonShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
 
@@ -2466,7 +2489,7 @@ void GraphicsView::createPolygonShape(QPointF point)
 
 void GraphicsView::createRectangleShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
 
@@ -2483,7 +2506,7 @@ void GraphicsView::createRectangleShape(QPointF point)
 
 void GraphicsView::createEllipseShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
 
@@ -2500,7 +2523,7 @@ void GraphicsView::createEllipseShape(QPointF point)
 
 void GraphicsView::createTextShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
 
@@ -2518,7 +2541,7 @@ void GraphicsView::createTextShape(QPointF point)
 
 void GraphicsView::createBitmapShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
 
@@ -2831,7 +2854,7 @@ void GraphicsView::emitResetDynamicSelect()
  */
 void GraphicsView::createActions()
 {
-  bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView();
+  bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView();
   // parameters Action
   mpParametersAction = new QAction(Helper::parameters, this);
   mpParametersAction->setStatusTip(tr("Shows the class parameters"));
@@ -2975,7 +2998,7 @@ bool GraphicsView::isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem)
  */
 bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return false;
   }
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
@@ -3115,7 +3138,7 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-            !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) &&
+            !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) ||
              (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
@@ -3151,7 +3174,7 @@ Element* GraphicsView::stateElementAtPosition(QPoint position)
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-            !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) &&
+            !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->getAnnotation()->isState()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
               !pElement->getLibraryTreeItem()->isNonExisting() && pElement->getLibraryTreeItem()->isState()))) {
@@ -3788,7 +3811,7 @@ void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
     pExportMenu->addAction(MainWindow::instance()->getExportAsImageAction());
     pExportMenu->addAction(MainWindow::instance()->getExportToOMNotebookAction());
     pMenu->addSeparator();
-    bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView();
+    bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView();
     mpPasteAction->setEnabled(!isSystemLibrary
                               && QApplication::clipboard()->mimeData()
                               && QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat));
@@ -3851,7 +3874,7 @@ void GraphicsView::modelicaOneComponentContextMenu(Element *pComponent, QMenu *p
   pMenu->addAction(pComponent->getParametersAction());
   pMenu->addAction(pComponent->getAttributesAction());
   pMenu->addSeparator();
-  pMenu->addAction(pComponent->getShowComponentAction());
+  pMenu->addAction(pComponent->getShowElementAction());
   pMenu->addSeparator();
   pMenu->addAction(pComponent->getOpenClassAction());
   pMenu->addSeparator();
@@ -4247,7 +4270,7 @@ void GraphicsView::clearSelection(QGraphicsItem *pSelectGraphicsItem)
  */
 void GraphicsView::addClassAnnotation()
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
   QStringList coOrdinateSystemList;
@@ -4290,8 +4313,12 @@ void GraphicsView::showParameters()
     MainWindow::instance()->getProgressBar()->setRange(0, 0);
     MainWindow::instance()->showProgressBar();
     ElementParameters *pElementParameters;
-    if (mpModelWidget->isComponentMode()) {
-      pElementParameters = new ElementParameters(mpModelWidget->getModelInstance()->getParentElement(), this, false, false, 0, 0, 0, MainWindow::instance());
+    if (mpModelWidget->isElementMode()) {
+      bool inherited = false;
+      if (mpModelWidget->getModelInstance()->getRootParentElement()) {
+        inherited = mpModelWidget->getModelInstance()->getRootParentElement()->isExtend();
+      }
+      pElementParameters = new ElementParameters(mpModelWidget->getModelInstance()->getParentElement(), this, inherited, false, 0, 0, 0, MainWindow::instance());
     } else {
       pElementParameters = new ElementParameters(0, this, false, false, 0, 0, 0, MainWindow::instance());
     }
@@ -4574,7 +4601,7 @@ void GraphicsView::cancelTransition()
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
   // check if the class is system library or a package or a OMSimulator model
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView() ||
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView() ||
       mpModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package ||
       mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     event->ignore();
@@ -4607,7 +4634,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
     event->accept();
   } else if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat)) {
     // check if the class is system library
-    if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+    if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
       event->ignore();
       return;
     }
@@ -4636,7 +4663,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   }
   QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
   QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   } else if (mViewType == StringHandler::Icon) {
     painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
@@ -4650,7 +4677,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   QRectF extentRectangle = mMergedCoOrdinateSystem.getExtentRectangle();
   painter->drawRect(extentRectangle);
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines()
-      && !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView())) {
+      && !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView())) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(lightGrayPen);
     /* Draw left half vertical lines */
@@ -4959,7 +4986,7 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
         if (!controlModifier && shiftModifier) {
           pRootComponent->openClass();
         } else if (controlModifier && !shiftModifier) {
-          pRootComponent->showComponent();
+          pRootComponent->showElement();
         } else {
           pRootComponent->showParameters();
         }
@@ -5112,7 +5139,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_C && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     copyItems();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_V && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isComponentMode() || isVisualizationView();
+    bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView();
     if (!isSystemLibrary) {
       pasteItems();
     }
@@ -5351,15 +5378,15 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       }
     }
     bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary();
-    bool isComponentMode = mpModelWidget->isComponentMode();
-    mpManhattanizeAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
-    mpDeleteAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
-    mpCutAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
-    mpDuplicateAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
-    mpRotateClockwiseAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
-    mpRotateAntiClockwiseAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
-    mpFlipHorizontalAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
-    mpFlipVerticalAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isComponentMode);
+    bool isElementMode = mpModelWidget->isElementMode();
+    mpManhattanizeAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpDeleteAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpCutAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpDuplicateAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpRotateClockwiseAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpRotateAntiClockwiseAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpFlipHorizontalAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
+    mpFlipVerticalAction->setEnabled(noInheritedItemSelected && !isSystemLibrary && !isElementMode);
     menu.exec(event->globalPos());
     return; // return from it because at a time we only want one context menu.
   }
@@ -6168,7 +6195,13 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
   mpDiagramGraphicsView->drawCoordinateSystem();
   clearDependsOnModels();
   disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
-  drawModelIconDiagram(mpModelInstance, false, modelInfo);
+  // if we are drawing the model inside the element mode and the parent element is extends so draw the element as inherited.
+  ModelInstance::Element *pElement = mpModelInstance->getRootParentElement();
+  if (pElement && pElement->isExtend()) {
+    drawModelIconDiagram(mpModelInstance, true, modelInfo);
+  } else {
+    drawModelIconDiagram(mpModelInstance, false, modelInfo);
+  }
   mpDiagramGraphicsView->handleCollidingConnections();
   /* Issue #12049
    * Show the error message when the getModelInstance returns empty JSON.
@@ -6523,7 +6556,7 @@ void ModelWidget::createModelWidgetComponents()
     mpBackToolButton->setToolTip(tr("Back"));
     mpBackToolButton->setAutoRaise(true);
     mpBackToolButton->setEnabled(false);
-    connect(mpBackToolButton, SIGNAL(clicked()), SLOT(backComponent()));
+    connect(mpBackToolButton, SIGNAL(clicked()), SLOT(backElement()));
     // forward tool button
     mpForwardToolButton = new QToolButton;
     mpForwardToolButton->setText(tr("Forward"));
@@ -6531,24 +6564,27 @@ void ModelWidget::createModelWidgetComponents()
     mpForwardToolButton->setToolTip(tr("Forward"));
     mpForwardToolButton->setAutoRaise(true);
     mpForwardToolButton->setEnabled(false);
-    connect(mpForwardToolButton, SIGNAL(clicked()), SLOT(forwardComponent()));
-    // back tool button
+    connect(mpForwardToolButton, SIGNAL(clicked()), SLOT(forwardElement()));
+    // exit tool button
     mpExitToolButton = new QToolButton;
     mpExitToolButton->setText(tr("Exit"));
     mpExitToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/delete.svg"));
-    mpExitToolButton->setToolTip(tr("Exit Component"));
+    mpExitToolButton->setToolTip(tr("Exit Element"));
     mpExitToolButton->setAutoRaise(true);
     mpExitToolButton->setEnabled(false);
-    connect(mpExitToolButton, SIGNAL(clicked()), SLOT(exitComponent()));
-    // frame to contain component mode buttons
-    QHBoxLayout *pComponentModeButtonsHorizontalLayout = new QHBoxLayout;
-    pComponentModeButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-    pComponentModeButtonsHorizontalLayout->setSpacing(0);
-    pComponentModeButtonsHorizontalLayout->addWidget(mpBackToolButton);
-    pComponentModeButtonsHorizontalLayout->addWidget(mpForwardToolButton);
-    pComponentModeButtonsHorizontalLayout->addWidget(mpExitToolButton);
-    QFrame *pComponentModeButtonsFrame = new QFrame;
-    pComponentModeButtonsFrame->setLayout(pComponentModeButtonsHorizontalLayout);
+    connect(mpExitToolButton, SIGNAL(clicked()), SLOT(exitElement()));
+    // description label for element mode
+    mpElementModeLabel = new Label;
+    // frame to contain element mode buttons
+    QHBoxLayout *pElementModeButtonsHorizontalLayout = new QHBoxLayout;
+    pElementModeButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+    pElementModeButtonsHorizontalLayout->setSpacing(0);
+    pElementModeButtonsHorizontalLayout->addWidget(mpBackToolButton);
+    pElementModeButtonsHorizontalLayout->addWidget(mpForwardToolButton);
+    pElementModeButtonsHorizontalLayout->addWidget(mpExitToolButton);
+    pElementModeButtonsHorizontalLayout->addWidget(mpElementModeLabel);
+    QFrame *pElementModeButtonsFrame = new QFrame;
+    pElementModeButtonsFrame->setLayout(pElementModeButtonsHorizontalLayout);
     // set Project Status Bar lables
     mpReadOnlyLabel = mpLibraryTreeItem->isReadOnly() ? new Label(Helper::readOnly) : new Label(tr("Writable"));
     mpModelicaTypeLabel = new Label;
@@ -6586,7 +6622,7 @@ void ModelWidget::createModelWidgetComponents()
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
-      mpModelStatusBar->addPermanentWidget(pComponentModeButtonsFrame);
+      mpModelStatusBar->addPermanentWidget(pElementModeButtonsFrame);
       mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpLibraryTreeItem->getRestriction()));
       mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
       // modelica text editor
@@ -6910,9 +6946,8 @@ void ModelWidget::clearGraphicsViewsExceptOutOfSceneItems()
 /*!
  * \brief ModelWidget::reDrawModelWidget
  * Redraws the ModelWidget.
- * \param skipLoadModelInstance
  */
-void ModelWidget::reDrawModelWidget(bool skipLoadModelInstance)
+void ModelWidget::reDrawModelWidget()
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   clearGraphicsViews();
@@ -6946,14 +6981,10 @@ void ModelWidget::reDrawModelWidget(bool skipLoadModelInstance)
       mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
     }
     if (isNewApi()) {
-      if (skipLoadModelInstance) {
-        drawModel(ModelInfo());
+      if (mDiagramViewLoaded) {
+        loadModelInstance(false, ModelInfo());
       } else {
-        if (mDiagramViewLoaded) {
-          loadModelInstance(false, ModelInfo());
-        } else {
-          loadModelInstance(true, ModelInfo());
-        }
+        loadModelInstance(true, ModelInfo());
       }
     } else {
       // Draw icon view
@@ -8310,19 +8341,19 @@ ModelInfo ModelWidget::createModelInfo() const
 }
 
 /*!
- * \brief ModelWidget::showComponent
- * Opens the component represented by passed ModelInstance in editing mode.
+ * \brief ModelWidget::showElement
+ * Opens the element represented by passed ModelInstance in editing mode.
  * \param pModelInstance
  * \param addToList
  */
-void ModelWidget::showComponent(ModelInstance::Model *pModelInstance, bool addToList)
+void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToList)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (mModelInstancesPos < 0) {
     mpRootModelInstance = mpModelInstance;
+    mModelInfo = createModelInfo();
   }
 
-  mModelInfo = createModelInfo();
   // Remove all elements from the scene
   mpIconGraphicsView->removeElementsFromScene();
   mpDiagramGraphicsView->removeElementsFromScene();
@@ -8340,15 +8371,9 @@ void ModelWidget::showComponent(ModelInstance::Model *pModelInstance, bool addTo
   mpDiagramGraphicsView->removeInheritedClassTransitions();
   mpDiagramGraphicsView->removeInheritedClassInitialStates();
   mpDiagramGraphicsView->removeInheritedClassElements();
-  /* get model components, connection and shapes. */
-  // Draw icon view
   // reset the CoOrdinateSystem
-  if (mpIconGraphicsView) {
-    mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
-  }
-  if (mpDiagramGraphicsView) {
-    mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
-  }
+  mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+  mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
 
   if (addToList) {
     while (mModelInstanceList.count() > (mModelInstancesPos+1)) {
@@ -8358,9 +8383,37 @@ void ModelWidget::showComponent(ModelInstance::Model *pModelInstance, bool addTo
     mModelInstancesPos++;
   }
   mpModelInstance = pModelInstance;
+  mpElementModeLabel->setText(tr("Showing element <b>%1</b> in <b>%2</b>").arg(mpModelInstance->getParentElement()->getQualifiedName(), mpRootModelInstance->getName()));
   drawModel(ModelInfo());
-  updateComponentModeButtons();
+  updateElementModeButtons();
+  // update the coordinate system according to new values
+  mpIconGraphicsView->resetZoom();
+  mpDiagramGraphicsView->resetZoom();
   QApplication::restoreOverrideCursor();
+}
+
+/*!
+ * \brief ModelWidget::selectDeselectElement
+ * Select/Deselect the element in the GraphicsView.
+ * \param name
+ * \param selected
+ */
+void ModelWidget::selectDeselectElement(const QString &name, bool selected)
+{
+  if (mpDiagramGraphicsView) {
+    Element *pDiagramElement = mpDiagramGraphicsView->getElementObjectFromQualifiedName(name);
+    if (pDiagramElement) {
+      pDiagramElement->setIgnoreSelection(true);
+      pDiagramElement->setSelected(selected);
+      pDiagramElement->setIgnoreSelection(false);
+      if (mpIconGraphicsView && pDiagramElement->getModel() && pDiagramElement->getModel()->isConnector()) {
+        Element *pIconElement = mpIconGraphicsView->getElementObjectFromQualifiedName(name);
+        pIconElement->setIgnoreSelection(true);
+        pIconElement->setSelected(selected);
+        pIconElement->setIgnoreSelection(false);
+      }
+    }
+  }
 }
 
 /*!
@@ -9400,10 +9453,10 @@ bool ModelWidget::dependsOnModel(const QString &modelName)
 }
 
 /*!
- * \brief ModelWidget::updateComponentModeButtons
+ * \brief ModelWidget::updateElementModeButtons
  * Enables/disables the back, forward and exit buttons.
  */
-void ModelWidget::updateComponentModeButtons()
+void ModelWidget::updateElementModeButtons()
 {
   // back button
   if (mModelInstancesPos > 0) {
@@ -9527,42 +9580,43 @@ void ModelWidget::showTextView(bool checked)
 }
 
 /*!
- * \brief ModelWidget::backComponent
+ * \brief ModelWidget::backElement
  * Slot activated when mpBackToolButton clicked SIGNAL is raised.
- * Moves back in component mode.
+ * Moves back in element mode.
  */
-void ModelWidget::backComponent()
+void ModelWidget::backElement()
 {
   if (mModelInstancesPos > 0) {
     mModelInstancesPos--;
-    showComponent(mModelInstanceList.at(mModelInstancesPos), false);
+    showElement(mModelInstanceList.at(mModelInstancesPos), false);
   }
-  updateComponentModeButtons();
+  updateElementModeButtons();
 }
 
 /*!
- * \brief ModelWidget::forwardComponent
+ * \brief ModelWidget::forwardElement
  * Slot activated when mpForwardToolButton clicked SIGNAL is raised.
- * Moves forward in component mode.
+ * Moves forward in element mode.
  */
-void ModelWidget::forwardComponent()
+void ModelWidget::forwardElement()
 {
   if ((mModelInstancesPos + 1) < mModelInstanceList.count()) {
     mModelInstancesPos++;
-    showComponent(mModelInstanceList.at(mModelInstancesPos), false);
+    showElement(mModelInstanceList.at(mModelInstancesPos), false);
   }
-  updateComponentModeButtons();
+  updateElementModeButtons();
 }
 
 /*!
- * \brief ModelWidget::exitComponent
+ * \brief ModelWidget::exitElement
  * Slot activated when mpExitToolButton clicked SIGNAL is raised.
- * Exits the component mode.
+ * Exits the element mode.
  */
-void ModelWidget::exitComponent()
+void ModelWidget::exitElement()
 {
   mModelInstanceList.clear();
   mModelInstancesPos = -1;
+  mpElementModeLabel->setText("");
   /* Clear GraphicsViews except out of scene items
    * The out of scene items are the original model elements that will be restored.
    */
@@ -9572,10 +9626,10 @@ void ModelWidget::exitComponent()
   mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
   mpModelInstance = mpRootModelInstance;
   if (isComponentModified()) {
-    /* We use the same model info as it doesn't matter in case of component mode.
-     * The component mode only allows changing the parameters.
+    /* We use the same model info as it doesn't matter in case of element mode.
+     * The element mode only allows changing the parameters.
      */
-    mpUndoStack->push(new OMCUndoCommand(mpLibraryTreeItem, mModelInfo, mModelInfo, QString("Model modified in component mode")));
+    mpUndoStack->push(new OMCUndoCommand(mpLibraryTreeItem, mModelInfo, mModelInfo, QString("Model modified in element mode")));
     updateModelText();
   } else {
     setRestoringModel(true);
@@ -9583,7 +9637,10 @@ void ModelWidget::exitComponent()
     setRestoringModel(false);
   }
   setComponentModified(false);
-  updateComponentModeButtons();
+  updateElementModeButtons();
+  // update the coordinate system according to new values
+  mpIconGraphicsView->resetZoom();
+  mpDiagramGraphicsView->resetZoom();
 }
 
 /*!
@@ -10324,7 +10381,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel());
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !textView && !pModelWidget->getLibraryTreeItem()->isSystemLibrary() && !pModelWidget->isComponentMode());
+  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !textView && !pModelWidget->getLibraryTreeItem()->isSystemLibrary() && !pModelWidget->isElementMode());
   MainWindow::instance()->getResetZoomAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
   MainWindow::instance()->getZoomInAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
   MainWindow::instance()->getZoomOutAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
@@ -10603,7 +10660,7 @@ void ModelWidgetContainer::fitToDiagram()
     const int top_ = qRound((double)diagramRect.top() / yInterval) * yInterval;
     QRectF adaptedRect(left, bottom, qAbs(left - right), qAbs(bottom - top_));
     // For read-only system libraries we just set the zoom and for writeable models we modify the extent.
-    if (pModelWidget->getLibraryTreeItem()->isSystemLibrary() || pModelWidget->isComponentMode()) {
+    if (pModelWidget->getLibraryTreeItem()->isSystemLibrary() || pModelWidget->isElementMode()) {
       pGraphicsView->setIsCustomScale(true);
       pGraphicsView->fitInView(diagramRect, Qt::KeepAspectRatio);
     } else {

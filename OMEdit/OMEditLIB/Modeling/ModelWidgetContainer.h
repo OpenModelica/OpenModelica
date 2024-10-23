@@ -265,6 +265,7 @@ public:
   void deleteElementFromOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.removeOne(pElement);}
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
   Element* getElementObject(QString elementName);
+  Element* getElementObjectFromQualifiedName(QString elementQualifiedName);
   QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
   QString getUniqueElementName(const QString &nameStructure, QString elementName, int number = 0);
   bool checkElementName(const QString &nameStructure, QString elementName);
@@ -590,7 +591,7 @@ public:
   bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
   void setRequiresUpdate(bool requiresUpdate) {mRequiresUpdate = requiresUpdate;}
   bool requiresUpdate() {return mRequiresUpdate;}
-  bool isComponentMode() const {return !mModelInstanceList.isEmpty();}
+  bool isElementMode() const {return !mModelInstanceList.isEmpty();}
   void setComponentModified(bool modified) {mComponentModified = modified;}
   bool isComponentModified() const {return mComponentModified;}
   void setRestoringModel(bool restoring) {mRestoringModel = restoring;}
@@ -622,7 +623,7 @@ public:
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void clearGraphicsViewsExceptOutOfSceneItems();
-  void reDrawModelWidget(bool skipLoadModelInstance = false);
+  void reDrawModelWidget();
   void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
@@ -647,7 +648,8 @@ public:
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
   ModelInfo createModelInfo() const;
-  void showComponent(ModelInstance::Model *pModelInstance, bool addToList);
+  void showElement(ModelInstance::Model *pModelInstance, bool addToList);
+  void selectDeselectElement(const QString &name, bool selected);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -660,6 +662,7 @@ private:
   QToolButton *mpBackToolButton;
   QToolButton *mpForwardToolButton;
   QToolButton *mpExitToolButton;
+  Label *mpElementModeLabel;
   Label *mpReadOnlyLabel;
   Label *mpModelicaTypeLabel;
   Label *mpViewTypeLabel;
@@ -731,14 +734,14 @@ private:
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   static void removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
   bool dependsOnModel(const QString &modelName);
-  void updateComponentModeButtons();
+  void updateElementModeButtons();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
   void showTextView(bool checked);
-  void backComponent();
-  void forwardComponent();
-  void exitComponent();
+  void backElement();
+  void forwardElement();
+  void exitElement();
   void updateModel();
 public slots:
   void makeFileWritAble();

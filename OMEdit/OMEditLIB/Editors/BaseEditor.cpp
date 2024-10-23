@@ -1858,7 +1858,7 @@ bool PlainTextEdit::canInsertFromMimeData(const QMimeData *source) const
 {
   // check mimeData to see if we can insert from it
   if (source->hasFormat(Helper::modelicaComponentFormat)) {
-    return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpBaseEditor->getModelWidget()->isComponentMode()
+    return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpBaseEditor->getModelWidget()->isElementMode()
         && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica;
   } else {
     return QPlainTextEdit::canInsertFromMimeData(source);

@@ -49,6 +49,7 @@ public:
   ElementTreeItem(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem = 0);
   ElementTreeItem(ModelInstance::Element *pElement, ElementTreeItem *pParentElementTreeItem = 0);
   ~ElementTreeItem();
+  bool isRootItem() const {return mIsRootItem;}
   int childrenSize() const {return mChildren.size();}
   ElementTreeItem* child(int row) const {return row >= 0 && row < childrenSize() ? mChildren.at(row) : 0;}
   void insertChild(int position, ElementTreeItem *pElementTreeItem) {mChildren.insert(position, pElementTreeItem);}
@@ -56,12 +57,15 @@ public:
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
   ElementTreeItem* parent() const {return mpParentElementTreeItem;}
+  bool isTopLevel() const;
   QString getName() const {return mName;}
+  QString getNameStructure() const {return mNameStructure;}
 private:
   ElementTreeItem *mpParentElementTreeItem = 0;
   bool mIsRootItem = false;
   QList<ElementTreeItem*> mChildren;
   QString mName;
+  QString mNameStructure;
   QString mDisplayName;
   QString mTooltip;
 };
@@ -85,20 +89,22 @@ public:
   Q_DISABLE_COPY_MOVE(ElementTreeModel)
   ElementTreeModel(ElementWidget *pElementWidget);
   ~ElementTreeModel();
+  ElementTreeItem* getRootElementTreeItem() {return mpRootElementTreeItem;}
   int columnCount(const QModelIndex &parent = QModelIndex()) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
-  QModelIndex parent(const QModelIndex & index) const override;
-  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
+  QModelIndex parent(const QModelIndex &index) const override;
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
-  QModelIndex elementsTreeItemIndex(const ElementTreeItem *pElementTreeItem) const;
-  void addElements(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem = 0);
+  QModelIndex elementTreeItemIndex(const ElementTreeItem *pElementTreeItem) const;
+  void addElements(ModelInstance::Model *pModel);
+  ElementTreeItem* findElementTreeItem(const QString &name, ElementTreeItem *pLibraryTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 private:
   ElementWidget *mpElementWidget;
   ElementTreeItem* mpRootElementTreeItem;
   void addElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem);
-  QModelIndex elementsTreeItemIndexHelper(const ElementTreeItem *pElementTreeItem, const ElementTreeItem *pParentElementTreeItem, const QModelIndex &parentIndex) const;
+  QModelIndex elementTreeItemIndexHelper(const ElementTreeItem *pElementTreeItem, const ElementTreeItem *pParentElementTreeItem, const QModelIndex &parentIndex) const;
 };
 
 class ElementTreeView : public QTreeView
@@ -118,13 +124,16 @@ public:
   ElementTreeModel* getElementTreeModel() {return mpElementTreeModel;}
   ElementTreeProxyModel* getElementTreeProxyModel() {return mpElementTreeProxyModel;}
   ElementTreeView* getElementTreeView() {return mpElementTreeView;}
+  void selectDeselectElementItem(const QString &name, bool selected);
 private:
   TreeSearchFilters *mpTreeSearchFilters;
   ElementTreeModel *mpElementTreeModel;
   ElementTreeProxyModel *mpElementTreeProxyModel;
   ElementTreeView *mpElementTreeView;
+  bool mIgnoreSelectionChange = false;
 private slots:
   void filterElements();
+  void elementSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 };
 
 #endif // ELEMENTTREEWIDGET_H

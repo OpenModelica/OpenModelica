@@ -580,6 +580,7 @@ private:
     void deserializeElements(const QJsonArray elements);
 
     Element *getParentElement() const {return mpParentElement;}
+    Element *getRootParentElement() const;
     Extend *getParentExtend() const;
     Component *getParentComponent() const;
     bool isModelJsonEmpty() const {return mModelJson.isEmpty();}
@@ -675,6 +676,7 @@ private:
     const ExtentAnnotation &getIconDiagramMapExtent(bool icon) const;
 
     virtual QString getName() const = 0;
+    virtual QString getQualifiedName(bool includeBaseName) const = 0;
     virtual QString getQualifiedName() const = 0;
     virtual const QString &getRootType() const = 0;
     virtual QString getType() const = 0;
@@ -712,7 +714,8 @@ private:
     // Element interface
   public:
     virtual QString getName() const override {return "";}
-    virtual QString getQualifiedName() const override;
+    virtual QString getQualifiedName(bool includeBaseName) const override;
+    virtual QString getQualifiedName() const override {return getQualifiedName(false);}
     virtual const QString& getRootType() const override;
     virtual QString getType() const override {return mBaseClass;}
     virtual bool isShortClassDefinition() const override {return false;}
@@ -740,7 +743,8 @@ private:
     // Element interface
   public:
     virtual QString getName() const override {return mName;}
-    virtual QString getQualifiedName() const override;
+    virtual QString getQualifiedName(bool includeBaseName) const override;
+    virtual QString getQualifiedName() const override {return getQualifiedName(false);}
     virtual const QString &getRootType() const override;
     virtual QString getType() const override {return mType;}
     virtual bool isShortClassDefinition() const override {return false;}
@@ -767,7 +771,8 @@ private:
     // Element interface
   public:
     virtual QString getName() const override {return mName;}
-    virtual QString getQualifiedName() const override;
+    virtual QString getQualifiedName(bool includeBaseName) const override;
+    virtual QString getQualifiedName() const override {return getQualifiedName(false);}
     virtual const QString &getRootType() const override {return mName;}
     virtual QString getType() const override {return mType;}
     virtual bool isShortClassDefinition() const override {return mIsShortClassDefinition;}

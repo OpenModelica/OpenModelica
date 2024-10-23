@@ -36,6 +36,7 @@
 #include "ItemDelegate.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
+#include "Modeling/ModelWidgetContainer.h"
 
 #include <QGridLayout>
 #include <QStringBuilder>
@@ -81,6 +82,7 @@ ElementTreeItem::ElementTreeItem(ModelInstance::Model *pModel, ElementTreeItem *
 {
   mpParentElementTreeItem = pParentElementTreeItem;
   mName = pModel->getName();
+  mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
   mDisplayName = pModel->getName();
   mTooltip = makeTooltip(pModel->getRestriction(), mName, pModel->getComment());
 }
@@ -96,6 +98,7 @@ ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeIt
   mpParentElementTreeItem = pParentElementTreeItem;
   if (pElement->isExtend()) {
     mName = pElement->getType();
+    mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
     mDisplayName = "extends " % pElement->getType();
     if (pElement->getModel()) {
       mTooltip = makeTooltip(pElement->getModel()->getRestriction(), mName, pElement->getModel()->getComment());
@@ -110,6 +113,7 @@ ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeIt
     mDisplayName = pElement->getName();
     mTooltip = makeTooltip(pElement->getType(), mName, pElement->getComment());
   }
+  mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
 }
 
 /*!
@@ -170,6 +174,20 @@ int ElementTreeItem::row() const
 }
 
 /*!
+ * \brief ElementTreeItem::isTopLevel
+ * Checks whether the ElementTreeItem is top level or not.
+ * \return
+ */
+bool ElementTreeItem::isTopLevel() const
+{
+  if (mpParentElementTreeItem && mpParentElementTreeItem->isRootItem()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/*!
  * \class ElementTreeProxyModel
  * \brief A sort filter proxy model for Element Browser.
  */
@@ -203,7 +221,7 @@ bool ElementTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
         return true;
       }
     }
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return pElementTreeItem->getName().contains(filterRegularExpression());
 #else
     return pElementTreeItem->getName().contains(filterRegExp());
@@ -354,61 +372,71 @@ Qt::ItemFlags ElementTreeModel::flags(const QModelIndex &index) const
 }
 
 /*!
- * \brief ElementTreeModel::elementsTreeItemIndex
+ * \brief ElementTreeModel::elementTreeItemIndex
  * Finds the QModelIndex attached to ElementTreeItem.
  * \param pElementTreeItem
  * \return
  */
-QModelIndex ElementTreeModel::elementsTreeItemIndex(const ElementTreeItem *pElementTreeItem) const
+QModelIndex ElementTreeModel::elementTreeItemIndex(const ElementTreeItem *pElementTreeItem) const
 {
-  return elementsTreeItemIndexHelper(pElementTreeItem, mpRootElementTreeItem, QModelIndex());
+  return elementTreeItemIndexHelper(pElementTreeItem, mpRootElementTreeItem, QModelIndex());
 }
 
 /*!
  * \brief ElementTreeModel::addElements
  * Adds the Elements of the model to the Element Browser.
  * \param pModel
- * \param pParentElementTreeItem
  */
-void ElementTreeModel::addElements(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
+void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 {
   // Element Browser is only available with new API.
   if (!MainWindow::instance()->isNewApi()) {
     return;
   }
-  // remove the existing elements if we are adding elements of new model.
-  if (!pParentElementTreeItem && mpRootElementTreeItem->childrenSize() > 0) {
-    beginRemoveRows(elementsTreeItemIndex(mpRootElementTreeItem->parent()), 0, mpRootElementTreeItem->childrenSize() - 1);
+  // remove the existing elements if there are any
+  if (mpRootElementTreeItem->childrenSize() > 0) {
+    beginRemoveRows(elementTreeItemIndex(mpRootElementTreeItem->parent()), 0, mpRootElementTreeItem->childrenSize() - 1);
     mpRootElementTreeItem->removeChildren();
     endRemoveRows();
   }
-  // add model name item
-  pParentElementTreeItem = mpRootElementTreeItem;
-  QModelIndex index = elementsTreeItemIndex(pParentElementTreeItem);
-  beginInsertRows(index, 0, 1);
-  ElementTreeItem *pElementTreeItem = new ElementTreeItem(pModel, pParentElementTreeItem);
-  pParentElementTreeItem->insertChild(0, pElementTreeItem);
-  endInsertRows();
-  // add model elements
-  addElementsHelper(pModel, pElementTreeItem);
-  // expand the top item
-  index = elementsTreeItemIndex(pElementTreeItem);
-  index = mpElementWidget->getElementTreeProxyModel()->mapFromSource(index);
-  mpElementWidget->getElementTreeView()->expand(index);
-  mpElementWidget->getElementTreeView()->setCurrentIndex(index);
+  // add model elements recursively
+  addElementsHelper(pModel, mpRootElementTreeItem);
+}
+
+/*!
+ * \brief ElementTreeModel::findElementTreeItem
+ * Finds the ElementTreeItem based on the name and case sensitivity.
+ * \param name
+ * \param pElementTreeItem
+ * \param caseSensitivity
+ * \return
+ */
+ElementTreeItem* ElementTreeModel::findElementTreeItem(const QString &name, ElementTreeItem *pElementTreeItem, Qt::CaseSensitivity caseSensitivity) const
+{
+  if (!pElementTreeItem) {
+    pElementTreeItem = mpRootElementTreeItem;
+  } else if (pElementTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
+    return pElementTreeItem;
+  }
+  for (int i = pElementTreeItem->childrenSize(); --i >= 0; ) {
+    if (ElementTreeItem *item = findElementTreeItem(name, pElementTreeItem->child(i), caseSensitivity)) {
+      return item;
+    }
+  }
+  return 0;
 }
 
 /*!
  * \brief ElementTreeModel::addElementsHelper
  * Helper function for ElementTreeModel::addElements
- * Adds the items recursivly.
+ * Adds the items recursively.
  * \param pModel
  * \param pParentElementTreeItem
  */
 void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
 {
   if (pModel) {
-    QModelIndex index = elementsTreeItemIndex(pParentElementTreeItem);
+    QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
     int row = 0;
     QList<ModelInstance::Element*> elements = pModel->getElements();
     beginInsertRows(index, row, elements.size() - 1);
@@ -425,14 +453,14 @@ void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTr
 }
 
 /*!
- * \brief ElementTreeModel::elementsTreeItemIndexHelper
- * Helper function for ElementTreeModel::ElementsTreeItemIndex()
+ * \brief ElementTreeModel::elementTreeItemIndexHelper
+ * Helper function for ElementTreeModel::ElementTreeItemIndex()
  * \param pElementTreeItem
  * \param pParentElementTreeItem
  * \param parentIndex
  * \return
  */
-QModelIndex ElementTreeModel::elementsTreeItemIndexHelper(const ElementTreeItem *pElementTreeItem, const ElementTreeItem *pParentElementTreeItem,
+QModelIndex ElementTreeModel::elementTreeItemIndexHelper(const ElementTreeItem *pElementTreeItem, const ElementTreeItem *pParentElementTreeItem,
                                                           const QModelIndex &parentIndex) const
 {
   if (pElementTreeItem == pParentElementTreeItem) {
@@ -441,7 +469,7 @@ QModelIndex ElementTreeModel::elementsTreeItemIndexHelper(const ElementTreeItem 
   for (int i = pParentElementTreeItem->childrenSize(); --i >= 0; ) {
     const ElementTreeItem *pChildElementTreeItem = pParentElementTreeItem->child(i);
     QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = elementsTreeItemIndexHelper(pElementTreeItem, pChildElementTreeItem, childIndex);
+    QModelIndex index = elementTreeItemIndexHelper(pElementTreeItem, pChildElementTreeItem, childIndex);
     if (index.isValid()) {
       return index;
     }
@@ -492,10 +520,12 @@ ElementWidget::ElementWidget(QWidget *pParent)
   mpElementTreeProxyModel->setSourceModel(mpElementTreeModel);
   mpElementTreeView = new ElementTreeView(this);
   mpElementTreeView->setModel(mpElementTreeProxyModel);
+  mpElementTreeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
   connect(mpElementTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpElementTreeProxyModel, SLOT(invalidate()));
   connect(mpElementTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpElementTreeProxyModel, SLOT(invalidate()));
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(collapseAll()));
+  connect(mpElementTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(elementSelectionChanged(QItemSelection,QItemSelection)));
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -506,6 +536,45 @@ ElementWidget::ElementWidget(QWidget *pParent)
 }
 
 /*!
+ * \brief ElementWidget::selectDeselectElementItem
+ * Select/Deselect the ElementTreeItem in the Element Browser.
+ * \param name
+ * \param selected
+ */
+void ElementWidget::selectDeselectElementItem(const QString &name, bool selected)
+{
+  mIgnoreSelectionChange = true;
+  mpElementTreeView->clearSelection();
+  mIgnoreSelectionChange = false;
+
+  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    QList<Element*> elementsList = pModelWidget->getDiagramGraphicsView()->getInheritedElementsList() + pModelWidget->getDiagramGraphicsView()->getElementsList();
+    foreach (Element *pElement, elementsList) {
+      if (pElement && pElement->isSelected() && pElement->getModelComponent()) {
+        ElementTreeItem *pElementTreeItem = mpElementTreeModel->findElementTreeItem(pElement->getModelComponent()->getQualifiedName(true));
+        if (pElementTreeItem) {
+          QModelIndex modelIndex = mpElementTreeModel->elementTreeItemIndex(pElementTreeItem);
+          QModelIndex proxyIndex = mpElementTreeProxyModel->mapFromSource(modelIndex);
+          mIgnoreSelectionChange = true;
+          mpElementTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
+          mIgnoreSelectionChange = false;
+        }
+      }
+    }
+  }
+  // Makesure the last selected Element is visible.
+  if (selected) {
+    ElementTreeItem *pElementTreeItem = mpElementTreeModel->findElementTreeItem(name, mpElementTreeModel->getRootElementTreeItem());
+    if (pElementTreeItem) {
+      QModelIndex modelIndex = mpElementTreeModel->elementTreeItemIndex(pElementTreeItem);
+      QModelIndex proxyIndex = mpElementTreeProxyModel->mapFromSource(modelIndex);
+      mpElementTreeView->scrollTo(proxyIndex);
+    }
+  }
+}
+
+/*!
  * \brief ElementWidget::filterElements
  * Filters the Elements in the Element Browser.
  */
@@ -513,7 +582,7 @@ void ElementWidget::filterElements()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
   mpElementTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
 #else
@@ -521,4 +590,41 @@ void ElementWidget::filterElements()
   QRegExp regExp(searchText, caseSensitivity, syntax);
   mpElementTreeProxyModel->setFilterRegExp(regExp);
 #endif
+}
+
+/*!
+ * \brief elementSelectionChangedHelper
+ * Helper function for ElementWidget::elementSelectionChanged
+ * \param pModelWidget
+ * \param pElementTreeProxyModel
+ * \param itemSelection
+ * \param selected
+ */
+void elementSelectionChangedHelper(ModelWidget *pModelWidget, ElementTreeProxyModel *pElementTreeProxyModel, const QItemSelection &itemSelection, bool selected)
+{
+  if (pModelWidget && pElementTreeProxyModel) {
+    const QModelIndexList modelIndexes = itemSelection.indexes();
+    foreach (QModelIndex modelIndex, modelIndexes) {
+      QModelIndex sourceModelIndex = pElementTreeProxyModel->mapToSource(modelIndex);
+      ElementTreeItem *pElementTreeItem = static_cast<ElementTreeItem*>(sourceModelIndex.internalPointer());
+      if (pElementTreeItem) {
+        pModelWidget->selectDeselectElement(pElementTreeItem->getNameStructure(), selected);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief ElementWidget::elementSelectionChanged
+ * Slot activated when selectionChanged SIGNAL of ElementTreeView selection model is raised.
+ * \param selected
+ * \param deselected
+ */
+void ElementWidget::elementSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+  if (!mIgnoreSelectionChange) {
+    ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+    elementSelectionChangedHelper(pModelWidget, mpElementTreeProxyModel, selected, true);
+    elementSelectionChangedHelper(pModelWidget, mpElementTreeProxyModel, deselected, false);
+  }
 }

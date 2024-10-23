@@ -52,7 +52,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   mpShapeAnnotation = pParent;
   initialize(x, y, connectedPointIndex);
   mIsSystemLibrary = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
-  mIsComponentMode = mpShapeAnnotation->getGraphicsView()->getModelWidget()->isComponentMode();
+  mIsElementMode = mpShapeAnnotation->getGraphicsView()->getModelWidget()->isElementMode();
   mIsInherited = mpShapeAnnotation->isInheritedShape();
   mIsOMSConnector = (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
                    (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
@@ -63,7 +63,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
    * AND not inherited shape
    * AND not a OMS connector i.e., input/output signals of fmu
    */
-  if (!mIsSystemLibrary && !mIsComponentMode && !mIsInherited && !mIsOMSConnector) {
+  if (!mIsSystemLibrary && !mIsElementMode && !mIsInherited && !mIsOMSConnector) {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
     connect(this, SIGNAL(cornerItemPress(int)), mpShapeAnnotation, SLOT(cornerItemPressed(int)));
     connect(this, SIGNAL(cornerItemRelease(bool)), mpShapeAnnotation, SLOT(cornerItemReleased(bool)));
@@ -80,7 +80,7 @@ void CornerItem::initialize(qreal x, qreal y, int connectedPointIndex)
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   mRectangle = QRectF (-3, -3, 6, 6);
   mIsSystemLibrary = false;
-  mIsComponentMode = false;
+  mIsElementMode = false;
   mIsInherited = false;
   mIsOMSConnector = false;
   mIsVisualizationView = false;
@@ -111,7 +111,7 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
     return;
   }
   QPen pen;
-  if (mIsSystemLibrary || mIsComponentMode || mIsInherited || mIsOMSConnector) {
+  if (mIsSystemLibrary || mIsElementMode || mIsInherited || mIsOMSConnector) {
     pen.setColor(Qt::darkRed);
   } else {
     pen.setColor(Qt::red);

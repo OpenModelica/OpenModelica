@@ -484,7 +484,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpApplyButton->setAutoDefault(false);
   connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applyShapeProperties()));
   if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
-      || mpShapeAnnotation->getGraphicsView()->getModelWidget()->isComponentMode() || mpShapeAnnotation->isInheritedShape()) {
+      || mpShapeAnnotation->getGraphicsView()->getModelWidget()->isElementMode() || mpShapeAnnotation->isInheritedShape()) {
     mpOkButton->setDisabled(true);
     mpApplyButton->setDisabled(true);
   }
