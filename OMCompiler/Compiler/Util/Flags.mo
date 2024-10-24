@@ -744,7 +744,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("dumpDAEXML", Gettext.gettext("dumps the DAE as xml representation of the current transformation state")),
     ("evaluateParameters", Gettext.gettext("Evaluates parameters with annotation(Evaluate=true). Use '--evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to specify additional parameters to be evaluated. Use '--replaceEvaluatedParameters=true' if the evaluated parameters should be replaced in the DAE. To evaluate all parameters in the Frontend use -d=evaluateAllParameters.")),
     ("extendDynamicOptimization", Gettext.gettext("Move loops to constraints.")),
-    ("generateSymbolicLinearization", Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t:math:`\\dot{x} = Ax + Bu `\n\t:math:`y = Cx +Du`")),
+    ("generateSymbolicLinearization", Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`y = Cx + Du`")),
     ("generateSymbolicSensitivities", Gettext.gettext("Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param.")),
     ("inlineArrayEqn", Gettext.gettext("This module expands all array equations to scalar equations.")),
     ("inputDerivativesUsed", Gettext.gettext("Checks if derivatives of inputs are need to calculate the model.")),
@@ -943,7 +943,7 @@ constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(51, "generateSymbol
 
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot x = Ax + Bu`\n\t\t:math:`y = Cx +Du`"));
+  Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t\t:math:`y = Cx + Du`"));
 
 constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(53, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),

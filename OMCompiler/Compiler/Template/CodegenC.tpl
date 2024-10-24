@@ -979,28 +979,43 @@ template simulationFile_lnz(SimCode simCode)
 ::=
   match simCode
     case simCode as SIMCODE(__) then
-    <<
-    /* Linearization */
-    <%simulationFileHeader(simCode.fileNamePrefix)%>
-    #if defined(__cplusplus)
-    extern "C" {
-    #endif
-    <%
-    if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica")
-      then functionlinearmodel(modelInfo, modelNamePrefix(simCode))
-    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"matlab")
-      then functionlinearmodelMatlab(modelInfo, modelNamePrefix(simCode))
-    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"julia")
-      then functionlinearmodelJulia(modelInfo, modelNamePrefix(simCode))
-    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"python")
-      then functionlinearmodelPython(modelInfo, modelNamePrefix(simCode))
-    %>
-    #if defined(__cplusplus)
-    }
-    #endif
-    <%\n%>
-    >>
-    /* adrpo: leave a newline at the end of file to get rid of the warning */
+    if Flags.getConfigBool(GENERATE_SYMBOLIC_LINEARIZATION) then
+      <<
+      /* Linearization */
+      <%simulationFileHeader(simCode.fileNamePrefix)%>
+      #if defined(__cplusplus)
+      extern "C" {
+      #endif
+      <%
+      if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica")
+        then functionlinearmodel(modelInfo, modelNamePrefix(simCode))
+      else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"matlab")
+        then functionlinearmodelMatlab(modelInfo, modelNamePrefix(simCode))
+      else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"julia")
+        then functionlinearmodelJulia(modelInfo, modelNamePrefix(simCode))
+      else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"python")
+        then functionlinearmodelPython(modelInfo, modelNamePrefix(simCode))
+      else
+        error(sourceInfo(), 'Unknown linearization language <%Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE)%>.')
+      %>
+      #if defined(__cplusplus)
+      }
+      #endif<%\n%>
+      >>
+      /* adrpo: leave a newline at the end of file to get rid of the warning */
+    else
+      <<
+      /* Linearization is empty */
+      <%simulationFileHeader(simCode.fileNamePrefix)%>
+      #if defined(__cplusplus)
+      extern "C" {
+      #endif
+      const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>() { return ""; }
+      const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>() { return ""; }
+      #if defined(__cplusplus)
+      }
+      #endif<%\n%>
+      >>
   end match
 end simulationFile_lnz;
 
@@ -1063,45 +1078,45 @@ template simulationFile_dae(SimCode simCode)
         daeModeData=SOME(DAEMODEDATA(daeEquations=daeEquations, sparsityPattern=sparsityPattern,
                                      algebraicVars=algebraicVars, residualVars=residualVars,
                                      auxiliaryVars=auxiliaryVars))) then
-     let modelNamePrefixStr = modelNamePrefix(simCode)
-     let initDAEmode =
-       match sparsityPattern
-       case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
-         '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
-       case NONE() then
-         'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData){ return -1; }'
-       end match
-     <<
-     /* DAE residuals */
-     <%simulationFileHeader(fileNamePrefix)%>
-     #include "simulation/solver/dae_mode.h"
+      let modelNamePrefixStr = modelNamePrefix(simCode)
+      let initDAEmode =
+        match sparsityPattern
+        case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
+          '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
+        case NONE() then
+          'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData){ return -1; }'
+        end match
+      <<
+      /* DAE residuals */
+      <%simulationFileHeader(fileNamePrefix)%>
+      #include "simulation/solver/dae_mode.h"
 
-     #ifdef __cplusplus
-     extern "C" {
-     #endif
+      #ifdef __cplusplus
+      extern "C" {
+      #endif
 
-     <%evaluateDAEResiduals(daeEquations, fileNamePrefix, fullPathPrefix, modelNamePrefixStr)%>
+      <%evaluateDAEResiduals(daeEquations, fileNamePrefix, fullPathPrefix, modelNamePrefixStr)%>
 
-     <%initDAEmode%>
+      <%initDAEmode%>
 
-     #ifdef __cplusplus
-     }
-     #endif<%\n%>
-     >>
-     /* adrpo: leave a newline at the end of file to get rid of the warning */
+      #ifdef __cplusplus
+      }
+      #endif<%\n%>
+      >>
+      /* adrpo: leave a newline at the end of file to get rid of the warning */
     else
-    let modelNamePrefixStr = modelNamePrefix(simCode)
-    <<
-    /* DAE residuals is empty */
-     <%simulationFileHeader(fileNamePrefix(simCode))%>
-    #ifdef __cplusplus
-    extern "C" {
-    #endif
-    int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData){ return -1; }
-    #ifdef __cplusplus
-    }
-    #endif<%\n%>
-    >>
+      let modelNamePrefixStr = modelNamePrefix(simCode)
+      <<
+      /* DAE residuals is empty */
+      <%simulationFileHeader(fileNamePrefix(simCode))%>
+      #ifdef __cplusplus
+      extern "C" {
+      #endif
+      int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData){ return -1; }
+      #ifdef __cplusplus
+      }
+      #endif<%\n%>
+      >>
   end match
 end simulationFile_dae;
 
@@ -5227,6 +5242,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       "  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n"
       "  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n"
       "  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
+      "\n"
       "  parameter Real x0[n] = %s;\n"
       "  parameter Real u0[m] = %s;\n"
       "\n"
@@ -5254,6 +5270,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       "  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n"
       "  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
       "  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
+      "\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = %s;\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = %s;\n"
       "  parameter Real z0[<%varInfo.numAlgVars%>] = %s;\n"
@@ -5318,9 +5335,7 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       "  Ts = %g; %% stop time\n\n"
       "end";
     }
-    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    {
-    }
+    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>() { return ""; }
     >>
   end match
 end functionlinearmodelMatlab;
@@ -5342,9 +5357,9 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
     {
       return "function linearized_model()\n"
       "  # <%modelNamePrefix%> #\n"
-      "  local n = <%varInfo.numStateVars%> # number of states \n"
-      "  local m = <%varInfo.numInVars%> # number of inputs \n"
-      "  local p = <%varInfo.numOutVars%> # number of outputs \n"
+      "  local n = <%varInfo.numStateVars%> # number of states\n"
+      "  local m = <%varInfo.numInVars%> # number of inputs\n"
+      "  local p = <%varInfo.numOutVars%> # number of outputs\n"
       "\n"
       "  local x0 = %s\n"
       "  local u0 = %s\n"
@@ -5361,9 +5376,7 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       "  return (n, m, p, x0, u0, A, B, C, D, stateVars, inputVars, outputVars)\n"
       "end";
     }
-    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    {
-    }
+    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>() { return ""; }
     >>
   end match
 end functionlinearmodelJulia;
@@ -5385,8 +5398,8 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
     {
       return "def linearized_model():\n"
       "    # <%modelNamePrefix%>\n"
-      "    # der(x) = A * x + B * u \n"
-      "    # y = C * x + D * u \n"
+      "    # der(x) = A * x + B * u\n"
+      "    # y = C * x + D * u\n"
       "    n = <%varInfo.numStateVars%> # number of states\n"
       "    m = <%varInfo.numInVars%> # number of inputs\n"
       "    p = <%varInfo.numOutVars%> # number of outputs\n"
@@ -5404,9 +5417,7 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       "\n"
       "    return (n, m, p, x0, u0, A, B, C, D, stateVars, inputVars, outputVars)\n";
     }
-    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    {
-    }
+    const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>() { return ""; }
     >>
   end match
 end functionlinearmodelPython;
