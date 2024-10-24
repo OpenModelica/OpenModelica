@@ -23,7 +23,7 @@ save(A.test);
 save(A);
 clear();
 loadFile("A.mo");
-loadFile("test.mo");
+loadFile("test.mo", allowWithin=true);
 getClassNames();
 getClassNames(A);
 system("rm -rf A.mo test.mo");
@@ -60,7 +60,7 @@ system("rm -rf A.mo test.mo");
 // true
 // Evaluating: loadFile("A.mo")
 // true
-// Evaluating: loadFile("test.mo")
+// Evaluating: loadFile("test.mo", allowWithin = true)
 // true
 // Evaluating: getClassNames()
 // {A}

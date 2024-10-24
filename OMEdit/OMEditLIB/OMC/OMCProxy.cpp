@@ -1699,12 +1699,12 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
   \param fileName - the file to load.
   \return true on success
   */
-bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion)
+bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin)
 {
   mLoadModelError = false;
   bool result = false;
   fileName = fileName.replace('\\', '/');
-  result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion);
+  result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion, allowWithin);
   printMessagesStringInternal();
   return result;
 }

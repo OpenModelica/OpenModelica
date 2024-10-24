@@ -1375,6 +1375,7 @@ function loadFile "load file (*.mo) and merge it with the loaded AST."
   input Boolean uses = true;
   input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
   input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
+  input Boolean allowWithin = true "Whether to allow the file to have a within-clause other than 'within;'.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1394,6 +1395,7 @@ function loadFiles "load files (*.mo) and merges them with the loaded AST."
   input Boolean uses = true;
   input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
   input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
+  input Boolean allowWithin = true "Whether to allow the files to have a within-clause other than 'within;'.";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

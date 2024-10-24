@@ -6233,5 +6233,16 @@ function makeAnnotationArrayValue
 algorithm
   arr := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(s)) for s in annotations));
 end makeAnnotationArrayValue;
+
+function parseWithinPath
+  input Absyn.Path path;
+  output Absyn.Within outWithin;
+algorithm
+  outWithin := match path
+    case Absyn.Path.IDENT("__OpenModelica_TopLevel") then Absyn.Within.TOP();
+    else Absyn.Within.WITHIN(path);
+  end match;
+end parseWithinPath;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
