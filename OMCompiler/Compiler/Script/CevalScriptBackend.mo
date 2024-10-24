@@ -1499,20 +1499,11 @@ algorithm
 
     case ("moveClassToBottom", _) then Values.BOOL(false);
 
-    case ("copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("__OpenModelica_TopLevel")))})
-      equation
-        p = SymbolTable.getAbsyn();
-        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
-        p = copyClass(absynClass, name, Absyn.TOP(), classpath, p);
-        SymbolTable.setAbsyn(p);
-      then
-        Values.BOOL(true);
-
     case ("copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(path))})
       equation
         p = SymbolTable.getAbsyn();
         absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
-        p = copyClass(absynClass, name, Absyn.WITHIN(path), classpath, p);
+        p = copyClass(absynClass, name, InteractiveUtil.parseWithinPath(path), classpath, p);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(true);

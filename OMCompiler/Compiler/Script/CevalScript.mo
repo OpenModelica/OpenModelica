@@ -320,6 +320,7 @@ public function loadFile "load the file or the directory structure if the file i
   input Boolean checkUses;
   input Boolean notifyLoad;
   input Boolean requireExactVersion;
+  input Boolean allowWithin = true;
   output Absyn.Program outProgram;
 protected
   String dir,filename,cname,prio,mp;
@@ -338,6 +339,9 @@ algorithm
     return;
   end if;
   outProgram := Parser.parse(name,encoding);
+  if not allowWithin then
+    checkTopClassWithin(outProgram, name);
+  end if;
   ClassLoader.checkOnLoadMessage(outProgram);
 
   // Check if we have duplicate top level classes before calling checkUsesAndUpdateProgram()
@@ -393,6 +397,19 @@ algorithm
     end match;
   end for;
 end checkDuplicateTopLevelClasses;
+
+protected function checkTopClassWithin
+  input Absyn.Program program;
+  input String filename;
+algorithm
+  if not AbsynUtil.withinEqual(program.within_, Absyn.Within.TOP()) then
+    Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN,
+      {AbsynUtil.withinString(Absyn.Within.TOP()), AbsynUtil.withinString(program.within_)},
+      SOURCEINFO(filename, false, 1, 0, 1, 0, 0)
+    );
+    fail();
+  end if;
+end checkTopClassWithin;
 
 protected function checkUsesAndUpdateProgram
   input Absyn.Program newp;
@@ -652,7 +669,7 @@ algorithm
       Integer i, access;
       list<String> strs, strs1, strs2, interfaceType;
       Real r,r1,r2;
-      Boolean bval, b, b1, mergeAST, includePartial, qualified, sort, requireExactVersion;
+      Boolean bval, b, b1, mergeAST, includePartial, qualified, sort, requireExactVersion, allowWithin;
       Absyn.CodeNode codeNode;
       list<Absyn.Path> paths;
       list<Absyn.Class> classes;
@@ -1308,11 +1325,11 @@ algorithm
       then
         Values.BOOL(false);
 
-    case ("loadFile",Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
+    case ("loadFile",Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::Values.BOOL(allowWithin)::_)
       algorithm
         execStatReset();
         name := Testsuite.friendlyPath(name);
-        newp := loadFile(name, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion);
+        newp := loadFile(name, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion, allowWithin);
         execStat("loadFile("+name+")");
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
@@ -1322,11 +1339,18 @@ algorithm
     case ("loadFile",_)
       then Values.BOOL(false);
 
-    case ("loadFiles",Values.ARRAY(valueLst=vals)::Values.STRING(encoding)::Values.INTEGER(i)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
+    case ("loadFiles",Values.ARRAY(valueLst=vals)::Values.STRING(encoding)::Values.INTEGER(i)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::Values.BOOL(allowWithin)::_)
       algorithm
         strs := List.mapMap(vals,ValuesUtil.extractValueString,Testsuite.friendlyPath);
         newps := Parser.parallelParseFilesToProgramList(strs,encoding,numThreads=i);
-        newp := List.fold(newps, function checkUsesAndUpdateProgram(checkUses=b, modelicaPath=Settings.getModelicaPath(Testsuite.isRunning()), notifyLoad=b1, requireExactVersion=requireExactVersion, mergeAST=false), SymbolTable.getAbsyn());
+        newp := SymbolTable.getAbsyn();
+        for p in newps loop
+          str :: strs := strs;
+          if not allowWithin then
+            checkTopClassWithin(p, str);
+          end if;
+          newp := checkUsesAndUpdateProgram(p, newp, b, Settings.getModelicaPath(Testsuite.isRunning()), b1, requireExactVersion, false);
+        end for;
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
       then
@@ -1418,8 +1442,7 @@ algorithm
     case ("reloadClass",_)
       then Values.BOOL(false);
 
-    case
-    ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
+    case ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
         str := if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
         newp := Parser.parsestring(str,name);
