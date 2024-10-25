@@ -3776,6 +3776,30 @@ annotation(
   preferredView="text");
 end getNthComponentAnnotation;
 
+function getNthComponentModification
+  input TypeName className;
+  input Integer n;
+  output ExpressionOrModification result[:];
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the modification for the n:th component in the given class.</p>
+</html>"),
+  preferredView="text");
+end getNthComponentModification;
+
+function getNthComponentCondition
+  input TypeName className;
+  input Integer n;
+  output String result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the condition for the n:th component in the given class as a string.</p>
+</html>"),
+  preferredView="text");
+end getNthComponentCondition;
+
 function getElementAnnotation
   input TypeName elementName;
   output String annotationString;

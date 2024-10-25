@@ -897,18 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getNthComponentModification"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-      then
-        getNthComponentModification(cr, p, n);
-
-    case "getNthComponentCondition"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-      then
-        getNthComponentCondition(cr, p, n);
-
     case "getInheritanceCount"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -7797,69 +7785,45 @@ algorithm
   result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), true);
 end getNthComponentAnnotation;
 
-protected function getNthComponentModification "
-  This function takes a `ComponentRef\', a `Program\' and an int and
-  returns a comma separated string of values corresponding to the
-  flat record for component annotations.
-"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthComponentModification
+  "Returns the modifier for the n:th component in the given class."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Absyn.Element comp;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.Element comp;
-      String str,str_1;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      Integer n;
-    case (model_,p,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = InteractiveUtil.getNthComponentInClass(cdef, n);
-        str = getComponentModification(comp);
-        str_1 = stringAppendList({"{",str,"}"});
-      then
-        str_1;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    comp := InteractiveUtil.getNthComponentInClass(cls, n);
+    result := getComponentModification(comp);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthComponentModification;
 
-protected function getNthComponentCondition
-"This function takes a `ComponentRef\', a `Program\' and an int and
-  returns a component condition."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthComponentCondition
+  "Returns the condition of the n:th component in the given class as a string."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Absyn.Element comp;
+  String str;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.Element comp;
-      String str,str_1;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      Integer n;
-    case (model_,p,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = InteractiveUtil.getNthComponentInClass(cdef, n);
-        str = getComponentCondition(comp);
-        str = System.trim(str, " ");
-        str_1 = stringAppendList({"\"",str,"\""});
-      then
-        str_1;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    comp := InteractiveUtil.getNthComponentInClass(cls, n);
+    str := getComponentCondition(comp);
+    str := System.trim(str, " ");
+    result := ValuesUtil.makeString(str);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthComponentCondition;
 
 protected function getComponentCondition
@@ -11007,66 +10971,30 @@ end getConnectionsInEquations;
 public function getComponentModification
 " This function takes an Element and returns a comma separated
    list of Code expression for the modification of the component."
-  input Absyn.Element inElement;
-  output String outString;
+  input Absyn.Element element;
+  output Values.Value result;
+protected
+  list<Absyn.ComponentItem> comps;
+  Option<Absyn.Modification> opt_mod;
+  Absyn.Modification mod;
+  list<Values.Value> vals = {};
 algorithm
-  outString:=
-  matchcontinue (inElement)
-    local
-      String str;
-      list<Absyn.ComponentItem> lst;
-    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst)))
-      equation
-        str = getComponentitemsModification(lst);
+  result := match element
+    case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = comps))
+      algorithm
+        for c in comps loop
+          opt_mod := c.component.modification;
+          mod := if isSome(opt_mod) then Util.getOption(opt_mod) else Absyn.emptyMod;
+          vals := Values.Value.CODE(Absyn.CodeNode.C_MODIFICATION(mod)) :: vals;
+        end for;
+
+        vals := Dangerous.listReverseInPlace(vals);
       then
-        str;
-    else "";
-  end matchcontinue;
+        ValuesUtil.makeArray(vals);
+
+    else ValuesUtil.makeEmptyArray();
+  end match;
 end getComponentModification;
-
-protected function getComponentitemsModification
-"Helper function to get_component_modification."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inAbsynComponentItemLst)
-    local
-      String s1,s2,res,str;
-      Absyn.Modification mod;
-      list<Absyn.ComponentItem> rest;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = SOME(mod))) :: (rest as (_ :: _))))
-      equation
-        s1 = Dump.printExpStr(Absyn.CODE(Absyn.C_MODIFICATION(mod)));
-        s2 = getComponentitemsModification(rest);
-        res = stringAppendList({s1,",",s2});
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = SOME(mod)))})
-      equation
-        res = Dump.printExpStr(Absyn.CODE(Absyn.C_MODIFICATION(mod)));
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
-      equation
-        str = getComponentitemsModification(rest);
-        res = stringAppend("$Code(),", str);
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
-      equation
-        str = getComponentitemsModification(rest);
-        res = stringAppend("$Code(),", str);
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(comment = NONE())})
-      equation
-        res = "$Code()";
-      then
-        res;
-  end matchcontinue;
-end getComponentitemsModification;
-
 
 public function cacheProgramAndPath
   input GraphicEnvCache inCache;

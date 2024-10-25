@@ -566,6 +566,8 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 end Algorithm;
 
 public
+constant Modification emptyMod = Modification.CLASSMOD({}, EqMod.NOMOD());
+
 uniontype Modification "Modifications are described by the `Modification\' type.  There
   are two forms of modifications: redeclarations and component
   modifications.
