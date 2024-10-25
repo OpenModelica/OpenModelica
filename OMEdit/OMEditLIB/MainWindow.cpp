@@ -4788,7 +4788,7 @@ void MainWindow::switchToPlottingPerspective()
     mpPlotWindowContainer->addPlotWindow();
   }
   if (pModelWidget) {
-    mpPlotWindowContainer->showDiagramWindow(pModelWidget);
+    mpPlotWindowContainer->showDiagramWindow(pModelWidget, true);
   }
   mpVariablesDockWidget->show();
   // show/hide toolbars

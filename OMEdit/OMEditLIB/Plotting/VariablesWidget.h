@@ -142,6 +142,7 @@ class VariablesTreeModel : public QAbstractItemModel
 public:
   VariablesTreeModel(VariablesTreeView *pVariablesTreeView = 0);
   VariablesTreeItem* getRootVariablesTreeItem() {return mpRootVariablesTreeItem;}
+  VariablesTreeItem* getActiveVariablesTreeItem() {return mpActiveVariablesTreeItem;}
   int columnCount(const QModelIndex &parent = QModelIndex()) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
@@ -163,6 +164,7 @@ public:
 private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
+  VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
   QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
@@ -177,6 +179,7 @@ signals:
   void variableTreeItemRemoved(QString variable);
 public slots:
   void removeVariableTreeItem();
+  void enableTimeControls();
   void filterDependencies();
   void openTransformationsBrowser();
 };
@@ -229,7 +232,6 @@ public:
   void updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions);
   void initializeVisualization();
   void updateVisualization();
-  void deInitializeVisualization();
   void updatePlotWindows();
   void updateBrowserTime(double time);
   QPair<double, bool> readVariableValue(QString variable, double time, bool reportError = true);
@@ -238,6 +240,7 @@ private:
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;
   QComboBox *mpSimulationTimeComboBox;
+  Label *mpTimeControlsDescriptionLabel;
   QSlider *mpSimulationTimeSlider;
   int mSliderRange;
   QToolBar *mpToolBar;

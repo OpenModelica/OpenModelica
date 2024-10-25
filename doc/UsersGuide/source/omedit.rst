@@ -1003,6 +1003,7 @@ Array Plot
 
 Plots an array variable so that the array elements' indexes are on the x-axis and corresponding
 elements' values are on the y-axis. The time is controlled by the slider above the variable tree.
+Right click the result file in variable browser and select `Enable Time Controls` to enable the slider.
 When an array is present in the model, it has a principal array node in the variable tree.
 To plot this array as an Array Plot, match the principal node. The principal node may be expanded
 into particular array elements. To plot a single element in the Time Plot, match the element.
@@ -1018,8 +1019,9 @@ Array Parametric Plot
 ^^^^^^^^^^^^^^^^^^^^^
 
 Plots the first array elements' values on the x-axis versus the second array elements'
-values on the y-axis. The time is controlled by the slider above the variable tree. To
-create a new Array Parametric Plot, press the New Array Parametric Plot Window toolbar
+values on the y-axis. The time is controlled by the slider above the variable tree.
+Right click the result file in variable browser and select `Enable Time Controls` to enable the slider.
+To create a new Array Parametric Plot, press the New Array Parametric Plot Window toolbar
 button (|array-parametric-plot-window|), then match the principle array node in the
 variable tree view to be plotted on the x-axis and match the principle array node to be
 plotted on the y-axis.
