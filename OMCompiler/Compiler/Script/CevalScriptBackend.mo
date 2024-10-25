@@ -3199,6 +3199,12 @@ algorithm
     case ("getNthComponentAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthComponentAnnotation(classpath, n, SymbolTable.getAbsyn());
 
+    case ("getNthComponentModification", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthComponentModification(classpath, n, SymbolTable.getAbsyn());
+
+    case ("getNthComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthComponentCondition(classpath, n, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

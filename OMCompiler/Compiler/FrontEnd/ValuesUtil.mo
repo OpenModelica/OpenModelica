@@ -1874,7 +1874,7 @@ algorithm
 
     case (Values.CODE(A = c))
       equation
-        Print.printBuf("Code(");
+        Print.printBuf("$Code(");
         Print.printBuf(Dump.printCodeStr(c));
         Print.printBuf(")");
       then
