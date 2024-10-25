@@ -14,8 +14,8 @@ equation
 end ModelTestBug3974;
 "); getErrorString();
 buildModel(ModelTestBug3974); getErrorString();
-system("ModelTestBug3974 -r ModelTestBug39741.mat"); getErrorString();
-system("ModelTestBug3974 -override a=2 -r ModelTestBug39742.mat"); getErrorString();
+system("./ModelTestBug3974 -r ModelTestBug39741.mat"); getErrorString();
+system("./ModelTestBug3974 -override a=2 -r ModelTestBug39742.mat"); getErrorString();
 writeFile("ModelTestBug3974.html", diffSimulationResultsHtml("x", "ModelTestBug39741.mat", "ModelTestBug39742.mat")); getErrorString();
 echo(false);
 str := readFile("ModelTestBug3974.html"); getErrorString();
