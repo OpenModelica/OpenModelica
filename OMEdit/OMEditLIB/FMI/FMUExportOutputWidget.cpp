@@ -217,6 +217,7 @@ void FmuExportOutputWidget::compileModel()
   arguments << CMAKE_BUILD_TYPE << "-DCMAKE_C_COMPILER=clang" << "-DCMAKE_COLOR_MAKEFILE=OFF" << "..";
 #endif
 
+  writeCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
   mpCompilationProcess->start(program, arguments);
 }
 
@@ -366,6 +367,7 @@ void FmuExportOutputWidget::runPostCompilation()
              << "--parallel"
              << "--target" << "install";
 
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
   mpPostCompilationProcess->start(program, arguments);
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
   mpGeneratedFilesTabWidget->setCurrentIndex(1);
@@ -504,14 +506,22 @@ void FmuExportOutputWidget::zipFMU()
 
   QString program = "zip";
   QStringList arguments;
-  arguments  << "-r" << mFmuLocationPath << ".";
+  arguments << "-r" << mFmuLocationPath << ".";
 
   // check for fmiSources=false and do not export the source folder
   if (!OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked()) {
-    arguments << arguments << "-x" << "'sources/*'";
+#ifdef Q_OS_WIN
+    arguments << "-x" << "'sources/*'";
+#else
+    arguments << "-x" << "sources/*";
+#endif
   } else {
     // ignore the build_cmake directory
-    arguments << arguments << "-x" << "'sources/build_cmake/*'";
+#ifdef Q_OS_WIN
+    arguments << "-x" << "'sources/build_cmake/*'";
+#else
+    arguments << "-x" << "sources/build_cmake/*";
+#endif
   }
   // remove the fmu if already exists.
   if (QFile::exists(mFmuLocationPath)) {
@@ -521,6 +531,8 @@ void FmuExportOutputWidget::zipFMU()
                                                               Helper::scriptingKind, Helper::warningLevel));
     }
   }
+
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
   mpZipCompilationProcess->start(program, arguments);
 }
 
