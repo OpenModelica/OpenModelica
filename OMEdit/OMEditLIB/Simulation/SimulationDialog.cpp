@@ -1951,7 +1951,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     /* issue #11811
      * Make sure we always update the diagramWindow after simulation.
      */
-    MainWindow::instance()->getPlotWindowContainer()->showDiagramWindow(0);
+    MainWindow::instance()->getPlotWindowContainer()->showDiagramWindow(0, false);
   }
   bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||

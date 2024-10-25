@@ -284,11 +284,20 @@ void PlotWindowContainer::removePlotCurves(PlotWindow *pPlotWindow)
  * \brief PlotWindowContainer::showDiagramWindow
  * Shows/Updates the Diagram Window if there is any.
  * \param pModelWidget
+ * \param initializeVisualization
  */
-void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget)
+void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget, bool initializeVisualization)
 {
   if (mpDiagramWindow) {
     mpDiagramWindow->showVisualizationDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
+    if (initializeVisualization) {
+      PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
+      // if DiagramWindow is active
+      if (pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget())) {
+        MainWindow::instance()->getVariablesWidget()->initializeVisualization();
+        MainWindow::instance()->getVariablesWidget()->updateVisualization();
+      }
+    }
   }
 }
 
