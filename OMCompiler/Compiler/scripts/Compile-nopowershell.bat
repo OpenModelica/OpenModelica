@@ -1,8 +1,8 @@
-REM echo off
+@echo off
 REM Arguments
 REM 1 fileprefix
 REM 2 target (gcc|msvc)
-REM 3 platform (ucrt64|mingw64)
+REM 3 platform (mingw64|mingw32)
 REM 4 serial/parallel
 REM 5 linkType (dynamic|static)
 REM 6 number of processors
@@ -24,7 +24,7 @@ set OLD_PATH=%PATH%
 call :CONVERT_OPENMODELICAHOME_TO_SHORT_PATH_NAME "%OPENMODELICAHOME%"
 set MINGW="%OPENMODELICAHOME%\tools\msys\%OM_PLATFORM%"
 set ADDITIONAL_ARGS=
-REM If OMDEV is set, use msys2-ucrt64 from there instead of OPENMODELICAHOME
+REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
 REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.compile.log 2>&1
@@ -35,13 +35,13 @@ if %LOGGING%==1 (goto :SET_PATH_LOG) else (goto :SET_PATH)
 
 :SET_PATH_LOG
 cd /D "%MINGW%\bin" >>%CURRENT_DIR%\%1.compile.log 2>&1
-set PATH=%CD%;%CD%\..\..\usr\bin;%OLD_PATH% >>%CURRENT_DIR%\%1.compile.log 2>&1
+set PATH=%CD%;%CD%\..\..\usr\bin; >>%CURRENT_DIR%\%1.compile.log 2>&1
 cd /D "%CURRENT_DIR%" >>%CURRENT_DIR%\%1.compile.log 2>&1
 goto :CHECK_TARGET
 
 :SET_PATH
 cd /D "%MINGW%\bin"
-set PATH=%CD%;%CD%\..\..\usr\bin;%OLD_PATH%
+set PATH=%CD%;%CD%\..\..\usr\bin;
 echo PATH = "%PATH%"
 cd /D "%CURRENT_DIR%"
 goto :CHECK_TARGET
@@ -113,7 +113,7 @@ goto :Final
 :MINGW
 REM echo "MINGW"
 if "%4"=="parallel" set ADDITIONAL_ARGS=-j%NUM_PROCS%
-if %LOGGING%==1 (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.compile.log 2>&1; Exit $LASTEXITCODE") else (PowerShell -Command "$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'; "%MinGW%\bin\mingw32-make.exe" SHELL='' -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%; Exit $LASTEXITCODE")
+if %LOGGING%==1 ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.compile.log 2>&1) else ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%)
 set RESULT=%ERRORLEVEL%
 if %LOGGING%==1 echo RESULT: %RESULT% >> %1.compile.log 2>&1
 goto :Final
