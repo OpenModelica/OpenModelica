@@ -37,6 +37,8 @@ ifeq (ucrt64,$(findstring ucrt64,$(MSYSTEM_PREFIX)))
 override CFLAGS += -DUCRT64
 endif
 
+# adrpo: automake 1.17 breaks compilation of libffi on msys2/ucrt
+export WANT_AUTOMAKE=1.16
 
 # makefile for Windows MinGW OMDev
 all : .testvariables settings omc

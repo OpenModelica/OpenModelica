@@ -306,5 +306,5 @@ clean:
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)
 
 gitclean:
-	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
+	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn -e .vscode/'
 	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch -e .vscode/
