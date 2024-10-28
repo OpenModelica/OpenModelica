@@ -1319,8 +1319,8 @@ void DocumentationViewer::setFocusInternal()
 {
   setFocus(Qt::ActiveWindowFocusReason);
   QPoint center = QPoint(0, 0);
-  QMouseEvent *pMouseEvent1 = new QMouseEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-  QMouseEvent *pMouseEvent2 = new QMouseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QMouseEvent *pMouseEvent1 = new QMouseEvent(QEvent::MouseButtonPress, center, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QMouseEvent *pMouseEvent2 = new QMouseEvent(QEvent::MouseButtonRelease, center, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
   QApplication::postEvent(this, pMouseEvent1);
   QApplication::postEvent(this, pMouseEvent2);
 }

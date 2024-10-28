@@ -47,6 +47,17 @@
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
+QString translationsPath(QString translationsDirectory)
+{
+#ifdef Q_OS_WIN
+  return translationDirectory;
+#elif (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  return QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+#else
+  return QLibraryInfo::location(QLibraryInfo::TranslationsPath);
+#endif
+}
+
 /*!
  * \class OMEditApplication
  * \brief It is a subclass for QApplication so that we can handle QFileOpenEvent sent by OSX at startup.
@@ -85,17 +96,13 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 
   QString translationDirectory = installationDirectoryPath + QString("/share/omedit/nls");
   // install Qt's default translations
-  QTranslator *pQtTranslator = new QTranslator(this);
-#ifdef Q_OS_WIN
-  pQtTranslator->load("qt_" + locale, translationDirectory);
-#else
-  pQtTranslator->load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-#endif
-  installTranslator(pQtTranslator);
+  if (mQtTranslator.load("qt_" + locale, translationsPath(translationDirectory))) {
+    installTranslator(&mQtTranslator);
+  }
   // install application translations
-  QTranslator *pTranslator = new QTranslator(this);
-  pTranslator->load("OMEdit_" + locale, translationDirectory);
-  installTranslator(pTranslator);
+  if (mTranslator.load("OMEdit_" + locale, translationDirectory)) {
+    installTranslator(&mTranslator);
+  }
   // Splash Screen
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();

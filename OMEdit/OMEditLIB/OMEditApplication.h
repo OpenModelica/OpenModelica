@@ -39,6 +39,7 @@ extern "C" {
 }
 
 #include <QApplication>
+#include <QTranslator>
 #include <QStringList>
 
 class OMEditApplication : public QApplication
@@ -48,6 +49,8 @@ public:
   OMEditApplication(int &argc, char**argv, threadData_t *threadData, bool testsuiteRunning = false);
 private:
   QStringList mFilesToOpenList;
+  QTranslator mQtTranslator;
+  QTranslator mTranslator;
 protected:
   virtual bool event(QEvent *pEvent) override;
 };
