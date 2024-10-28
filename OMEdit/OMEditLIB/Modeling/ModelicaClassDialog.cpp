@@ -244,7 +244,7 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   // create save contents of package in one file checkbox
   mpSaveContentsInOneFileCheckBox = new QCheckBox(Helper::saveContentsInOneFile);
   mpSaveContentsInOneFileCheckBox->setChecked(true);
-  mpSaveContentsInOneFileCheckBox->setVisible(false);
+  mpSaveContentsInOneFileCheckBox->setEnabled(false);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -284,26 +284,35 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
  */
 void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(int index)
 {
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem();
+  if (!mpParentClassTextBox->text().isEmpty()) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpParentClassTextBox->text());
+    if (pLibraryTreeItem) {
+      pParentLibraryTreeItem = pLibraryTreeItem;
+    }
+  }
+
   const QString text = mpSpecializationComboBox->itemText(index);
-  if (text.toLower().compare("package") == 0) {
-    mpSaveContentsInOneFileCheckBox->setVisible(true);
+
+  if ((pParentLibraryTreeItem->isRootItem() || pParentLibraryTreeItem->getSaveContentsType() != LibraryTreeItem::SaveInOneFile)
+      && (text.toLower().compare("package") == 0)) {
+    mpSaveContentsInOneFileCheckBox->setEnabled(true);
   } else {
-    mpSaveContentsInOneFileCheckBox->setVisible(false);
+    mpSaveContentsInOneFileCheckBox->setEnabled(false);
     mpSaveContentsInOneFileCheckBox->setChecked(true);
   }
 }
 
 void ModelicaClassDialog::browseExtendsClass()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Extends Class"), mpExtendsClassTextBox,
-                                                                      MainWindow::instance()->getLibraryWidget());
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Extends Class"), mpExtendsClassTextBox, MainWindow::instance()->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
 
 void ModelicaClassDialog::browseParentClass()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox,
-                                                                      MainWindow::instance()->getLibraryWidget());
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox, MainWindow::instance()->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
 
