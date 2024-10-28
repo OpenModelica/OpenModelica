@@ -3205,6 +3205,9 @@ algorithm
     case ("getNthComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthComponentCondition(classpath, n, SymbolTable.getAbsyn());
 
+    case ("getInheritanceCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

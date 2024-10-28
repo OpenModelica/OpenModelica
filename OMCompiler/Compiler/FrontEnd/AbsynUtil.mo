@@ -5107,6 +5107,16 @@ algorithm
   end match;
 end isElementItemClass;
 
+public function isElementItemExtends
+  input Absyn.ElementItem item;
+  output Boolean isExtends;
+algorithm
+  isExtends := match item
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS())) then true;
+    else false;
+  end match;
+end isElementItemExtends;
+
 public function isElementItem
   input Absyn.ElementItem inElement;
   output Boolean outIsClass;
