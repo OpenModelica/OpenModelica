@@ -70,6 +70,7 @@ GetModelInstanceMod2.mos \
 GetModelInstanceMod3.mos \
 GetModelInstanceMod4.mos \
 GetModelInstanceMod5.mos \
+GetModelInstanceMod6.mos \
 GetModelInstanceProtected1.mos \
 GetModelInstanceReplaceable1.mos \
 GetModelInstanceReplaceable2.mos \

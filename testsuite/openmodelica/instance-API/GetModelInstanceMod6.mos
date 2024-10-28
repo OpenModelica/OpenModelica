@@ -1,0 +1,53 @@
+// name: GetModelInstanceMod6
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    Real x(start = 1
+// comment
+    );
+
+    Real y(start = 2 /* comment */);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"modifiers\": {
+//         \"start\": \"1\"
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"modifiers\": {
+//         \"start\": \"2\"
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 8,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult
