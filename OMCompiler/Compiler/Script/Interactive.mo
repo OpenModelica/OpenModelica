@@ -897,12 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getInheritanceCount"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        intString(getInheritanceCount(cr, p));
-
     case "getNthInheritedClass"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
@@ -7106,30 +7100,23 @@ end try;
 
 end getInheritedClasses;
 
-protected function getInheritanceCount
-"This function takes a ComponentRef and a Program and
+public function getInheritanceCount
+"This function takes a Path and a Program and
   returns the number of inherited classes in the class
-  referenced by the ComponentRef."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output Integer outInteger;
+  referenced by the Path."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Integer count;
 algorithm
-  outInteger := matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Integer count;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        count = countBaseClasses(cdef);
-      then
-        count;
-    else 0;
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    result := ValuesUtil.makeInteger(countBaseClasses(cls));
+  else
+    result := ValuesUtil.makeInteger(0);
+  end try;
 end getInheritanceCount;
 
 protected function getNthInheritedClass
@@ -7297,100 +7284,39 @@ algorithm
 end getNthInheritedClassMapAnnotation;
 
 protected function getExtendsInClass
-"Returns all ElementSpec of EXTENDS in a class."
+  "Returns all ElementSpec of EXTENDS in a class."
   input Absyn.Class inClass;
-  output list<Absyn.ElementSpec> outAbsynElementSpecLst;
+  output list<Absyn.ElementSpec> outExtends;
+protected
+  list<Absyn.ClassPart> parts;
 algorithm
-  outAbsynElementSpecLst := match (inClass)
-    local
-      list<Absyn.ElementSpec> res;
-      String n;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      list<Absyn.ClassPart> parts;
-    /* a class with parts */
-    case (Absyn.CLASS(
-                      body = Absyn.PARTS(classParts = parts)))
-      equation
-        res = getExtendsInParts(parts);
-      then
-        res;
-    /* an extended class with parts: model extends M end M; */
-    case (Absyn.CLASS(
-                      body = Absyn.CLASS_EXTENDS(parts = parts)))
-      equation
-        res = getExtendsInParts(parts);
-      then
-        res;
+  outExtends := match inClass
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) then getExtendsInParts(parts);
     /* adrpo: TODO! how about model extends M(modifications) end M??
                     should we report EXTENDS(IDENT(M), modifications)? */
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) then getExtendsInParts(parts);
+    else {};
   end match;
 end getExtendsInClass;
 
 protected function getExtendsInParts
-"author: PA
-  Helper function to getExtendsInElass."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.ElementSpec> outAbsynElementSpecLst;
+  input list<Absyn.ClassPart> parts;
+  output list<Absyn.ElementSpec> outExtends = {};
+protected
+  Absyn.ElementSpec spec;
 algorithm
-  outAbsynElementSpecLst := matchcontinue (inAbsynClassPartLst)
-    local
-      list<Absyn.ElementSpec> l1,l2,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> parts;
+  for part in parts loop
+    for el in AbsynUtil.getElementItemsInClassPart(part) loop
+      outExtends := match el
+        case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = spec as Absyn.EXTENDS()))
+          then spec :: outExtends;
+        else outExtends;
+      end match;
+    end for;
+  end for;
 
-    case {} then {};
-
-    case ((Absyn.PUBLIC(contents = elts) :: parts))
-      equation
-        l1 = getExtendsInParts(parts);
-        l2 = getExtendsInElementitems(elts);
-        res = listAppend(l1, l2);
-      then
-        res;
-
-    case ((Absyn.PROTECTED(contents = elts) :: parts))
-      equation
-        l1 = getExtendsInParts(parts);
-        l2 = getExtendsInElementitems(elts);
-        res = listAppend(l1, l2);
-      then
-        res;
-
-    case ((_ :: parts))
-      equation
-        res = getExtendsInParts(parts);
-      then
-        res;
-
-  end matchcontinue;
+  outExtends := Dangerous.listReverseInPlace(outExtends);
 end getExtendsInParts;
-
-protected function getExtendsInElementitems
-"author: PA
-  Helper function to getExtendsInParts."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output list<Absyn.ElementSpec> outAbsynElementSpecLst;
-algorithm
-  outAbsynElementSpecLst:=
-  matchcontinue (inAbsynElementItemLst)
-    local
-      list<Absyn.ElementSpec> res;
-      Absyn.ElementSpec e;
-      list<Absyn.ElementItem> es;
-    case ({}) then {};
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = (e as Absyn.EXTENDS()))) :: es))
-      equation
-        res = getExtendsInElementitems(es);
-      then
-        (e :: res);
-    case ((_ :: es))
-      equation
-        res = getExtendsInElementitems(es);
-      then
-        res;
-  end matchcontinue;
-end getExtendsInElementitems;
 
 protected function getNthInheritedClass2
 "Helper function to getNthInheritedClass."
@@ -9937,96 +9863,32 @@ end getBaseClassesFromElts;
 protected function countBaseClasses
 " This function counts the number of base classes of a class"
   input Absyn.Class inClass;
-  output Integer outInteger;
+  output Integer count;
+protected
+  list<Absyn.ClassPart> parts;
 algorithm
-  outInteger := matchcontinue (inClass)
-    local
-      Integer res;
-      list<Absyn.ClassPart> parts;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
-      equation
-        res = countBaseClassesFromParts(parts);
-      then
-        res;
-
+  count := match inClass
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) then countBaseClassesFromParts(parts);
     // adrpo: add the case for model extends baseClassName extends SomeElseClass; end baseClassName;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
-      equation
-        res = countBaseClassesFromParts(parts);
-      then
-        res + 1;
-
-    case (Absyn.CLASS(body = Absyn.DERIVED())) then 1;
-
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) then countBaseClassesFromParts(parts);
+    case Absyn.CLASS(body = Absyn.DERIVED()) then 1;
     else 0;
-
-  end matchcontinue;
+  end match;
 end countBaseClasses;
 
 protected function countBaseClassesFromParts
 "Helper function to countBaseClasses."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output Integer outInteger;
+  input list<Absyn.ClassPart> parts;
+  output Integer count = 0;
 algorithm
-  outInteger := matchcontinue (inAbsynClassPartLst)
-    local
-      Integer c1,c2,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> rest;
-
-    case ((Absyn.PUBLIC(contents = elts) :: rest))
-      equation
-        c1 = countBaseClassesFromElts(elts);
-        c2 = countBaseClassesFromParts(rest);
-      then
-        c1 + c2;
-
-    case ((Absyn.PROTECTED(contents = elts) :: rest))
-      equation
-        c1 = countBaseClassesFromElts(elts);
-        c2 = countBaseClassesFromParts(rest);
-      then
-        c1 + c2;
-
-    case ((_ :: rest))
-      equation
-        res = countBaseClassesFromParts(rest);
-      then
-        res;
-
-    case ({}) then 0;
-
-  end matchcontinue;
+  for part in parts loop
+    for el in AbsynUtil.getElementItemsInClassPart(part) loop
+      if AbsynUtil.isElementItemExtends(el) then
+        count := count + 1;
+      end if;
+    end for;
+  end for;
 end countBaseClassesFromParts;
-
-protected function countBaseClassesFromElts
-"Helper function to countBaseClassesFromParts."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inAbsynElementItemLst)
-    local
-      Integer cl;
-      Absyn.Path path;
-      list<Absyn.ElementItem> rest;
-
-    case ({}) then 0;
-
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS())) :: rest))
-      equation
-        cl = countBaseClassesFromElts(rest) "Inherited class" ;
-      then
-        cl + 1;
-
-    case ((_ :: rest))
-      equation
-        cl = countBaseClassesFromElts(rest);
-      then
-        cl;
-
-  end matchcontinue;
-end countBaseClassesFromElts;
 
 protected function getAnnotationInClass
   "Helper function to getIconAnnotation."

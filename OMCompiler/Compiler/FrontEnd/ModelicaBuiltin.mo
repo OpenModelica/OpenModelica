@@ -4264,6 +4264,17 @@ algorithm
 annotation(preferredView="text");
 end ngspicetoModelica;
 
+function getInheritanceCount
+  input TypeName className;
+  output Integer count;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the numbers of extends clauses in the given class.
+</html>"),
+  preferredView="text");
+end getInheritanceCount;
+
 function getInheritedClasses
   input TypeName name;
   output TypeName inheritedClasses[:];
