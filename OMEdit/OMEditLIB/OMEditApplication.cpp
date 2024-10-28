@@ -50,7 +50,7 @@
 QString translationsPath(QString translationsDirectory)
 {
 #ifdef Q_OS_WIN
-  return translationDirectory;
+  return translationsDirectory;
 #elif (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   return QLibraryInfo::path(QLibraryInfo::TranslationsPath);
 #else
