@@ -4286,6 +4286,18 @@ annotation(
   preferredView="text");
 end getInheritedClasses;
 
+function getNthInheritedClass
+  input TypeName className;
+  input Integer n;
+  output TypeName baseClass;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the name of the n:th inherited class in the given class.
+</html>"),
+  preferredView="text");
+end getNthInheritedClass;
+
 function getComponentsTest "returns an array of records with information about the components of the given class"
   input TypeName name;
   output Component[:] components;

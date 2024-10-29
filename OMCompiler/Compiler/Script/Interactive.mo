@@ -897,13 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getNthInheritedClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        outResult := getNthInheritedClass(cr, n);
-      then
-        outResult;
-
     case "setConnectionComment"
       algorithm
         {Absyn.CREF(componentRef = cr),
@@ -6994,11 +6987,11 @@ protected function getInheritedClassesHelper
   input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input FCore.Graph inEnv4;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  output list<Absyn.Path> outAbsynComponentRefLst;
 algorithm
   outAbsynComponentRefLst := matchcontinue (inClass1,inClass2,inEnv4)
     local
-      list<Absyn.ComponentRef> lst;
+      list<Absyn.Path> lst;
       Integer n_1,n;
       Absyn.ComponentRef cref;
       Absyn.Path path;
@@ -7023,7 +7016,7 @@ algorithm
           (_,env_2,_,_,_) :=
             Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-          end if;
+        end if;
         lst := getBaseClasses(cdef, env_2);
         ErrorExt.rollBack("getInheritedClassesHelper");
       then
@@ -7061,7 +7054,7 @@ try
       list<SCode.Element> p_1;
       FCore.Graph env,env_1;
       SCode.Element c;
-      list<Absyn.ComponentRef> lst;
+      list<Absyn.Path> lst;
       Absyn.Program p;
       list<Absyn.ElementSpec> extendsLst;
       FCore.Cache cache;
@@ -7073,9 +7066,8 @@ try
         p_1 = SymbolTable.getSCode();
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
-        lst = getInheritedClassesHelper(c, cdef, env_1);
-        failure({} = lst);
-        paths = List.map(lst, AbsynUtil.crefToPath);
+        paths = getInheritedClassesHelper(c, cdef, env_1);
+        failure({} = paths);
       then
         paths;
     case (modelpath) /* if above fails, baseclass not defined. return its name */
@@ -7119,50 +7111,34 @@ algorithm
   end try;
 end getInheritanceCount;
 
-protected function getNthInheritedClass
-"This function takes a ComponentRef, an integer and a Program and returns
-  the nth inherited class in the class referenced by the ComponentRef."
-  input Absyn.ComponentRef inComponentRef;
-  input Integer inInteger;
-  output String outString;
+public function getNthInheritedClass
+"This function takes a Path, an integer and a Program and returns
+  the nth inherited class in the class referenced by the Path."
+  input Absyn.Path classPath;
+  input Integer n;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  FCore.Graph env;
+  FCore.Cache cache;
+  SCode.Element elem;
+  Absyn.Path path;
 algorithm
-  outString := matchcontinue (inComponentRef,inInteger)
-    local
-      Absyn.Path modelpath,path;
-      Absyn.Class cdef;
-      list<SCode.Element> p_1;
-      FCore.Graph env,env_1;
-      SCode.Element c;
-      String id,str,s;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
-      Absyn.ComponentRef model_;
-      Integer n,n_1;
-      Absyn.Program p;
-      list<Absyn.ElementSpec> extends_;
-      FCore.Cache cache;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, SymbolTable.getAbsyn());
+    (cache, env) := Inst.makeEnvFromProgram(SymbolTable.getSCode());
 
-    case (model_,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        p_1 = SymbolTable.getSCode();
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
-        str = getNthInheritedClass2(c, cdef, n, env_1);
-      then
-        str;
-    case (model_,n) /* if above fails, baseclass not defined. return its name */
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        extends_ = getExtendsInClass(cdef);
-        Absyn.EXTENDS(path,_,_) = listGet(extends_, n);
-        s = AbsynUtil.pathString(path);
-      then
-        s;
-    else "Error";
-  end matchcontinue;
+    try
+      (_, elem as SCode.CLASS(), env) := Lookup.lookupClass(cache, env, classPath);
+      result := ValuesUtil.makeCodeTypeName(getNthInheritedClass2(elem, cls, n, env));
+    else
+      // if above fails, baseclass not defined. return its name
+      Absyn.EXTENDS(path = path) := listGet(getExtendsInClass(cls), n);
+      result := ValuesUtil.makeCodeTypeName(path);
+    end try;
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthInheritedClass;
 
 protected function getNthInheritedClassAnnotationOpt
@@ -7320,45 +7296,36 @@ end getExtendsInParts;
 
 protected function getNthInheritedClass2
 "Helper function to getNthInheritedClass."
-  input SCode.Element inClass1;
-  input Absyn.Class inClass2;
-  input Integer inInteger3;
-  input FCore.Graph inEnv4;
-  output String outString;
+  input SCode.Element element;
+  input Absyn.Class cls;
+  input Integer n;
+  input FCore.Graph env;
+  output Absyn.Path baseClass;
+protected
+  String id;
+  SCode.Encapsulated enc;
+  SCode.Restriction restr;
+  list<Absyn.Path> extends_lst;
+  FCore.Graph cenv;
+  ClassInf.State ci_state;
+  Absyn.Class c;
 algorithm
-  outString := match (inClass1,inClass2,inInteger3,inEnv4)
-    local
-      list<Absyn.ComponentRef> lst;
-      Integer n_1,n;
-      Absyn.ComponentRef cref;
-      Absyn.Path path;
-      String str,id;
-      SCode.Element c;
-      Absyn.Class cdef;
-      FCore.Graph env,env2,env_2;
-      ClassInf.State ci_state;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
+  SCode.CLASS(name = id, encapsulatedPrefix = enc, restriction = restr) := element;
 
-    case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
-      algorithm
-        // for derived classes, search in parents
-        if SCodeUtil.isDerivedClass(c) then
-          lst := getBaseClasses(cdef, env);
-        else // for non-derived classes, search from inside the class
-          env2 := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-          ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
-          (_,env_2,_,_,_) :=
-            Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-              DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-          lst := getBaseClasses(cdef, env_2);
-        end if;
-        cref := listGet(lst, n);
-        path := AbsynUtil.crefToPath(cref);
-        str := AbsynUtil.pathString(path);
-      then
-        str;
-  end match;
+  if SCodeUtil.isDerivedClass(element) then
+    // for derived classes, search in parents
+    extends_lst := getBaseClasses(cls, env);
+  else
+    // for non-derived classes, search from inside the class
+    cenv := FGraph.openScope(env, enc, id, FGraph.restrictionToScopeType(restr));
+    ci_state := ClassInf.start(restr, FGraph.getGraphName(cenv));
+    (_, cenv, _, _, _) := Inst.partialInstClassIn(FCore.emptyCache(), cenv,
+      InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(), ci_state,
+      element, SCode.PUBLIC(), {}, 0);
+    extends_lst := getBaseClasses(cls, cenv);
+  end if;
+
+  baseClass := listGet(extends_lst, n);
 end getNthInheritedClass2;
 
 public function getComponentCount
@@ -9714,151 +9681,85 @@ end getTopQualifiedClassnames;
 protected function getBaseClasses
 " This function gets all base classes of a class, NOT Recursive.
    It uses the environment to get the fully qualified names of the classes."
-  input Absyn.Class inClass;
-  input FCore.Graph inEnv;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  input Absyn.Class cls;
+  input FCore.Graph env;
+  output list<Absyn.Path> baseClasses;
+protected
+  String base_class_name;
+  list<Absyn.ClassPart> parts;
+  FCore.Graph cenv;
+  Option<Absyn.Path> env_path_opt;
+  Absyn.Path env_path, path;
 algorithm
-  outAbsynComponentRefLst := matchcontinue (inClass,inEnv)
-    local
-      list<Absyn.ComponentRef> res;
-      list<Absyn.ClassPart> parts;
-      FCore.Graph env;
-      Absyn.Path tp;
-      String baseClassName;
-      Option<String> comment;
-      list<Absyn.ElementArg> modifications;
-      FCore.Graph cenv;
-      Absyn.Path envpath,p1;
-      String tpname,str;
-      Absyn.ComponentRef cref;
-      SCode.Element c;
-      FCore.Cache cache;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),env)
-      equation
-        res = getBaseClassesFromParts(parts, env);
-      then
-        res;
+  baseClasses := matchcontinue cls
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      then getBaseClassesFromParts(parts, env);
 
     // adrpo: handle the case for model extends baseClassName end baseClassName;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName=baseClassName, parts = parts)),env)
-      equation
-        (_,_,cenv) = Lookup.lookupClassIdent(FCore.emptyCache(), env, baseClassName, SOME(inClass.info));
-        SOME(envpath) = FGraph.getScopePath(cenv);
-        p1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(baseClassName));
-        cref = AbsynUtil.pathToCref(p1);
-        res = getBaseClassesFromParts(parts, env);
-      then cref::res;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = base_class_name, parts = parts))
+      algorithm
+        (_, _, cenv) := Lookup.lookupClassIdent(FCore.emptyCache(), env, base_class_name, SOME(cls.info));
+        SOME(env_path) := FGraph.getScopePath(cenv);
+        path := AbsynUtil.suffixPath(env_path, base_class_name);
+      then
+        path :: getBaseClassesFromParts(parts, env);
 
-    case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(tp,_))),env)
-      equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
-        SOME(envpath) = FGraph.getScopePath(cenv);
-        tpname = AbsynUtil.pathLastIdent(tp);
-        p1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
-        cref = AbsynUtil.pathToCref(p1);
-        // str = AbsynUtil.pathString(p1);
-      then {cref};
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path = path)))
+      algorithm
+        (_, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, path, SOME(cls.info));
+        env_path_opt := FGraph.getScopePath(cenv);
 
-    case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_))),env)
-      equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
-        NONE() = FGraph.getScopePath(cenv);
-        cref = AbsynUtil.pathToCref(tp);
-        then {cref};
+        if isSome(env_path_opt) then
+          path := AbsynUtil.suffixPath(Util.getOption(env_path_opt), AbsynUtil.pathLastIdent(path));
+        end if;
+      then
+        {path};
 
     else {};
-
   end matchcontinue;
 end getBaseClasses;
 
 protected function getBaseClassesFromParts
 "Helper function to getBaseClasses."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input FCore.Graph inEnv;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  input list<Absyn.ClassPart> parts;
+  input FCore.Graph env;
+  output list<Absyn.Path> baseClasses = {};
 algorithm
-  outAbsynComponentRefLst := matchcontinue (inAbsynClassPartLst,inEnv)
-    local
-      list<Absyn.ComponentRef> c1,c2,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> rest;
-      FCore.Graph env;
+  for part in parts loop
+    for el in AbsynUtil.getElementItemsInClassPart(part) loop
+      baseClasses := getBaseClassesFromElt(el, env, baseClasses);
+    end for;
+  end for;
 
-    case ((Absyn.PUBLIC(contents = elts) :: rest),env)
-      equation
-        c1 = getBaseClassesFromElts(elts, env);
-        c2 = getBaseClassesFromParts(rest, env);
-        res = listAppend(c1, c2);
-      then
-        res;
-
-    case ((Absyn.PROTECTED(contents = elts) :: rest),env)
-      equation
-        c1 = getBaseClassesFromElts(elts, env);
-        c2 = getBaseClassesFromParts(rest, env);
-        res = listAppend(c1, c2);
-      then
-        res;
-
-    case ((_ :: rest),env)
-      equation
-        res = getBaseClassesFromParts(rest, env);
-      then
-        res;
-
-    case ({},_) then {};
-
-  end matchcontinue;
+  baseClasses := Dangerous.listReverseInPlace(baseClasses);
 end getBaseClassesFromParts;
 
-protected function getBaseClassesFromElts
+protected function getBaseClassesFromElt
 "Helper function to getBaseClassesFromParts."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input FCore.Graph inEnv;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  input Absyn.ElementItem element;
+  input FCore.Graph env;
+  input output list<Absyn.Path> baseClasses;
+protected
+  Absyn.Path path;
+  SourceInfo info;
+  FCore.Graph cenv;
+  Option<Absyn.Path> env_path_opt;
 algorithm
-  outAbsynComponentRefLst := matchcontinue (inAbsynElementItemLst,inEnv)
-    local
-      FCore.Graph env,env_1;
-      list<Absyn.ComponentRef> cl;
-      SCode.Element c;
-      Absyn.Path envpath,p_1,path;
-      String tpname;
-      Absyn.ComponentRef cref;
-      list<Absyn.ElementItem> rest;
-      Absyn.Element e;
+  baseClasses := matchcontinue element
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path), info = info))
+      algorithm
+        (_, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, path, SOME(info));
+        env_path_opt := FGraph.getScopePath(cenv);
 
-    case ({},_) then {};
-
-    case ((Absyn.ELEMENTITEM(element = e as Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
-      equation
-        cl = getBaseClassesFromElts(rest, env) "Inherited class is defined inside package" ;
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
-        SOME(envpath) = FGraph.getScopePath(env_1);
-        tpname = AbsynUtil.pathLastIdent(path);
-        p_1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
-        cref = AbsynUtil.pathToCref(p_1);
+        if isSome(env_path_opt) then
+          path := AbsynUtil.suffixPath(Util.getOption(env_path_opt), AbsynUtil.pathLastIdent(path));
+        end if;
       then
-        (cref :: cl);
+        path :: baseClasses;
 
-    case ((Absyn.ELEMENTITEM(element = e as Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
-      equation
-        cl = getBaseClassesFromElts(rest, env) "Inherited class defined on top level scope" ;
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
-        NONE() = FGraph.getScopePath(env_1);
-        cref = AbsynUtil.pathToCref(path);
-      then
-        (cref :: cl);
-
-    case ((_ :: rest),env)
-      equation
-        cl = getBaseClassesFromElts(rest, env);
-      then
-        cl;
-
+    else baseClasses;
   end matchcontinue;
-end getBaseClassesFromElts;
+end getBaseClassesFromElt;
 
 protected function countBaseClasses
 " This function counts the number of base classes of a class"

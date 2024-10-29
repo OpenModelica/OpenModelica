@@ -3208,6 +3208,9 @@ algorithm
     case ("getInheritanceCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
 
+    case ("getNthInheritedClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthInheritedClass(classpath, n);
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
