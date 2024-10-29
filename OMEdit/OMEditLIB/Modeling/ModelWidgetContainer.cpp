@@ -488,7 +488,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
       // if connection is valid and has line annotation
       if (pConnection->getStartConnector() && pConnection->getEndConnector() && pConnection->getAnnotation()->getLine()
           && !connectionExists(pConnection->getStartConnector()->getName(), pConnection->getEndConnector()->getName(), inherited)) {
-        //// get start and end elements
+        // get start and end elements
         auto pStartConnectorElement = getConnectorElement(pConnection->getStartConnector());
         // show error message if start element is not found.
         if (!pStartConnectorElement) {
@@ -2255,6 +2255,19 @@ void GraphicsView::removeClassComponents()
 }
 
 /*!
+ * \brief GraphicsView::removeShapesFromScene
+ * Removes the shapes from the scene.
+ */
+void GraphicsView::removeShapesFromScene()
+{
+  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    removeItem(pShapeAnnotation);
+    removeItem(pShapeAnnotation->getOriginItem());
+    deleteShapeFromList(pShapeAnnotation);
+  }
+}
+
+/*!
  * \brief GraphicsView::removeElementsFromView
  * Removes all the elements from the scene and add them to mOutOfSceneElementsList.
  */
@@ -3227,6 +3240,10 @@ Element* GraphicsView::getConnectorElement(ModelInstance::Connector *pConnector)
 
   // Get element.
   if (elementList.size() > 0) {
+    if (mpModelWidget->isElementMode() && mpModelWidget->getModelInstance()->getParentElement()) {
+      QString relativeName = StringHandler::makeClassNameRelative(elementList.join('.'), mpModelWidget->getModelInstance()->getParentElement()->getQualifiedName());
+      elementList = StringHandler::makeVariableParts(relativeName);
+    }
     QString elementName = elementList.front();
     elementName = elementName.left(elementName.indexOf('['));
     element = getElementObject(elementName);
@@ -8351,11 +8368,15 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (mModelInstancesPos < 0) {
     mpRootModelInstance = mpModelInstance;
+    mPreservedIconShapesList = mpIconGraphicsView->getShapesList();
+    mPreservedDiagramShapesList = mpDiagramGraphicsView->getShapesList();
     mModelInfo = createModelInfo();
   }
 
   // Remove all elements from the scene
+  mpIconGraphicsView->removeShapesFromScene();
   mpIconGraphicsView->removeElementsFromScene();
+  mpDiagramGraphicsView->removeShapesFromScene();
   mpDiagramGraphicsView->removeElementsFromScene();
   mpDiagramGraphicsView->removeConnectionsFromScene();
   mpDiagramGraphicsView->removeTransitionsFromScene();
@@ -9614,17 +9635,22 @@ void ModelWidget::forwardElement()
  */
 void ModelWidget::exitElement()
 {
-  mModelInstanceList.clear();
-  mModelInstancesPos = -1;
-  mpElementModeLabel->setText("");
   /* Clear GraphicsViews except out of scene items
    * The out of scene items are the original model elements that will be restored.
    */
   clearGraphicsViewsExceptOutOfSceneItems();
+  // call clearGraphicsViewsExceptOutOfSceneItems before resetting the model instances list so the icon update signal can be ignored.
+  mModelInstanceList.clear();
+  mModelInstancesPos = -1;
+  mpElementModeLabel->setText("");
   // reset the CoOrdinateSystem
   mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
   mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
   mpModelInstance = mpRootModelInstance;
+  mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
+  mPreservedIconShapesList.clear();
+  mpDiagramGraphicsView->setShapesList(mPreservedDiagramShapesList);
+  mPreservedDiagramShapesList.clear();
   if (isComponentModified()) {
     /* We use the same model info as it doesn't matter in case of element mode.
      * The element mode only allows changing the parameters.

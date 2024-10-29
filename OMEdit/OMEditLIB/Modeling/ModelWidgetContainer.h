@@ -230,6 +230,7 @@ public:
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
   bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
+  void setShapesList(QList<ShapeAnnotation*> shapesList) {mShapesList = shapesList;}
   QList<ShapeAnnotation*> getInheritedShapesList() {return mInheritedShapesList;}
   QAction* getManhattanizeAction() {return mpManhattanizeAction;}
   QAction* getDeleteAction() {return mpDeleteAction;}
@@ -328,6 +329,7 @@ public:
   void clearGraphicsView();
   void clearGraphicsViewsExceptOutOfSceneItems();
   void removeClassComponents();
+  void removeShapesFromScene();
   void removeElementsFromScene();
   void removeOutOfSceneClassComponents();
   void removeInheritedClassShapes();
@@ -701,6 +703,8 @@ private:
   ModelInstance::Model *mpRootModelInstance;
   QList<ModelInstance::Model*> mModelInstanceList;
   int mModelInstancesPos = -1;
+  QList<ShapeAnnotation*> mPreservedIconShapesList;
+  QList<ShapeAnnotation*> mPreservedDiagramShapesList;
   ModelInfo mModelInfo;
   bool mComponentModified = false;
   bool mRestoringModel = false;
