@@ -361,3 +361,8 @@ if(MINGW)
 endif()
 
 target_include_directories(OMEditLib PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/Script)
+
+# Install the translation files
+install(DIRECTORY Resources/nls
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit/
+        FILES_MATCHING PATTERN "*.qm")
