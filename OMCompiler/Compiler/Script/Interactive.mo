@@ -897,17 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "setConnectionComment"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = cr1),
-         Absyn.CREF(componentRef = cr2),
-         Absyn.STRING(value = cmt)} := args;
-        (p, outResult) := setConnectionComment(cr, cr1, cr2, cmt, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
     case "addConnection"
       algorithm
         {Absyn.CREF(componentRef = cr1),
@@ -8731,147 +8720,125 @@ algorithm
   end matchcontinue;
 end setComponentCommentInCompitems;
 
-protected function setConnectionComment
-"author: PA
-  Sets the nth connection comment."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  input Absyn.Program inProgram5;
-  output Absyn.Program outProgram;
-  output String outString;
+public function setConnectionComment
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+  input output Absyn.Program program;
+        output Boolean success;
 algorithm
-  (outProgram,outString):=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inString4,inProgram5)
-    local
-      Absyn.Path p_class;
-      Absyn.Within within_;
-      Absyn.Class cdef,cdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef class_,cr1,cr2;
-      String cmt;
-    case (class_,cr1,cr2,cmt,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        within_ = InteractiveUtil.buildWithin(p_class);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        cdef_1 = setConnectionCommentInClass(cdef, cr1, cr2, cmt);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
-      then
-        (newp,"Ok");
-    else (inProgram5,"Error");
-  end matchcontinue;
+  try
+    (program, _, success) := InteractiveUtil.transformPathedElementInProgram(classPath,
+      function setConnectionCommentInElement(connector1 = connector1, connector2 = connector2, comment = comment),
+      program);
+  else
+    success := false;
+  end try;
 end setConnectionComment;
 
-protected function setConnectionCommentInClass
-"author: PA
-  Sets a connection comment in a Absyn.Class given two Absyn,ComponentRef"
-  input Absyn.Class inClass1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  output Absyn.Class outClass;
+protected function setConnectionCommentInElement
+  input output Absyn.Element element;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+protected
+  Absyn.ElementSpec spec;
+  Absyn.Class cls;
 algorithm
-  outClass:=
-  match (inClass1,inComponentRef2,inComponentRef3,inString4)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String name,cmt,bcname;
-      Boolean p,f,e;
-      Absyn.Restriction restr;
-      Option<String> pcmt;
-      SourceInfo info;
-      Absyn.ComponentRef cr1,cr2;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    /* a class with parts */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = pcmt),info = info),cr1,cr2,cmt)
-      equation
-        parts_1 = setConnectionCommentInParts(parts, cr1, cr2, cmt);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,pcmt);
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as Absyn.ElementSpec.CLASSDEF())
+      algorithm
+        cls := setConnectionCommentInClass(spec.class_, connector1, connector2, comment);
+        spec.class_ := cls;
+        element.specification := spec;
       then
-        outClass;
-    /* an extended class with parts: model extends M end M; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann=ann,comment = pcmt),info = info),cr1,cr2,cmt)
-      equation
-        parts_1 = setConnectionCommentInParts(parts, cr1, cr2, cmt);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1,ann);
-      then outClass;
+        ();
+  end match;
+end setConnectionCommentInElement;
+
+protected function setConnectionCommentInClass
+  "Sets the comment on the connection of two connectors in a class."
+  input output Absyn.Class cls;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+algorithm
+  () := match cls
+    local
+      Absyn.ClassDef cdef;
+      list<Absyn.ClassPart> parts;
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        parts := setConnectionCommentInParts(cdef.classParts, connector1, connector2, comment);
+        cdef.classParts := parts;
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        parts := setConnectionCommentInParts(cdef.parts, connector1, connector2, comment);
+        cdef.parts := parts;
+        cls.body := cdef;
+      then
+        ();
   end match;
 end setConnectionCommentInClass;
 
 protected function setConnectionCommentInParts
-"author: PA
-  Helper function to setConnectionCommentInClass."
-  input list<Absyn.ClassPart> inAbsynClassPartLst1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
+  input output list<Absyn.ClassPart> parts;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
 algorithm
-  outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst1,inComponentRef2,inComponentRef3,inString4)
-    local
-      list<Absyn.EquationItem> e_1,e;
-      list<Absyn.ClassPart> xs,xs_1;
-      Absyn.ComponentRef cr1,cr2;
-      String cmt;
-      Absyn.ClassPart p;
-    case ((Absyn.EQUATIONS(contents = e) :: xs),cr1,cr2,cmt)
-      equation
-        e_1 = setConnectionCommentInEquations(e, cr1, cr2, cmt);
-      then
-        (Absyn.EQUATIONS(e_1) :: xs);
-    case ((Absyn.EQUATIONS(contents = e) :: xs),cr1,cr2,cmt) /* rule above failed */
-      equation
-        xs_1 = setConnectionCommentInParts(xs, cr1, cr2, cmt);
-      then
-        (Absyn.EQUATIONS(e) :: xs_1);
-    case ((p :: xs),cr1,cr2,cmt)
-      equation
-        xs_1 = setConnectionCommentInParts(xs, cr1, cr2, cmt);
-      then
-        (p :: xs_1);
-  end matchcontinue;
+  (parts, true) := List.findMap(parts, function setConnectionCommentInEquationsPart(connector1 = connector1,
+    connector2 = connector2, comment = comment));
 end setConnectionCommentInParts;
 
-protected function setConnectionCommentInEquations
-"author: PA
-  Helper function to setConnectionCommentInParts"
-  input list<Absyn.EquationItem> inAbsynEquationItemLst1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  output list<Absyn.EquationItem> outAbsynEquationItemLst;
+protected function setConnectionCommentInEquationsPart
+  input output Absyn.ClassPart part;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+        output Boolean found;
+protected
+  list<Absyn.EquationItem> eql;
 algorithm
-  outAbsynEquationItemLst:=
-  matchcontinue (inAbsynEquationItemLst1,inComponentRef2,inComponentRef3,inString4)
-    local
-      Option<Absyn.Comment> eqcmt_1,eqcmt;
-      Absyn.ComponentRef c1,c2,cr1,cr2;
-      list<Absyn.EquationItem> es,es_1;
-      String cmt;
-      Absyn.EquationItem e;
-      SourceInfo info;
-    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),comment = eqcmt, info = info) :: es),cr1,cr2,cmt)
-      equation
-        true = AbsynUtil.crefEqual(cr1, c1);
-        true = AbsynUtil.crefEqual(cr2, c2);
-        eqcmt_1 = setClassCommentInCommentOpt(eqcmt, cmt);
+  (part, found) := match part
+    case Absyn.EQUATIONS()
+      algorithm
+        (eql, found) := List.findMap(part.contents, function setConnectionCommentInEquation(
+          connector1 = connector1, connector2 = connector2, comment = comment));
+        part.contents := eql;
       then
-        (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),eqcmt_1,info) :: es);
-    case ((e :: es),cr1,cr2,cmt)
-      equation
-        es_1 = setConnectionCommentInEquations(es, cr1, cr2, cmt);
+        (part, found);
+
+    else (part, false);
+  end match;
+end setConnectionCommentInEquationsPart;
+
+protected function setConnectionCommentInEquation
+  input output Absyn.EquationItem eq;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+        output Boolean success;
+protected
+  Absyn.ComponentRef c1, c2;
+algorithm
+  success := match eq
+    case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
+      guard AbsynUtil.crefEqual(connector1, c1) and AbsynUtil.crefEqual(connector2, c2)
+      algorithm
+        eq.comment := setClassCommentInCommentOpt(eq.comment, comment);
       then
-        (e :: es_1);
-  end matchcontinue;
-end setConnectionCommentInEquations;
+        true;
+
+    else false;
+  end match;
+end setConnectionCommentInEquation;
 
 protected function getNthConnectionAnnotation
 "This function takes a ComponentRef and a Program and an int and
