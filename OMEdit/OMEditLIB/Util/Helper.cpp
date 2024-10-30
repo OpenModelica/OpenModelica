@@ -440,6 +440,7 @@ QString Helper::installLibrary;
 QString Helper::upgradeInstalledLibraries;
 QString Helper::updateLibraryIndex;
 QString Helper::dataReconciliation;
+QString Helper::replaceSubModel;
 
 void Helper::initHelperVariables()
 {
@@ -751,6 +752,7 @@ void Helper::initHelperVariables()
   Helper::upgradeInstalledLibraries = tr("Upgrade Installed Libraries");
   Helper::updateLibraryIndex = tr("Update Library Index");
   Helper::dataReconciliation = tr("Data Reconciliation");
+  Helper::replaceSubModel = tr("Replace SubModel");
 }
 
 QString GUIMessages::getMessage(int type)
