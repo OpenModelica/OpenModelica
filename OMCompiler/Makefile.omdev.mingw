@@ -282,6 +282,7 @@ else # 64-bit MSYS
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)
 
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll $(builddir_bin)/
+	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp3-9.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp3-9.dll $(builddir_bin)/
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
 endif
 	mkdir -p $(builddir_lib)/omc/libexec/
