@@ -283,6 +283,22 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/Vector.h
                       Animation/rapidxml.hpp)
 
+set(TS_FILES Resources/nls/OMEdit_de.ts
+             Resources/nls/OMEdit_es.ts
+             Resources/nls/OMEdit_fr.ts
+             Resources/nls/OMEdit_it.ts
+             Resources/nls/OMEdit_ja.ts
+             Resources/nls/OMEdit_ro.ts
+             Resources/nls/OMEdit_ru.ts
+             Resources/nls/OMEdit_sv.ts
+             Resources/nls/OMEdit_zh_CN.ts)
+
+# Add the translation files.
+find_package(Qt${OM_QT_MAJOR_VERSION} REQUIRED COMPONENTS LinguistTools)
+# Create the output folder, lrelease doesn't do it automatically.
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls)
+set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION "Resources/nls")
+qt_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
 
 # Add the OpenModelica generated files to sources
 set(OMEDITLIB_HEADERS ${OMEDITLIB_HEADERS} ${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h)
@@ -292,7 +308,7 @@ set(OMEDITLIB_SOURCES ${OMEDITLIB_SOURCES} ${OMCompiler_SOURCE_DIR}/Compiler/Scr
 set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.cpp GENERATED)
 set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h GENERATED)
 
-add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS})
+add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # OpenSceneGraph does not provide imported targets yet. Add includes manually.
@@ -363,6 +379,6 @@ endif()
 target_include_directories(OMEditLib PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/Script)
 
 # Install the translation files
-install(DIRECTORY Resources/nls
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit/
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit
         FILES_MATCHING PATTERN "*.qm")
