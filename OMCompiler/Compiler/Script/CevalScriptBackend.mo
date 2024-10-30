@@ -1763,7 +1763,7 @@ algorithm
       Absyn.Exp aexp, aexp2, aexp3;
       Option<DAE.DAElist> odae;
       Values.Value v,cvar,cvar2,v1,v2;
-      Absyn.ComponentRef cr;
+      Absyn.ComponentRef cr, cr2;
       Integer size,i,n,curveStyle,numberOfIntervals, access;
       list<String> vars_1,args,strings,strs1,strs2,files;
       Real timeStamp,val,x1,x2,y1,y2,r1,r2,curveWidth, interval;
@@ -3210,6 +3210,14 @@ algorithm
 
     case ("getNthInheritedClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthInheritedClass(classpath, n);
+
+    case ("setConnectionComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_VARIABLENAME(cr)),
+                                   Values.CODE(Absyn.C_VARIABLENAME(cr2)), Values.STRING(str)})
+      algorithm
+        (p, b) := Interactive.setConnectionComment(classpath, cr, cr2, str, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
 
  end matchcontinue;
 end cevalInteractiveFunctions4;

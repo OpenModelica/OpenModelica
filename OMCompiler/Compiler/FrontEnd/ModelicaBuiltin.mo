@@ -3664,6 +3664,18 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end updateConnectionAnnotation;
 
+function setConnectionComment
+  input TypeName className;
+  input VariableName connector1;
+  input VariableName connector2;
+  input String comment;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Sets the description string on a connection consisting of the two connectors in the given class.</p>
+</html>"));
+end setConnectionComment;
+
 function updateConnectionNames
   input TypeName className;
   input String from;
