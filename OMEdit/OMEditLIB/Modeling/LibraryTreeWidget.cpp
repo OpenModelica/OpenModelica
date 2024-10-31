@@ -2476,10 +2476,12 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     if (pLibraryTreeItem->isTopLevel()) {
       oms_element_t** pElements = NULL;
       if (OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
-        for (int i = 0 ; pElements[i] ; i++) {
-          QString name = QString(pElements[i]->name);
-          createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
-                                pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i]);
+        if (pElements) {
+          for (int i = 0 ; pElements[i] ; i++) {
+            QString name = QString(pElements[i]->name);
+            createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                                  pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i]);
+          }
         }
       }
     } else if (pLibraryTreeItem->getOMSElement()) {
