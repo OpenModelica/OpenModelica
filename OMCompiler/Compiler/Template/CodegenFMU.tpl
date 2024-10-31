@@ -64,7 +64,8 @@ match simCode
 case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
-  let fileNamePrefixTmpDir = '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>'
+  let fileNamePrefixHash = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>'
+  let fileNamePrefixTmpDir = '<%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>'
   let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefixTmpDir%>_literals.h')
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls, sc.generic_loop_calls), '<%fileNamePrefixTmpDir%>_functions.h')
   let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, generic_loop_calls), '<%fileNamePrefixTmpDir%>_functions.c')
@@ -84,20 +85,20 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let &fmuModelDescription += closeFile()
   */
 
-  let()= textFile(fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), '<%fileNamePrefix%>.fmutmp/modelDescription.xml')
+  let()= textFile(fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/modelDescription.xml')
 
   // Generate optional <fmiPrefix>_flags.json
   let _ = match sc.fmiSimulationFlags
     case SOME(fmiSimFlags as FMI_SIMULATION_FLAGS(__)) then
-      let() = textFile(fmuSimulationFlagsFile(fmiSimFlags), '<%fileNamePrefix%>.fmutmp/resources/<%fileNamePrefix%>_flags.json')
+      let() = textFile(fmuSimulationFlagsFile(fmiSimFlags), '<%fileNamePrefixHash%>.fmutmp/resources/<%fileNamePrefix%>_flags.json')
       ""
     else
       ""
     end match
 
-  let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>.def')
-  let()= textFile('# Dummy file so OMDEV Compile.bat works<%\n%>include Makefile<%\n%>', '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>.makefile')
-  let()= textFile(fmuSourceMakefile(simCode,FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>.def')
+  let()= textFile('# Dummy file so OMDEV Compile.bat works<%\n%>include Makefile<%\n%>', '<%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>.makefile')
+  let()= textFile(fmuSourceMakefile(simCode,FMUVersion,fileNamePrefixHash), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
 
@@ -1251,7 +1252,7 @@ end mapInitialUnknownsIndependentCrefs;
 template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
  "returns compilation commands for the platform. "
 ::=
-let fmudirname = '<%fileNamePrefix%>.fmutmp'
+let fmudirname = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>.fmutmp'
 match platform
   case "win32"
   case "win64" then
@@ -1348,7 +1349,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
       let libsPos1 = if not dirExtra then libsStr //else ""
       let libsPos2 = if dirExtra then libsStr // else ""
-      let fmudirname = '<%fileNamePrefix%>.fmutmp'
+      let fmudirname = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>.fmutmp'
       let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, fmuTargetName, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
       let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
       <<
@@ -1458,12 +1459,12 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
 end fmuMakefile;
 
 
-template fmuSourceMakefile(SimCode simCode, String FMUVersion)
+template fmuSourceMakefile(SimCode simCode, String FMUVersion, String fileNamePrefixHash)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
   match simCode
   case SIMCODE(modelInfo=modelInfo as MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  let includedir = '<%fileNamePrefix%>.fmutmp/sources/'
+  let includedir = '<%fileNamePrefixHash%>.fmutmp/sources/'
   let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
   <<
   # FIXME: before you push into master...
@@ -1471,9 +1472,9 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion)
   #COPY_RUNTIMEFILES=$(FMI_ME_OBJS:%= && (OMCFILE=% && cp $(RUNTIMEDIR)/$$OMCFILE.c $$OMCFILE.c))
 
   fmu:
-  <%\t%>rm -f <%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>_init.xml<%/*Already translated to .c*/%>
-  <%\t%>cp -a "<%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefix%>.fmutmp/sources
-  <%\t%>cp -a <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>.fmutmp/sources/
+  <%\t%>rm -f <%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>_init.xml<%/*Already translated to .c*/%>
+  <%\t%>cp -a "<%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefixHash%>.fmutmp/sources
+  <%\t%>cp -a <%fileNamePrefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
   <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
      match  Config.simCodeTarget()
      case "omsicpp" then

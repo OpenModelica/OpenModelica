@@ -4280,7 +4280,7 @@ algorithm
 
   isWindows := Autoconf.os == "Windows_NT";
 
-  fmutmp := filenameprefix + ".fmutmp";
+  fmutmp := substring(intString(stringHashDjb2(filenameprefix)), 1, 3) + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 
@@ -4305,7 +4305,7 @@ algorithm
     CevalScript.compileModel(filenameprefix+"_FMU" , libs);
     ExecStat.execStat("buildModelFMU: Generate the FMI files");
   else
-    fmutmp := filenameprefix+".fmutmp" + Autoconf.pathDelimiter;
+    fmutmp := fmutmp + Autoconf.pathDelimiter;
     CevalScript.compileModel(filenameprefix+"_FMU" , libs, fmutmp);
     return;
   end if;
