@@ -310,7 +310,7 @@ protected
   list<SimCodeVar.SimVar> tmpsetcVars, tmpdatareconinputvars, tmpsetBVars;
   SimCode.JacobianMatrix dataReconSimJac, dataReconSimJacH;
   Integer numRelatedBoundaryConditions;
-  String fullPathPrefix;
+  String fullPathPrefix, fileNamePrefixHash;
 
   SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
@@ -736,12 +736,15 @@ algorithm
       execStat("simCode: alias equations");
     end if;
 
+    // fix issue https://github.com/OpenModelica/OpenModelica/issues/12916
+    fileNamePrefixHash := substring(intString(stringHashDjb2(filenamePrefix)), 1, 3);
+
     // Set fullPathPrefix for FMUs
     if isFMU then
       if (Config.simCodeTarget()=="omsic") /* or (Config.simCodeTarget() ==  "omsicpp")*/ then
-        fullPathPrefix := filenamePrefix+".fmutmp";
+        fullPathPrefix := fileNamePrefixHash+".fmutmp";
       else
-        fullPathPrefix := filenamePrefix+".fmutmp/sources/";
+        fullPathPrefix := fileNamePrefixHash+".fmutmp/sources/";
       end if;
     else
       fullPathPrefix := "";
@@ -15861,7 +15864,7 @@ algorithm
                  "             NAMES " + lib + "\n" +
                  "             PATHS ${EXTERNAL_LIBDIRECTORIES})\n" +
                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n" +
+                 "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
   end for;
 end getCmakeLinkLibrariesCode;

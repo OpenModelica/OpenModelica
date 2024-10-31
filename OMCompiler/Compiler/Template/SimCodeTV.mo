@@ -198,6 +198,16 @@ package builtin
     output TypeVar head;
   end listHead;
 
+  function intString
+    input Integer i;
+    output String s;
+  end intString;
+
+  function stringHashDjb2
+    input String str;
+    output Integer hash;
+  end stringHashDjb2;
+
   function stringHashDjb2Mod
     input String str;
     input Integer mod;

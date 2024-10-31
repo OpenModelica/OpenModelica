@@ -36,7 +36,7 @@
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
 #include "Git/CommitChangesDialog.h"
-
+#include "meta/meta_modelica_builtin.h"
 #include <QApplication>
 #include <QObject>
 #include <QHeaderView>
@@ -54,10 +54,20 @@ FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, 
 
   // set the FMU Name and the fmuTmpPath
   if (!OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text().isEmpty()) {
-    mFmuTmpPath = QDir::currentPath().append("/").append(OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text()+".fmutmp");
+    /*
+     * fix issue https://github.com/OpenModelica/OpenModelica/issues/12916,
+     * use hashed string for fmu tmp directory
+    */
+    QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text().toUtf8().constData())));
+    mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
     mFMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
   } else {
-    mFmuTmpPath = QDir::currentPath().append("/").append(mpLibraryTreeItem->getName()+".fmutmp");
+    /*
+     * fix issue https://github.com/OpenModelica/OpenModelica/issues/12916,
+     * use hashed string for fmu tmp directory
+     */
+    QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(mpLibraryTreeItem->getName().toUtf8().constData())));
+    mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
     mFMUName = mpLibraryTreeItem->getName();
   }
 

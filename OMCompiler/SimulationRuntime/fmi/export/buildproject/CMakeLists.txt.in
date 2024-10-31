@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.5)
 
 set(FMU_NAME @FMU_NAME_IN@)
 
-project(${FMU_NAME} C)
+set(FMU_NAME_HASH @FMU_NAME_HASH_IN@)
+
+# build the project with fmu hash string to make shorter paths (e.g) ToroidalCoreQuadraticCrossSection.dir => 759.dir
+project(${FMU_NAME_HASH} C)
 
 # FMU compilation options
 set(BUILD_SHARED_LIBS
@@ -118,28 +121,31 @@ else()
 endif()
 
 # Target library
-add_library(${FMU_NAME}
+add_library(${FMU_NAME_HASH}
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
+
+# Set output name for the .dll's and .so files to use the full FMU name instead of fmu hash string
+set_target_properties(${FMU_NAME_HASH} PROPERTIES OUTPUT_NAME ${FMU_NAME})
 
 # Linker options
 if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
   if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")  # Using Clang
-    target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:-undefined,error")
+    target_link_options(${FMU_NAME_HASH} PRIVATE "LINKER:SHELL:-undefined,error")
   elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")  # Using GCC
-    target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
+    target_link_options(${FMU_NAME_HASH} PRIVATE "LINKER:SHELL:--no-undefined")
   endif()
 endif()
 
 # If we have PThreads support, define OM_HAVE_PTHREADS and link to the imported threading library.
 if(OM_HAVE_PTHREADS)
-  target_compile_definitions(${FMU_NAME} PRIVATE OM_HAVE_PTHREADS)
-  target_link_libraries(${FMU_NAME} PRIVATE Threads::Threads)
+  target_compile_definitions(${FMU_NAME_HASH} PRIVATE OM_HAVE_PTHREADS)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE Threads::Threads)
 endif()
 
 # If not using MSVC, link to the math library libm.
 if(NOT MSVC)
-  target_link_libraries(${FMU_NAME} PRIVATE m)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE m)
 endif()
 
 @FMU_ADDITIONAL_LIBS@
@@ -148,7 +154,7 @@ if(${NEED_CVODE})
   # Force static compilation on Windows or if CMake is too old
   if(WIN32 OR (${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none"))
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
-    target_compile_definitions(${FMU_NAME} PRIVATE LINK_SUNDIALS_STATIC)
+    target_compile_definitions(${FMU_NAME_HASH} PRIVATE LINK_SUNDIALS_STATIC)
   endif()
 
   message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
@@ -174,9 +180,9 @@ if(${NEED_CVODE})
   message(STATUS "SUNDIALS_NVECSERIAL_LIBRARY: ${SUNDIALS_NVECSERIAL_LIBRARY}")
   list(APPEND RUNTIME_DEPENDS ${SUNDIALS_NVECSERIAL_LIBRARY})
 
-  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_NVECSERIAL_LIBRARY})
-  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_CVODE_LIBRARY})
-  target_include_directories(${FMU_NAME} PRIVATE sundials)
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SUNDIALS_NVECSERIAL_LIBRARY})
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SUNDIALS_CVODE_LIBRARY})
+  target_include_directories(${FMU_NAME_HASH} PRIVATE sundials)
   set(WITH_SUNDIALS ";WITH_SUNDIALS")
   message(STATUS "CVODE: ${SUNDIALS_NVECSERIAL_LIBRARY} ${SUNDIALS_CVODE_LIBRARY}")
 else()
@@ -184,16 +190,16 @@ else()
 endif()
 
 # Add include directories
-target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
+target_include_directories(${FMU_NAME_HASH} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${FMU_NAME_HASH} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
                                                sundials@FMU_ADDITIONAL_INCLUDES@)
 
 # Set compiler definitions
-target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
+target_compile_definitions(${FMU_NAME_HASH} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
 
 if(BUILD_SHARED_LIBS)
   # Override FMI2_FUNCTION_PREFIX if FMU compiled dynamically
-  target_compile_definitions(${FMU_NAME} PRIVATE FMI2_OVERRIDE_FUNCTION_PREFIX)
+  target_compile_definitions(${FMU_NAME_HASH} PRIVATE FMI2_OVERRIDE_FUNCTION_PREFIX)
   message(STATUS "Not using FMI2_FUNCTION_PREFIX")
 else()
   message(STATUS "Using FMI2_FUNCTION_PREFIX")
@@ -201,7 +207,7 @@ endif()
 
 # Install target
 if(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "all")
-  install(TARGETS ${FMU_NAME}
+  install(TARGETS ${FMU_NAME_HASH}
     RUNTIME_DEPENDENCIES
       DIRECTORIES ${EXTERNAL_LIBDIRECTORIES} ${CVODE_DIRECTORY}
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
@@ -210,7 +216,7 @@ if(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "all")
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
 elseif(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "modelica")
   message(STATUS "Installing dynamic dependencies from list: ${RUNTIME_DEPENDS}")
-  install(TARGETS ${FMU_NAME}
+  install(TARGETS ${FMU_NAME_HASH}
     RUNTIME_DEPENDENCIES
       DIRECTORIES ${EXTERNAL_LIBDIRECTORIES} ${CVODE_DIRECTORY}
       PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
@@ -221,7 +227,7 @@ elseif(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "modelica")
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
 else()
-  install(TARGETS ${FMU_NAME}
+  install(TARGETS ${FMU_NAME_HASH}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
