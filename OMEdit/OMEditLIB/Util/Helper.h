@@ -440,6 +440,7 @@ public:
   static QString upgradeInstalledLibraries;
   static QString updateLibraryIndex;
   static QString dataReconciliation;
+  static QString replaceSubModel;
 };
 
 class GUIMessages : public QObject
