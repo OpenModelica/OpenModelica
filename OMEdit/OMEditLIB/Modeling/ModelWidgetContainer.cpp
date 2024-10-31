@@ -4000,7 +4000,7 @@ void GraphicsView::omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMe
  */
 void GraphicsView::omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu)
 {
-  if (pComponent->getLibraryTreeItem()->isSystemElement() || pComponent->getLibraryTreeItem()->isComponentElement()) {
+  if (pComponent->getLibraryTreeItem() && (pComponent->getLibraryTreeItem()->isSystemElement() || pComponent->getLibraryTreeItem()->isComponentElement())) {
     pMenu->addAction(pComponent->getElementPropertiesAction());
   }
   pMenu->addSeparator();
@@ -4010,8 +4010,10 @@ void GraphicsView::omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu)
   pMenu->addAction(mpRotateAntiClockwiseAction);
   pMenu->addAction(mpFlipHorizontalAction);
   pMenu->addAction(mpFlipVerticalAction);
-  pMenu->addSeparator();
-  pMenu->addAction(pComponent->getReplaceSubModelAction());
+  if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isComponentElement()) {
+    pMenu->addSeparator();
+    pMenu->addAction(pComponent->getReplaceSubModelAction());
+  }
 }
 
 /*!

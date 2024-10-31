@@ -452,12 +452,12 @@ ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, QStrin
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg("replaceSubModel"));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::replaceSubModel));
   setMinimumWidth(400);
   mpGraphicsView = pGraphicsView;
   mpElementName = pName;
   // set heading
-  mpHeading = Utilities::getHeadingLabel("replaceSubModel");
+  mpHeading = Utilities::getHeadingLabel(Helper::replaceSubModel);
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
 
