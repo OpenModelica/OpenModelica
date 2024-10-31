@@ -418,11 +418,8 @@ private:
   QString mOldEditedCref;
   QString mNewEditedCref;
   QStringList mExpandedLibraryTreeItemsList;
-  QStringList mOpenedModelWidgetsList;
-  QStringList mIconSelectedItemsList;
-  QStringList mDiagramSelectedItemsList;
+  QHash<QString, QPair<QStringList, QStringList> > mOpenedModelWidgetsAndSelectedElements;
 
-  void restoreClosedModelWidgets();
   void switchToEditedModelWidget();
 };
 

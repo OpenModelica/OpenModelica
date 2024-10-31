@@ -2005,6 +2005,76 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
 }
 
 /*!
+ * \brief LibraryTreeModel::reloadClass
+ * Reloads the Modelica class.
+ * \param pLibraryTreeItem
+ * \param askQuestion
+ * \return
+ */
+bool LibraryTreeModel::reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+{
+  if (askQuestion) {
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::RELOAD_CLASS_MSG).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        // Yes was clicked. Don't return.
+        break;
+      case QMessageBox::No:
+      default:
+        // No was clicked. Return
+        return false;
+    }
+  }
+
+  const QString nameStructure = pLibraryTreeItem->getNameStructure();
+  const QString filePath = pLibraryTreeItem->getFileName();
+  int row = pLibraryTreeItem->row();
+  // get the active model
+  QString activeModel;
+  ModelWidget *pCurrentModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+  if (pCurrentModelWidget && pCurrentModelWidget->getLibraryTreeItem()) {
+    activeModel = pCurrentModelWidget->getLibraryTreeItem()->getNameStructure();
+  }
+  // Save the expanded LibraryTreeItems list
+  QStringList expandedLibraryTreeItemsList;
+  getExpandedLibraryTreeItemsList(pLibraryTreeItem, &expandedLibraryTreeItemsList);
+  // save the opened ModelWidgets that belong to this class and save the selected elements
+  QHash<QString, QPair<QStringList, QStringList> > openedModelWidgetsAndSelectedElements;
+  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(nameStructure, &openedModelWidgetsAndSelectedElements);
+  // unload the class
+  if (unloadClass(pLibraryTreeItem, false, true)) {
+    // load the class again if unload was successful
+    mpLibraryWidget->openModelicaFile(filePath, Helper::utf8, true, false, row);
+    // find the newly created LibraryTreeItem
+    LibraryTreeItem *pNewLibraryTreeItem = findLibraryTreeItemOneLevel(nameStructure);
+    if (pNewLibraryTreeItem) {
+      // Restore the expanded LibraryTreeItems list
+      expandLibraryTreeItems(pNewLibraryTreeItem, expandedLibraryTreeItemsList);
+      // Restore the closed ModelWidgets and select elements in them
+      MainWindow::instance()->getModelWidgetContainer()->openModelWidgetsAndSelectElement(openedModelWidgetsAndSelectedElements);
+    }
+    // find the active model and show it
+    LibraryTreeItem *pActiveLibraryTreeItem = findLibraryTreeItem(activeModel);
+    if (pActiveLibraryTreeItem) {
+      showModelWidget(pActiveLibraryTreeItem);
+      // clear the Library Browser selection and select the active model
+      mpLibraryWidget->getLibraryTreeView()->clearSelection();
+      QModelIndex modelIndex = libraryTreeItemIndex(pActiveLibraryTreeItem);
+      QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      mpLibraryWidget->getLibraryTreeView()->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
+    }
+  }
+  return true;
+}
+
+/*!
  * \brief LibraryTreeModel::unloadCompositeModelOrTextFile
  * Unloads/deletes the CompositeModel/Text class.
  * \param pLibraryTreeItem
@@ -3166,6 +3236,10 @@ void LibraryTreeView::createActions()
   mpUnloadClassAction->setShortcut(QKeySequence::Delete);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadClassAction, SIGNAL(triggered()), SLOT(unloadClass()));
+  // reload Action
+  mpReloadClassAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::reloadClass, this);
+  mpReloadClassAction->setStatusTip(Helper::reloadClassTip);
+  connect(mpReloadClassAction, SIGNAL(triggered()), SLOT(reloadClass()));
   // unload CompositeModel/Text file Action
   mpUnloadCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadCompositeModelFileAction->setShortcut(QKeySequence::Delete);
@@ -3447,18 +3521,23 @@ void LibraryTreeView::showContextMenu(QPoint point)
             } else {
               mpDuplicateClassAction->setEnabled(false);
             }
+            /* Add unload/delete menu item for top level libraries
+             * Add reload menu item for top level non system libraries
+             * Add unload/delete menu item for non top level and non system libraries
+             */
             if (pLibraryTreeItem->isTopLevel()) {
               mpUnloadClassAction->setText(Helper::unloadClass);
               mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+              menu.addAction(mpUnloadClassAction);
+              if (!pLibraryTreeItem->isSystemLibrary()) {
+                menu.addAction(mpReloadClassAction);
+              }
             } else {
-              mpUnloadClassAction->setText(Helper::deleteStr);
-              mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
-            }
-            // only add unload/delete option for top level system libraries
-            if (!pLibraryTreeItem->isSystemLibrary()) {
-              menu.addAction(mpUnloadClassAction);
-            } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
-              menu.addAction(mpUnloadClassAction);
+              if (!pLibraryTreeItem->isSystemLibrary()) {
+                mpUnloadClassAction->setText(Helper::deleteStr);
+                mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
+                menu.addAction(mpUnloadClassAction);
+              }
             }
             menu.addSeparator();
           }
@@ -3837,6 +3916,18 @@ void LibraryTreeView::unloadClass()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadClass(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::reloadClass
+ * Reloads the Modelica LibraryTreeItem.
+ */
+void LibraryTreeView::reloadClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->reloadClass(pLibraryTreeItem);
   }
 }
 
@@ -4274,8 +4365,9 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
  * \param encoding
  * \param showProgress
  * \param secondAttempt - If true then do not try to resolve the loaded libraries conflicts.
+ * \param row - insert position for the new LibraryTreeItem.
  */
-void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt)
+void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt, int row)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
@@ -4336,7 +4428,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
             MainWindow::instance()->showProgressBar();
           }
           foreach (QString model, classesList) {
-            mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1);
+            mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, row);
             mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
             if (showProgress) {
               MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
