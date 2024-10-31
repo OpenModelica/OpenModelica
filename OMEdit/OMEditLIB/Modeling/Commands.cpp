@@ -1491,9 +1491,7 @@ OMSimulatorUndoCommand::OMSimulatorUndoCommand(const QString &modelName, const Q
   mOldEditedCref = oldEditedCref;
   mNewEditedCref = newEditedCref;
   mExpandedLibraryTreeItemsList.clear();
-  mOpenedModelWidgetsList.clear();
-  mIconSelectedItemsList.clear();
-  mDiagramSelectedItemsList.clear();
+  mOpenedModelWidgetsAndSelectedElements.clear();
   setText(commandText);
 }
 
@@ -1509,10 +1507,8 @@ void OMSimulatorUndoCommand::redoInternal()
   assert(pModelLibraryTreeItem);
   // Save the expanded LibraryTreeItems list
   pLibraryTreeModel->getExpandedLibraryTreeItemsList(pModelLibraryTreeItem, &mExpandedLibraryTreeItemsList);
-  // save the selected components
-  MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidgetSelectedComponents(&mIconSelectedItemsList, &mDiagramSelectedItemsList);
-  // save the opened ModelWidgets that belong to this model
-  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsOfOMSimulatorModel(mModelName, &mOpenedModelWidgetsList);
+  // save the opened ModelWidgets that belong to this model and save the selected elements
+  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(mModelName, &mOpenedModelWidgetsAndSelectedElements);
   // load the new snapshot
   if (mDoSnapShot) {
     OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, &mModelName);
@@ -1524,10 +1520,8 @@ void OMSimulatorUndoCommand::redoInternal()
   assert(pNewModelLibraryTreeItem);
   // Restore the expanded LibraryTreeItems list
   pLibraryTreeModel->expandLibraryTreeItems(pNewModelLibraryTreeItem, mExpandedLibraryTreeItemsList);
-  // Restore the selected components
-  MainWindow::instance()->getModelWidgetContainer()->selectCurrentModelWidgetComponents(mIconSelectedItemsList, mDiagramSelectedItemsList);
-  // Restore the closed ModelWidgets
-  restoreClosedModelWidgets();
+  // Restore the closed ModelWidgets and select elements in them
+  MainWindow::instance()->getModelWidgetContainer()->openModelWidgetsAndSelectElement(mOpenedModelWidgetsAndSelectedElements);
   // switch to the ModelWidget where the change happened
   switchToEditedModelWidget();
 }
@@ -1549,25 +1543,10 @@ void OMSimulatorUndoCommand::undo()
   assert(pNewModelLibraryTreeItem);
   // Restore the expanded LibraryTreeItems list
   pLibraryTreeModel->expandLibraryTreeItems(pNewModelLibraryTreeItem, mExpandedLibraryTreeItemsList);
-  // Restore the closed ModelWidgets
-  restoreClosedModelWidgets();
+  // Restore the closed ModelWidgets but do not select elements
+  MainWindow::instance()->getModelWidgetContainer()->openModelWidgetsAndSelectElement(mOpenedModelWidgetsAndSelectedElements, true);
   // switch to the ModelWidget where the change happened
   switchToEditedModelWidget();
-}
-
-/*!
- * \brief OMSimulatorUndoCommand::restoreClosedModelWidgets
- * Restores the closed ModelWidgets
- */
-void OMSimulatorUndoCommand::restoreClosedModelWidgets()
-{
-  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  foreach (QString modelWidgetName, mOpenedModelWidgetsList) {
-    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(modelWidgetName);
-    if (pLibraryTreeItem) {
-      pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-    }
-  }
 }
 
 /*!

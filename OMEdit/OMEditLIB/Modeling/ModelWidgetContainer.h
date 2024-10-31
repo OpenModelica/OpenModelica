@@ -780,9 +780,8 @@ public:
   void updateThreeDViewer(ModelWidget *pModelWidget);
 #endif
   bool validateText();
-  void getOpenedModelWidgetsOfOMSimulatorModel(const QString &modelName, QStringList *pOpenedModelWidgetsList);
-  void getCurrentModelWidgetSelectedComponents(QStringList *pIconSelectedItemsList, QStringList *pDiagramSelectedItemsList);
-  void selectCurrentModelWidgetComponents(QStringList iconSelectedItemsList, QStringList diagramSelectedItemsList);
+  void getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
+  void openModelWidgetsAndSelectElement(QHash<QString, QPair<QStringList, QStringList> > closedModelWidgetsAndSelectedElements, bool skipSelection = false);
 private:
   StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;

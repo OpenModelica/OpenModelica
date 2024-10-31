@@ -222,10 +222,12 @@ QString Helper::fitToDiagram;
 QString Helper::loading;
 QString Helper::question;
 QString Helper::search;
-QString Helper::unloadClass;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
+QString Helper::unloadClass;
 QString Helper::unloadClassTip;
+QString Helper::reloadClass;
+QString Helper::reloadClassTip;
 QString Helper::unloadCompositeModelOrTextTip;
 QString Helper::unloadOMSModelTip;
 QString Helper::refresh;
@@ -538,6 +540,8 @@ void Helper::initHelperVariables()
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
+  Helper::reloadClass = tr("Reload");
+  Helper::reloadClassTip = tr("Reload the Modelica class");
   Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
   Helper::unloadOMSModelTip = tr("Unloads the model");
   Helper::refresh = tr("Refresh");
@@ -849,6 +853,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The read-only package is generated at <b>%1</b>.");
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
+    case RELOAD_CLASS_MSG:
+      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes to the class and its containing classes will be lost.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
     case UNLOAD_TEXT_FILE_MSG:
