@@ -2898,7 +2898,7 @@ void Element::createActions()
   mpElementPropertiesAction->setStatusTip(tr("Shows the Properties dialog"));
   connect(mpElementPropertiesAction, SIGNAL(triggered()), SLOT(showElementPropertiesDialog()));
   // ReplaceSubModel Action
-  mpReplaceSubModelAction = new QAction(ResourceCache::getIcon(":/Resources/icons/import-fmu.svg"), tr("Replace SubModel"), this);
+  mpReplaceSubModelAction = new QAction(ResourceCache::getIcon(":/Resources/icons/import-fmu.svg"), Helper::replaceSubModel, this);
   mpReplaceSubModelAction->setStatusTip(tr("Replaces the SubModel, but retains the connections and parameters if valid"));
   connect(mpReplaceSubModelAction, SIGNAL(triggered()), SLOT(showReplaceSubModelDialog()));
 }
