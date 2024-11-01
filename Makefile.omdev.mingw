@@ -51,6 +51,8 @@ builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
+builddir_bin_share_qt5_translations=$(OMBUILDDIR)/bin/share/qt5/translations
+builddir_bin_share_qt6_translations=$(OMBUILDDIR)/bin/share/qt6/translations
 
 PKG_CONFIG_PATH=$(OM_MSYS_ENV_DIR)/lib/pkgconfig
 
@@ -61,8 +63,7 @@ ifeq ($(BUILDTYPE),)
 	BUILDTYPE=Debug
 endif
 
-
-.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
+.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
 
 all: omc testsuite-depends
 
@@ -196,6 +197,8 @@ ifeq ($(OM_QT_MAJOR_VERSION),6)
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6OpenGL.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Concurrent.dll $(builddir_bin)/
 	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/plugins/* $(builddir_bin)/
+	mkdir -p $(builddir_bin_share_qt6_translations)/
+	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/translations/* $(builddir_bin_share_qt6_translations)/
 else
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Core.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Gui.dll $(builddir_bin)/
@@ -217,6 +220,8 @@ else
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Sql.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5OpenGL.dll $(builddir_bin)/
 	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt5/plugins/* $(builddir_bin)/
+	mkdir -p $(builddir_bin_share_qt5_translations)/
+	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt5/translations/* $(builddir_bin_share_qt5_translations)/
 endif
 
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
