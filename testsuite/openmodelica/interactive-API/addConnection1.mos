@@ -1,0 +1,37 @@
+// name: addConnection1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the addConnection API.
+//
+
+loadString("
+  model M
+    connector C
+      Real e;
+      flow Real f;
+    end C;
+
+    C c1, c2, c3;
+  end M;
+");
+
+addConnection(c1, c2, M, comment="comment", annotate=Line(points = {{-25, 30}, {10, 30}, {10, -20}, {40, -20}}));
+list(M);
+
+// Result:
+// true
+// true
+// "model M
+//   connector C
+//     Real e;
+//     flow Real f;
+//   end C;
+//
+//   C c1, c2, c3;
+// equation
+//   connect(c1, c2) \"comment\" annotation(
+//     Line(points = {{-25, 30}, {10, 30}, {10, -20}, {40, -20}}));
+// end M;"
+// endResult

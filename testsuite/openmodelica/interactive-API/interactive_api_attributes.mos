@@ -153,7 +153,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addConnection(a, b, A)
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setConnectionComment(A, a, b, "connecting a and b")
@@ -307,7 +307,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addConnection(a, b, A)
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setConnectionComment(A, a, b, "connecting a and b")
