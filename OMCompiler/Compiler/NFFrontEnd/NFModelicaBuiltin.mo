@@ -3894,6 +3894,34 @@ annotation(
   preferredView="text");
 end setComponentDimensions;
 
+function addConnection
+  input VariableName connector1;
+  input VariableName connector2;
+  input TypeName className;
+  input Expression comment = $Expression(());
+  input Expression annotate = $Expression(());
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Adds a connection to the given class.
+</html>"),
+  preferredView="text");
+end addConnection;
+
+function deleteConnection
+  input VariableName connector1;
+  input VariableName connector2;
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Deletes a connection in the given class.
+</html>"),
+  preferredView="text");
+end deleteConnection;
+
 function updateConnection
   input TypeName className;
   input String from;

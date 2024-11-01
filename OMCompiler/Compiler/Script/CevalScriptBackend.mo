@@ -3219,6 +3219,22 @@ algorithm
       then
         ValuesUtil.makeBoolean(b);
 
+    case ("addConnection", {Values.CODE(Absyn.C_VARIABLENAME(cr)), Values.CODE(Absyn.C_VARIABLENAME(cr2)),
+                            Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_EXPRESSION(aexp)),
+                            Values.CODE(Absyn.C_EXPRESSION(aexp2))})
+      algorithm
+        (p, b) := Interactive.addConnection(classpath, cr, cr2, aexp, aexp2, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
+
+    case ("deleteConnection", {Values.CODE(Absyn.C_VARIABLENAME(cr)), Values.CODE(Absyn.C_VARIABLENAME(cr2)),
+                               Values.CODE(Absyn.C_TYPENAME(classpath))})
+      algorithm
+        (p, b) := Interactive.deleteConnection(classpath, cr, cr2, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

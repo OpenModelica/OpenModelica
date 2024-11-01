@@ -897,27 +897,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "addConnection"
-      algorithm
-        {Absyn.CREF(componentRef = cr1),
-         Absyn.CREF(componentRef = cr2),
-         Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "deleteConnection"
-      algorithm
-        {Absyn.CREF(componentRef = cr1),
-         Absyn.CREF(componentRef = cr2),
-         Absyn.CREF(componentRef = cr)} := args;
-        (outResult, p) := deleteConnection(cr, cr1, cr2, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
     case "getNthConnectionAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
@@ -7792,165 +7771,78 @@ algorithm
   end match;
 end getStringComment;
 
-protected function addConnection "
-  Adds a connect equation to the model, i..e connect(c1,c2)
-
-  inputs: (Absyn.ComponentRef, /* model name */
-             Absyn.ComponentRef, /* c1 */
-             Absyn.ComponentRef, /* c2 */
-             Absyn.NamedArg list, /* annotations */
-             Absyn.Program) =>
-  outputs: (string, Absyn.Program)
-"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst4;
-  input Absyn.Program inProgram5;
-  output String outString;
-  output Absyn.Program outProgram;
+public function addConnection
+  "Adds a connect equation to the model, i.e. connect(c1,c2)"
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input Absyn.Exp commentExp;
+  input Absyn.Exp annotationExp;
+  input output Absyn.Program program;
+        output Boolean success;
+protected
+  Absyn.EquationItem eq;
+  Option<Absyn.Comment> cmt;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
-    local
-      Absyn.Path modelpath,package_;
-      Absyn.Class cdef,newcdef;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef model_,c1,c2;
-      Absyn.Within w;
-      Option<Absyn.Comment> cmt;
-      list<Absyn.NamedArg> nargs;
-
-    case ((model_ as Absyn.CREF_IDENT()),c1,c2,{},(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
-      then
-        ("Ok",newp);
-
-    case ((model_ as Absyn.CREF_QUAL()),c1,c2,{},(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        package_ = AbsynUtil.stripLast(modelpath);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
-      then
-        ("Ok",newp);
-    case ((model_ as Absyn.CREF_IDENT()),c1,c2,nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        cmt = annotationListToAbsynComment(nargs,NONE());
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
-      then
-        ("Ok",newp);
-    case ((model_ as Absyn.CREF_QUAL()),c1,c2,nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        package_ = AbsynUtil.stripLast(modelpath);
-        cmt = annotationListToAbsynComment(nargs,NONE());
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
-      then
-        ("Ok",newp);
-  end matchcontinue;
+  try
+    cmt := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp);
+    eq := Absyn.EquationItem.EQUATIONITEM(Absyn.Equation.EQ_CONNECT(connector1, connector2),
+      cmt, AbsynUtil.dummyInfo);
+    program := transformPathedClassInProgram(classPath, program,
+      function addToEquation(inEquationItem = eq));
+    success := true;
+  else
+    success := false;
+  end try;
 end addConnection;
 
-protected function deleteConnection "
-  Delete the connection connect(c1,c2) from a model.
-
-  inputs:  (Absyn.ComponentRef, /* model name */
-              Absyn.ComponentRef, /* c1 */
-              Absyn.ComponentRef, /* c2 */
-              Absyn.Program)
-  outputs:  (string,Absyn.Program)
-"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.Program inProgram4;
-  output String outString;
-  output Absyn.Program outProgram;
+public function deleteConnection
+  "Deletes the connection connect(c1,c2) from a model."
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input output Absyn.Program program;
+        output Boolean success;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
-    local
-      Absyn.Path modelpath,modelwithin;
-      Absyn.Class cdef,newcdef;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef model_,c1,c2;
-      Absyn.Within w;
-
-    case (model_,c1,c2,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        modelwithin = AbsynUtil.stripLast(modelpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then
-        ("Ok",newp);
-    case (model_,c1,c2,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
-      then
-        ("Ok",newp);
-    case (_,_,_,(p as Absyn.PROGRAM())) then ("Error",p);
-  end matchcontinue;
+  try
+    program := transformPathedClassInProgram(classPath, program,
+      function deleteConnectionInClass(connector1 = connector1, connector2 = connector2));
+    success := true;
+  else
+    success := false;
+  end try;
 end deleteConnection;
 
-protected function deleteEquationInClass
+protected function deleteConnectionInClass
 "Helper function to deleteConnection."
-  input Absyn.Class inClass1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  output Absyn.Class outClass;
+  input output Absyn.Class cls;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+protected
+  list<Absyn.EquationItem> eqlst;
+  Absyn.ClassDef cdef;
 algorithm
-  outClass:=
-  match (inClass1,inComponentRef2,inComponentRef3)
-    local
-      list<Absyn.EquationItem> eqlst,eqlst_1;
-      list<Absyn.ClassPart> parts2,parts;
-      String i, bcname;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.ComponentRef c1,c2;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  () := match cls
     /* a class with parts */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),info = file_info),c1,c2)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst_1 = deleteEquationInEqlist(eqlst, c1, c2);
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.classParts);
+        eqlst := deleteEquationInEqlist(eqlst, connector1, connector2);
+        cdef.classParts := InteractiveUtil.replaceEquationList(cdef.classParts, eqlst);
+        cls.body := cdef;
       then
-        outClass;
+        ();
     /* an extended class with parts: model extends M end M;  */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),c1,c2)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst_1 = deleteEquationInEqlist(eqlst, c1, c2);
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.parts);
+        eqlst := deleteEquationInEqlist(eqlst, connector1, connector2);
+        cdef.parts := InteractiveUtil.replaceEquationList(cdef.parts, eqlst);
+        cls.body := cdef;
       then
-        outClass;
+        ();
   end match;
-end deleteEquationInClass;
+end deleteConnectionInClass;
 
 protected function deleteEquationInEqlist
 "Helper function to deleteConnection."
