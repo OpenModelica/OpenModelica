@@ -177,6 +177,8 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
      echo set -ex
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
+     echo set
+     echo which cmake
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc testsuite-depends
      echo cd \${MSYS_WORKSPACE}
      echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
@@ -318,6 +320,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
      echo cd \${MSYS_WORKSPACE}
+     echo which cmake
      echo set -ex
      echo mkdir build_cmake
      echo ${cmake_exe} --version
@@ -360,6 +363,8 @@ void buildGUI(stash, qtVersion) {
      echo set -e
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
+     echo set
+     echo which cmake
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients ${getQtMajorVersion(qtVersion)}
      echo echo Check that at least OMEdit can be started
      echo ./build/bin/OMEdit --help
@@ -467,6 +472,7 @@ if not exist "%OMDEV%" (
   call SETUP_OMDEV.bat
 ) else (
   cd %OMDEV%
+  git fetch origin
   git reset --hard origin/master
   git pull
   call SETUP_OMDEV.bat
