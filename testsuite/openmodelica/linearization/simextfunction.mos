@@ -61,7 +61,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // ""
 // record SimulationResult
 //     resultFile = "extfunction_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 0.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -76,9 +76,9 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 0 \"number of outputs\";
 //   parameter Integer nz = 2 \"data recovery variables\";
-//   parameter Real x0[2] = {1, -1};
-//   parameter Real u0[0] = zeros(0);
-//   parameter Real z0[2] = {0.5403023058681398, 0.5403023058681398};
+//   parameter Real x0[n] = {1, -1};
+//   parameter Real u0[m] = zeros(0);
+//   parameter Real z0[nz] = {0.5403023058681398, 0.5403023058681398};
 //   parameter Real A[n, n] = [0.5403023058681398, 0.8414709848078965; 0.8414709848078965, 0.5403023058681398];
 //   parameter Real B[n, m] = zeros(n, m);
 //   parameter Real C[p, n] = zeros(p, n);
@@ -100,7 +100,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // end linearized_model;"
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -114,7 +114,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // ""
 // record SimulationResult
 //     resultFile = "extfunction_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=1 -l_datarec'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=1 -l_datarec'",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 1.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -129,9 +129,9 @@ readFile("linearized_model.log"); // Check that output log is empty
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 0 \"number of outputs\";
 //   parameter Integer nz = 2 \"data recovery variables\";
-//   parameter Real x0[2] = {1.398992320427181, -1.398992320427181};
-//   parameter Real u0[0] = zeros(0);
-//   parameter Real z0[2] = {0.1709600740012847, 0.1709600740012847};
+//   parameter Real x0[n] = {1.398992320427181, -1.398992320427181};
+//   parameter Real u0[m] = zeros(0);
+//   parameter Real z0[nz] = {0.1709600740012847, 0.1709600740012847};
 //   parameter Real A[n, n] = [0.1709600742174606, 1.378396283075882; 1.378396310036173, 0.170960073974575];
 //   parameter Real B[n, m] = zeros(n, m);
 //   parameter Real C[p, n] = zeros(p, n);
@@ -153,7 +153,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // end linearized_model;"
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -167,7 +167,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // ""
 // record SimulationResult
 //     resultFile = "extfunction_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 0.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -198,7 +198,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // end linearized_model;"
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -212,7 +212,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // ""
 // record SimulationResult
 //     resultFile = "extfunction_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 1.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -243,7 +243,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 // end linearized_model;"
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

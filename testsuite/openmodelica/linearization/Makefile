@@ -1,4 +1,4 @@
-# BuiltinReal.mos fails when using Cevalfunc.mo! the values are OK, the display is different! 
+# BuiltinReal.mos fails when using Cevalfunc.mo! the values are OK, the display is different!
 TEST = ../../rtest -v
 
 
@@ -8,7 +8,8 @@ else
 	# this DOES NOT WORK ON WINDOWS! PATH := ./;${PATH}
 endif
 
-TESTFILES = linmodel.mos \
+TESTFILES = \
+linmodel.mos \
 simVanDerPol.mos \
 smallValues.mos \
 simLotkaVolterra.mos \
@@ -32,17 +33,16 @@ testSortFunction.mos \
 testSteamPipe.mos \
 ticket3701.mos \
 
-
-# test that currently fail. Move up when fixed. 
+# test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES= \
+FAILINGTESTFILES = \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile 
+Makefile
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
@@ -56,18 +56,18 @@ test:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 
-# Cleans all files that are not listed as dependencies 
+# Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
 
 # Run this if you want to list out the files (dependencies).
-getdeps: 
+getdeps:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt	
+	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt
 	@echo Dependency list saved in deps.txt.
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
-	
+
 failingtest :
 	@echo
 	@echo Running failing tests...
