@@ -241,15 +241,15 @@ algorithm
   File.writeReal(file, s.tolerance);
   File.write(file, "\"\n");
 
-  File.write(file, "    solver        = \"");
+  File.write(file, "    solver         = \"");
   File.write(file, s.method);
   File.write(file, "\"\n");
 
-  File.write(file, "    outputFormat      = \"");
+  File.write(file, "    outputFormat   = \"");
   File.write(file, s.outputFormat);
   File.write(file, "\"\n");
 
-  File.write(file, "    variableFilter      = \"");
+  File.write(file, "    variableFilter = \"");
   File.write(file, s.variableFilter);
   File.write(file, "\" />\n\n");
 
