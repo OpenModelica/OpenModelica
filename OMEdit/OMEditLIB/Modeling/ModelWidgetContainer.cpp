@@ -1173,7 +1173,7 @@ void GraphicsView::addUsesAnnotation(const QString &insertedClassName, const QSt
       QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
       MainWindow::instance()->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
       // if save folder structure then update the parent package
-      if (pTopLevelLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure || updateParentText) {
+      if (pTopLevelLibraryTreeItem->isSaveFolderStructure() || updateParentText) {
         pLibraryTreeModel->updateLibraryTreeItemClassText(pTopLevelLibraryTreeItem);
       }
     }
@@ -7153,12 +7153,12 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   QString className = classNames.at(0);
   if (pParentLibraryTreeItem != mpLibraryTreeItem) {
     // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
-    if (!pOMCProxy->loadString(stringToLoad, pParentLibraryTreeItem->getFileName(), Helper::utf8, pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
+    if (!pOMCProxy->loadString(stringToLoad, pParentLibraryTreeItem->getFileName(), Helper::utf8, pParentLibraryTreeItem->isSaveFolderStructure())) {
       return false;
     }
   } else {
     // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
-    if (!pOMCProxy->loadString(stringToLoad, mpLibraryTreeItem->getFileName(), Helper::utf8, mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
+    if (!pOMCProxy->loadString(stringToLoad, mpLibraryTreeItem->getFileName(), Helper::utf8, mpLibraryTreeItem->isSaveFolderStructure())) {
       return false;
     }
   }
@@ -10459,7 +10459,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getExportFMUAction()->setEnabled(enabled && modelica);
   bool packageSaveAsFolder = (enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel()
                               && pLibraryTreeItem->getRestriction() == StringHandler::Package
-                              && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure);
+                              && pLibraryTreeItem->isSaveFolderStructure());
   MainWindow::instance()->getExportReadonlyPackageAction()->setEnabled(packageSaveAsFolder && enabled && modelica);
   MainWindow::instance()->getExportEncryptedPackageAction()->setEnabled(packageSaveAsFolder && enabled && modelica);
   MainWindow::instance()->getExportXMLAction()->setEnabled(enabled && modelica);
