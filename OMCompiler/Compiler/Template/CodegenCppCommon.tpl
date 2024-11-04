@@ -1705,7 +1705,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%daeExp(crefExp(crefPrefixPrevious(arg.componentRef)), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
 
   case CALL(path=IDENT(name="firstTick")) then
-    '(<%contextSystem(context)%>_clockStart[clockIndex - 1] || <%contextSystem(context)%>_clockSubactive[clockIndex - 1])'
+    match context
+      case SIMULATION_CONTEXT() then
+        // clockSubactive is checked separately for state equations -- see CodegenCpp.equationSimpleAssign
+        '(<%contextSystem(context)%>_clockStart[clockIndex - 1])'
+      else
+        '(<%contextSystem(context)%>_clockStart[clockIndex - 1] || <%contextSystem(context)%>_clockSubactive[clockIndex - 1])'
 
   case CALL(path=IDENT(name="interval")) then
     '<%contextSystem(context)%>_clockInterval[clockIndex - 1]'
