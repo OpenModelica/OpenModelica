@@ -3495,7 +3495,7 @@ CodeColorsWidget::CodeColorsWidget(QWidget *pParent)
   // preview textbox
   mpPreviewLabel = new Label(tr("Preview:"));
   mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
   mpPreviewPlainTextEdit->setTabStopDistance((qreal)Helper::tabWidth);
 #else // QT_VERSION_CHECK
   mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);

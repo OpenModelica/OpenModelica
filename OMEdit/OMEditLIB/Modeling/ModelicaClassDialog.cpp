@@ -127,7 +127,7 @@ void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegExp &regExp)
   }
 }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegularExpression &regExp)
 {
   QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
@@ -156,7 +156,7 @@ void LibraryBrowseDialog::searchClasses()
   mpLibraryTreeView->selectionModel()->clearSelection();
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
   QRegularExpression regExp(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
   mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
@@ -515,7 +515,7 @@ void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
   file.close();
   file.open(QIODevice::WriteOnly | QIODevice::Truncate);
   QTextStream out(&file);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   out.setEncoding(QStringConverter::Utf8);
 #else
   out.setCodec(Helper::utf8.toUtf8().constData());

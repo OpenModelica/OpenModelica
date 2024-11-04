@@ -1209,7 +1209,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (hide) {
       return false;
     } else {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       return pLibraryTreeItem->getNameStructure().contains(filterRegularExpression());
 #else
       return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
@@ -1402,7 +1402,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
   }
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   if (regExp.indexIn(pLibraryTreeItem->getNameStructure()) > 0) {
 #else
   if (pLibraryTreeItem->getNameStructure().contains(regExp)) {
@@ -1416,7 +1416,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
   }
   return 0;
 }
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegularExpression &regExp, LibraryTreeItem *pLibraryTreeItem) const
 {
   if (!pLibraryTreeItem) {
@@ -2163,7 +2163,7 @@ void LibraryTreeModel::getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibrary
   if (mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex)) {
     pExpandedLibraryTreeItemsList->append(pLibraryTreeItem->getNameStructure());
   }
-  // check recursivly nested items
+  // check recursively nested items
   for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
     getExpandedLibraryTreeItemsList(pLibraryTreeItem->childAt(i), pExpandedLibraryTreeItemsList);
   }
@@ -2183,7 +2183,7 @@ void LibraryTreeModel::expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem,
     QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
     mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, true);
   }
-  // check recursivly nested items
+  // check recursively nested items
   for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
     expandLibraryTreeItems(pLibraryTreeItem->childAt(i), expandedLibraryTreeItemsList);
   }
@@ -4831,7 +4831,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     // set to UTF-8
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     textStream.setEncoding(QStringConverter::Utf8);
 #else
     textStream.setCodec(Helper::utf8.toUtf8().constData());
@@ -5248,7 +5248,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
             QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
                           QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
           } else {
-            Utilities::removeDirectoryRecursivly(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+            Utilities::removeDirectoryRecursively(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
           }
         } else {
           if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
@@ -5663,7 +5663,7 @@ void LibraryWidget::searchClasses()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
   mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
 #else

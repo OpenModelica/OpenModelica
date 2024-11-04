@@ -793,7 +793,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           } else if (simulationFlag.compare("s") == 0) {
             mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
           } else if (simulationFlag.compare("lv") == 0) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
             QStringList logStreams = value.split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
             QStringList logStreams = value.split(",", QString::SkipEmptyParts);
@@ -1552,7 +1552,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (logStreams.size() > 0) {
     simulationFlags.insert("lv", logStreams.join(","));
   }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
   QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
   QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", QString::SkipEmptyParts);
@@ -1562,7 +1562,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     if (additionalSimulationFlag.startsWith('-')) {
       additionalSimulationFlag.remove(0, 1);
     }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList nameValueList = additionalSimulationFlag.split("=", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
     QStringList nameValueList = additionalSimulationFlag.split("=", QString::SkipEmptyParts);

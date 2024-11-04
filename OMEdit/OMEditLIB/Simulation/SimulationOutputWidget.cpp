@@ -442,7 +442,7 @@ SimulationOutputWidget::~SimulationOutputWidget()
   }
   /* Ticket:3788 comment:12 Delete the entire simulation folder. */
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteEntireSimulationDirectoryCheckBox()->isChecked()) {
-    Utilities::removeDirectoryRecursivly(mSimulationOptions.getWorkingDirectory());
+    Utilities::removeDirectoryRecursively(mSimulationOptions.getWorkingDirectory());
   }
   if (mpSimulationOutputHandler) {
     delete mpSimulationOutputHandler;
@@ -558,7 +558,7 @@ void SimulationOutputWidget::compileModel()
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
 #else
   connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
@@ -607,14 +607,14 @@ void SimulationOutputWidget::runPostCompilation()
     connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
     connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
     connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
     connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
   #else
     connect(mpPostCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
   #endif
     connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
     writeCompilationOutput(QString("%1\n").arg(postCompilationCommand), Qt::blue);
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+  #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     QStringList args(QProcess::splitCommand(postCompilationCommand));
     const QString program(args.takeFirst());
     mpPostCompilationProcess->start(program, args);
@@ -757,7 +757,7 @@ void SimulationOutputWidget::runSimulationExecutable()
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
 #else
   connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));

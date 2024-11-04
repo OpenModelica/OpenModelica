@@ -333,7 +333,7 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
   connect(mpGDBProcess, SIGNAL(started()), SLOT(handleGDBProcessStarted()));
   connect(mpGDBProcess, SIGNAL(readyReadStandardOutput()), SLOT(readGDBStandardOutput()));
   connect(mpGDBProcess, SIGNAL(readyReadStandardError()), SLOT(readGDBErrorOutput()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpGDBProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
 #else
   connect(mpGDBProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
@@ -892,7 +892,7 @@ void GDBAdapter::handleGDBProcessStartedHelper()
   mDebuggerLogFile.setFileName(QString("%1omeditdebugger.log").arg(tmpPath));
   if (mDebuggerLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
     mDebuggerLogFileTextStream.setDevice(&mDebuggerLogFile);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     mDebuggerLogFileTextStream.setEncoding(QStringConverter::Utf8);
 #else
     mDebuggerLogFileTextStream.setCodec(Helper::utf8.toUtf8().constData());

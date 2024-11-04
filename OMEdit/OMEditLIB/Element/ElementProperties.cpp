@@ -497,7 +497,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
          * If the items width is greater than the value text than use it.
          */
         fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         mpValueComboBox->setMinimumWidth(qMin(qMax(fm.horizontalAdvance(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
 #else // QT_VERSION_CHECK
         mpValueComboBox->setMinimumWidth(qMin(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
@@ -522,7 +522,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       if (adjustSize) {
         /* Set the minimum width so that the value text will be readable */
         fm = QFontMetrics(mpValueTextBox->font());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         mpValueTextBox->setMinimumWidth(qMin(fm.horizontalAdvance(value), screenWidth) + 50);
 #else // QT_VERSION_CHECK
         mpValueTextBox->setMinimumWidth(qMin(fm.width(value), screenWidth) + 50);
@@ -2142,7 +2142,7 @@ void ElementParameters::updateElementParameters()
   if (!mpModifiersTextBox->text().isEmpty()) {
     QString regexp ("\\s*([A-Za-z0-9._]+\\s*)\\(\\s*([A-Za-z0-9._]+)\\s*=\\s*([A-Za-z0-9._]+)\\s*\\)$");
     QRegExp modifierRegExp (regexp);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList modifiers = mpModifiersTextBox->text().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
     QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
@@ -2941,7 +2941,7 @@ void ElementParametersOld::updateElementParameters()
   if (!mpModifiersTextBox->text().isEmpty()) {
     QString regexp ("\\s*([A-Za-z0-9._]+\\s*)\\(\\s*([A-Za-z0-9._]+)\\s*=\\s*([A-Za-z0-9._]+)\\s*\\)$");
     QRegExp modifierRegExp (regexp);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList modifiers = mpModifiersTextBox->text().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
     QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
