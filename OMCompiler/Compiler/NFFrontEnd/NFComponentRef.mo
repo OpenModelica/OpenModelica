@@ -1391,9 +1391,9 @@ public
           algorithm
             hash := stringHashDjb2Continue(InstNode.name(cref.node), hash);
 
-            if not listEmpty(cref.subscripts) then
-              hash := stringHashDjb2Continue(Subscript.toStringList(cref.subscripts), hash);
-            end if;
+            for s in cref.subscripts loop
+              hash := stringHashDjb2Continue(Subscript.toString(s), hash);
+            end for;
           then
             hash_rest(cref.restCref, hash);
 
@@ -1407,9 +1407,9 @@ public
         algorithm
           h := stringHashDjb2(InstNode.name(cref.node));
 
-          if not listEmpty(cref.subscripts) then
-            h := stringHashDjb2Continue(Subscript.toStringList(cref.subscripts), h);
-          end if;
+          for s in cref.subscripts loop
+            h := stringHashDjb2Continue(Subscript.toString(s), h);
+          end for;
         then
           hash_rest(cref.restCref, h);
 
