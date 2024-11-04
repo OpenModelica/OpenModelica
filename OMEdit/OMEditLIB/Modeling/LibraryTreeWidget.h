@@ -85,6 +85,10 @@ public:
   QList<LibraryTreeItem*> childrenItems() {return mChildren;}
   LibraryType getLibraryType() {return mLibraryType;}
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
+  bool isModelica() const {return mLibraryType == LibraryTreeItem::Modelica;}
+  bool isText() const {return mLibraryType == LibraryTreeItem::Text;}
+  bool isCompositeModel() const {return mLibraryType == LibraryTreeItem::CompositeModel;}
+  bool isSSP() const {return mLibraryType == LibraryTreeItem::OMS;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
   bool isSystemLibrary() {return mSystemLibrary;}
   void setModelWidget(ModelWidget *pModelWidget);

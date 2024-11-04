@@ -829,7 +829,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
         completionClasses << (CompleterItem(classes[i]->getName(), classes[i]->getHTMLDescription()));
     }
 
-    if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->isModelica()) {
       const QList<ElementInfo*> &components = baseClasses[bc]->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
         if (components[i]->getName().startsWith(lastPart, Qt::CaseInsensitive))
@@ -1186,7 +1186,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
   if (pLibraryTreeItem) {
     // if showOnlyModelica flag is enabled then filter out all other types of LibraryTreeItem e.g., CompositeModel & Text.
-    if (mShowOnlyModelica && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+    if (mShowOnlyModelica && !pLibraryTreeItem->isModelica()) {
       return false;
     }
     // filter the dummy tree item "All" created for search functionality to be at the top
@@ -1692,7 +1692,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
   // set the library node not saved.
   pLibraryTreeItem->setIsSaved(false);
   updateLibraryTreeItem(pLibraryTreeItem);
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     // update the containing parent LibraryTreeItem class text.
     LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
     // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
@@ -1742,7 +1742,7 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
  */
 void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (pLibraryTreeItem->isSSP()) {
     QString contents;
     if (OMSProxy::instance()->exportSnapshot(pLibraryTreeItem->getNameStructure(), &contents)) {
       pLibraryTreeItem->setClassText(contents);
@@ -1753,7 +1753,7 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
       if (pLibraryTreeItem->isInPackageOneFile()) {
         updateLibraryTreeItemClassText(pLibraryTreeItem);
       } else {
-        if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+        if (pLibraryTreeItem->isModelica()) {
           pLibraryTreeItem->setClassText(MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
         }
       }
@@ -1811,7 +1811,7 @@ LibraryTreeItem *LibraryTreeModel::getTopLevelLibraryTreeItem(LibraryTreeItem *p
 void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem)
 {
   // Return if the class is OMSimulator connector.
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS /*&& pLibraryTreeItem->getOMSConnector()*/) {
+  if (pLibraryTreeItem->isSSP() /*&& pLibraryTreeItem->getOMSConnector()*/) {
     return;
   }
   if (!pLibraryTreeItem->getModelWidget()) {
@@ -1899,7 +1899,7 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
 void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  if (show && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+  if (show && pLibraryTreeItem->isModelica()
       && ((pLibraryTreeItem->mClassInformation.preferredView.compare("info") == 0) ||
           (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() && pLibraryTreeItem->isDocumentationClass()) ||
           (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
@@ -2305,7 +2305,7 @@ bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   // remove the LibraryTreeItem from Library Browser
   int row = pLibraryTreeItem->row();
   beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem->parent()), row, row);
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     unloadClassChildren(pLibraryTreeItem);
   } else {
     unloadFileChildren(pLibraryTreeItem);
@@ -2524,7 +2524,7 @@ QString LibraryTreeModel::getUniqueTopLevelItemName(QString name, int number)
  */
 void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList libs = pOMCProxy->getClassNames(pLibraryTreeItem->getNameStructure(), true, true);
     if (!libs.isEmpty()) {
@@ -2545,7 +2545,7 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled());
       }
     }
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pLibraryTreeItem->isSSP()) {
     // we only call oms_getElements on the model
     if (pLibraryTreeItem->isTopLevel()) {
       oms_element_t** pElements = NULL;
@@ -2845,7 +2845,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
     row = pParentLibraryTreeItem->childrenSize();
   }
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (pLibraryTreeItem->isSSP()) {
     // create library tree items
     createLibraryTreeItems(pLibraryTreeItem);
   }
@@ -3398,7 +3398,7 @@ void LibraryTreeView::libraryTreeItemExpanded(const QModelIndex &index)
   collapse(index);
   QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica || pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (pLibraryTreeItem->isModelica() || pLibraryTreeItem->isSSP()) {
     libraryTreeItemExpanded(pLibraryTreeItem);
   }
   bool state = blockSignals(true);
@@ -3417,7 +3417,7 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
   QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
   if (pLibraryTreeItem) {
-    if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+    if (pLibraryTreeItem->isText()) {
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
       if (fileInfo.isDir()) {
         if (isExpanded(index)) {
@@ -3428,13 +3428,13 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
       } else {
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    } else if (pLibraryTreeItem->isSSP()) {
       if ((pLibraryTreeItem->getOMSConnector() || pLibraryTreeItem->getOMSBusConnector() || pLibraryTreeItem->getOMSTLMBusConnector())) {
         return;
       } else {
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    } else if (pLibraryTreeItem->isCompositeModel()) {
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     } else { // LibraryTreeItem::Modelica
       /* if Model text is changed manually by user then validate it before opening double clicked ModelWidget. */
@@ -4203,8 +4203,8 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     bool isSystemLibrary = pLibraryTreeItem->isSystemLibrary();
-    bool isModelicaLibraryType = pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica ? true : false;
-    bool isOMSimulatorLibraryType = pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS ? true : false;
+    bool isModelicaLibraryType = pLibraryTreeItem->isModelica() ? true : false;
+    bool isOMSimulatorLibraryType = pLibraryTreeItem->isSSP() ? true : false;
     bool isTopLevel = pLibraryTreeItem->isTopLevel() ? true : false;
     if (controlModifier && event->key() == Qt::Key_Up && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassUp();
@@ -4230,7 +4230,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
         unloadCompositeModelOrTextFile();
       }
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
-      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+      if (pLibraryTreeItem->isText()) {
         QFileInfo fileInfo(pLibraryTreeItem->getFileName());
         if (fileInfo.isFile()) {
           mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
@@ -4861,17 +4861,17 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   bool result = false;
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
     if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return false;
     }
     result = saveModelicaLibraryTreeItem(pLibraryTreeItem, false);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pLibraryTreeItem->isCompositeModel()) {
     result = saveCompositeModelLibraryTreeItem(pLibraryTreeItem);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+  } else if (pLibraryTreeItem->isText()) {
     result = saveTextLibraryTreeItem(pLibraryTreeItem, false);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pLibraryTreeItem->isSSP()) {
     if (pLibraryTreeItem->isTopLevel()) {
       /* if user has done some changes in the OMSimulator text view then save & validate it before saving it to file. */
       if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -4916,21 +4916,21 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
     return;
   }
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
       QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("It is not possible to save as a Modelica package saved in a directory hierarchy Mapping."), QMessageBox::Ok);
     } else {
       saveModelicaLibraryTreeItem(pLibraryTreeItem, true);
     }
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pLibraryTreeItem->isCompositeModel()) {
     saveAsCompositeModelLibraryTreeItem(pLibraryTreeItem);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pLibraryTreeItem->isSSP()) {
     if (pLibraryTreeItem->isTopLevel()) {
       saveAsOMSLibraryTreeItem(pLibraryTreeItem);
     } else {
       saveAsLibraryTreeItem(pLibraryTreeItem->parent());
     }
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+  } else if (pLibraryTreeItem->isText()) {
     saveTextLibraryTreeItem(pLibraryTreeItem, true);
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)

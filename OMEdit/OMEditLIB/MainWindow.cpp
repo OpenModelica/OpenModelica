@@ -589,7 +589,7 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
   }
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
     pSettings->beginGroup(ToolBars::modelingTextPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -603,7 +603,7 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     pSettings->beginGroup(ToolBars::modelingCompositeModelPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -617,7 +617,7 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::modelingOMSPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -661,7 +661,7 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
   }
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
     pSettings->beginGroup(ToolBars::debuggingTextPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -675,7 +675,7 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     pSettings->beginGroup(ToolBars::debuggingCompositeModelPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -689,7 +689,7 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::debuggingOMSPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -987,7 +987,7 @@ void MainWindow::openResultFile(const QString &fileName)
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     if (!mpSimulationDialog) {
       mpSimulationDialog = new SimulationDialog(this);
     }
@@ -998,7 +998,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
       }
     }
     mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
@@ -1058,7 +1058,7 @@ void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
 
 void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     if (!mpSimulationDialog) {
       mpSimulationDialog = new SimulationDialog(this);
     }
@@ -1069,7 +1069,7 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
       }
     }
     mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
@@ -2107,9 +2107,9 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
       if ((pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OpenModelica")) == 0)
           || (pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OMEdit.Search.Feature")) == 0)) {
         continue;
-      } else if (pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+      } else if (pChildLibraryTreeItem->isModelica()) {
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pChildLibraryTreeItem, false, false);
-      } else if (!onlyModelicaClasses && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (!onlyModelicaClasses && pChildLibraryTreeItem->isSSP()) {
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(pChildLibraryTreeItem, true, false);
       } else if (!onlyModelicaClasses) { // LibraryTreeItem::CompositeModel or LibraryTreeItem::Text
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadCompositeModelOrTextFile(pChildLibraryTreeItem, false);
@@ -2672,7 +2672,7 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
 void MainWindow::simulateModelInteractive()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isSSP()) {
     // get the top level LibraryTreeItem
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
     if (pTopLevelLibraryTreeItem) {
@@ -3624,7 +3624,7 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
   if (visible) {
     ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
     if (pModelWidget && pModelWidget->getLibraryTreeItem() &&
-        pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        pModelWidget->getLibraryTreeItem()->isModelica()) {
       LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
       if (pModelWidget->validateText(&pLibraryTreeItem)) {
         mpDocumentationWidget->showDocumentation(pLibraryTreeItem);
@@ -5117,11 +5117,11 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
       break;
     case 1:
       pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-      if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+      if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
         perspective = ToolBars::modelingTextPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
         perspective = ToolBars::modelingCompositeModelPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
         perspective = ToolBars::modelingOMSPerspective;
       } else {
         perspective = ToolBars::modelingModelicaPerspective;
@@ -5132,11 +5132,11 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
       break;
     case 3:
       pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-      if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+      if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
         perspective = ToolBars::debuggingTextPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
         perspective = ToolBars::debuggingCompositeModelPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
         perspective = ToolBars::debuggingOMSPerspective;
       } else {
         perspective = ToolBars::debuggingModelicaPerspective;

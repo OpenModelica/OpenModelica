@@ -197,7 +197,7 @@ void BreakpointDialog::addOrEditBreakpoint()
                               GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_SAVED).arg(pLibraryTreeItem->getNameStructure()),
                               QMessageBox::Ok);
         return;
-      } else if (pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+      } else if (!pLibraryTreeItem->isModelica()) {
         QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                               GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_MODELICA_CLASS).arg(pLibraryTreeItem->getNameStructure()),
                               QMessageBox::Ok);

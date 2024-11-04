@@ -464,7 +464,7 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
 #ifndef OM_DISABLE_DOCUMENTATION
   // We only support documentation of Modelica classes.
-  if (pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+  if (!pLibraryTreeItem->isModelica()) {
     return;
   }
   // if documentation is proctected then do not show it.

@@ -236,7 +236,7 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
 
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     // Connector type components exists on icon view as well
     mpIconComponent = new Element(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
   }
@@ -259,7 +259,7 @@ void AddComponentCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     // Connector type components exists on icon view as well
     if (mpIconComponent->mTransformation.isValid() && mpIconComponent->mTransformation.getVisible()) {
       mpIconGraphicsView->addElementItem(mpIconComponent);
@@ -300,7 +300,7 @@ void AddComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     // Connector type components exists on icon view as well
     mpIconGraphicsView->removeElementItem(mpIconComponent);
     mpIconGraphicsView->deleteElementFromList(mpIconComponent);
@@ -333,7 +333,7 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Ele
 void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
           || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
@@ -375,7 +375,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
 void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
           || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
@@ -674,7 +674,7 @@ DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView
     mpComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
   }
   //Save sub-model parameters for composite models
-  if (pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (pGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
     mParameterNames = pEditor->getParameterNames(pComponent->getName());  //Assume submodel; otherwise returned list is empty
     foreach(QString parName, mParameterNames) {
@@ -691,7 +691,7 @@ void DeleteComponentCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     // Connector type components exists on both icon and diagram views
     GraphicsView *pGraphicsView;
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -722,7 +722,7 @@ void DeleteComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     // Connector type components exists on both icon and diagram views
     GraphicsView *pGraphicsView;
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -749,7 +749,7 @@ void DeleteComponentCommand::undo()
     UpdateElementAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getElementInfo());
   }
   // Restore sub-model parameters for composite models
-  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pModelWidget->getEditor());
     for(int i=0; i<mParameterNames.size(); ++i) {
       pEditor->setParameterValue(mpComponent->getName(),mParameterNames[i],mParameterValues[i]);
@@ -1326,7 +1326,7 @@ void UpdateSubModelAttributesCommand::redoInternal()
   mpComponent->getElementInfo()->setExactStep(mNewComponentInfo.getExactStep());
   mpComponent->getElementInfo()->setGeometryFile(mNewComponentInfo.getGeometryFile());
 
-  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
     for(int i=0; i<mParameterNames.size(); ++i) {
       pCompositeModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mNewParameterValues[i]);
     }
@@ -1346,7 +1346,7 @@ void UpdateSubModelAttributesCommand::undo()
   mpComponent->getElementInfo()->setExactStep(mOldComponentInfo.getExactStep());
   mpComponent->getElementInfo()->setGeometryFile(mOldComponentInfo.getGeometryFile());
 
-  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
     for(int i=0; i<mParameterNames.size(); ++i) {
       pCompositeModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mOldParameterValues[i]);
     }
