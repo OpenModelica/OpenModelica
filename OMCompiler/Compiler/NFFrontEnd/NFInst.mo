@@ -733,6 +733,11 @@ algorithm
         base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, context, info);
         checkExtendsLoop(base_node, scope, base_path, info);
         checkReplaceableBaseClass(base_nodes, base_path, info);
+
+        if InstNode.isRootClass(scope) and SCodeUtil.isEmptyMod(smod) then
+          base_node := InstUtil.mergeScalars(base_node, base_path);
+        end if;
+
         base_node := expand(base_node, context);
 
         ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def, InstNode.nodeType(base_node)), base_node);
@@ -1354,7 +1359,8 @@ algorithm
 
           // Finding a different element than before expanding extends
           // (probably an inherited element) is an error.
-          if not referenceEq(InstNode.definition(extendsNode), InstNode.definition(ext_node)) then
+          if not referenceEq(InstNode.definition(extendsNode), InstNode.definition(ext_node)) and
+             not Flags.isSet(Flags.MERGE_COMPONENTS) then
             Error.addMultiSourceMessage(Error.FOUND_OTHER_BASECLASS,
               {AbsynUtil.pathString(elem.baseClassPath)},
               {InstNode.info(extendsNode), InstNode.info(ext_node)});
