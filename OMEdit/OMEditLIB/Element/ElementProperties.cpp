@@ -3520,7 +3520,7 @@ void CompositeModelSubModelAttributes::updateSubModelParameters()
 
 
   QStringList parameterNames, oldParameterValues, newParameterValues;
-  if(mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if(mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
     BaseEditor *pBaseEditor = mpElement->getGraphicsView()->getModelWidget()->getEditor();
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pBaseEditor);
 

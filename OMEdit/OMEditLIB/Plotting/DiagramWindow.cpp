@@ -63,7 +63,7 @@ DiagramWindow::DiagramWindow(QWidget *parent) : QWidget(parent)
  */
 void DiagramWindow::showVisualizationDiagram(ModelWidget *pModelWidget)
 {
-  if (pModelWidget && pModelWidget->getDiagramGraphicsView() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     setWindowTitle(pModelWidget->getLibraryTreeItem()->getName());
     mpModelWidget = pModelWidget;
     mpModelWidget->getDiagramGraphicsView()->setIsVisualizationView(true);

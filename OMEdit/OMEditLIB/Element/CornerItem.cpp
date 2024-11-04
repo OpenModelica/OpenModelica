@@ -54,7 +54,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   mIsSystemLibrary = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
   mIsElementMode = mpShapeAnnotation->getGraphicsView()->getModelWidget()->isElementMode();
   mIsInherited = mpShapeAnnotation->isInheritedShape();
-  mIsOMSConnector = (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
+  mIsOMSConnector = (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSSP() &&
                    (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
                     || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
                     || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()));
@@ -244,7 +244,7 @@ void ResizerItem::setActive()
 {
   setZValue(4000);
   if (mpComponent->isInheritedElement()
-      || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+      || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isSSP()
           && (mpComponent->getLibraryTreeItem()->getOMSConnector()
               || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
               || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
@@ -403,7 +403,7 @@ void OriginItem::setActive()
   setZValue(4000);
   if ((mpShapeAnnotation && mpShapeAnnotation->isInheritedShape())
       || (mpComponent && (mpComponent->isInheritedElement()
-                          || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+                          || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isSSP()
                               && (mpComponent->getLibraryTreeItem()->getOMSConnector()
                                   || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
                                   || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))))) {

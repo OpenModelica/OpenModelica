@@ -935,7 +935,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     return false;
   }
   // if we are dropping something on meta-model editor then we can skip Modelica stuff.
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     if (!pLibraryTreeItem->isSaved()) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.")
@@ -1115,7 +1115,7 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
 
 void GraphicsView::addElementToClass(Element *pElement)
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
+  if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
     // Add the component to model in OMC.
     /* Ticket:4132
      * Always send the full path so that addComponent API doesn't fail when it makes a call to getDefaultPrefixes.
@@ -1125,7 +1125,7 @@ void GraphicsView::addElementToClass(Element *pElement)
     MainWindow::instance()->getOMCProxy()->addComponent(pElement->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pElement->getPlacementAnnotation());
     // add uses annotation
     addUsesAnnotation(className, mpModelWidget->getLibraryTreeItem()->getNameStructure(), false);
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+  } else if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     // add SubModel Element
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->addSubModel(pElement);
@@ -1262,7 +1262,7 @@ void GraphicsView::deleteElement(Element *pElement)
     }
   }
   pElement->setSelected(false);
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
     pElement->emitDeleted();
   } else if (mpModelWidget->isNewApi()) {
@@ -1302,10 +1302,10 @@ void GraphicsView::deleteElement(Element *pElement)
  */
 void GraphicsView::deleteElementFromClass(Element *pElement)
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
     // delete the component from OMC
     MainWindow::instance()->getOMCProxy()->deleteComponent(pElement->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+  } else if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteSubModel(pElement->getName());
   }
@@ -1419,7 +1419,7 @@ QString GraphicsView::getUniqueElementName(const QString &nameStructure, QString
 bool GraphicsView::checkElementName(const QString &nameStructure, QString elementName)
 {
   // if element name is any keyword of Modelica
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
     if (ModelicaHighlighter::getKeywords().contains(elementName)) {
       return false;
     }
@@ -1567,12 +1567,12 @@ void GraphicsView::addConnectionToView(LineAnnotation *pConnectionLineAnnotation
  */
 bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo)
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+  if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     if (pCompositeModelEditor) {
       pCompositeModelEditor->createConnection(pConnectionLineAnnotation);
     }
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+  } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     // if TLM connection
     bool connectionSuccessful = false;
     if (pConnectionLineAnnotation->getOMSConnectionType() == oms_connection_tlm) {
@@ -1660,10 +1660,10 @@ int elementIndexInConnection(const QString &connectionElementName)
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
 {
   MainWindow *pMainWindow = MainWindow::instance();
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+  if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+  } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
   } else {
     // delete the connection
@@ -1740,7 +1740,7 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
  */
 void GraphicsView::updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation)
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+  if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     if (pCompositeModelEditor) {
       pCompositeModelEditor->updateConnection(pConnectionLineAnnotation);
@@ -1871,7 +1871,7 @@ QString GraphicsView::getConnectorName(Element *pConnector)
     name = pConnector->getName();
   }
 
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::OMS && pConnector->isConnectorSizing()) {
+  if (!mpModelWidget->getLibraryTreeItem()->isSSP() && pConnector->isConnectorSizing()) {
     name = QString("%1[%2]").arg(name).arg(numberOfElementConnections(pConnector) + 1);
   }
 
@@ -2873,7 +2873,7 @@ void GraphicsView::createActions()
   mpParametersAction->setStatusTip(tr("Shows the class parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Graphics View Properties Action
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     mpPropertiesAction = new QAction(Helper::systemSimulationInformation, this);
   } else {
     mpPropertiesAction = new QAction(Helper::properties, this);
@@ -3014,7 +3014,7 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return false;
   }
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     if (mpModelWidget->getLibraryTreeItem()->isComponentElement()) {
       switch (key) {
         case Qt::Key_Delete:
@@ -3154,9 +3154,9 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) ||
-             (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
+             (mpModelWidget->getLibraryTreeItem()->isCompositeModel() &&
               pElement->isPort()) ||
-             (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
+             (mpModelWidget->getLibraryTreeItem()->isSSP() &&
               (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
                || pElement->getLibraryTreeItem()->getOMSTLMBusConnector() || pElement->isPort())))) {
           return pElement;
@@ -3189,7 +3189,7 @@ Element* GraphicsView::stateElementAtPosition(QPoint position)
         if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->getAnnotation()->isState()) ||
-             (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
+             (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isModelica() &&
               !pElement->getLibraryTreeItem()->isNonExisting() && pElement->getLibraryTreeItem()->isState()))) {
           return pElement;
         }
@@ -3279,7 +3279,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
   // When clicking the start element
   if (!isCreatingConnection()) {
     QPointF startPos;
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
       startPos = roundPoint(pElement->mapToScene(pElement->boundingRect().center()));
     } else {
       startPos = snapPointToGrid(pElement->mapToScene(pElement->boundingRect().center()));
@@ -3304,7 +3304,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
     mpConnectionLineAnnotation->setEndElement(pElement);
     // update the last point to the center of element
     QPointF newPos;
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
       newPos = roundPoint(pElement->mapToScene(pElement->boundingRect().center()));
     } else {
       newPos = snapPointToGrid(pElement->mapToScene(pElement->boundingRect().center()));
@@ -3401,7 +3401,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
         QString endElementName = getConnectorName(pElement);
         mpConnectionLineAnnotation->setStartElementName(startElementName);
         mpConnectionLineAnnotation->setEndElementName(endElementName);
-        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
           CompositeModelEditor* editor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
           if (!editor->okToConnect(mpConnectionLineAnnotation)) {
             removeCurrentConnection();
@@ -3414,7 +3414,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
               removeCurrentConnection();
             }
           }
-        } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
           mpConnectionLineAnnotation->drawCornerItems();
           mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
           addConnectionToView(mpConnectionLineAnnotation, false);
@@ -3561,7 +3561,7 @@ void GraphicsView::removeCurrentTransition()
 void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   // if deleting a bus connection
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     if (pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()
         && pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getOMSBusConnector()
         && pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()
@@ -4327,7 +4327,7 @@ void GraphicsView::addClassAnnotation()
  */
 void GraphicsView::showParameters()
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
     MainWindow::instance()->getStatusBar()->showMessage(tr("Opening %1 parameters window").arg(mpModelWidget->getModelInstance()->getName()));
     MainWindow::instance()->getProgressBar()->setRange(0, 0);
     MainWindow::instance()->showProgressBar();
@@ -4354,10 +4354,10 @@ void GraphicsView::showParameters()
  */
 void GraphicsView::showGraphicsViewProperties()
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
     GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
     pGraphicsViewProperties->exec();
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     ModelWidget *pModelWidget = 0;
     if (mpModelWidget->getLibraryTreeItem()->isTopLevel()) {
       if (mpModelWidget->getLibraryTreeItem()->childrenSize() > 0) {
@@ -4622,7 +4622,7 @@ void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
   // check if the class is system library or a package or a OMSimulator model
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView() ||
       mpModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package ||
-      mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      mpModelWidget->getLibraryTreeItem()->isSSP()) {
     event->ignore();
     return;
   }
@@ -4759,7 +4759,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   bool eventConsumed = false;
   // if left button presses and we are creating a connector
   if (isCreatingConnection()) {
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
       mpConnectionLineAnnotation->addPoint(roundPoint(scenePos));
     } else {
       mpConnectionLineAnnotation->addPoint(snappedPoint);
@@ -4890,7 +4890,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   }
   //If creating connector, the end port shall be updated to the mouse position.
   if (isCreatingConnection()) {
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
       mpConnectionLineAnnotation->updateEndPoint(roundPoint(mapToScene(event->pos())));
     } else {
       mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
@@ -4993,9 +4993,9 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
     Element *pRootComponent = pComponent->getRootParentElement();
     if (pRootComponent) {
       removeCurrentConnection();
-      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
         pRootComponent->showSubModelAttributes();
-      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
         pRootComponent->handleOMSElementDoubleClick();
       } else {
         removeCurrentTransition();
@@ -5043,7 +5043,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
    * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
    */
   if (!isCreatingConnection() && !isCreatingTransition() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
       LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
       if (pTransitionLineAnnotation && pTransitionLineAnnotation->isTransition()) {
         pShapeAnnotation->editTransition();
@@ -5052,12 +5052,12 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
       }
       return;
     }
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
       LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
       if (pConnectionLineAnnotation && pConnectionLineAnnotation->isConnection()) {
         pConnectionLineAnnotation->showOMSConnection();
       }
-    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    } else if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
       pShapeAnnotation->showShapeAttributes();
       return;
     }
@@ -5153,11 +5153,11 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     mpModelWidget->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_A) {
     selectAll();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_X && isAnyItemSelectedAndEditable(event->key()) && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_X && isAnyItemSelectedAndEditable(event->key()) && mpModelWidget->getLibraryTreeItem()->isModelica()) {
     cutItems();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_C && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_C && mpModelWidget->getLibraryTreeItem()->isModelica()) {
     copyItems();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_V && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_V && mpModelWidget->getLibraryTreeItem()->isModelica()) {
     bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView();
     if (!isSystemLibrary) {
       pasteItems();
@@ -5291,7 +5291,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   }
   // if creating a connection
   if (isCreatingConnection()) {
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
       QMenu menu(MainWindow::instance());
       menu.addAction(mpCreateConnectorAction);
       menu.addSeparator();
@@ -5314,11 +5314,11 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     QMenu menu;
     mContextMenuStartPosition = mapToScene(mapFromGlobal(QCursor::pos()));
     mContextMenuStartPositionValid = true;
-    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
       modelicaGraphicsViewContextMenu(&menu);
-    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    } else if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
       compositeModelGraphicsViewContextMenu(&menu);
-    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
       omsGraphicsViewContextMenu(&menu);
     }
     menu.exec(event->globalPos());
@@ -5349,21 +5349,21 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     // construct context menu now
     QMenu menu;
     if (oneShapeSelected) {
-      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
         modelicaOneShapeContextMenu(pShapeAnnotation, &menu);
-      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      } else if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
         compositeModelOneShapeContextMenu(pShapeAnnotation, &menu);
-      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
         omsOneShapeContextMenu(pShapeAnnotation, &menu);
       }
     } else if (oneComponentSelected) {
-      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
         modelicaOneComponentContextMenu(pComponent, &menu);
-      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      } else if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
         compositeModelOneComponentContextMenu(pComponent, &menu);
-      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
         // No context menu for component of type OMS connector i.e., input/output signal or OMS bus connector.
-        if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+        if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isSSP()
             && (pComponent->getLibraryTreeItem()->getOMSConnector()
                 || pComponent->getLibraryTreeItem()->getOMSBusConnector()
                 || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
@@ -5372,11 +5372,11 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         omsOneComponentContextMenu(pComponent, &menu);
       }
     } else {
-      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
         modelicaMultipleItemsContextMenu(&menu);
-      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      } else if (mpModelWidget->getLibraryTreeItem()->isCompositeModel()) {
         compositeModelMultipleItemsContextMenu(&menu);
-      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
         omsMultipleItemsContextMenu(&menu);
       }
     }
@@ -5834,7 +5834,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mCreateModelWidgetComponents(false), mExtendsModifiersLoaded(false), mDerivedClassModifiersLoaded(false)
 {
   // create widgets based on library type
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem->isModelica()) {
     // icon graphics framework
     mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
     mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
@@ -5874,7 +5874,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mUpdateModelTimer.setSingleShot(true);
     mUpdateModelTimer.setInterval(500);
     connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
-  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (mpLibraryTreeItem->isSSP()) {
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
       mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
@@ -5902,7 +5902,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView = 0;
   }
   // Read the file for LibraryTreeItem::Text
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text && !mpLibraryTreeItem->isFilePathValid()) {
+  if (mpLibraryTreeItem->isText() && !mpLibraryTreeItem->isFilePathValid()) {
     QString contents = "";
     QFile file(mpLibraryTreeItem->getFileName());
     if (!file.open(QIODevice::ReadOnly)) {
@@ -5972,7 +5972,7 @@ QMap<QString, QString> ModelWidget::getDerivedClassModifiersMap()
  */
 bool ModelWidget::isNewApi()
 {
-  if (MainWindow::instance()->isNewApi() && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (MainWindow::instance()->isNewApi() && mpLibraryTreeItem->isModelica()) {
     return true;
   } else {
     return false;
@@ -6632,7 +6632,7 @@ void ModelWidget::createModelWidgetComponents()
     setLayout(mpMainLayout);
     MainWindow *pMainWindow = MainWindow::instance();
     // show hide widgets based on library type
-    if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpLibraryTreeItem->isModelica()) {
       connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
@@ -6664,7 +6664,7 @@ void ModelWidget::createModelWidgetComponents()
       mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpMainLayout->addWidget(mpIconGraphicsView, 1);
       mpUndoStack->clear();
-    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+    } else if (mpLibraryTreeItem->isText()) {
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
       QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
       if (Utilities::isCFile(fileInfo.suffix())) {
@@ -6693,7 +6693,7 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       mpMainLayout->addWidget(mpModelStatusBar);
-    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    } else if (mpLibraryTreeItem->isCompositeModel()) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
@@ -6744,7 +6744,7 @@ void ModelWidget::createModelWidgetComponents()
       }
       mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
-    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    } else if (mpLibraryTreeItem->isSSP()) {
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
         connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
         pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
@@ -6971,7 +6971,7 @@ void ModelWidget::reDrawModelWidget()
   QApplication::setOverrideCursor(Qt::WaitCursor);
   clearGraphicsViews();
   /* get model components, connection and shapes. */
-  if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (getLibraryTreeItem()->isCompositeModel()) {
     // read new CompositeModel name
     QString compositeModelName = getCompositeModelName();
     mpLibraryTreeItem->setName(compositeModelName);
@@ -6985,7 +6985,7 @@ void ModelWidget::reDrawModelWidget()
 //    if (mpEditor) {
 //      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
 //    }
-  } else if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (getLibraryTreeItem()->isSSP()) {
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
     // get the submodels and connections
     drawOMSModelIconElements();
@@ -7314,7 +7314,7 @@ void ModelWidget::clearSelection()
  */
 void ModelWidget::updateClassAnnotationIfNeeded()
 {
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem->isModelica()) {
     if (mpIconGraphicsView && mpIconGraphicsView->isAddClassAnnotationNeeded()) {
       mpIconGraphicsView->addClassAnnotation();
       mpIconGraphicsView->setAddClassAnnotationNeeded(false);
@@ -7334,7 +7334,7 @@ void ModelWidget::updateModelText()
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   // Don't allow updating the child LibraryTreeItems of OMS model
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpLibraryTreeItem->isSSP()) {
     LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem->getModelWidget()) {
       pModelLibraryTreeItem->getModelWidget()->setWindowTitle(QString("%1*").arg(pModelLibraryTreeItem->getName()));
@@ -7359,7 +7359,7 @@ void ModelWidget::updateModelText()
   }
 #if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (mpLibraryTreeItem->isCompositeModel()) {
     MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(this);
   }
 #endif
@@ -7371,7 +7371,7 @@ void ModelWidget::updateModelText()
  */
 void ModelWidget::callHandleCollidingConnectionsIfNeeded()
 {
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && mpDiagramGraphicsView && isHandleCollidingConnectionsNeeded()) {
+  if (mpLibraryTreeItem->isModelica() && mpDiagramGraphicsView && isHandleCollidingConnectionsNeeded()) {
     mpDiagramGraphicsView->handleCollidingConnections();
     setHandleCollidingConnectionsNeeded(false);
   }
@@ -7406,7 +7406,7 @@ void ModelWidget::updateUndoRedoActions()
 bool ModelWidget::writeCoSimulationResultFile(QString fileName)
 {
   // this function is only for meta-models
-  if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::CompositeModel) {
+  if (!mpLibraryTreeItem->isCompositeModel()) {
     return false;
   }
   // first remove the result file.
@@ -7558,7 +7558,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
 bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile)
 {
   // this function is only for meta-models
-  if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::CompositeModel) {
+  if (!mpLibraryTreeItem->isCompositeModel()) {
     return false;
   }
   // first remove the visual xml file.
@@ -8070,7 +8070,7 @@ void ModelWidget::beginMacro(const QString &text)
  */
 void ModelWidget::endMacro()
 {
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpLibraryTreeItem->isSSP()) {
     createOMSimulatorUndoCommand("");
   }
   mpUndoStack->endMacro();
@@ -8449,7 +8449,7 @@ void ModelWidget::createUndoStack()
    * For OMSimulator models only the top level model has the undo stack.
    * Nested systems and components use the same undo stack.
    */
-  if (mpLibraryTreeItem && !mpLibraryTreeItem->isTopLevel() && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpLibraryTreeItem && !mpLibraryTreeItem->isTopLevel() && mpLibraryTreeItem->isSSP()) {
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem) {
@@ -8478,7 +8478,7 @@ void ModelWidget::createUndoStack()
  */
 void ModelWidget::handleCanUndoRedoChanged()
 {
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpLibraryTreeItem->isSSP()) {
     ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
     if (pModelWidget) {
       pModelWidget->updateUndoRedoActions();
@@ -9835,7 +9835,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
     ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
     if (pSubModelWidget == pModelWidget) {
-      if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      if (pModelWidget->getLibraryTreeItem()->isModelica()) {
         if (pModelWidget->isNewApi()) {
           pModelWidget->loadDiagramViewNAPI();
         } else {
@@ -9855,7 +9855,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (pModelWidget->getLibraryTreeItem()->isModelica()) {
       if (pModelWidget->isNewApi()) {
         pModelWidget->loadDiagramViewNAPI();
       } else {
@@ -9869,17 +9869,17 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
     setActiveSubWindow(pSubWindow);
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (pModelWidget->getLibraryTreeItem()->isSSP()) {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
   }
-  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+  if (pModelWidget->getLibraryTreeItem()->isText()) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
     if (!pModelWidget->getEditor()->isVisible()) {
       pModelWidget->getEditor()->show();
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
       loadPreviousViewType(pModelWidget);
     } else {
@@ -9887,7 +9887,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
   }
   pModelWidget->updateViewButtonsBasedOnAccess();
-  if (!checkPreferedView || pModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::Modelica) {
+  if (!checkPreferedView || !pModelWidget->getLibraryTreeItem()->isModelica()) {
     return;
   }
   // get the preferred view to display
@@ -10030,7 +10030,7 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
     shouldValidateText = true;
   } else if (event->type() == QEvent::FocusIn && qobject_cast<LibraryTreeView*>(object)) {
     ModelWidget *pCurrentModelWidget = getCurrentModelWidget();
-    if (pCurrentModelWidget && pCurrentModelWidget->getLibraryTreeItem() && pCurrentModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (pCurrentModelWidget && pCurrentModelWidget->getLibraryTreeItem() && pCurrentModelWidget->getLibraryTreeItem()->isSSP()) {
       shouldValidateText = true;
     }
   }
@@ -10070,7 +10070,7 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
               ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
               if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
                 QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
-                if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+                if (pModelWidget->getLibraryTreeItem()->isModelica()) {
                   listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
                 } else {
                   listItem->setText(pModelWidget->getLibraryTreeItem()->getName());
@@ -10103,7 +10103,7 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
           }
           return true;
         case Qt::Key_4: // Ctrl+4 shows the documentation view
-          if (pCurrentModelWidget && pCurrentModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+          if (pCurrentModelWidget && pCurrentModelWidget->getLibraryTreeItem()->isModelica()) {
             pCurrentModelWidget->showDocumentationView();
           }
           return true;
@@ -10163,7 +10163,7 @@ void ModelWidgetContainer::changeRecentModelsListSelection(bool moveDown)
  */
 void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
 {
-  if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     // write dummy csv file for 3d view
     QString fileName;
     if (pModelWidget->getLibraryTreeItem()->getFileName().isEmpty()) {
@@ -10307,7 +10307,7 @@ void ModelWidgetContainer::openModelWidgetsAndSelectElement(QHash<QString, QPair
  */
 void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
 {
-  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pModelWidget->getLibraryTreeItem()->isModelica()) {
     switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
       case StringHandler::Icon:
         pModelWidget->getIconViewToolButton()->setChecked(true);
@@ -10320,7 +10320,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
       case StringHandler::ModelicaText:
         pModelWidget->getTextViewToolButton()->setChecked(true);
@@ -10331,7 +10331,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+  } else if (pModelWidget->getLibraryTreeItem()->isText()) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
   }
 }
@@ -10393,11 +10393,11 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
      * GitCommands::getGitStdout causes crash in Linux.
      */
     //gitWorkingDirectory = !pLibraryTreeItem->getFileName().isEmpty() && GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
-    if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (pLibraryTreeItem->isModelica()) {
       modelica = true;
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    } else if (pLibraryTreeItem->isCompositeModel()) {
       compositeModel = true;
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    } else if (pLibraryTreeItem->isSSP()) {
       oms = true;
       omsModel = pLibraryTreeItem->isTopLevel() ? true : false;
       omsSystem = false;

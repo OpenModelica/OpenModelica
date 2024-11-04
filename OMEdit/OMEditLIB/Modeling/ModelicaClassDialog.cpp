@@ -2020,7 +2020,7 @@ void SaveChangesDialog::listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem)
     if (pChildLibraryTreeItem && !pChildLibraryTreeItem->isSystemLibrary()) {
       if (!pChildLibraryTreeItem->isSaved()) {
         QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
-        if (pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+        if (pChildLibraryTreeItem->isModelica()) {
           pListItem->setText(pChildLibraryTreeItem->getNameStructure());
         } else {
           pListItem->setText(pChildLibraryTreeItem->getName());
@@ -2290,7 +2290,7 @@ RenameItemDialog::RenameItemDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *p
   : QDialog(pParent), mpLibraryTreeItem(pLibraryTreeItem)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem->isModelica()) {
     setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::rename).arg(mpLibraryTreeItem->getNameStructure()));
   } else {
     setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::rename).arg(mpLibraryTreeItem->getName()));
@@ -2358,7 +2358,7 @@ void RenameItemDialog::renameItem()
   if (mpNameTextBox->text().compare(mpLibraryTreeItem->getName()) == 0) {
     return;
   }
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+  if (mpLibraryTreeItem->isText()) {
     // check if file/folder already exists
     QFileInfo oldFileInfo(mpLibraryTreeItem->getFileName());
     QString fileOrFolderPath = QString("%1/%2").arg(oldFileInfo.absoluteDir().absolutePath()).arg(mpNameTextBox->text());
@@ -2383,14 +2383,14 @@ void RenameItemDialog::renameItem()
         updateChildrenPath(mpLibraryTreeItem);
       }
     }
-  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (mpLibraryTreeItem->isCompositeModel()) {
     if (mpLibraryTreeItem->getModelWidget()) {
       CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
       RenameCompositeModelCommand *pRenameCompositeModelCommand = new RenameCompositeModelCommand(pCompositeModelEditor, mpLibraryTreeItem->getName(), mpNameTextBox->text());
       mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pRenameCompositeModelCommand);
       mpLibraryTreeItem->getModelWidget()->updateModelText();
     }
-  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (mpLibraryTreeItem->isSSP()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
@@ -2406,7 +2406,7 @@ void RenameItemDialog::renameItem()
                                                                           mpLibraryTreeItem->getNameStructure(), newEditedCref);
       }
     }
-  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  } else if (mpLibraryTreeItem->isModelica()) {
     qDebug() << "Rename feature not implemented for Modelica library type.";
   } else {
     qDebug() << "Unable to rename, unknown library type.";

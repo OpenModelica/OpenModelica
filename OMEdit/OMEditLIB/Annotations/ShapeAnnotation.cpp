@@ -1099,7 +1099,7 @@ void ShapeAnnotation::setShapeFlags(bool enable)
    */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
       && !mpGraphicsView->isVisualizationView() && !isInheritedShape()
-      && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+      && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()
            && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
                || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
                || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
@@ -1239,7 +1239,7 @@ void ShapeAnnotation::manhattanizeShape(bool addToStack)
     }
     if (addToStack) {
       ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
-      if (pModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::OMS) {
+      if (!pModelWidget->getLibraryTreeItem()->isSSP()) {
         pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, getOMCShapeAnnotation()));
       }
     }
@@ -1561,7 +1561,7 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
       ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
       LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
 
-      if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      if (pModelWidget->getLibraryTreeItem()->isSSP()) {
         if (pLineAnnotation) {
           pLineAnnotation->updateOMSConnection();
           pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartElementName(), pLineAnnotation->getEndElementName()));
@@ -1812,7 +1812,7 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
  */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();

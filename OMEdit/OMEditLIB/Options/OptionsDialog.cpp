@@ -7204,7 +7204,7 @@ void DiscardLocalTranslationFlagsDialog::listLocalTranslationFlagsClasses(Librar
 {
   for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !pChildLibraryTreeItem->isSystemLibrary()) {
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->isModelica() && !pChildLibraryTreeItem->isSystemLibrary()) {
       if (pChildLibraryTreeItem->mSimulationOptions.isValid()) {
         QListWidgetItem *pListItem = new QListWidgetItem(mpClassesWithLocalTranslationFlagsListWidget);
         pListItem->setCheckState(Qt::Checked);

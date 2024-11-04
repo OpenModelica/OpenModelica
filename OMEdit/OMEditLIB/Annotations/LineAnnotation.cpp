@@ -208,7 +208,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
      * Or use black color if no shape is found even in inheritance.
      * Dymola is doing it the way explained above. The Modelica specification doesn't say anything about it.
      */
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isModelica()) {
       if (pStartElement->getShapesList().size() > 0) {
         mLineColor = pStartElement->getShapesList().at(0)->getLineColor();
       } else {
@@ -1511,7 +1511,7 @@ QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &v
   if (change == QGraphicsItem::ItemSelectedHasChanged) {
 
     // if connection selection is changed in CompositeModel
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
       MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
     }
   }
@@ -1586,7 +1586,7 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
  */
 void LineAnnotation::updateConnectionAnnotation()
 {
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
   } else {
@@ -1617,7 +1617,7 @@ void LineAnnotation::updateConnectionTransformation()
     mStartAndEndElementsSelected = false;
   }
 
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()) {
     updateOMSConnection();
   } else {
     if (!mOldAnnotation.isEmpty()) {

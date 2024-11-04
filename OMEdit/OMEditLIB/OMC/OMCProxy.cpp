@@ -361,7 +361,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
           int i = 0;
           while (i < MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->childrenSize()) {
             LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->child(i);
-            if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+            if (pLibraryTreeItem && pLibraryTreeItem->isModelica()) {
               MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
               i = 0;  //Restart iteration
             } else {

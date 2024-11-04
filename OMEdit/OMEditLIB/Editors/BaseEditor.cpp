@@ -1863,7 +1863,7 @@ bool PlainTextEdit::canInsertFromMimeData(const QMimeData *source) const
   // check mimeData to see if we can insert from it
   if (source->hasFormat(Helper::modelicaComponentFormat)) {
     return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpBaseEditor->getModelWidget()->isElementMode()
-        && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica;
+        && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isModelica();
   } else {
     return QPlainTextEdit::canInsertFromMimeData(source);
   }
@@ -1904,7 +1904,7 @@ void PlainTextEdit::focusInEvent(QFocusEvent *event)
   MainWindow::instance()->getAutoSaveTimer()->stop();
   // Issue #8723. If we are editing the documentation then save and close the documentation editing when focus moves to text view.
   if (dynamic_cast<ModelicaEditor*>(mpBaseEditor)
-      && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+      && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isModelica()
       && MainWindow::instance()->getDocumentationDockWidget()->isVisible()
       && MainWindow::instance()->getDocumentationWidget()->isEditingDocumentation()) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpBaseEditor->getModelWidget()->getLibraryTreeItem());
@@ -2086,7 +2086,7 @@ bool BaseEditor::isModelicaModelInPackageOneFile()
 {
   return (mpModelWidget && mpModelWidget->getLibraryTreeItem() &&
           mpModelWidget->getLibraryTreeItem()->isInPackageOneFile() &&
-          mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica);
+          mpModelWidget->getLibraryTreeItem()->isModelica());
 }
 
 /*!
