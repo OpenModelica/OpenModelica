@@ -1709,7 +1709,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
     // if we first updated the parent class then the child classes needs to be updated as well.
     if (pParentLibraryTreeItem != pLibraryTreeItem) {
       pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8,
-                            pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure, false);
+                            pParentLibraryTreeItem->isSaveFolderStructure(), false);
       updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
       pParentLibraryTreeItem->updateClassInformation();
     }
@@ -3544,7 +3544,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           // add actions to Export menu
           exportMenu.addAction(mpExportFMUAction);
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
-              && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+              && pLibraryTreeItem->isSaveFolderStructure()) {
             exportMenu.addAction(mpExportReadonlyPackageAction);
             exportMenu.addAction(mpExportEncryptedPackageAction);
           }
@@ -4917,7 +4917,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     return;
   }
   if (pLibraryTreeItem->isModelica()) {
-    if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+    if (pLibraryTreeItem->isSaveFolderStructure()) {
       QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("It is not possible to save as a Modelica package saved in a directory hierarchy Mapping."), QMessageBox::Ok);
     } else {
       saveModelicaLibraryTreeItem(pLibraryTreeItem, true);
@@ -5043,12 +5043,12 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
 bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, bool saveAs)
 {
   bool result = false;
-  if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+  if (pLibraryTreeItem->isSaveInOneFile()) {
     result = saveModelicaLibraryTreeItemOneFile(pLibraryTreeItem, saveAs);
     if (result) {
       saveChildLibraryTreeItemsOneFile(pLibraryTreeItem);
     }
-    if (pLibraryTreeItem->parent() && pLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+    if (pLibraryTreeItem->parent() && pLibraryTreeItem->parent()->isSaveFolderStructure()) {
       saveModelicaLibraryTreeItemFolder(pLibraryTreeItem->parent());
     }
   } else {
@@ -5091,7 +5091,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       }
     } else if (pLibraryTreeItem->isFilePathValid()
                && pLibraryTreeItem->parent()
-               && pLibraryTreeItem->parent()->getSaveContentsType() != LibraryTreeItem::SaveFolderStructure) {
+               && !pLibraryTreeItem->parent()->isSaveFolderStructure()) {
       fileName = pLibraryTreeItem->getFileName();
     } else {
       QFileInfo fileInfo(pLibraryTreeItem->parent()->getFileName());

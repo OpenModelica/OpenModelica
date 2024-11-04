@@ -1830,7 +1830,7 @@ bool OMCProxy::createSubClass(QString type, QString className, LibraryTreeItem *
                  .arg(pExtendsLibraryTreeItem->getNameStructure()).arg(equationOrAlgorithm).arg(className);
   }
   QString fileName;
-  if (pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+  if (pParentLibraryTreeItem->isSaveInOneFile()) {
     fileName = pParentLibraryTreeItem->mClassInformation.fileName;
   } else {
     fileName = pParentLibraryTreeItem->getNameStructure() + "." + className;

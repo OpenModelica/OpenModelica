@@ -120,6 +120,8 @@ public:
   Access getAccess();
   void setSaveContentsType(LibraryTreeItem::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
   SaveContentsType getSaveContentsType() {return mSaveContentsType;}
+  bool isSaveInOneFile() const {return mSaveContentsType == LibraryTreeItem::SaveInOneFile;}
+  bool isSaveFolderStructure() const {return mSaveContentsType == LibraryTreeItem::SaveFolderStructure;}
   void setPixmap(QPixmap pixmap) {mPixmap = pixmap;}
   QPixmap getPixmap() {return mPixmap;}
   void setDragPixmap(QPixmap dragPixmap) {mDragPixmap = dragPixmap;}
