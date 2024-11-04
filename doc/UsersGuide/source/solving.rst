@@ -330,12 +330,17 @@ Importing initial values from previous simulations
 In many use cases it is useful to import initial values from previous simulations, possibly obtained with
 another Modelica tool, which are saved in a .mat file. There are two different options to do that.
 
-The first option is to solve the initial equations specified by the Modelica model, using the previous simulation results to
-obtain good initial guesses for the iterative solvers. This can be very helpful in case the initialization problem involves the
+Using previous simulation results as start values for the initial equations
+***************************************************************************
+
+The first option is to solve the initial equations specified by the Modelica model, using the previous simulation results as
+initial guesses for the iterative solvers, in case they are needed. This can be very helpful in case the initialization problem involves the
 solution of large nonlinear systems of equations by means of iterative algorithms, whose convergence is sensitive to the selected
-initial guess. Importing a previously found solution allows the OpenModelica solver to pick very good initial guesses for the
-unknowns of the iterative solvers, thus achieving convergence with a few iterations at most. Since the initial equations
-are solved anyway, the values of all variables and derivatives, as well as of all parameters with `fixed = false` attribute,
+initial guess.
+
+Importing a previously found solution allows the OpenModelica solver to pick very good initial guesses for the
+unknowns of the iterative solvers, thus achieving convergence with a few iterations. Since the initial equations
+are solved in the process, the values of all variables and derivatives, as well as of all parameters with `fixed = false` attribute,
 are re-computed and fully consistent with the selected initial conditions, even in case the previously saved simulation results
 refer to a slightly different model configuration. Note that parameters with `fixed = true` will also get their values from the
 imported .mat file, so if you want to change them you need to edit the .mat file accordingly.
@@ -348,18 +353,40 @@ when loading the model again later on. It is also possible to specify at which p
 should be picked, by means of the *Simulation Setup | Simulation Flags | Equation System Initialization Time* input field, or by setting
 the simulation flag :ref:`-iit=initialTimeValue <simflag-iit>`.
 
-The second option is to skip the solution of the initial equations entirely, and to directly start the simulation
-using the imported start values. In this case, the initial equations of the model are ignored, and the initial values of
-all parameters and state variables are set to the values loaded from the .mat file. This option is useful in particular
-to restart a simulation from the final state of a previous one, without bothering about changing the initial conditions
-manually in the Modelica model. Note that the algebraic variables will be recomputed starting from the imported initial
-state and parameter values; the values of algebraic variables in the imported file will be used to initialize iteration
-variables in nonlinear implicit equations of the simulation model, or otherwise ignored.
+Using previous simulation results to directly initialize a simulation
+*********************************************************************
+
+The second option is to skip the solution of the initial equations entirely, directly starting the simulation
+with the imported start values. In this case, the initial equations of the model are ignored, and the initial values of
+all parameters and state variables are directly set to the values loaded from the .mat file. This option is useful
+to restart a simulation from the final state of a previous one, ignoring whatever initial conditions are declared in the
+Modelica model by either fixed = true attributes or initial equations.
+
+Note that state variables and parameters will be directly initialized to the imported values, while algebraic variables
+will be recomputed with the regular simulation equations, on the basis of the imported initial state and parameter values.
+The values of algebraic variables in the imported file will only be used to initialize iteration variables, in case this
+computation involves nonlinear implicit equations and iterative solvers, otherwise they will be ignored.
 
 To activate this second option, set *Simulation Setup | Simulation Flag | Initialization Method* to *none* in OMEdit,
 or set the simulation flag :ref:`-iim=none <simflag-iim>`. Also in this case, activating the checkbox *Save simulation
 flags inside model, i.e. __OpenModelica_simulationFlags annotation* saves this option in an
 *__OpenModelica_simulationFlags(iim=none)* annotation, so it is retained for future simulations of the same model.
+
+Beware of missing variables in the simulation result file
+*********************************************************
+
+When importing simulation results to initialize a new simulation, bear in mind that, by default, protected and hidden variables
+are *not saved* to the .mat file, so they will be missing when importing the simulation results for initialization. This is
+particularly dangerous when the imported values are used directly, as unsaved protected or hidden variables will not be
+initialized and will retain their default zero value, which is likely to cause numerical problems such as division by zero
+when the simulation is started.
+
+To avoid this problem, make sure you also save protected and hidden variables in the simulation result file, by setting the
+corresponding checkboxes in the *Simulation Setup | Output* tab of OMEdit, or by setting the simulation flags
+:ref:`-emit_protected <simflag-emit-protected>` and :ref:`-ignoreHideResult <simflag-ignorehideresult>`.
+
+Example of use
+**************
 
 The following minimal working example demonstrates the use of the initial value import feature. You can create a new package
 `ImportInitialValues` in OMEdit, copy and paste its code from here, and then run the different models in it.
