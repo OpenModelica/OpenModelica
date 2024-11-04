@@ -1344,7 +1344,7 @@ void CompositeModelHighlighter::initializeSettings()
   font.setFamily(mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
   font.setPointSizeF(mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK
   mpPlainTextEdit->setTabStopWidth(mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));

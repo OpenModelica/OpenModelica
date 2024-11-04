@@ -668,7 +668,7 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
   mDocumentationFile.open(QIODevice::WriteOnly);
   QTextStream out(&mDocumentationFile);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   out.setEncoding(QStringConverter::Utf8);
 #else
   out.setCodec(Helper::utf8.toUtf8().constData());
@@ -1552,7 +1552,7 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
  */
 void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().y() != 0 && event->modifiers().testFlag(Qt::ControlModifier)) {
 #else // QT_VERSION_CHECK
   if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
@@ -1561,7 +1561,7 @@ void DocumentationViewer::wheelEvent(QWheelEvent *event)
     /* ticket:4349 Take smaller steps for zooming.
      * Also set the minimum zoom to readable size.
      */
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().y() > 0) {
 #else // QT_VERSION_CHECK
   if (event->delta() > 0) {

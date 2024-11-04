@@ -1525,7 +1525,7 @@ QString OMCProxy::getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibrary
 
 /*!
  * \brief OMCProxy::getDocumentationAnnotation
- * Returns the documentation annotation of a model. Recursivly looks into the parent classes for __OpenModelica_infoHeader sections.\n
+ * Returns the documentation annotation of a model. Recursively looks into the parent classes for __OpenModelica_infoHeader sections.\n
  * The documenation is not standardized, so for any non-standard html documentation add <pre></pre> tags.
  * \param pLibraryTreeItem
  * \return the documentation

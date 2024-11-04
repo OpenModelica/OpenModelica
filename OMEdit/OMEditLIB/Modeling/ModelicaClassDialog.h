@@ -73,7 +73,7 @@ private:
   QDialogButtonBox *mpButtonBox;
 
   void findAndSelectLibraryTreeItem(const QRegExp &regExp);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   void findAndSelectLibraryTreeItem(const QRegularExpression &regExp);
 #endif
 private slots:

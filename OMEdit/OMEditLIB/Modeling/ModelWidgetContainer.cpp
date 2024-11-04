@@ -2130,7 +2130,7 @@ void GraphicsView::bringForward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
   mShapesList.swapItemsAt(shapeIndex, shapeIndex + 1);
 #else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex, shapeIndex + 1);
@@ -2174,7 +2174,7 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
   mShapesList.swapItemsAt(shapeIndex - 1, shapeIndex);
 #else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex - 1, shapeIndex);
@@ -4661,7 +4661,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
     QString className;
     dataStream >> className;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     if (addComponent(className, mapToScene(event->position().toPoint()))) {
 #else
     if (addComponent(className, mapToScene(event->pos()))) {
@@ -5426,7 +5426,7 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
  */
 void GraphicsView::wheelEvent(QWheelEvent *event)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   static QPoint angleDelta = QPoint(0, 0);
   angleDelta += event->angleDelta();
   QPoint numDegrees = angleDelta / 8;
@@ -7422,7 +7422,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream resultFile(&file);
     // set to UTF-8
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   resultFile.setEncoding(QStringConverter::Utf8);
 #else
     resultFile.setCodec(Helper::utf8.toUtf8().constData());
@@ -7475,7 +7475,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         // get the submodel position
         double values[] = {0.0, 0.0, 0.0};
         QGenericMatrix<3, 1, double> cX_R_cG_cG(values);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         QStringList subModelPositionList = pSubModelComponent->getElementInfo()->getPosition().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
         QStringList subModelPositionList = pSubModelComponent->getElementInfo()->getPosition().split(",", QString::SkipEmptyParts);
@@ -7487,7 +7487,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the submodel angle
         double subModelPhi[3] = {0.0, 0.0, 0.0};
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         QStringList subModelAngleList = pSubModelComponent->getElementInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
         QStringList subModelAngleList = pSubModelComponent->getElementInfo()->getAngle321().split(",", QString::SkipEmptyParts);
@@ -7500,7 +7500,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         QGenericMatrix<3, 3, double> cX_A_cG = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(subModelPhi));
         // get the interface position
         QGenericMatrix<3, 1, double> ci_R_cX_cX(values);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         QStringList interfacePositionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
         QStringList interfacePositionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", QString::SkipEmptyParts);
@@ -7512,7 +7512,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the interface angle
         double interfacePhi[3] = {0.0, 0.0, 0.0};
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         QStringList interfaceAngleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
         QStringList interfaceAngleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", QString::SkipEmptyParts);
@@ -7585,7 +7585,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream visualFile(&file);
     // set to UTF-8
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     visualFile.setEncoding(QStringConverter::Utf8);
 #else
     visualFile.setCodec(Helper::utf8.toUtf8().constData());
@@ -7944,7 +7944,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         //              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
         // get the angle
         double phi[3] = {0.0, 0.0, 0.0};
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         QStringList angleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
         QStringList angleList = pInterfaceComponent->getElementInfo()->getAngle321().split(",", QString::SkipEmptyParts);
@@ -7957,7 +7957,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         QGenericMatrix<3, 3, double> T = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
         // get the position
         double position[3] = {0.0, 0.0, 0.0};
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         QStringList positionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
         QStringList positionList = pInterfaceComponent->getElementInfo()->getPosition().split(",", QString::SkipEmptyParts);
@@ -9444,7 +9444,7 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
 /*!
  * \brief ModelWidget::removeInheritedClasses
  * \param pLibraryTreeItem
- * Removes the connect signal/slot of all LibraryTreeItem's recursivly.
+ * Removes the connect signal/slot of all LibraryTreeItem's recursively.
  */
 void ModelWidget::removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
 {
@@ -10633,7 +10633,7 @@ void ModelWidgetContainer::printModel()
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pModelWidget->getEditor());
       // set print options if text is selected
       if (pModelicaEditor->getPlainTextEdit()->textCursor().hasSelection()) {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         pPrintDialog->setOption(QAbstractPrintDialog::PrintSelection);
 #else
         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);

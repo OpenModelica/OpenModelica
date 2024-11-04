@@ -875,7 +875,7 @@ int PlainTextEdit::lineNumberAreaWidth()
     ++digits;
   }
   const QFontMetrics fm(document()->defaultFont());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   int space = fm.horizontalAdvance(QLatin1Char('9')) * digits;
 #else // QT_VERSION_CHECK
   int space = fm.width(QLatin1Char('9')) * digits;
@@ -1061,7 +1061,7 @@ void PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
         QMenu menu(this);
         mpBaseEditor->getToggleBreakpointAction()->setData(QStringList() << fileName << QString::number(lineNumber));
         menu.addAction(mpBaseEditor->getToggleBreakpointAction());
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         menu.exec(event->globalPosition().toPoint());
 #else
         menu.exec(event->globalPos());
@@ -1797,7 +1797,7 @@ QMimeData* PlainTextEdit::createMimeDataFromSelection() const
     const int selectionStart = cursor.selectionStart();
     const int endOfDocument = tempDocument->characterCount() - 1;
     for (QTextBlock current = start; current.isValid() && current != end; current = current.next()) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   foreach (const QTextLayout::FormatRange &range, current.layout()->formats()) {
 #else // QT_VERSION_CHECK
   foreach (const QTextLayout::FormatRange &range, current.layout()->additionalFormats()) {
@@ -1992,7 +1992,7 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
         QString rectReplacement = QLatin1String(" ") + replacement + QLatin1String("); ");
 
         const QFontMetrics fm(document()->defaultFont());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.horizontalAdvance(rectReplacement), lineRect.height());
 #else // QT_VERSION_CHECK
         QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.width(rectReplacement), lineRect.height());
@@ -2040,7 +2040,7 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
 void PlainTextEdit::wheelEvent(QWheelEvent *event)
 {
   if (event->modifiers() & Qt::ControlModifier) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().x() > 0 || event->angleDelta().y() > 0) {
 #else // QT_VERSION_CHECK
   if (event->delta() > 0) {

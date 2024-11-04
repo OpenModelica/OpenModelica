@@ -221,7 +221,7 @@ public:
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   QStringList mimeTypes() const override;
   QMimeData* mimeData(const QModelIndexList &indexes) const override;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;
 #endif
   bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;

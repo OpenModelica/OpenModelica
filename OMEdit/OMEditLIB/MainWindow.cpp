@@ -127,15 +127,15 @@ MainWindow::MainWindow(QWidget *parent)
    * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
    * DebuggerConfiguration section respectively from the settings file.
    */
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   qRegisterMetaType<RecentFile>("RecentFile");
   qRegisterMetaType<FindTextOM>("FindTextOM");
   qRegisterMetaType<DebuggerConfiguration>("DebuggerConfiguration");
-#else // #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
-#endif // #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
@@ -911,7 +911,7 @@ void MainWindow::beforeClosingMainWindow()
   if (OptionsDialog::instance()->getFMIPage()->getDeleteFMUDirectoryAndModelCheckBox()->isChecked()) {
     foreach (QString fmuDirectory, mFMUDirectoriesList) {
       if (QDir().exists(fmuDirectory)) {
-        Utilities::removeDirectoryRecursivly(fmuDirectory);
+        Utilities::removeDirectoryRecursively(fmuDirectory);
       }
     }
     mFMUDirectoriesList.clear();
@@ -919,7 +919,7 @@ void MainWindow::beforeClosingMainWindow()
   // Delete the MOL directories
   foreach (QString molDirectory, mMOLDirectoriesList) {
     if (QDir().exists(molDirectory)) {
-      Utilities::removeDirectoryRecursivly(molDirectory);
+      Utilities::removeDirectoryRecursively(molDirectory);
     }
   }
   mMOLDirectoriesList.clear();
@@ -1482,7 +1482,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   QFile omnotebookFile(omnotebookFileName);
   omnotebookFile.open(QIODevice::WriteOnly);
   QTextStream textStream(&omnotebookFile);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   textStream.setEncoding(QStringConverter::Utf8);
 #else
   textStream.setCodec(Helper::utf8.toUtf8().constData());
@@ -1721,7 +1721,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       throw OMPlot::PlotException("Invalid input" + QString(autoScale));
     }
     // plot variables
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList variablesList = QString(variables).split(" ", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
     QStringList variablesList = QString(variables).split(" ", QString::SkipEmptyParts);
@@ -3100,7 +3100,7 @@ void MainWindow::openTerminal()
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   const QStringList args(QProcess::splitCommand(arguments));
   process.start(terminalCommand, args);
 #else

@@ -192,7 +192,7 @@ void FmuExportOutputWidget::compileModel()
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
 #else
   connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
@@ -364,7 +364,7 @@ void FmuExportOutputWidget::runPostCompilation()
   connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
   connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
   connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
 #else
   connect(mpPostCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
@@ -498,7 +498,7 @@ void FmuExportOutputWidget::zipFMU()
   connect(mpZipCompilationProcess, SIGNAL(started()), SLOT(ZipCompilationProcessStarted()));
   connect(mpZipCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readZipCompilationStandardOutput()));
   connect(mpZipCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readZipCompilationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpZipCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(ZipCompilationProcessError(QProcess::ProcessError)));
 #else
   connect(mpZipCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(ZipCompilationProcessError(QProcess::ProcessError)));

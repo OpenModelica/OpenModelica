@@ -256,7 +256,7 @@ Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
 
 QSize Label::minimumSizeHint() const
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
 #else // QT_VERSION_CHECK
   if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
@@ -264,7 +264,7 @@ QSize Label::minimumSizeHint() const
     return QLabel::minimumSizeHint();
   }
   const QFontMetrics &fm = fontMetrics();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance("..."), fm.height()+5);
 #else // QT_VERSION_CHECK
   QSize size(fm.width("..."), fm.height()+5);
@@ -274,7 +274,7 @@ QSize Label::minimumSizeHint() const
 
 QSize Label::sizeHint() const
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
 #else // QT_VERSION_CHECK
   if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
@@ -282,7 +282,7 @@ QSize Label::sizeHint() const
     return QLabel::sizeHint();
   }
   const QFontMetrics& fm = fontMetrics();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance(mText), fm.height()+5);
 #else // QT_VERSION_CHECK
   QSize size(fm.width(mText), fm.height()+5);
@@ -459,7 +459,7 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
   setProcessState(QProcess::NotRunning);
 }
 
-#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
 /*!
  * \brief QDetachableProcess::start
  * Starts a process and detaches from it.
@@ -624,7 +624,7 @@ QSettings* Utilities::getApplicationSettings()
   if (!init) {
     init = 1;
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
 #endif
   }
@@ -898,7 +898,7 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
 qint64 Utilities::getProcessId(QProcess *pProcess)
 {
   qint64 processId = 0;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
   processId = pProcess->processId();
 #else /* Qt4 */
 #if defined(_WIN32)
@@ -1235,18 +1235,18 @@ QList<QPointF> Utilities::liangBarskyClipper(float xmin, float ymin, float xmax,
 }
 
 /*!
- * \brief Utilities::removeDirectoryRecursivly
+ * \brief Utilities::removeDirectoryRecursively
  * Removes the directory recursively.
  * \param path
  */
-void Utilities::removeDirectoryRecursivly(QString path)
+void Utilities::removeDirectoryRecursively(QString path)
 {
   QFileInfo fileInfo(path);
   if (fileInfo.isDir()) {
     QDir dir(path);
     QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
     for (int i = 0 ; i < filesList.count() ; ++i) {
-      removeDirectoryRecursivly(QString("%1/%2").arg(path, filesList.at(i)));
+      removeDirectoryRecursively(QString("%1/%2").arg(path, filesList.at(i)));
     }
     QDir().rmdir(path);
   } else {

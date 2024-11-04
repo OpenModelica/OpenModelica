@@ -123,7 +123,7 @@ void CHighlighter::initializeSettings()
   font.setFamily(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
   font.setPointSizeF(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK
   mpPlainTextEdit->setTabStopWidth(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));

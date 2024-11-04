@@ -105,7 +105,7 @@ void HTMLHighlighter::initializeSettings()
   font.setFamily(mpHTMLEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
   font.setPointSizeF(mpHTMLEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpHTMLEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK
   mpPlainTextEdit->setTabStopWidth(mpHTMLEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));

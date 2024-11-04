@@ -554,7 +554,7 @@ void AddBusDialog::addBus()
       }
     }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QSet<QString> connectorsSet(connectors.begin(), connectors.end());
     QSet<QString> existingConnectorsSet(existingConnectors.begin(), existingConnectors.end());
     QSet<QString> addConnectors = connectorsSet.subtract(existingConnectorsSet);
@@ -1174,7 +1174,7 @@ QMimeData* ConnectionsModel::mimeData(const QModelIndexList &indexes) const
   return mimeData;
 }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
 bool ConnectionsModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
 {
   Q_UNUSED(action);
