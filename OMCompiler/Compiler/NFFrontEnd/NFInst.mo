@@ -2424,7 +2424,7 @@ algorithm
 
         // Instantiate expressions in the local components.
         ClassTree.applyLocalComponents(cls_tree,
-          function instComponentExpressions(context = context));
+          function instComponentExpressions(context = context, settings = settings));
 
         // Flatten the class tree so we don't need to deal with extends anymore.
         cls.elements := ClassTree.flatten(cls_tree);
@@ -2463,7 +2463,7 @@ algorithm
     case Class.INSTANCED_BUILTIN(elements = ClassTree.FLAT_TREE(components = local_comps))
       algorithm
         for comp in local_comps loop
-          instComponentExpressions(comp, context);
+          instComponentExpressions(comp, context, settings);
         end for;
       then
         ();
@@ -2588,6 +2588,7 @@ end instBuiltinAttribute;
 function instComponentExpressions
   input InstNode component;
   input InstContext.Type context;
+  input InstSettings settings;
 protected
   InstNode node = InstNode.resolveInner(component);
   Component c = InstNode.component(node);
@@ -2606,7 +2607,7 @@ algorithm
         c.condition := instBinding(c.condition, context);
 
         if not InstNode.isEmpty(c.classInst) then
-          instExpressions(c.classInst, node, context = context);
+          instExpressions(c.classInst, node, context = context, settings = settings);
         end if;
 
         for i in 1:arrayLength(dims) loop
