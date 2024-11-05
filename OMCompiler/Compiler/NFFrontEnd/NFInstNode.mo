@@ -332,11 +332,12 @@ uniontype InstNode
 
   function newIndexedIterator
     input Integer index;
-    input Type ty = Type.INTEGER();
+    input String name = "i";
     input SourceInfo info = AbsynUtil.dummyInfo;
+    input Type ty = Type.INTEGER();
     output InstNode iterator;
   algorithm
-    iterator := newIterator("$i" + String(index), ty, info);
+    iterator := newIterator("$" + name + String(index), ty, info);
   end newIndexedIterator;
 
   function fromComponent

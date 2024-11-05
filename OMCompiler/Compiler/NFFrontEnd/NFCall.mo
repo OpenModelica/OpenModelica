@@ -2082,6 +2082,7 @@ public
   function toArrayConstructor
     "tries to make an array constructor from any call"
     input Call iCall;
+    input Pointer<Integer> index_ptr;
     output Call oCall;
   algorithm
     oCall := match iCall
@@ -2091,19 +2092,30 @@ public
         Option<Expression> step;
         list<Expression> rest;
         list<tuple<InstNode, Expression>> iterators = {};
-        Integer index = 1;
+        Call body_call;
+        Integer index;
 
       case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(iCall.fn))
         case "fill" algorithm
+          index         := Pointer.access(index_ptr);
           body :: rest  := iCall.arguments;
           start         := Expression.INTEGER(1);
           step          := NONE();
           for stop in rest loop
-            iter_name   := InstNode.newIndexedIterator(index);
+            iter_name   := InstNode.newIndexedIterator(index, "f");
             iter_range  := Expression.makeRange(start, step, stop);
             iterators   := (iter_name, iter_range) :: iterators;
             index       := index + 1;
           end for;
+
+          // if there are nested calls, combine them
+          (body, iterators) := match body
+            case Expression.CALL(call = body_call as TYPED_ARRAY_CONSTRUCTOR()) algorithm
+            then (body_call.exp, listAppend(iterators, body_call.iters));
+            else (body, iterators);
+          end match;
+
+          Pointer.update(index_ptr, index);
         then TYPED_ARRAY_CONSTRUCTOR(iCall.ty, iCall.var, iCall.purity, body, listReverse(iterators));
         else iCall;
       end match;

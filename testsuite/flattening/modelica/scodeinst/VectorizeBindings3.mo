@@ -139,7 +139,7 @@ end VectorizeBindings3;
 //   final parameter Integer aimc.stator.m = 3;
 //   final parameter Real aimc.stator.effectiveTurns = aimc.effectiveStatorTurns;
 //   final parameter Integer aimc.stator.electroMagneticConverter.m = 3;
-//   final parameter Real[3] aimc.stator.electroMagneticConverter.effectiveTurns = array(aimc.stator.effectiveTurns for $i1 in 1:3);
+//   final parameter Real[3] aimc.stator.electroMagneticConverter.effectiveTurns = array(aimc.stator.effectiveTurns for $f1 in 1:3);
 //   final parameter Real[3] aimc.stator.electroMagneticConverter.orientation = {0.0, 2.0, 4.0};
 //   final parameter Real[3] aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.effectiveTurns = array(aimc.stator.electroMagneticConverter.effectiveTurns[$singlePhaseElectroMagneticConverter1] for $singlePhaseElectroMagneticConverter1 in 1:3);
 //   final parameter Real[3] aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.orientation = {0.0, 2.0, 4.0};

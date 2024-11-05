@@ -64,6 +64,6 @@ simulate(ArrayAlias2); getErrorString();
 //
 // 	Nominal map after replacements (conflicting array index = 2):
 // 	(a, {10.0, 1e5})
-// 	(b, {1.0 for $i1 in 1:2})
+// 	(b, {1.0 for $f1 in 1:2})
 // "
 // endResult
