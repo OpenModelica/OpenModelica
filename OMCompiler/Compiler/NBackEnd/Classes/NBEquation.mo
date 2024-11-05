@@ -809,7 +809,7 @@ public
     function hash
       "only hashes the name"
       input Pointer<Equation> eqn;
-      output Integer i = Variable.hash(Pointer.access(getResidualVar(eqn)));
+      output Integer i = if isDummy(Pointer.access(eqn)) then 0 else ComponentRef.hash(getEqnName(eqn));
     end hash;
 
     function equalName

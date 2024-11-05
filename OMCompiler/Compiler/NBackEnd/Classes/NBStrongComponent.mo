@@ -782,6 +782,17 @@ public
     end match;
   end isDiscrete;
 
+  function isDummy
+    input StrongComponent comp;
+    output Boolean b;
+  algorithm
+    b := match comp
+      case SINGLE_COMPONENT() then Equation.isDummy(Pointer.access(comp.eqn));
+      case MULTI_COMPONENT()  then Equation.isDummy(Pointer.access(Slice.getT(comp.eqn)));
+      else false;
+    end match;
+  end isDummy;
+
   function isAlias
     input StrongComponent comp;
     output Boolean b;

@@ -1367,5 +1367,28 @@ algorithm
   end if;
 end generate;
 
+function filter<T>
+  input array<T> arr;
+  input filterFunc fun;
+  output array<T> new_arr;
+  partial function filterFunc
+    input T t;
+    output Boolean b "if b=true then 't' gets removed";
+  end filterFunc;
+protected
+  Integer new_size;
+  T dummy = dummy; // Fool the compiler into thinking dummy is initialized.
+  Integer index = 1;
+algorithm
+  new_size  := arrayLength(arr) - sum(1 for e guard fun(e) in arr);
+  new_arr   := arrayCreateNoInit(new_size, dummy);
+  for e in arr loop
+    if not fun(e) then
+      arrayUpdateNoBoundsChecking(new_arr, index, e);
+      index := index + 1;
+    end if;
+  end for;
+end filter;
+
 annotation(__OpenModelica_Interface="util");
 end Array;
