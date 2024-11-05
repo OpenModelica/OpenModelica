@@ -578,7 +578,6 @@ public
           bdae.init_0 := SOME(list(Partition.clone(par, false) for par in bdae.init));
           bdae.init_0 := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init = true, hasHom = hasHom)) for par in Util.getOption(bdae.init_0)));
         end if;
-
       then bdae;
 
       else bdae;

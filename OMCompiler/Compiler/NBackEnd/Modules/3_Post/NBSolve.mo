@@ -484,6 +484,9 @@ public
         end match;
       then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), funcTree, status);
 
+      // dummy equation implies removed equation (occurs only in simulation systems)
+      case Equation.DUMMY_EQUATION() then (eqn_slice, funcTree, Status.EXPLICIT);
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for equation:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
       then fail();
@@ -524,6 +527,9 @@ public
             + " failed to solve a for-equation with multiple body eqns for a single cref. Please iterate over body elements individually.\n"
             + "cref: " + ComponentRef.toString(cref) + " in equation:\n" + Equation.toString(eqn)});
       then fail();
+
+      // dummy equation implies removed equation (occurs only in simulation systems)
+      case Equation.DUMMY_EQUATION() then (eqn, funcTree, Status.EXPLICIT, false);
 
       else solveBody(eqn, cref, funcTree);
     end match;
