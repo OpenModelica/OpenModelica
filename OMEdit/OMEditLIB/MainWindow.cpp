@@ -1170,6 +1170,14 @@ void MainWindow::checkAllModels(LibraryTreeItem *pLibraryTreeItem)
 
 void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
 {
+  // check for supported targetLanguage C or Cpp
+  QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
+  if (targetLanguage.compare("C") != 0 && targetLanguage.compare("Cpp") != 0) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b> and <b>Cpp</b> are supported").arg(targetLanguage),
+                                                                  tr("FMU_EXPORT Failed"), Helper::errorLevel));
+    return;
+  }
+
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -1186,9 +1194,13 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
    * see https://github.com/OpenModelica/OpenModelica/issues/12171, to have short temp directory path and dump the files in it.
   */
   QString modelDirectoryPath = QString("%1/%2%3").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getName(), Utilities::generateHash(pLibraryTreeItem->getNameStructure()));
-  if (!QDir().exists(modelDirectoryPath)) {
-    QDir().mkpath(modelDirectoryPath);
+
+  QDir dir(modelDirectoryPath);
+  if (dir.exists()) {
+    dir.removeRecursively();
   }
+  dir.mkpath(modelDirectoryPath);
+
   // set the folder as working directory
   MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
   // buildModelFMU parameters
@@ -1227,7 +1239,11 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     // create a FMU compilation window  similar to simulation process
     FmuExportOutputWidget * pFmuExportOutputWidget = new FmuExportOutputWidget(pLibraryTreeItem, this);
     MessagesWidget::instance()->addSimulationOutputTab(pFmuExportOutputWidget, pLibraryTreeItem->getName() + "_fmuExport");
-    pFmuExportOutputWidget->compileModel();
+    if (targetLanguage.compare("C") == 0) {
+      pFmuExportOutputWidget->compileModelCRuntime();
+    } else {
+      pFmuExportOutputWidget->compileModelCppRuntime();
+    }
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Translation of FMU: <b>%1</b> Failed").arg(pLibraryTreeItem->getName()),
                                                                   "Translation Error", Helper::errorLevel));
