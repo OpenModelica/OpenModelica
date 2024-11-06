@@ -47,6 +47,7 @@ import ConnectionGraph;
 import DAE;
 import FCore;
 import Interactive;
+import Interactive.Access;
 import SCode;
 
 // protected imports
@@ -6180,24 +6181,25 @@ public function accessClass
   input Absyn.Program program;
   input Fn fn;
   input Boolean evaluateParams = false;
+  input Access accessLevel = Access.icon;
   output Values.Value result;
 
   partial function Fn
     input Absyn.Path classPath;
     input Absyn.Program program;
-    input Integer accessLevel;
+    input Access accessLevel;
     output Values.Value result;
   end Fn;
 protected
-  Integer access;
+  Access access;
   Boolean silent, eval_params;
 algorithm
   eval_params := Config.getEvaluateParametersInAnnotations();
 
   try
-    Values.ENUM_LITERAL(index = access) := Interactive.checkAccessAnnotationAndEncryption(classPath, program);
+    access := Interactive.checkAccessAnnotationAndEncryption(classPath, program);
 
-    if access < 2 then // Access.icon
+    if access < accessLevel then
       Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
       result := ValuesUtil.makeBoolean(false);
       return;
