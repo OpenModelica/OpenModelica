@@ -460,29 +460,22 @@ public
       input UnorderedMap<ComponentRef, Integer> eqns_map;
       input EquationPointers eqns;
       input MatrixStrictness st;
-    protected
-      array<UnorderedSet<ComponentRef>> occ;
-      array<UnorderedMap<ComponentRef, Dependency>> dep;
-      array<UnorderedMap<ComponentRef, Solvability>> sol;
-      array<UnorderedSet<ComponentRef>> rep;
-      Mapping mapping;
-      Integer index, min, max;
-      list<ComponentRef> filtered;
     algorithm
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
         print(StringUtil.headline_1("Upgrading from [" + strictnessString(getStrictness(adj)) + "] to [" + strictnessString(st) +"]") + "\n");
       end if;
 
       adj := match full
+        local
+          Integer min, max;
+
         case EMPTY() then EMPTY(st);
 
         case FULL() algorithm
-          (mapping, occ, dep, sol, rep) := (full.mapping, full.occurences, full.dependencies, full.solvabilities, full.repetitions);
-
           // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
           if isEmpty(adj) then
             min := 0;
-            adj := initialize(mapping, st);
+            adj := initialize(full.mapping, st);
           else
             min := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
           end if;
@@ -491,6 +484,11 @@ public
           adj := match adj
             local
               Matrix result;
+              list<ComponentRef> filtered;
+              array<UnorderedSet<ComponentRef>> occ;
+              array<UnorderedMap<ComponentRef, Dependency>> dep;
+              array<UnorderedMap<ComponentRef, Solvability>> sol;
+              array<UnorderedSet<ComponentRef>> rep;
 
             // default case
             case FINAL() algorithm
@@ -498,8 +496,8 @@ public
               if max == min then
                 result := adj;
               elseif max > min then
-                for name in UnorderedMap.keyList(eqns_map) loop
-                  index := UnorderedMap.getSafe(name, eqns_map, sourceInfo());
+                (occ, dep, sol, rep) := (full.occurences, full.dependencies, full.solvabilities, full.repetitions);
+                for index in UnorderedMap.valueList(eqns_map) loop
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
                   // upgrade the row and all meta data
                   upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, adj.m, adj.mapping, adj.modes);
@@ -711,8 +709,6 @@ public
     algorithm
       full := match full
         local
-          ComponentRef eqn, var;
-          Integer eqn_idx, var_idx;
           DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcTree);
           Pointer<Equation> eqn_ptr;
           Expression exp;
@@ -722,13 +718,10 @@ public
           list<ComponentRef> param_lst, var_lst;
 
         case FULL() algorithm
-          for v_tpl in UnorderedMap.toList(v) loop
-            (var, var_idx) := v_tpl;
-            diffArgs.diffCref := var;
-            for e_tpl in UnorderedMap.toList(e) loop
-              (eqn, eqn_idx) := e_tpl;
-              // only do something if there is a value to refine
-              if UnorderedSet.contains(var, full.occurences[eqn_idx]) then
+          for eqn_idx in UnorderedMap.valueArray(e) loop
+            for var in UnorderedSet.toArray(full.occurences[eqn_idx]) loop
+              // only do something if var is to be refined
+              if UnorderedMap.contains(var, v) then
                 // only do something if it is not implicit or unsolvable)
                 sol := UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo());
                 if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
@@ -741,6 +734,7 @@ public
                     sol := if status == NBSolve.Status.EXPLICIT then Solvability.EXPLICIT_LINEAR(NONE(), NONE()) else Solvability.UNSOLVABLE();
                   else
                     // get the residual expression, differentiate and simplify it
+                    diffArgs.diffCref := var;
                     exp             := Equation.getResidualExp(Pointer.access(eqn_ptr));
                     (exp, diffArgs) := Differentiate.differentiateExpressionDump(exp, diffArgs, getInstanceName());
                     exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
@@ -748,12 +742,13 @@ public
                       sol := Solvability.UNSOLVABLE();
                     elseif Expression.containsCrefSet(exp, vars_set) then
                       // nonlinear -> unique solution if does not contain the variable itself
+                      // TODO: might still be unique in some cases, even if contains the variable, e.g. `exp(x)`
                       sol := Solvability.EXPLICIT_NONLINEAR(Expression.containsCref(exp, var));
                     else
                       // linear -> find all contained crefs and split them by kind. remove constants and save params / variables
-                      linear_set := Expression.extractCrefs(exp);
-                      (_, var_lst)          := List.splitOnTrue(UnorderedSet.toList(linear_set), function BVariable.checkCref(func = BVariable.isConst));
-                      (param_lst, var_lst)  := List.splitOnTrue(UnorderedSet.toList(linear_set), function BVariable.checkCref(func = BVariable.isParamOrConst));
+                      linear_set  := Expression.extractCrefs(exp);
+                      var_lst     := list(v for v guard not BVariable.checkCref(v, BVariable.isConst) in UnorderedSet.toList(linear_set));
+                      (param_lst, var_lst)  := List.splitOnTrue(var_lst, function BVariable.checkCref(func = BVariable.isParamOrConst));
                       sol := Solvability.EXPLICIT_LINEAR(
                         pars = if listEmpty(param_lst) then NONE() else SOME(UnorderedSet.fromList(param_lst, ComponentRef.hash, ComponentRef.isEqual)),
                         vars = if listEmpty(var_lst) then NONE() else SOME(UnorderedSet.fromList(var_lst, ComponentRef.hash, ComponentRef.isEqual)));
@@ -1579,16 +1574,16 @@ public
       end match;
     end fromStrictness;
 
-    function nonlinearOrImplicit
+    function isNonlinearOrImplicit
       input Solvability sol;
       output Boolean b;
     algorithm
       b := match sol
         case EXPLICIT_NONLINEAR() then true;
-        case IMPLICIT() then true;
+        case IMPLICIT()           then true;
         else false;
       end match;
-    end nonlinearOrImplicit;
+    end isNonlinearOrImplicit;
   end Solvability;
 
   function collectDependenciesEquation

@@ -571,12 +571,12 @@ public
   function subMap
     input UnorderedMap<K, V> map;
     input list<K> lst;
-    output UnorderedMap<K, V> sub_set;
+    output UnorderedMap<K, V> sub_map;
   protected
     Integer len;
   algorithm
     len := listLength(lst);
-    sub_set := UNORDERED_MAP(
+    sub_map := UNORDERED_MAP(
       Vector.newFill(len, {}),
       Vector.new<K>(len),
       Vector.new<V>(len),
@@ -584,7 +584,7 @@ public
       map.eqFn
     );
     for k in lst loop
-      add(k, getSafe(k, map, sourceInfo()), sub_set);
+      add(k, getSafe(k, map, sourceInfo()), sub_map);
     end for;
   end subMap;
 

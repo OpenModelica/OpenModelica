@@ -503,8 +503,8 @@ public
         case VariableKind.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
         case VariableKind.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
         case VariableKind.DISCRETE()                then OldBackendDAE.DISCRETE();
-        case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we dont differ between clocked, discrete states and discretes in the old backend. is this correct?
-        case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we dont differ between clocked, discrete states and discretes in the old backend. is this correct?
+        case VariableKind.DISCRETE_STATE()          then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
+        case VariableKind.CLOCKED()                 then OldBackendDAE.DISCRETE(); // we don't distinguish between clocked, discrete states and discretes in the old backend. is this correct?
         case VariableKind.PREVIOUS()                then OldBackendDAE.DISCRETE();
         case VariableKind.PARAMETER()               then OldBackendDAE.PARAM();
         case VariableKind.CONSTANT()                then OldBackendDAE.CONST();
