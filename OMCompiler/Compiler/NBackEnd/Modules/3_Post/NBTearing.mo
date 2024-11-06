@@ -160,7 +160,7 @@ public
     input output Integer index            "current unique loop index";
     input Partition.Kind kind = NBPartition.Kind.ODE   "partition type";
   protected
-    // dummy adjacency matrix, dont need it for implicit
+    // dummy adjacency matrix, don't need it for implicit
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
     StrongComponent new_comp;
   algorithm
@@ -272,8 +272,7 @@ protected
   function initialize extends Module.tearingInterface;
   protected
     Tearing strict;
-    list<Pointer<Variable>> vars_lst;
-    list<Pointer<Equation>> eqns_lst;
+    list<ComponentRef> vars_lst, eqns_lst;
     UnorderedSet<ComponentRef> vars_set         "all loop vars, used to determine solvability";
     UnorderedMap<ComponentRef, Integer> v, e    "all loop vars and equations map";
   algorithm
@@ -283,17 +282,18 @@ protected
         comp.idx := index;
 
         // get all loop variables and equations
-        vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
-        eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
+        vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
+        eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn in strict.residual_eqns);
 
         // the set of all loop variables used to determine solvability
-        vars_set  := UnorderedSet.fromList(list(BVariable.getVarName(var) for var in vars_lst), ComponentRef.hash, ComponentRef.isEqual);
+        vars_set := UnorderedSet.fromList(vars_lst, ComponentRef.hash, ComponentRef.isEqual);
 
         // the sets of discrete variables and discrete equations
-        v         := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in vars_lst));
-        e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in eqns_lst));
+        // FIXME: these are all variables/equations, not discrete variables/equations. Is this wrong?
+        v := UnorderedMap.subMap(variables.map, vars_lst);
+        e := UnorderedMap.subMap(equations.map, eqns_lst);
 
-        // refining the adjacency matrix by updating solvability information using differentiation
+        // refine the adjacency matrix by updating solvability information
         (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
         comp.linear       := checkLinearity(full, v, e);
       then (comp, full, index);
@@ -307,35 +307,25 @@ protected
     Option<Jacobian> jacobian;
     Tearing strict;
   protected
-    list<Slice<EquationPointer>> tmp;
-    list<list<Slice<EquationPointer>>> acc = {};
-    String tag;
+    list<list<Slice<EquationPointer>>> acc;
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // inline potential records
-        for eqn in listReverse(strict.residual_eqns) loop
-          tmp := Inline.inlineRecordSliceEquation(eqn, variables, eq_index, true);
-          if listEmpty(tmp) then
-            acc := {eqn} :: acc;
-          else
-            acc := tmp :: acc;
-          end if;
-        end for;
+        acc := list(Inline.inlineRecordSliceEquation(eqn, variables, eq_index, true) for eqn in strict.residual_eqns);
 
         // create residual equations
         strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));
 
-        tag := if comp.linear then "_LS_JAC_" else "_NLS_JAC_";
         // create residual equations
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
         // update jacobian to take slices (just to have correct inner variables and such)
         (jacobian, funcTree) := BJacobian.nonlinear(
           variables = VariablePointers.fromList(list(Slice.getT(var) for var in strict.iteration_vars)),
           equations = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
-          comps     = arrayAppend(strict.innerEquations,listArray(residual_comps)),
+          comps     = Array.appendList(strict.innerEquations, residual_comps),
           funcTree  = funcTree,
-          name      = Partition.Partition.kindToString(kind) + tag + intString(index),
+          name      = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(index),
           init      = kind == NBPartition.Kind.INI);
         strict.jac := jacobian;
         comp.strict := strict;
@@ -362,15 +352,15 @@ protected
     Adjacency.Matrix adj;
     Matching matching;
     list<StrongComponent> inner_comps;
-    UnorderedMap<ComponentRef, Integer> v, e            "discrete variables and equations we have to refine";
+    UnorderedMap<ComponentRef, Integer> v, e  "discrete variables and equations we have to refine";
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars)  := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = kind == NBPartition.Kind.INI));
-        (cont_eqns, disc_eqns)  := List.splitOnTrue(eqns_lst, Equation.isContinuous);
+        (cont_vars, disc_vars) := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = kind == NBPartition.Kind.INI));
+        (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinuous);
         num_vars := sum(BVariable.size(var) for var in disc_vars);
         num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
 
@@ -390,8 +380,8 @@ protected
           comp.mixed := true;
 
           // the sets of discrete variables and discrete equations
-          v         := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
-          e         := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
+          v := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var in disc_vars));
+          e := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
 
           // match the discretes to create inner components
           adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
@@ -401,8 +391,8 @@ protected
           strict.innerEquations := listArray(inner_comps);
 
           // create residuals equations and iteration variables
-          strict.residual_eqns    := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
-          strict.iteration_vars   := list(Slice.SLICE(var, {}) for var in cont_vars);
+          strict.residual_eqns  := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
+          strict.iteration_vars := list(Slice.SLICE(var, {}) for var in cont_vars);
           comp.strict := strict;
         end if;
       then comp;
@@ -412,22 +402,27 @@ protected
 
   function checkLinearity
     input Adjacency.Matrix full;
-    input UnorderedMap<ComponentRef, Integer> v;
-    input UnorderedMap<ComponentRef, Integer> e;
-    output Boolean linear = true;
+    input UnorderedMap<ComponentRef, Integer> v "variables in the algebraic loop";
+    input UnorderedMap<ComponentRef, Integer> e "equations in the algebraic loop";
+    output Boolean linear;
   protected
-    list<ComponentRef> var_lst = UnorderedMap.keyList(v);
+    function varIsLinear
+      input ComponentRef var;
+      input UnorderedMap<ComponentRef, Integer> v;
+      input UnorderedMap<ComponentRef, Solvability> sol;
+      output Boolean b = not (UnorderedMap.contains(var, v) and Solvability.isNonlinearOrImplicit(UnorderedMap.getSafe(var, sol, sourceInfo())));
+    end varIsLinear;
+
+    function eqnIsLinear
+      input Integer i "equation index";
+      input array<UnorderedSet<ComponentRef>> occ;
+      input array<UnorderedMap<ComponentRef, Solvability>> sol;
+      input UnorderedMap<ComponentRef, Integer> v;
+      output Boolean b = UnorderedSet.all(occ[i], function varIsLinear(v = v, sol = sol[i]));
+    end eqnIsLinear;
   algorithm
     linear := match full
-      case Adjacency.Matrix.FULL() algorithm
-        for eqn_idx in UnorderedMap.valueList(e) loop
-          for var in var_lst loop
-            if UnorderedSet.contains(var, full.occurences[eqn_idx]) and Solvability.nonlinearOrImplicit(UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo())) then
-              linear := false; break;
-            end if;
-          end for;
-        end for;
-      then true;
+      case Adjacency.Matrix.FULL() then UnorderedMap.all(e, function eqnIsLinear(occ = full.occurences, sol = full.solvabilities, v = v));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.Matrix.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
       then fail();
