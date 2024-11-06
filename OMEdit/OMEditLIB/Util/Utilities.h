@@ -561,6 +561,7 @@ namespace Utilities {
   QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
   bool isMultiline(const QString &text);
+  QMap<QString, QLocale> supportedLanguages();
 } // namespace Utilities
 
 #endif // UTILITIES_H

@@ -3551,22 +3551,12 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpLanguageLabel = new Label(tr("Language: *"));
   mpLanguageComboBox = new QComboBox;
   mpLanguageComboBox->addItem(tr("Auto Detected"), "");
+  QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
+  QStringList keys(languagesMap.keys());
   /* Slow sorting, but works using regular Qt functions */
-  QMap<QString, QLocale> map;
-  map.insert(tr("Chinese").append(" (zh_CN)"), QLocale(QLocale::Chinese));
-  map.insert(tr("English").append(" (en)"), QLocale(QLocale::English));
-  map.insert(tr("French").append(" (fr)"), QLocale(QLocale::French));
-  map.insert(tr("German").append(" (de)"), QLocale(QLocale::German));
-  map.insert(tr("Italian").append(" (it)"), QLocale(QLocale::Italian));
-  map.insert(tr("Japanese").append(" (ja)"), QLocale(QLocale::Japanese));
-  map.insert(tr("Romanian").append(" (ro)"), QLocale(QLocale::Romanian));
-  map.insert(tr("Russian").append(" (ru)"), QLocale(QLocale::Russian));
-  map.insert(tr("Spanish").append(" (es)"), QLocale(QLocale::Spanish));
-  map.insert(tr("Swedish").append(" (sv)"), QLocale(QLocale::Swedish));
-  QStringList keys(map.keys());
   keys.sort();
   foreach (const QString &key, keys) {
-    QLocale locale = map[key];
+    QLocale locale = languagesMap[key];
     mpLanguageComboBox->addItem(key, locale);
   }
   mpLanguageComboBox->installEventFilter(mpOptionsDialog);
