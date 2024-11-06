@@ -50,6 +50,7 @@
 FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, QWidget *pParent)
   : QWidget(pParent)
 {
+  mTargetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
   mpLibraryTreeItem = pLibraryTreeItem;
 
   // set the FMU Name and the fmuTmpPath
@@ -58,17 +59,25 @@ FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, 
      * fix issue https://github.com/OpenModelica/OpenModelica/issues/12916,
      * use hashed string for fmu tmp directory
     */
-    QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text().toUtf8().constData())));
-    mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
+    if (mTargetLanguage.compare("C") == 0) {
+      QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text().toUtf8().constData())));
+      mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
+    } else {
+      mFmuTmpPath = QDir::currentPath();
+    }
     mFMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
   } else {
     /*
      * fix issue https://github.com/OpenModelica/OpenModelica/issues/12916,
      * use hashed string for fmu tmp directory
      */
-    QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(mpLibraryTreeItem->getName().toUtf8().constData())));
-    mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
-    mFMUName = mpLibraryTreeItem->getName();
+     if (mTargetLanguage.compare("C") == 0) {
+       QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(mpLibraryTreeItem->getName().toUtf8().constData())));
+       mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
+     } else {
+       mFmuTmpPath = QDir::currentPath();
+     }
+     mFMUName = mpLibraryTreeItem->getName();
   }
 
   // progress label
@@ -88,7 +97,7 @@ FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, 
   // Compilation Output TextBox
   mpCompilationOutputTextBox = new OutputPlainTextEdit;
   mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
-  mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Generate Target Files"));
+  mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Configure"));
 
   mpPostCompilationOutputTextBox = new OutputPlainTextEdit;
   mpPostCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
@@ -157,7 +166,7 @@ void FmuExportOutputWidget::cancelCompilation()
     setPostCompilationProcessKilled(true);
     mpPostCompilationProcess->kill();
     mIsPostCompilationProcessRunning = false;
-    progressStr = tr("Building cmake of %1 is cancelled.").arg(mpLibraryTreeItem->getName());
+    progressStr = tr("Building of %1 is cancelled.").arg(mpLibraryTreeItem->getName());
     mpCancelButton->setEnabled(false);
   } else if (isZipCompilationProcessRunning()) {
     setZipCompilationProcessKilled(true);
@@ -186,7 +195,7 @@ void FmuExportOutputWidget::updateMessageTab(const QString &text)
  * \brief FmuExportOutputWidget::compileModel
  * generates cmake target files for the compiled model
  */
-void FmuExportOutputWidget::compileModel()
+void FmuExportOutputWidget::compileModelCRuntime()
 {
   mpCompilationProcess = new QProcess;
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
@@ -384,6 +393,37 @@ void FmuExportOutputWidget::runPostCompilation()
 }
 
 /*!
+ * \brief FmuExportOutputWidget::compileModelCppRuntime
+ * Runs the post compilation command after the compilation of the model.
+ */
+void FmuExportOutputWidget::compileModelCppRuntime()
+{
+  mpPostCompilationProcess = new QProcess;
+  connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
+  connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
+  connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
+#else
+  connect(mpPostCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
+#endif
+  connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
+
+  // set the current directory to makefile directory
+  MainWindow::instance()->getOMCProxy()->changeDirectory(mFmuTmpPath);
+
+  QString program = "make";
+  QStringList arguments;
+  arguments << "-f" << mFMUName + "_FMU.makefile" << "ZIP_FMU=OFF";
+
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  mpPostCompilationProcess->start(program, arguments);
+  mpGeneratedFilesTabWidget->setTabEnabled(1, true);
+  mpGeneratedFilesTabWidget->setTabEnabled(0, false);
+  mpGeneratedFilesTabWidget->setCurrentIndex(1);
+}
+
+/*!
  * \brief FmuExportOutputWidget::postCompilationProcessStarted
 * Slot activated when mpPostCompilationProcess started signal is raised.\n
  * Updates the progress label, bar and button controls.
@@ -391,10 +431,14 @@ void FmuExportOutputWidget::runPostCompilation()
 void FmuExportOutputWidget::postCompilationProcessStarted()
 {
   mIsPostCompilationProcessRunning = true;
-  const QString progressStr = tr("Building cmake of %1.").arg(mpLibraryTreeItem->getName());
+  const QString progressStr = tr("Building %1").arg(mpLibraryTreeItem->getName());
   mpProgressLabel->setText(progressStr);
   mpProgressBar->setTextVisible(true);
-  mpProgressBar->setMaximum(100);
+  if (mTargetLanguage.compare("C")==0) {
+    mpProgressBar->setMaximum(100);
+  } else {
+    mpProgressBar->setRange(0, 0);
+  }
   updateMessageTab(progressStr);
   mpCancelButton->setText(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(true);
@@ -407,13 +451,16 @@ void FmuExportOutputWidget::postCompilationProcessStarted()
 void FmuExportOutputWidget::readPostCompilationStandardOutput()
 {
   QString output = mpPostCompilationProcess->readAllStandardOutput();
-  // Regular expression to capture progress percentage (e.g., "[ 12%]")
-  QRegularExpression regex("\\[\\s*(\\d+)%\\]");
-  QRegularExpressionMatch match = regex.match(output);
-  if (match.hasMatch()) {
-    int currentStep = match.captured(1).toInt();
-    // Update the progress bar
-    mpProgressBar->setValue(currentStep);
+
+  if (mTargetLanguage.compare("C")==0) {
+    // Regular expression to capture progress percentage (e.g., "[ 12%]")
+    QRegularExpression regex("\\[\\s*(\\d+)%\\]");
+    QRegularExpressionMatch match = regex.match(output);
+    if (match.hasMatch()) {
+      int currentStep = match.captured(1).toInt();
+      // Update the progress bar
+      mpProgressBar->setValue(currentStep);
+    }
   }
   writePostCompilationOutput(output, Qt::black);
 }
@@ -455,7 +502,7 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
   mIsPostCompilationProcessRunning = false;
   QString exitCodeStr = tr("Post compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writePostCompilationOutput(tr("Build cmake finished successfully.\n"), Qt::blue);
+    writePostCompilationOutput(tr("Build finished successfully.\n"), Qt::blue);
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
     zipFMU();
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
@@ -479,9 +526,9 @@ void FmuExportOutputWidget::postCompilationProcessFinishedHelper(int exitCode, Q
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(mpProgressBar->maximum());
-    progressStr = tr("Build cmake of %1 finished.").arg(mpLibraryTreeItem->getName());
+    progressStr = tr("Build of %1 finished.").arg(mpLibraryTreeItem->getName());
   } else {
-    progressStr = tr("Build cmake of %1 failed.").arg(mpLibraryTreeItem->getName());
+    progressStr = tr("Build of %1 failed.").arg(mpLibraryTreeItem->getName());
   }
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
@@ -554,7 +601,7 @@ void FmuExportOutputWidget::zipFMU()
 void FmuExportOutputWidget::ZipCompilationProcessStarted()
 {
   mIsZipCompilationProcessRunning = true;
-  const QString progressStr = tr("Zipping of %1.").arg(mpLibraryTreeItem->getName());
+  const QString progressStr = tr("Zipping of %1").arg(mpLibraryTreeItem->getName());
   mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 0);
   mpProgressBar->setTextVisible(false);

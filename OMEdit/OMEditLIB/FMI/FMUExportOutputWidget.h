@@ -65,10 +65,12 @@ public:
   QString getFMUPath() {return mFmuLocationPath;}
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
-  void compileModel();
+  void compileModelCRuntime();
+  void compileModelCppRuntime();
 private:
   QString mFmuTmpPath;
   QString mFMUName;
+  QString mTargetLanguage;
   QString mFmuLocationPath;
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpProgressLabel;
