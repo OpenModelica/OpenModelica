@@ -58,6 +58,7 @@ import AbsynToSCode;
 import Settings;
 import Values;
 
+
 // protected imports
 protected
 
@@ -135,6 +136,8 @@ public uniontype GraphicEnvCache
     FCore.Graph env;
   end GRAPHIC_ENV_FULL_CACHE;
 end GraphicEnvCache;
+
+type Access = enumeration(hide, icon, documentation, diagram, nonPackageText, nonPackageDuplicate, packageText, packageDuplicate, all);
 
 public function evaluate
 "This function evaluates expressions or statements feed interactively to the compiler.
@@ -879,7 +882,7 @@ protected
   Absyn.ComponentRef crident, subident;
   Absyn.Path path;
   list<Absyn.NamedArg> nargs;
-  Integer n, access;
+  Integer n;
   String cmt, variability, causality/*, isField*/;
   Absyn.Class cls;
   Absyn.Modification mod;
@@ -891,31 +894,13 @@ protected
   list<Absyn.Exp> dimensions;
   Absyn.CodeNode cn;
   Absyn.Element el;
+  Access access;
 algorithm
   fn_name := getApiFunctionNameInfo(inStatement);
   p := SymbolTable.getAbsyn();
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getNthConnectionAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 4) then // i.e., Access.diagram
-          ErrorExt.setCheckpoint("getNthConnectionAnnotation");
-          path := AbsynUtil.crefToPath(cr);
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          Config.setEvaluateParametersInAnnotations(true);
-          outResult := getNthConnectionAnnotation(path, p, n);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          ErrorExt.rollBack("getNthConnectionAnnotation");
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
     case "getConnectorCount"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -947,8 +932,8 @@ algorithm
     case "getIconAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
+        access := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
+        if access >= Access.icon then // i.e., Access.icon
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.setCheckpoint("getIconAnnotation");
           end if;
@@ -972,8 +957,8 @@ algorithm
     case "getDiagramAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 4) then // i.e., Access.diagram
+        access := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
+        if access >= Access.diagram then
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.setCheckpoint("getDiagramAnnotation");
           end if;
@@ -7507,7 +7492,7 @@ public function getElements
   input Boolean onlyComponents = false;
   output Values.Value result;
 protected
-  Integer access;
+  Access access;
   Absyn.Class cls;
   Interactive.GraphicEnvCache env;
   Boolean silent;
@@ -7515,9 +7500,9 @@ protected
   list<Absyn.Element> elems;
 algorithm
   try
-    Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(classPath, program);
+    access := checkAccessAnnotationAndEncryption(classPath, program);
 
-    if access < 2 then // Access.icon
+    if access < Access.icon then // Access.icon
       Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
       result := ValuesUtil.makeBoolean(false);
       return;
@@ -7531,7 +7516,7 @@ algorithm
     cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
     env := InteractiveUtil.createEnvironment(program, SOME(SymbolTable.getSCode()), classPath);
 
-    if access >= 4 then // Access.diagram
+    if access >= Access.diagram then // Access.diagram
       elems := InteractiveUtil.getProtectedElementsInClass(cls);
       infos := InteractiveUtil.getElementsInfo(elems, false, useQuotes, onlyComponents, env);
     end if;
@@ -7562,15 +7547,17 @@ protected
   function impl
     input Absyn.Path classPath;
     input Absyn.Program program;
-    input Integer accessLevel;
+    input Access accessLevel;
     output Values.Value result;
   protected
     Absyn.Class cdef;
     list<Absyn.Element> comps;
+
+    OpenModelica.AutoCompletion.Annotations.Access access;
   algorithm
     cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
 
-    if accessLevel >= 4 then // Access.diagram
+    if accessLevel >= Access.diagram then
       comps := InteractiveUtil.getProtectedComponentsInClass(cdef);
     end if;
 
@@ -7593,16 +7580,15 @@ protected
   function impl
     input Absyn.Path classPath;
     input Absyn.Program program;
-    input Integer accessLevel;
+    input Access accessLevel;
     output Values.Value result;
   protected
-    Absyn.Path model_path;
     Absyn.Class cdef;
     list<Absyn.Element> elts;
   algorithm
     cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
 
-    if accessLevel >= 4 then // Access.diagram
+    if accessLevel >= Access.diagram then
       elts := InteractiveUtil.getProtectedElementsInClass(cdef);
     end if;
 
@@ -7627,7 +7613,7 @@ protected
     input Absyn.Path classPath;
     input Integer n;
     input Absyn.Program program;
-    input Integer accessLevel;
+    input Access accessLevel;
     output Values.Value result;
   protected
     Absyn.Class cdef;
@@ -8732,33 +8718,31 @@ algorithm
   end match;
 end setConnectionCommentInEquation;
 
-protected function getNthConnectionAnnotation
+public function getNthConnectionAnnotation
 "This function takes a ComponentRef and a Program and an int and
   returns a comma separated string  of values for the annotation of
   the nth connection."
-  input Absyn.Path inModelPath;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cdef;
+    Absyn.EquationItem conn;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    conn := listGet(getConnections(cdef), n);
+    result := getConnectionAnnotationStr(conn, cdef, program, classPath);
+  end impl;
 algorithm
-  outString := matchcontinue (inModelPath,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.EquationItem citem;
-      String s1,str;
-      Absyn.Program p;
-      Integer n;
-    case (modelpath,p,n)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        citem = listGet(getConnections(cdef), n);
-        s1 = getConnectionAnnotationStr(citem, cdef, p, modelpath);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
-    else "{}";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), true, Access.diagram);
 end getNthConnectionAnnotation;
 
 protected function getConnectorCount
@@ -10419,27 +10403,20 @@ protected function getConnectionAnnotationStr
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
-  output String outString;
+  output Values.Value result;
+protected
+  String gexpstr;
+  list<String> res;
+  list<Absyn.ElementArg> annotations;
+  SourceInfo info;
 algorithm
-  outString := match (inEquationItem, inClass, inFullProgram, inModelPath)
-    local
-      String gexpstr;
-      list<String> res;
-      list<Absyn.ElementArg>  annotations;
-      SourceInfo info;
-
-    case (Absyn.EQUATIONITEM(info=info, equation_ = Absyn.EQ_CONNECT(),
-      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annotations)),_))),
-      _, _, _)
-    equation
-        res = getConnectionAnnotationStrElArgs(annotations, info, inClass, inFullProgram, inModelPath);
-        gexpstr = stringDelimitList(res, ", ");
-    then
-      gexpstr;
-    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(),comment = NONE()),
-          _, _, _)
+  result := match inEquationItem
+    case Absyn.EQUATIONITEM(info=info, equation_ = Absyn.EQ_CONNECT(),
+        comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(annotations)))))
+      algorithm
+        res := getConnectionAnnotationStrElArgs(annotations, info, inClass, inFullProgram, inModelPath);
       then
-        fail();
+        InteractiveUtil.makeAnnotationArrayValue(res);
   end match;
 end getConnectionAnnotationStr;
 
@@ -10498,29 +10475,11 @@ end getConnectionStr;
 public function getConnections
 "This function takes a Class and returns a list of connections in the Class."
   input Absyn.Class inClass;
-  output list<Absyn.EquationItem> outList;
+  output list<Absyn.EquationItem> connections;
+protected
+  Absyn.ClassDef body = inClass.body;
 algorithm
-  outList := match (inClass)
-    local
-      list<Absyn.EquationItem> connectionsList;
-      list<Absyn.ClassPart> parts;
-
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        connectionsList = getConnectionsInClassparts(parts);
-      then
-        connectionsList;
-
-    // adrpo: handle also the case model extends X end X;
-    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        connectionsList = getConnectionsInClassparts(parts);
-      then
-        connectionsList;
-
-    case Absyn.CLASS(body = Absyn.DERIVED()) then {};
-
-  end match;
+  connections := getConnectionsInClassparts(AbsynUtil.getClassPartsInClass(inClass));
 end getConnections;
 
 protected function getConnectionsInClassparts
@@ -13171,42 +13130,36 @@ end getAccessAnnotationString2;
 public function checkAccessAnnotationAndEncryption
   input Absyn.Path path;
   input Absyn.Program p;
-  output Values.Value val;
+  output Access access;
 protected
-  String access, fileName;
+  String access_str, fileName;
   Boolean encryptedClass;
 algorithm
   try
     Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := InteractiveUtil.getPathedClassInProgram(path, p);
     encryptedClass := StringUtil.endsWith(fileName, ".moc");
     if encryptedClass then
-      access := getAccessAnnotation(path, p);
-      if access == "Access.hide" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("hide"))), 1);
-      elseif access == "Access.icon" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("icon"))), 2);
-      elseif access == "Access.documentation" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("documentation"))), 3);
-      elseif access == "Access.diagram" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("diagram"))), 4);
-      elseif access == "Access.nonPackageText" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("nonPackageText"))), 5);
-      elseif access == "Access.nonPackageDuplicate" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("nonPackageDuplicate"))), 6);
-      elseif access == "Access.packageText" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("packageText"))), 7);
-      elseif access == "Access.packageDuplicate" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("packageDuplicate"))), 8);
-      elseif not AbsynUtil.pathIsIdent(path) then // if the class doesn't have the access annotation then look for it in the parent class.
-        val := checkAccessAnnotationAndEncryption(AbsynUtil.stripLast(path), p);
-      else // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("documentation"))), 3);
-      end if;
+      access := match getAccessAnnotation(path, p)
+        case "Access.hide" then Access.hide;
+        case "Access.icon" then Access.icon;
+        case "Access.documentation" then Access.documentation;
+        case "Access.diagram" then Access.diagram;
+        case "Access.nonPackageText" then Access.nonPackageText;
+        case "Access.nonPackageDuplicate" then Access.nonPackageDuplicate;
+        case "Access.packageText" then Access.packageText;
+        case "Access.packageDuplicate" then Access.packageDuplicate;
+        // If the class doesn't have the access annotation then look for it in the parent class.
+        case _ guard not AbsynUtil.pathIsIdent(path)
+          then checkAccessAnnotationAndEncryption(AbsynUtil.stripLast(path), p);
+        // if a class is encrypted and no Protection annotation is defined, the
+        // access annotation has the default value Access.documentation
+        else Access.documentation;
+      end match;
     else
-      val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("all"))), 9);
+      access := Access.all;
     end if;
   else
-   val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("all"))), 9);
+    access := Access.all;
   end try;
 end checkAccessAnnotationAndEncryption;
 

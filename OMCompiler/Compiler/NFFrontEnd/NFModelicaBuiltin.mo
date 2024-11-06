@@ -3988,6 +3988,16 @@ external "builtin";
 annotation(preferredView="text");
 end getNthConnection;
 
+function getNthConnectionAnnotation
+  input TypeName className;
+  input Integer index;
+  output Expression result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the annotation of the n:th connect clause in the class.</p>
+</html>"));
+end getNthConnectionAnnotation;
+
 function getConnectionList "returns an array of all connections including those within loops"
   input TypeName className;
   output String[:,:] result;

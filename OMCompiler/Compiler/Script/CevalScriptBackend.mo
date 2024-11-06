@@ -46,6 +46,7 @@ import DAE;
 import FCore;
 import GlobalScript;
 import Interactive;
+import Interactive.Access;
 import InteractiveUtil;
 import Values;
 import SimCode;
@@ -1763,7 +1764,8 @@ algorithm
       Option<DAE.DAElist> odae;
       Values.Value v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr, cr2;
-      Integer size,i,n,curveStyle,numberOfIntervals, access;
+      Integer size,i,n,curveStyle,numberOfIntervals;
+      Access access;
       list<String> vars_1,args,strings,strs1,strs2,files;
       Real timeStamp,val,x1,x2,y1,y2,r1,r2,curveWidth, interval;
       GlobalScript.Statements istmts;
@@ -1813,8 +1815,8 @@ algorithm
     case ("saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         b := false;
-        Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
-        if (access >= 9) then // i.e., The class is not encrypted.
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then // i.e., The class is not encrypted.
           absynClass := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
           str := Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
           try
@@ -1832,8 +1834,8 @@ algorithm
 
     case ("save",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
-        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
-        if (access >= 9) then // i.e., The class is not encrypted.
+        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then // i.e., The class is not encrypted.
           (newp,filename) = Interactive.getContainedClassAndFile(classpath, SymbolTable.getAbsyn());
           str = Dump.unparseStr(newp);
           System.writeFile(filename, str);
@@ -1865,8 +1867,8 @@ algorithm
     case ("saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                     Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
       equation
-        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
-        if (access >= 9) then // i.e., Access.documentation
+        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then
           saveTotalModel(filename, classpath, b1, b2, b3);
           b = true;
         else
@@ -1883,8 +1885,8 @@ algorithm
     case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                  Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
       equation
-        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
-        if (access >= 9) then // i.e., Access.documentation
+        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then // i.e., Access.documentation
           saveTotalModelDebug(filename, classpath, b1, b2, b3);
           b = true;
         else
@@ -1899,8 +1901,8 @@ algorithm
 
     case ("getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
-        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
-        if (access >= 3) then // i.e., Access.documentation
+        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.documentation then
           ((str1,str2,str3)) = Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
@@ -2734,8 +2736,8 @@ algorithm
     case ("getConnectionCount",{Values.CODE(Absyn.C_TYPENAME(path))})
       equation
         absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        if (access >= 4) then // i.e., Access.diagram
+        access = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if access >= Access.diagram then
           n = listLength(Interactive.getConnections(absynClass));
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
@@ -2748,8 +2750,8 @@ algorithm
 
     case ("getNthConnection",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
       equation
-        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        if (access >= 4) then // i.e., Access.diagram
+        access = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if access >= Access.diagram then
           vals = Interactive.getNthConnection(AbsynUtil.pathToCref(path), SymbolTable.getAbsyn(), n);
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
@@ -3234,6 +3236,10 @@ algorithm
         SymbolTable.setAbsyn(p);
       then
         ValuesUtil.makeBoolean(b);
+
+    case ("getNthConnectionAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthConnectionAnnotation(classpath, n, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

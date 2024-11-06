@@ -58,6 +58,7 @@ import ErrorTypes;
 import FCore;
 import GlobalScript;
 import Interactive;
+import Interactive.Access;
 import SimCode;
 import Values;
 
@@ -666,7 +667,8 @@ algorithm
       DAE.Type ty;
       list<DAE.Type> tys;
       Values.Value v;
-      Integer i, access;
+      Integer i;
+      Access access;
       list<String> strs, strs1, strs2, interfaceType;
       Real r,r1,r2;
       Boolean bval, b, b1, mergeAST, includePartial, qualified, sort, requireExactVersion, allowWithin;
@@ -729,8 +731,8 @@ algorithm
 
     case ("setSourceFile",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)})
       algorithm
-        Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        if (access >= 9) then // i.e., The class is not encrypted.
+        access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if access >= Access.all then // i.e., The class is not encrypted.
           (b,p) := Interactive.setSourceFile(path, str, SymbolTable.getAbsyn());
           SymbolTable.setAbsyn(p);
         else
@@ -3122,7 +3124,7 @@ protected
   String str;
   Absyn.Path path, className;
   Boolean nested;
-  Integer access;
+  Access access;
   Absyn.Class absynClass;
   Absyn.Restriction restriction;
 algorithm
@@ -3134,13 +3136,13 @@ algorithm
           else className;
         end match;
         // handle encryption
-        Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
         (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
         absynClass := if nested then absynClass else AbsynUtil.filterNestedClasses(absynClass);
         /* If the class has Access.packageText annotation or higher
          * If the class has Access.nonPackageText annotation or higher and class is not a package
          */
-        if ((access >= 7) or ((access >= 5) and not AbsynUtil.isPackageRestriction(restriction))) then
+        if ((access >= Access.packageText) or ((access >= Access.nonPackageText) and not AbsynUtil.isPackageRestriction(restriction))) then
           str := Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(AbsynUtil.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
