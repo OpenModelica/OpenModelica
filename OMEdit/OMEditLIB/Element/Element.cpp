@@ -3214,12 +3214,16 @@ void Element::updateToolTip()
     comment.replace("src=\"file://", "src=\"");
   #endif
 
+    QString name = mpModelComponent->getName();
+    if (mpModelComponent && mpModelComponent->getDimensions().isArray()) {
+      name.append("[" % mpModelComponent->getDimensions().getTypedDimensionsString() % "]");
+    }
     if ((mIsInheritedElement || isPort()) && mpParentElement && !mpGraphicsView->isVisualizationView()) {
       setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Element declared in %4").arg(mpModel->getName())
-                 .arg(mpModelComponent->getName()).arg(comment)
+                 .arg(name).arg(comment)
                  .arg(mpParentElement->getModel()->getName()));
     } else {
-      setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpModel->getName()).arg(mpModelComponent->getName()).arg(comment));
+      setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpModel->getName()).arg(name).arg(comment));
     }
   } else {
     if (mpLibraryTreeItem && mpLibraryTreeItem->isSSP()) {
