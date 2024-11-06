@@ -1173,8 +1173,8 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   // check for supported targetLanguage C or Cpp
   QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
   if (targetLanguage.compare("C") != 0 && targetLanguage.compare("Cpp") != 0) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b> and <b> CPP </b> are supported").arg(targetLanguage),
-                                                                  "FMU_EXPORT Failed", Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b> and <b>Cpp</b> are supported").arg(targetLanguage),
+                                                                  tr("FMU_EXPORT Failed"), Helper::errorLevel));
     return;
   }
 
@@ -1198,10 +1198,8 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QDir dir(modelDirectoryPath);
   if (dir.exists()) {
     dir.removeRecursively();
-    dir.mkpath(modelDirectoryPath);
-  } else {
-    dir.mkpath(modelDirectoryPath);
   }
+  dir.mkpath(modelDirectoryPath);
 
   // set the folder as working directory
   MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);

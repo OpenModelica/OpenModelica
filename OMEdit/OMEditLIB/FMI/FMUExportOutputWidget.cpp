@@ -53,31 +53,20 @@ FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, 
   mTargetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
   mpLibraryTreeItem = pLibraryTreeItem;
 
-  // set the FMU Name and the fmuTmpPath
-  if (!OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text().isEmpty()) {
-    /*
-     * fix issue https://github.com/OpenModelica/OpenModelica/issues/12916,
-     * use hashed string for fmu tmp directory
-    */
-    if (mTargetLanguage.compare("C") == 0) {
-      QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text().toUtf8().constData())));
-      mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
-    } else {
-      mFmuTmpPath = QDir::currentPath();
-    }
-    mFMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
+  // set the FMU name
+  const QString fmuNameText = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
+  mFMUName = fmuNameText.isEmpty() ? mpLibraryTreeItem->getName() : fmuNameText;
+
+  /*
+   * set the fmuTmpPath
+   * fix issue https://github.com/OpenModelica/OpenModelica/issues/12916,
+   * use hashed string for fmu tmp directory
+  */
+  if (mTargetLanguage.compare("C") == 0) {
+    QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(mFMUName.toUtf8().constData())));
+    mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
   } else {
-    /*
-     * fix issue https://github.com/OpenModelica/OpenModelica/issues/12916,
-     * use hashed string for fmu tmp directory
-     */
-     if (mTargetLanguage.compare("C") == 0) {
-       QString hashedString = QString::number(stringHashDjb2(mmc_mk_scon(mpLibraryTreeItem->getName().toUtf8().constData())));
-       mFmuTmpPath = QDir::currentPath().append("/").append(hashedString.left(3)+".fmutmp");
-     } else {
-       mFmuTmpPath = QDir::currentPath();
-     }
-     mFMUName = mpLibraryTreeItem->getName();
+    mFmuTmpPath = QDir::currentPath();
   }
 
   // progress label
@@ -402,7 +391,7 @@ void FmuExportOutputWidget::compileModelCppRuntime()
   connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
   connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
   connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
 #else
   connect(mpPostCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
