@@ -1,0 +1,12 @@
+// name:     testVectorizedPowerSystem
+// keywords: vectorized components, array equations, for loops
+// status: correct
+// teardown_command: rm -f *VectorizedPowerSystemTest*
+// cflags: --newBackend
+
+setCommandLineOptions("-d=bltdump"); getErrorString();
+loadFile("../../../../openmodelica/cppruntime/VectorizedPowerSystemTotal.mo"); getErrorString();
+
+simulate(VectorizedPowerSystemTest); getErrorString();
+
+val(fixedVoltageSource1.p[1], 1.0);

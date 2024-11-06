@@ -977,6 +977,7 @@ algorithm
       case Op.MUL then simplifyBinaryMul(exp1, op, exp2);
       case Op.DIV then simplifyBinaryDiv(exp1, op, exp2);
       case Op.POW then simplifyBinaryPow(exp1, op, exp2);
+      case Op.SCALAR_PRODUCT guard(Expression.isZero(exp1) or Expression.isZero(exp2)) then Expression.makeZero(op.ty);
       else Expression.BINARY(exp1, op, exp2);
     end match;
   end if;
