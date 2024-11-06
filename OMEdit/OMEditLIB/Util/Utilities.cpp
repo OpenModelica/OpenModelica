@@ -1400,3 +1400,28 @@ bool Utilities::isMultiline(const QString &text)
 {
   return text.indexOf('\n') >= 0;
 }
+
+/*!
+ * \brief Utilities::supportedLanguages
+ * Returns the map of languages that OMEdit support.
+ * \return
+ */
+QMap<QString, QLocale> Utilities::supportedLanguages()
+{
+  static int init = 0;
+  static QMap<QString, QLocale> languagesMap;
+  if (!init) {
+    init = 1;
+    languagesMap.insert(QObject::tr("Chinese").append(" (zh_CN)"), QLocale(QLocale::Chinese));
+    languagesMap.insert(QObject::tr("English").append(" (en)"), QLocale(QLocale::English));
+    languagesMap.insert(QObject::tr("French").append(" (fr)"), QLocale(QLocale::French));
+    languagesMap.insert(QObject::tr("German").append(" (de)"), QLocale(QLocale::German));
+    languagesMap.insert(QObject::tr("Italian").append(" (it)"), QLocale(QLocale::Italian));
+    languagesMap.insert(QObject::tr("Japanese").append(" (ja)"), QLocale(QLocale::Japanese));
+    languagesMap.insert(QObject::tr("Romanian").append(" (ro)"), QLocale(QLocale::Romanian));
+    languagesMap.insert(QObject::tr("Russian").append(" (ru)"), QLocale(QLocale::Russian));
+    languagesMap.insert(QObject::tr("Spanish").append(" (es)"), QLocale(QLocale::Spanish));
+    languagesMap.insert(QObject::tr("Swedish").append(" (sv)"), QLocale(QLocale::Swedish));
+  }
+  return languagesMap;
+}

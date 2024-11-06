@@ -82,27 +82,32 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // Set OMEdit locale to C so that we get dot as decimal separator instead of comma.
   QLocale::setDefault(QLocale::c());
 
+  QString qtTranslatorLoadError, translatorLoadError;
+  QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
+  for (auto i = languagesMap.cbegin(), end = languagesMap.cend(); i != end; ++i) {
+    if (i.value() == settingsLocale) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  QString qtTranslationsLocation = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+      QString qtTranslationsLocation = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
 #else
-  QString qtTranslationsLocation = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
+      QString qtTranslationsLocation = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
 #endif
-  QString qtTranslatorLoadError;
-  // install Qt's default translations
-  if (mQtTranslator.load("qt_" + locale, qtTranslationsLocation)) {
-    installTranslator(&mQtTranslator);
-  } else {
-    qtTranslatorLoadError = QString("Failed to load Qt translation file %1 from location %2").arg("qt_" + locale, qtTranslationsLocation);
-  }
-  // install application translations
-  QString translationsLocation = installationDirectoryPath + QString("/share/omedit/nls");
-  QString translatorLoadError;
-  // skip loading OMEdit translation file if locale is english i.e., en_US. We don't have any OMEdit_en.qm file.
-  if (locale.compare(QStringLiteral("en_US")) != 0) {
-    if (mTranslator.load("OMEdit_" + locale, translationsLocation)) {
-      installTranslator(&mTranslator);
-    } else {
-      translatorLoadError = QString("Failed to load translation file %1 from location %2").arg("OMEdit_" + locale, translationsLocation);
+      // install Qt's default translations
+      if (mQtTranslator.load("qt_" + locale, qtTranslationsLocation)) {
+        installTranslator(&mQtTranslator);
+      } else {
+        qtTranslatorLoadError = QString("Failed to load Qt translation file %1 from location %2").arg("qt_" + locale, qtTranslationsLocation);
+      }
+      // install application translations
+      QString translationsLocation = installationDirectoryPath + QString("/share/omedit/nls");
+      // skip loading OMEdit translation file if locale language is QLocale::English. We don't have any OMEdit_en*.qm file.
+      if (settingsLocale.language() != QLocale::English) {
+        if (mTranslator.load("OMEdit_" + locale, translationsLocation)) {
+          installTranslator(&mTranslator);
+        } else {
+          translatorLoadError = QString("Failed to load translation file %1 from location %2").arg("OMEdit_" + locale, translationsLocation);
+        }
+      }
+      break;
     }
   }
   // Splash Screen
