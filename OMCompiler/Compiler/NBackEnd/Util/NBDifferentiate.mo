@@ -1678,8 +1678,8 @@ public
           (_, sizeClass) := Operator.classify(operator);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
       then (Expression.MULTARY(
-              {Expression.MULTARY({exp1, diffExp2}, {}, operator),
-               Expression.MULTARY({diffExp1, exp2}, {}, operator)},
+              {Expression.BINARY(exp1, operator, diffExp2),
+               Expression.BINARY(diffExp1, operator, exp2)},
               {},
               addOp
             ),
@@ -1699,8 +1699,8 @@ public
           powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, sizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.MULTARY(
-                {Expression.MULTARY({exp1, diffExp2}, {}, mulOp)},              // fg'
-                {Expression.MULTARY({diffExp1, exp2}, {}, mulOp)},              // - f'g
+                {Expression.BINARY(exp1, mulOp, diffExp2)},              // fg'
+                {Expression.BINARY(diffExp1, mulOp, exp2)},              // - f'g
                 addOp
               )},
               {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))},           // / g^2

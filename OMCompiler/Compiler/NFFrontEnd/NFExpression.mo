@@ -4426,13 +4426,14 @@ public
 
   function isZero
     input Expression exp;
-    output Boolean isZero;
+    output Boolean b;
   algorithm
-    isZero := match exp
-      case INTEGER() then exp.value == 0;
-      case REAL() then exp.value == 0.0;
-      case CAST() then isZero(exp.exp);
-      case UNARY() then isZero(exp.exp);
+    b := match exp
+      case INTEGER()  then exp.value == 0;
+      case REAL()     then exp.value == 0.0;
+      case CAST()     then isZero(exp.exp);
+      case UNARY()    then isZero(exp.exp);
+      case ARRAY()    then Array.all(exp.elements, isZero);
       else false;
     end match;
   end isZero;
@@ -4760,10 +4761,10 @@ public
     output Expression zeroExp;
   algorithm
     zeroExp := match ty
-      case Type.REAL() then REAL(0.0);
+      case Type.REAL()    then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
-      case Type.ARRAY() then fillType(ty, makeZero(Type.arrayElementType(ty)));
+      case Type.ARRAY()   then fillType(ty, makeZero(Type.arrayElementType(ty)));
       case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
