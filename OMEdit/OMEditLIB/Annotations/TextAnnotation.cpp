@@ -665,7 +665,15 @@ void TextAnnotation::updateTextString()
       return;
     }
     if (mTextString.toLower().contains("%name")) {
-      mTextString.replace(QRegExp("%name"), mpElement->getName());
+      if (mpElement->getGraphicsView()->getModelWidget()->isNewApi()) {
+        QString name = mpElement->getName();
+        if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
+          name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
+        }
+        mTextString.replace(QRegExp("%name"), name);
+      } else {
+        mTextString.replace(QRegExp("%name"), mpElement->getName());
+      }
     }
     if (mTextString.toLower().contains("%class")) {
       mTextString.replace(QRegExp("%class"), mpElement->getClassName());
