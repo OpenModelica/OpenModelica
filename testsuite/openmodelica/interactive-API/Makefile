@@ -112,6 +112,7 @@ setComponentModifierValue.mos \
 setElementAnnotation.mos \
 setElementType.mos \
 setElementModifierValue.mos \
+setExtendsModifierValue.mos \
 setExtendsModifier.mos \
 setParameterValue.mos \
 setSourceFileListFile.mos \
