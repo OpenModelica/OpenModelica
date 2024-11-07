@@ -371,7 +371,7 @@ algorithm
     end try;
   end try;
 
-  clsNode := InstUtil.mergeScalars(clsNode, path);
+  clsNode := InstUtil.mergeScalars(clsNode, path, isRootClass = true);
   checkInstanceRestriction(clsNode, path, context);
   clsNode := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), clsNode);
 end lookupRootClass;
@@ -636,12 +636,31 @@ protected
   SCode.Element def = InstNode.definition(node);
   SCode.ClassDef cdef;
   SourceInfo info;
+  Option<InstUtil.MergeNameMap> name_map = NONE();
 algorithm
   SCode.CLASS(classDef = cdef, info = info) := def;
 
   node := match cdef
-    case SCode.PARTS() then expandClassParts(def, node, context, info);
-    case SCode.CLASS_EXTENDS() then expandClassParts(def, node, context, info);
+    case SCode.PARTS()
+      algorithm
+        (node, name_map) := expandClassParts(def, node, context, info);
+
+        if isSome(name_map) then
+          InstUtil.mergeScalarsComponentBindings(node, Util.getOption(name_map));
+        end if;
+      then
+        node;
+
+    case SCode.CLASS_EXTENDS()
+      algorithm
+        (node, name_map) := expandClassParts(def, node, context, info);
+
+        if isSome(name_map) then
+          InstUtil.mergeScalarsComponentBindings(node, Util.getOption(name_map));
+        end if;
+      then
+        node;
+
     // A short class definition, e.g. class A = B.
     case SCode.DERIVED()
       then match cdef.typeSpec
@@ -675,6 +694,7 @@ function expandClassParts
   input output InstNode node;
   input InstContext.Type context;
   input SourceInfo info;
+  output Option<InstUtil.MergeNameMap> nameMap;
 protected
   Class cls;
   ClassTree cls_tree;
@@ -682,6 +702,7 @@ protected
   InstNode builtin_ext;
   Class.Prefixes prefs;
   Restriction res;
+  InstUtil.MergeNameMap name_map;
 algorithm
   cls := InstNode.getClass(node);
   // Change the class to an empty expanded class, to avoid instantiation loops.
@@ -689,7 +710,15 @@ algorithm
   node := InstNode.updateClass(cls, node);
 
   Class.EXPANDED_CLASS(elements = cls_tree, modifier = mod, ccMod = cc_mod, prefixes = prefs) := cls;
-  builtin_ext := ClassTree.mapFoldExtends(cls_tree, function expandExtends(context = context), InstNode.EMPTY_NODE());
+
+  if ClassTree.extendsCount(cls_tree) > 0 then
+    name_map := InstUtil.makeMergeNameMap();
+    builtin_ext := ClassTree.mapFoldExtends(cls_tree, function expandExtends(context = context, nameMap = name_map), InstNode.EMPTY_NODE());
+    nameMap := if UnorderedMap.isEmpty(name_map) then NONE() else SOME(name_map);
+  else
+    builtin_ext := InstNode.EMPTY_NODE();
+    nameMap := NONE();
+  end if;
 
   if InstNode.name(builtin_ext) == "ExternalObject" then
     node := expandExternalObject(cls_tree, node);
@@ -709,6 +738,7 @@ function expandExtends
   input output InstNode ext;
   input output InstNode builtinExt = InstNode.EMPTY_NODE();
   input InstContext.Type context;
+  input InstUtil.MergeNameMap nameMap;
 protected
   SCode.Element def;
   Absyn.Path base_path;
@@ -735,7 +765,7 @@ algorithm
         checkReplaceableBaseClass(base_nodes, base_path, info);
 
         if InstNode.isRootClass(scope) and SCodeUtil.isEmptyMod(smod) then
-          base_node := InstUtil.mergeScalars(base_node, base_path);
+          base_node := InstUtil.mergeScalars(base_node, base_path, false, nameMap);
         end if;
 
         base_node := expand(base_node, context);
