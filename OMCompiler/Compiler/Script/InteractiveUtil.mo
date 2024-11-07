@@ -445,8 +445,14 @@ algorithm
         (_, full_path) := Interactive.mkFullyQual(env, ext_spec.path);
         true := AbsynUtil.pathEqual(extendsPath, full_path);
 
-        opt_mod := propagateMod(AbsynUtil.prefixPath("dummy", elementName),
-          mod, SOME(Absyn.CLASSMOD(eargs, Absyn.NOMOD())));
+        if AbsynUtil.pathFirstIdent(elementName) == "_" then
+          // If the element name is _, then apply the modifier directly to the
+          // extends clause instead of to a specific element.
+          opt_mod := propagateMod(elementName, mod, SOME(Absyn.CLASSMOD(eargs, Absyn.NOMOD())));
+        else
+          opt_mod := propagateMod(AbsynUtil.prefixPath("dummy", elementName),
+            mod, SOME(Absyn.CLASSMOD(eargs, Absyn.NOMOD())));
+        end if;
 
         ext_spec.elementArg := match opt_mod
           case SOME(Absyn.Modification.CLASSMOD(elementArgLst = eargs)) then eargs;

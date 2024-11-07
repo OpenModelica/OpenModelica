@@ -1,0 +1,34 @@
+// name: setExtendsModifier
+// keywords:
+// status: correct
+//
+// Tests the setExtendsModifier API function.
+//
+
+loadString("
+  package TestArrayModifiers
+    model System
+      parameter Real r[3];
+    end System;
+    model SystemVariant1
+        extends System(x = 1, r = 2);
+    end SystemVariant1;
+  end TestArrayModifiers;
+");
+
+setExtendsModifier(TestArrayModifiers.SystemVariant1, TestArrayModifiers.System, $Code((each r = 1)));
+list(TestArrayModifiers);
+
+// Result:
+// true
+// true
+// "package TestArrayModifiers
+//   model System
+//     parameter Real r[3];
+//   end System;
+//
+//   model SystemVariant1
+//     extends System(x = 1, each r = 1);
+//   end SystemVariant1;
+// end TestArrayModifiers;"
+// endResult
