@@ -111,13 +111,14 @@ public
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
-          (oldPartitions, oldEvents, name) := match kind
-            case NBPartition.Kind.ODE    then (bdae.ode, bdae.ode_event, "ODE_JAC");
-            case NBPartition.Kind.DAE    then (Util.getOption(bdae.dae), bdae.ode_event,"DAE_JAC");
+          (oldPartitions, name) := match kind
+            case NBPartition.Kind.ODE then (bdae.ode, "ODE_JAC");
+            case NBPartition.Kind.DAE then (Util.getOption(bdae.dae), "DAE_JAC");
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
+          oldEvents := bdae.ode_event;
 
           if Flags.isSet(Flags.JAC_DUMP) then
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
@@ -125,7 +126,7 @@ public
 
           for part in listReverse(oldPartitions) loop
             (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
-            newEvents := part::newEvents;
+            newPartitions := part::newPartitions;
           end for;
 
           for part in listReverse(oldEvents) loop
@@ -134,16 +135,10 @@ public
           end for;
 
           () := match kind
-            case NBPartition.Kind.ODE algorithm
-              bdae.ode := newPartitions;
-              bdae.ode_event := newEvents;
-            then ();
-
-            case NBPartition.Kind.DAE algorithm
-              bdae.dae := SOME(newPartitions);
-              bdae.ode_event := newEvents;
-            then ();
+            case NBPartition.Kind.ODE algorithm bdae.ode := newPartitions; then ();
+            case NBPartition.Kind.DAE algorithm bdae.dae := SOME(newPartitions); then ();
           end match;
+          bdae.ode_event := newEvents;
           bdae.funcTree := funcTree;
       then bdae;
 
