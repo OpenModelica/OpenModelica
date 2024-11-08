@@ -53,6 +53,6 @@ public:
   virtual IMixedSystem* clone() = 0;
 
   virtual bool isJacobianSparse() = 0;//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
-  virtual bool isAnalyticJacobianGenerated() = 0;//true if the flag --generateSymbolicJacobian is true, false if not.
+  virtual bool isAnalyticJacobianGenerated() = 0;//true if the flag --generateDynamicJacobian=symbolic, false if not.
 };
 /** @} */ // end of coreSystem
