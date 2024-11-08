@@ -226,7 +226,7 @@ protected
           state_var := BVariable.getVarPointer(state_cref);
           if BVariable.hasDerVar(state_var) then
             // this derivative was already created -> the variable should already have a pointer to its derivative
-            der_cref := BVariable.getDerCref(state_cref);
+            der_cref := BVariable.getPartnerCref(state_cref, BVariable.getVarDer);
             if not scalarized then
               der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), der_cref);
             end if;
@@ -285,7 +285,7 @@ protected
             if List.hasOneElement(oDiffArgs.new_vars) then
               der_var := List.first(oDiffArgs.new_vars);
               Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
-              Pointer.update(acc_states, BVariable.getStateVar(der_var) :: Pointer.access(acc_states));
+              Pointer.update(acc_states, Util.getOption(BVariable.getVarState(der_var)) :: Pointer.access(acc_states));
             elseif List.hasSeveralElements(oDiffArgs.new_vars) then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the number of algebraic variables were miscounted! " +
                 "Expected: 0 or 1, got: " + intString(listLength(oDiffArgs.new_vars))});

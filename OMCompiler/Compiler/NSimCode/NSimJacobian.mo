@@ -269,7 +269,7 @@ public
                 UnorderedMap.add(cref, var.index, idx_map);
                 if BVariable.checkCref(cref, BVariable.isState) then
                   subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
-                  cref := BVariable.getDerCref(cref);
+                  cref := BVariable.getPartnerCref(cref, BVariable.getVarDer);
                   cref := ComponentRef.mergeSubscripts(subscripts, cref, true, true);
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;

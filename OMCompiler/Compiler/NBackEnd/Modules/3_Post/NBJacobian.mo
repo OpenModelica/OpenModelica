@@ -686,7 +686,7 @@ protected
   algorithm
     partialCandidates := part.unknowns;
     derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(part.unknowns));
-    state_vars := list(BVariable.getStateVar(var) for var in derivative_vars);
+    state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
     seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
     (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
