@@ -267,11 +267,12 @@ public
   partial function checkVar
     input Pointer<Variable> var_ptr;
     output Boolean b;
-  end checkVar;
-
-  function isArray extends checkVar;
   protected
     Variable var = Pointer.access(var_ptr);
+  end checkVar;
+
+  function isArray
+    extends checkVar;
   algorithm
     b := Type.isArray(var.ty);
   end isArray;
@@ -286,121 +287,130 @@ public
     dims := Type.arrayDims(var.ty);
   end getDimensions;
 
-  function isEmpty extends checkVar;
+  function isEmpty
+    extends checkVar;
   algorithm
-    b := ComponentRef.isEmpty(getVarName(var_ptr));
+    b := ComponentRef.isEmpty(var.name);
   end isEmpty;
 
-  function isState extends checkVar;
+  function isState
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.STATE() then true;
       else false;
     end match;
   end isState;
 
-  function isStateDerivative extends checkVar;
+  function isStateDerivative
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE_DER())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.STATE_DER() then true;
       else false;
     end match;
   end isStateDerivative;
 
-  function isAlgebraic extends checkVar;
+  function isAlgebraic
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.ALGEBRAIC())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.ALGEBRAIC() then true;
       else false;
     end match;
   end isAlgebraic;
 
-  function isStart extends checkVar;
+  function isStart
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.START())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.START() then true;
       else false;
     end match;
   end isStart;
 
-  function isTime extends checkVar;
+  function isTime
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.TIME())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.TIME() then true;
       else false;
     end match;
   end isTime;
 
-  function isContinuous extends checkVar;
+  function isContinuous
+    extends checkVar;
     input Boolean init  "true if its an initial system";
   algorithm
-    b := match Pointer.access(var_ptr)
-      local
-        Variable var;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE_STATE()))   then false;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE()))         then false;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PREVIOUS()))         then false;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT()))         then false;
-      case var as Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
-      then init and Type.isContinuous(var.ty);
+    b := match var.backendinfo.varKind
+      case VariableKind.DISCRETE_STATE()  then false;
+      case VariableKind.DISCRETE()        then false;
+      case VariableKind.PREVIOUS()        then false;
+      case VariableKind.CONSTANT()        then false;
+      case VariableKind.PARAMETER()       then init and Type.isContinuous(var.ty);
       else true;
     end match;
   end isContinuous;
 
-  function isDiscreteState extends checkVar;
+  function isDiscreteState
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE_STATE())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.DISCRETE_STATE() then true;
       else false;
     end match;
   end isDiscreteState;
 
-  function isDiscrete extends checkVar;
+  function isDiscrete
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.DISCRETE() then true;
       else false;
     end match;
   end isDiscrete;
 
-  function isPrevious extends checkVar;
+  function isPrevious
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PREVIOUS())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.PREVIOUS() then true;
       else false;
     end match;
   end isPrevious;
 
-  function isRecord extends checkVar;
+  function isRecord
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.RECORD() then true;
       else false;
     end match;
   end isRecord;
 
-  function isKnownRecord extends checkVar;
+  function isKnownRecord
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-     local
-        Boolean known;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(known = known))) then known;
+    b := match var.backendinfo.varKind
+      case VariableKind.RECORD(known = true) then true;
       else false;
     end match;
   end isKnownRecord;
 
-  function isClock extends checkVar;
+  function isClock
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CLOCK())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.CLOCK() then true;
       else false;
     end match;
   end isClock;
 
-  function isClocked extends checkVar;
+  function isClocked
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CLOCKED())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.CLOCKED() then true;
       else false;
     end match;
   end isClocked;
@@ -495,15 +505,10 @@ public
     end if;
   end getPartnerCref;
 
-  function hasStartAttr extends checkVar;
+  function hasStartAttr
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      local
-        VariableAttributes attr;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attr))
-        then Util.isSome(VariableAttributes.getStartAttribute(attr));
-      else false;
-    end match;
+    b := Util.isSome(VariableAttributes.getStartAttribute(var.backendinfo.attributes));
   end hasStartAttr;
 
   function hasPre
@@ -513,91 +518,96 @@ public
     b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
   end hasPre;
 
-  function isDummyState extends checkVar;
+  function isDummyState
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DUMMY_STATE())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.DUMMY_STATE() then true;
       else false;
     end match;
   end isDummyState;
 
-  function isDummyDer extends checkVar;
+  function isDummyDer
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DUMMY_DER())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.DUMMY_DER() then true;
       else false;
     end match;
   end isDummyDer;
 
-  function isParamOrConst extends checkVar;
+  function isParamOrConst
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))  then true;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT()))   then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.PARAMETER() then true;
+      case VariableKind.CONSTANT()  then true;
       else false;
     end match;
   end isParamOrConst;
 
-  function isConst extends checkVar;
+  function isConst
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.CONSTANT() then true;
       else false;
     end match;
   end isConst;
 
-  function isKnown extends checkVar;
+  function isKnown
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))  then true;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.CONSTANT()))   then true;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE()))      then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.PARAMETER() then true;
+      case VariableKind.CONSTANT()  then true;
+      case VariableKind.STATE()     then true;
       else false;
     end match;
   end isKnown;
 
-  function isResidual extends checkVar;
+  function isResidual
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RESIDUAL_VAR())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.RESIDUAL_VAR() then true;
       else false;
     end match;
   end isResidual;
 
-  function isSeed extends checkVar;
+  function isSeed
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.SEED_VAR())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.SEED_VAR() then true;
       else false;
     end match;
   end isSeed;
 
-  function isInput extends checkVar;
+  function isInput
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.INPUT)) then true;
-      else false;
-    end match;
+    b := var.attributes.direction == NFPrefixes.Direction.INPUT;
   end isInput;
 
-  function isOutput extends checkVar;
+  function isOutput
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.OUTPUT)) then true;
-      else false;
-    end match;
+    b := var.attributes.direction == NFPrefixes.Direction.OUTPUT;
   end isOutput;
 
-  function isFixed extends checkVar;
+  function isFixed
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
+    // FIXME use VariableAttributes.isFixed()?
+    b := match var.backendinfo.attributes
       local
         Expression fixed;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))))        then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))))         then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))))        then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))))      then Expression.isAllTrue(fixed);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)))) then Expression.isAllTrue(fixed);
+      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
+      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(fixed);
+      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
+      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(fixed);
+      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(fixed);
       else false;
     end match;
   end isFixed;
@@ -607,13 +617,13 @@ public
     discrete states are always fixable. previous vars are only fixable if the discrete state for it wasn't fixed."
     extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE()))          then not isFixed(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.ALGEBRAIC()))      then not isFixed(var_ptr) and hasStartAttr(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE()))       then not isFixed(var_ptr) or hasPre(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DISCRETE_STATE())) then not isFixed(var_ptr) or hasPre(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))      then not isFixed(var_ptr);
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PREVIOUS()))       then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.STATE()          then not isFixed(var_ptr);
+      case VariableKind.ALGEBRAIC()      then not isFixed(var_ptr) and hasStartAttr(var_ptr);
+      case VariableKind.DISCRETE()       then not isFixed(var_ptr) or hasPre(var_ptr);
+      case VariableKind.DISCRETE_STATE() then not isFixed(var_ptr) or hasPre(var_ptr);
+      case VariableKind.PARAMETER()      then not isFixed(var_ptr);
+      case VariableKind.PREVIOUS()       then true;
       else false;
     end match;
   end isFixable;
@@ -623,15 +633,7 @@ public
     extends checkVar;
     input StateSelect stateSelect;
   algorithm
-    b := match Pointer.access(var_ptr)
-      local
-        VariableAttributes attributes;
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes))
-      then VariableAttributes.getStateSelect(attributes) == stateSelect;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(Pointer.access(var_ptr))});
-      then fail();
-    end match;
+    b := VariableAttributes.getStateSelect(var.backendinfo.attributes) == stateSelect;
   end isStateSelect;
 
   function setVariableAttributes
@@ -772,18 +774,20 @@ public
     during frontend!"
     extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      case NFVariable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY())) then true;
+    b := match var.backendinfo.varKind
+      case VariableKind.FRONTEND_DUMMY() then true;
       else false;
     end match;
   end isDummyVariable;
 
-  function isFunctionAlias extends checkVar;
+  function isFunctionAlias
+    extends checkVar;
   algorithm
     b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), FUNCTION_STR);
   end isFunctionAlias;
 
-  function isClockAlias extends checkVar;
+  function isClockAlias
+    extends checkVar;
   algorithm
     b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), CLOCK_STR);
   end isClockAlias;
@@ -1253,14 +1257,12 @@ public
     end match;
   end getBindingVariability;
 
-  function hasEvaluableBinding extends checkVar;
+  function hasEvaluableBinding
+    extends checkVar;
   protected
-    Variable var;
     Expression binding;
   algorithm
-    b := false;
     if isBound(var_ptr) then
-      var := Pointer.access(var_ptr);
       binding := Binding.getExp(var.binding);
       b := Expression.isLiteral(binding);
       if not b then
@@ -1269,6 +1271,8 @@ public
         binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
         b := Expression.isLiteral(Ceval.tryEvalExp(binding));
       end if;
+    else
+      b := false;
     end if;
   end hasEvaluableBinding;
 
@@ -1340,42 +1344,25 @@ public
      used for alias removal since only those can be stored as actual alias variables"
     extends checkVar;
   protected
-    Variable var;
-    Expression binding;
+    Expression binding = Binding.getExp(var.binding);
   algorithm
-    var := Pointer.access(var_ptr);
-    binding := Binding.getExp(var.binding);
     b := (not Expression.isTrivialCref(binding)) and checkExpMap(binding, isTimeDependent);
   end hasNonTrivialAliasBinding;
 
-  function hasConstOrParamAliasBinding extends checkVar;
-  protected
-    Variable var;
-    Expression binding;
+  function hasConstOrParamAliasBinding
+    extends checkVar;
   algorithm
-    var := Pointer.access(var_ptr);
-    binding := Binding.getExp(var.binding);
-    b := not checkExpMap(binding, isTimeDependent);
+    b := not checkExpMap(Binding.getExp(var.binding), isTimeDependent);
   end hasConstOrParamAliasBinding;
 
-  function isTimeDependent extends checkVar;
+  function isTimeDependent
+    extends checkVar;
   algorithm
-    b := match Pointer.access(var_ptr)
-      local
-        Variable var;
-
-      case var as Variable.VARIABLE()
-      then VariableKind.isTimeDependent(BackendInfo.getVarKind(var.backendinfo));
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
-      then fail();
-    end match;
+    b := VariableKind.isTimeDependent(var.backendinfo.varKind);
   end isTimeDependent;
 
-  function isBound extends checkVar;
-  protected
-    Variable var = Pointer.access(var_ptr);
+  function isBound
+    extends checkVar;
   algorithm
     b := match var.binding
       case Binding.TYPED_BINDING()    then true;
