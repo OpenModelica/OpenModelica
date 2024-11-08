@@ -80,18 +80,18 @@ protected
 public
   type JacobianType = enumeration(ODE, DAE, LS, NLS);
 
-  function isForIntegrator
+  function isDynamic
     "is the jacobian used for integration (-> ture)
      or solving algebraic systems (-> false)?"
     input JacobianType jacType;
-    output Boolean isForIntegrator;
+    output Boolean b;
   algorithm
-    isForIntegrator := match jacType
+    b := match jacType
       case JacobianType.ODE then true;
       case JacobianType.DAE then true;
       else false;
     end match;
-  end isForIntegrator;
+  end isDynamic;
 
   function main
     "Wrapper function for any jacobian function. This will be called during
@@ -276,11 +276,11 @@ public
     "Returns the module function that was chosen by the user."
     output Module.jacobianInterface func;
   algorithm
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
-      func := jacobianSymbolic;
-    else
-      func := jacobianNumeric;
-    end if;
+    func := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
+      case "symbolic" then jacobianSymbolic;
+      case "numeric"  then jacobianNumeric;
+      case "none"     then jacobianNone;
+    end match;
   end getModule;
 
   function toString
@@ -821,6 +821,12 @@ protected
       sparsityColoring  = sparsityColoring
     ));
   end jacobianNumeric;
+
+  function jacobianNone
+    extends Module.jacobianInterface;
+  algorithm
+    jacobian := NONE();
+  end jacobianNone;
 
   function getTmpFilterFunction
     " - ODE/DAE filter by state derivative / algebraic

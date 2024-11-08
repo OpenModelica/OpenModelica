@@ -263,7 +263,7 @@ public
 
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
-            if Jacobian.isForIntegrator(jacobian.jacType) then
+            if Jacobian.isDynamic(jacobian.jacType) then
               for var in seedVars loop
                 cref := SimVar.getName(var);
                 UnorderedMap.add(cref, var.index, idx_map);

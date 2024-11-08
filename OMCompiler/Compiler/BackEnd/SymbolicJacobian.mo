@@ -84,7 +84,7 @@ import ValuesUtil;
 // section for postOptModule >>symbolicJacobian<<
 //
 // Detects the sparse pattern of the ODE system and calculates also the symbolic
-// Jacobian if flag "--generateSymbolicJacobian" is enabled.
+// Jacobian if flag "--generateDynamicJacobian=symbolic".
 // =============================================================================
 
 // From User Documentation for ida v5.4.0 equation (2.5) aka Alpha
@@ -94,11 +94,11 @@ public constant String DAE_CJ = "$DAE_CJ";
 
 public function symbolicJacobian "author: lochel
   Detects the sparse pattern of the ODE system and calculates also the symbolic
-  Jacobian if flag '--generateSymbolicJacobian' is enabled."
+  Jacobian if flag '--generateDynamicJacobian=symbolic'."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+  if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
     outDAE := generateSymbolicJacobianPast(inDAE);
   else
     outDAE := detectSparsePatternODE(inDAE);
@@ -248,7 +248,7 @@ algorithm
 
     if debug then execStat(getInstanceName() + "-> get all vars "); end if;
 
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
       // generate symbolic jacobian and sparsity pattern
       (symjac, funcs, sparsePattern, coloredCols, nonlinearPattern) := generateGenericJacobian(
         inBackendDAE          = DAE,
@@ -2471,7 +2471,7 @@ algorithm
 
     else
      equation
-      Error.addInternalError("function generateSymbolicJacobian failed", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed", sourceInfo());
     then fail();
   end matchcontinue;
 end generateSymbolicJacobian;

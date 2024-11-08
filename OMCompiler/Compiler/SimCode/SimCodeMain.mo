@@ -1637,7 +1637,7 @@ algorithm
 
     // create DAE mode Sparse pattern and TODO: Jacobians
     // sparsity pattern generation
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
       // create symbolic jacobian (like nls systems!)
       (daeModeJac, daeModeSparsity, daeModeColoring, nonlinearPattern) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
@@ -1730,7 +1730,7 @@ algorithm
 
     algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
 
-    // only create sparsity pattern for dae mode data even if it is created with --generateSymbolicJacobian
+    // only create sparsity pattern for dae mode data even if it is created with --generateDynamicJacobian=symbolic
     // the A matrix will be used symbolically
     // (also the A matrix sparsity pattern seems to be faulty so we use this one instead)
     daeModeJacobian := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
@@ -1738,7 +1738,7 @@ algorithm
     daeModeSP := SOME(symDAESparsPattern);
 
     // copy the sparsity pattern to the A jacobian
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
      SymbolicJacs := list(SimCodeUtil.syncDAEandSimJac(symjac, symDAESparsPattern) for symjac in SymbolicJacs);
     end if;
 

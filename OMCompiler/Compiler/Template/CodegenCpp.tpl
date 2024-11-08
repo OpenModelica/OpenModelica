@@ -430,7 +430,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
 
     virtual string getModelName();
     virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
-    virtual bool isAnalyticJacobianGenerated();//true if the flag --generateSymbolicJacobian is true, false if not.
+    virtual bool isAnalyticJacobianGenerated();//true if the flag --generateDynamicJacobian=symbolic, false if not.
    private:
     // update residual methods
     <%extraResidualsFuncsDecl%>
@@ -1035,7 +1035,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       else "A matrix type is not supported"
           end match
 
-      let isAnalyticJacobianGenerated = if getConfigBool(GENERATE_SYMBOLIC_JACOBIAN) then 'return true;' else 'return false;'
+      let isAnalyticJacobianGenerated = if stringEq(getConfigString(GENERATE_DYNAMIC_JACOBIAN), "symbolic") then 'return true;' else 'return false;'
 
      let statesetjacobian =
      (stateSets |> set hasindex i1 fromindex 0 => (match set
