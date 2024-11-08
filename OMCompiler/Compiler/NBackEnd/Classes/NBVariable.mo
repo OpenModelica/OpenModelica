@@ -408,6 +408,7 @@ public
   partial function getVarPartner
     input Pointer<Variable> var_ptr;
     output Option<Pointer<Variable>> partner;
+    output String partnerName "for error messages";
   protected
     Variable var = Pointer.access(var_ptr);
   end getVarPartner;
@@ -416,6 +417,7 @@ public
     "Gets the pre() / previous() var if its a variable / clocked variable or the other way around."
     extends getVarPartner;
   algorithm
+    partnerName := "pre variable";
     partner := var.backendinfo.var_pre;
   end getVarPre;
 
@@ -423,6 +425,7 @@ public
     "Gets the SEED var to the variable or the other way around."
     extends getVarPartner;
   algorithm
+    partnerName := "seed variable";
     partner := var.backendinfo.var_seed;
   end getVarSeed;
 
@@ -430,23 +433,66 @@ public
     "Gets the partial derivative of a residual or the other way around."
     extends getVarPartner;
   algorithm
+    partnerName := "partial derivative";
     partner := var.backendinfo.var_pder;
   end getVarPDer;
+
+  function getVarDer
+    "Returns the derivative from a state.
+    Only works after the state has been detected by the DetectStates module."
+    extends getVarPartner;
+  algorithm
+    partnerName := "derivative";
+    partner := match var.backendinfo.varKind
+      case VariableKind.STATE(derivative = partner) then partner;
+      else NONE();
+    end match;
+  end getVarDer;
+
+  function getVarState
+    extends getVarPartner;
+  algorithm
+    partnerName := "state";
+    partner := match var.backendinfo.varKind
+      local
+        Pointer<Variable> p;
+      case VariableKind.STATE_DER(state = p) then SOME(p);
+      else NONE();
+    end match;
+  end getVarState;
+
+  function getVarDummyDer
+    "Returns the dummy derivative from a dummy state.
+    Only works after the dummy state has been created by the IndexReduction module"
+    extends getVarPartner;
+  algorithm
+    partnerName := "dummy derivative";
+    partner := match var.backendinfo.varKind
+      local
+        Pointer<Variable> p;
+      case VariableKind.DUMMY_STATE(dummy_der = p) then SOME(p);
+      else NONE();
+    end match;
+  end getVarDummyDer;
 
   function getPartnerCref
     "Like getVarPartner but for cref. Fails if there is no partner."
     input ComponentRef cref;
     input getVarPartner func;
     output ComponentRef partner_cref;
+  protected
+    Option<Pointer<Variable>> partner;
+    String partnerName;
   algorithm
-    partner_cref := match func(getVarPointer(cref))
-      local
-        Pointer<Variable> partner;
-      case SOME(partner) then getVarName(partner);
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because " + ComponentRef.toString(cref) + " has no partner variable."});
-      then fail();
-    end match;
+    (partner, partnerName) := func(getVarPointer(cref));
+    if isSome(partner) then
+      partner_cref := getVarName(Util.getOption(partner));
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,
+        {getInstanceName() + " failed because " + ComponentRef.toString(cref)
+         + " has no corresponding " + partnerName + "."});
+      fail();
+    end if;
   end getPartnerCref;
 
   function hasStartAttr extends checkVar;
@@ -806,43 +852,6 @@ public
     end match;
   end makeDerVar;
 
-  function getStateVar
-    input Pointer<Variable> der_var;
-    output Pointer<Variable> state_var;
-  algorithm
-    state_var := match Pointer.access(der_var)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE_DER(state = state_var)))
-      then state_var;
-      else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(der_var) + " because of wrong variable kind."});
-        then fail();
-    end match;
-  end getStateVar;
-
-  function getStateCref
-    "Returns the state variable component reference from a state derivative component reference.
-    Only works after the state has been detected by the DetectStates module and fails for non-state derivative crefs!"
-    input output ComponentRef cref;
-  algorithm
-    cref := match cref
-      local
-        Pointer<Variable> state, derivative;
-        Variable stateVar;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = derivative)) then match Pointer.access(derivative)
-        case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE_DER(state = state)))
-          algorithm
-            stateVar := Pointer.access(state);
-        then stateVar.name;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
-        then fail();
-      end match;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
-      then fail();
-    end match;
-  end getStateCref;
-
   function hasDerVar
     input Pointer<Variable> state_var;
     output Boolean b;
@@ -852,43 +861,6 @@ public
       else false;
     end match;
   end hasDerVar;
-
-  function getDerVar
-    input Pointer<Variable> state_var;
-    output Pointer<Variable> der_var;
-  algorithm
-    der_var := match Pointer.access(state_var)
-      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE(derivative = SOME(der_var))))
-      then der_var;
-      else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(state_var) + " because of wrong variable kind."});
-        then fail();
-    end match;
-  end getDerVar;
-
-  function getDerCref
-    "Returns the derivative variable component reference from a state component reference.
-    Only works after the state has been detected by the DetectStates module and fails for non-state crefs!"
-    input output ComponentRef cref;
-  algorithm
-    cref := match cref
-      local
-        Pointer<Variable> state, derivative;
-        Variable derVar;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = state)) then match Pointer.access(state)
-        case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE(derivative = SOME(derivative))))
-          algorithm
-            derVar := Pointer.access(derivative);
-        then derVar.name;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
-        then fail();
-      end match;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
-      then fail();
-    end match;
-  end getDerCref;
 
   function getRecordChildren
     "returns all children of the variable if its a record, otherwise returns empty list"
@@ -929,30 +901,6 @@ public
     end match;
     Pointer.update(varPointer, var);
   end makeDummyState;
-
-  function getDummyDerCref
-    "Returns the dummy derivative variable component reference from a dummy state component reference.
-    Only works after the dummy state has been created by the IndexReduction module and fails for non-dummy-state crefs!"
-    input output ComponentRef cref;
-  algorithm
-    cref := match cref
-      local
-        Pointer<Variable> dummy_state, dummy_derivative;
-        Variable dummy_derVar;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = dummy_state)) then match Pointer.access(dummy_state)
-        case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.DUMMY_STATE(dummy_der = dummy_derivative)))
-          algorithm
-            dummy_derVar := Pointer.access(dummy_derivative);
-        then dummy_derVar.name;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
-        then fail();
-      end match;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
-      then fail();
-    end match;
-  end getDummyDerCref;
 
   function makeDiscreteStateVar
     "Updates a discrete variable pointer to be a discrete state, requires the pointer to its left limit (pre) variable."

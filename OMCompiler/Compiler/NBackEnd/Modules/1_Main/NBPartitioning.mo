@@ -846,7 +846,7 @@ protected
     // discrete states and there pre value also
     // todo: difference between pre and previous for clocked
     if BVariable.isState(var_ptr) then
-      UnorderedSet.add(BVariable.getDerCref(cref), set);
+      UnorderedSet.add(BVariable.getPartnerCref(cref, BVariable.getVarDer), set);
     elseif BVariable.isPrevious(var_ptr) then
       UnorderedSet.add(BVariable.getPartnerCref(cref, BVariable.getVarPre), set);
     else

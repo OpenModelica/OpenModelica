@@ -669,14 +669,14 @@ public
       // DUMMY_STATES => DUMMY_DER
       case (Expression.CREF(), DifferentiationType.TIME, _)
         guard(BVariable.isDummyState(var_ptr))
-      then (Expression.fromCref(BVariable.getDummyDerCref(exp.cref)), diffArguments);
+      then (Expression.fromCref(BVariable.getPartnerCref(exp.cref, BVariable.getVarDummyDer)), diffArguments);
 
       // Types: (TIME)
       // D(x)/dtime --> der(x) --> $DER.x
       // STATE => STATE_DER
       case (Expression.CREF(), DifferentiationType.TIME, _)
         guard(BVariable.isState(var_ptr))
-      then (Expression.fromCref(BVariable.getDerCref(exp.cref)), diffArguments);
+      then (Expression.fromCref(BVariable.getPartnerCref(exp.cref, BVariable.getVarDer)), diffArguments);
 
       // Types: (TIME)
       // D(y)/dtime --> der(y) --> $DER.y
