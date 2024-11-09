@@ -88,38 +88,31 @@ public uniontype FlagData
   end EMPTY_FLAG;
 
   record BOOL_FLAG
-    "Value of a boolean flag."
-    Boolean data;
+    Boolean data "Value of a boolean flag.";
   end BOOL_FLAG;
 
   record INT_FLAG
-    "Value of an integer flag."
-    Integer data;
+    Integer data "Value of an integer flag.";
   end INT_FLAG;
 
   record INT_LIST_FLAG
-    "Value of an integer flag that can have multiple values."
-    list<Integer> data;
+    list<Integer> data "Value of an integer flag that can have multiple values.";
   end INT_LIST_FLAG;
 
   record REAL_FLAG
-    "Value of a real flag."
-    Real data;
+    Real data "Value of a real flag.";
   end REAL_FLAG;
 
   record STRING_FLAG
-    "Value of a string flag."
-    String data;
+    String data "Value of a string flag.";
   end STRING_FLAG;
 
   record STRING_LIST_FLAG
-    "Values of a string flag that can have multiple values."
-    list<String> data;
+    list<String> data "Values of a string flag that can have multiple values.";
   end STRING_LIST_FLAG;
 
   record ENUM_FLAG
-    "Value of an enumeration flag."
-    Integer data;
+    Integer data "Value of an enumeration flag.";
     list<tuple<String, Integer>> validValues "The valid values of the enum.";
   end ENUM_FLAG;
 end FlagData;
@@ -144,13 +137,12 @@ public uniontype ValidOptions
   "Specifies valid options for a flag."
 
   record STRING_OPTION
-    "Options for a string flag."
-    list<String> options;
+    list<String> options "Options for a string flag.";
   end STRING_OPTION;
 
   record STRING_DESC_OPTION
-    "Options for a string flag, with a description for each option."
-    list<tuple<String, Gettext.TranslatableContent>> options;
+    list<tuple<String, Gettext.TranslatableContent>> options
+      "Options for a string flag, with a description for each option.";
   end STRING_DESC_OPTION;
 end ValidOptions;
 
@@ -260,9 +252,9 @@ constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(43, "debugAlias", false,
 constant DebugFlag TEARING_DUMP = DEBUG_FLAG(44, "tearingdump", false,
   Gettext.gettext("Dumps tearing information."));
 constant DebugFlag JAC_DUMP = DEBUG_FLAG(45, "symjacdump", false,
-  Gettext.gettext("Dumps information about symbolic Jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
+  Gettext.gettext("Dumps information about symbolic Jacobians."));
 constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(46, "symjacdumpverbose", false,
-  Gettext.gettext("Dumps information in verbose mode about symbolic Jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
+  Gettext.gettext("Dumps information in verbose mode about symbolic Jacobians."));
 constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(47, "symjacdumpeqn", false,
   Gettext.gettext("Dump for debug purpose of symbolic Jacobians. (deactivated now)."));
 constant DebugFlag JAC_WARNINGS = DEBUG_FLAG(48, "symjacwarnings", false,
@@ -567,53 +559,43 @@ public
 constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",
   SOME("d"), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Sets debug flags. Use --help=debug to see available flags."));
-
 constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
   SOME("h"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Displays the help text. Use --help=topics for more information."));
-
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Used when running the testsuite."));
-
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
   SOME("-v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Print the version and exit."));
-
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc", "msvc","msvc10","msvc12","msvc13","msvc15","msvc19", "vxworks69", "debugrt"})),
   Gettext.gettext("Sets the target compiler to use."));
-
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
   ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA), ("Optimica", OPTIMICA), ("PDEModelica", PDEMODELICA)}),
   SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica", "Optimica", "PDEModelica"})),
   Gettext.gettext("Sets the grammar and semantics to accept."));
-
 constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
   NONE(), EXTERNAL(), STRING_FLAG("3.x"), SOME(STRING_OPTION({"1.x", "2.x", "3.x"})),
   Gettext.gettext("Sets the annotation version that should be used."));
-
 constant ConfigFlag LANGUAGE_STANDARD = CONFIG_FLAG(8, "std", NONE(), EXTERNAL(),
   ENUM_FLAG(1000,
     {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33),
      ("3.4", 34), ("3.5", 35), ("3.6", 36), ("latest",1000), ("experimental", 9999)}),
   SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "latest", "experimental"})),
   Gettext.gettext("Sets the language standard that should be used."));
-
 constant ConfigFlag SHOW_ERROR_MESSAGES = CONFIG_FLAG(9, "showErrorMessages",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Show error messages immediately when they happen."));
-
 constant ConfigFlag SHOW_ANNOTATIONS = CONFIG_FLAG(10, "showAnnotations",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Show annotations in the flattened code."));
-
 constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Do not simplify expressions if set."));
+
 constant Gettext.TranslatableContent removeSimpleEquationDesc = Gettext.gettext("Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).");
 
-public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "normalInlineFunction",
@@ -663,15 +645,13 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("wrapFunctionCalls", Gettext.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Gettext.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
-
 constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",
   NONE(), EXTERNAL(), INT_FLAG(3),
   SOME(STRING_DESC_OPTION({
     ("0", Gettext.gettext("No cheap matching.")),
     ("1", Gettext.gettext("Cheap matching, traverses all equations and match the first free variable.")),
     ("3", Gettext.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))})),
-    Gettext.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));
-
+  Gettext.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));
 constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
   NONE(), EXTERNAL(), STRING_FLAG("PFPlusExt"),
   SOME(STRING_DESC_OPTION({
@@ -696,8 +676,7 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("BB", Gettext.gettext("BBs try.")),
     ("SBGraph", Gettext.gettext("Set-Based Graph matching algorithm for efficient array handling.")),
     ("pseudo", Gettext.gettext("Pseudo array matching that uses scalar matching and reconstructs arrays afterwards as much as possible."))})),
-    Gettext.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
-
+  Gettext.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
@@ -706,8 +685,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
     ("dynamicStateSelection", Gettext.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system.")),
     ("dummyDerivatives", Gettext.gettext("Simple index reduction method, select (static) dummy states based on heuristic."))
     })),
-    Gettext.gettext("Sets the index reduction method to use. See --help=optmodules for more info."));
-
+  Gettext.gettext("Sets the index reduction method to use. See --help=optmodules for more info."));
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
@@ -768,111 +746,85 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("solveLinearSystem", Gettext.notrans("solve linear system with newton step")),
     ("solveSimpleEquations", Gettext.notrans("Solves simple equations")),
     ("symSolver", Gettext.notrans("Rewrites the ode system for implicit Euler method. This module requires +symSolver.")),
-    ("symbolicJacobian", Gettext.notrans("Detects the sparse pattern of the ODE system and calculates also the symbolic Jacobian if flag '--generateSymbolicJacobian' is enabled.")),
+    ("symbolicJacobian", Gettext.notrans("Detects the sparse pattern of the ODE system and calculates also the symbolic Jacobian if flag '--generateDynamicJacobian=symbolic'.")),
     ("tearingSystem", Gettext.notrans("For method selection use flag tearingMethod.")),
     ("wrapFunctionCalls", Gettext.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Gettext.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
-
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
   SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC"})),
   Gettext.gettext("Sets the target language for the code generation."));
-
-
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("Orders connect equations alphabetically if set."));
-
 constant ConfigFlag TYPE_INFO = CONFIG_FLAG(19, "typeinfo",
   SOME("t"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Prints out extra type information if set."));
-
 constant ConfigFlag KEEP_ARRAYS = CONFIG_FLAG(20, "keepArrays",
   SOME("a"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Sets whether to split arrays or not."));
-
 constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(21, "modelicaOutput",
   SOME("m"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables valid modelica output for flat modelica."));
-
 constant ConfigFlag SILENT = CONFIG_FLAG(22, "silent",
   SOME("q"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Turns on silent mode."));
-
 constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Sets the name of the corba session if -d=interactiveCorba or --interactive=corba is used."));
-
 constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the number of processors to use (0=default=auto)."));
-
 constant ConfigFlag INST_CLASS = CONFIG_FLAG(25, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Instantiate the class given by the fully qualified path."));
-
 constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(26, "vectorizationLimit",
   SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."));
-
 constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(27, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Turns on simulation code generation."));
-
 constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(28,
   "evalAnnotationParams", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Sets whether to evaluate parameters in annotations or not."));
-
 constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(29,
   "checkModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Set when checkModel is used to turn on specific features for checking."));
-
 constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(30,
   "cevalEquation", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.notrans(""));
-
 constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(31,
   "unitChecking", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.notrans("Enable unit checking."));
-
 constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(32,
   "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Turns on labeled SimCode generation for reduction algorithms."));
-
 constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(33,
   "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Turns on reducing terms for reduction algorithms."));
-
 constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(34, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
-    Gettext.gettext("Sets the reduction method to be used."));
-
+  Gettext.gettext("Sets the reduction method to be used."));
 constant ConfigFlag DEMO_MODE = CONFIG_FLAG(35, "demoMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Disable Warning/Error Massages."));
-
 constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(36, "locale",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Override the locale from the environment."));
-
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(37, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the default OpenCL device to be used for parallel execution."));
-
 constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(38, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   Gettext.gettext("Maximal traversals to find simple equations in the acausal system."));
-
 constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(39, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Redirect the dump to file. If the file ends with .html HTML code is generated."));
-
 constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(40, "delayBreakLoop",
   NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
   Gettext.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
-
 constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(41, "tearingMethod",
   NONE(), EXTERNAL(), STRING_FLAG("cellier"),
   SOME(STRING_DESC_OPTION({
@@ -880,9 +832,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(41, "tearingMethod",
     ("minimalTearing", Gettext.gettext("Minimal tearing method to only tear discrete variables.")),
     ("omcTearing", Gettext.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
     ("cellier", Gettext.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
-
-    Gettext.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
-
+  Gettext.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(42, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
   SOME(STRING_DESC_OPTION({
@@ -897,37 +847,28 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(42, "tearingHeuristic",
     ("MC231", Gettext.gettext("Modified MC23, Two rounds, choose better potentials-set.")),
     ("MC3", Gettext.gettext("Modified cellier, build sum of impossible assignment and causalizable equations for all vars, choose var with biggest sum.")),
     ("MC4", Gettext.gettext("Modified cellier, use all heuristics, choose var that occurs most in potential sets"))})),
-    Gettext.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
-
+  Gettext.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(43, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Scalarizes the builtin min/max reduction operators if true."));
-
 constant ConfigFlag STRICT = CONFIG_FLAG(44, "strict",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables stricter enforcement of Modelica language rules."));
-
 constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(45, "scalarizeBindings",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Always scalarizes bindings if set."));
-
 constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(46, "corbaObjectReferenceFilePath",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Sets the path for corba object reference file if -d=interactiveCorba is used."));
-
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(47, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
   Gettext.gettext("Sets the scheduler for task graph scheduling (list | listr | level | levelfix | ext | metis | mcp | taskdep | tds | bls | rand | none). Default: level."));
-
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(48, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
   Gettext.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | tbb | mpi). Default: openmp."));
-
-
 constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(49, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),
   Gettext.gettext("Activates user given rewrite rules for Absyn expressions. The rules are read from the given file and are of the form rewrite(fromExp, toExp);"));
-
 constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(50, "replaceHomotopy",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
@@ -935,20 +876,21 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(50, "replaceHomotopy",
     ("actual", Gettext.gettext("Replace homotopy(actual, simplified) with actual.")),
     ("simplified", Gettext.gettext("Replace homotopy(actual, simplified) with simplified."))
     })),
-    Gettext.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
-
-constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(51, "generateSymbolicJacobian",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used by dassl or ida solver with simulation flag '-jacobian'."));
-
+  Gettext.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
+constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamicJacobian",
+  NONE(), EXTERNAL(), STRING_FLAG("numeric"),
+  SOME(STRING_DESC_OPTION({
+    ("none", Gettext.gettext("Does not generate Jacobian. For use with explicit solvers.")),
+    ("numeric", Gettext.gettext("Generates sparsity pattern for numeric Jacobian.")),
+    ("symbolic", Gettext.gettext("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'."))
+    })),
+  Gettext.gettext("Select how Jacobian matrix is generated, where der(x) is differentiated w.r.t. x."));
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t\t:math:`y = Cx + Du`"));
-
 constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(53, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Allow Integer to enumeration conversion."));
-
 constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(54, "profiling",
   NONE(), EXTERNAL(), STRING_FLAG("none"), SOME(STRING_DESC_OPTION({
     ("none",Gettext.gettext("Generate code without profiling")),
@@ -959,23 +901,18 @@ constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(54, "profiling",
     ("all_stat",Gettext.gettext("Generate code for profiling of all functions and equations with additional statistics (cpp-runtime)"))
     })),
   Gettext.gettext("Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."));
-
 constant ConfigFlag RESHUFFLE = CONFIG_FLAG(55, "reshuffle",
   NONE(), EXTERNAL(), INT_FLAG(1), NONE(),
   Gettext.gettext("sets tolerance of reshuffling algorithm: 1: conservative, 2: more tolerant, 3 resolve all"));
-
 constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(56, "gDynOpt",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Generate dynamic optimization problem based on annotation approach."));
-
 constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(57, "maxSizeSolveLinearSystem",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Max size for solveLinearSystem."));
-
 constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(58, "cppFlags",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
   Gettext.gettext("Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)"));
-
 constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(59, "removeSimpleEquations",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
@@ -986,8 +923,7 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(59, "removeSimpleEquat
     ("allAcausal", Gettext.gettext("Performs alias elimination and removes constant variables. Implementation allAcausal.")),
     ("new", Gettext.gettext("New implementation (experimental)"))
     })),
-    Gettext.gettext("Specifies method that removes simple equations."));
-
+  Gettext.gettext("Specifies method that removes simple equations."));
 constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(60, "dynamicTearing",
   NONE(), EXTERNAL(), STRING_FLAG("false"),
   SOME(STRING_DESC_OPTION({
@@ -997,11 +933,9 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(60, "dynamicTearing",
     ("nonlinear", Gettext.gettext("Dynamic tearing only for nonlinear systems."))
   })),
   Gettext.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"));
-
 constant ConfigFlag SYM_SOLVER = CONFIG_FLAG(61, "symSolver",
   NONE(), EXTERNAL(), ENUM_FLAG(0, {("none",0), ("impEuler", 1), ("expEuler",2)}), SOME(STRING_OPTION({"none", "impEuler", "expEuler"})),
   Gettext.gettext("Activates symbolic implicit solver (original system is not changed)."));
-
 constant ConfigFlag LOOP2CON = CONFIG_FLAG(62, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
@@ -1009,12 +943,10 @@ constant ConfigFlag LOOP2CON = CONFIG_FLAG(62, "loop2con",
     ("lin", Gettext.gettext("linear loops --> constraints")),
     ("noLin", Gettext.gettext("no linear loops --> constraints")),
     ("all", Gettext.gettext("loops --> constraints"))})),
-    Gettext.gettext("Specifies method that transform loops in constraints. hint: using initial guess from file!"));
-
+  Gettext.gettext("Specifies method that transform loops in constraints. hint: using initial guess from file!"));
 constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(63, "forceTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Use tearing set even if it is not smaller than the original component."));
-
 constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(64, "simplifyLoops",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
@@ -1022,8 +954,7 @@ constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(64, "simplifyLoops",
     ("1", Gettext.gettext("special modification of residual expressions")),
     ("2", Gettext.gettext("special modification of residual expressions with helper variables"))
     })),
-    Gettext.gettext("Simplify algebraic loops."));
-
+  Gettext.gettext("Simplify algebraic loops."));
 constant ConfigFlag RTEARING = CONFIG_FLAG(65, "recursiveTearing",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
@@ -1031,20 +962,16 @@ constant ConfigFlag RTEARING = CONFIG_FLAG(65, "recursiveTearing",
     ("1", Gettext.gettext("linear tearing set of size 1")),
     ("2", Gettext.gettext("linear tearing"))
     })),
-    Gettext.gettext("Inline and repeat tearing."));
-
+  Gettext.gettext("Inline and repeat tearing."));
 constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(66, "flowThreshold",
   NONE(), EXTERNAL(), REAL_FLAG(1e-7), NONE(),
   Gettext.gettext("Sets the minium threshold for stream flow rates"));
-
 constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(67, "matrixFormat",
   NONE(), EXTERNAL(), STRING_FLAG("dense"), NONE(),
   Gettext.gettext("Sets the matrix format type in cpp runtime which should be used (dense | sparse ). Default: dense."));
-
 constant ConfigFlag PARTLINTORN = CONFIG_FLAG(68, "partlintorn",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the limit for partitionin of linear torn systems."));
-
 constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(69, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "simplifyComplexFunction",
@@ -1075,7 +1002,6 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(69, "initOptModules",
     ("wrapFunctionCalls", Gettext.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Gettext.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
-
 constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(70, "maxMixedDeterminedIndex",
   NONE(), EXTERNAL(), INT_FLAG(10), NONE(),
   Gettext.gettext("Sets the maximum mixed-determined index that is handled by the initialization."));
@@ -1216,35 +1142,28 @@ constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(108, "homotopyApproach",
     ("equidistantGlobal", Gettext.gettext("Default, global homotopy approach with equidistant lambda steps. The homotopy parameter effects the entire initialization system.")),
     ("adaptiveGlobal", Gettext.gettext("Global homotopy approach with adaptive lambda steps. The homotopy parameter effects the entire initialization system."))
     })),
-    Gettext.gettext("Sets the homotopy approach."));
+  Gettext.gettext("Sets the homotopy approach."));
 constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(109, "ignoreReplaceable",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Sets whether to ignore replaceability or not when redeclaring."));
-
 constant ConfigFlag LABELED_REDUCTION = CONFIG_FLAG(110,
   "labeledReduction", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Turns on labeling and reduce terms to do whole process of reduction."));
-
 constant ConfigFlag DISABLE_EXTRA_LABELING = CONFIG_FLAG(111,
   "disableExtraLabeling", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Disable adding extra label into the whole experssion with more than one term and +,- operations."));
-
 constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(112,
   "loadMSLModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Used to know loadFile doesn't need to be called in cpp-runtime (for labeled model reduction)."));
-
 constant ConfigFlag LOAD_PACKAGE_FILE = CONFIG_FLAG(113,
   "loadPackageFile", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
-
 constant ConfigFlag BUILDING_FMU = CONFIG_FLAG(114,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Is true when building an FMU (so the compiler can look for URIs to package as FMI resources)."));
-
 constant ConfigFlag BUILDING_MODEL = CONFIG_FLAG(115,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Is true when building a model (as opposed to running a Modelica script)."));
-
 constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(116, "postOptModulesDAE",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
@@ -1260,28 +1179,22 @@ constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(116, "postOptModulesDAE",
     "symbolicJacobianDAE",
     "setEvaluationStage"
     }),NONE(),
-    Gettext.gettext("Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."));
-
+  Gettext.gettext("Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."));
 constant ConfigFlag EVAL_LOOP_LIMIT = CONFIG_FLAG(117,
   "evalLoopLimit", NONE(), EXTERNAL(), INT_FLAG(100000), NONE(),
   Gettext.gettext("The loop iteration limit used when evaluating constant function calls."));
-
 constant ConfigFlag EVAL_RECURSION_LIMIT = CONFIG_FLAG(118,
   "evalRecursionLimit", NONE(), EXTERNAL(), INT_FLAG(256), NONE(),
   Gettext.gettext("The recursion limit used when evaluating constant function calls."));
-
 constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER = CONFIG_FLAG(119, "singleInstanceAglSolver",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Sets to instantiate only  one algebraic loop solver all algebraic loops"));
-
 constant ConfigFlag SHOW_STRUCTURAL_ANNOTATIONS = CONFIG_FLAG(120, "showStructuralAnnotations",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Show annotations affecting the solution process in the flattened code."));
-
 constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSelection",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates the state selection inside initialization to avoid singularities."));
-
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
   NONE(), EXTERNAL(), STRING_FLAG("modelica"),
   SOME(STRING_DESC_OPTION({
@@ -1291,39 +1204,30 @@ constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizatio
     ("julia", Gettext.gettext("Generate julia function that returns linearization matrices A,B,C,D.")),
     ("python", Gettext.gettext("Generate python function that returns linearization matrices A,B,C,D."))})),
   Gettext.gettext("Sets the target language for the produced code of linearization."));
-
 constant ConfigFlag NO_ASSC = CONFIG_FLAG(123, "noASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Gettext.gettext("Disables analytical to structural singularity conversion."));
-
 constant ConfigFlag FULL_ASSC = CONFIG_FLAG(124, "fullASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables full equation replacement for BLT transformation from the ASSC algorithm."));
-
 constant ConfigFlag REAL_ASSC = CONFIG_FLAG(125, "realASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables the ASSC algorithm to evaluate real valued coefficients (usually only integers)."));
-
 constant ConfigFlag INIT_ASSC = CONFIG_FLAG(126, "initASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables the ASSC algorithm for initialization."));
-
 constant ConfigFlag MAX_SIZE_ASSC = CONFIG_FLAG(127, "maxSizeASSC",
   NONE(), EXTERNAL(), INT_FLAG(200), NONE(),
   Gettext.gettext("Sets the maximum system size for the analytical to structural conversion algorithm (default 200)."));
-
 constant ConfigFlag USE_ZEROMQ_IN_SIM = CONFIG_FLAG(128, "useZeroMQInSim",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Configures to use zeroMQ in simulation runtime to exchange information via ZeroMQ with other applications"));
-
 constant ConfigFlag ZEROMQ_PUB_PORT = CONFIG_FLAG(129, "zeroMQPubPort",
   NONE(), INTERNAL(), INT_FLAG(3203), NONE(),
   Gettext.gettext("Configures port number for simulation runtime to send information via ZeroMQ"));
-
 constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(130, "zeroMQSubPort",
   NONE(), INTERNAL(), INT_FLAG(3204), NONE(),
   Gettext.gettext("Configures port number for simulation runtime to receive information via ZeroMQ"));
-
 constant ConfigFlag ZEROMQ_JOB_ID = CONFIG_FLAG(131, "zeroMQJOBID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the omc api call is labelled for zeroMQ communication."));
@@ -1333,15 +1237,12 @@ constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(132, "zeroMQServerID",
 constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(133, "zeroMQClientID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the client application is labelled for zeroMQ communication."));
-
 constant ConfigFlag FMI_VERSION = CONFIG_FLAG(134,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("returns the FMI Version either 1.0 or 2.0."));
-
 constant ConfigFlag BASE_MODELICA = CONFIG_FLAG(135, "baseModelica",
   SOME("f"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Outputs experimental Base Modelica."));
-
 constant ConfigFlag FMI_FILTER = CONFIG_FLAG(136, "fmiFilter", NONE(), EXTERNAL(),
   ENUM_FLAG(FMI_PROTECTED, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
   SOME(STRING_DESC_OPTION({
@@ -1351,31 +1252,24 @@ constant ConfigFlag FMI_FILTER = CONFIG_FLAG(136, "fmiFilter", NONE(), EXTERNAL(
     ("blackBox", Gettext.gettext("Only the interface is exposed. All other variables are hidden or exposed with concealed names."))
     })),
   Gettext.gettext("Specifies which model variables are exposed by the modelDescription.xml"));
-
 constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(137, "fmiSources", NONE(), EXTERNAL(),
   BOOL_FLAG(true), NONE(),
   Gettext.gettext("Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code."));
-
 constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(138, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
-
 constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(139, "fmuCMakeBuild",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("Configured and build FMU with CMake if true."));
-
 constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(140, "newBackend",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates experimental new backend for better array handling. This also activates the new frontend. [WIP]"));
-
 constant ConfigFlag PARMODAUTO = CONFIG_FLAG(141, "parmodauto",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model. Only works on Linux systems."));
-
 constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(142, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the port used by the interactive server."));
-
 constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStandardModelica",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     }),
@@ -1392,22 +1286,18 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
 
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
-
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("exports clocks in modeldescription.xml for fmus, The default is false."));
-
 constant ConfigFlag LINK_TYPE = CONFIG_FLAG(145, "linkType",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}),
   SOME(STRING_OPTION({"dynamic", "static"})),
   Gettext.gettext("Sets the link type for the simulation executable.\n"+
                "dynamic: libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies.\n"+
                "static: libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.\n"));
-
 constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(146, "tearingAlwaysDer",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Always choose state derivatives as iteration variables in strong components."));
-
 constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(147, "dumpFlatModel",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({"all"}),
   SOME(STRING_DESC_OPTION({
@@ -1418,11 +1308,9 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(147, "dumpFlatModel",
     ("scalarize", Gettext.gettext("After scalarizing arrays."))
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
-
 constant ConfigFlag SIMULATION = CONFIG_FLAG(148, "simulation",
   SOME("u"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Simulates the last model in the given Modelica file."));
-
 constant ConfigFlag OBFUSCATE = CONFIG_FLAG(149, "obfuscate",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
@@ -1432,7 +1320,6 @@ constant ConfigFlag OBFUSCATE = CONFIG_FLAG(149, "obfuscate",
     ("full", Gettext.gettext("Obfuscates everything."))
   })),
   Gettext.gettext("Obfuscates identifiers in the simulation model"));
-
 constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(150, "fmuRuntimeDepends",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
@@ -1446,17 +1333,14 @@ constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(150, "fmuRuntimeDepends",
                                  "Needs --fmuCMakeBuild=true and CMake version >= 3.21."))
     })),
   Gettext.gettext("Defines if runtime library dependencies are included in the FMU. Only used when compiler flag fmuCMakeBuild=true."));
-
 constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(151, "frontendInline",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables inlining of functions in the frontend."));
-
 constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(152, "exposeLocalIOs",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Introduces top-level inputs/outputs for unconnected input/output connectors at requested levels, provided they are public, " +
                   "0 meaning top-level (standard Modelica), 1 inputs/outputs of top-level components, >1 going deeper. " +
                   "This flag is particularly useful for FMI export."));
-
 constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_OPTION({
     "scalarized",
@@ -1466,18 +1350,15 @@ constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat"
     "withoutRecords"
   })),
   Gettext.gettext("Formatting options for Base Modelica"));
-
 constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOptions",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
     ("moveBindings", Gettext.notrans("Moves movable binding equations to normal equations.")),
     ("scalarize", Gettext.notrans("Fully scalarize the Base Modelica model."))
     })),
   Gettext.gettext("Enables optional Base Modelica options."));
-
 constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquations",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Takes a list of equation names and prints the corresponding equations after each stage of the backend process."));
-
 constant ConfigFlag MAX_SIZE_LINEARIZATION = CONFIG_FLAG(156, "maxSizeLinearization",
   NONE(), EXTERNAL(), INT_FLAG(1000), NONE(),
   Gettext.gettext("Sets the maximum system size for which linearization code is generated."));

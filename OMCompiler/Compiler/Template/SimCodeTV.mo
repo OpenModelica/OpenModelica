@@ -4055,7 +4055,7 @@ package Flags
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
   constant ConfigFlag EQUATIONS_PER_FILE;
-  constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN;
+  constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;
   constant ConfigFlag GENERATE_LABELED_SIMCODE;
   constant ConfigFlag REDUCE_TERMS;

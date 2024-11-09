@@ -8,7 +8,7 @@ loadFile("NPendulum.mo");
 getErrorString();
 
 setCommandLineOptions("--maxSizeLinearTearing=0");
-setCommandLineOptions("--generateSymbolicJacobian");
+setCommandLineOptions("--generateDynamicJacobian=symbolic");
 buildModel(NPendulum.pendulum40); getErrorString();
 system("./NPendulum.pendulum40 -ls umfpack -lssMinSize=4000 -jacobian=coloredSymbolical");
 res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res.mat",

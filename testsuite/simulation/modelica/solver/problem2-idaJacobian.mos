@@ -32,7 +32,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.
 getErrorString();
 
 
-setCommandLineOptions("--generateSymbolicJacobian");
+setCommandLineOptions("--generateDynamicJacobian=symbolic");
 getErrorString();
 simulate(testSolver.problem2, stopTime=stopTime, method="ida", simflags="-jacobian=coloredSymbolical"); getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
@@ -114,7 +114,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -128,7 +128,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -140,7 +140,7 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=dense'",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=dense'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -152,7 +152,7 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=dense -jacobian=coloredSymbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=dense -jacobian=coloredSymbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

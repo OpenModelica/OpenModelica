@@ -10,7 +10,7 @@
 
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 
-setCommandLineOptions("-d=newInst,symJacConstantSplit --generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("-d=newInst,symJacConstantSplit --generateDynamicJacobian=symbolic"); getErrorString();
 
 buildModel(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler); getErrorString();
 
