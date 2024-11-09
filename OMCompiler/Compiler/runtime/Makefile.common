@@ -20,6 +20,14 @@ else
 	configUnix = $(OMC_CONFIG_INC)/omc_config.unix.h
 endif
 
+ifeq ($(HAVE_LLVM),Yes)
+	LLVM_FILES = llvm_gen_modelica_constants.h ext_llvm.hpp llvm_gen_util.hpp llvm_gen.hpp llvm_gen.cpp OMC_JIT.hpp
+	LLVM_TARGET_FILE = llvm_gen.cpp
+	LLVM_OBJS = llvm_gen_wrappers.o llvm_gen.o
+else
+endif
+
+
 OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
   Print_omc.o \
   ErrorMessage$(OBJEXT) systemimplmisc.o System_omc$(OBJEXT) \
@@ -27,6 +35,7 @@ OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
   UnitParserExt_omc.o unitparser.o \
   IOStreamExt_omc.o Socket_omc.o ZeroMQ_omc.o getMemorySize.o OMSimulator_omc.o \
   is_utf8.o om_curl.o om_unzip.o ffi_omc.o \
+  $(LLVM_OBJS)
 
 OMC_OBJ_STUBS = corbaimpl_stub_omc.o
 
@@ -105,6 +114,9 @@ ifdef USE_CORBA
 	$(IDL) omc_communication.idl
 endif
 omc_communication.h: omc_communication.cc
+
+llvm_gen.o : $(LLVM_FILES)
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $(LLVM_FLAGS) -I. $(LLVM_TARGET_FILE) -o llvm_gen.o
 
 Print_omc.o : printimpl.c printimpl.h
 omc_communication_impl.o: omc_communication.h

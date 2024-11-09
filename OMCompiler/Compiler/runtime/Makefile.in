@@ -36,10 +36,12 @@ IDL	= @IDLCMD@
 IDLPYTHON = @IDLPYTHONCMD@
 CXXFLAGS = @CXXFLAGS@
 CPPFLAGS = @CPPFLAGS@ -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE) -I$(ZMQINCLUDE)  -I"$(TOP_DIR)/3rdParty/zlib" -I"$(TOP_DIR)/3rdParty/libffi/install/include/"
+LLVM_FLAGS = @LLVM_CPPFLAGS@ @LLVM_CFLAGS@
 TRIPLE=@host_short@
 SHREXT=@SHREXT@
 RPATH=@RPATH@
-LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/" -lOpenModelicaRuntimeC @OMCRUNTIME_SHARED_LDFLAGS@
+HAVE_LLVM=@HAVE_LLVM@
+LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/" -lOpenModelicaRuntimeC @OMCRUNTIME_SHARED_LDFLAGS@ @LLVM_LIBS@
 
 include Makefile.common
 
