@@ -26,9 +26,9 @@ rkMethods := {"expl_euler",
              "rk1012",
              "rk1214"};
 
-errCtrls := {"const", "i"};
+errCtrls := {"default", "richardson", "embedded"};
 
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(SlowFastDynamics);
@@ -42,7 +42,7 @@ print(readFile("refSimulation.log"));
 for rkMethod in rkMethods loop
   for errCtrl in errCtrls loop
     print("\n--------------------------------------------------------\n");
-    print("Running RK " + rkMethod + ":\n");
+    print("Running RK " + rkMethod + " with errCtrl " + errCtrl + ":\n");
     logFile := "SlowFastDynamics_"+ rkMethod + "_" + errCtrl + ".log";
     system("rm -f SlowFastDynamics_res.mat");
     system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=gbode -gbint=hermite -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
@@ -66,11 +66,11 @@ end for;
 // Result:
 // true
 // ""
-// {"expl_euler","dopri45","merson","fehlberg12","fehlberg45","fehlberg78","rk810","rk1012","rk1214"}
-// {"const","i"}
+// {"expl_euler", "dopri45", "merson", "fehlberg12", "fehlberg45", "fehlberg78", "rk810", "rk1012", "rk1214"}
+// {"default", "richardson", "embedded"}
 // true
 // ""
-// {"SlowFastDynamics","SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
 // 0
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
@@ -81,7 +81,7 @@ end for;
 //
 //
 // --------------------------------------------------------
-// Running RK expl_euler:
+// Running RK expl_euler with errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -91,7 +91,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK expl_euler:
+// Running RK expl_euler with errCtrl richardson:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -101,7 +101,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK dopri45:
+// Running RK expl_euler with errCtrl embedded:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -111,7 +111,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK dopri45:
+// Running RK dopri45 with errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -121,7 +121,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK merson:
+// Running RK dopri45 with errCtrl richardson:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -131,7 +131,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK merson:
+// Running RK dopri45 with errCtrl embedded:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -141,7 +141,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg12:
+// Running RK merson with errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -151,7 +151,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg12:
+// Running RK merson with errCtrl richardson:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -161,7 +161,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg45:
+// Running RK merson with errCtrl embedded:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -171,7 +171,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg45:
+// Running RK fehlberg12 with errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -181,7 +181,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg78:
+// Running RK fehlberg12 with errCtrl richardson:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -191,7 +191,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg78:
+// Running RK fehlberg12 with errCtrl embedded:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -201,7 +201,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk810:
+// Running RK fehlberg45 with errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -211,7 +211,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk810:
+// Running RK fehlberg45 with errCtrl richardson:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -221,7 +221,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1012:
+// Running RK fehlberg45 with errCtrl embedded:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -231,7 +231,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1012:
+// Running RK fehlberg78 with errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -241,7 +241,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1214:
+// Running RK fehlberg78 with errCtrl richardson:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -251,7 +251,97 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1214:
+// Running RK fehlberg78 with errCtrl embedded:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk810 with errCtrl default:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk810 with errCtrl richardson:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk810 with errCtrl embedded:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1012 with errCtrl default:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1012 with errCtrl richardson:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1012 with errCtrl embedded:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1214 with errCtrl default:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1214 with errCtrl richardson:
+// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
+// |                 | info    | | Re-calculating step size for 500 intervals.
+// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk1214 with errCtrl embedded:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.

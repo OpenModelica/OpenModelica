@@ -27,7 +27,7 @@ rkMethods := {"expl_euler",
 
 nlsMethods := {"newton"};
 
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(SlowFastDynamics);
@@ -64,11 +64,11 @@ end for;
 // Result:
 // true
 // ""
-// {"expl_euler","impl_euler","sdirk3","esdirk2","esdirk3","esdirk4","merson","dopri45 -gbint=dense_output_errctrl"}
+// {"expl_euler", "impl_euler", "sdirk3", "esdirk2", "esdirk3", "esdirk4", "merson", "dopri45 -gbint=dense_output_errctrl"}
 // {"newton"}
 // true
 // ""
-// {"SlowFastDynamics","SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
 // 0
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.

@@ -13,7 +13,7 @@ model burgerEq
 end burgerEq;
 "); getErrorString();
 
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(burgerEq); getErrorString();
@@ -62,7 +62,7 @@ getErrorString();
 // ""
 // true
 // ""
-// {"burgerEq","burgerEq_init.xml"}
+// {"burgerEq", "burgerEq_init.xml"}
 // ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
@@ -72,18 +72,18 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// (true,{})
+// (true, {})
 // ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// (true,{})
+// (true, {})
 // ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// (true,{})
+// (true, {})
 // ""
 // endResult

@@ -13,7 +13,7 @@ model HeatingSystem
 end HeatingSystem;
 "); getErrorString();
 
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(HeatingSystem, stopTime=864000); getErrorString();
@@ -54,7 +54,7 @@ getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from HeatingSystem.
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from HeatingSystemDiscrete.
 // Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
 // Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
 // "
@@ -62,7 +62,7 @@ getErrorString();
 // ""
 // true
 // ""
-// {"HeatingSystem","HeatingSystem_init.xml"}
+// {"HeatingSystem", "HeatingSystem_init.xml"}
 // ""
 // 0
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
@@ -78,7 +78,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// (true,{})
+// (true, {})
 // ""
 // 0
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
@@ -87,12 +87,12 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// (true,{})
+// (true, {})
 // ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// (true,{})
+// (true, {})
 // ""
 // endResult

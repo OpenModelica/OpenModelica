@@ -26,7 +26,7 @@ rkMethods := {"gauss6",
 
 nlsMethods := {"newton", "kinsol"};
 
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(SlowFastDynamics);
@@ -63,11 +63,11 @@ end for;
 // Result:
 // true
 // ""
-// {"gauss6","radauIA4","radauIIA3","lobattoIIIA3","lobattoIIIB4","lobattoIIIC3","dopri45"}
-// {"newton","kinsol"}
+// {"gauss6", "radauIA4", "radauIIA3", "lobattoIIIA3", "lobattoIIIB4", "lobattoIIIC3", "dopri45"}
+// {"newton", "kinsol"}
 // true
 // ""
-// {"SlowFastDynamics","SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
 // 0
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.

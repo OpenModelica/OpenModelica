@@ -36,9 +36,9 @@ rkMethods := {"gauss2",
 
 nlsMethods := {"kinsol"};
 
-errCtrls := {"const"};
+errCtrls := {"default"};
 
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(SlowFastDynamics);
@@ -53,7 +53,7 @@ for rkMethod in rkMethods loop
   for nlsMethod in nlsMethods loop
     for errCtrl in errCtrls loop
       print("\n--------------------------------------------------------\n");
-      print("Running RK " + rkMethod + " with NLS " + nlsMethod + ":\n");
+      print("Running RK " + rkMethod + " with NLS " + nlsMethod + " and errCtrl " + errCtrl + ":\n");
       logFile := "SlowFastDynamics_"+ rkMethod + "_" + nlsMethod + "_" + errCtrl + ".log";
       system("rm -f SlowFastDynamics_res.mat");
       system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=gbode -gbm=" + rkMethod + " -gbnls=" + nlsMethod + " -gberr=" + errCtrl, logFile);
@@ -78,12 +78,12 @@ end for;
 // Result:
 // true
 // ""
-// {"gauss2","gauss3","gauss4","gauss5","gauss6","radauIA2","radauIA3","radauIA4","radauIIA2","radauIIA3","radauIIA4","lobattoIIIA3","lobattoIIIA4","lobattoIIIB3","lobattoIIIB4","lobattoIIIC3","lobattoIIIC4"}
+// {"gauss2", "gauss3", "gauss4", "gauss5", "gauss6", "radauIA2", "radauIA3", "radauIA4", "radauIIA2", "radauIIA3", "radauIIA4", "lobattoIIIA3", "lobattoIIIA4", "lobattoIIIB3", "lobattoIIIB4", "lobattoIIIC3", "lobattoIIIC4"}
 // {"kinsol"}
-// {"const"}
+// {"default"}
 // true
 // ""
-// {"SlowFastDynamics","SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
 // 0
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
@@ -94,7 +94,7 @@ end for;
 //
 //
 // --------------------------------------------------------
-// Running RK gauss2 with NLS kinsol:
+// Running RK gauss2 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -104,7 +104,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK gauss3 with NLS kinsol:
+// Running RK gauss3 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -114,7 +114,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK gauss4 with NLS kinsol:
+// Running RK gauss4 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -124,7 +124,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK gauss5 with NLS kinsol:
+// Running RK gauss5 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -134,7 +134,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK gauss6 with NLS kinsol:
+// Running RK gauss6 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -144,7 +144,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK radauIA2 with NLS kinsol:
+// Running RK radauIA2 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -154,7 +154,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK radauIA3 with NLS kinsol:
+// Running RK radauIA3 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -164,7 +164,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK radauIA4 with NLS kinsol:
+// Running RK radauIA4 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -174,7 +174,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK radauIIA2 with NLS kinsol:
+// Running RK radauIIA2 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -184,7 +184,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK radauIIA3 with NLS kinsol:
+// Running RK radauIIA3 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -194,7 +194,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK radauIIA4 with NLS kinsol:
+// Running RK radauIIA4 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -204,7 +204,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK lobattoIIIA3 with NLS kinsol:
+// Running RK lobattoIIIA3 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -214,7 +214,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK lobattoIIIA4 with NLS kinsol:
+// Running RK lobattoIIIA4 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -224,7 +224,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK lobattoIIIB3 with NLS kinsol:
+// Running RK lobattoIIIB3 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -234,7 +234,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK lobattoIIIB4 with NLS kinsol:
+// Running RK lobattoIIIB4 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -244,7 +244,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK lobattoIIIC3 with NLS kinsol:
+// Running RK lobattoIIIC3 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
@@ -254,7 +254,7 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK lobattoIIIC4 with NLS kinsol:
+// Running RK lobattoIIIC4 with NLS kinsol and errCtrl default:
 // LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
