@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2024, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -88,8 +88,8 @@ import ValuesUtil;
 // =============================================================================
 
 // From User Documentation for ida v5.4.0 equation (2.5) aka Alpha
-// is the scalar in the system Jacobian, proportional to the inverse of the step size
-// used for DAE_Mode symbolic jacobians
+// is the scalar in the system Jacobian, proportional to the inverse of the step
+// size used for DAE_Mode symbolic jacobians
 public constant String DAE_CJ = "$DAE_CJ";
 
 public function symbolicJacobian "author: lochel
@@ -98,11 +98,11 @@ public function symbolicJacobian "author: lochel
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
-    outDAE := generateSymbolicJacobianPast(inDAE);
-  else
-    outDAE := detectSparsePatternODE(inDAE);
-  end if;
+  outDAE := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
+    case "none"     then inDAE;
+    case "numeric"  then detectSparsePatternODE(inDAE);
+    case "symbolic" then generateSymbolicJacobianPast(inDAE);
+  end match;
 end symbolicJacobian;
 
 // =============================================================================
