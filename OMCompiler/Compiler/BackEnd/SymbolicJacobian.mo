@@ -2578,20 +2578,9 @@ algorithm
   try
     BackendDAE.DIFFINPUTDATA(allVars=SOME(allVars)) := inDiffData;
     for currEquation in inEquations loop
-      if Flags.isSet(Flags.JAC_DUMP_EQN) then
-        print("Derive Equation!\n");
-        BackendDump.printEquationList({currEquation});
-        print("\n");
-      end if;
-
       (currDerivedEquation, outFunctions) := Differentiate.differentiateEquation(currEquation, inDiffCref, inDiffData, BackendDAE.GENERIC_GRADIENT(daeMode), outFunctions);
       tmpEquations := BackendEquation.scalarComplexEquations(currDerivedEquation, outFunctions);
       outDerivedEquations := listAppend(tmpEquations, outDerivedEquations);
-
-      if Flags.isSet(Flags.JAC_DUMP_EQN) then
-        BackendDump.printEquationList(outDerivedEquations);
-        print("\n");
-      end if;
     end for;
 
     outDerivedEquations := listReverse(outDerivedEquations);

@@ -103,8 +103,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.TEARING_DUMP,
   Flags.JAC_DUMP,
   Flags.JAC_DUMP2,
-  Flags.JAC_DUMP_EQN,
-  Flags.JAC_WARNINGS,
+  Flags.DUMP_BINDINGS,
+  Flags.DUMP_SORTING,
   Flags.DUMP_SPARSE,
   Flags.DUMP_SPARSE_VERBOSE,
   Flags.BLT_DUMP,
@@ -249,9 +249,7 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.MERGE_COMPONENTS,
   Flags.DUMP_SLICE,
   Flags.VECTORIZE_BINDINGS,
-  Flags.DUMP_EVENTS,
-  Flags.DUMP_BINDINGS,
-  Flags.DUMP_SORTING
+  Flags.DUMP_EVENTS
 };
 
 protected

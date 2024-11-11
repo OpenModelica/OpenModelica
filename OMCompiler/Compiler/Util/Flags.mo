@@ -255,10 +255,10 @@ constant DebugFlag JAC_DUMP = DEBUG_FLAG(45, "symjacdump", false,
   Gettext.gettext("Dumps information about symbolic Jacobians."));
 constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(46, "symjacdumpverbose", false,
   Gettext.gettext("Dumps information in verbose mode about symbolic Jacobians."));
-constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(47, "symjacdumpeqn", false,
-  Gettext.gettext("Dump for debug purpose of symbolic Jacobians. (deactivated now)."));
-constant DebugFlag JAC_WARNINGS = DEBUG_FLAG(48, "symjacwarnings", false,
-  Gettext.gettext("Prints warnings regarding symoblic jacbians."));
+constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(47, "dumpBindings", false,
+  Gettext.gettext("Dumps information about the equations created from bindings."));
+constant DebugFlag DUMP_SORTING = DEBUG_FLAG(48, "dumpSorting", false,
+  Gettext.gettext("Dumps information about the process of sorting."));
 constant DebugFlag DUMP_SPARSE = DEBUG_FLAG(49, "dumpSparsePattern", false,
   Gettext.gettext("Dumps sparse pattern with coloring used for simulation."));
 constant DebugFlag DUMP_SPARSE_VERBOSE = DEBUG_FLAG(50, "dumpSparsePatternVerbose", false,
@@ -549,10 +549,6 @@ constant DebugFlag VECTORIZE_BINDINGS = DEBUG_FLAG(192, "vectorizeBindings", fal
   Gettext.gettext("Turns on vectorization of bindings when scalarization is turned off."));
 constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
   Gettext.gettext("Dumps information about the detected event functions."));
-constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(194, "dumpBindings", false,
-  Gettext.gettext("Dumps information about the equations created from bindings."));
-constant DebugFlag DUMP_SORTING = DEBUG_FLAG(195, "dumpSorting", false,
-  Gettext.gettext("Dumps information about the process of sorting."));
 
 public
 // CONFIGURATION FLAGS
