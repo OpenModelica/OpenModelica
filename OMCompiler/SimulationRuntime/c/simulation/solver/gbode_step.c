@@ -323,11 +323,15 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   for (i=0; i<nStates; i++)
   {
     gbData->y[i]  = gbData->yOld[i];
-    gbData->yt[i] = gbData->yOld[i];
+    if (!gbData->tableau->richardson) {
+      gbData->yt[i] = gbData->yOld[i];
+    }
     for (stage_=0; stage_<nStages; stage_++)
     {
       gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
-      gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      if (!gbData->tableau->richardson) {
+        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      }
     }
   }
 

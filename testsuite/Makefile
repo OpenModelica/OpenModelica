@@ -83,6 +83,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
+simulationsolver_gbode.log \
 simulationBuiltin_delay.log \
 simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
@@ -420,6 +421,9 @@ simulationrecords.log: omc-diff
 	@echo $@ done
 simulationsolver.log: omc-diff
 	$(MAKE) -C simulation/modelica/solver -f Makefile test > $@
+	@echo $@ done
+simulationsolver_gbode.log: omc-diff
+	$(MAKE) -C simulation/modelica/solver/gbode -f Makefile test > $@
 	@echo $@ done
 simulationBuiltin_delay.log: omc-diff
 	$(MAKE) -C simulation/modelica/built_in_functions/delay -f Makefile test > $@

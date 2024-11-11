@@ -838,7 +838,7 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau)
     tableau->order_bt = 2;
     tableau->fac      = 1.e0;
 
-    // /* Butcher Tableau */
+    /* Butcher Tableau */
     const double c[] = {0.0, 1.0};
     const double A[] = {0.0, 0.0,
                         0.0, 1.0};
