@@ -10,20 +10,21 @@ getErrorString();
 loadString("
 model HeatingSystem
   extends HeatingSystemDiscrete.HeatingSystem;
+  annotation(experiment(StopTime=864000));
 end HeatingSystem;
 "); getErrorString();
 
 setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
-buildModel(HeatingSystem, stopTime=864000); getErrorString();
+buildModel(HeatingSystem); getErrorString();
 
 // Create reference results
-system(realpath(".") + "/HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=1e-8,stopTime=864000\"", "refSimulation.log");
+system(realpath(".") + "/HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=1e-8\"", "refSimulation.log");
 print(readFile("refSimulation.log"));
 
 // Simulate with gauss2 & KINSOL+KLU
-system(realpath(".") + "/HeatingSystem -s=gbode -gbm=esdirk4 -jacobian=coloredSymbolical -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_esdirk4.log");
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=esdirk4 -jacobian=coloredSymbolical -override=\"tolerance=1e-6\"", "HeatingSystem_esdirk4.log");
 print(readFile("HeatingSystem_esdirk4.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -33,7 +34,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system(realpath(".") + "/HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-6\"", "HeatingSystem_fehlberg78.log");
 print(readFile("HeatingSystem_fehlberg78.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -43,7 +44,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system(realpath(".") + "/HeatingSystem -s=gbode -gbm=dopri45 -gbctrl=const -gbint=dense_output -override=\"tolerance=1e-6,stepSize=10,stopTime=864000\"", "HeatingSystem_dopri45.log");
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=dopri45 -gbctrl=const -gbint=dense_output -override=\"tolerance=1e-6,stepSize=10\"", "HeatingSystem_dopri45.log");
 print(readFile("HeatingSystem_dopri45.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -65,25 +66,16 @@ getErrorString();
 // {"HeatingSystem", "HeatingSystem_init.xml"}
 // ""
 // 0
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // 0
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // (true, {})
 // ""
 // 0
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //

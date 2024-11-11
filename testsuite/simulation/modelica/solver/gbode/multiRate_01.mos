@@ -13,6 +13,7 @@ model SlowFastDynamics
   Real y[2](start = {1,1}, each fixed=true);
 equation
   der(y) = {-y[1] - corr*y[2] + fast*sin(fast*time), corr*y[1] - epsilon*y[2] - cos(slow*time)};
+  annotation(experiment(StopTime=20));
 end SlowFastDynamics;");
 getErrorString();
 
@@ -34,7 +35,7 @@ buildModel(SlowFastDynamics);
 getErrorString();
 
 // Create reference results
-system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
+system(realpath(".") + "/SlowFastDynamics -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
 print(readFile("refSimulation.log"));
 
 // Test all RK methods
@@ -43,17 +44,19 @@ for rkMethod in rkMethods loop
     print("\n--------------------------------------------------------\n");
     print("Running RK " + rkMethod + " with NLS " + nlsMethod + ":\n");
     logFile := "SlowFastDynamics_"+ rkMethod + "_" + nlsMethod + ".log";
-    system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=gbode -gbratio=0.5 -gbm=" + rkMethod + " -gbnls=" + nlsMethod, logFile);
+    system(realpath(".") + "/SlowFastDynamics -s=gbode -gbratio=0.5 -gbm=" + rkMethod + " -gbnls=" + nlsMethod, logFile);
     print(readFile(logFile) + "\n");
 
     (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
                                  expectedFile = "SlowFastDynamics_ref.mat",
                                  diffPrefix = "diff_" + rkMethod + "_" + nlsMethod,
                                  vars = {"der(y[1])", "der(y[2])"});
-    print("Failed vars:\n");
-    for var in failVars loop
-      print("\t" + var + "\n");
-    end for;
+    if size(failVars, 1) > 0 then
+      print("Failed vars:\n");
+      for var in failVars loop
+        print("\t" + var + "\n");
+      end for;
+    end if;
     if not success then
       print("Failed to compare simulation results\n");
       print(getErrorString() + "\n");
@@ -71,91 +74,56 @@ end for;
 // {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
 // 0
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 //
 // --------------------------------------------------------
 // Running RK expl_euler with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
 // Running RK impl_euler with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
 // Running RK sdirk3 with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
 // Running RK esdirk2 with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
 // Running RK esdirk4 with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
 // Running RK merson with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
 // Running RK dopri45 -gbint=dense_output_errctrl with NLS newton:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // endResult
