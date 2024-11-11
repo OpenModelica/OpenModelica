@@ -958,36 +958,26 @@ Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
 /*!
  * \brief Element::hasShapeAnnotation
  * Checks if Element has any ShapeAnnotation
- * \param pElement
  * \return
  */
-bool Element::hasShapeAnnotation(Element *pElement)
+bool Element::hasShapeAnnotation() const
 {
-  if (!pElement->getShapesList().isEmpty()) {
+  if (!mShapesList.isEmpty()) {
     return true;
   }
   bool iconAnnotationFound = false;
-  foreach (Element *pInheritedElement, pElement->getInheritedElementsList()) {
-    iconAnnotationFound = hasShapeAnnotation(pInheritedElement);
+  foreach (Element *pInheritedElement, mInheritedElementsList) {
+    iconAnnotationFound = pInheritedElement->hasShapeAnnotation();
     if (iconAnnotationFound) {
       return iconAnnotationFound;
     }
   }
-  /* Ticket #3654
-   * Don't check components because if it has components and no shapes then it looks empty.
-   */
-//  foreach (Element *pChildElement, pElement->getElementsList()) {
-//    iconAnnotationFound = hasShapeAnnotation(pChildElement);
-//    if (iconAnnotationFound) {
-//      return iconAnnotationFound;
-//    }
-//    foreach (Element *pInheritedElement, pChildElement->getInheritedElementsList()) {
-//      iconAnnotationFound = hasShapeAnnotation(pInheritedElement);
-//      if (iconAnnotationFound) {
-//        return iconAnnotationFound;
-//      }
-//    }
-//  }
+  foreach (Element *pChildElement, mElementsList) {
+    iconAnnotationFound = pChildElement->hasShapeAnnotation();
+    if (iconAnnotationFound) {
+      return iconAnnotationFound;
+    }
+  }
   return iconAnnotationFound;
 }
 
@@ -2734,7 +2724,7 @@ void Element::showNonExistingOrDefaultElementIfNeeded()
   deleteNonExistingElement();
   deleteDefaultElement();
 
-  if (!hasShapeAnnotation(this)) {
+  if (!hasShapeAnnotation()) {
     if (hasNonExistingClass()) {
       createNonExistingElement();
     } else if (isRoot()) {
