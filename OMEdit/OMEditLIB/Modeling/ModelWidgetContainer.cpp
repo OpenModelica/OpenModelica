@@ -2735,7 +2735,7 @@ bool GraphicsView::hasAnnotation()
     return true;
   }
   foreach (Element *pInheritedElement, mInheritedElementsList) {
-    if (pInheritedElement->hasShapeAnnotation(pInheritedElement) && pInheritedElement->isVisible()) {
+    if (pInheritedElement->hasShapeAnnotation() && pInheritedElement->isVisible()) {
       return true;
     }
   }
@@ -2744,7 +2744,7 @@ bool GraphicsView::hasAnnotation()
     return true;
   }
   foreach (Element *pElement, mElementsList) {
-    if (pElement->hasShapeAnnotation(pElement) && pElement->isVisible()) {
+    if (pElement->hasShapeAnnotation() && pElement->isVisible()) {
       return true;
     }
   }

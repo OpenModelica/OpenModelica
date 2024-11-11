@@ -209,7 +209,7 @@ public:
   bool isExtend() const {return mElementType == Element::Extend;}
   bool isPort() const {return mElementType == Element::Port;}
   bool isInheritedElement() {return mIsInheritedElement;}
-  bool hasShapeAnnotation(Element *pElement);
+  bool hasShapeAnnotation() const;
   bool hasNonExistingClass();
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
