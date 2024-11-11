@@ -1800,6 +1800,19 @@ public
       threaded for l in lits, i in 1:listLength(lits));
   end makeEnumLiterals;
 
+  function isIntegerValue
+    "Returns true if the expression is an Integer expression with the given
+     value, otherwise false."
+    input Expression exp;
+    input Integer value;
+    output Boolean result;
+  algorithm
+    result := match exp
+      case INTEGER() then exp.value == value;
+      else false;
+    end match;
+  end isIntegerValue;
+
   function toInteger
     input Expression exp;
     output Integer i;
@@ -1930,7 +1943,10 @@ public
       case BOOLEAN() then boolString(exp.value);
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
-        then "'" + AbsynUtil.pathString(t.typePath) + "'." + exp.name;
+        then if Type.isBuiltinEnumeration(t) then
+            AbsynUtil.pathString(t.typePath) + "." + exp.name
+          else
+            "'" + AbsynUtil.pathString(t.typePath) + "'." + exp.name;
 
       case CLKCONST(clk) then ClockKind.toFlatString(clk, format);
 
