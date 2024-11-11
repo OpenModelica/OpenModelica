@@ -1754,6 +1754,22 @@ QString StringHandler::getSimulationMessageTypeString(StringHandler::SimulationM
 }
 
 /*!
+ * \brief makeClassNameRelativeHelper
+ * Helper function for StringHandler::makeClassNameRelative
+ * \param draggedClassName
+ * \param droppedClassName
+ * \return
+ */
+QString makeClassNameRelativeHelper(QString draggedClassName, QString droppedClassName)
+{
+  if (StringHandler::getFirstWordBeforeDot(draggedClassName).compare(StringHandler::getFirstWordBeforeDot(droppedClassName)) == 0) {
+    return makeClassNameRelativeHelper(StringHandler::removeFirstWordAfterDot(draggedClassName), StringHandler::removeFirstWordAfterDot(droppedClassName));
+  } else {
+    return draggedClassName;
+  }
+}
+
+/*!
  * \brief StringHandler::makeClassNameRelative
  * Removes the first characters matching with droppedClassName from draggedClassName.
  * \param draggedClassName
@@ -1764,10 +1780,18 @@ QString StringHandler::makeClassNameRelative(QString draggedClassName, QString d
 {
   if (draggedClassName.compare(droppedClassName) == 0) {
     return getLastWordAfterDot(draggedClassName);
-  } else if (getFirstWordBeforeDot(draggedClassName).compare(getFirstWordBeforeDot(droppedClassName)) == 0) {
-    return makeClassNameRelative(removeFirstWordAfterDot(draggedClassName), removeFirstWordAfterDot(droppedClassName));
   } else {
-    return draggedClassName;
+    /* issue #13153. If the droppedClassName path size is greater than draggedClassName then it is not possible to get relative name so use the fully qualified path
+     * e.g., (P.M.A, P.M.B.D) => P.M.A
+     * otherwise make relative path e.g.,
+     * (P.M.A, P.M.B) => A
+     * (P.M.A.C, P.M.B) => A.C
+     */
+    if (makeVariableParts(draggedClassName).size() < makeVariableParts(droppedClassName).size()) {
+      return draggedClassName;
+    } else {
+    return makeClassNameRelativeHelper(draggedClassName, droppedClassName);
+    }
   }
 }
 
