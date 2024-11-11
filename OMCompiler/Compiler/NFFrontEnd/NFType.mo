@@ -465,6 +465,24 @@ public
     end match;
   end isEnumeration;
 
+  function isBuiltinEnumeration
+    input Type ty;
+    output Boolean isBuiltin;
+  protected
+    String name;
+  algorithm
+    isBuiltin := match ty
+      case ENUMERATION(typePath = Absyn.Path.IDENT(name))
+        then match name
+          case "StateSelect" then true;
+          case "AssertionLevel" then true;
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isBuiltinEnumeration;
+
   function isUnspecifiedEnumeration
     input Type ty;
     output Boolean res;
@@ -942,7 +960,10 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
-      case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
+      case Type.ENUMERATION()
+        then if listEmpty(ty.literals) then "enumeration(:)"
+             elseif Type.isBuiltinEnumeration(ty) then AbsynUtil.pathString(ty.typePath)
+             else Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
       case Type.ARRAY() then List.toString(ty.dimensions, function Dimension.toFlatString(format = format), toFlatString(ty.elementType, format), "[", ", ", "]", false);
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, function toFlatString(format = format)), ", ") + ")";
       case Type.NORETCALL() then "()";

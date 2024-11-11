@@ -35,6 +35,8 @@ TESTFILES = \
 	ScalarizedWithoutRecords1.mo \
 	SD.mo \
 	SimpleCoolingCycle.mo \
+	StateSelect1.mo \
+	String1.mo \
   Tables.mos \
 	Tuple1.mo \
 	Tuple2.mo \

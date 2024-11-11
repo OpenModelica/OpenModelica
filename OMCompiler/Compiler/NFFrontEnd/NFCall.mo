@@ -810,7 +810,7 @@ public
       case TYPED_CALL()
         algorithm
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-          arg_str := stringDelimitList(list(Expression.toFlatString(arg, format) for arg in call.arguments), ", ");
+          arg_str := toFlatStringArgs(call.arguments, name, format);
         then
           if Function.isBuiltin(call.fn) then
             stringAppendList({name, "(", arg_str, ")"})
@@ -850,6 +850,50 @@ public
 
     end match;
   end toFlatString;
+
+  function toFlatStringArgs
+    input list<Expression> args;
+    input String fnName;
+    input BaseModelica.OutputFormat format;
+    output String argsString;
+  protected
+    Expression arg1, arg2;
+    list<Expression> rest_args;
+  algorithm
+    argsString := match fnName
+      case "String"
+        then match args
+          case {arg1, arg2}
+            then Expression.toFlatString(arg1, format) + ", format = " + Expression.toFlatString(arg2, format);
+
+          else
+            algorithm
+              arg1 :: rest_args := args;
+              argsString := Expression.toFlatString(arg1, format);
+
+              if listLength(rest_args) == 3 then
+                arg1 :: rest_args := rest_args;
+                if not Expression.isIntegerValue(arg1, 6) then
+                  argsString := argsString + ", significantDigits = " + Expression.toFlatString(arg1, format);
+                end if;
+              end if;
+
+              arg1 :: rest_args := rest_args;
+              if not Expression.isZero(arg1) then
+                argsString := argsString + ", minimumLength = " + Expression.toFlatString(arg1, format);
+              end if;
+
+              arg1 :: rest_args := rest_args;
+              if not Expression.isTrue(arg1) then
+                argsString := argsString + ", leftJustified = " + Expression.toFlatString(arg1, format);
+              end if;
+            then
+              argsString;
+         end match;
+
+      else stringDelimitList(list(Expression.toFlatString(arg, format) for arg in args), ", ");
+    end match;
+  end toFlatStringArgs;
 
   function typedString
     "Like toString, but prefixes each argument with its type as a comment."

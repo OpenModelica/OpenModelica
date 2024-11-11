@@ -352,6 +352,7 @@ public
   algorithm
     () := match ty
       case Type.ENUMERATION()
+        guard not Type.isBuiltinEnumeration(ty)
         algorithm
           UnorderedMap.tryAdd(ty.typePath, ty, types);
         then
