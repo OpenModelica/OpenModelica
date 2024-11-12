@@ -901,18 +901,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getConnectorCount"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getConnectorCount(cr, p);
-
-    case "getNthConnector"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-      then
-        getNthConnector(AbsynUtil.crefToPath(cr), p, n);
-
     case "getNthConnectorIconAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
@@ -8754,69 +8742,52 @@ algorithm
   result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), true, Access.diagram);
 end getNthConnectionAnnotation;
 
-protected function getConnectorCount
+public function getConnectorCount
 "This function takes a ComponentRef and a Program and returns the number
   of connector components in the class given by the classname in the
   ComponentRef. A partial instantiation of the inheritance structure is
   performed in order to find all connectors of the class.
   inputs:  (Absyn.ComponentRef, Absyn.Program)
   outputs: string"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cdef;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Integer count;
-      String countstr;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_) "A complete instantiation is far too expensive. Instead we only
-    look through the components of the class for types declared using
-    the \"connector\" restricted class keyword. We also look in
-    base classes  (recursively)
-  " ;
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        count = countPublicConnectors(modelpath, p, cdef);
-        countstr = intString(count);
-      then
-        countstr;
-    else "Error";
-  end matchcontinue;
+  try
+    //A complete instantiation is far too expensive. Instead we only
+    //look through the components of the class for types declared using
+    //the "connector" restricted class keyword. We also look in
+    //base classes (recursively).
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    result := ValuesUtil.makeInteger(countPublicConnectors(classPath, program, cdef));
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getConnectorCount;
 
-protected function getNthConnector
-"This function takes a ComponentRef and a Program and an int and returns
-  a string with the name of the nth
-  connector component in the class given by ComponentRef in the Program."
-  input Absyn.Path inModelPath;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthConnector
+  "Returns the name and type of the n:th connector in the given class."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  String name;
+  Absyn.Path ty;
 algorithm
-  outString := matchcontinue (inModelPath,inProgram,inInteger)
-    local
-      Absyn.Path modelpath,tp;
-      Absyn.Class cdef;
-      String str,tpstr,resstr;
-      Absyn.Program p;
-      Integer n;
-
-    case (modelpath,p,n)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-        tpstr = AbsynUtil.pathString(tp);
-        resstr = stringAppendList({str, ",", tpstr});
-      then
-        resstr;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    (SOME((name, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
+    result := ValuesUtil.makeArray({
+      ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(name)),
+      ValuesUtil.makeCodeTypeName(ty)
+    });
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthConnector;
 
 protected function getNthConnectorIconAnnotation
@@ -8838,7 +8809,7 @@ algorithm
     case (modelpath,p,n)
       equation
         cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (_,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
+        (SOME((_, tp)), _) = getNthPublicConnectorStr(modelpath, cdef, p, n);
         resstr = getIconAnnotation(tp, p);
       then
         resstr;
@@ -10034,328 +10005,156 @@ algorithm
 end getDocumentationAnnotationInfoHeader;
 
 protected function getNthPublicConnectorStr
-"Helper function to getNthConnector."
-  input Absyn.Path inPath;
-  input Absyn.Class inClass;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
-  output Absyn.Path outPath;
+  "Returns the n:th connector's name and type in the given class, or n minus
+   the number of connectors found if n is too large."
+  input Absyn.Path classPath;
+  input Absyn.Class cls;
+  input Absyn.Program program;
+        output Option<tuple<String, Absyn.Path>> conn = NONE();
+  input output Integer n;
+protected
+  list<Absyn.ClassPart> parts;
 algorithm
-  (outString,outPath) := matchcontinue (inPath,inClass,inProgram,inInteger)
-    local
-      String str,a;
-      Absyn.Path tp,modelpath;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      list<Absyn.ElementItem> elt;
-      list<Absyn.ClassPart> lst;
-      Absyn.Program p;
-      Integer n,c1,c2;
-      Option<String> cmt;
-      SourceInfo file_info;
-      list<Absyn.Annotation> ann;
-      Absyn.Class cdef;
+  parts := AbsynUtil.getClassPartsInClass(cls);
 
-    case (modelpath,Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: _))),p,n)
-      equation
-        (str,tp) = getNthConnectorStr(p, modelpath, elt, n);
-      then
-        (str,tp);
+  for part in parts loop
+    (conn, n) := match part
+      case Absyn.PUBLIC() then getNthConnectorInfo(program, classPath, part.contents, n);
+      else (conn, n);
+    end match;
 
-    /*
-     * The rule above failed, count the number of connectors in the first
-     * public list, subtract the number and try the rest of the list
-     */
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = n - c1;
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, c2);
-      then
-        (str,tp);
-
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = _ :: lst,ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-      then
-        (str,tp);
-
-    /***********   adrpo: handle also the case of model extends name end name; **********/
-    case (modelpath,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: _))),p,n)
-      equation
-        (str,tp) = getNthConnectorStr(p, modelpath, elt, n);
-      then
-        (str,tp);
-
-    /*
-     * The rule above failed, count the number of connectors in the first
-     * public list, subtract the number and try the rest of the list
-     */
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = Absyn.PUBLIC(contents = elt) :: lst,ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = n - c1;
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, c2);
-      then
-        (str,tp);
-
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-      then
-        (str,tp);
-
-  end matchcontinue;
+    if n <= 0 then
+      break;
+    end if;
+  end for;
 end getNthPublicConnectorStr;
 
-protected function getNthConnectorStr
-" This function takes an ElementItem list and an int and
-   returns the name of the nth connector component in that list."
-  input Absyn.Program inProgram;
-  input Absyn.Path inPath;
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Integer inInteger;
-  output String outString;
-  output Absyn.Path outPath;
+protected function getNthConnectorInfo
+  "Returns the n:th connector's name and type in the given list of element
+   items, or n minus the number of connectors found if n is too large."
+  input Absyn.Program program;
+  input Absyn.Path classPath;
+  input list<Absyn.ElementItem> items;
+        output Option<tuple<String, Absyn.Path>> conn = NONE();
+  input output Integer n;
+protected
+  Absyn.Path tp, cls_path;
+  Absyn.Class cls;
+  list<Absyn.ComponentItem> comps;
+  Integer comp_count;
+  String name;
 algorithm
-  (outString,outPath) := matchcontinue (inProgram,inPath,inAbsynElementItemLst,inInteger)
-    local
-      Absyn.Class cdef;
-      Absyn.Path newmodelpath,tp,modelpath;
-      String str;
-      Absyn.Program p;
-      list<Absyn.ElementItem> lst;
-      Integer n,c1,c2,newn;
-      list<Absyn.ComponentItem> complst;
+  for item in items loop
+    (conn, n) := match item
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp)))
+        algorithm
+          (cls, cls_path) := lookupClassdef(tp, classPath, program);
+        then
+          getNthPublicConnectorStr(cls_path, cls, program, n);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp))) :: _),n)
-      equation
-        (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
-        (str,tp) = getNthPublicConnectorStr(newmodelpath, cdef, p, n);
-      then
-        (str,tp);
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(
+             typeSpec = Absyn.TPATH(path = tp), components = comps)))
+        algorithm
+          (cls, _) := lookupClassdef(tp, classPath, program);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp))) :: lst),n)
-      equation
-        (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
-        c1 = countPublicConnectors(newmodelpath, p, cdef);
-        c2 = n - c1;
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, c2);
-      then
-        (str,tp);
+          if AbsynUtil.isConnector(cls) or AbsynUtil.isExpandableConnector(cls) then
+            comp_count := listLength(comps);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: _),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        str = getNthCompname(complst, n);
-      then
-        (str,tp);
+            if n <= comp_count then
+              name := AbsynUtil.componentName(listGet(comps, n));
+              conn := SOME((name, tp));
+            end if;
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: lst),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p)
-        "Not so fast, since we lookup and instantiate two times just because this was not the connector we were looking for." ;
-        c1 = listLength(complst);
-        newn = n - c1;
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, newn);
-      then
-        (str,tp);
+            n := n - comp_count;
+          end if;
+        then
+          (conn, n);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: _),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        str = getNthCompname(complst, n);
-      then
-        (str,tp);
+      else (conn, n);
+    end match;
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: lst),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p)
-        "Not so fast, since we lookup and instantiate two times just because this was not the connector we were looking for." ;
-        c1 = listLength(complst);
-        newn = n - c1;
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, newn);
-      then
-        (str,tp);
-
-    case (p,modelpath,(_ :: lst),n)
-      equation
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, n);
-      then
-        (str,tp);
-
-    case (_,_,{},_) then fail();
-
-  end matchcontinue;
-end getNthConnectorStr;
-
-protected function getNthCompname
-"Returns the nth component name from a list of ComponentItems.
-  Index is from 1..n."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Integer inInteger;
-  output String outString;
-algorithm
-  outString := match (inAbsynComponentItemLst,inInteger)
-    local
-      String id,res;
-      list<Absyn.ComponentItem> lst,xs;
-      Integer n1,n;
-
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id)) :: _),1) then id;
-
-    case ((_ :: xs),n)
-      equation
-        n1 = n - 1;
-        res = getNthCompname(xs, n1);
-      then
-        res;
-
-    case ({},_) then fail();
-
-  end match;
-end getNthCompname;
+    if n <= 0 then
+      break;
+    end if;
+  end for;
+end getNthConnectorInfo;
 
 protected function countPublicConnectors
 "This function takes a Class and counts the number of connector
   components in the class. This also includes counting in inherited classes."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  input Absyn.Class inClass;
-  output Integer outInteger;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input Absyn.Class cls;
+  output Integer count;
+protected
+  list<Absyn.ClassPart> parts;
+  Absyn.Class cdef;
+  Absyn.Path cls_name;
 algorithm
-  outInteger := matchcontinue (inPath,inProgram,inClass)
-    local
-      Integer c1,c2,res;
-      Absyn.Path modelpath,newmodelpath,cname;
-      Absyn.Program p;
-      String a;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      list<Absyn.ElementItem> elt;
-      list<Absyn.ClassPart> lst;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.Class cdef;
-      list<Absyn.Annotation> ann;
+  count := match cls
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      then countPublicConnectorsInParts(parts, classPath, program);
 
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann=ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = countConnectors(modelpath, p, elt);
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      then countPublicConnectorsInParts(parts, classPath, program);
+
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path = cls_name)))
+      algorithm
+        (cdef, _) := lookupClassdef(cls_name, classPath, program);
       then
-        c1 + c2;
+        countPublicConnectors(classPath, program, cdef);
 
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        res = countPublicConnectors(modelpath, p, cdef);
-      then
-        res;
-
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = {})))
-      then 0;
-
-    // adrpo: handle also the case of model extends name end name;
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = countConnectors(modelpath, p, elt);
-      then
-        c1 + c2;
-
-    // adrpo: handle also the case of model extends name end name;
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann=ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        res = countPublicConnectors(modelpath, p, cdef);
-      then
-        res;
-
-    // adrpo: handle also the case of model extends name end name;
-    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {})))
-      then 0;
-
-    // the case model name = OtherName;
-    case (modelpath,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(cname, _))))
-      equation
-        (cdef,newmodelpath) = lookupClassdef(cname, modelpath, p);
-        res = countPublicConnectors(newmodelpath, p, cdef);
-      then
-        res;
-
-  end matchcontinue;
+    else 0;
+  end match;
 end countPublicConnectors;
+
+protected function countPublicConnectorsInParts
+  input list<Absyn.ClassPart> parts;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Integer count = 0;
+algorithm
+  for part in parts loop
+    count := match part
+      case Absyn.ClassPart.PUBLIC() then count + countConnectors(classPath, program, part.contents);
+      else count;
+    end match;
+  end for;
+end countPublicConnectorsInParts;
 
 protected function countConnectors
 "This function takes a Path to the current model and a ElementItem
   list and returns the number of connector components in that list."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output Integer outInteger;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input list<Absyn.ElementItem> items;
+  output Integer count = 0;
+protected
+  Absyn.Class cls;
+  Absyn.Path tp, cls_path;
+  list<Absyn.ComponentItem> comps;
+  Integer c;
 algorithm
-  outInteger := matchcontinue (inPath,inProgram,inAbsynElementItemLst)
-    local
-      Absyn.Class cdef;
-      Absyn.Path newmodelpath,modelpath,tp;
-      Integer c1,c2,res;
-      Absyn.Program p;
-      list<Absyn.ElementItem> lst;
-      list<Absyn.ComponentItem> complst;
+  for item in items loop
+    c := matchcontinue item
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp)))
+        algorithm
+          (cls, cls_path) := lookupClassdef(tp, classPath, program);
+        then
+          countPublicConnectors(cls_path, program, cls);
 
-    case (modelpath,p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp))) :: lst))
-      equation
-        (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
-        c1 = countPublicConnectors(newmodelpath, p, cdef);
-        c2 = countConnectors(modelpath, p, lst);
-      then
-        c1 + c2;
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+             Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp), components = comps)))
+        algorithm
+          (cls, _) := lookupClassdef(tp, classPath, program);
+        then
+          if AbsynUtil.isConnector(cls) or AbsynUtil.isExpandableConnector(cls) then listLength(comps) else 0;
 
-    case (modelpath,p,(Absyn.ELEMENTITEM(element =
-      Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp, _),components = complst))) :: lst))
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        c1 = listLength(complst);
-        c2 = countConnectors(modelpath, p, lst);
-      then
-        c1 + c2;
+      else 0;
+    end matchcontinue;
 
-    case (modelpath,p,(Absyn.ELEMENTITEM(element =
-      Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp, _),components = complst))) :: lst))
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        c1 = listLength(complst);
-        c2 = countConnectors(modelpath, p, lst);
-      then
-        c1 + c2;
-
-    case (modelpath,p,(_ :: lst)) /* Rule above didn\'t match => element not connector components, try rest of list */
-      equation
-        res = countConnectors(modelpath, p, lst);
-      then
-        res;
-
-    case (_,_,{}) then 0;
-
-  end matchcontinue;
+    count := count + c;
+  end for;
 end countConnectors;
 
 protected function getConnectionAnnotationStrElArgs

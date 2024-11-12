@@ -51,6 +51,7 @@ getCommandLineOptions.mos \
 GetComponents.mos \
 getComponentsTestNF.mos \
 getComponentsTestOF.mos \
+getConnectorCount.mos \
 getDefinitions.mos \
 getDialogAnnotation.mos \
 getElementAnnotation.mos \
@@ -58,6 +59,8 @@ getExtendsModifierNames.mos \
 getIconAnnotation.mos \
 getInheritedClasses1.mos \
 getInheritedClasses2.mos \
+getNthComponentAnnotation.mos \
+getNthConnector.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \

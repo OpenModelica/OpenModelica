@@ -1,0 +1,33 @@
+// name: getConnectorCount
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  connector C
+    Real e;
+    flow Real f;
+  end C;
+
+  model A
+    C ac1;
+  end A;
+
+  model M
+    extends A;
+    C c1, c2;
+    C c3;
+    Real x;
+  protected
+    C c4;
+  end M;
+");
+
+getConnectorCount(A);
+getConnectorCount(M);
+
+// Result:
+// true
+// 1
+// 4
+// endResult

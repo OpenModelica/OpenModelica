@@ -3652,6 +3652,29 @@ annotation(
   preferredView="text");
 end setComponentDimensions;
 
+function getNthConnector
+  input TypeName className;
+  input Integer n;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the name and type of the n:th public connector in the given class.</p>
+</html>"),
+  preferredView="text");
+end getNthConnector;
+
+function getConnectorCount
+  input TypeName className;
+  output Integer count;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the number of public connectors in the given class.</p>
+</html>"),
+  preferredView="text");
+end getConnectorCount;
+
 function addConnection
   input VariableName connector1;
   input VariableName connector2;

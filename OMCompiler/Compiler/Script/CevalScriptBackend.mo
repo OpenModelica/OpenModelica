@@ -3250,6 +3250,11 @@ algorithm
     case ("getNthConnectionAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthConnectionAnnotation(classpath, n, SymbolTable.getAbsyn());
 
+    case ("getConnectorCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getConnectorCount(classpath, SymbolTable.getAbsyn());
+
+    case ("getNthConnector", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthConnector(classpath, n, SymbolTable.getAbsyn());
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
