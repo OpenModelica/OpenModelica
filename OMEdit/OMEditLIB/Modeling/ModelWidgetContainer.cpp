@@ -894,13 +894,15 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   MainWindow::instance()->getOMCProxy()->addComponent(name, className, dummyClass, "annotate=Placement()");
   const QJsonObject modelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(dummyClass);
   MainWindow::instance()->getOMCProxy()->deleteClass(dummyClass);
-  pModelInstance->deserializeElements(modelJSON.value("elements").toArray());
-  QList<ModelInstance::Element*> elements = pModelInstance->getElements();
-  if (!elements.isEmpty()) {
-    return dynamic_cast<ModelInstance::Component*>(elements.last());
-  } else {
-    return 0;
+  const QJsonArray elementsArray = modelJSON.value("elements").toArray();
+  if (!elementsArray.isEmpty()) {
+    pModelInstance->deserializeElements(modelJSON.value("elements").toArray());
+    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    if (!elements.isEmpty()) {
+      return dynamic_cast<ModelInstance::Component*>(elements.last());
+    }
   }
+  return 0;
 }
 
 /*!
