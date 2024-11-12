@@ -389,6 +389,18 @@ private:
     BooleanAnnotation mPrimitivesVisible = true;
   };
 
+  class ExperimentAnnotation
+  {
+  public:
+    ExperimentAnnotation() = default;
+    void deserialize(const QJsonObject &jsonObject);
+
+    bool hasInterval() const {return mHasInterval;}
+  private:
+    //RealAnnotation mInterval = 0.2;
+    bool mHasInterval = false;
+  };
+
   class Annotation
   {
   public:
@@ -411,6 +423,7 @@ private:
     Text *getText() const {return mpText.get();}
     // Extend annotation
     const IconDiagramMap &getMap(bool icon) const;
+    const ExperimentAnnotation &getExperimentAnnotation() const {return mExperimentAnnotation;}
 
     static Annotation defaultAnnotation;
 
@@ -439,6 +452,8 @@ private:
     // Extend annotation
     IconDiagramMap mIconMap;
     IconDiagramMap mDiagramMap;
+    // experiment annotation
+    ExperimentAnnotation mExperimentAnnotation;
   };
 
   class Dimensions

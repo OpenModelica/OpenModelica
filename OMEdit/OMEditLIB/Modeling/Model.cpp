@@ -490,6 +490,30 @@ namespace ModelInstance
     }
   }
 
+  void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("extent")) {
+      mHasExtent = true;
+      mExtent.deserialize(jsonObject.value("extent"));
+    }
+
+    if (jsonObject.contains("primitivesVisible")) {
+      mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
+    }
+  }
+
+  void ExperimentAnnotation::deserialize(const QJsonObject &jsonObject)
+  {
+    /* We only use this to check if the model has Interval defined in experiment annotation.
+     * The simulation still uses getSimulationOptions() API.
+     * We might change this in future.
+     */
+    if (jsonObject.contains("Interval")) {
+      mHasInterval = true;
+      //mInterval.deserialize(jsonObject.value("extent"));
+    }
+  }
+
   Annotation Annotation::defaultAnnotation{nullptr};
 
   Annotation::Annotation(Model *pParentModel)
@@ -605,6 +629,10 @@ namespace ModelInstance
 
     if (jsonObject.contains("DiagramMap")) {
       mDiagramMap.deserialize(jsonObject.value("DiagramMap").toObject());
+    }
+    // experiment annotation
+    if (jsonObject.contains("experiment")) {
+      mExperimentAnnotation.deserialize(jsonObject.value("experiment").toObject());
     }
   }
 
@@ -2564,18 +2592,6 @@ namespace ModelInstance
   QString InitialState::toString() const
   {
     return "initialState(" % mpStartConnector->getName() % ")";
-  }
-
-  void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("extent")) {
-      mHasExtent = true;
-      mExtent.deserialize(jsonObject.value("extent"));
-    }
-
-    if (jsonObject.contains("primitivesVisible")) {
-      mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
-    }
   }
 
 }
