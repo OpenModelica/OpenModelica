@@ -228,7 +228,6 @@ public
     end match;
   end add;
 
-
   function size
     input Dimension dim;
     output Integer size;
