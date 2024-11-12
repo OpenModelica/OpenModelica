@@ -6675,6 +6675,7 @@ protected
   Option<Absyn.RedeclareKeywords> redecl;
   Absyn.ElementAttributes attr;
   SourceInfo info;
+  Absyn.Path ty_path;
 algorithm
   try
     w := match classPath
@@ -6690,10 +6691,18 @@ algorithm
     modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, info);
     (io, redecl, attr) := getDefaultPrefixes(program, typeName);
 
+    ty_path := AbsynUtil.pathStripSamePrefix(typeName, classPath);
+
+    if AbsynUtil.pathContains(classPath, AbsynUtil.pathFirstIdent(ty_path)) then
+      // Keep the full type name if the first identifier of the stripped name
+      // is part of the class path, to avoid name collisions.
+      ty_path := typeName;
+    end if;
+
     cdef := addToPublic(cdef,
       Absyn.ELEMENTITEM(
         Absyn.ELEMENT(false, redecl, io,
-          Absyn.COMPONENTS(attr, Absyn.TPATH(AbsynUtil.pathStripSamePrefix(typeName, classPath), NONE()),
+          Absyn.COMPONENTS(attr, Absyn.TPATH(ty_path, NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(componentName, {}, modification), NONE(), annotation_)}),
           info, NONE())
       )

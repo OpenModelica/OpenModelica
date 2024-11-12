@@ -10,11 +10,27 @@ loadString("model InstantiationExample
   block MyBlock
     extends Modelica.Blocks.Icons.Block;
   end MyBlock;
+
+  package P
+    package Example
+      model M
+      end M;
+    end Example;
+
+    model M
+    end M;
+
+    model NotM
+    end NotM;
+  end P;
 end InstantiationExample;");
 getErrorString();
 list(InstantiationExample);
 addComponent(myBlock, InstantiationExample.MyBlock,InstantiationExample,annotate=Placement(transformation=transformation(origin={-32,-62},extent={{-10,-10},{10,10}})));
 addComponent(x, Real, InstantiationExample, comment="comment", binding=10, modification = $Code((start = 0.0)));
+// Check that addComponent doesn't remove the prefix if it would lead to name collisions.
+addComponent(m, InstantiationExample.P.M, InstantiationExample.P.Example.M);
+addComponent(n, InstantiationExample.P.NotM, InstantiationExample.P.Example.M);
 getErrorString();
 list(InstantiationExample);
 getErrorString();
@@ -26,7 +42,22 @@ getErrorString();
 //   block MyBlock
 //     extends Modelica.Blocks.Icons.Block;
 //   end MyBlock;
+//
+//   package P
+//     package Example
+//       model M
+//       end M;
+//     end Example;
+//
+//     model M
+//     end M;
+//
+//     model NotM
+//     end NotM;
+//   end P;
 // end InstantiationExample;"
+// true
+// true
 // true
 // true
 // ""
@@ -34,6 +65,21 @@ getErrorString();
 //   block MyBlock
 //     extends Modelica.Blocks.Icons.Block;
 //   end MyBlock;
+//
+//   package P
+//     package Example
+//       model M
+//         InstantiationExample.P.M m;
+//         NotM n;
+//       end M;
+//     end Example;
+//
+//     model M
+//     end M;
+//
+//     model NotM
+//     end NotM;
+//   end P;
 //
 //   MyBlock myBlock annotation(
 //     Placement(transformation(origin = {-32, -62}, extent = {{-10, -10}, {10, 10}})));
