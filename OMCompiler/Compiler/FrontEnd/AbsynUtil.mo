@@ -6357,6 +6357,26 @@ algorithm
   end match;
 end isBlock;
 
+function isConnector
+  input Absyn.Class cls;
+  output Boolean res;
+algorithm
+  res := match cls
+    case Absyn.Class.CLASS(restriction = Absyn.Restriction.R_CONNECTOR()) then true;
+    else false;
+  end match;
+end isConnector;
+
+function isExpandableConnector
+  input Absyn.Class cls;
+  output Boolean res;
+algorithm
+  res := match cls
+    case Absyn.Class.CLASS(restriction = Absyn.Restriction.R_EXP_CONNECTOR()) then true;
+    else false;
+  end match;
+end isExpandableConnector;
+
 function eachBool
   input Absyn.Each eachPrefix;
   output Boolean res;
