@@ -1492,6 +1492,7 @@ public function combineBinaries
   "just a wrapper to remove the interface for traversal"
   input output Expression exp;
 algorithm
+  exp := Expression.map(exp, removeTrivialScalarProduct);
   exp := combineBinariesExp(exp);
 end combineBinaries;
 
@@ -1806,6 +1807,27 @@ algorithm
   end match;
 end addArgument;
 
+function removeTrivialScalarProduct
+  "removes trivial scalar products of size 1 vectors"
+  input output Expression exp;
+protected
+  Type ty;
+  Expression exp1, exp2;
+  list<Subscript> subs;
+algorithm
+  exp := match exp
+    // only do something for scalar products of size 1 vectors
+    case Expression.BINARY(operator = Operator.OPERATOR(ty = ty, op = NFOperator.Op.SCALAR_PRODUCT))
+      guard(Type.sizeOf(Expression.typeOf(exp.exp1)) == 1 and Type.sizeOf(Expression.typeOf(exp.exp2)) == 1) algorithm
+      // generate "1" subscript for each dimension of the vector and apply them to left and right binary argument
+      subs := list(Subscript.INDEX(index = Expression.INTEGER(1)) for d in Type.arrayDims(Expression.typeOf(exp.exp1)));
+      exp1 := Expression.applySubscripts(subs, exp.exp1);
+      subs := list(Subscript.INDEX(index = Expression.INTEGER(1)) for d in Type.arrayDims(Expression.typeOf(exp.exp2)));
+      exp2 := Expression.applySubscripts(subs, exp.exp2);
+    then Expression.BINARY(exp1, Operator.OPERATOR(ty, op = NFOperator.Op.MUL), exp2);
+    else exp;
+  end match;
+end removeTrivialScalarProduct;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;
