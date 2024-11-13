@@ -574,22 +574,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-   } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
-    pSettings->beginGroup(ToolBars::modelingCompositeModelPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
->>>>>>> db699a53f2 (preliminary CRML support)
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::modelingOMSPerspective);
@@ -2172,8 +2156,6 @@ void MainWindow::openCRMLFile()
   hideProgressBar();
 }
 
-<<<<<<< HEAD
-=======
 /*!
  * \brief MainWindow::createNewMOSFile
  * Opens the new Modelica Scripting dialog.
@@ -2222,7 +2204,6 @@ void MainWindow::openMOSFile()
   hideProgressBar();
 }
 
->>>>>>> d12c404a7a (fix creation of crml files, add mos file support)
 /*!
  * \brief MainWindow::openDirectory
  * Opens the directory.
@@ -3675,7 +3656,7 @@ void MainWindow::showRunCRMLTestsuiteDialog()
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
   MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, Helper::runningCRMLTestsuite);
   pCRMLTranslatorOutputWidget->start();
-}
+      }
 
 
 /*!
@@ -3844,8 +3825,6 @@ void MainWindow::createActions()
   mpOpenCRMLFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open CRML Model(s)"), this);
   mpOpenCRMLFileAction->setStatusTip(tr("Opens the CRML file(s)"));
   connect(mpOpenCRMLFileAction, SIGNAL(triggered()), SLOT(openCRMLFile()));
-<<<<<<< HEAD
-=======
   // create new MOS action
   mpNewMOSFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newMOSScript, this);
   mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
@@ -3854,11 +3833,6 @@ void MainWindow::createActions()
   mpOpenMOSFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Modelica Script(s)"), this);
   mpOpenMOSFileAction->setStatusTip(tr("Opens the Modelica Scripting file(s)"));
   connect(mpOpenMOSFileAction, SIGNAL(triggered()), SLOT(openMOSFile()));
-  // load External Model action
-  mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
-  mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
-  connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
->>>>>>> d12c404a7a (fix creation of crml files, add mos file support)
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));

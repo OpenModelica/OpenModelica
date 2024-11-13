@@ -57,15 +57,9 @@ class LibraryTreeItem : public QObject
 public:
   enum LibraryType {
     Modelica,         /* Used to represent Modelica models. */
-<<<<<<< HEAD
     Text,             /* Used to represent text based files. */
     OMS,              /* Used to represent OMSimulator models. */
     CRML              /* Used to represent CRML models. */
-=======
-    Text,             /* Used to represent Text based files. */
-    CompositeModel,   /* Used to represent CompositeModel files. */
-    OMS              /* Used to represent OMSimulator models. */
->>>>>>> 47b733753a (do not use a special type for .crml files in the library browser, treat them as text files)
   };
   enum Access {
     hide,
@@ -481,14 +475,11 @@ public:
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
-  void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openCRMLFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
-<<<<<<< HEAD
-=======
   void openMOSFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
-  void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
->>>>>>> d12c404a7a (fix creation of crml files, add mos file support)
+
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);

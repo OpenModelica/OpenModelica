@@ -582,6 +582,10 @@ bool MessagesWidget::closeTab(int index)
   if (pFmuExportOutputWidget
       && !pFmuExportOutputWidget->isCompilationProcessRunning()
       && !pFmuExportOutputWidget->isPostCompilationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
+    return true;
+  }
   // Close CRMLTranslatorOutputWidget
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isCompilationProcessRunning()) {

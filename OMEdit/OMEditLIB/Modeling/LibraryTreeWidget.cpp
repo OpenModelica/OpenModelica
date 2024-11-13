@@ -3163,7 +3163,7 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
       } else {
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
-    } else if (pLibraryTreeItem->isCRML()) {
+    } else if (pLibraryTreeItem->isCRMLFile()) {
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     } else if (pLibraryTreeItem->isSSP()) {
       if ((pLibraryTreeItem->getOMSConnector() || pLibraryTreeItem->getOMSBusConnector() || pLibraryTreeItem->getOMSTLMBusConnector())) {
@@ -3321,15 +3321,11 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpDeleteAction);
           if (pLibraryTreeItem->isTopLevel()) {
             menu.addSeparator();
-<<<<<<< HEAD
             if (pLibraryTreeItem->isCRMLFile()) {
               menu.addAction(mpUnloadCRMLFileAction);
             } else {
               menu.addAction(mpUnloadTextFileAction);
             }
-=======
-            menu.addAction(mpUnloadCompositeModelFileAction);
->>>>>>> f09dc963a9 (add actions for crml and mos library items)
           }
           break;
         case LibraryTreeItem::OMS:

@@ -71,4 +71,5 @@ int CRMLFile::save() {
     return 0;
   QFile f = QFile(mPath);
   f.write(mContents.toUtf8());
+  return 1;
 }
