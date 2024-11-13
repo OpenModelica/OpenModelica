@@ -790,6 +790,9 @@ package SimCode
       Absyn.Path name;
       String description;
       String version;
+      String author;
+      String license;
+      String copyright;
       String directory;
       VarInfo varInfo;
       SimCodeVar.SimVars vars;

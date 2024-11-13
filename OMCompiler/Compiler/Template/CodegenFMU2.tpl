@@ -113,7 +113,10 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let fmiVersion = '2.0'
   let modelName = dotPath(modelInfo.name)
   let description = modelInfo.description
+  let author = modelInfo.author
   let version = modelInfo.version
+  let copyright = modelInfo.copyright
+  let license = modelInfo.license
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
@@ -124,6 +127,9 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   guid="{<%guid%>}"
   description="<%Util.escapeModelicaStringToXmlString(description)%>"
   version="<%Util.escapeModelicaStringToXmlString(version)%>"
+  <% if stringEq(author, "") then '' else 'author="<%Util.escapeModelicaStringToXmlString(author)%>"'%>
+  <% if stringEq(copyright, "") then '' else 'copyright="<%Util.escapeModelicaStringToXmlString(copyright)%>"'%>
+  <% if stringEq(license, "") then '' else 'license="<%Util.escapeModelicaStringToXmlString(license)%>"'%>
   generationTool="<%Util.escapeModelicaStringToXmlString(generationTool)%>"
   generationDateAndTime="<%Util.escapeModelicaStringToXmlString(generationDateAndTime)%>"
   variableNamingConvention="<%variableNamingConvention%>"

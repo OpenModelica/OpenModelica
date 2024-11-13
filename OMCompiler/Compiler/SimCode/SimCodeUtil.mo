@@ -7718,7 +7718,7 @@ public function createModelInfo
   input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description, directory, version;
+  String description, directory, version, author, license, copyright;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
@@ -7733,6 +7733,12 @@ algorithm
     // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
     version := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("version"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+
+    // fix issue https://github.com/OpenModelica/OpenModelica/issues/13169
+    author := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("__OpenModelica_author"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    license := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("__OpenModelica_license"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    copyright := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("__OpenModelica_copyright"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+
     (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
 
     if debug then execStat("simCode: createVars"); end if;
@@ -7764,7 +7770,7 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
-    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, version, directory, varInfo, vars, functions,
+    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, version, author, license, copyright, directory, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
