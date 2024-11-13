@@ -1,0 +1,93 @@
+// name: fmi_attributes_23.mos
+// keywords: FMI 2.0 export html documentation
+// status: correct
+// teardown_command: rm -rf fmi_attributes_25.fmu fmi_attributes_25.log fmi_attributes_25_info.json fmi_attributes_25.xml
+
+
+setCommandLineOptions("--fmiFilter=blackBox"); getErrorString();
+loadString("
+  model fmi_attributes_25 \"model description text example \"
+    parameter Real A = 2;
+    output Real B;
+  equation
+    B = A*time;
+  annotation(version=\"2.3\",
+             __OpenModelica_author=\"OSMC\",
+             __OpenModelica_license=\"OpenSource\",
+             __OpenModelica_copyright=\"OSMC\"
+              );
+  end fmi_attributes_25;
+"); getErrorString();
+
+buildModelFMU(fmi_attributes_25); getErrorString();
+
+//unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_25.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > fmi_attributes_25.xml");
+readFile("fmi_attributes_25.xml"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_25.fmu"
+// ""
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"fmi_attributes_25\"
+//   description=\"model description text example \"
+//   version=\"2.3\"
+//   author=\"OSMC\"
+//   copyright=\"OSMC\"
+//   license=\"OpenSource\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"fmi_attributes_25\"
+//     needsExecutionTool=\"false\"
+//     completedIntegratorStepNotNeeded=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canNotUseMemoryManagementFunctions=\"false\"
+//     canGetAndSetFMUstate=\"false\"
+//     canSerializeFMUstate=\"false\"
+//     providesDirectionalDerivative=\"false\">
+//   </ModelExchange>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"B\"
+//     valueReference=\"0\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Outputs>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// ""
+// endResult

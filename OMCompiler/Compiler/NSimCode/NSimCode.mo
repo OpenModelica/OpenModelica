@@ -600,6 +600,9 @@ public
       Absyn.Path name;
       String description;
       String version;
+      String author;
+      String license;
+      String copyright;
       String directory;
       SimVars vars;
       VarInfo varInfo;
@@ -643,6 +646,9 @@ public
         name                            = name,
         description                     = "",
         version                         = "",
+        author                          = "",
+        license                         = "",
+        copyright                       = "",
         directory                       = directory,
         vars                            = vars,
         varInfo                         = info,
@@ -686,6 +692,9 @@ public
         name                            = modelInfo.name,
         description                     = modelInfo.description,
         version                         = modelInfo.version,
+        author                          = modelInfo.author,
+        license                         = modelInfo.license,
+        copyright                       = modelInfo.copyright,
         directory                       = modelInfo.directory,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
         vars                            = SimVar.SimVars.convert(modelInfo.vars),
