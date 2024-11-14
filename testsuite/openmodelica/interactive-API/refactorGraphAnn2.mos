@@ -15,7 +15,7 @@ refactorClass(connecttest);
 // true
 // true
 // true
-// model connecttest
+// "model connecttest
 //   // name:     refactorGraphAnn2
 //   // keywords: annotation
 //   // status:   correct
@@ -38,7 +38,7 @@ refactorClass(connecttest);
 //   connect(conductor1.n, conductor.n) annotation(
 //     Line(points = {{68.3934, 39.0711}, {68.3934, 64}, {44, 64}}, color = {0, 0, 255}, thickness = 1.0));
 //   annotation(
-//     uses(Modelica(version = "1.6"), ModelicaAdditions(version = "1.5")),
+//     uses(Modelica(version = \"1.6\"), ModelicaAdditions(version = \"1.5\")),
 //     Diagram);
-// end connecttest;
+// end connecttest;"
 // endResult

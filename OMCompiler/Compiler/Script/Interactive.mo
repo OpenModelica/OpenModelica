@@ -901,157 +901,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getNthConnectorIconAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthConnectorIconAnnotation(AbsynUtil.crefToPath(cr), p, n);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthConnectorIconAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "getIconAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        access := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if access >= Access.icon then // i.e., Access.icon
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getIconAnnotation");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          graphicsExpMode := Config.getGraphicsExpMode();
-          Config.setEvaluateParametersInAnnotations(true);
-          Config.setGraphicsExpMode(true);
-          outResult := getIconAnnotation(AbsynUtil.crefToPath(cr), p);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          Config.setGraphicsExpMode(graphicsExpMode);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getIconAnnotation");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getDiagramAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        access := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if access >= Access.diagram then
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getDiagramAnnotation");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          graphicsExpMode := Config.getGraphicsExpMode();
-          Config.setEvaluateParametersInAnnotations(true);
-          Config.setGraphicsExpMode(true);
-          outResult := getDiagramAnnotation(AbsynUtil.crefToPath(cr), p);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          Config.setGraphicsExpMode(graphicsExpMode);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getDiagramAnnotation");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getNthInheritedClassIconMapAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthInheritedClassMapAnnotation(AbsynUtil.crefToPath(cr), n, p, "IconMap");
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "getNthInheritedClassDiagramMapAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthInheritedClassMapAnnotation(AbsynUtil.crefToPath(cr), n, p, "DiagramMap");
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "getNamedAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = Absyn.CREF_IDENT(name, {}))} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNamedAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNamedAnnotation(AbsynUtil.crefToPath(cr), p,
-            Absyn.IDENT(name), SOME("{}"), getAnnotationValue);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNamedAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "refactorClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-
-        try
-          cls := InteractiveUtil.getPathedClassInProgram(AbsynUtil.crefToPath(cr), p);
-          cls := Refactor.refactorGraphicalAnnotation(p, cls);
-          p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), p);
-          SymbolTable.setAbsyn(p);
-          outResult := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
-        else
-          outResult := "Failed in translating " + Dump.printComponentRefStr(cr)
-                     + " to Modelica v2.0 graphical annotations";
-        end try;
-      then
-        outResult;
-
-    case "refactorIconAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        cls := InteractiveUtil.getPathedClassInProgram(path, p);
-        cls := Refactor.refactorGraphicalAnnotation(p, cls);
-      then
-        getAnnotationInClass(cls, ICON_ANNOTATION(), p, path);
-
-    case "refactorDiagramAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        cls := InteractiveUtil.getPathedClassInProgram(path, p);
-        cls := Refactor.refactorGraphicalAnnotation(p, cls);
-      then
-        getAnnotationInClass(cls, DIAGRAM_ANNOTATION(), p, path);
-
     case "getShortDefinitionBaseClassInformation"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -5346,6 +5195,33 @@ algorithm
   end matchcontinue;
 end renameClassInImport;
 
+public function refactorClass
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+    Absyn.Program p;
+    String str;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := Refactor.refactorGraphicalAnnotation(program, cls);
+    p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), program);
+    SymbolTable.setAbsyn(p);
+    str := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
+    result := ValuesUtil.makeString(str);
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end refactorClass;
+
 protected function changeLastIdent
 "author: x02lucpo
   chages the last ident of the first path to the last path ident ie:
@@ -6711,7 +6587,7 @@ algorithm
   (io,redecl,attr) := match(p,className)
   local String str;
     case(_,_) equation
-      str = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
+      str = getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
       io = getDefaultInnerOuter(str);
       redecl = getDefaultReplaceable(str);
       redecl = makeReplaceableIfPartial(p, className, redecl);
@@ -7172,41 +7048,67 @@ algorithm
   end matchcontinue;
 end getMapAnnotationStr;
 
-protected function getNthInheritedClassMapAnnotation
-"This function takes a ComponentRef, an integer and a Program and returns
-  the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
-  input Absyn.Path inModelPath;
-  input Integer inInteger;
-  input Absyn.Program inProgram;
-  input String inMapType "IconMap or DiagramMap";
-  output String outString;
+public function getNthInheritedClassIconMapAnnotation
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNthInheritedClassMapAnnotation(classPath, n, program, "IconMap");
+  end impl;
 algorithm
-  outString := matchcontinue (inModelPath,inInteger,inProgram,inMapType)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      String s,annStr;
-      Integer n;
-      Absyn.Program p;
-      list<Absyn.ElementArg> elArgs;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
+end getNthInheritedClassIconMapAnnotation;
 
-    case (modelpath,n,p,_)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (s, SOME(Absyn.ANNOTATION(elArgs))) = getNthInheritedClassAnnotationOpt(modelpath, n, cdef, p);
-        annStr = getMapAnnotationStr(elArgs,inMapType, cdef, p, modelpath);
-        s = "{" + s + ", " + annStr + "}";
-      then
-        s;
-    case (modelpath,n,p,_)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (s, NONE()) = getNthInheritedClassAnnotationOpt(modelpath, n, cdef, p);
-        s = "{" + s + ",{}}";
-      then
-        s;
-    else "Error";
-  end matchcontinue;
+public function getNthInheritedClassDiagramMapAnnotation
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNthInheritedClassMapAnnotation(classPath, n, program, "DiagramMap");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
+end getNthInheritedClassDiagramMapAnnotation;
+
+protected function getNthInheritedClassMapAnnotation
+"This function takes a Path, an integer and a Program and returns
+  the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  input String mapType "IconMap or DiagramMap";
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  String s, annStr;
+  Option<Absyn.Annotation> opt_ann;
+  list<Absyn.ElementArg> args;
+algorithm
+  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  (s, opt_ann) := getNthInheritedClassAnnotationOpt(classPath, n, cls, program);
+
+  annStr := match opt_ann
+    case SOME(Absyn.ANNOTATION(args)) then getMapAnnotationStr(args, mapType, cls, program, classPath);
+    else "{}";
+  end match;
+
+  result := InteractiveUtil.makeAnnotationArrayValue({s, annStr});
 end getNthInheritedClassMapAnnotation;
 
 protected function getExtendsInClass
@@ -7562,7 +7464,7 @@ protected
     result := InteractiveUtil.getElementAnnotationsFromElts(comps, cdef, program, classPath);
   end impl;
 algorithm
-  result := InteractiveUtil.accessClass(classPath, program, impl, true);
+  result := InteractiveUtil.accessClass(classPath, program, impl, evaluateParams = true);
 end getComponentAnnotations;
 
 public function getElementAnnotations " This function takes a `Path\', a `Program\' and
@@ -7593,7 +7495,7 @@ protected
     result := InteractiveUtil.getElementAnnotationsFromElts(elts, cdef, program, classPath);
   end impl;
 algorithm
-  result := InteractiveUtil.accessClass(classPath, program, impl, true);
+  result := InteractiveUtil.accessClass(classPath, program, impl, evaluateParams = true);
 end getElementAnnotations;
 
 public function getNthComponentAnnotation "
@@ -7626,7 +7528,7 @@ protected
     end if;
   end impl;
 algorithm
-  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), true);
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
 end getNthComponentAnnotation;
 
 public function getNthComponentModification
@@ -8739,7 +8641,8 @@ protected
     result := getConnectionAnnotationStr(conn, cdef, program, classPath);
   end impl;
 algorithm
-  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), true, Access.diagram);
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n),
+    evaluateParams = true, accessLevel = Access.diagram);
 end getNthConnectionAnnotation;
 
 public function getConnectorCount
@@ -8790,58 +8693,144 @@ algorithm
   end try;
 end getNthConnector;
 
-protected function getNthConnectorIconAnnotation
-" This function takes a ComponentRef and a Program and an int and returns
-   a string with the name of the nth connectors icon annotation in the
-   class given by ComponentRef in the Program."
-  input Absyn.Path inModelPath;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthConnectorIconAnnotation
+  "Returns the Icon annotation of the type of the n:th public connector in the
+   given class."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+    Absyn.Element comp;
+    Absyn.Path ty;
+    String str;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    (SOME((_, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
+    result := getIconAnnotation(ty, program);
+  end impl;
 algorithm
-  outString := matchcontinue (inModelPath,inProgram,inInteger)
-    local
-      Absyn.Path modelpath,tp;
-      Absyn.Class cdef;
-      String resstr;
-      Absyn.Program p;
-      Integer n;
-    case (modelpath,p,n)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (SOME((_, tp)), _) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-        resstr = getIconAnnotation(tp, p);
-      then
-        resstr;
-    else "Error";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
 end getNthConnectorIconAnnotation;
 
-protected function getDiagramAnnotation
+public function getIconAnnotation
 "This function takes a Path and a Program and returns a comma separated
-  string of values for the diagram annotation for the class named by the
+  string of values for the icon annotation for the class named by the
   first argument."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNamedAnnotationValue(classPath, program, "Icon");
+  end impl;
 algorithm
-  outString := matchcontinue (inPath,inProgram)
-    local
-      Absyn.Class cdef;
-      String str;
-      Absyn.Path modelpath;
-      Absyn.Program p;
-    case (modelpath,p)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION(), p, modelpath);
-      then
-        str;
-    else "{}";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end getIconAnnotation;
+
+public function refactorIconAnnotation
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := Refactor.refactorGraphicalAnnotation(program, cls);
+    result := getNamedAnnotationValue(classPath, program, "Icon");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end refactorIconAnnotation;
+
+public function getDiagramAnnotation
+"This function takes a Path and a Program and returns a comma separated
+  string of values for the icon annotation for the class named by the
+  first argument."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNamedAnnotationValue(classPath, program, "Diagram");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
 end getDiagramAnnotation;
 
+public function refactorDiagramAnnotation
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := Refactor.refactorGraphicalAnnotation(program, cls);
+    result := getNamedAnnotationValue(classPath, program, "Diagram");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end refactorDiagramAnnotation;
+
 public function getNamedAnnotation
+  input Absyn.Path classPath;
+  input Absyn.Path annotationPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Path annotationPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    String str;
+  algorithm
+    str := getNamedAnnotationExp(classPath, program, annotationPath, SOME("{}"), getAnnotationValue);
+    result := ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(str));
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program,
+    function impl(annotationPath = annotationPath), evaluateParams = true);
+end getNamedAnnotation;
+
+public function getNamedAnnotationExp
 "This function takes a Path and a Program and returns a comma separated
   string of values for the Documentation annotation for the class named by the
   first argument."
@@ -8873,17 +8862,17 @@ algorithm
 
     case (_,_,_,SOME(str),_) then str;
   end matchcontinue;
-end getNamedAnnotation;
+end getNamedAnnotationExp;
 
 public function getStringNamedAnnotation
-"Calls getNamedAnnotation and makes sure we don't fail if annotation is not String type."
+"Calls getNamedAnnotationExp and makes sure we don't fail if annotation is not String type."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Path id;
   output String outString;
 algorithm
   try
-    Absyn.STRING(outString) := getNamedAnnotation(inPath, inProgram, id, SOME(Absyn.STRING("")), getAnnotationExp);
+    Absyn.STRING(outString) := getNamedAnnotationExp(inPath, inProgram, id, SOME(Absyn.STRING("")), getAnnotationExp);
   else
     outString := "";
   end try;
@@ -8913,6 +8902,44 @@ algorithm
     outString := "";
   end try;
 end getIntegerNamedAnnotation;
+
+function getNamedAnnotationValue
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input String name;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+algorithm
+  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  result := getNamedAnnotationValueInClass(classPath, cls, program, name);
+end getNamedAnnotationValue;
+
+function getNamedAnnotationValueInClass
+  input Absyn.Path classPath;
+  input Absyn.Class cls;
+  input Absyn.Program program;
+  input String name;
+  output Values.Value result;
+protected
+  Option<Absyn.Modification> mod;
+  Absyn.ElementArg arg;
+  String str;
+algorithm
+  mod := AbsynUtil.lookupClassAnnotation(cls, name);
+
+  result := match mod
+    case SOME(Absyn.Modification.CLASSMOD())
+      algorithm
+        arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(),
+          Absyn.Path.IDENT(name), mod, NONE(), AbsynUtil.dummyInfo);
+        str := getAnnotationString(Absyn.ANNOTATION({arg}), cls, program, classPath);
+      then
+        InteractiveUtil.makeAnnotationArrayValue({str});
+
+    else ValuesUtil.makeEmptyArray();
+  end match;
+end getNamedAnnotationValueInClass;
 
 constant Absyn.Path USES_PATH = Absyn.Path.IDENT("uses");
 
@@ -9229,30 +9256,6 @@ algorithm
     else false;
   end match;
 end filterIsVersionElement;
-
-protected function getIconAnnotation
-"This function takes a Path and a Program and returns a comma separated
-  string of values for the icon annotation for the class named by the
-  first argument."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  output String outString;
-algorithm
-  outString := matchcontinue (inPath,inProgram)
-    local
-      Absyn.Class cdef;
-      String str;
-      Absyn.Path modelpath;
-      Absyn.Program p;
-    case (modelpath,p)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, ICON_ANNOTATION(), p, modelpath);
-      then
-        str;
-    else "{}";
-  end matchcontinue;
-end getIconAnnotation;
 
 public function getPackagesInPath
 " This function takes a Path and a Program and returns a list of the
@@ -9614,113 +9617,6 @@ algorithm
   end for;
 end countBaseClassesFromParts;
 
-protected function getAnnotationInClass
-  "Helper function to getIconAnnotation."
-  input Absyn.Class inClass;
-  input AnnotationType annotationType;
-  input Absyn.Program inProgram;
-  input Absyn.Path inModelPath;
-  output String annotationStr;
-protected
-  Absyn.ClassDef body;
-  list<Absyn.ElementArg> ann;
-algorithm
-  Absyn.CLASS(body = body) := inClass;
-
-  ann := match body
-    case Absyn.PARTS()
-      then List.flatten(list(AbsynUtil.annotationToElementArgs(a) for a in body.ann));
-
-    case Absyn.CLASS_EXTENDS()
-      then List.flatten(list(AbsynUtil.annotationToElementArgs(a) for a in body.ann));
-
-    case Absyn.DERIVED(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-
-    case Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-
-    case Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-
-    case Absyn.PDER(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-  end match;
-
-  annotationStr := getAnnotationStr(ann, annotationType, inClass, inProgram, inModelPath);
-  annotationStr := "{" + annotationStr + "}";
-end getAnnotationInClass;
-
-protected function isAnnotationType
-  "Checks if the name of an annotation matches the annotation type given."
-  input String annotationStr;
-  input AnnotationType annotationType;
-algorithm
-  _ := match(annotationStr, annotationType)
-    case ("Icon", ICON_ANNOTATION()) then ();
-    case ("Diagram", DIAGRAM_ANNOTATION()) then ();
-  end match;
-end isAnnotationType;
-
-protected function containAnnotation
-"Helper function to getAnnotationFromElts."
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input AnnotationType annotationType;
-algorithm
-  _ := matchcontinue (inAbsynElementArgLst, annotationType)
-    local
-      list<Absyn.ElementArg> lst;
-      String ann_name;
-
-    case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = ann_name)) :: _), _)
-      equation
-        isAnnotationType(ann_name, annotationType);
-      then
-        ();
-
-    case ((_ :: lst), _)
-      equation
-        containAnnotation(lst, annotationType);
-      then
-        ();
-  end matchcontinue;
-end containAnnotation;
-
-protected function getAnnotationStr
-"Helper function to getIconAnnotationInClass."
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input AnnotationType annotationType;
-  input Absyn.Class inClass;
-  input Absyn.Program inProgram;
-  input Absyn.Path inModelPath;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynElementArgLst, annotationType, inClass, inProgram, inModelPath)
-    local
-      String str, ann_name;
-      Absyn.ElementArg ann;
-      Option<Absyn.Modification> mod;
-      list<Absyn.ElementArg> xs;
-      Absyn.Program fullProgram;
-      Absyn.Class c;
-      Absyn.Path p;
-
-    case (((ann as Absyn.MODIFICATION(path = Absyn.IDENT(name = ann_name))) :: _), _, c, fullProgram, p)
-      equation
-        isAnnotationType(ann_name, annotationType);
-        str = getAnnotationString(Absyn.ANNOTATION({ann}), c, fullProgram, p);
-      then
-        str;
-
-    case ((_ :: xs), _, c, fullProgram, p)
-      equation
-        str = getAnnotationStr(xs, annotationType, c, fullProgram, p);
-      then
-        str;
-
-  end matchcontinue;
-end getAnnotationStr;
-
 public function getDocumentationClassAnnotation
 "Returns the documentation class annotation of a class.
   This is annotated with the annotation:
@@ -9734,7 +9630,7 @@ algorithm
       String docStr;
     case(_,_)
       equation
-        docStr = getNamedAnnotation(className,p,Absyn.IDENT("DocumentationClass"),SOME("false"),getDocumentationClassAnnotationModStr);
+        docStr = getNamedAnnotationExp(className,p,Absyn.IDENT("DocumentationClass"),SOME("false"),getDocumentationClassAnnotationModStr);
       then
         stringEq(docStr, "true");
   end match;
@@ -9770,7 +9666,7 @@ algorithm
   compName := match(className,p)
     case(_,_)
       equation
-        compName = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentName"),SOME("{}"),getDefaultComponentNameModStr);
+        compName = getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentName"),SOME("{}"),getDefaultComponentNameModStr);
       then
         compName;
   end match;
@@ -9807,7 +9703,7 @@ algorithm
   compName := match(className,p)
     case(_,_)
       equation
-        compName = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
+        compName = getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
       then
         compName;
   end match;
@@ -12885,7 +12781,7 @@ algorithm
       String accessStr;
     case(_,_)
       equation
-        accessStr = getNamedAnnotation(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
+        accessStr = getNamedAnnotationExp(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
       then
         accessStr;
     else "";

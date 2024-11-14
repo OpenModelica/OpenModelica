@@ -7732,12 +7732,12 @@ algorithm
   try
     // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
-    version := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("version"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    version := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("version"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
 
     // fix issue https://github.com/OpenModelica/OpenModelica/issues/13169
-    author := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("__OpenModelica_author"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
-    license := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("__OpenModelica_license"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
-    copyright := System.trim(Interactive.getNamedAnnotation(class_, program, Absyn.IDENT("__OpenModelica_copyright"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    author := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_author"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    license := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_license"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    copyright := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_copyright"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
 
     (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
 
