@@ -560,14 +560,7 @@ public
     // if the equation does not have a simple structure try to solve with other strategies
     if status == Status.UNPROCESSED then
       residual := Equation.getResidualExp(eqn);
-      diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
-        diffCref        = fixed_cref,
-        new_vars        = {},
-        jacobianHT      = NONE(),
-        diffType        = NBDifferentiate.DifferentiationType.SIMPLE,
-        funcTree        = funcTree,
-        scalarized      = false
-      );
+      diffArgs := Differentiate.DifferentiationArguments.simpleCref(fixed_cref, funcTree);
       (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
       derivative := SimplifyExp.simplifyDump(derivative, true, getInstanceName());
 

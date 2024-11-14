@@ -340,12 +340,12 @@ public
 
   function isContinuous
     extends checkVar;
-    input Boolean init  "true if its an initial system";
+    input Boolean init  "true if it's an initial system";
   algorithm
     b := match var.backendinfo.varKind
-      case VariableKind.DISCRETE_STATE()  then false;
-      case VariableKind.DISCRETE()        then false;
-      case VariableKind.PREVIOUS()        then false;
+      case VariableKind.DISCRETE_STATE()  then false; // like parameter?
+      case VariableKind.DISCRETE()        then false; // like parameter?
+      case VariableKind.PREVIOUS()        then false; // like parameter?
       case VariableKind.CONSTANT()        then false;
       case VariableKind.PARAMETER()       then init and Type.isContinuous(var.ty);
       else true;
