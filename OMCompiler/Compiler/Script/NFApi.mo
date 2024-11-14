@@ -1538,6 +1538,7 @@ algorithm
     ErrorExt.setCheckpoint(getInstanceName());
     try
       exp := Ceval.evalExp(exp, Ceval.EvalTarget.new(AbsynUtil.dummyInfo, NFInstContext.INSTANCE_API));
+      exp := Expression.map(exp, Expression.expandSplitIndices);
       json := JSON.addPair("value", Expression.toJSON(exp), json);
     else
     end try;
