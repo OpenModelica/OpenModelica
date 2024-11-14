@@ -26,6 +26,7 @@ Generated on |date| at |time|
   debugger
   basemodelica
   porting
+  backwardscompatibility
   graphs
   fmitlm
   omsimulator
