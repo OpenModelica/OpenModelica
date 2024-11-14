@@ -972,12 +972,15 @@ bool Element::hasShapeAnnotation() const
       return iconAnnotationFound;
     }
   }
-  foreach (Element *pChildElement, mElementsList) {
-    iconAnnotationFound = pChildElement->hasShapeAnnotation();
-    if (iconAnnotationFound) {
-      return iconAnnotationFound;
-    }
-  }
+  /* Issue #13211
+   * Don't check connectors because if it has connectors and no shapes then it looks empty.
+   */
+  // foreach (Element *pChildElement, mElementsList) {
+  //   iconAnnotationFound = pChildElement->hasShapeAnnotation();
+  //   if (iconAnnotationFound) {
+  //     return iconAnnotationFound;
+  //   }
+  // }
   return iconAnnotationFound;
 }
 
@@ -2539,8 +2542,8 @@ void Element::drawModelicaElement()
   if (mpGraphicsView->getModelWidget()->isNewApi()) {
     createClassInheritedElements();
     createClassShapes();
-    createClassElements();
     showNonExistingOrDefaultElementIfNeeded();
+    createClassElements();
   } else {
     if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
       if (isRoot()) {
