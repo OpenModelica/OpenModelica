@@ -203,7 +203,7 @@ public
           if UnorderedMap.contains(stripped, replacements) then
             subs  := ComponentRef.subscriptsAllFlat(exp.cref);
             res   := UnorderedMap.getOrFail(stripped, replacements);
-            res   := Expression.applySubscripts(subs, res);
+            res   := Expression.applySubscripts(subs, res, true);
           else
             // do nothing
             res := exp;

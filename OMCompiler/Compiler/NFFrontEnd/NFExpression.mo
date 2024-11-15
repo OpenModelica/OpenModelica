@@ -1199,12 +1199,13 @@ public
     "Subscripts an expression with the given list of subscripts."
     input list<Subscript> subscripts;
     input Expression exp;
+    input Boolean applyToScope = false;
     output Expression outExp;
   algorithm
     if listEmpty(subscripts) then
       outExp := exp;
     else
-      outExp := applySubscript(listHead(subscripts), exp, listRest(subscripts));
+      outExp := applySubscript(listHead(subscripts), exp, listRest(subscripts), applyToScope);
     end if;
   end applySubscripts;
 
@@ -1214,35 +1215,36 @@ public
     input Subscript subscript;
     input Expression exp;
     input list<Subscript> restSubscripts = {};
+    input Boolean applyToScope = false;
     output Expression outExp;
   algorithm
     outExp := match exp
-      case CREF() then applySubscriptCref(subscript, exp.cref, restSubscripts);
+      case CREF() then applySubscriptCref(subscript, exp.cref, restSubscripts, applyToScope);
 
       case TYPENAME() guard listEmpty(restSubscripts)
         then applySubscriptTypename(subscript, exp.ty);
 
-      case ARRAY() then applySubscriptArray(subscript, exp, restSubscripts);
+      case ARRAY() then applySubscriptArray(subscript, exp, restSubscripts, applyToScope);
 
       case RANGE() guard listEmpty(restSubscripts)
         then applySubscriptRange(subscript, exp);
 
       case CALL()
-        then applySubscriptCall(subscript, exp, restSubscripts);
+        then applySubscriptCall(subscript, exp, restSubscripts, applyToScope);
 
-      case IF() then applySubscriptIf(subscript, exp, restSubscripts);
+      case IF() then applySubscriptIf(subscript, exp, restSubscripts, applyToScope);
 
       case UNBOX()
         algorithm
-          outExp := applySubscript(subscript, exp.exp, restSubscripts);
+          outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
         then
           unbox(outExp);
 
-      case BOX() then box(applySubscript(subscript, exp.exp, restSubscripts));
+      case BOX() then box(applySubscript(subscript, exp.exp, restSubscripts, applyToScope));
 
       case CAST()
         algorithm
-          outExp := applySubscript(subscript, exp.exp, restSubscripts);
+          outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
         then
           CAST(Type.copyElementType(typeOf(outExp), exp.ty), outExp);
 
@@ -1254,12 +1256,13 @@ public
     input Subscript subscript;
     input ComponentRef cref;
     input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
     output Expression outExp;
   protected
     ComponentRef cr;
     Type ty;
   algorithm
-    cr := ComponentRef.mergeSubscripts(subscript :: restSubscripts, cref);
+    cr := ComponentRef.mergeSubscripts(subscript :: restSubscripts, cref, applyToScope);
     ty := ComponentRef.getSubscriptedType(cr);
     outExp := CREF(ty, cr);
   end applySubscriptCref;
@@ -1321,6 +1324,7 @@ public
     input Subscript subscript;
     input Expression exp;
     input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
     output Expression outExp;
   protected
     Subscript sub, s;
@@ -1348,7 +1352,7 @@ public
           else
             ARRAY(ty = ty, elements = expl, literal = literal) := exp;
             s :: rest_subs := restSubscripts;
-            expl := Array.map(expl, function applySubscript(subscript = s, restSubscripts = rest_subs));
+            expl := Array.map(expl, function applySubscript(subscript = s, restSubscripts = rest_subs, applyToScope = applyToScope));
             (ty, literal) := typeSubscriptedArray(expl, restSubscripts, ty, literal);
             outExp := makeArray(ty, expl, literal);
           end if;
@@ -1529,6 +1533,7 @@ public
     input Subscript subscript;
     input Expression exp;
     input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
     output Expression outExp;
   protected
     Call call;
@@ -1543,7 +1548,7 @@ public
       case Call.TYPED_CALL(arguments = {arg})
         guard Function.Function.isSubscriptableBuiltin(call.fn)
         algorithm
-          arg := applySubscript(subscript, arg, restSubscripts);
+          arg := applySubscript(subscript, arg, restSubscripts, applyToScope);
           ty := Type.copyDims(typeOf(arg), call.ty);
         then
           CALL(Call.TYPED_CALL(call.fn, ty, call.var, call.purity, {arg}, call.attributes));
@@ -1595,6 +1600,7 @@ public
     input Subscript subscript;
     input Expression exp;
     input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
     output Expression outExp;
   protected
     Expression cond, tb, fb;
@@ -1607,16 +1613,16 @@ public
       // since they have different dimensions. If it fails just subscript the
       // whole if-expression instead.
       try
-        tb := applySubscript(subscript, tb, restSubscripts);
-        fb := applySubscript(subscript, fb, restSubscripts);
+        tb := applySubscript(subscript, tb, restSubscripts, applyToScope);
+        fb := applySubscript(subscript, fb, restSubscripts, applyToScope);
         ty := Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb));
         outExp := IF(ty, cond, tb, fb);
       else
         outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
       end try;
     else
-      tb := applySubscript(subscript, tb, restSubscripts);
-      fb := applySubscript(subscript, fb, restSubscripts);
+      tb := applySubscript(subscript, tb, restSubscripts, applyToScope);
+      fb := applySubscript(subscript, fb, restSubscripts, applyToScope);
       ty := typeOf(tb);
       outExp := IF(ty, cond, tb, fb);
     end if;
