@@ -19,7 +19,7 @@ control, etc. Hence, the development of OpenModelica development strives to impl
 MLS standard as strictly as possible.
 
 The Open Source Modelica Consortium also recognizes the value of the code developed by the
-users of OpenModelica. There is hardly nothing more annoying than not being able to use legacy
+users of OpenModelica. There is hardly anything more annoying than not being able to use legacy
 code with up-to-date versions of a software tool. Hence, the Consortium strives to keep
 newer versions of OpenModelica fully backwards compatible with older ones and is committed
 to releasing patch versions of the latest x.y.0 release of the software, in case regressions
