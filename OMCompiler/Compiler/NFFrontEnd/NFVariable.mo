@@ -223,9 +223,6 @@ public
     // for non-complex variables the children are empty therefore it will be returned itself
     var.children := List.flatten(list(expandChildren(v, newArrayDims) for v in var.children));
     // return all children and the variable itself
-    if not listEmpty(var.children) then
-      print("var: " + Variable.toString(var) + " children: " + List.toString(var.children, function toString(indent = "", printBindingType = false)) + "\n");
-    end if;
     children := var :: var.children;
   end expandChildren;
 
