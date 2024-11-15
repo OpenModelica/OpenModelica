@@ -11,6 +11,7 @@
 #include "Modifier.h"
 #include "ElementAttributes.h"
 #include "Comment.h"
+#include "Util/IndirectForwardIterator.h"
 
 namespace OpenModelica::Absyn
 {
@@ -18,57 +19,62 @@ namespace OpenModelica::Absyn
   class ExternalDecl;
   class Equation;
   class Algorithm;
+  struct ClassDefVisitor;
 
   class ClassDef
   {
     public:
-      class Base
-      {
-        public:
-          virtual ~Base() = default;
+      static std::unique_ptr<ClassDef> fromSCode(MetaModelica::Record value);
+      virtual ~ClassDef();
 
-          virtual std::unique_ptr<Base> clone() const noexcept = 0;
-          virtual MetaModelica::Value toSCode() const noexcept = 0;
-          virtual void print(std::ostream &os, const Class &parent) const noexcept = 0;
-          virtual void printBody(std::ostream &os) const noexcept = 0;
-      };
+      virtual std::unique_ptr<ClassDef> clone() const noexcept = 0;
+      virtual MetaModelica::Value toSCode() const noexcept = 0;
 
-    public:
-      ClassDef(MetaModelica::Record value);
-      ClassDef(const ClassDef &other) noexcept;
+      virtual void apply(ClassDefVisitor &visitor) const = 0;
+
+      virtual void print(std::ostream &os, const Class &parent) const noexcept = 0;
+      virtual void printBody(std::ostream &os) const noexcept = 0;
+
+    protected:
+      ClassDef() = default;
+      ClassDef(const ClassDef &other) = default;
       ClassDef(ClassDef &&other) = default;
-
-      ClassDef& operator= (const ClassDef &other) noexcept;
+      ClassDef& operator= (const ClassDef &other) = default;
       ClassDef& operator= (ClassDef &&other) = default;
-
-      MetaModelica::Value toSCode() const noexcept;
-
-      void print(std::ostream &os, const Class &parent) const noexcept;
-      void printBody(std::ostream &os) const noexcept;
-
-    private:
-      std::unique_ptr<Base> _impl;
   };
 
-  class Parts : public ClassDef::Base
+  class ClassParts : public ClassDef
   {
     public:
-      Parts(MetaModelica::Record value);
-      Parts(const Parts &other) noexcept;
-      Parts(Parts &&other) = default;
-      ~Parts();
+      using ElementList = std::vector<std::unique_ptr<Element>>;
+      using ElementIterator = Util::IndirectForwardIterator<ElementList::iterator>;
+      using ElementConstIterator = Util::IndirectForwardIterator<ElementList::const_iterator>;
 
-      Parts& operator= (Parts other) noexcept;
-      Parts& operator= (Parts &&other) = default;
-      void swap(Parts &parts) noexcept;
+    public:
+      ClassParts();
+      ClassParts(std::vector<std::unique_ptr<Element>> elements);
+      ClassParts(MetaModelica::Record value);
+      ClassParts(const ClassParts &other) noexcept;
+      ClassParts(ClassParts &&other) = default;
+      ~ClassParts();
 
-      std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      ClassParts& operator= (ClassParts other) noexcept;
+      ClassParts& operator= (ClassParts &&other) = default;
+      friend void swap(ClassParts &first, ClassParts &second) noexcept;
+
+      std::unique_ptr<ClassDef> clone() const noexcept override;
       MetaModelica::Value toSCode() const noexcept override;
+      void apply(ClassDefVisitor &visitor) const override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
+      ElementIterator elementsBegin();
+      ElementConstIterator elementsBegin() const;
+      ElementIterator elementsEnd();
+      ElementConstIterator elementsEnd() const;
+
     private:
-      std::vector<Element> _elements;
+      std::vector<std::unique_ptr<Element>> _elements;
       std::vector<Equation> _equations;
       std::vector<Equation> _initialEquations;
       std::vector<Algorithm> _algorithms;
@@ -78,28 +84,37 @@ namespace OpenModelica::Absyn
       std::unique_ptr<ExternalDecl> _externalDecl;
   };
 
-  class ClassExtends : public ClassDef::Base
+  class ClassExtends : public ClassDef
   {
     public:
       ClassExtends(MetaModelica::Record value);
+      ClassExtends(const ClassExtends &other) noexcept;
+      ClassExtends(ClassExtends &&other) = default;
+      ~ClassExtends();
 
-      std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      ClassExtends& operator= (ClassExtends other) noexcept;
+      ClassExtends& operator= (ClassExtends &&other) = default;
+      friend void swap(ClassExtends &first, ClassExtends &second) noexcept;
+
+      std::unique_ptr<ClassDef> clone() const noexcept override;
       MetaModelica::Value toSCode() const noexcept override;
+      void apply(ClassDefVisitor &visitor) const override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
     private:
       Modifier _modifier;
-      ClassDef _composition;
+      std::unique_ptr<ClassDef> _composition; // TODO: Inherit ClassParts instead?
   };
 
-  class Derived : public ClassDef::Base
+  class Derived : public ClassDef
   {
     public:
       Derived(MetaModelica::Record value);
 
-      std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      std::unique_ptr<ClassDef> clone() const noexcept override;
       MetaModelica::Value toSCode() const noexcept override;
+      void apply(ClassDefVisitor &visitor) const override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -109,7 +124,7 @@ namespace OpenModelica::Absyn
       ElementAttributes _attributes;
   };
 
-  class Enumeration : public ClassDef::Base
+  class Enumeration : public ClassDef
   {
     public:
       using EnumLiteral = std::pair<std::string, Comment>;
@@ -117,8 +132,9 @@ namespace OpenModelica::Absyn
     public:
       Enumeration(MetaModelica::Record value);
 
-      std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      std::unique_ptr<ClassDef> clone() const noexcept override;
       MetaModelica::Value toSCode() const noexcept override;
+      void apply(ClassDefVisitor &visitor) const override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -126,13 +142,14 @@ namespace OpenModelica::Absyn
       std::vector<EnumLiteral> _literals;
   };
 
-  class Overload : public ClassDef::Base
+  class Overload : public ClassDef
   {
     public:
       Overload(MetaModelica::Record value);
 
-      std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      std::unique_ptr<ClassDef> clone() const noexcept override;
       MetaModelica::Value toSCode() const noexcept override;
+      void apply(ClassDefVisitor &visitor) const override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
@@ -140,19 +157,31 @@ namespace OpenModelica::Absyn
       std::vector<Path> _paths;
   };
 
-  class PartialDerivative : public ClassDef::Base
+  class PartialDerivative : public ClassDef
   {
     public:
       PartialDerivative(MetaModelica::Record value);
 
-      std::unique_ptr<ClassDef::Base> clone() const noexcept override;
+      std::unique_ptr<ClassDef> clone() const noexcept override;
       MetaModelica::Value toSCode() const noexcept override;
+      void apply(ClassDefVisitor &visitor) const override;
       void print(std::ostream &os, const Class &parent) const noexcept override;
       void printBody(std::ostream &os) const noexcept override;
 
     private:
       Path _functionPath;
       std::vector<std::string> _derivedVariables;
+  };
+
+  struct ClassDefVisitor
+  {
+    virtual void visit(const ClassDef &) {};
+    virtual void visit(const ClassParts &def)         { visit(static_cast<const ClassDef&>(def)); }
+    virtual void visit(const ClassExtends &def)       { visit(static_cast<const ClassDef&>(def)); }
+    virtual void visit(const Derived &def)            { visit(static_cast<const ClassDef&>(def)); }
+    virtual void visit(const Enumeration &def)        { visit(static_cast<const ClassDef&>(def)); }
+    virtual void visit(const Overload &def)           { visit(static_cast<const ClassDef&>(def)); }
+    virtual void visit(const PartialDerivative &def)  { visit(static_cast<const ClassDef&>(def)); }
   };
 }
 

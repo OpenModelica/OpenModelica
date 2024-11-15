@@ -10,14 +10,16 @@
 
 namespace OpenModelica::Absyn
 {
-  class Extends : public Element::Base
+  class Extends : public Element
   {
     public:
       Extends(MetaModelica::Record value);
 
+      void apply(ElementVisitor &visitor) override;
+
       MetaModelica::Value toSCode() const noexcept override;
 
-      std::unique_ptr<Element::Base> clone() const noexcept override;
+      std::unique_ptr<Element> clone() const noexcept override;
       void print(std::ostream &os, Each each) const noexcept override;
 
     private:

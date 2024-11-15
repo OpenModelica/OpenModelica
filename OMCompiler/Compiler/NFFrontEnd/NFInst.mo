@@ -124,11 +124,12 @@ constant InstSettings DEFAULT_SETTINGS = InstSettings.SETTINGS(
     mergeExtendsSections = true
   );
 
-function Inst_test
+function Inst_makeTopNode
   input SCode.Program program;
-  output SCode.Program res;
-  external "C" res=Inst_test(program) annotation(Library = "omcruntimecpp");
-end Inst_test;
+  input SCode.Program annotationProgram;
+  output InstNode topNode;
+  external "C" topNode=Inst_makeTopNode(program, annotationProgram);
+end Inst_makeTopNode;
 
 function instClassInProgram
   "Instantiates a class given by its fully qualified path, with the result being
@@ -147,8 +148,6 @@ protected
   Integer var_count, eq_count, expose_local_ios;
   SCode.Program prog = program;
 algorithm
-  //prog := Inst_test(program);
-
   resetGlobalFlags();
   context := if relaxedFrontend or Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
     NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
@@ -442,6 +441,7 @@ protected
   InstNode ann_node;
   UnorderedMap<String, InstNode> generated_inners;
 algorithm
+  //topNode := Inst_makeTopNode(topClasses, annotationClasses);
   top_classes := topClasses;
 
   if Flags.getConfigBool(Flags.BASE_MODELICA) then

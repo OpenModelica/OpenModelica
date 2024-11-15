@@ -14,7 +14,11 @@ add_subdirectory(Absyn)
 # Libraries
 ##################################################################################################
 set(OMC_FRONTEND_CPP_SOURCES
+    Class.cpp
+    ClassNode.cpp
+    ClassTree.cpp
     Inst.cpp
+    InstNodeType.cpp
     MetaModelica.cpp
     Path.cpp
     Prefixes.cpp
