@@ -209,10 +209,19 @@ public
   function expandChildren
     "Expands a variable into itself and its children if its complex."
     input Variable var;
+    input list<Dimension> arrayDims = {};
     output list<Variable> children;
+  protected
+    list<Dimension> newArrayDims;
   algorithm
+    // add dimensions of surrounding record
+    if not listEmpty(arrayDims) then
+      var.ty := Type.liftArrayLeftList(var.ty, arrayDims);
+    end if;
+    newArrayDims := Type.arrayDims(var.ty);
+
     // for non-complex variables the children are empty therefore it will be returned itself
-    var.children := List.flatten(list(expandChildren(v) for v in var.children));
+    var.children := List.flatten(list(expandChildren(v, newArrayDims) for v in var.children));
     // return all children and the variable itself
     children := var :: var.children;
   end expandChildren;
