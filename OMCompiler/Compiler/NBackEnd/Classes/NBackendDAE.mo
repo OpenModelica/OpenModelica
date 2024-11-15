@@ -835,8 +835,8 @@ protected
         attr := lowerEquationAttributes(ty, init);
         result := match ty
           case Type.ARRAY()   then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
-          case Type.COMPLEX() then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
-          case Type.TUPLE()   then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.sizeOf(ty)))};
+          case Type.COMPLEX() then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.recordFieldCount(ty)))};
+          case Type.TUPLE()   then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.tupleFieldCount(ty)))};
                               else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
         end match;
       then result;

@@ -1300,6 +1300,16 @@ public
     end for;
   end updateRecordFieldsIndexMap;
 
+  function tupleFieldCount
+    input Type tupleType;
+    output Integer fieldCount;
+  algorithm
+    fieldCount := match tupleType
+      case TUPLE() then listLength(tupleType.types);
+      else 0;
+    end match;
+  end tupleFieldCount;
+
   function enumName
     input Type ty;
     output Absyn.Path name;
