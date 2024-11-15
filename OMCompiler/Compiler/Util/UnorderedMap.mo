@@ -558,8 +558,9 @@ public
       result  := copy(map2);
       tmp     := map1;
     end if;
-    for tpl in toList(tmp) loop
-      (k, v) := tpl;
+    for i in 1:Vector.size(tmp.keys) loop
+      k := Vector.getNoBounds(tmp.keys, i);
+      v := Vector.getNoBounds(tmp.values, i);
       try
         addUnique(k, v, result);
       else
