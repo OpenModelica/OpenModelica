@@ -106,6 +106,19 @@ public
       );
     end default;
 
+    function simpleCref "Differentiate w.r.t. cref"
+      input ComponentRef cref;
+      input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
+      output DifferentiationArguments diffArgs = DIFFERENTIATION_ARGUMENTS(
+        diffCref        = cref,
+        new_vars        = {},
+        jacobianHT      = NONE(),
+        diffType        = DifferentiationType.SIMPLE,
+        funcTree        = funcTree,
+        scalarized      = false
+      );
+    end simpleCref;
+
     function toString
       input DifferentiationArguments diffArgs;
       output String str = "[" + diffTypeStr(diffArgs.diffType) + "]";

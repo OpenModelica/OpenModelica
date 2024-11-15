@@ -577,7 +577,7 @@ public
   algorithm
     len := listLength(lst);
     sub_map := UNORDERED_MAP(
-      Vector.newFill(len, {}),
+      Vector.newFill(Util.nextPrime(len), {}),
       Vector.new<K>(len),
       Vector.new<V>(len),
       map.hashFn,

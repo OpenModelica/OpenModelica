@@ -208,10 +208,10 @@ public
     String flag = Flags.getConfigString(Flags.TEARING_METHOD);
   algorithm
     funcs := match flag
-      case "cellier"        then {initialize, minimal, finalize};
-      case "noTearing"      then {initialize, minimal, finalize};
-      case "omcTearing"     then {initialize, minimal, finalize};
-      case "minimalTearing" then {initialize, minimal, finalize};
+      case "cellier"        then {function initialize(minimal = false), minimal, finalize};
+      case "noTearing"      then {function initialize(minimal = true), minimal, finalize};
+      case "omcTearing"     then {function initialize(minimal = false), minimal, finalize};
+      case "minimalTearing" then {function initialize(minimal = true), minimal, finalize};
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
@@ -269,27 +269,36 @@ protected
     new_partitions := listReverse(new_partitions);
   end tearingTraverser;
 
-  function initialize extends Module.tearingInterface;
+
+  function initialize
+    extends Module.tearingInterface;
+    input Boolean minimal "if true, refines only discrete variables and equations";
   protected
     Tearing strict;
     list<ComponentRef> vars_lst, eqns_lst;
     UnorderedSet<ComponentRef> vars_set         "all loop vars, used to determine solvability";
     UnorderedMap<ComponentRef, Integer> v, e    "all loop vars and equations map";
+    constant Boolean init = kind == NBPartition.Kind.INI;
   algorithm
     (comp, full, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         index := index + 1;
         comp.idx := index;
 
-        // get all loop variables and equations
-        vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
-        eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        if minimal then
+          // get discrete loop variables and equations
+          vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var guard BVariable.isContinuous(Slice.getT(var), init) in strict.iteration_vars);
+          eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn guard Equation.isContinuous(Slice.getT(eqn)) in strict.residual_eqns);
+        else
+          // get all loop variables and equations
+          vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
+          eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        end if;
 
         // the set of all loop variables used to determine solvability
         vars_set := UnorderedSet.fromList(vars_lst, ComponentRef.hash, ComponentRef.isEqual);
 
-        // the sets of discrete variables and discrete equations
-        // FIXME: these are all variables/equations, not discrete variables/equations. Is this wrong?
+        // the sets of variables and equations
         v := UnorderedMap.subMap(variables.map, vars_lst);
         e := UnorderedMap.subMap(equations.map, eqns_lst);
 

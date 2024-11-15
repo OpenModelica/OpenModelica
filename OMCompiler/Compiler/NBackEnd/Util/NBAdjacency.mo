@@ -707,27 +707,31 @@ public
       input UnorderedSet<ComponentRef> vars_set      "context variables to determine solvability";
       input Boolean init                             "true if initial";
     algorithm
-      full := match full
+      (full, funcTree) := match full
         local
           DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcTree);
           Pointer<Equation> eqn_ptr;
-          Expression exp;
+          Expression residual, exp;
           Solve.Status status;
           Solvability sol;
-          UnorderedSet<ComponentRef> linear_set;
-          list<ComponentRef> param_lst, var_lst;
+          UnorderedSet<ComponentRef> linear_set, param_set, var_set;
+          Boolean eqnIsDiscrete;
 
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
+            eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
+            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr);
+            if not eqnIsDiscrete then
+              residual := Equation.getResidualExp(Pointer.access(eqn_ptr));
+            end if;
             for var in UnorderedSet.toArray(full.occurences[eqn_idx]) loop
               // only do something if var is to be refined
               if UnorderedMap.contains(var, v) then
                 // only do something if it is not implicit or unsolvable)
                 sol := UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo());
                 if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
-                  eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
                   // booleans or (todo: enumerations)
-                  if Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or not BVariable.checkCref(var, function BVariable.isContinuous(init = init)) then
+                  if eqnIsDiscrete or not BVariable.checkCref(var, function BVariable.isContinuous(init = init)) then
                     // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
@@ -735,8 +739,7 @@ public
                   else
                     // get the residual expression, differentiate and simplify it
                     diffArgs.diffCref := var;
-                    exp             := Equation.getResidualExp(Pointer.access(eqn_ptr));
-                    (exp, diffArgs) := Differentiate.differentiateExpressionDump(exp, diffArgs, getInstanceName());
+                    (exp, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
                     exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
                     if Expression.isZero(exp) then
                       sol := Solvability.UNSOLVABLE();
@@ -747,11 +750,11 @@ public
                     else
                       // linear -> find all contained crefs and split them by kind. remove constants and save params / variables
                       linear_set  := Expression.extractCrefs(exp);
-                      var_lst     := list(v for v guard not BVariable.checkCref(v, BVariable.isConst) in UnorderedSet.toList(linear_set));
-                      (param_lst, var_lst)  := List.splitOnTrue(var_lst, function BVariable.checkCref(func = BVariable.isParamOrConst));
+                      linear_set  := UnorderedSet.filterOnFalse(linear_set, function BVariable.checkCref(func = BVariable.isConst));
+                      (param_set, var_set) := UnorderedSet.splitOnTrue(linear_set, function BVariable.checkCref(func = BVariable.isParamOrConst));
                       sol := Solvability.EXPLICIT_LINEAR(
-                        pars = if listEmpty(param_lst) then NONE() else SOME(UnorderedSet.fromList(param_lst, ComponentRef.hash, ComponentRef.isEqual)),
-                        vars = if listEmpty(var_lst) then NONE() else SOME(UnorderedSet.fromList(var_lst, ComponentRef.hash, ComponentRef.isEqual)));
+                        pars = if UnorderedSet.isEmpty(param_set) then NONE() else SOME(param_set),
+                        vars = if UnorderedSet.isEmpty(var_set) then NONE() else SOME(var_set));
                     end if;
                   end if;
                   UnorderedMap.add(var, sol, full.solvabilities[eqn_idx]);
@@ -759,7 +762,7 @@ public
               end if;
             end for;
           end for;
-        then full;
+        then (full, diffArgs.funcTree);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + strictnessString(getStrictness(full)) + "."});
         then fail();

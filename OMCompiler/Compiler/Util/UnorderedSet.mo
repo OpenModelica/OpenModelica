@@ -468,6 +468,45 @@ public
     res := true;
   end none;
 
+  function filterOnFalse
+    "Returns new set containing elements for which fn returns false"
+    input UnorderedSet<T> set;
+    input PredFn fn;
+    output UnorderedSet<T> falseSet = new<T>(set.hashFn, set.eqFn);
+
+    partial function PredFn
+      input T key;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        if not fn(k) then
+          add(k, falseSet);
+        end if;
+      end for;
+    end for;
+  end filterOnFalse;
+
+  function splitOnTrue
+    "Splits a set into two subsets depending on predicate function."
+    input UnorderedSet<T> set;
+    input PredFn fn;
+    output UnorderedSet<T> trueSet = new<T>(set.hashFn, set.eqFn);
+    output UnorderedSet<T> falseSet = new<T>(set.hashFn, set.eqFn);
+
+    partial function PredFn
+      input T key;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        add(k, if fn(k) then trueSet else falseSet);
+      end for;
+    end for;
+  end splitOnTrue;
+
   function size
     "Returns the number of elements the set contains."
     input UnorderedSet<T> set;
