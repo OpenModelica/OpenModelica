@@ -126,7 +126,7 @@ public
           print(List.toString(binding_cont, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Continuous Binding Equations (" + intString(listLength(binding_cont)) + "):"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_clck, function Equation.pointerToString(str = ""),
-            StringUtil.headline_4("Created Clocked Binding Equations (" + intString(listLength(binding_cont)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+            StringUtil.headline_4("Created Clocked Binding Equations (" + intString(listLength(binding_clck)) + "):"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_disc, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Discrete Binding Equations (" + intString(listLength(binding_disc)) + "):"), "\t", "\n\t", "", false) + "\n\n");
           print(List.toString(binding_rec, function Equation.pointerToString(str = ""),
