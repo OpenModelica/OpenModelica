@@ -213,6 +213,17 @@ public
     end match;
   end getFunctionTree;
 
+  function sizes
+    input BackendDAE bdae;
+    output tuple<Integer, Integer> varSizes "scal, arr";
+    output tuple<Integer, Integer> eqnSizes "scal, arr";
+  algorithm
+    (varSizes, eqnSizes) := match bdae
+      case MAIN() then ((VarData.scalarSize(bdae.varData), VarData.size(bdae.varData)), (EqData.scalarSize(bdae.eqData), EqData.size(bdae.eqData)));
+      else ((0, 0), (0, 0));
+    end match;
+  end sizes;
+
   function lower
     "This function transforms the FlatModel structure to BackendDAE."
     input FlatModel flatModel;
@@ -318,11 +329,14 @@ public
     String name, debugStr;
     Real clock_time;
     Integer length;
+    tuple<Integer, Integer> varSizes, eqnSizes;
   algorithm
     for module in modules loop
       (func, name) := module;
-      debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
-      debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr));
+      if  Flags.isSet(Flags.FAILTRACE) then
+        debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
+        debugStr := debugStr + StringUtil.repeat(".", 50 - stringLength(debugStr));
+      end if;
       if clock_idx <> -1 then
         System.realtimeClear(clock_idx);
         System.realtimeTick(clock_idx);
@@ -339,6 +353,13 @@ public
         ExecStat.execStat(name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
+          (varSizes, eqnSizes) := sizes(bdae);
+          debugStr := debugStr + " V(" + intString(Util.tuple21(varSizes)) + "|" + intString(Util.tuple22(varSizes)) +")";
+          debugStr := debugStr + " E(" + intString(Util.tuple21(eqnSizes)) + "|" + intString(Util.tuple22(eqnSizes)) +") ";
+          if Util.tuple21(varSizes) <> Util.tuple21(eqnSizes) then
+            debugStr := debugStr + "XX ";
+          end if;
+          debugStr := debugStr + StringUtil.repeat(".", 100 - stringLength(debugStr));
           debugStr := debugStr + " " + realString(clock_time) + "s\n";
           print(debugStr);
         end if;
