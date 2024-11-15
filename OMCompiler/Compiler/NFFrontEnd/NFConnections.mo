@@ -264,7 +264,7 @@ public
 
         if count == 0 then
           flows := f :: flows;
-        elseif count > 1 then
+        elseif count > 1 or count == -1 then
           flows := listAppend(Connector.scalarize(f), flows);
         end if;
       end for;
@@ -308,13 +308,16 @@ public
       output Integer outCount;
     algorithm
       outCount := match count
-        case SOME(outCount) then outCount + 1;
+        case SOME(outCount) then if outCount >= 0 then outCount + 1 else -1;
         else 1;
       end match;
     end update;
   algorithm
-    if Connector.isArray(conn) or ComponentRef.hasSubscripts(conn.name) then
+    if Connector.isArray(conn) then
       UnorderedMap.addUpdate(conn, update, connectCounts);
+    elseif ComponentRef.hasSubscripts(conn.name) then
+      // Always scalarize connector arrays that are partially connected.
+      UnorderedMap.add(conn, -1, connectCounts);
     end if;
   end analyseArrayConnector;
 
