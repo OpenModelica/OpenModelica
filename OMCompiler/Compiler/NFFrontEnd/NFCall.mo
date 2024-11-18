@@ -2801,7 +2801,7 @@ protected
             sub := Subscript.INDEX(exp);
 
             call_args := List.mapIndices(call_args, mk.vectorizedArgs,
-              function Expression.applySubscript(subscript = sub, restSubscripts = {}));
+              function Expression.applySubscript(subscript = sub, restSubscripts = {}, applyToScope = false));
 
             i := i + 1;
           end for;
