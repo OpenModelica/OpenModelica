@@ -825,8 +825,13 @@ void NotebookWindow::createFormatMenu()
   fontsgroup = new QActionGroup( this );
   fontMenu = formatMenu->addMenu( tr("&Font") );
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
   QFontDatabase fontDatabase;
   QStringList fonts = fontDatabase.families( QFontDatabase::Latin );
+#else
+  QStringList fonts = QFontDatabase::families( QFontDatabase::Latin );
+#endif
+
   for( int index = 0; index < fonts.count(); ++index )
   {
     QAction *tmp = new QAction( fonts[index], this );
@@ -1842,20 +1847,29 @@ void NotebookWindow::updateFontMenu()
   QTextCursor cursor( subject_->getCursor()->currentCell()->textCursor() );
   if( !cursor.isNull() )
   {
-    QString family = cursor.charFormat().fontFamily();
-    if( fonts_.contains( family ))
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    const QStringList families = {cursor.charFormat().fontFamily()};
+#elif (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
+    const QStringList families = cursor.charFormat().fontFamilies().toStringList();
+#else
+    const QStringList families = cursor.charFormat().fontFamilies();
+#endif
+
+    for ( const auto &family: families )
     {
-      fonts_[family]->setChecked( true );
-    }
-    else
-    {
-      qDebug("No font found");
-      QHash<QString, QAction*>::iterator f_iter = fonts_.begin();
-      while( f_iter != fonts_.end() )
+      if ( fonts_.contains( family ) )
       {
-        f_iter.value()->setChecked( false );
-        ++f_iter;
+        fonts_[family]->setChecked( true );
+        return;
       }
+    }
+
+    qDebug("No font found");
+    QHash<QString, QAction*>::iterator f_iter = fonts_.begin();
+    while( f_iter != fonts_.end() )
+    {
+      f_iter.value()->setChecked( false );
+      ++f_iter;
     }
   }
 }

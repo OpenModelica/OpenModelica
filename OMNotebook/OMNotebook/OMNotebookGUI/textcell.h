@@ -146,10 +146,10 @@ namespace IAEX
 #endif
 
   protected:
-    void mousePressEvent(QMouseEvent *event);      // Added 2005-11-01 AF
-    void wheelEvent(QWheelEvent * event);        // Added 2005-11-28 AF
-    void insertFromMimeData(const QMimeData *source);  // Added 2006-01-23 AF
-    void keyPressEvent(QKeyEvent *event );        // Added 2006-01-30 AF
+    void mousePressEvent(QMouseEvent *event) override;      // Added 2005-11-01 AF
+    void wheelEvent(QWheelEvent * event) override;        // Added 2005-11-28 AF
+    void insertFromMimeData(const QMimeData *source) override;  // Added 2006-01-23 AF
+    void keyPressEvent(QKeyEvent *event ) override;        // Added 2006-01-30 AF
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     // QTextBrowser interface

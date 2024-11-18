@@ -163,10 +163,11 @@ void DocumentMarker::updateBreakpointsLineNumber()
   QTextBlock block = mpTextDocument->begin();
   int blockNumber = 0;
   while (block.isValid()) {
-    if (const TextBlockUserData *userData = BaseEditorDocumentLayout::testUserData(block))
+    if (const TextBlockUserData *userData = BaseEditorDocumentLayout::testUserData(block)) {
       foreach (ITextMark *mrk, userData->marks()) {
         mrk->updateLineNumber(mLineStartNumber > 0 ? blockNumber + mLineStartNumber : blockNumber + 1);
       }
+    }
     block = block.next();
     ++blockNumber;
   }
@@ -174,8 +175,9 @@ void DocumentMarker::updateBreakpointsLineNumber()
 
 void DocumentMarker::updateBreakpointsBlock(const QTextBlock &block)
 {
-  if (const TextBlockUserData *userData = BaseEditorDocumentLayout::testUserData(block))
+  if (const TextBlockUserData *userData = BaseEditorDocumentLayout::testUserData(block)) {
     foreach (ITextMark *mrk, userData->marks()) {
       mrk->updateBlock(block);
     }
+  }
 }

@@ -103,8 +103,9 @@ int main(int argc, char *argv[])
   QString locale = QString("OMShell_") + QLocale::system().name();
 
   QTranslator translator;
-  translator.load(locale, dir);
-  app.installTranslator(&translator);
+  if (translator.load(locale, dir)) {
+    app.installTranslator(&translator);
+  }
 
   // Avoid cluttering the whole disk with omc temp-files
   QString tmpDir = env->TmpPath();
