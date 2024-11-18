@@ -717,15 +717,13 @@ namespace ModelInstance
   void Dimensions::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("absyn")) {
-      QJsonArray absynDimsArray = jsonObject.value("absyn").toArray();
-      foreach (auto absynDim, absynDimsArray) {
+      for (const QJsonValue &absynDim: jsonObject.value("absyn").toArray()) {
         mAbsynDims.append(absynDim.toString());
       }
     }
 
     if (jsonObject.contains("typed")) {
-      QJsonArray typedDimsArray = jsonObject.value("typed").toArray();
-      foreach (auto typedDim, typedDimsArray) {
+      for (const QJsonValue &typedDim: jsonObject.value("typed").toArray()) {
         mTypedDims.append(typedDim.toString());
       }
     }
@@ -1131,8 +1129,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("connections")) {
-      QJsonArray connections = mModelJson.value("connections").toArray();
-      foreach (QJsonValue connection, connections) {
+      for (const QJsonValue &connection: mModelJson.value("connections").toArray()) {
         QJsonObject connectionObject = connection.toObject();
         if (!connectionObject.isEmpty()) {
           Connection *pConnection = new Connection(this);
@@ -1143,8 +1140,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("transitions")) {
-      QJsonArray transitions = mModelJson.value("transitions").toArray();
-      foreach (QJsonValue transition, transitions) {
+      for (const QJsonValue &transition: mModelJson.value("transitions").toArray()) {
         QJsonObject transitionObject = transition.toObject();
         if (!transitionObject.isEmpty()) {
           Transition *pTransition = new Transition(this);
@@ -1155,8 +1151,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("initialStates")) {
-      QJsonArray initialStates = mModelJson.value("initialStates").toArray();
-      foreach (QJsonValue initialState, initialStates) {
+      for (const QJsonValue &initialState: mModelJson.value("initialStates").toArray()) {
         QJsonObject initialStateObject = initialState.toObject();
         if (!initialStateObject.isEmpty()) {
           InitialState *pInitialState = new InitialState(this);
@@ -1178,7 +1173,7 @@ namespace ModelInstance
    */
   void Model::deserializeElements(const QJsonArray elements)
   {
-    foreach (const QJsonValue &element, elements) {
+    for (const QJsonValue &element: elements) {
       QJsonObject elementObject = element.toObject();
       QString kind = elementObject.value("$kind").toString();
 
@@ -1793,8 +1788,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("choice")) {
-      QJsonArray choices = jsonObject.value("choice").toArray();
-      foreach (auto choice, choices) {
+      for (const auto& choice: jsonObject.value("choice").toArray()) {
         mChoices.append(new Modifier("", choice, mpParentModel));
       }
     }
@@ -2395,8 +2389,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("subscripts")) {
-      QJsonArray subscripts = jsonObject.value("subscripts").toArray();
-      foreach (QJsonValue subscript, subscripts) {
+      for (const QJsonValue &subscript: jsonObject.value("subscripts").toArray()) {
         mSubScripts.append(QString::number(subscript.toInt()));
       }
     }
@@ -2423,7 +2416,7 @@ namespace ModelInstance
 
   void Name::deserialize(const QJsonArray &jsonArray)
   {
-    foreach (QJsonValue part, jsonArray) {
+    for (const QJsonValue &part: jsonArray) {
       Part partObject;
       partObject.deserialize(part.toObject());
       mParts.append(partObject);

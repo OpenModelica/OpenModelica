@@ -336,7 +336,7 @@ MyHandler::MyHandler(QFile &file, QHash<QString,OMVariable> &vars, QList<OMEquat
         currentEquation->eqs = nestedEquations;
         operations.clear();
         if (currentEquation->index != equations.size()) {
-          printf("failing: %d expect %d\n", currentEquation->index, equations.size()+1);
+          printf("failing: %d expect %zu\n", currentEquation->index, static_cast<size_t>(equations.size())+1);
           break;
         }
         equations.append(currentEquation);
