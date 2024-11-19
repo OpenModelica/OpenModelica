@@ -7840,6 +7840,9 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
       end match
     else
       match var
+        case SIMVAR(varKind=CONST(), initialValue = SOME(value)) then
+          let c_comment = CodegenUtil.crefCCommentWithVariability(var)
+          '<%daeExpSimpleLiteral(value)%><%c_comment%>'
         case SIMVAR(varKind=PARAM())
         case SIMVAR(varKind=OPT_TGRID()) then
           '(<%arr%>data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]<%crefCCommentWithVariability(var)%>)<%&sub%>'
