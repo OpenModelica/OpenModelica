@@ -287,8 +287,8 @@ protected
 
         if minimal then
           // get discrete loop variables and equations
-          vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var guard BVariable.isContinuous(Slice.getT(var), init) in strict.iteration_vars);
-          eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn guard Equation.isContinuous(Slice.getT(eqn)) in strict.residual_eqns);
+          vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var guard not BVariable.isContinuous(Slice.getT(var), init) in strict.iteration_vars);
+          eqns_lst := list(Equation.getEqnName(Slice.getT(eqn)) for eqn guard not Equation.isContinuous(Slice.getT(eqn)) in strict.residual_eqns);
         else
           // get all loop variables and equations
           vars_lst := list(BVariable.getVarName(Slice.getT(var)) for var in strict.iteration_vars);
