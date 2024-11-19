@@ -59,7 +59,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-6\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"PI.I.y\" description=\"Connector of Real output signal\" valueReference=\"0\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
@@ -1745,7 +1745,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.c\" description=\"Spring constant\" valueReference=\"131\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
-//       <Real start=\"10000.0\" fixed=\"true\" min=\"0.0\"  unit=\"N.m/rad\" />
+//       <Real start=\"1e4\" fixed=\"true\" min=\"0.0\"  unit=\"N.m/rad\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
 //         <exp:QualifiedNamePart name=\"c\"/>
@@ -1769,7 +1769,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.phi_nominal\" description=\"Nominal value of phi_rel (used for scaling)\" valueReference=\"133\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
-//       <Real start=\"0.0001\" fixed=\"true\" min=\"0.0\"  unit=\"rad\" displayUnit=\"rad\"/>
+//       <Real start=\"1e-4\" fixed=\"true\" min=\"0.0\"  unit=\"rad\" displayUnit=\"rad\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
 //         <exp:QualifiedNamePart name=\"phi_nominal\"/>
@@ -1997,7 +1997,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //     <ScalarVariable name=\"PI.unitTime\"  valueReference=\"152\" variability=\"constant\" causality=\"local\" alias=\"noAlias\">
-//       <Real    unit=\"s\" />
+//       <Real start=\"1.0\" fixed=\"true\"   unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"unitTime\"/>
@@ -2599,7 +2599,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         <exp:QualifiedNamePart name=\"c\"/>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>10000.0</exp:RealLiteral>
+//         <exp:RealLiteral>1e4</exp:RealLiteral>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //
@@ -2619,7 +2619,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         <exp:QualifiedNamePart name=\"phi_nominal\"/>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>0.0001</exp:RealLiteral>
+//         <exp:RealLiteral>1e-4</exp:RealLiteral>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //
@@ -4688,7 +4688,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"h\"  valueReference=\"0\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
@@ -4928,7 +4928,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\" description=\"Temperature\" valueReference=\"0\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">
@@ -5193,7 +5193,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\"  valueReference=\"0\" variability=\"continuous\" causality=\"local\" alias=\"noAlias\">

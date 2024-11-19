@@ -10034,6 +10034,44 @@ algorithm
       Boolean encrypted;
       Boolean relativeQuantity;
 
+    // constants should not arrive here but whatever
+    // set initial value to binding expression
+    case ((BackendDAE.VAR(varName = cr,
+      varKind = kind as BackendDAE.CONST(),
+      arryDim = inst_dims,
+      values = dae_var_attr,
+      hideResult = hideResultExp,
+      comment = comment,
+      varType = tp,
+      source = source,
+      encrypted = encrypted)), _, vars)
+      equation
+        commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
+        (unit, displayUnit) = extractVarUnit(dae_var_attr);
+        isProtected = BackendVariable.isProtected(dlowVar);
+        hideResult = getHideResult(hideResultExp);
+        initVal = dlowVar.bindExp;
+        isFixed = BackendVariable.varFixed(dlowVar);
+        type_ = tp;
+        isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
+        arrayCref = ComponentReference.getArrayCref(cr);
+        aliasvar = getAliasVar(dlowVar, optAliasVars);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
+        isValueChangeable = BackendVariable.isChangeable(dlowVar);
+        caus = getCausality(dlowVar, vars, isValueChangeable);
+        variability = SimCodeVar.CONSTANT();
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
+        initVal = updateStartValue(dlowVar, initVal, initial_, caus);
+        // fix ticket https://github.com/OpenModelica/OpenModelica/issues/12533
+        if BackendVariable.isRealVar(dlowVar) then
+          relativeQuantity = SCodeUtil.optCommentHasBooleanNamedAnnotationFalse(comment, "absoluteValue");
+        else
+          relativeQuantity = false;
+        end if;
+      then
+        SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
+        NONE(), NONE(), initVal, NONE(), isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), NONE(), relativeQuantity);
+
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.PARAM(),
       arryDim = inst_dims,
