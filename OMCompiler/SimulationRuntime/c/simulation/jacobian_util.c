@@ -206,12 +206,12 @@ enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILA
     }
     // Error case
     if(jacobianMethod == JAC_UNKNOWN){
-      errorStreamPrint(LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", flagValue);
-      infoStreamPrint(LOG_STDOUT, 1, "Available options are");
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", flagValue);
+      infoStreamPrint(OMC_LOG_STDOUT, 1, "Available options are");
       for (int method=1; method < JAC_MAX; method++) {
-        infoStreamPrint(LOG_STDOUT, 0, "%s", JACOBIAN_METHOD[method]);
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", JACOBIAN_METHOD[method]);
       }
-      messageClose(LOG_STDOUT);
+      messageClose(OMC_LOG_STDOUT);
       omc_throw(threadData);
     }
   }
@@ -221,16 +221,16 @@ enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILA
   {
   case JACOBIAN_NOT_AVAILABLE:
     if (jacobianMethod != INTERNALNUMJAC && jacobianMethod != JAC_UNKNOWN) {
-      warningStreamPrint(LOG_STDOUT, 0, "Jacobian not available, switching to internal numerical Jacobian.");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian not available, switching to internal numerical Jacobian.");
     }
     jacobianMethod = INTERNALNUMJAC;
     break;
   case JACOBIAN_ONLY_SPARSITY:
     if (jacobianMethod == COLOREDSYMJAC) {
-      warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
       jacobianMethod = COLOREDNUMJAC;
     } else if(jacobianMethod == SYMJAC) {
-      warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to numerical Jacobian.");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to numerical Jacobian.");
       jacobianMethod = NUMJAC;
     } else if(jacobianMethod == JAC_UNKNOWN) {
       jacobianMethod = COLOREDNUMJAC;
@@ -250,19 +250,19 @@ enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILA
   switch (jacobianMethod)
   {
   case INTERNALNUMJAC:
-    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Internal numerical Jacobian.");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Internal numerical Jacobian.");
     break;
   case NUMJAC:
-    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Numerical Jacobian.");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Numerical Jacobian.");
     break;
   case COLOREDNUMJAC:
-    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Colored numerical Jacobian.");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored numerical Jacobian.");
     break;
   case SYMJAC:
-    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Symbolical Jacobian.");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Symbolical Jacobian.");
     break;
   case COLOREDSYMJAC:
-    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Colored symbolical Jacobian.");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored symbolical Jacobian.");
     break;
   default:
     throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");

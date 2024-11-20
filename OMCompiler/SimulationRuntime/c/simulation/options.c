@@ -67,7 +67,7 @@ int setLogFormat(int argc, char** argv)
     } else if (0 == strcmp(value, "text")) {
       setStreamPrintXML(0);
     } else {
-      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -logFormat=%s, expected text, xml, or xmltcp", value);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "invalid command line option: -logFormat=%s, expected text, xml, or xmltcp", value);
       return 1;
     }
   }
@@ -91,12 +91,12 @@ int checkCommandLineArguments(int argc, char **argv)
   }
 
 #ifdef USE_DEBUG_OUTPUT
-  debugStreamPrint(LOG_STDOUT, 1, "used command line options");
+  debugStreamPrint(OMC_LOG_STDOUT, 1, "used command line options");
   for(i=1; i<argc; ++i)
-    debugStreamPrint(LOG_STDOUT, 0, "%s", argv[i]);
-  messageClose(LOG_STDOUT);
+    debugStreamPrint(OMC_LOG_STDOUT, 0, "%s", argv[i]);
+  messageClose(OMC_LOG_STDOUT);
 
-  debugStreamPrint(LOG_STDOUT, 1, "interpreted command line options");
+  debugStreamPrint(OMC_LOG_STDOUT, 1, "interpreted command line options");
 #endif
 
   for(i=1; i<argc; ++i)
@@ -121,7 +121,7 @@ int checkCommandLineArguments(int argc, char **argv)
         found=1;
 
 #ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(LOG_STDOUT, 0, "-%s", FLAG_NAME[j]);
+        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s", FLAG_NAME[j]);
 #endif
 
         break;
@@ -144,7 +144,7 @@ int checkCommandLineArguments(int argc, char **argv)
         i++;
 
 #ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(LOG_STDOUT, 0, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
+        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
 #endif
 
         break;
@@ -167,7 +167,7 @@ int checkCommandLineArguments(int argc, char **argv)
         found = 1;
 
 #ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(LOG_STDOUT, 0, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
+        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
 #endif
         break;
       }
@@ -176,15 +176,15 @@ int checkCommandLineArguments(int argc, char **argv)
     if(!found)
     {
 #ifdef USE_DEBUG_OUTPUT
-      messageClose(LOG_STDOUT);
+      messageClose(OMC_LOG_STDOUT);
 #endif
-      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: %s", argv[i]);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "invalid command line option: %s", argv[i]);
       return 1;
     }
   }
 
 #ifdef USE_DEBUG_OUTPUT
-  messageClose(LOG_STDOUT);
+  messageClose(OMC_LOG_STDOUT);
 #endif
 
   return 0;
@@ -196,28 +196,28 @@ static int handle_repeated_flag(int flag_index) {
   flag_repeat_policy repeat_policy = FLAG_REPEAT_POLICIES[flag_index];
 
   if(repeat_policy == FLAG_REPEAT_POLICY_IGNORE) {
-    warningStreamPrint(LOG_STDOUT, 0, "Command line flag '%s' specified again. Ignoring."
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Command line flag '%s' specified again. Ignoring."
                                     , flag_name);
     return 1;
   }
 
   if(repeat_policy == FLAG_REPEAT_POLICY_FORBID) {
-    errorStreamPrint(LOG_STDOUT, 0, "Command line flag '%s' can be specified only once.", flag_name);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Command line flag '%s' can be specified only once.", flag_name);
     return 0;
   }
 
 
   if(repeat_policy == FLAG_REPEAT_POLICY_REPLACE) {
-    errorStreamPrint(LOG_STDOUT, 0, "Command line flag %s is supposed to be replaced on repetition. This option does not apply for flags. Fix the repetition policy for the flag.", flag_name);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Command line flag %s is supposed to be replaced on repetition. This option does not apply for flags. Fix the repetition policy for the flag.", flag_name);
     return 0;
   }
 
   if(repeat_policy == FLAG_REPEAT_POLICY_COMBINE) {
-    errorStreamPrint(LOG_STDOUT, 0, "Command line flag %s is supposed to be combined on repetition. This option does not apply for flags. Fix the repetition policy for the flag.", flag_name);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Command line flag %s is supposed to be combined on repetition. This option does not apply for flags. Fix the repetition policy for the flag.", flag_name);
     return 0;
   }
 
-  errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow repetition policy for command line flag %s.", flag_name);
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "Error: Unknow repetition policy for command line flag %s.", flag_name);
   return 0;
 }
 
@@ -229,13 +229,13 @@ static int handle_repeated_option(int flag_index, char **argv_loc, int is_sticky
   const char* old_value = omc_flagValue[flag_index];
 
   if(repeat_policy == FLAG_REPEAT_POLICY_IGNORE) {
-    warningStreamPrint(LOG_STDOUT, 0, "Command line option '%s' specified again. Keeping the first value '%s' and ignoring the rest."
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Command line option '%s' specified again. Keeping the first value '%s' and ignoring the rest."
                                     , flag_name, old_value);
     return 1;
   }
 
   if(repeat_policy == FLAG_REPEAT_POLICY_FORBID) {
-    errorStreamPrint(LOG_STDOUT, 0, "Command line option '%s' can be specified only once.", flag_name);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Command line option '%s' can be specified only once.", flag_name);
     return 0;
   }
 
@@ -244,22 +244,22 @@ static int handle_repeated_option(int flag_index, char **argv_loc, int is_sticky
 
   if(is_sticky) // lv=LOG_STATS
     new_value = (char*)getOption(flag_name, 1, argv_loc);
-  else // lv LOG_STATS
+  else // lv OMC_LOG_STATS
     new_value = (char*)getFlagValue(flag_name, 1, argv_loc);
 
   if(repeat_policy == FLAG_REPEAT_POLICY_REPLACE) {
     omc_flagValue[flag_index] = new_value;
-    warningStreamPrint(LOG_STDOUT, 0, "Command line option '%s' specified again. Value has been overriden from '%s' to '%s'."
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Command line option '%s' specified again. Value has been overriden from '%s' to '%s'."
                                     , flag_name, old_value, new_value);
     return 1;
   }
 
   if(repeat_policy == FLAG_REPEAT_POLICY_COMBINE) {
-    errorStreamPrint(LOG_STDOUT, 0, "Command line option %s is supposed to be combined on repetition. This has not bee implemented yet", flag_name);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Command line option %s is supposed to be combined on repetition. This has not bee implemented yet", flag_name);
     return 0;
   }
 
-  errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow repetition policy for command line option %s.", flag_name);
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "Error: Unknow repetition policy for command line option %s.", flag_name);
   return 0;
 
 }

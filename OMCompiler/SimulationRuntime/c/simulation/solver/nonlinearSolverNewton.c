@@ -230,20 +230,20 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   }
 
   /* debug output */
-  if(ACTIVE_STREAM(LOG_NLS_V))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
   {
     int indexes[2] = {1, eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
+    infoStreamPrintWithEquationIndexes(OMC_LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
       "Start solving Non-Linear System %d (size %d) at time %g with Newton Solver",
       eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
 
     for(i = 0; i < solverData->n; i++) {
-      infoStreamPrint(LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo->discreteCall ? nlsData->nlsx[i] : nlsData->nlsxExtrapolation[i]);
-      infoStreamPrint(LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
+      infoStreamPrint(OMC_LOG_NLS_V, 1, "x[%d] = %.15e", i, data->simulationInfo->discreteCall ? nlsData->nlsx[i] : nlsData->nlsxExtrapolation[i]);
+      infoStreamPrint(OMC_LOG_NLS_V, 0, "nominal = %g +++ nlsx = %g +++ old = %g +++ extrapolated = %g",
           nlsData->nominal[i], nlsData->nlsx[i], nlsData->nlsxOld[i], nlsData->nlsxExtrapolation[i]);
-      messageClose(LOG_NLS_V);
+      messageClose(OMC_LOG_NLS_V);
     }
-    messageClose(LOG_NLS_V);
+    messageClose(OMC_LOG_NLS_V);
   }
 
   /* set x vector */
@@ -283,14 +283,14 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     {
       success = NLS_SOLVED;
       nfunc_evals += solverData->nfev;
-      if(ACTIVE_STREAM(LOG_NLS_V))
+      if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
       {
-        infoStreamPrint(LOG_NLS_V, 1, "System solved");
-        infoStreamPrint(LOG_NLS_V, 0, "%d restarts", retries);
-        infoStreamPrint(LOG_NLS_V, 0, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
+        infoStreamPrint(OMC_LOG_NLS_V, 1, "System solved");
+        infoStreamPrint(OMC_LOG_NLS_V, 0, "%d restarts", retries);
+        infoStreamPrint(OMC_LOG_NLS_V, 0, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
         for(i = 0; i < solverData->n; i++)
-          infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
-        messageClose(LOG_NLS_V);
+          infoStreamPrint(OMC_LOG_NLS_V, 0, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
+        messageClose(OMC_LOG_NLS_V);
       }
 
       /* take the solution */
@@ -302,7 +302,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
     else if(retries < 1 && casualTearingSet)
     {
       giveUp = 1;
-      infoStreamPrint(LOG_NLS_V, 0, "### No Solution for the casual tearing set at the first try! ###");
+      infoStreamPrint(OMC_LOG_NLS_V, 0, "### No Solution for the casual tearing set at the first try! ###");
     }
     else if(retries < 1)
     {
@@ -311,7 +311,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      infoStreamPrint(LOG_NLS_V, 0, " - iteration making no progress:\t try old values.");
+      infoStreamPrint(OMC_LOG_NLS_V, 0, " - iteration making no progress:\t try old values.");
       /* try to vary the initial values */
 
       /* evaluate jacobian in every step now */
@@ -324,7 +324,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      infoStreamPrint(LOG_NLS_V, 0, " - iteration making no progress:\t vary solution point by 1%%.");
+      infoStreamPrint(OMC_LOG_NLS_V, 0, " - iteration making no progress:\t vary solution point by 1%%.");
       /* try to vary the initial values */
     }
     else if(retries < 3)
@@ -334,7 +334,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      infoStreamPrint(LOG_NLS_V, 0, " - iteration making no progress:\t try nominal values as initial solution.");
+      infoStreamPrint(OMC_LOG_NLS_V, 0, " - iteration making no progress:\t try nominal values as initial solution.");
     }
     else if(retries < 4  && data->simulationInfo->discreteCall)
     {
@@ -354,7 +354,7 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
 
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      infoStreamPrint(LOG_NLS_V, 0, " - iteration making no progress:\t try to solve a discontinuous system.");
+      infoStreamPrint(OMC_LOG_NLS_V, 0, " - iteration making no progress:\t try to solve a discontinuous system.");
     }
     else if(retries2 < 4)
     {
@@ -366,18 +366,18 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      infoStreamPrint(LOG_NLS_V, 0, " - iteration making no progress:\t reduce the tolerance slightly to %e.", local_tol);
+      infoStreamPrint(OMC_LOG_NLS_V, 0, " - iteration making no progress:\t reduce the tolerance slightly to %e.", local_tol);
     }
     else
     {
       printErrorEqSyst(ERROR_AT_TIME, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
-      if(ACTIVE_STREAM(LOG_NLS_V))
+      if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
       {
-        infoStreamPrint(LOG_NLS_V, 0, "### No Solution! ###\n after %d restarts", retries);
-        infoStreamPrint(LOG_NLS_V, 0, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
-        if(ACTIVE_STREAM(LOG_NLS_V))
+        infoStreamPrint(OMC_LOG_NLS_V, 0, "### No Solution! ###\n after %d restarts", retries);
+        infoStreamPrint(OMC_LOG_NLS_V, 0, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
+        if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
           for(i = 0; i < solverData->n; i++)
-            infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
+            infoStreamPrint(OMC_LOG_NLS_V, 0, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
       }
     }
   }

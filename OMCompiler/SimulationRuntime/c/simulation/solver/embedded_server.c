@@ -79,43 +79,43 @@ void* embedded_server_load_functions(const char *server_name)
 #if defined(UPC_DA)
     server_name = "libomopcda" DLL_EXT;
 #else
-    errorStreamPrint(LOG_DEBUG, 0, "OPC DA interface is not available on this platform (requires WIN32)");
+    errorStreamPrint(OMC_LOG_DEBUG, 0, "OPC DA interface is not available on this platform (requires WIN32)");
     MMC_THROW();
 #endif
   }
-  infoStreamPrint(LOG_DEBUG, 0, "Try to load embedded server %s", server_name);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Try to load embedded server %s", server_name);
   dll = dlopen(server_name, RTLD_LAZY);
 
   if (dll == NULL) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load shared object %s: %s\n", server_name, dlerror());
+    errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load shared object %s: %s\n", server_name, dlerror());
     MMC_THROW();
   }
 
   funcInit = dlsym(dll, "omc_embedded_server_init");
   if (!funcInit) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_embedded_server_init: %s\n", dlerror());
+    errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_embedded_server_init: %s\n", dlerror());
     MMC_THROW();
   }
   funcWaitForStep = dlsym(dll, "omc_wait_for_step");
   if (!funcWaitForStep) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_wait_for_step: %s\n", dlerror());
+    errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_wait_for_step: %s\n", dlerror());
     MMC_THROW();
   }
   funcDeinit = dlsym(dll, "omc_embedded_server_deinit");
   if (!funcDeinit) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_embedded_server_deinit: %s\n", dlerror());
+    errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_embedded_server_deinit: %s\n", dlerror());
     MMC_THROW();
   }
   funcUpdate = dlsym(dll, "omc_embedded_server_update");
   if (!funcUpdate) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_embedded_server_update: %s\n", dlerror());
+    errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_embedded_server_update: %s\n", dlerror());
     MMC_THROW();
   }
   embedded_server_init = funcInit;
   wait_for_step = funcWaitForStep;
   embedded_server_deinit = funcDeinit;
   embedded_server_update = funcUpdate;
-  infoStreamPrint(LOG_DEBUG, 0, "Loaded embedded server");
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Loaded embedded server");
   return dll;
 }
 

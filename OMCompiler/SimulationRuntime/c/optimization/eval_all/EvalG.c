@@ -149,7 +149,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
     /*terminal constraint(s)*/
     memcpy(g + m - ncf, &v[nsi-1][0][index_conf], ncf*sizeof(double));
   }
-  if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
+  if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_ERROR)){
     const int nJ = optData->dim.nJ;
     printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data, optData);
   }
@@ -713,15 +713,15 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
 
   if(kk>-1){
     if(kk < nx){
-      infoStreamPrint(LOG_IPOPT_ERROR, 0, "max error is %g for the approximation of the state %s(time = %g)\n",
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0, "max error is %g for the approximation of the state %s(time = %g)\n",
               gmax, data->modelData->realVarsData[kk].info.name, (double)t[ii][jj]);
     }else if(kk < nJ){
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(LOG_IPOPT_ERROR, 0,"max violation is %g for the constraint %s(time = %g)\n",
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the constraint %s(time = %g)\n",
               gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
     }else{
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
     }
   }
 }

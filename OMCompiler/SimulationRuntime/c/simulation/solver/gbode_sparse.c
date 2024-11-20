@@ -67,12 +67,12 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
   printSparseStructure(sparsePattern,
                        sizeRows,
                        sizeCols,
-                       LOG_GBODE_V,
+                       OMC_LOG_GBODE_V,
                        "sparsePattern");
   printSparseStructure(sparsePatternT,
                        sizeRows,
                        sizeCols,
-                       LOG_GBODE_V,
+                       OMC_LOG_GBODE_V,
                        "sparsePatternT");
 
   free(leadindex);
@@ -298,7 +298,7 @@ void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR
   printSparseStructure(sparsePattern_MR,
                        nFastStates,
                        nFastStates,
-                       LOG_GBODE_V,
+                       OMC_LOG_GBODE_V,
                        "sparsePattern_MR");
 
 
@@ -341,7 +341,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   printSparseStructure(sparsePattern_ODE,
                        sizeRows,
                        sizeCols,
-                       LOG_GBODE_V,
+                       OMC_LOG_GBODE_V,
                        "sparsePatternODE");
 
   nnz_A = 0;
@@ -408,9 +408,9 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
 
   numberOfNonZeros = i;
 
-  if (ACTIVE_STREAM(LOG_GBODE_V)){
-    printIntVector_gb(LOG_GBODE_V, "rows", coo_row, numberOfNonZeros, 0.0);
-    printIntVector_gb(LOG_GBODE_V, "cols", coo_col, numberOfNonZeros, 0.0);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)){
+    printIntVector_gb(OMC_LOG_GBODE_V, "rows", coo_row, numberOfNonZeros, 0.0);
+    printIntVector_gb(OMC_LOG_GBODE_V, "cols", coo_col, numberOfNonZeros, 0.0);
   }
 
   int length_row_indices = jacobian->sizeCols*nStages+1;

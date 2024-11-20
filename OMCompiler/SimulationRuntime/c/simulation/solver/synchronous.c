@@ -213,9 +213,9 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
       .type = SYNC_BASE_CLOCK,
       .activationTime = nextBaseTime};
     insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %li at time %f", idx, curTime);
+    infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated base-clock %li at time %f", idx, curTime);
   } else {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated event-clock %li at time %f", idx, curTime);
+    infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated event-clock %li at time %f", idx, curTime);
   }
 
   // Add sub-clocks to timer that will fire during this base-clock interval.
@@ -302,11 +302,11 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         data->callback->function_equationsSynchronous(data, threadData, base_idx, sub_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
         if (subClock->holdEvents) {
           ret = TIMER_FIRED_EVENT;
-          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) which triggered event at time %f",
+          infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) which triggered event at time %f",
                           base_idx, sub_idx, solverInfo->currentTime);
         } else {
           ret = TIMER_FIRED;
-          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) at time %f",
+          infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) at time %f",
                           base_idx, sub_idx, solverInfo->currentTime);
         }
         break;
@@ -383,11 +383,11 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
         data->callback->function_equationsSynchronous(data, threadData, base_idx, sub_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
         if (subClock->holdEvents) {
           ret = TIMER_FIRED_EVENT;
-          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) which triggered event at time %f",
+          infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) which triggered event at time %f",
                           base_idx, sub_idx, currentTime);
         } else {
           ret = TIMER_FIRED;
-          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) at time %f",
+          infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) at time %f",
                           base_idx, sub_idx, currentTime);
         }
         break;
@@ -417,33 +417,33 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks)
   BASECLOCK_DATA* baseClock;
   SUBCLOCK_DATA* subClock;
 
-  if(useStream[LOG_SYNCHRONOUS]) {
-    infoStreamPrint(LOG_SYNCHRONOUS, 1, "Initialized synchronous timers.");
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of base clocks: %i", nBaseClocks);
+  if(omc_useStream[OMC_LOG_SYNCHRONOUS]) {
+    infoStreamPrint(OMC_LOG_SYNCHRONOUS, 1, "Initialized synchronous timers.");
+    infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Number of base clocks: %i", nBaseClocks);
     for(i=0; i<nBaseClocks; i++) {
       baseClock = &baseClocks[i];
-      infoStreamPrint(LOG_SYNCHRONOUS, 1, "Base clock %i", i+1);
+      infoStreamPrint(OMC_LOG_SYNCHRONOUS, 1, "Base clock %i", i+1);
       if (baseClock->isEventClock) {
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "is event clock");
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "is event clock");
       } else if (baseClock->intervalCounter==-1) {
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
       } else {
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "intervalCounter/resolution = : %i/%i", baseClock->intervalCounter, baseClock->resolution);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "intervalCounter/resolution = : %i/%i", baseClock->intervalCounter, baseClock->resolution);
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
       }
-      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %i", baseClock->nSubClocks);
+      infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %i", baseClock->nSubClocks);
       for(j=0; j<baseClock->nSubClocks; j++) {
         subClock = &baseClock->subClocks[j];
-        infoStreamPrint(LOG_SYNCHRONOUS, 1, "Sub-clock %i of base clock %i", j+1, i+1);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "shift: "RAT_FMT"/"RAT_FMT, subClock->shift.num, subClock->shift.den);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "factor: "RAT_FMT"/"RAT_FMT, subClock->factor.num, subClock->factor.den);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "solverMethod: %s", strlen(subClock->solverMethod)>0?subClock->solverMethod:"none");
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "holdEvents: %s", subClock->holdEvents?"true":"false");
-        messageClose(LOG_SYNCHRONOUS);
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 1, "Sub-clock %i of base clock %i", j+1, i+1);
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "shift: "RAT_FMT"/"RAT_FMT, subClock->shift.num, subClock->shift.den);
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "factor: "RAT_FMT"/"RAT_FMT, subClock->factor.num, subClock->factor.den);
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "solverMethod: %s", strlen(subClock->solverMethod)>0?subClock->solverMethod:"none");
+        infoStreamPrint(OMC_LOG_SYNCHRONOUS, 0, "holdEvents: %s", subClock->holdEvents?"true":"false");
+        messageClose(OMC_LOG_SYNCHRONOUS);
       }
-      messageClose(LOG_SYNCHRONOUS);
+      messageClose(OMC_LOG_SYNCHRONOUS);
     }
-    messageClose(LOG_SYNCHRONOUS);
+    messageClose(OMC_LOG_SYNCHRONOUS);
   }
 }
 
@@ -454,7 +454,7 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks)
  *
  * @param data          Void pointer to sync timer element.
  *                      Will be casted to SYNC_TIMER*.
- * @param stream        Stream of LOG_STREAM type.
+ * @param stream        Stream of OMC_LOG_STREAM type.
  * @param elemPointer   Address of element storing this data.
  */
 void printSyncTimer(void* data, int stream, void* elemPointer)

@@ -78,99 +78,99 @@ void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
 /* #define USE_DEBUG_OUTPUT */
 /* #define USE_DEBUG_TRACE */
 
-enum LOG_STREAM
+enum OMC_LOG_STREAM
 {
-  LOG_UNKNOWN = 0,
-  LOG_STDOUT,
-  LOG_ASSERT,
+  OMC_LOG_UNKNOWN = 0,
+  OMC_LOG_STDOUT,
+  OMC_LOG_ASSERT,
 
-  LOG_DASSL,
-  LOG_DASSL_STATES,
-  LOG_DEBUG,
-  LOG_DELAY,
-  LOG_DIVISION,
-  LOG_DSS,
-  LOG_DSS_JAC,
-  LOG_DT,
-  LOG_DT_CONS,
-  LOG_EVENTS,
-  LOG_EVENTS_V,
-  LOG_GBODE,
-  LOG_GBODE_V,
-  LOG_GBODE_NLS,
-  LOG_GBODE_NLS_V,
-  LOG_GBODE_STATES,
-  LOG_INIT,
-  LOG_INIT_HOMOTOPY,
-  LOG_INIT_V,
-  LOG_IPOPT,
-  LOG_IPOPT_FULL,
-  LOG_IPOPT_JAC,
-  LOG_IPOPT_HESSE,
-  LOG_IPOPT_ERROR,
-  LOG_JAC,
-  LOG_LS,
-  LOG_LS_V,
-  LOG_MIXED,
-  LOG_NLS,
-  LOG_NLS_V,
-  LOG_NLS_HOMOTOPY,
-  LOG_NLS_JAC,
-  LOG_NLS_JAC_TEST,
-  LOG_NLS_NEWTON_DIAG,
-  LOG_NLS_RES,
-  LOG_NLS_EXTRAPOLATE,
-  LOG_RES_INIT,
-  LOG_RT,
-  LOG_SIMULATION,
-  LOG_SOLVER,
-  LOG_SOLVER_V,
-  LOG_SOLVER_CONTEXT,
-  LOG_SOTI,
-  LOG_SPATIALDISTR,
-  LOG_STATS,
-  LOG_STATS_V,
-  LOG_SUCCESS,
-  LOG_SYNCHRONOUS,
+  OMC_LOG_DASSL,
+  OMC_LOG_DASSL_STATES,
+  OMC_LOG_DEBUG,
+  OMC_LOG_DELAY,
+  OMC_LOG_DIVISION,
+  OMC_LOG_DSS,
+  OMC_LOG_DSS_JAC,
+  OMC_LOG_DT,
+  OMC_LOG_DT_CONS,
+  OMC_LOG_EVENTS,
+  OMC_LOG_EVENTS_V,
+  OMC_LOG_GBODE,
+  OMC_LOG_GBODE_V,
+  OMC_LOG_GBODE_NLS,
+  OMC_LOG_GBODE_NLS_V,
+  OMC_LOG_GBODE_STATES,
+  OMC_LOG_INIT,
+  OMC_LOG_INIT_HOMOTOPY,
+  OMC_LOG_INIT_V,
+  OMC_LOG_IPOPT,
+  OMC_LOG_IPOPT_FULL,
+  OMC_LOG_IPOPT_JAC,
+  OMC_LOG_IPOPT_HESSE,
+  OMC_LOG_IPOPT_ERROR,
+  OMC_LOG_JAC,
+  OMC_LOG_LS,
+  OMC_LOG_LS_V,
+  OMC_LOG_MIXED,
+  OMC_LOG_NLS,
+  OMC_LOG_NLS_V,
+  OMC_LOG_NLS_HOMOTOPY,
+  OMC_LOG_NLS_JAC,
+  OMC_LOG_NLS_JAC_TEST,
+  OMC_LOG_NLS_NEWTON_DIAG,
+  OMC_LOG_NLS_RES,
+  OMC_LOG_NLS_EXTRAPOLATE,
+  OMC_LOG_RES_INIT,
+  OMC_LOG_RT,
+  OMC_LOG_SIMULATION,
+  OMC_LOG_SOLVER,
+  OMC_LOG_SOLVER_V,
+  OMC_LOG_SOLVER_CONTEXT,
+  OMC_LOG_SOTI,
+  OMC_LOG_SPATIALDISTR,
+  OMC_LOG_STATS,
+  OMC_LOG_STATS_V,
+  OMC_LOG_SUCCESS,
+  OMC_LOG_SYNCHRONOUS,
 #ifdef USE_DEBUG_TRACE
-  LOG_TRACE,
+  OMC_LOG_TRACE,
 #endif
-  LOG_ZEROCROSSINGS,
+  OMC_LOG_ZEROCROSSINGS,
 
-  SIM_LOG_MAX
+  OMC_SIM_LOG_MAX
 };
 
-enum LOG_TYPE
+enum OMC_LOG_TYPE
 {
-  LOG_TYPE_UNKNOWN = 0,
-  LOG_TYPE_INFO,
-  LOG_TYPE_WARNING,
-  LOG_TYPE_ERROR,
-  LOG_TYPE_ASSERT,
-  LOG_TYPE_DEBUG,
-  LOG_TYPE_MAX
+  OMC_LOG_TYPE_UNKNOWN = 0,
+  OMC_LOG_TYPE_INFO,
+  OMC_LOG_TYPE_WARNING,
+  OMC_LOG_TYPE_ERROR,
+  OMC_LOG_TYPE_ASSERT,
+  OMC_LOG_TYPE_DEBUG,
+  OMC_LOG_TYPE_MAX
 };
 
 extern const int firstOMCErrorStream;
-extern const char *LOG_STREAM_NAME[SIM_LOG_MAX];
-extern const char *LOG_STREAM_DESC[SIM_LOG_MAX];
-extern const char *LOG_STREAM_DETAILED_DESC[SIM_LOG_MAX];
-extern const char *LOG_TYPE_DESC[LOG_TYPE_MAX];
+extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
+extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
+extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
+extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
 
-extern int useStream[SIM_LOG_MAX];
-extern int level[SIM_LOG_MAX];
-extern int lastType[SIM_LOG_MAX];
-extern int lastStream;
-extern int showAllWarnings;
-extern char logBuffer[2048];
+extern int omc_useStream[OMC_SIM_LOG_MAX];
+extern int omc_logLevel[OMC_SIM_LOG_MAX];
+extern int omc_logLastType[OMC_SIM_LOG_MAX];
+extern int omc_logLastStream;
+extern int omc_showAllWarnings;
+extern char omc_logBuffer[2048];
 
-#define ACTIVE_STREAM(stream)    (useStream[stream])
-#define ACTIVE_WARNING_STREAM(stream)    (showAllWarnings || useStream[stream])
+#define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
+#define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
 
 #ifdef USE_DEBUG_OUTPUT
-  #define DEBUG_STREAM(stream)    (useStream[stream])
+  #define OMC_DEBUG_STREAM(stream)    (omc_useStream[stream])
 #else
-  #define DEBUG_STREAM(stream)    (0)
+  #define OMC_DEBUG_STREAM(stream)    (0)
 #endif
 
 #ifdef USE_DEBUG_TRACE

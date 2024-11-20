@@ -65,11 +65,11 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
   if (flag_value != NULL) {
     for (method=GB_UNKNOWN; method<RK_MAX; method++) {
       if (strcmp(flag_value, GB_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: %s", GB_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode method: %s", GB_METHOD_NAME[method]);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Unknown gbode method %s.", flag_value);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown gbode method %s.", flag_value);
     return GB_UNKNOWN;
   }
 
@@ -104,7 +104,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
   }
 
   // Default value for single-rate method
-  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk4 [default]");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode method: esdirk4 [default]");
   return RK_ESDIRK4;
 }
 
@@ -131,7 +131,7 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
   if (flag_value != NULL) {
     for (method=GB_NLS_UNKNOWN; method<GB_NLS_MAX; method++) {
       if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
         return method;
       }
     }
@@ -143,7 +143,7 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
   if (flag == FLAG_MR_NLS) {
     return getGB_NLS_method(FLAG_SR_NLS);
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
     return GB_NLS_KINSOL;
   }
 }
@@ -169,7 +169,7 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
   if (flag_value != NULL) {
     for (method=GB_CTRL_UNKNOWN; method<GB_CTRL_MAX; method++) {
       if (strcmp(flag_value, GB_CTRL_METHOD_NAME[method]) == 0) {
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size control: %s", GB_CTRL_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: %s", GB_CTRL_METHOD_NAME[method]);
         return method;
       }
     }
@@ -180,7 +180,7 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
     if (flag == FLAG_MR_CTRL) {
       return getControllerMethod(FLAG_SR_CTRL);
     } else {
-      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
       return GB_CTRL_I;
     }
   }
@@ -210,10 +210,10 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
     for (method=GB_INTERPOL_UNKNOWN; method<GB_INTERPOL_MAX; method++) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
         if (flag == FLAG_MR_INT && (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL)) {
-          warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
           method = GB_DENSE_OUTPUT;
         }
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: %s", GB_INTERPOL_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: %s", GB_INTERPOL_METHOD_NAME[method]);
         return method;
       }
     }
@@ -224,13 +224,13 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
     if (flag == FLAG_MR_INT) {
       method = getInterpolationMethod(FLAG_SR_INT);
       if (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL) {
-        warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
         method = GB_DENSE_OUTPUT;
       }
       return method;
     } else {
-      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
       return GB_DENSE_OUTPUT;
     }
   }
@@ -283,12 +283,12 @@ enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
     } else if (strcmp(flag_value, "embedded")==0) {
       extrapolationMethod = GB_EXT_EMBEDDED;
     } else {
-      errorStreamPrint(LOG_STDOUT, 0, "Illegal value '%s' for flag -%s", flag_value, FLAG_NAME[flag]);
-      infoStreamPrint(LOG_STDOUT, 1, "Allowed values are:");
-      infoStreamPrint(LOG_STDOUT, 0, "default");
-      infoStreamPrint(LOG_STDOUT, 0, "richardson");
-      infoStreamPrint(LOG_STDOUT, 0, "embedded");
-      messageClose(LOG_STDOUT);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Illegal value '%s' for flag -%s", flag_value, FLAG_NAME[flag]);
+      infoStreamPrint(OMC_LOG_STDOUT, 1, "Allowed values are:");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "default");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "richardson");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "embedded");
+      messageClose(OMC_LOG_STDOUT);
       omc_throw(NULL);
     }
   } else {
@@ -306,10 +306,10 @@ enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
  * @param maxArgs     Size of maxArgs.
  */
 void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs) {
-  errorStreamPrint(LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
-  infoStreamPrint(LOG_STDOUT, 1, "Valid arguments are:");
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
+  infoStreamPrint(OMC_LOG_STDOUT, 1, "Valid arguments are:");
   for (int i=0; i<maxArgs; i++) {
-    infoStreamPrint(LOG_STDOUT, 0, "%s", argsArr[i]);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", argsArr[i]);
   }
-  messageClose(LOG_STDOUT);
+  messageClose(OMC_LOG_STDOUT);
 }

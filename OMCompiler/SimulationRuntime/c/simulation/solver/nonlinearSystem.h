@@ -74,7 +74,7 @@ void cleanUpOldValueListAfterEvent(DATA *data, double time);
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData);
 void freeNonlinearSystems(DATA *data, threadData_t *threadData);
-void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum LOG_STREAM stream);
+void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum OMC_LOG_STREAM stream);
 NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys);
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
@@ -95,7 +95,7 @@ extern void debugVectorInt(int logName, char* vectorName, int* vector, int n);
 
 static inline void debugString(int logName, char* message)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     infoStreamPrint(logName, 1, "%s", message);
     messageClose(logName);
@@ -104,7 +104,7 @@ static inline void debugString(int logName, char* message)
 
 static inline void debugInt(int logName, char* message, int value)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     infoStreamPrint(logName, 1, "%s %d", message, value);
     messageClose(logName);
@@ -113,7 +113,7 @@ static inline void debugInt(int logName, char* message, int value)
 
 static inline void debugDouble(int logName, char* message, double value)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     infoStreamPrint(logName, 1, "%s %18.10e", message, value);
     messageClose(logName);

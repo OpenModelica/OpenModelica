@@ -311,7 +311,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 {
   if (tableau->richardson) {
-    warningStreamPrint(LOG_STDOUT, 0,"Richardson extrapolation is not available for multi-step methods");
+    warningStreamPrint(OMC_LOG_STDOUT, 0,"Richardson extrapolation is not available for multi-step methods");
     tableau->richardson = FALSE;
   }
 
@@ -1378,15 +1378,15 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
   if (isGenericIRK) {
     *GM_type = GM_TYPE_IMPLICIT;
     *nlSystemSize = tableau->nStages*nStates;
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen RK method is fully implicit");
   } else if (isDIRK) {
     *GM_type = GM_TYPE_DIRK;
     *nlSystemSize = nStates;
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
   } else {
     *GM_type = GM_TYPE_EXPLICIT;
     *nlSystemSize = 0;
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen RK method is explicit");
   }
 
   if (tableau->richardson) {
@@ -1415,7 +1415,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
   extrapolMethod = getGBErr(flag);
   tableau->richardson = extrapolMethod == GB_EXT_RICHARDSON;
   if (tableau->richardson) {
-    infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation is used for step size control");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Richardson extrapolation is used for step size control");
   }
 
   switch(method)
@@ -1595,7 +1595,7 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau)
 /**
  * @brief Print given Butcher tableau
  *
- * Prints into LOG_SOLVER stream if it is active.
+ * Prints into OMC_LOG_SOLVER stream if it is active.
  * c | A
  * --|---
  *   | b
@@ -1605,35 +1605,35 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau)
  */
 void printButcherTableau(BUTCHER_TABLEAU* tableau)
 {
-  if (useStream[LOG_SOLVER]) {
+  if (omc_useStream[OMC_LOG_SOLVER]) {
     int i, j;
     char buffer[1024];
     int buffSize = 1024;
     int ct;
     const char* line = "----------";
-    infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of gbode method:");
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "Butcher tableau of gbode method:");
     for (i = 0; i<tableau->nStages; i++) {
       ct = snprintf(buffer, buffSize, "%10g | ", tableau->c[i]);
       for (j = 0; j<tableau->nStages; j++) {
         ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->A[i*tableau->nStages + j]);
       }
-      infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
     }
     ct = snprintf(buffer, buffSize, "%s | ", line);
       for (j = 0; j<tableau->nStages; j++) {
         ct += snprintf(buffer+ct, buffSize-ct, "%s", line);
       }
-    infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
     ct = snprintf(buffer, buffSize, "%10s | ", "");
     for (j = 0; j<tableau->nStages; j++) {
       ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->b[j]);
     }
-    infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
     ct = snprintf(buffer, buffSize, "%10s | ", "");
     for (j = 0; j<tableau->nStages; j++) {
       ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->bt[j]);
     }
-    infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
-    messageClose(LOG_SOLVER);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
+    messageClose(OMC_LOG_SOLVER);
   }
 }

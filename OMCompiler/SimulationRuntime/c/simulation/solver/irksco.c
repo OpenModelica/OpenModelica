@@ -255,7 +255,7 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     newtonData->numberOfFunctionEvaluations = 0;
     newtonData->calculate_jacobian = 1;
 
-    warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
     _omc_newton((genericResidualFunc*)wrapper_fvec_irksco, newtonData, irkscoData);
 
     newtonData->calculate_jacobian = -1;
@@ -447,7 +447,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
   while (userdata->radauTime < targetTime)
   {
-    infoStreamPrint(LOG_SOLVER, 1, "new step to %f -> targetTime: %f", userdata->radauTime, targetTime);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "new step to %f -> targetTime: %f", userdata->radauTime, targetTime);
 
     do
     {
@@ -499,8 +499,8 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
       userdata->stepsDone += 1;
       /* debug
-      infoStreamPrint(LOG_SOLVER, 0, "err = %e", err);
-      infoStreamPrint(LOG_SOLVER, 0, "min(facmax, max(facmin, fac*sqrt(1/err))) = %e",  fmin(facmax, fmax(facmin, fac*sqrt(1.0/err))));
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "err = %e", err);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "min(facmax, max(facmin, fac*sqrt(1/err))) = %e",  fmin(facmax, fmax(facmin, fac*sqrt(1.0/err))));
       */
       /* update step size */
       userdata->radauStepSizeOld = 2.0*userdata->radauStepSize;
@@ -512,7 +512,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
       if (err>1)
       {
-        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
       }
 
@@ -522,7 +522,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     userdata->radauTimeOld = userdata->radauTime;
 
     userdata->radauTime += userdata->radauStepSizeOld;
-    infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
 
     memcpy(userdata->radauVarsOld, userdata->radauVars, data->modelData->nStates*sizeof(double));
@@ -540,7 +540,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       data->callback->updateContinuousSystem(data, threadData);
       sim_result.emit(&sim_result, data, threadData);
     }
-    messageClose(LOG_SOLVER);
+    messageClose(OMC_LOG_SOLVER);
   }
 
   if (!solverInfo->integratorSteps)
@@ -565,16 +565,16 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   }
 
 
-  if(ACTIVE_STREAM(LOG_SOLVER))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_SOLVER))
   {
-    infoStreamPrint(LOG_SOLVER, 1, "irksco call statistics: ");
-    infoStreamPrint(LOG_SOLVER, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER, 0, "current integration time value: %0.4g", userdata->radauTime);
-    infoStreamPrint(LOG_SOLVER, 0, "step size H to be attempted on next step: %0.4g", userdata->radauStepSize);
-    infoStreamPrint(LOG_SOLVER, 0, "number of steps taken so far: %d", userdata->stepsDone);
-    infoStreamPrint(LOG_SOLVER, 0, "number of calls of functionODE() : %d", userdata->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER, 0, "number of calculation of jacobian : %d", userdata->evalJacobians);
-    messageClose(LOG_SOLVER);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "irksco call statistics: ");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "current time value: %0.4g", solverInfo->currentTime);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "current integration time value: %0.4g", userdata->radauTime);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "step size H to be attempted on next step: %0.4g", userdata->radauStepSize);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "number of steps taken so far: %d", userdata->stepsDone);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "number of calls of functionODE() : %d", userdata->evalFunctionODE);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "number of calculation of jacobian : %d", userdata->evalJacobians);
+    messageClose(OMC_LOG_SOLVER);
   }
 
   /* write stats */
@@ -582,7 +582,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   solverInfo->solverStatsTmp.nCallsODE = userdata->evalFunctionODE;
   solverInfo->solverStatsTmp.nCallsJacobian = userdata->evalJacobians;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Finished irksco step.");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Finished irksco step.");
 
   return 0;
 }
@@ -688,5 +688,5 @@ void irksco_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solver
 
   /* end calculation new step size */
 
-  infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e", userdata->radauStepSize);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "initial step size = %e", userdata->radauStepSize);
 }

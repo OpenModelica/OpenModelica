@@ -46,15 +46,15 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
 {
   long k, l;
 
-  infoStreamPrint(LOG_DSS, 0, "Select %ld state%s from %ld candidates.", set->nStates, set->nStates == 1 ? "" : "s", set->nCandidates);
-  infoStreamPrint(LOG_DSS, 1, "State candidates:");
+  infoStreamPrint(OMC_LOG_DSS, 0, "Select %ld state%s from %ld candidates.", set->nStates, set->nStates == 1 ? "" : "s", set->nCandidates);
+  infoStreamPrint(OMC_LOG_DSS, 1, "State candidates:");
   for(k=0; k < set->nCandidates; k++)
   {
-    infoStreamPrint(LOG_DSS, 0, "[%ld] %s", k+1, set->statescandidates[k]->name);
+    infoStreamPrint(OMC_LOG_DSS, 0, "[%ld] %s", k+1, set->statescandidates[k]->name);
   }
-  messageClose(LOG_DSS);
+  messageClose(OMC_LOG_DSS);
 
-  infoStreamPrint(LOG_DSS, 1, "Selected state%s", set->nStates == 1 ? "" : "s");
+  infoStreamPrint(OMC_LOG_DSS, 1, "Selected state%s", set->nStates == 1 ? "" : "s");
   {
     unsigned int aid = set->A->id - data->modelData->integerVarsData[0].info.id;
     modelica_integer *Adump = &(data->localData[0]->integerVars[aid]);
@@ -64,13 +64,13 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
       {
         if (Adump[k*set->nCandidates+l] == 1)
         {
-          infoStreamPrint(LOG_DSS, 0, "[%ld] %s", l+1, set->statescandidates[l]->name);
+          infoStreamPrint(OMC_LOG_DSS, 0, "[%ld] %s", l+1, set->statescandidates[l]->name);
           break;
         }
       }
     }
   }
-  messageClose(LOG_DSS);
+  messageClose(OMC_LOG_DSS);
 }
 
 /*! \fn initializeStateSetJacobians
@@ -204,12 +204,12 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
         jacobian->seedVars[ii] = 1;
 
 /*
-    if(ACTIVE_STREAM(LOG_DSS_JAC))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_DSS_JAC))
     {
-      infoStreamPrint(LOG_DSS_JAC, 1, "Caluculate one col:");
+      infoStreamPrint(OMC_LOG_DSS_JAC, 1, "Caluculate one col:");
       for(l=0; l < jacobian->sizeCols; l++)
-        infoStreamPrint(LOG_DSS_JAC, 0, "seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f", l, jacobian->seedVars[l]);
-      messageClose(LOG_DSS_JAC);
+        infoStreamPrint(OMC_LOG_DSS_JAC, 0, "seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f", l, jacobian->seedVars[l]);
+      messageClose(OMC_LOG_DSS_JAC);
     }
 */
     (data->simulationInfo->stateSetData[index].analyticalJacobianColumn)(data, threadData, jacobian, NULL);
@@ -220,14 +220,14 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
       {
         ii = jacobian->sparsePattern->leadindex[j];
 
-        /* infoStreamPrint(LOG_DSS_JAC, 0, "take for %d -> %d\n", j, ii); */
+        /* infoStreamPrint(OMC_LOG_DSS_JAC, 0, "take for %d -> %d\n", j, ii); */
 
         while(ii < jacobian->sparsePattern->leadindex[j+1])
         {
           l  = jacobian->sparsePattern->index[ii];
           k  = j*jacobian->sizeRows + l;
           jac[k] = jacobian->resultVars[l];
-          /* infoStreamPrint(LOG_DSS_JAC, 0, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, jacobian->resultVars[l]); */
+          /* infoStreamPrint(OMC_LOG_DSS_JAC, 0, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, jacobian->resultVars[l]); */
           ii++;
         };
       }
@@ -237,20 +237,20 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
         jacobian->seedVars[ii] = 0;
   }
 
-  if(ACTIVE_STREAM(LOG_DSS_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_DSS_JAC))
   {
     char *buffer = (char*)malloc(sizeof(char)*jacobian->sizeCols*20);
 
-    infoStreamPrint(LOG_DSS_JAC, 1, "jacobian %dx%d [id: %d]", jacobian->sizeRows, jacobian->sizeCols, jacIndex);
+    infoStreamPrint(OMC_LOG_DSS_JAC, 1, "jacobian %dx%d [id: %d]", jacobian->sizeRows, jacobian->sizeCols, jacIndex);
 
     for(i=0; i<jacobian->sizeRows; i++)
     {
       buffer[0] = 0;
       for(j=0; j < jacobian->sizeCols; j++)
         sprintf(buffer, "%s%.5e ", buffer, jac[i*jacobian->sizeCols+j]);
-      infoStreamPrint(LOG_DSS_JAC, 0, "%s", buffer);
+      infoStreamPrint(OMC_LOG_DSS_JAC, 0, "%s", buffer);
     }
-    messageClose(LOG_DSS_JAC);
+    messageClose(OMC_LOG_DSS_JAC);
     free(buffer);
 
   }
@@ -338,10 +338,10 @@ static int comparePivot(modelica_integer *oldPivot, STATE_SET_DATA *set, long se
       {
         setAMatrix(newEnable, nCandidates, nStates, A, states, statecandidates, data);
         /* debug */
-        if(ACTIVE_STREAM(LOG_DSS)){
-          infoStreamPrint(LOG_DSS, 1, "StateSelection Set %ld at time = %f", setIndex, data->localData[0]->timeValue);
+        if(OMC_ACTIVE_STREAM(OMC_LOG_DSS)){
+          infoStreamPrint(OMC_LOG_DSS, 1, "StateSelection Set %ld at time = %f", setIndex, data->localData[0]->timeValue);
           printStateSelectionInfo(data, set);
-          messageClose(LOG_DSS);
+          messageClose(OMC_LOG_DSS);
         }
       }
       ret = -1;
@@ -392,23 +392,23 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
       /* error, report the matrix and the time */
 
       char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols*100+5);
-      warningStreamPrint(LOG_DSS, 1, "jacobian %dx%d [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
+      warningStreamPrint(OMC_LOG_DSS, 1, "jacobian %dx%d [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
 
       for(m=0; m < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows; m++)
       {
         buffer[0] = 0;
         for(j=0; j < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols; j++)
           sprintf(buffer, "%s%.5e ", buffer, set->J[m*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols+j]);
-        warningStreamPrint(LOG_DSS, 0, "%s", buffer);
+        warningStreamPrint(OMC_LOG_DSS, 0, "%s", buffer);
       }
 
       free(buffer);
 
       for(m=0; m<set->nCandidates; m++)
-        warningStreamPrint(LOG_DSS, 0, "%s", set->statescandidates[m]->name);
-      messageClose(LOG_DSS);
+        warningStreamPrint(OMC_LOG_DSS, 0, "%s", set->statescandidates[m]->name);
+      messageClose(OMC_LOG_DSS);
 
-      throwStreamPrint(threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
+      throwStreamPrint(threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv OMC_LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }
     /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */

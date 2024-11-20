@@ -127,13 +127,13 @@ void cleanValueListbyTime(LIST *valueList, double time)
     if (elem->time <= time)
     {
       cleanValueList(valueList, it);
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "New list length %d: ", listLen(valueList));
+      infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "New list length %d: ", listLen(valueList));
       printValuesListTimes(valueList);
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Done!");
+      infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Done!");
       break;
     }
     /* debug output */
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "cleanValueListbyTime %g check element: ", time);
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "cleanValueListbyTime %g check element: ", time);
     printValueElement(elem);
 
     listRemoveFront(valueList);
@@ -157,7 +157,7 @@ VALUE* createValueElement(unsigned int size, double time, double* values)
   memcpy(elem->values, values, size*sizeof(double));
 
   /* debug output */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Create Element");
+  infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Create Element");
 
   return elem;
 }
@@ -186,16 +186,16 @@ void addListElement(LIST* valuesList, VALUE* newElem)
   int replace = 0, i = 0;
 
   /* debug output */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Adding element in a list of size %d", listLen(valuesList));
+  infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 1, "Adding element in a list of size %d", listLen(valuesList));
   printValueElement(newElem);
 
   /*  if it's empty, just push it in */
   if (listLen(valuesList) == 0)
   {
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "List is empty add new element.");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "List is empty add new element.");
     listPushFront(valuesList, (void*) newElem);
 
-    messageClose(LOG_NLS_EXTRAPOLATE);
+    messageClose(OMC_LOG_NLS_EXTRAPOLATE);
     return;
   }
 
@@ -205,16 +205,16 @@ void addListElement(LIST* valuesList, VALUE* newElem)
   node = listFirstNode(valuesList);
   if ( fabs( ((VALUE*)listNodeData(node))->time - newElem->time ) > MINIMAL_STEP_SIZE )
   {
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "First Value list element is:");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "First Value list element is:");
     printValueElement(((VALUE*)listNodeData(node)));
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "so new element is added before.");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "so new element is added before.");
     listPushFront(valuesList, (void*) newElem);
 
-    messageClose(LOG_NLS_EXTRAPOLATE);
+    messageClose(OMC_LOG_NLS_EXTRAPOLATE);
     return;
   }
 
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Search position of new element");
+  infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Search position of new element");
   /* search correct position */
   next = node;
   do
@@ -222,14 +222,14 @@ void addListElement(LIST* valuesList, VALUE* newElem)
     /*  if next node is empty */
     if (!next)
     {
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Search finished last element reached");
+      infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Search finished last element reached");
       break;
     }
 
     elem = ((VALUE*)listNodeData(next));
 
     /* debug output */
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Next node of list is element:");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Next node of list is element:");
     printValueElement(elem);
 
 
@@ -249,12 +249,12 @@ void addListElement(LIST* valuesList, VALUE* newElem)
 
   /* add element before currect node */
   if (!replace){
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Insert element before last output element.");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Insert element before last output element.");
     listInsert(valuesList, node, (void*) newElem);
   }
   else
   {
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "replace element.");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "replace element.");
     updateNodeData(valuesList, next, (void*) newElem);
   }
   /*  clean list if too full */
@@ -268,7 +268,7 @@ void addListElement(LIST* valuesList, VALUE* newElem)
     cleanValueList(valuesList, next);
   }
 
-  messageClose(LOG_NLS_EXTRAPOLATE);
+  messageClose(OMC_LOG_NLS_EXTRAPOLATE);
   return;
 }
 
@@ -287,25 +287,25 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
   LIST_NODE *old2 = NULL;
   VALUE *oldValues, *old2Values, *elem;
 
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Get values for time %g in a list of size %d", time, listLen(valuesList));
+  infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 1, "Get values for time %g in a list of size %d", time, listLen(valuesList));
 
   /* find corresponding values */
   for(it = listFirstNode(valuesList); it; it = listNextNode(it))
   {
     elem = (VALUE*)listNodeData(it);
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Searching current element:");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Searching current element:");
     printValueElement(elem);
 
     old = it;
     if(fabs(elem->time - time) <= MINIMAL_STEP_SIZE)
     {
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "take element with the same time.");
+      infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "take element with the same time.");
       break;
     }
     else if(elem->time < time)
     {
       old2 = listNextNode(old);
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "found element to use for extrapolation.");
+      infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "found element to use for extrapolation.");
       break;
     }
   }
@@ -315,7 +315,7 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
 
   if(it == NULL)
   {
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "reached end of list.");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "reached end of list.");
   }
 
   /*  get next values */
@@ -324,14 +324,14 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
     oldValues = (VALUE*) listNodeData(old);
     memcpy(extrapolatedValues, oldValues->values, oldValues->size*sizeof(double));
     memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "take just old values.");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "take just old values.");
   }
   else
   {
     int i;
     oldValues = (VALUE*) listNodeData(old);
     old2Values = (VALUE*) listNodeData(old2);
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Use following elements for calculation:");
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, "Use following elements for calculation:");
     printValueElement(oldValues);
     printValueElement(old2Values);
     for(i = 0; i < oldValues->size; ++i)
@@ -340,21 +340,21 @@ void getValues(LIST* valuesList, double time, double* extrapolatedValues, double
     }
     memcpy(oldOutput, oldValues->values, oldValues->size*sizeof(double));
   }
-  messageClose(LOG_NLS_EXTRAPOLATE);
+  messageClose(OMC_LOG_NLS_EXTRAPOLATE);
   return;
 }
 
 void printValueElement(VALUE* elem)
 {
   /* debug output */
-  if(ACTIVE_STREAM(LOG_NLS_EXTRAPOLATE))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_EXTRAPOLATE))
   {
     int i;
-    infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Element(size %d) at time %g ", elem->size, elem->time);
+    infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 1, "Element(size %d) at time %g ", elem->size, elem->time);
     for(i = 0; i < elem->size; i++) {
-      infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, " oldValues[%d] = %g",i, elem->values[i]);
+      infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 0, " oldValues[%d] = %g",i, elem->values[i]);
     }
-    messageClose(LOG_NLS_EXTRAPOLATE);
+    messageClose(OMC_LOG_NLS_EXTRAPOLATE);
   }
 }
 
@@ -381,7 +381,7 @@ static void printElemTimes(void* data, int stream, void* unused) {
  * @param list    Value list.
  */
 void printValuesListTimes(LIST* list) {
-  printList(list, LOG_NLS_EXTRAPOLATE, printElemTimes);
+  printList(list, OMC_LOG_NLS_EXTRAPOLATE, printElemTimes);
 }
 
 /*! \fn extraPolateValues

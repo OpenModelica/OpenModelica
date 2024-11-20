@@ -284,7 +284,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     gbData->lastStepSize = 0.0;
   }
 
-  infoStreamPrint(LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
 
   // Set number of initialization failures back to -1 (intial step size determination was succesfull)
   gbData->initialFailures = -1;
