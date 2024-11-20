@@ -537,7 +537,7 @@ Element::Element(ModelInstance::Component *pModelComponent, bool inherited, Grap
   mpBusComponent = 0;
   drawElement();
   // transformation
-  mTransformation = Transformation(mpGraphicsView->getViewType(), this);
+  mTransformation = Transformation(mpGraphicsView->isIconView() ? StringHandler::Icon : StringHandler::Diagram, this);
   if (createTransformation) {
     QRectF boundingRectangle = boundingRect();
     if (boundingRectangle.width() > 0) {
@@ -692,7 +692,7 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
     drawElement();
   }
   // transformation
-  mTransformation = Transformation(mpGraphicsView->getViewType(), this);
+  mTransformation = Transformation(mpGraphicsView->isIconView() ? StringHandler::Icon : StringHandler::Diagram, this);
   mTransformation.parseTransformationString(mTransformationString, boundingRect().width(), boundingRect().height());
   if (mTransformationString.isEmpty()) {
     // snap to grid while creating component
@@ -944,7 +944,7 @@ Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
   mpDefaultElementText->setVisible(true);
   // Transformation. Doesn't matter what we set here since it will be overwritten in adjustInterfacePoints();
   QString transformation = QString("Placement(true,100.0,100.0,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)");
-  mTransformation = Transformation(mpGraphicsView->getViewType(), this);
+  mTransformation = Transformation(mpGraphicsView->isIconView() ? StringHandler::Icon : StringHandler::Diagram, this);
   mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
@@ -1039,7 +1039,7 @@ QRectF Element::boundingRect() const
     } else if (isPort()) {
       ExtentAnnotation extent;
       if (mpModelComponent) {
-        if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
+        if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
           mpModelComponent->getAnnotation()->getPlacementAnnotation().getTransformation().getExtent();
         } else {
           mpModelComponent->getAnnotation()->getPlacementAnnotation().getIconTransformation().getExtent();
@@ -1215,7 +1215,7 @@ CoOrdinateSystem Element::getCoOrdinateSystem() const
   if (mpLibraryTreeItem && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isModelica()
       && mpLibraryTreeItem->getModelWidget()) {
     if (mpLibraryTreeItem->isConnector()) {
-      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      if (mpGraphicsView->isIconView()) {
         coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mMergedCoOrdinateSystem;
       } else {
         coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mMergedCoOrdinateSystem;
@@ -1231,7 +1231,7 @@ ModelInstance::CoordinateSystem Element::getCoOrdinateSystemNew() const
 {
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModelComponent && mpModel) {
-    if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->getViewType() == StringHandler::Diagram) && canUseDiagramAnnotation()) {
+    if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
       coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     } else {
       coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
@@ -1264,9 +1264,9 @@ void Element::setElementFlags(bool enable)
 QString Element::getTransformationAnnotation(bool ModelicaSyntax)
 {
   QString annotationString;
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     annotationString.append(ModelicaSyntax ? "iconTransformation(" : "iconTransformation=transformation(");
-  } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
+  } else if (mpGraphicsView->isDiagramView()) {
     annotationString.append(ModelicaSyntax ? "transformation(" : "transformation=transformation(");
   }
   QStringList annotationStringList;
@@ -1301,7 +1301,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
     }
   }
   if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpGraphicsView->getModelWidget()->isNewApi() && mpModelComponent && mpModelComponent->getModel()->isConnector())) {
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    if (mpGraphicsView->isIconView()) {
       // first get the component from diagram view and get the transformations
       Element *pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementObject(getName());
       if (pElement) {
@@ -1309,7 +1309,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
       }
       // then get the icon transformations
       placementAnnotationString.append(getTransformationAnnotation(ModelicaSyntax));
-    } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
+    } else if (mpGraphicsView->isDiagramView()) {
       // first get the component from diagram view and get the transformations
       placementAnnotationString.append(getTransformationAnnotation(ModelicaSyntax)).append(", ");
       // then get the icon transformations
@@ -1367,7 +1367,7 @@ QString Element::getOMCPlacementAnnotation(QPointF position)
     placementAnnotationString.append(mTransformation.getVisible() ? "true" : "false");
   }
   if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpGraphicsView->getModelWidget()->isNewApi() && mpModelComponent && mpModelComponent->getModel()->isConnector())) {
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    if (mpGraphicsView->isIconView()) {
       // first get the component from diagram view and get the transformations
       Element *pElement;
       pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementObject(getName());
@@ -1378,7 +1378,7 @@ QString Element::getOMCPlacementAnnotation(QPointF position)
       }
       // then get the icon transformations
       placementAnnotationString.append(",").append(getOMCTransformationAnnotation(position));
-    } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
+    } else if (mpGraphicsView->isDiagramView()) {
       // first get the component from diagram view and get the transformations
       placementAnnotationString.append(",").append(getOMCTransformationAnnotation(position));
       // then get the icon transformations
@@ -1813,7 +1813,7 @@ void Element::emitAdded()
     connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
     connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
   }
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
   emit added();
@@ -1821,7 +1821,7 @@ void Element::emitAdded()
 
 void Element::emitTransformHasChanged()
 {
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
   emit transformHasChanged();
@@ -1829,7 +1829,7 @@ void Element::emitTransformHasChanged()
 
 void Element::emitChanged()
 {
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
   emit changed();
@@ -1845,7 +1845,7 @@ void Element::emitDeleted()
     disconnect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), this, SLOT(handleElementAdded()));
     disconnect(mpLibraryTreeItem, SIGNAL(nameChanged()), this, SLOT(handleNameChanged()));
   }
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
   emit deleted();
@@ -2102,7 +2102,7 @@ void Element::shapeAdded()
   if (isRoot()) {
     deleteDefaultElement();
   }
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
@@ -2113,7 +2113,7 @@ void Element::shapeAdded()
  */
 void Element::shapeUpdated()
 {
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
@@ -2129,7 +2129,7 @@ void Element::shapeDeleted()
     deleteDefaultElement();
   }
   showNonExistingOrDefaultElementIfNeeded();
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
@@ -2142,7 +2142,7 @@ void Element::shapeDeleted()
  */
 void Element::renameComponentInConnections(QString newName)
 {
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     return;
   }
   foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
@@ -2789,7 +2789,7 @@ void Element::createClassShapes()
        * So when called for extends we use the top level element restriction.
        * We use the same mpModelComponent for top level and extends elements. See Element constructor above for extends element type.
        */
-      if (mpModelComponent && mpModelComponent->getModel()->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
+      if (mpModelComponent && mpModelComponent->getModel()->isConnector() && mpGraphicsView->isDiagramView() && canUseDiagramAnnotation()) {
         shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
       } else {
         shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
@@ -2825,7 +2825,7 @@ void Element::createClassShapes()
          *
          * Always use the icon annotation when element type is port.
          */
-        if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
+        if (mpLibraryTreeItem->isConnector() && mpGraphicsView->isDiagramView() && canUseDiagramAnnotation()) {
           mpLibraryTreeItem->getModelWidget()->loadDiagramView();
           pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
         }
@@ -3032,7 +3032,7 @@ void Element::getScale(qreal *sx, qreal *sy)
  */
 void Element::updateConnections()
 {
-  if ((!mpGraphicsView) || mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if ((!mpGraphicsView) || mpGraphicsView->isIconView()) {
     return;
   }
   foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
@@ -3307,7 +3307,7 @@ void Element::updatePlacementAnnotation()
        * If one connector is updated then update the other connector automatically.
        */
       GraphicsView *pGraphicsView = 0;
-      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      if (mpGraphicsView->isIconView()) {
         pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
       } else {
         pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
@@ -3330,7 +3330,7 @@ void Element::updatePlacementAnnotation()
     pOMCProxy->setElementAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure() % "." % getName(), "$Code((" % getPlacementAnnotation(true) % "))");
   }
   /* When something is changed in the icon layer then update the LibraryTreeItem in the Library Browser */
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
@@ -3441,7 +3441,7 @@ void Element::referenceElementAdded()
     mpGraphicsView->addItem(this);
     mpGraphicsView->addItem(mpOriginItem);
   }
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   } else if (!isInBus() && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()) {
     foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
@@ -3472,7 +3472,7 @@ void Element::referenceElementTransformHasChanged()
     mTransformation.updateTransformation(pElement->mTransformation);
     setTransform(mTransformation.getTransformationMatrix());
   }
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   }
 }
@@ -3503,7 +3503,7 @@ void Element::referenceElementDeleted()
   } else {
     mpGraphicsView->removeElementItem(this);
   }
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   } else if (isInBus() && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()) {
     foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
@@ -3734,7 +3734,7 @@ void Element::duplicate()
   }
   Element *pDiagramElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementsList().last();
   setSelected(false);
-  if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
+  if (mpGraphicsView->isDiagramView()) {
     pDiagramElement->setSelected(true);
   } else {
     Element *pIconElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getElementsList().last();

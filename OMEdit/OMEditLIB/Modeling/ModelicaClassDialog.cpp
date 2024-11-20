@@ -1685,7 +1685,7 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpComponentGroupBox->setLayout(pComponentLayout);
   // copy properties check box
   mpCopyProperties = new QCheckBox;
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if (mpGraphicsView->isIconView()) {
     mpCopyProperties->setText(tr("Copy properties to Diagram layer"));
   } else {
     mpCopyProperties->setText(tr("Copy properties to Icon layer"));

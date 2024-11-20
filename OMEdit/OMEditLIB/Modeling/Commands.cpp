@@ -243,7 +243,7 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
   mpDiagramComponent = new Element(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    if (mpGraphicsView->isIconView()) {
       mpGraphicsView->clearSelection(mpIconComponent);
     } else {
       mpGraphicsView->clearSelection(mpDiagramComponent);
@@ -337,7 +337,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
           || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
-    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+    if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
     } else {
       pGraphicsView = pModelWidget->getIconGraphicsView();
@@ -363,7 +363,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && pModelWidget->isNewApi()) {
+  if (mpComponent->getGraphicsView()->isDiagramView() && pModelWidget->isNewApi()) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
@@ -379,7 +379,7 @@ void UpdateComponentTransformationsCommand::undo()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
           || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
-    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+    if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
     } else {
       pGraphicsView = pModelWidget->getIconGraphicsView();
@@ -405,7 +405,7 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram && pModelWidget->isNewApi()) {
+  if (mpComponent->getGraphicsView()->isDiagramView() && pModelWidget->isNewApi()) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
@@ -465,7 +465,7 @@ void UpdateElementAttributesCommand::updateComponentAttributes(Element *pCompone
     pComponent->getElementInfo()->setInner(componentInfo.getInner());
     pComponent->getElementInfo()->setOuter(componentInfo.getOuter());
     pComponent->getElementInfo()->setCausality(causality);
-    if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+    if (pComponent->getGraphicsView()->isIconView()) {
       if (pComponent->getElementInfo()->getProtected()) {
         pComponent->setVisible(false);
         pComponent->emitDeleted();
@@ -497,7 +497,7 @@ void UpdateElementAttributesCommand::updateComponentAttributes(Element *pCompone
       pComponent->getElementInfo()->setComment(comment);
       pComponent->componentCommentHasChanged();
       if (pComponent->getLibraryTreeItem()->isConnector()) {
-        if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+        if (pComponent->getGraphicsView()->isIconView()) {
           Element *pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentCommentHasChanged();
@@ -522,7 +522,7 @@ void UpdateElementAttributesCommand::updateComponentAttributes(Element *pCompone
       pComponent->getElementInfo()->setName(componentInfo.getName());
       pComponent->componentNameHasChanged();
       if (pComponent->getLibraryTreeItem()->isConnector()) {
-        if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+        if (pComponent->getGraphicsView()->isIconView()) {
           Element *pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentNameHasChanged();
@@ -694,7 +694,7 @@ void DeleteComponentCommand::redoInternal()
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     // Connector type components exists on both icon and diagram views
     GraphicsView *pGraphicsView;
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    if (mpGraphicsView->isIconView()) {
       pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
@@ -725,7 +725,7 @@ void DeleteComponentCommand::undo()
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     // Connector type components exists on both icon and diagram views
     GraphicsView *pGraphicsView;
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    if (mpGraphicsView->isIconView()) {
       pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
@@ -1139,7 +1139,7 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
   // if copy properties is true
   if (mCopyProperties) {
     GraphicsView *pGraphicsView;
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    if (mpGraphicsView->isIconView()) {
       pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
@@ -1183,7 +1183,7 @@ void UpdateCoOrdinateSystemCommand::undo()
   // if copy properties is true
   if (mCopyProperties) {
     GraphicsView *pGraphicsView;
-    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+    if (mpGraphicsView->isIconView()) {
       pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();

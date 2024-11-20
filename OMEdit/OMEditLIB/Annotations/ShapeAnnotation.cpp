@@ -597,7 +597,7 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   if (MainWindow::instance()->isNewApi()) {
     ModelInstance::Extend *pExtend = dynamic_cast<ModelInstance::Extend*>(getExtend());
     if (pExtend) {
-      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      if (pGraphicsView->isIconView()) {
         extent = pExtend->getIconDiagramMapExtent(true);
         preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
       } else {
@@ -609,7 +609,7 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
     int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
     if (index > 0) {
       QVector<QPointF> mapExtent(2, QPointF(0, 0));
-      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      if (pGraphicsView->isIconView()) {
         mapExtent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
       } else {
         mapExtent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
