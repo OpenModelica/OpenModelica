@@ -350,7 +350,8 @@ function makeNewCref
   output Expression outExp;
 algorithm
   outExp := Expression.CREF(Type.UNKNOWN(),
-    ComponentRef.STRING(paramName, ComponentRef.STRING(fnName + "()", ComponentRef.EMPTY())));
+    ComponentRef.prefixCref(InstNode.NAME_NODE(paramName), Type.UNKNOWN(), {},
+      ComponentRef.fromNode(InstNode.NAME_NODE(fnName + "()"), Type.UNKNOWN())));
 end makeNewCref;
 
 function insertUnitInEquation
