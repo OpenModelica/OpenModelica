@@ -43,6 +43,12 @@ readFile("resetWithLoops_systemCall.log");
 
 // Result:
 // true
+// ""
+// 0
+// true
+// "Modelica.Electrical.Analog.Examples.Rectifier.fmu"
+// ""
+// true
 // true
 // ""
 // 0
