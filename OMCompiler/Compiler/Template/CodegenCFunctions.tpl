@@ -78,7 +78,6 @@ DLLExport int __omc_main(int argc, char **argv)
 
   <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
   fflush(NULL);
-  EXIT(0);
   return 0;
 }
 
@@ -1549,7 +1548,6 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
 
     <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
     fflush(NULL);
-    EXIT(0);
     return 0;
   }
   #endif

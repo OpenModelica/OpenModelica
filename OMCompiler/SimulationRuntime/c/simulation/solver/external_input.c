@@ -100,7 +100,7 @@ void externalInputallocate2(DATA* data, const char *filename){
 
   if (NULL == res) {
     fprintf(stderr, "Failed to read CSV-file %s", filename);
-    EXIT(1);
+    exit(1);
   }
 
   data->modelData->nInputVars = nu;
