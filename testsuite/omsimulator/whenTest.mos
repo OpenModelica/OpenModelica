@@ -57,8 +57,8 @@ val(stop, 1.0, "WhenTestB_res.mat");
 // "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: WhenTestA_res.mat (bufferSize=1)
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 250 NumRhsEvals  = 251 NumLinSolvSetups = 14
-//          NumNonlinSolvIters = 250 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+//          NumSteps = 251 NumRhsEvals  = 252 NumLinSolvSetups = 14
+//          NumNonlinSolvIters = 251 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // 0.0
 // 1.0
@@ -68,8 +68,8 @@ val(stop, 1.0, "WhenTestB_res.mat");
 // "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: WhenTestB_res.mat (bufferSize=1)
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 250 NumRhsEvals  = 251 NumLinSolvSetups = 14
-//          NumNonlinSolvIters = 250 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+//          NumSteps = 251 NumRhsEvals  = 252 NumLinSolvSetups = 14
+//          NumNonlinSolvIters = 251 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // 0.0
 // 1.0
