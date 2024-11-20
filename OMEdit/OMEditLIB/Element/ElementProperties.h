@@ -239,6 +239,7 @@ public:
   ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
   bool hasElement() const {return mpElement ? true : false;}
+  bool isElementArray() const {return mpElement->getDimensions().isArray();}
   bool isInherited() const {return mInherited;}
   QString getModification() const {return mModification;}
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);

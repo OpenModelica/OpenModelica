@@ -253,7 +253,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mpFixedCheckBox = new FixedCheckBox;
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
   setFixedState("", true);
-  mpFixedFinalEachMenuButton = new FinalEachToolButton(mpModelInstanceElement->getDimensions().isArray());
+  mpFixedFinalEachMenuButton = new FinalEachToolButton(mpElementParameters->hasElement() && mpElementParameters->isElementArray());
   // set the value type based on element type.
   if (mpModelInstanceElement->getRootType().compare(QStringLiteral("Boolean")) == 0) {
     if (mpModelInstanceElement->getAnnotation()->getChoices()
@@ -285,7 +285,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     mValueType = Parameter::Normal;
   }
   // final and each menu
-  mpFinalEachMenuButton = new FinalEachToolButton(mpModelInstanceElement->getDimensions().isArray());
+  mpFinalEachMenuButton = new FinalEachToolButton(mpElementParameters->hasElement() && mpElementParameters->isElementArray());
   mValueCheckBoxModified = false;
   mDefaultValue = "";
   mpFileSelectorButton = new QToolButton;
@@ -1457,7 +1457,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
            * If start is final then hide the value box.
            * If fixed is final then hide the fixed checkbox.
            * If both are final then delete the parameter.
-           * The can be set final at different levels e.g., start can be set final at delaration and fixed set final via modifier
+           * They can be set final at different levels e.g., start can be set final at delaration and fixed set final via modifier
            * so we check visibility and hide based on it.
            */
           if (isStartFinal) {
@@ -1476,6 +1476,9 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           }
         } else {
           pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
+          // set final and each checkboxes in the menu
+          pParameter->getFinalEachMenu()->setFinal(pModifier->isFinal());
+          pParameter->getFinalEachMenu()->setEach(pModifier->isEach());
         }
       } else { // if not builtin type then use all sub modifiers
         QString modifierValue;
@@ -1593,7 +1596,7 @@ void ElementParameters::setUpDialog()
   pParametersScrollArea->addGroupBox(pInitializationGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
-  createTabsGroupBoxesAndParameters(getModel() , hasElement());
+  createTabsGroupBoxesAndParameters(getModel(), hasElement());
   fetchElementExtendsModifiers(getModel(), hasElement());
   if (hasElement()) {
     fetchModifiers(mpElement->getModifier());
@@ -1641,9 +1644,7 @@ void ElementParameters::setUpDialog()
           } else {
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
-          if (hasElement()) {
-            pGroupBoxGridLayout->addWidget(pParameter->getFinalEachMenu(), layoutIndex, columnIndex++);
-          }
+          pGroupBoxGridLayout->addWidget(pParameter->getFinalEachMenu(), layoutIndex, columnIndex++);
           if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
               pParameter->getSaveSelectorFilter().compare("-") != 0 || pParameter->getSaveSelectorCaption().compare("-") != 0) {
             pGroupBoxGridLayout->addWidget(pParameter->getFileSelectorButton(), layoutIndex, columnIndex++);
@@ -1814,12 +1815,7 @@ void ElementParameters::fetchModifiers(ModelInstance::Modifier *pModifier)
   if (pModifier) {
     foreach (auto *pModifier, pModifier->getModifiers()) {
       Parameter *pParameter = findParameter(pModifier->getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true);
-      // set final and each checkboxes in the menu
-      if (pParameter && !pParameter->isShowStartAndFixed()) {
-        pParameter->getFinalEachMenu()->setFinal(pModifier->isFinal());
-        pParameter->getFinalEachMenu()->setEach(pModifier->isEach());
-      }
+      applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true);
     }
   }
 }
@@ -1917,7 +1913,7 @@ void ElementParameters::applyModifier(ModelInstance::Modifier *pModifier, bool d
   if (mNested && pModifier) {
     foreach (auto pSubModifier, pModifier->getModifiers()) {
       Parameter *pParameter = findParameter(pSubModifier->getName());
-      ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, defaultValue, false);
+      applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pSubModifier, defaultValue, false);
       // set final and each checkboxes in the menu
       if (pParameter && !pParameter->isShowStartAndFixed()) {
         pParameter->getFinalEachMenu()->setFinal(pSubModifier->isFinal());
@@ -2218,7 +2214,26 @@ void ElementParameters::updateElementParameters()
         if (!modifiers.isEmpty()) {
           // if the element is inherited then add the modifier value into the extends.
           if (mInherited) {
-            pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getQualifiedName(), modifiers);
+            if (pModelWidget->isElementMode()) {
+              ModelInstance::Element *pParentElement = mpElement;
+              while (pParentElement) {
+                if (pParentElement->isComponent()) {
+                  /* Skip adding `each` to this element since it will be added from the dialog if user selects it.
+                   * We only automatically add `each` to upper hierarchy elements.
+                   * See issue #13126
+                   */
+                  if (pParentElement != mpElement && pParentElement->getDimensions().isArray()) {
+                    modifiers = pParentElement->getName() % "(each " % modifiers % ")";
+                  } else {
+                    modifiers = pParentElement->getName() % "(" % modifiers % ")";
+                  }
+                }
+                pParentElement = pParentElement->getParentModel() ? pParentElement->getParentModel()->getParentElement() : nullptr;
+              }
+              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), "_", modifiers);
+            } else {
+              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getQualifiedName(), modifiers);
+            }
           } else {
             pOMCProxy->setElementModifierValue(className, mpElement->getQualifiedName(), modifiers);
           }
@@ -2235,12 +2250,12 @@ void ElementParameters::updateElementParameters()
         for (const auto &modifier : modifiersList) {
           const QString name = modifier.mName;
           QString value = modifier.mValue;
-          if (value.startsWith(name)) {
-            value.remove(0, name.size());
-          }
           if (modifier.mInherited) {
-            pOMCProxy->setExtendsModifierValue(className, modifier.mExtendName, name, value);
+            pOMCProxy->setExtendsModifierValue(className, modifier.mExtendName, "_", value);
           } else {
+            if (value.startsWith(name)) {
+              value.remove(0, name.size());
+            }
             pOMCProxy->setElementModifierValue(className, name, value);
           }
         }
