@@ -43,12 +43,6 @@ readFile("resetWithLoops_systemCall.log");
 
 // Result:
 // true
-// ""
-// 0
-// true
-// "Modelica.Electrical.Analog.Examples.Rectifier.fmu"
-// ""
-// true
 // true
 // ""
 // 0
@@ -66,8 +60,8 @@ readFile("resetWithLoops_systemCall.log");
 // Simulate
 // Terminate and Delete
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 22 NumRhsEvals  = 34 NumLinSolvSetups = 12
-//          NumNonlinSolvIters = 33 NumNonlinSolvConvFails = 0 NumErrTestFails = 2
+//          NumSteps = 22 NumRhsEvals  = 32 NumLinSolvSetups = 11
+//          NumNonlinSolvIters = 31 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
 // Success
 // "
 // endResult
