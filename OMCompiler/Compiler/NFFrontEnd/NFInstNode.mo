@@ -602,6 +602,12 @@ uniontype InstNode
         then
           ();
 
+      case NAME_NODE()
+        algorithm
+          node.name := name;
+        then
+          ();
+
       case VAR_NODE()
         algorithm
           node.name := name;

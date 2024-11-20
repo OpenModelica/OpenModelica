@@ -73,11 +73,6 @@ public
   record EMPTY end EMPTY;
   record WILD end WILD;
 
-  record STRING
-    String name;
-    ComponentRef restCref;
-  end STRING;
-
   function fromNode
     input InstNode node;
     input Type ty;
@@ -332,7 +327,6 @@ public
     name := match cref
       case CREF() then InstNode.name(cref.node);
       case WILD() then if baseModelica then "" else "_";
-      case STRING() then cref.name;
       else "";
     end match;
   end firstName;
@@ -342,12 +336,6 @@ public
   algorithm
     () := match cref
       case CREF()
-        algorithm
-          cref.restCref := EMPTY();
-        then
-          ();
-
-      case STRING()
         algorithm
           cref.restCref := EMPTY();
         then
@@ -569,12 +557,12 @@ public
     input output ComponentRef cref;
   algorithm
     cref := match cref
-      case CREF() algorithm
-        cref.node := InstNode.rename(name, cref.node);
-      then cref;
-      case STRING() algorithm
-        cref.name := name;
-      then cref;
+      case CREF()
+        algorithm
+          cref.node := InstNode.rename(name, cref.node);
+        then
+          cref;
+
       else cref;
     end match;
   end rename;
@@ -1135,12 +1123,6 @@ public
         then
           toAbsyn_impl(cref.restCref, acref);
 
-      case STRING()
-        algorithm
-          acref := Absyn.ComponentRef.CREF_IDENT(cref.name, {});
-        then
-          toAbsyn_impl(cref.restCref, acref);
-
       case WILD() then Absyn.ComponentRef.WILD();
     end match;
   end toAbsyn;
@@ -1157,12 +1139,6 @@ public
         algorithm
           acref := Absyn.ComponentRef.CREF_QUAL(InstNode.name(cref.node),
             list(Subscript.toAbsyn(s) for s in cref.subscripts), accumCref);
-        then
-          toAbsyn_impl(cref.restCref, acref);
-
-      case STRING()
-        algorithm
-          acref := Absyn.ComponentRef.CREF_QUAL(cref.name, {}, accumCref);
         then
           toAbsyn_impl(cref.restCref, acref);
 
@@ -1234,7 +1210,6 @@ public
           toString_impl(cref.restCref, str :: strl);
 
       case WILD() then "_" :: strl;
-      case STRING() then toString_impl(cref.restCref, cref.name :: strl);
       else strl;
     end match;
   end toString_impl;
@@ -1397,7 +1372,6 @@ public
           then
             hash_rest(cref.restCref, hash);
 
-        case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
         else hash;
       end match;
     end hash_rest;
@@ -1414,7 +1388,6 @@ public
           hash_rest(cref.restCref, h);
 
       case WILD() then stringHashDjb2("_");
-      case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
       else 0;
     end match;
   end hash;
@@ -1430,7 +1403,6 @@ public
     algorithm
       hash := match cref
         case CREF() then hash_rest(cref.restCref, stringHashDjb2Continue(InstNode.name(cref.node), hash));
-        case STRING() then hash_rest(cref.restCref, stringHashDjb2Continue(cref.name, hash));
         else hash;
       end match;
     end hash_rest;
@@ -1438,7 +1410,6 @@ public
     hash := match cref
       case CREF() then hash_rest(cref.restCref, stringHashDjb2(InstNode.name(cref.node)));
       case WILD() then stringHashDjb2("_");
-      case STRING() then hash_rest(cref.restCref, stringHashDjb2(cref.name));
       else 0;
     end match;
   end hashStrip;
@@ -1732,8 +1703,6 @@ public
       case CREF() guard includeScope
         then toListReverse(cref.restCref, includeScope, cref :: accum);
       case CREF(origin = Origin.CREF)
-        then toListReverse(cref.restCref, includeScope, cref :: accum);
-      case STRING()
         then toListReverse(cref.restCref, includeScope, cref :: accum);
       else accum;
     end match;

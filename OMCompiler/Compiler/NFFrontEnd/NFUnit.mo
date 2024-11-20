@@ -41,6 +41,8 @@ public
 import ComponentRef = NFComponentRef;
 import Absyn;
 import AbsynUtil;
+import NFInstNode.InstNode;
+import Type = NFType;
 import UnorderedMap;
 
 protected
@@ -91,7 +93,8 @@ protected uniontype Token
   record T_RPAREN end T_RPAREN;
 end Token;
 
-public constant ComponentRef UPDATECREF = ComponentRef.STRING("jhagemann", ComponentRef.EMPTY());
+public constant ComponentRef UPDATECREF = ComponentRef.CREF(InstNode.NAME_NODE("jhagemann"), {},
+  Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
 
 public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 /*                   fac,mol,cd, m, s, A, K, g*/

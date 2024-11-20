@@ -112,7 +112,8 @@ uniontype TypingError
 end TypingError;
 
 // Used by typeDimension for catching cyclic dimension involving :
-constant Expression WHOLEDIM_CREF = Expression.CREF(Type.UNKNOWN(), ComponentRef.STRING(":", ComponentRef.EMPTY()));
+constant Expression WHOLEDIM_CREF = Expression.CREF(Type.UNKNOWN(),
+  ComponentRef.CREF(InstNode.NAME_NODE(":"), {}, Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY()));
 
 public
 function typeClass
