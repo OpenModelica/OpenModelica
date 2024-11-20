@@ -185,7 +185,8 @@ public:
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;
-  StringHandler::ViewType getViewType() {return mViewType;}
+  bool isIconView() const {return mViewType == StringHandler::Icon;}
+  bool isDiagramView() const {return mViewType == StringHandler::Diagram;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
   void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}

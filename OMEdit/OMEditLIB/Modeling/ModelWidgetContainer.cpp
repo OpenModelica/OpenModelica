@@ -120,7 +120,7 @@ LineAnnotation* ModelInfo::getConnection(const QString &startElementName, const 
 
 /*!
  * \class GraphicsScene
- * \brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
+ * \brief The GraphicsScene class is a container for graphical components in a simulationmodel.
  */
 /*!
  * \brief GraphicsScene::GraphicsScene
@@ -166,10 +166,10 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   if (!mpModelWidget->getLibraryTreeItem()->isSaved()) {
     GraphicalViewsPage *pGraphicalViewsPage;
     pGraphicalViewsPage = OptionsDialog::instance()->getGraphicalViewsPage();
-    const qreal left = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
-    const qreal bottom = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
-    const qreal right = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
-    const qreal top = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
+    const qreal left = isIconView() ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
+    const qreal bottom = isIconView() ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
+    const qreal right = isIconView() ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
+    const qreal top = isIconView() ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
     if (!qFuzzyCompare(left, -100) || !qFuzzyCompare(bottom, -100) || !qFuzzyCompare(right, 100) || !qFuzzyCompare(top, 100)) {
       QVector<QPointF> extent;
       extent.append(QPointF(left, bottom));
@@ -177,18 +177,18 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
       mCoOrdinateSystem.setExtent(extent);
     }
 
-    const bool preserveAspectRatio = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation();
+    const bool preserveAspectRatio = isIconView() ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation();
     if (!preserveAspectRatio) {
       mCoOrdinateSystem.setPreserveAspectRatio(preserveAspectRatio);
     }
 
-    const qreal initialScale = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor();
+    const qreal initialScale = isIconView() ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor();
     if (!qFuzzyCompare(initialScale, 0.1)) {
       mCoOrdinateSystem.setInitialScale(initialScale);
     }
 
-    const qreal horizontal = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
-    const qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
+    const qreal horizontal = isIconView() ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
+    const qreal vertical = isIconView() ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
     if (!qFuzzyCompare(horizontal, 2) || !qFuzzyCompare(vertical, 2)) {
       mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
     }
@@ -286,9 +286,9 @@ void GraphicsView::setIsVisualizationView(bool visualizationView)
 void GraphicsView::drawCoordinateSystem()
 {
   ModelInstance::CoordinateSystem coordinateSystem;
-  if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+  if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     coordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
-  } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+  } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     coordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
   }
 
@@ -308,9 +308,9 @@ void GraphicsView::drawCoordinateSystem()
   // if local CoOrdinateSystem is not complete then try to complete the merged CoOrdinateSystem.
   if (!mCoOrdinateSystem.isComplete()) {
     ModelInstance::CoordinateSystem mergedCoordinateSystem;
-    if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+    if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
       mergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
-    } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+    } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
       mergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
     }
 
@@ -346,11 +346,11 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
   if (inhertied) {
     pExtendModel = pModelInstance->getParentExtend();
   }
-  if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+  if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
       shapes = pModelInstance->getAnnotation()->getIconAnnotation()->getGraphics();
     }
-  } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+  } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(false))) {
       shapes = pModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics();
     }
@@ -424,7 +424,7 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
 void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)
 {
   // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
-  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon && mViewType == StringHandler::Diagram) {
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon && isDiagramView()) {
     QList<ModelInstance::Element*> elements = pModelInstance->getElements();
     int elementIndex = -1, connectorIndex = -1;
     for (int i = 0; i < elements.size(); ++i) {
@@ -480,7 +480,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
 {
   mpModelWidget->detectMultipleDeclarations();
   // We use access.diagram so we can draw connections.
-  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && mViewType == StringHandler::Diagram) {
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
     QList<ModelInstance::Connection*> connections = pModelInstance->getConnections();
     for (int i = 0; i < connections.size(); ++i) {
@@ -548,7 +548,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
 void GraphicsView::drawTransitions(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)
 {
   // We use access.diagram so we can draw transitions.
-  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && mViewType == StringHandler::Diagram) {
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
     QList<ModelInstance::Transition*> transitions = pModelInstance->getTransitions();
     for (int i = 0; i < transitions.size(); ++i) {
@@ -616,7 +616,7 @@ void GraphicsView::drawTransitions(ModelInstance::Model *pModelInstance, bool in
 void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)
 {
   // We use access.diagram so we can draw initial states.
-  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && mViewType == StringHandler::Diagram) {
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
     QList<ModelInstance::InitialState*> initialStates = pModelInstance->getInitialStates();
     for (int i = 0; i < initialStates.size(); ++i) {
@@ -993,9 +993,9 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       }
       // If dropping an item on the diagram layer. If item is a class, model, block, connector or record. then we can drop it to the graphicsview
       // If dropping an item on the icon layer. If item is a connector. then we can drop it to the graphicsview
-      if ((mViewType == StringHandler::Diagram && ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
+      if ((isDiagramView() && ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
                                                    (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)))
-          || (mViewType == StringHandler::Icon && (type == StringHandler::Connector || type == StringHandler::ExpandableConnector))) {
+          || (isIconView() && (type == StringHandler::Connector || type == StringHandler::ExpandableConnector))) {
         if (mpModelWidget->isNewApi()) {
           ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
           ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure());
@@ -1013,7 +1013,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         }
         return true;
       } else {
-        if (mViewType == StringHandler::Diagram) {
+        if (isDiagramView()) {
           QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                    GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
                                    .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
@@ -1106,7 +1106,7 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
       pDiagramGraphicsView->addElementToClass(pDiagramElement);
     }
     if (clearSelection) {
-      if (mViewType == StringHandler::Diagram) {
+      if (isDiagramView()) {
         pDiagramGraphicsView->clearSelection(pDiagramElement);
       } else {
         pIconGraphicsView->clearSelection(pIconElement);
@@ -1270,7 +1270,7 @@ void GraphicsView::deleteElement(Element *pElement)
   } else if (mpModelWidget->isNewApi()) {
     if (pElement->getModel() && pElement->getModel()->isConnector()) {
       GraphicsView *pGraphicsView;
-      if (mViewType == StringHandler::Icon) {
+      if (isIconView()) {
         pGraphicsView = mpModelWidget->getDiagramGraphicsView();
       } else {
         pGraphicsView = mpModelWidget->getIconGraphicsView();
@@ -3152,7 +3152,7 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
             || (pRootElement->getLibraryTreeItem() && pRootElement->getLibraryTreeItem()->isConnector() && pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
           pElement = pRootElement;
         }
-        if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+        if (MainWindow::instance()->getConnectModeAction()->isChecked() && isDiagramView() &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) ||
@@ -3188,7 +3188,7 @@ Element* GraphicsView::stateElementAtPosition(QPoint position)
             || (pRootElement->getLibraryTreeItem() && pRootElement->getLibraryTreeItem()->isState() && pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isState())) {
           pElement = pRootElement;
         }
-        if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+        if (MainWindow::instance()->getTransitionModeAction()->isChecked() && isDiagramView() &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->getAnnotation()->isState()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isModelica() &&
@@ -3772,7 +3772,7 @@ void GraphicsView::copyItems(bool cut)
     QJsonDocument jsonDocument(jsonObject);
     QByteArray json = jsonDocument.toJson(QJsonDocument::Compact);
 
-    const QString view = (mViewType == StringHandler::Icon) ? "Icon" : "Diagram";
+    const QString view = isIconView() ? "Icon" : "Diagram";
     QString annotation;
     if (!shapes.isEmpty()) {
       annotation = "annotation (" % view % "(graphics={" % shapes.join(", ") % "}));";
@@ -4189,7 +4189,7 @@ void GraphicsView::pasteItems()
       shapesOMC = pClipboard->mimeData()->data(cutCopyPasteShapesOMCFormat);
     }
 
-    const QString view = (mViewType == StringHandler::Icon) ? "Icon" : "Diagram";
+    const QString view = isIconView() ? "Icon" : "Diagram";
     QString annotation;
     if (!shapes.isEmpty()) {
       QStringList coOrdinateSystemList;
@@ -4248,7 +4248,7 @@ void GraphicsView::pasteItems()
           // always add the connections to diagram layer.
           GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
           pDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
-          if (mViewType == StringHandler::Diagram) {
+          if (isDiagramView()) {
             mConnectionsList.last()->setSelected(true);
           }
         }
@@ -4299,7 +4299,7 @@ void GraphicsView::addClassAnnotation()
   getCoOrdinateSystemAndGraphics(coOrdinateSystemList, graphicsList);
   // build the annotation string
   QString annotationString;
-  QString viewType = (mViewType == StringHandler::Icon) ? "Icon" : "Diagram";
+  QString viewType = isIconView() ? "Icon" : "Diagram";
   if (coOrdinateSystemList.size() > 0 && graphicsList.size() > 0) {
     annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})").arg(viewType)
                        .arg(coOrdinateSystemList.join(",")).arg(graphicsList.join(","));
@@ -4313,7 +4313,7 @@ void GraphicsView::addClassAnnotation()
   // add the class annotation to model through OMC
   if (MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeItem()->getNameStructure(), annotationString)) {
     /* When something is added/changed in the icon layer then update the LibraryTreeItem in the Library Browser */
-    if (mViewType == StringHandler::Icon) {
+    if (isIconView()) {
       mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
     }
   } else {
@@ -4686,7 +4686,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
-  } else if (mViewType == StringHandler::Icon) {
+  } else if (isIconView()) {
     painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
   } else {
     painter->setBrush(QBrush(QColor(242, 242, 242), Qt::SolidPattern));
@@ -8687,7 +8687,7 @@ void ModelWidget::readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidg
   foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
     if (!pLibraryTreeItem->isNonExisting()) {
       GraphicsView *pInheritedGraphicsView;
-      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      if (pGraphicsView->isIconView()) {
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
       } else {
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();

@@ -1079,7 +1079,7 @@ void LibraryTreeItem::handleShapeAdded(ShapeAnnotation *pShapeAnnotation, Graphi
     bool primitivesVisible = true;
     int index = mpModelWidget->getInheritedClassesList().indexOf(pGraphicsView->getModelWidget()->getLibraryTreeItem()) + 1;
     GraphicsView *pCurrentGraphicsView = 0;
-    if (pGraphicsView->getViewType() == StringHandler::Icon) {
+    if (pGraphicsView->isIconView()) {
       if (index > 0) {
         primitivesVisible = mpModelWidget->getInheritedClassIconMap().value(index).mPrimitivesVisible;
       }
@@ -1148,7 +1148,7 @@ void LibraryTreeItem::handleIconUpdated()
 void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
 {
   if (mpModelWidget) {
-    if (pGraphicsView->getViewType() == StringHandler::Icon) {
+    if (pGraphicsView->isIconView()) {
       mpModelWidget->drawModelCoOrdinateSystem(mpModelWidget->getIconGraphicsView());
     } else {
       mpModelWidget->drawModelCoOrdinateSystem(mpModelWidget->getDiagramGraphicsView());
