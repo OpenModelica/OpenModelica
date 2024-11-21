@@ -818,21 +818,22 @@ void Parameter::createValueWidget()
       }
       for (i = 0; i < replaceableChoices.size(); i++) {
         replaceableChoice = replaceableChoices[i];
-        // if replaceableChoices points to a class in this scope, remove scope
-        if (replaceableChoice.startsWith(parentClassName + ".")) {
-          replaceableChoice.remove(0, parentClassName.size() + 1);
-        }
-        if (mValueType == Parameter::ReplaceableClass) {
-          replaceable = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice);
-          QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
+        if (mValueType == Parameter::ReplaceableClass || mValueType == Parameter::ReplaceableComponent) {
+          QString str = (pOMCProxy->getClassInformation(replaceableChoice)).comment;
           if (!str.isEmpty()) {
             str = " - " + str;
           }
-          replaceableText = replaceableChoices[i] + str;
+          replaceableText = replaceableChoice + str;
+          // if replaceableChoices points to a class in this scope, remove scope
+          if (replaceableChoice.startsWith(parentClassName + ".")) {
+            replaceableChoice.remove(0, parentClassName.size() + 1);
+          }
+          if (mValueType == Parameter::ReplaceableClass) {
+            replaceable = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice);
+          } else {
+            replaceable = QString("redeclare %1 %2").arg(replaceableChoice, elementName);
+          }
           mpValueComboBox->addItem(replaceableText, replaceable);
-        } else if (mValueType == Parameter::ReplaceableComponent) {
-          replaceable = QString("redeclare %1 %2").arg(replaceableChoice, elementName);
-          mpValueComboBox->addItem(replaceable, replaceable);
         } else {
           mpValueComboBox->addItem(replaceableChoice, replaceableChoice);
         }
