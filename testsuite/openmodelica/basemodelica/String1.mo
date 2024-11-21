@@ -30,7 +30,7 @@ end String1;
 // Result:
 // //! base 0.1.0
 // package 'String1'
-//   type 'E' = enumeration(one, two, three);
+//   type 'E' = enumeration('one', 'two', 'three');
 //
 //   model 'String1'
 //     Real 'r';

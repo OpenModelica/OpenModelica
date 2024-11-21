@@ -1952,7 +1952,7 @@ public
         then if Type.isBuiltinEnumeration(t) then
             AbsynUtil.pathString(t.typePath) + "." + exp.name
           else
-            "'" + AbsynUtil.pathString(t.typePath) + "'." + exp.name;
+            "'" + AbsynUtil.pathString(t.typePath) + "'.'" + exp.name + "'";
 
       case CLKCONST(clk) then ClockKind.toFlatString(clk, format);
 
