@@ -45,7 +45,7 @@ void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function
 
 const int firstOMCErrorStream = 1;
 
-const char *LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
+const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_UNKNOWN",
   "LOG_STDOUT",
   "LOG_ASSERT",
@@ -104,7 +104,7 @@ const char *LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_ZEROCROSSINGS",
 };
 
-const char *LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
+const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "unknown",
   "this stream is always active, can be disabled with -lv=-LOG_STDOUT",         /* OMC_LOG_STDOUT */
   "this stream is always active, can be disabled with -lv=-LOG_ASSERT",         /* OMC_LOG_ASSERT */
@@ -163,7 +163,7 @@ const char *LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "additional information about the zerocrossings"                              /* OMC_LOG_ZEROCROSSINGS */
 };
 
-const char *LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {
+const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {
   "unknown",
   "info",
   "warning",
@@ -173,12 +173,12 @@ const char *LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {
 };
 
 int omc_useStream[OMC_SIM_LOG_MAX];         /* 1 if LOG is enabled, otherwise 0 */
-int backupUseStream[OMC_SIM_LOG_MAX];   /* Backup of omc_useStream */
-int omc_level[OMC_SIM_LOG_MAX];
-int omc_lastType[OMC_SIM_LOG_MAX];
-int omc_lastStream = OMC_LOG_UNKNOWN;
-int showAllWarnings = 0;
-int streamsActive = 1;              /* 1 if info streams from omc_useStream are active, 0 if deactivated */
+static int backupUseStream[OMC_SIM_LOG_MAX];   /* Backup of omc_useStream */
+static int omc_level[OMC_SIM_LOG_MAX];
+static int omc_lastType[OMC_SIM_LOG_MAX];
+static int omc_lastStream = OMC_LOG_UNKNOWN;
+int omc_showAllWarnings = 0;
+static int streamsActive = 1;              /* 1 if info streams from omc_useStream are active, 0 if deactivated */
 
 #ifdef USE_DEBUG_TRACE
   int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){if(omc_useStream[OMC_LOG_TRACE]) printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}

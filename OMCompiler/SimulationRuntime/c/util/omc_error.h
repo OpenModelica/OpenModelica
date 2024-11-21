@@ -158,11 +158,7 @@ extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
 extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
 
 extern int omc_useStream[OMC_SIM_LOG_MAX];
-extern int omc_logLevel[OMC_SIM_LOG_MAX];
-extern int omc_logLastType[OMC_SIM_LOG_MAX];
-extern int omc_logLastStream;
 extern int omc_showAllWarnings;
-extern char omc_logBuffer[2048];
 
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
