@@ -13965,7 +13965,7 @@ template algebraicDAEVar(list<SimVar> algVars, String className)
     case SIMVAR(__) then
       <<
       algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal * data->simulationInfo->tolerance;
-      infoStreamPrint(LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
       >>
     end match)
 
