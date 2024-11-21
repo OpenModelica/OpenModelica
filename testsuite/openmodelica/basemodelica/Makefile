@@ -12,6 +12,7 @@ TESTFILES = \
   ArrayBinding1.mo \
 	Comments.mo \
   DoublePendulum.mos \
+	Enum1.mo \
 	Expression1.mo \
 	InStreamNominalThreshold.mo \
 	MoveBindings1.mo \

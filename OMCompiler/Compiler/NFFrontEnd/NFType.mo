@@ -1021,12 +1021,15 @@ public
           s := IOStream.append(s, " = enumeration(");
 
           if not listEmpty(ty.literals) then
+            s := IOStream.append(s, "'");
             s := IOStream.append(s, listHead(ty.literals));
 
             for l in listRest(ty.literals) loop
-              s := IOStream.append(s, ", ");
+              s := IOStream.append(s, "', '");
               s := IOStream.append(s, l);
             end for;
+
+            s := IOStream.append(s, "'");
           end if;
 
           s := IOStream.append(s, ")");
