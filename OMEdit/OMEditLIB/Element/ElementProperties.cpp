@@ -340,10 +340,10 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   const QString comment = mpModelInstanceElement->getComment();
   mpCommentLabel = new Label(comment);
 
-  if (mValueType == Parameter::ReplaceableClass) {
+  if (isReplaceableClass()) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
     setValueWidget(pReplaceableClass->getBaseClass(), true, mUnit);
-  } else if (mValueType == Parameter::ReplaceableComponent) {
+  } else if (isReplaceableComponent()) {
     QString value;
     if (mpModelInstanceElement->getModifier()) {
       if (mpModelInstanceElement->getModifier()->isValueDefined()) {
@@ -478,7 +478,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
          * Since we always want to update the unit combobox when value selection changes for choices.
          * Also don't add the new value to the combobox.
          */
-        if (mValueType == Parameter::Choices) {
+        if (isChoices()) {
           mpValueComboBox->setCurrentIndex(-1);
         } else {
           int index = mpValueComboBox->findData(value);
@@ -756,7 +756,7 @@ void Parameter::createValueWidget()
     case Parameter::Choices:
     case Parameter::ChoicesAllMatching:
       if (MainWindow::instance()->isNewApi()) {
-        if (mValueType == Parameter::ReplaceableComponent || mValueType == Parameter::ReplaceableClass) {
+        if (isReplaceableComponent() || isReplaceableClass()) {
           constrainedByClassName = mpModelInstanceElement->getReplaceable()->getConstrainedby();
           if (constrainedByClassName.isEmpty()) {
             auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
@@ -818,7 +818,7 @@ void Parameter::createValueWidget()
       }
       for (i = 0; i < replaceableChoices.size(); i++) {
         replaceableChoice = replaceableChoices[i];
-        if (mValueType == Parameter::ReplaceableClass || mValueType == Parameter::ReplaceableComponent) {
+        if (isReplaceableComponent() || isReplaceableClass()) {
           QString str = (pOMCProxy->getClassInformation(replaceableChoice)).comment;
           if (!str.isEmpty()) {
             str = " - " + str;
@@ -828,7 +828,7 @@ void Parameter::createValueWidget()
           if (replaceableChoice.startsWith(parentClassName + ".")) {
             replaceableChoice.remove(0, parentClassName.size() + 1);
           }
-          if (mValueType == Parameter::ReplaceableClass) {
+          if (isReplaceableClass()) {
             replaceable = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice);
           } else {
             replaceable = QString("redeclare %1 %2").arg(replaceableChoice, elementName);
@@ -938,7 +938,7 @@ void Parameter::editClassButtonClicked()
   QString type;
   QString value;
   QString defaultValue;
-  if (mValueType == Parameter::Record) {
+  if (isRecord()) {
     value = mpValueTextBox->text();
     defaultValue = mpValueTextBox->placeholderText();
   } else {
@@ -949,21 +949,21 @@ void Parameter::editClassButtonClicked()
   QString defaultModifier = defaultValue;
   ModelInstance::Modifier *pReplaceableConstrainedByModifier = 0;
   QString comment;
-  if (mValueType == Parameter::ReplaceableComponent) {
+  if (isReplaceableComponent()) {
     type = mpModelInstanceElement->getType();
     pReplaceableConstrainedByModifier = mpModelInstanceElement->getReplaceable()->getModifier();
-  } else if (mValueType == Parameter::ReplaceableClass) {
+  } else if (isReplaceableClass()) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
     type = pReplaceableClass->getBaseClass();
     pReplaceableConstrainedByModifier = pReplaceableClass->getReplaceable()->getModifier();
-  } else if (mValueType == Parameter::Record) {
+  } else if (isRecord()) {
     type = mpModelInstanceElement->getType();
   }
   // parse the Modelica code of element redeclaration to get the type and modifiers
   if (value.startsWith("redeclare")) {
-    if (mValueType == Parameter::ReplaceableComponent) {
+    if (isReplaceableComponent()) {
       FlatModelica::Parser::getTypeFromElementRedeclaration(value, type, modifier, comment);
-    } else if (mValueType == Parameter::ReplaceableClass) {
+    } else if (isReplaceableClass()) {
       FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(value, type, modifier, comment);
     }
   }
@@ -1002,7 +1002,7 @@ void Parameter::editClassButtonClicked()
       MainWindow::instance()->getStatusBar()->clearMessage();
       if (pElementParameters->exec() == QDialog::Accepted) {
         const QString modification = pElementParameters->getModification();
-        if (mValueType == Parameter::ReplaceableComponent || mValueType == Parameter::Record) {
+        if (isReplaceableComponent() || isRecord()) {
           if (value.startsWith("redeclare")) {
             QString elementRedeclaration = "redeclare " % type % " " % mpModelInstanceElement->getName() % modification;
             if (!comment.isEmpty()) {
@@ -1016,7 +1016,7 @@ void Parameter::editClassButtonClicked()
               setValueWidget(mpModelInstanceElement->getName() % modification, false, mUnit, true);
             }
           }
-        } else if (mValueType == Parameter::ReplaceableClass) {
+        } else if (isReplaceableClass()) {
           QString restriction;
           if (mpModelInstanceElement->getModel()) {
             restriction = mpModelInstanceElement->getModel()->getRestriction();
@@ -1114,10 +1114,10 @@ void Parameter::valueComboBoxChanged(int index)
   }
 
   try {
-    if (mValueType == Parameter::Enumeration) {
+    if (isEnumeration()) {
       updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
     } else {
-      if (mValueType == Parameter::Choices) {
+      if (isChoices()) {
         resetUnitCombobox();
       }
       updateValueBinding(FlatModelica::Expression::parse(value));
@@ -2051,7 +2051,7 @@ void ElementParameters::updateElementParameters()
     elementModifier.mInherited = pParameter->isInherited();
     elementModifier.mKey = pParameter->getName();
     QString elementModifierValue = pParameter->getValue();
-    elementModifier.mIsReplaceable = (pParameter->getValueType() == Parameter::ReplaceableClass || pParameter->getValueType() == Parameter::ReplaceableComponent);
+    elementModifier.mIsReplaceable = (pParameter->isReplaceableComponent() || pParameter->isReplaceableClass());
     elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
     elementModifier.mEach = pParameter->getFinalEachMenu()->isEach();
     elementModifier.mStartAndFixed = pParameter->isShowStartAndFixed();
@@ -2670,7 +2670,7 @@ void ElementParametersOld::createTabsGroupBoxesAndParametersHelper(LibraryTreeIt
     pParameter->setLoadSelectorCaption(loadSelectorCaption);
     pParameter->setSaveSelectorFilter(saveSelectorFilter);
     pParameter->setSaveSelectorCaption(saveSelectorCaption);
-    if (pParameter->getValueType() == Parameter::ReplaceableClass) {
+    if (pParameter->isReplaceableClass()) {
       QString className = pElement->getElementInfo()->getClassName();
       QString comment = "";
       if (pElement->getLibraryTreeItem()) {
@@ -2679,7 +2679,7 @@ void ElementParametersOld::createTabsGroupBoxesAndParametersHelper(LibraryTreeIt
         comment = (pOMCProxy->getClassInformation(className)).comment;
       }
       pParameter->setValueWidget(comment.isEmpty() ? className : QString("%1 - %2").arg(className, comment), true, pParameter->getUnit());
-    } else if (pParameter->getValueType() == Parameter::ReplaceableComponent) {
+    } else if (pParameter->isReplaceableComponent()) {
       pParameter->setValueWidget(QString("replaceable %1 %2").arg(pElement->getElementInfo()->getClassName(), pElement->getName()), true, pParameter->getUnit());
     } else {
       QString elementDefinedInClass = pElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
