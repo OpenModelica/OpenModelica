@@ -994,12 +994,22 @@ namespace ModelInstance
   {
     QStringList value;
 
-    if (mRedeclare) {
-      value.append("redeclare");
-    }
     if (mFinal && !skipTopLevel) {
       value.append("final");
     }
+
+    if (mRedeclare) {
+      value.append("redeclare");
+    }
+
+    if (mInner) {
+      value.append("inner");
+    }
+
+    if (mOuter) {
+      value.append("outer");
+    }
+
     if (mpReplaceable) {
       value.append("replaceable");
     }
@@ -2257,6 +2267,10 @@ namespace ModelInstance
 
     value.append(mType);
     value.append(mName);
+    const QString dims = getDimensions().getAbsynDimensionsString();
+    if (!dims.isEmpty()) {
+      value.append("[" % dims % "]");
+    }
     if (mpModifier) {
       value.append(mpModifier->toString());
     }
