@@ -573,7 +573,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
             warningStreamPrint(OMC_LOG_STDOUT, 0, "The non-linear solver tries to solve the problem that could take some time.");
             warningStreamPrint(OMC_LOG_STDOUT, 0, "It could help to provide better start-values for the iteration variables.");
             if (!OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
-              warningStreamPrint(OMC_LOG_STDOUT, 0, "For more information simulate with -lv OMC_LOG_NLS_V");
+              warningStreamPrint(OMC_LOG_STDOUT, 0, "For more information simulate with -lv LOG_NLS_V");
             messageClose(OMC_LOG_STDOUT);
           }
           assertMessage = 1;
